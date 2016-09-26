@@ -1,0 +1,23 @@
+@(curationObject: models.CurationObject, space: Option[String], classes:String, redirect: Call)(implicit user: Option[models.User])
+@import _root_.util.Formatters.ellipsize
+<div class="post-box @classes" id="@curationObject.id-tile">
+    <div class="panel panel-default dataset-panel">
+        <div class="pull-left">
+            <span class="glyphicon glyphicon-briefcase"></span>
+        </div>
+        <div class="panel-body">
+            <div class="caption break-word">
+                <h4><a href="@(routes.Datasets.dataset(curationObject.id, space))">@Html(curationObject.name)</a></h4>
+                <p>@Html(ellipsize(curationObject.description, 200))</p>
+            </div>
+        </div>
+        @curationObject
+        <ul class="list-group">
+            <li class="list-group-item dataset-panel-footer">
+                <span class="glyphicon glyphicon-folder-close" title="@curationObject.folders.size folders"></span> @curationObject.folders.size
+                <span class="glyphicon glyphicon-file" title="@curationObject.files.size files"></span> @curationObject.files.size
+                <span class="glyphicon glyphicon-list" title="@(curationObject.metadataCount) metadata fields"></span> @(curationObject.metadataCount)
+            </li>
+        </ul>
+    </div>
+</div>

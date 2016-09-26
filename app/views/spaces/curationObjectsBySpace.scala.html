@@ -1,0 +1,9 @@
+@(curationObjects: List[models.CurationObject], space: ProjectSpace)(implicit user: Option[models.User])
+@import play.api.i18n.Messages
+@import api.Permission
+<h3>Published @Messages("datasets.title")</h3>
+@if(curationObjects.size == 0) {
+    <p> There are no published datasets associated with this @Messages("space.title")</p>
+} else {
+    @spaces.curationObjectsGrid(curationObjects, space)
+}

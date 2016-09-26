@@ -152,6 +152,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
 	        val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
 	        val usersInSpace = spaces.getUsersInSpace(id)
+          var curationObjectsInSpace: List[CurationObject] = List()
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
 	            case Some(theCreator) => {
@@ -186,7 +187,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
 
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
+          if (play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+            curationObjectsInSpace = curationService.listSpace(Some(size),Some(id.stringify))
+          }
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, curationObjectsInSpace, userRoleMap))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }

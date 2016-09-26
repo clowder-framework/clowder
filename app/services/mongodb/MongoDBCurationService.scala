@@ -3,6 +3,8 @@ package services.mongodb
 import java.net.URI
 import javax.inject.{Inject, Singleton}
 
+import api.Permission
+import api.Permission._
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models._
 import org.bson.types.ObjectId
@@ -15,6 +17,7 @@ import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
+import util.Formatters
 
 
 @Singleton
@@ -88,6 +91,22 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
     CurationFolderDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
+
+  /**
+    * Return a list of curation objects in a space, this does not check for permissions
+    */
+  def listSpace(limit: Option[Integer], space: Option[String]): List[CurationObject] = {
+    val filter = space match {
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    limit match {
+      case Some(l) => CurationDAO.find(filter).limit(l).toList.reverse
+      case None => CurationDAO.find(filter).toList.reverse
+    }
+
+    CurationDAO.findAll.limit(limit.get).toList.reverse
   }
 
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {

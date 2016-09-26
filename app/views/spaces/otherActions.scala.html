@@ -1,4 +1,4 @@
-@(space: ProjectSpace, userRoleMap: Map[User, String])(implicit user: Option[models.User])
+@(space: ProjectSpace)(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.i18n.Messages
 <div class="row ds-section-sm space-col-right">
@@ -34,23 +34,5 @@
             <li><a class = "btn btn-xs btn-link btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-book"></span> Staging Area</a></li>
         }
         <li>@spaces.follow(space)</li>
-        <!-- user has submit request -->
-        @defining("You are not authorized to access this " + Messages("space.title") + ".") { msg =>
-            @if(user.isDefined) {
-                @if(!(userRoleMap contains user.get)) {
-                    @if(space.requests.contains(RequestResource(user.get.id))) {
-                        <li style="margin-top:15px; margin-left:10px">@msg Authorization request is pending.</li>
-                    } else {
-                        <li style="margin-top:15px; margin-left:10px">@msg @spaces.requestAuthorization(space.id)</li>
-                    }
-                }
-            } else {
-                @if(space.requests.contains(RequestResource(user.get.id))) {
-                    <li style="margin-top:15px; margin-left:10px">@msg Authorization request is pending.</li>
-                } else {
-                    <li style="margin-top:15px; margin-left:10px">@msg @spaces.requestAuthorization(space.id)</li>
-                }
-            }
-        }
     </ul>
 </div>

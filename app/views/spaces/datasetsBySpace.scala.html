@@ -1,9 +1,9 @@
-@(datasets: List[models.Dataset], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
+@(datasets: List[models.Dataset], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
 @import api.Permission
 <h3>@Messages("a.in.b", Messages("datasets.title"), Messages("space.title"))</h3>
 @if(datasets.size == 0) {
-    @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+    @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
         <p> Please request access to add datasets to this @Messages("space.title")</p>
     } else {
         <p> There are no datasets associated with this @Messages("space.title")</p>

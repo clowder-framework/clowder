@@ -1,4 +1,4 @@
-@(datasetsList: List[Dataset], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
+@(datasetsList: List[Dataset], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.i18n.Messages
@@ -7,7 +7,7 @@
 <p>
     <span class="small">@Messages("recent.message", Messages("datasets.title").toLowerCase)</span>
     <span class="pull-right">
-        <a href="@(routes.Datasets.list("", "", 12, Some(space)))" class="btn btn-link btn-xs">
+        <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link btn-xs">
             <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
         </a>
     </span>
@@ -19,12 +19,12 @@
             @isPublic match {
                 case Some(b) => {
                     @datasetsList.filter(_.isPublic == b).map { dataset =>
-                        @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
+                        @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)))
                     }
                 }
                 case None => {
                     @datasetsList.map { dataset =>
-                        @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
+                        @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)))
                     }
                 }
             }

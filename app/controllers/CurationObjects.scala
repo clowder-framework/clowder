@@ -136,7 +136,8 @@ class CurationObjects @Inject()(
                 files = newFiles,
                 folders = List.empty,
                 repository = None,
-                status = "In Curation",
+                //status = "In Curation",
+                status = "Published",
                 creators = COCreators(0).split(",").toList)
 
               // insert curation

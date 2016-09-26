@@ -1,13 +1,13 @@
-@(collections: List[Collection], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
+@(collections: List[Collection], space: ProjectSpace)(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.i18n.Messages
 <h3>@Messages("a.in.b", Messages("collections.title"), Messages("space.title"))</h3>
 @if(collections.size == 0) {
-    @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+    @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
         <p>Please request access to add collections to this @Messages("space.title")</p>
     } else {
-            <p>There are no collections associated with this @Messages("space.title"). </p>
+        <p>There are no collections associated with this @Messages("space.title"). </p>
     }
 } else {
-    @spaces.collectionsGrid(collections, space, isPublic)
+    @spaces.collectionsGrid(collections, space)
 }
