@@ -33,8 +33,8 @@ case class ProjectSpace (
   status: String = SpaceStatus.TRIAL.toString // space has three status: trial, private and public. yet users can only see the
   // access of the space, where trial equals to private
 ){
-  def isPublic:Boolean = status.contains(SpaceStatus.PUBLIC.toString)
-  def isTrial:Boolean = status.contains(SpaceStatus.TRIAL.toString)
+  def isPublic:Boolean = status == SpaceStatus.PUBLIC.toString
+  def isTrial:Boolean = status == SpaceStatus.TRIAL.toString
 }
 
 object SpaceStatus extends Enumeration {

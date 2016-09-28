@@ -601,7 +601,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       spaces.get(id) match {
         case Some(s) => {
           val curationIds = s.curationObjects.reverse.slice(index*limit, (index+1)*limit)
-          val curationDatasets: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
+          val curationObjects: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
 
           val prev = index-1
           val next = if(s.curationObjects.length > (index+1) * limit) {
@@ -609,7 +609,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           } else {
             -1
           }
-          Ok(views.html.spaces.stagingarea(s, curationDatasets, prev, next, limit ))
+          Ok(views.html.spaces.stagingarea(s, curationObjects, prev, next, limit ))
         }
         case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }

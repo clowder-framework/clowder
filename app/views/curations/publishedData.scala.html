@@ -11,7 +11,7 @@
     @for(pd <- publishedData) {
       <div class="panel panel-default">
         <div class="panel-body">
-            @if(pd("id").contains("uuid")){
+            @if(pd.exists(_._1 == "id") && pd("id").contains("uuid")){
                 <p><b>Title:</b> <a href=@routes.CurationObjects.getCurationObject(UUID(pd("id").substring(10)))>@pd("title")</a></p>
             } else{
                 <p><b>Title:</b> @pd("title")</p>

@@ -48,8 +48,9 @@ class CurationObjects @Inject()(
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces.map(id => spaces.get(id)).flatten
-        .filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces
+        .filter (spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
+        .map(id => spaces.get(id)).flatten)
       case None => ("", "", List.empty)
     }
     //default space is the space from which user access to the dataset
@@ -233,8 +234,9 @@ class CurationObjects @Inject()(
       implicit val user = request.user
       curations.get(id) match {
         case Some(c) =>
-          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces.map(id => spaces.get(id)).flatten
-            .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
+          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces
+            .filter(spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
+            .map(id => spaces.get(id)).flatten, spaces.get(c.space))
 
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             true, false, c.creators))
@@ -852,52 +854,49 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     var next = index + 1
-    val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "")
+    val endpoint = play.Play.application().configuration().getString("publishData.list.uri").replaceAll("/$", "")
     Logger.debug(endpoint)
     val futureResponse = WS.url(endpoint).get()
-    val publishDataList: ListBuffer[Map[String, String]] = ListBuffer.empty
+    var publishDataList: List[Map[String, String]] = List.empty
     val result =  futureResponse.map {
       case response =>
         if(response.status >= 200 && response.status < 300 || response.status == 304) {
-
-          val tags = (response.json\\ "Identifier").toList.reverse
-          if(tags.length < (index * limit +limit ) ) next = 0
-          tags.foreach{
-            tag => {
-            val endpointInner = play.Play.application().configuration().getString("stagingarea.uri") + '/' + tag.toString()
-              .replaceAll("/$", "").replaceAll("\"", "")
-
-            val futureResponseInner: Future[Response] = WS.url(endpointInner).get()
-            val resultInner:Future[Map[String, String]] =  futureResponseInner.map {
-              case response =>
-                if(response.status >= 200 && response.status < 300 || response.status == 304) {
-                  val resultMap: Map[String, Option[String]] =
-                  Map("id" -> (response.json \ "Aggregation" \ "Identifier").asOpt[String],
-                    "title" -> (response.json \ "Aggregation" \ "Title").asOpt[String],
-                    "author" -> (response.json \ "Aggregation" \ "Creator").asOpt[String],
-                    "description" -> (response.json \ "Aggregation" \ "Abstract").asOpt[String],
-                    "space" -> (response.json \ "Aggregation" \ "Publishing Project Name").asOpt[String],
-                    "DOI" -> (response.json \\ "message" ).map(_.as[String]).filter(_.contains("doi") ).headOption,
-                    "date" -> (response.json \ "Aggregation" \ "Creation Date").asOpt[String]
-                  )
-                  // remove value is none in the map.
-                  resultMap.collect {
-                    case (key, Some(value)) => key -> value
-                  }
-
-                } else {
-                  Map()
-                }
-            }
-
-              // asynchronous to synchronous
-              val rsInner: Map[String, String] = Await.result(resultInner, Duration.Inf)
-              publishDataList.append(rsInner)
-            }
+          val a = response.json.as[List[JsValue]]
+          publishDataList = a.map{
+            js =>
+              var resultMap: Map[String, String] = Map(
+                "id" -> (js \ "Identifier").asOpt[String],
+                "title" -> (js \ "Title").asOpt[String],
+                "author" -> (js \ "Creator").asOpt[String],
+                "description" -> (js \ "Abstract").asOpt[String],
+                "space" -> (js \ "Publishing Project Name").asOpt[String],
+                "DOI" -> (js \ "DOI" ).asOpt[String],
+                "date" -> (js \ "Publication Date").asOpt[String])
+                // remove (key, value) where value ==  None
+                .collect{
+                case (key, Some(value)) => key -> value
+                // do not add "case _ =>" here, otherwise report error:
+                // type mismatch; found : scala.collection.immutable.Iterable[Any] required: Map[String,String]
+              }
+              // add creator as a list of string
+              (js \ "Creator").asOpt[List[JsValue]] match {
+                case Some(authorList) =>  resultMap += ("author" ->  authorList.map(_.as[String]).mkString(", ") )
+                case None =>
+              }
+              // add Abstract as a list of string
+              (js \ "Abstract").asOpt[List[JsValue]] match {
+                case Some(authorList) =>  resultMap += ("description" ->  authorList.map(_.as[String]).mkString(" \n") )
+                case None =>
+              }
+              resultMap
           }
-          //sort by create time, don't use joda.Datatime here or you have to write a comparaison by yourself
-          val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
-          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("01-01-1000"))).reverse.take(limit + index * limit).takeRight(limit)
+
+
+          if(publishDataList.length < (index * limit +limit ) ) next = 0
+          //sort by Publication time, don't use joda.Datatime here or you have to write a comparaison by yourself
+          val format = new java.text.SimpleDateFormat("MMM dd, yyyy h:mm:ss aaa")
+          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("Sep 14, 2016 10:59:26 AM"))).reverse.take(limit + index * limit).takeRight(limit)
+
         } else {
           Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
           ListBuffer.empty
