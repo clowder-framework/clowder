@@ -861,8 +861,8 @@ class CurationObjects @Inject()(
     val result =  futureResponse.map {
       case response =>
         if(response.status >= 200 && response.status < 300 || response.status == 304) {
-          val a = response.json.as[List[JsValue]]
-          publishDataList = a.map{
+          val rawDataList = response.json.as[List[JsValue]]
+          publishDataList = rawDataList.map{
             js =>
               var resultMap: Map[String, String] = Map(
                 "id" -> (js \ "Identifier").asOpt[String],
@@ -878,7 +878,7 @@ class CurationObjects @Inject()(
                 // do not add "case _ =>" here, otherwise report error:
                 // type mismatch; found : scala.collection.immutable.Iterable[Any] required: Map[String,String]
               }
-              // add creator as a list of string
+              // add creator as a list of string. do not use .asOpt[List[String]], otherwise nothing will be parsed
               (js \ "Creator").asOpt[List[JsValue]] match {
                 case Some(authorList) =>  resultMap += ("author" ->  authorList.map(_.as[String]).mkString(", ") )
                 case None =>
@@ -891,7 +891,6 @@ class CurationObjects @Inject()(
               resultMap
           }
 
-
           if(publishDataList.length < (index * limit +limit ) ) next = 0
           //sort by Publication time, don't use joda.Datatime here or you have to write a comparaison by yourself
           val format = new java.text.SimpleDateFormat("MMM dd, yyyy h:mm:ss aaa")
@@ -899,13 +898,13 @@ class CurationObjects @Inject()(
 
         } else {
           Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
-          ListBuffer.empty
+          List.empty
         }
     }
 
     val rs = Await.result(result, Duration.Inf)
 
-    Ok(views.html.curations.publishedData(rs.toList, index -1 , next, limit))
+    Ok(views.html.curations.publishedData(rs, index -1 , next, limit))
 
   }
 }
