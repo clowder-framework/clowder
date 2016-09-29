@@ -63,7 +63,7 @@ object SearchUtils {
     }
 
     Some(new ElasticsearchObject(
-      ResourceRef('file, id),
+      ResourceRef(ResourceRef.file, id),
       f.filename,
       f.author.id.toString,
       f.uploadDate,
@@ -113,7 +113,7 @@ object SearchUtils {
     }
 
     Some(new ElasticsearchObject(
-      ResourceRef('dataset, id),
+      ResourceRef(ResourceRef.dataset, id),
       ds.name,
       ds.author.id.toString,
       ds.created,
@@ -134,7 +134,7 @@ object SearchUtils {
     var parent_of = c.parent_collection_ids.map( pc_id => pc_id.toString) //++ parent_of
 
     Some(new ElasticsearchObject(
-      ResourceRef('collection, c.id),
+      ResourceRef(ResourceRef.collection, c.id),
       c.name,
       c.author.id.toString,
       c.created,
@@ -189,7 +189,7 @@ object SearchUtils {
     }
 
     Some(new ElasticsearchObject(
-      ResourceRef('section, id),
+      ResourceRef(ResourceRef.section, id),
       "section-"+id.toString,
       "",
       new Date,
@@ -205,7 +205,7 @@ object SearchUtils {
   /**Convert TempFile to ElasticsearchObject and return, fetching metadata as necessary**/
   def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
     Some(new ElasticsearchObject(
-      ResourceRef('file, file.id),
+      ResourceRef(ResourceRef.file, file.id),
       file.filename,
       "",
       file.uploadDate,

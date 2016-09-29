@@ -57,20 +57,20 @@ class Metadata @Inject()(
     var listOfTerms = ListBuffer.empty[String]
 
     // First, get regular vocabulary matches
-    val vocabularies = metadataService.getDefinitionsDistinctName(user)
-    for (md_def <- vocabularies) {
+    val definitions = metadataService.getDefinitionsDistinctName(user)
+    for (md_def <- definitions) {
       val currVal = (md_def.json \ "label").as[String]
       if (currVal.toLowerCase startsWith query.toLowerCase) {
         listOfTerms.append("metadata."+currVal)
       }
     }
 
-    // Next get ElasticSeach metadata fields if plugin available
+    // Next get Elasticsearch metadata fields if plugin available
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         val mdTerms = plugin.getAutocompleteMetadataFields(query)
         for (term <- mdTerms) {
-          // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terraPlantCV.angle",
+          // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terra.plantcv.angle",
           //      "metadata.Jane Doe.Alternative Title"
           if (!(listOfTerms contains term))
             listOfTerms.append(term)

@@ -35,12 +35,11 @@ class Search @Inject() (
         val response = plugin.search(query.replaceAll("([:/\\\\])", "\\\\$1"))
 
         for (resource <- response) {
-          if (resource.resourceType == ResourceRef.file)
-            filesFound += resource.id.stringify
-          else if (resource.resourceType == ResourceRef.dataset)
-            datasetsFound += resource.id.stringify
-          else if (resource.resourceType == ResourceRef.collection)
-            collectionsFound += resource.id.stringify
+          resource.resourceType match {
+            case ResourceRef.file => filesFound += resource.id.stringify
+            case ResourceRef.dataset => datasetsFound += resource.id.stringify
+            case ResourceRef.collection => collectionsFound += resource.id.stringify
+          }
         }
 
         Ok(toJson( Map[String,JsValue](
