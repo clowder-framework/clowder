@@ -142,7 +142,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
        followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
       }
       case _ => {
-        val latestFiles = files.latest(5)
         val datasetsCount = datasets.count()
         val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
         val filesCount = files.count()
@@ -153,7 +152,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
         val usersCount = users.count()
 
-        Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
+        Ok(views.html.index(datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
           spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
       }
     }
@@ -161,7 +160,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
 
   def about = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
-    val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
@@ -172,7 +170,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
 
-    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
+    Ok(views.html.index(datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
