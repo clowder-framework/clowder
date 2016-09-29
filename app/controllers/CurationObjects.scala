@@ -2,6 +2,7 @@ package controllers
 
 import java.util.Date
 import javax.inject.Inject
+import api.Permission._
 import api.{UserRequest, Permission}
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
@@ -13,7 +14,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import services._
-import _root_.util.RequiredFieldsConfig
+import _root_.util.{Formatters, RequiredFieldsConfig}
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
@@ -69,6 +70,69 @@ class CurationObjects @Inject()(
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
       true, true, mdCreators))
+  }
+
+  /**
+    * List curation objects.
+    */
+  def list(when: String, date: String, limit: Int, space:Option[String]) = UserAction(needActive=false) { implicit request =>
+      implicit val user = request.user
+
+      val nextPage = (when == "a")
+      val curationObjectSpace = space.flatMap(o => spaces.get(UUID(o)))
+      Logger.debug("When: " + when + ", date: " + date + ",Limit: " + limit + ", space: " + space)
+      Logger.debug("nextPage: " + nextPage)
+      val title: Option[String] = Some(curationObjectSpace.get.name)
+
+      val curationObjectList: List[CurationObject] = {
+          if (date != "") {
+              curations.listSpace(date, nextPage, Some(limit), space)
+          } else {
+              curations.listSpace(Some(limit), space)
+          }
+      }
+      Logger.debug("Length: " + curationObjectList.size + ", curationObjectList: " + curationObjectList)
+
+      // check to see if there is a prev page
+      val prev = if (curationObjectList.nonEmpty && date != "") {
+          val first = Formatters.iso8601(curationObjectList.head.created)
+          val ds = curations.listSpace(first, nextPage = false, Some(1), space)
+
+          if (ds.nonEmpty && ds.head.id != curationObjectList.head.id) {
+              first
+          } else {
+              ""
+          }
+      } else {
+          ""
+      }
+
+      // check to see if there is a next page
+      val next = if (curationObjectList.nonEmpty) {
+          val last = Formatters.iso8601(curationObjectList.last.created)
+          val ds = curations.listSpace(last, nextPage=true, Some(1), space)
+          Logger.debug("Last: " + last + ", ds: " + ds)
+          //Logger.debug("ds.head.id:" + ds.head.id + ", curationObjectList.last.id:" + curationObjectList.last.id)
+          if (ds.nonEmpty && ds.head.id != curationObjectList.last.id) {
+              last
+          } else {
+              ""
+          }
+      } else {
+          ""
+      }
+      Logger.debug("prev: " + prev + ", next: " + next)
+
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+      val viewMode: Option[String] =
+          request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+          }
+
+      Ok(views.html.curationObjectList(curationObjectList, prev, next, limit, viewMode, space, title))
   }
 
   /**
@@ -136,8 +200,7 @@ class CurationObjects @Inject()(
                 files = newFiles,
                 folders = List.empty,
                 repository = None,
-                //status = "In Curation",
-                status = "Published",
+                status = "In Curation",
                 creators = COCreators(0).split(",").toList)
 
               // insert curation

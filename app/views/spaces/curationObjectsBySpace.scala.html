@@ -5,5 +5,9 @@
 @if(curationObjects.size == 0) {
     <p> There are no published datasets associated with this @Messages("space.title")</p>
 } else {
-    @spaces.curationObjectsGrid(curationObjects, space)
+    @if(user.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
+        @spaces.curationObjectsGrid(curationObjects, space)
+    } else {
+        <p>You are not authorized to access the @Messages("space.title")</p>
+    }
 }

@@ -97,16 +97,58 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     * Return a list of curation objects in a space, this does not check for permissions
     */
   def listSpace(limit: Option[Integer], space: Option[String]): List[CurationObject] = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+    val (filter, sort) = filteredQuery(None, false, space, None, None)
+    CurationDAO.find(filter).sort(sort).limit(limit.get).toList
+  }
+
+  def listSpace(date: String, nextPage: Boolean, limit: Option[Integer], space: Option[String]): List[CurationObject] = {
+    Logger.debug("Date: " + date + ", nextPage: " + nextPage + ", limit: " + limit + ", space: " + space)
+    val (filter, sort) = filteredQuery(Some(date), nextPage, space, None, None)
+    if (date.isEmpty || nextPage) {
+      Logger.debug("Date: " + date + ", nextPage: " + nextPage)
+      CurationDAO.find(filter).sort(sort).limit(limit.get).toList
+      //val space = Option("111")
+      //CurationDAO.find(MongoDBObject("space" -> new ObjectId(space.get)) ++ ("created" $lt Formatters.iso8601("2016-09-28T01:04:12.749-05"))).limit(limit.get).toList
+    } else {
+      CurationDAO.find(filter).sort(sort).limit(limit.get).toList.reverse
+    }
+  }
+
+  /**
+    * Create a filters and sorts based on the given parameters
+    */
+  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], status: Option[String], owner: Option[User]): (DBObject, DBObject) = {
+    val filterStatus = status match {
+      case Some(fs) => MongoDBObject ("status" -> new ObjectId(fs))
       case None => MongoDBObject()
     }
-    limit match {
-      case Some(l) => CurationDAO.find(filter).limit(l).toList.reverse
-      case None => CurationDAO.find(filter).toList.reverse
+    val filterOwner = owner match {
+      case Some(o) => MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
+      case None => MongoDBObject()
+    }
+    val filterSpace = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    val filterDate = date match {
+      case Some(d) => {
+        if (nextPage) {
+          ("created" $lt Formatters.iso8601(d))
+        } else {
+          ("created" $gt Formatters.iso8601(d))
+        }
+      }
+      case None => MongoDBObject()
+    }
+    val sort = if (date.isDefined && !nextPage) {
+      MongoDBObject("created"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    CurationDAO.findAll.limit(limit.get).toList.reverse
+    //val sort = MongoDBObject("created"-> 1)
+    Logger.debug("Filter: " + (filterSpace ++ filterDate ++ filterStatus ++ filterOwner) + ", sort: " + sort)
+    (filterStatus ++ filterDate ++ filterSpace ++ filterOwner, sort)
   }
 
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {

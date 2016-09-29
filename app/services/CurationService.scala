@@ -70,6 +70,11 @@ trait CurationService {
   def listSpace(limit: Option[Integer], space: Option[String]): List[CurationObject]
 
   /**
+    * Return a list of curation objects in a space, this does not check for permissions
+    */
+  def listSpace(date: String, nextPage: Boolean, limit: Option[Integer], space: Option[String]): List[CurationObject]
+
+  /**
    * List curation and published objects a dataset is related to.
    */
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject]

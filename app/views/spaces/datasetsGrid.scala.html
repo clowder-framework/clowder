@@ -18,7 +18,7 @@
         <div id="masonry-datasets">
             @isPublic match {
                 case Some(b) => {
-                    @datasetsList.filter(_.isPublic == b).map { dataset =>
+                    @datasetsList.filter(x => (x.isPublic == b || (x.isDefault == b && space.isPublic))).map { dataset =>
                         @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)))
                     }
                 }
