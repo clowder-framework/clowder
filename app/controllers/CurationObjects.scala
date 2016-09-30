@@ -449,6 +449,7 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
+
     val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
     var aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
@@ -679,6 +680,10 @@ class CurationObjects @Inject()(
             metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
           }
           val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
+          val spaceName = spaces.get(c.space) match {
+            case Some(space) => space.name
+            case None => AppConfiguration.getDisplayName
+          }
           var aggregation = metadataToAdd ++
             Map(
               "Identifier" -> Json.toJson("urn:uuid:"+curationId),
@@ -687,6 +692,7 @@ class CurationObjects @Inject()(
               "Title" -> Json.toJson(c.name),
               "Uploaded By" -> Json.toJson(creator),
               "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+              "Publishing Project Name" -> Json.toJson(spaceName),
               "Creation Date" -> Json.toJson(format.format(c.created))
             )
           if(metadataJson.contains("Creator")) {
@@ -739,6 +745,7 @@ class CurationObjects @Inject()(
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
                     "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
                     "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "Publishing Project Name" -> Json.toJson("http://sead-data.net/terms/publishingProjectName"),
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
