@@ -40,9 +40,8 @@
 				@collectionSpaces_canRemove match {
 					case Some(spaces_map) => {
 						@if(spaces_map.size == 1) {
-							@spaces_map.map { case (s, v) =>
-								<li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name,18))</a></li>
-							}
+								<li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(spaces_map.head._1.id)" title="@spaces_map.head._1.name"> @Html(ellipsize(spaces_map.head._1.name,18))</a></li>
+
 
 						} else  { @if(spaces_map.size > 1) {
 							<li>

@@ -157,9 +157,8 @@
 			<div class="row">
 				<ol class="breadcrumb">
 					@if(spaces.length == 1 ) {
-						@spaces.map { s =>
-							<li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name, 18))</a></li>
-						}
+							<li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
+
 					} else {
 						@if(spaces.length > 1) {
 							<li>

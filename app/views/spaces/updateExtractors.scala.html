@@ -4,12 +4,11 @@
 
 @main("Space") {
 	<div>
-		<div class="breadcrumb">
-			<span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space)" title="@spaceName"> @Html(ellipsize(spaceName,18))</a>
-			<span class="glyphicon glyphicon-chevron-right"></span>
-			<span class="glyphicon glyphicon-fullscreen"></span> Extractors
+		<ol class="breadcrumb">
+			<li><span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space)" title="@spaceName"> @Html(ellipsize(spaceName,18))</a></li>
+			<li><span class="glyphicon glyphicon-fullscreen"></span> Extractors</li>
 
-		</div>
+		</ol>
 	</div>
  @if(runningExtractors.size == 0) {
 	<div class="page-header">

@@ -165,15 +165,16 @@ class Files @Inject() (
           }
         }
 
-
+        //decodedDatasetsContaining are the datasets where the file is, where the file is not within a folder
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
-
 
         for (aDataset <- datasetsContainingFile) {
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsContaining += dDataset
         }
 
+        //allDecodedDatasets includes datasets where the file is on the first level (not within a folder) and when the file is in a folder
+        //it includes the parent dataset of the folder.
         val allDecodedDatasets = ListBuffer.empty[models.Dataset]
         val decodedSpacesContaining= ListBuffer.empty[models.ProjectSpace]
         for (aDataset <- allDatasets) {
@@ -184,6 +185,7 @@ class Files @Inject() (
               case Some(s) => {
                 decodedSpacesContaining += Utils.decodeSpaceElements(s)
               }
+              case None =>
             }
           }
         }

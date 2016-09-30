@@ -39,6 +39,7 @@
                     <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name, 18))</a></li>
                 }
                 case None => {
+                    //Right now this is not used. It is a placeholder for when we have a personal space/ private space/ user space where you can publish stuff into.
                     @user match {
                         case Some(u) => {
                             <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)" title="@u.fullName"> @Html(ellipsize(u.fullName, 18)) </a></li>
