@@ -2,7 +2,7 @@
         collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
 
-@import _root_.util.Formatters
+@import _root_.util.Formatters._
 
 @main(displayedName) {
     <div class="row featurette">
@@ -18,27 +18,27 @@
               <div class="panel-body">
                   <ul class="list-group">
 
-                        <li class="list-group-item" title="Access to @{spacesCountAccess} @Messages("spaces.title")">
-                            <a href="@routes.Spaces.list()">@Messages("spaces.title")<span class="badge pull-right">@spacesCount</span></a>
+                        <li class="list-group-item" title="Access to @humanReadableNumber(spacesCountAccess) @Messages("spaces.title")">
+                            <a href="@routes.Spaces.list()">@Messages("spaces.title")<span class="badge pull-right">@humanReadableNumber(spacesCount)</span></a>
                         </li>
 
-                      <li class="list-group-item" title="Access to @collectionsCountAccess collections">
-                          <a href="@routes.Collections.list("")">@Messages("collections.title") <span class="badge pull-right">@collectionsCount</span></a>
+                      <li class="list-group-item" title="Access to @humanReadableNumber(collectionsCountAccess) collections">
+                          <a href="@routes.Collections.list("")">@Messages("collections.title") <span class="badge pull-right">@humanReadableNumber(collectionsCount)</span></a>
                       </li>
-                      <li class="list-group-item" title="Access to @datasetsCountAccess datasets">
-                          <a href="@routes.Datasets.list("")">@Messages("datasets.title") <span class="badge pull-right">@datasetsCount</span></a>
+                      <li class="list-group-item" title="Access to @humanReadableNumber(datasetsCountAccess) datasets">
+                          <a href="@routes.Datasets.list("")">@Messages("datasets.title") <span class="badge pull-right">@humanReadableNumber(datasetsCount)</span></a>
                       </li>
                       <li class="list-group-item">
-                          Files <span class="badge pull-right">@filesCount</span>
+                          Files <span class="badge pull-right">@humanReadableNumber(filesCount)</span>
                       </li>
                       <li class="list-group-item" title="Total number of raw bytes stored.">
-                          Bytes <span class="badge pull-right">@_root_.util.FileUtils.humanReadableByteCount(filesBytes)</span>
+                          Bytes <span class="badge pull-right">@humanReadableByteCount(filesBytes)</span>
                       </li>
                       <li class="list-group-item" title="Total number users signed up for this server.">
                           @if(user.isDefined) {
-                              <a href="@routes.Users.getUsers()"> Users <span class="badge pull-right">@usersCount</span></a>
+                              <a href="@routes.Users.getUsers()"> Users <span class="badge pull-right">@humanReadableNumber(usersCount)</span></a>
                           } else {
-                             Users <span class="badge pull-right">@usersCount</span>
+                             Users <span class="badge pull-right">@humanReadableNumber(usersCount)</span>
                           }
                       </li>
                   </ul>
