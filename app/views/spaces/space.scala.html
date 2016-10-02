@@ -62,7 +62,13 @@
                     <div role="tabpanel" class="tab-pane fade" id="tab-public">
                         <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
                         @spaces.datasetsBySpace(datasets, space, Option(true))
-                        @spaces.collectionsBySpace(collections, space)
+                        <!-- collections follow the space status, there is no public, provate flag on a collection -->
+                        @if(space.isPublic) {
+                            @spaces.collectionsBySpace(collections, space)
+                        } else {
+                            <h3>@Messages("a.in.b", Messages("collections.title"), Messages("space.title"))</h3>
+                            <p>There are no public collections associated with this @Messages("space.title"). </p>
+                        }
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-publish">
                         <p>Data published from this @Messages("space.title")</p>
