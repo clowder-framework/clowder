@@ -190,7 +190,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
-    Logger.info("---controller: PreFlight Information---")
+    Logger.debug("---controller: PreFlight Information---")
     Ok("")
    }
 

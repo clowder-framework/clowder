@@ -148,7 +148,7 @@ class MongoDBEventService extends EventService {
            )
          ).toList
 
-           Logger.info("find " + eventList.size + " request")
+           Logger.debug("find " + eventList.size + " request")
           limit match {
             case Some(x) => eventList.take(x)
             case None => eventList

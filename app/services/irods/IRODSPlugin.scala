@@ -60,9 +60,9 @@ class IRODSPlugin(app: Application) extends Plugin {
   	try {
   	  account = IRODSAccount.instance(host, port, username, password, userhome, zone, defaultStorageResource)
       irodsFileSystem = IRODSFileSystem.instance()	// RODSFileSystem shared object, initialized
-	  Logger.info("irods: Connecting to " + account.toString())
+	    Logger.debug("irods: Connecting to " + account.toString())
 
-	  // the actual connection, For a given account creates an IRODSFileFactory that can return iRODS file objects for this particular connection.
+	    // the actual connection, For a given account creates an IRODSFileFactory that can return iRODS file objects for this particular connection.
       irodsFileFactory = irodsFileSystem.getIRODSFileFactory(account)
       
 	  _conn = true

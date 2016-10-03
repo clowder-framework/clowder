@@ -580,7 +580,7 @@ class  Datasets @Inject()(
               case Some (file) => {
                 attachExistingFileHelper (toDatasetId, fileId, toDataset, file, request.user)
                 detachFileHelper(datasetId, fileId, dataset, request.user)
-                Logger.info ("----- Successfully moved File between datasets.")
+                Logger.debug ("----- Successfully moved File between datasets.")
                 Ok (toJson (Map ("status" -> "success") ) )
               }
               case None => {
@@ -1241,7 +1241,7 @@ class  Datasets @Inject()(
     */
   @ApiOperation(value = "Get the tags associated with this dataset", notes = "Returns a JSON object of multiple fields", responseClass = "None", httpMethod = "GET")
   def getTags(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    Logger.info(s"Getting tags for dataset with id  $id.")
+    Logger.debug(s"Getting tags for dataset with id  $id.")
     /* Found in testing: given an invalid ObjectId, a runtime exception
      * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
      */
@@ -1476,7 +1476,7 @@ class  Datasets @Inject()(
     notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
     responseClass = "None", httpMethod = "POST")
   def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    Logger.info(s"Removing all tags for dataset with id: $id.")
+    Logger.debug(s"Removing all tags for dataset with id: $id.")
     if (UUID.isValid(id.stringify)) {
       datasets.get(id) match {
         case Some(dataset) => {
