@@ -48,7 +48,7 @@
                 @if(user.isDefined){
                     <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
                     <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                    @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                    @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))){
                         <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
                     }
                 }
@@ -75,11 +75,15 @@
                         @spaces.curationObjectsBySpace(curationObjects, space)
                     </div>
                 } else {
-                    <div>
-                        <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
-                        @spaces.datasetsBySpace(datasets, space, Option(true))
-                        @spaces.collectionsBySpace(collections, space)
-                    </div>
+                    @if(space.isPublic) {
+                        <div>
+                            <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
+                            @spaces.datasetsBySpace(datasets, space, Option(true))
+                            @spaces.collectionsBySpace(collections, space)
+                        </div>
+                    } else {
+                        <p>This @Messages("space.title") is private. You must be logged in to access the @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase.</p>
+                    }
                 }
             </div>
         </div>
