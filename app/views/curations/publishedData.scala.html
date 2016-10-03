@@ -15,7 +15,7 @@
 
             @for((key, value) <- pd - "title" -"id") {
                 @if(key == "Published Dataset"){
-                    <p><b>@key.capitalize:</b> <a href="@value">@value</a></p>
+                    <p><b>@key.capitalize:</b> <a href="@value" target="_blank">@value</a></p>
                 } else {
                     <p><b>@key.capitalize:</b> @value</p>
                 }
