@@ -26,6 +26,14 @@ body {
   }
 }
 
+#superadmin {
+    position: fixed;
+    left: 0px;
+    bottom: 0px;
+    margin-bottom: 0px;
+    width: 100%;
+}
+
 /* Login and Sign up boxes */
 div.login-nav-box {
     margin: 10px 0 25px 0
