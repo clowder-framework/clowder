@@ -877,9 +877,9 @@ class CurationObjects @Inject()(
                 "title" -> (js \ "Title").asOpt[String],
                 "author" -> (js \ "Creator").asOpt[String],
                 "description" -> (js \ "Abstract").asOpt[String],
-                "space" -> (js \ "Publishing Project Name").asOpt[String],
-                "DOI" -> (js \ "DOI" ).asOpt[String],
-                "date" -> (js \ "Publication Date").asOpt[String])
+                spaceTitle -> (js \ "Publishing Project Name").asOpt[String],
+                "Published Dataset" -> (js \ "DOI" ).asOpt[String],
+                "Publication Date" -> (js \ "Publication Date").asOpt[String])
                 // remove (key, value) where value ==  None
                 .collect{
                 case (key, Some(value)) => key -> value
