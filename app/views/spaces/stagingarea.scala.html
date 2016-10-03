@@ -1,10 +1,16 @@
 @(space: models.ProjectSpace, curationObjects: List[models.CurationObject], prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
 @import play.api.i18n.Messages
+@import _root_.util.Formatters._
+
 @main("Staging Area") {
     <div class="row">
         <div class="col-md-12">
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name,18))</a></li>
+                <li><span class="glyphicon glyphicon-book"></span> Staging Area</li>
+
+            </ol>
             <h1>Staging Area</h1>
-            <h5>@Messages("space.title"): <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
         </div>
     </div>
     @util.masonry()

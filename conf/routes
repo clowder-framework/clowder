@@ -276,7 +276,6 @@ GET            /api-docs.json/:path                                             
 POST           /api/admin/mail                                                          @api.Admin.mail
 POST           /api/admin/users                                                         @api.Admin.users
 POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
-DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
 POST           /api/reindex                                                             @api.Admin.reindex
 POST           /api/admin/configuration                                                 @api.Admin.updateConfiguration
@@ -722,6 +721,7 @@ DELETE         /spaces/curations/:id/folders/:curationFolderId                  
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 GET            /spaces/curations/:id/getMetadataDefinitionsByFile                       @api.CurationObjects.getMetadataDefinitionsByFile(id: UUID)
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
+GET            /publishedData                                                           @controllers.CurationObjects.getPublishedData(index: Int ?= 0, limit: Int ?=20)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
 

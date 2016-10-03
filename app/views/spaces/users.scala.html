@@ -1,10 +1,17 @@
 @(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String], invite:List[SpaceInvite], roleDescription:Map[String, String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import play.api.i18n.Messages
 @import api.Permission
+@import _root_.util.Formatters._
 
 @main(space.name) {
     <div class="row">
         <div class="col-md-12">
+
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-tent"></span><a href= "@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name, 18))</a></li>
+                <li><span class="glyphicon glyphicon-user"></span> Manage Users</li>
+            </ol>
+
             <div class="row">
                 <div class="col-md-12" id="s-title">
                     <h1 id="space-title" class="inline">Manage Users of @Messages("space.title")

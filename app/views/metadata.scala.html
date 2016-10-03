@@ -1,6 +1,5 @@
 @(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean, curationId: Option[UUID])(implicit user: Option[models.User])
 
-@import api.Permission
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
 

@@ -1,23 +1,17 @@
 package controllers
 
-import java.io.FileInputStream
-import java.text.SimpleDateFormat
-import java.util.Date
+
 import javax.inject.Inject
 import api.Permission
 import api.Permission.Permission
-import fileutils.FilesUtils
 import models._
-import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.current
-import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
+import util.{FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
-import scala.collection.mutable.{ListBuffer, Map => MutableMap}
-import scala.util.matching.Regex
+import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
 
 /**
@@ -64,22 +58,20 @@ class Datasets @Inject()(
       }
 
     var hasVerifiedSpace = false
-    val spaceId = space match {
+    val (spaceId, spaceName) = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
           case Some(space) => {
             hasVerifiedSpace = !space.isTrial
-            Some(space.id.toString)
+            (Some(space.id.toString), Some(space.name))
           }
-          case None => None
+          case None => (None, None)
         }
       }
-      case None => None
+      case None => (None, None)
     }
 
-
     var collectionSpaces : ListBuffer[String] = ListBuffer.empty[String]
-
 
     val collectionSelected = collection match {
       case Some(c) => {
@@ -109,7 +101,7 @@ class Datasets @Inject()(
       (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces.toList ,showAccess))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, spaceName, collectionSelected, collectionSpaces.toList ,showAccess))
 
   }
 
@@ -463,7 +455,7 @@ class Datasets @Inject()(
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
 
-          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
           var isInPublicSpace = false
           dataset.spaces.map{
             sp => spaceService.get(sp) match {
