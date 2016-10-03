@@ -80,8 +80,6 @@ class CurationObjects @Inject()(
 
       val nextPage = (when == "a")
       val curationObjectSpace = space.flatMap(o => spaces.get(UUID(o)))
-      Logger.debug("When: " + when + ", date: " + date + ",Limit: " + limit + ", space: " + space)
-      Logger.debug("nextPage: " + nextPage)
       val title: Option[String] = Some(curationObjectSpace.get.name)
 
       val curationObjectList: List[CurationObject] = {
@@ -91,7 +89,6 @@ class CurationObjects @Inject()(
               curations.listSpace(Some(limit), space)
           }
       }
-      Logger.debug("Length: " + curationObjectList.size + ", curationObjectList: " + curationObjectList)
 
       // check to see if there is a prev page
       val prev = if (curationObjectList.nonEmpty && date != "") {
@@ -111,8 +108,6 @@ class CurationObjects @Inject()(
       val next = if (curationObjectList.nonEmpty) {
           val last = Formatters.iso8601(curationObjectList.last.created)
           val ds = curations.listSpace(last, nextPage=true, Some(1), space)
-          Logger.debug("Last: " + last + ", ds: " + ds)
-          //Logger.debug("ds.head.id:" + ds.head.id + ", curationObjectList.last.id:" + curationObjectList.last.id)
           if (ds.nonEmpty && ds.head.id != curationObjectList.last.id) {
               last
           } else {
@@ -121,7 +116,6 @@ class CurationObjects @Inject()(
       } else {
           ""
       }
-      Logger.debug("prev: " + prev + ", next: " + next)
 
       //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
       //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar

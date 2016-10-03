@@ -102,10 +102,8 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def listSpace(date: String, nextPage: Boolean, limit: Option[Integer], space: Option[String]): List[CurationObject] = {
-    Logger.debug("Date: " + date + ", nextPage: " + nextPage + ", limit: " + limit + ", space: " + space)
     val (filter, sort) = filteredQuery(Some(date), nextPage, space, None, None)
     if (date.isEmpty || nextPage) {
-      Logger.debug("Date: " + date + ", nextPage: " + nextPage)
       CurationDAO.find(filter).sort(sort).limit(limit.get).toList
       //val space = Option("111")
       //CurationDAO.find(MongoDBObject("space" -> new ObjectId(space.get)) ++ ("created" $lt Formatters.iso8601("2016-09-28T01:04:12.749-05"))).limit(limit.get).toList
@@ -146,8 +144,6 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    //val sort = MongoDBObject("created"-> 1)
-    Logger.debug("Filter: " + (filterSpace ++ filterDate ++ filterStatus ++ filterOwner) + ", sort: " + sort)
     (filterStatus ++ filterDate ++ filterSpace ++ filterOwner, sort)
   }
 
