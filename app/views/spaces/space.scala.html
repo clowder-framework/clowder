@@ -36,7 +36,7 @@
                     <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))">
                         <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
                 }
-                @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) || Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                @if(play.Play.application().configuration().getBoolean("enablePublic") && (Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) || Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)))){
                     <hr/>
                 }
             }
@@ -45,7 +45,7 @@
     <div class="row">
         <div class="col-md-8 col-lg-8 col-sm-8">
             <ul class="nav nav-tabs margin-bottom-20" >
-                @if(user.isDefined){
+                @if(user.isDefined && play.Play.application().configuration().getBoolean("enablePublic")){
                     <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
                     <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
                     @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))){
