@@ -1,9 +1,14 @@
 @(dataset: models.Dataset, userListSpaceRoleTupleMap: Map[UUID, List[Tuple2[String,String]]], currUserIsAuthor: Boolean, users: List[User])(implicit user: Option[models.User])
+@import play.api.i18n.Messages
+@import _root_.util.Formatters._
 
 @main("Dataset") {
 
     <div class="row">
-
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-briefcase"></span><a href= "@routes.Datasets.dataset(dataset.id)" title="@dataset.name"> @Html(ellipsize(dataset.name, 18))</a></li>
+            <li><span class="glyphicon glyphicon-user"></span> Collaborators</li>
+        </ol>
         <div class="row bottom-padding">
             <div class="col-md-12" id="ds-title">
                 <h1 id="datasettitle">@dataset.name</h1>
@@ -25,7 +30,7 @@
                                     <table id='nested-space-role-headers' class="table table-hover">
                                         <thead>
                                             <tr>
-                                                <th class="col-md-6">@{spaces.spaceTitle()}</th>
+                                                <th class="col-md-6">@Messages("space.title")</th>
                                                 <th class="col-md-2">Role</th>
                                             </tr>
                                         </thead>

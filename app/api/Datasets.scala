@@ -638,6 +638,14 @@ class  Datasets @Inject()(
 
         //add metadata to mongo
         metadataService.addMetadata(metadata)
+        val mdMap = metadata.getExtractionSummary
+
+        //send RabbitMQ message
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.metadata.added"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+        }
+
 
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
@@ -653,39 +661,46 @@ class  Datasets @Inject()(
     notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
     responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
-    PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-      datasets.get(id) match {
-        case Some(x) => {
-          val json = request.body
-          //parse request for agent/creator info
-          //creator can be UserAgent or ExtractorAgent
-          var creator: models.Agent = null
-          json.validate[Agent] match {
-            case s: JsSuccess[Agent] => {
-              creator = s.get
+     PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+        datasets.get(id) match {
+          case Some(x) => {
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
 
-              // check if the context is a URL to external endpoint
-              val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
 
-              // check if context is a JSON-LD document
-              val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                .map(contextService.addContext(new JsString("context name"), _))
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
 
-              // when the new metadata is added
-              val createdAt = new Date()
+                // when the new metadata is added
+                val createdAt = new Date()
 
-              //parse the rest of the request to create a new models.Metadata object
-              val attachedTo = ResourceRef(ResourceRef.dataset, id)
-              val content = (json \ "content")
-              val version = None
-              val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                content, version)
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
-              //add metadata to mongo
-              metadataService.addMetadata(metadata)
-              datasets.index(id)
-              Ok(toJson("Metadata successfully added to db"))
+                //add metadata to mongo
+                metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  val dtkey = s"${p.exchange}.metadata.added"
+                  p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                }
+
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
             }
             case e: JsError => {
               Logger.error("Error getting creator");
@@ -801,7 +816,13 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-          case Some(file) => jsonFile(file)
+          case Some(file) => {
+            val serveradmin = request.user match {
+              case Some(u) => u.serverAdmin
+              case None => false
+            }
+            jsonFile(file, serveradmin)
+          }
           case None => Logger.error(s"Error getting File $fileId")
         }).asInstanceOf[List[JsValue]]
         Ok(toJson(list))
@@ -817,10 +838,20 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-          case Some(file) => jsonFile(file)
+          case Some(file) => {
+            val serveradmin = request.user match {
+              case Some(u) => u.serverAdmin
+              case None => false
+            }
+            jsonFile(file, serveradmin)
+          }
           case None => Logger.error(s"Error getting File $fileId")
         }).asInstanceOf[List[JsValue]]
-        val list = listFiles ++ getFilesWithinFolders(id)
+        val serveradmin = request.user match {
+          case Some(u) => u.serverAdmin
+          case None => false
+        }
+        val list = listFiles ++ getFilesWithinFolders(id, serveradmin)
         Ok(toJson(list))
       }
       case None => Logger.error("Error getting dataset" + id); InternalServerError
@@ -866,7 +897,7 @@ class  Datasets @Inject()(
   }
 
 
-  private def getFilesWithinFolders(id: UUID): List[JsValue] = {
+  private def getFilesWithinFolders(id: UUID, serveradmin: Boolean = false): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
     datasets.get(id) match {
       case Some(dataset) => {
@@ -875,7 +906,7 @@ class  Datasets @Inject()(
           folder =>
             folder.files.map {
               fileId => files.get(fileId) match {
-                case Some(file) => output += jsonFile(file)
+                case Some(file) => output += jsonFile(file, serveradmin)
                 case None => Logger.error(s"Error getting file $fileId")
               }
             }
@@ -886,9 +917,31 @@ class  Datasets @Inject()(
     output.toList.asInstanceOf[List[JsValue]]
   }
 
-  def jsonFile(file: models.File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
-      "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
+  def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
+    val defaultMap = Map(
+      "id" -> file.id.toString,
+      "filename" -> file.filename,
+      "contentType" -> file.contentType,
+      "date-created" -> file.uploadDate.toString(),
+      "size" -> file.length.toString)
+
+    // Only include filepath if using DiskByte storage and user is serverAdmin
+    val jsonMap = file.loader match {
+      case "services.filesystem.DiskByteStorageService" => {
+        if (serverAdmin)
+          Map(
+            "id" -> file.id.toString,
+            "filename" -> file.filename,
+            "filepath" -> file.loader_id,
+            "contentType" -> file.contentType,
+            "date-created" -> file.uploadDate.toString(),
+            "size" -> file.length.toString)
+        else
+          defaultMap
+      }
+      case _ => defaultMap
+    }
+    toJson(jsonMap)
   }
 
   //Update Dataset Information code starts
@@ -2153,8 +2206,10 @@ class  Datasets @Inject()(
       space.name
     }
 
+    val dataset_description = Utils.decodeString(dataset.description)
+
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
-    Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset.description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
+    Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset_description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
   }
 
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {

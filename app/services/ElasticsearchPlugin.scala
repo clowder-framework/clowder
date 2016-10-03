@@ -1,9 +1,11 @@
 package services
 
 import play.api.{Plugin, Logger, Application}
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
+import java.net.InetAddress;
+import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
@@ -38,17 +40,21 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   def connect(): Boolean = {
     if (client.isDefined) {
-      Logger.debug("Already Connected to Elasticsearch")
       return true
     }
     try {
-      val settings = ImmutableSettings.settingsBuilder().put("cluster.name", nameOfCluster).build()
-      client = Some(new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(serverAddress, serverPort)))
+      val settings = if (nameOfCluster != "") {
+        Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+      } else {
+        Settings.settingsBuilder().build()
+      }
+      client = Some(TransportClient.builder().settings(settings).build()
+    		  .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(serverAddress), serverPort)))
       Logger.debug("--- ElasticSearch Client is being created----")
       client match {
         case Some(x) => {
           Logger.debug("Index \"data\"  is being created if it does not exist ---")
-          val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
+          val indexSettings = Settings.settingsBuilder().loadFromSource(jsonBuilder()
             .startObject()
             .startObject("analysis")
             .startObject("analyzer")
@@ -96,7 +102,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val response = x.prepareSearch(index)
           .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(QueryBuilders.queryString(query).analyzer("snowball"))
+          .setQuery(QueryBuilders.queryStringQuery(query).analyzer("snowball"))
           .setFrom(0).setSize(60).setExplain(true)
           .execute()
           .actionGet()
@@ -115,7 +121,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     client match {
       case Some(x) => {
         Logger.debug("Searching ElasticSearch for " + query)
-        var qbqs = QueryBuilders.queryString(query)
+        var qbqs = QueryBuilders.queryStringQuery(query)
         for (f <- fields) {
           qbqs.field(f.trim())
         }

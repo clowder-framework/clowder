@@ -1,6 +1,7 @@
 @(dataset: models.Dataset, space: Option[String], comments: Map[UUID, Int],classes:String, isFollowing: Boolean, isSpace: Boolean, redirect: Call)(implicit user: Option[models.User])
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
+@import play.api.i18n.Messages
 <div class="post-box @classes" id="@dataset.id-tile">
     <div class="panel panel-default dataset-panel">
         <div class="pull-left">
@@ -29,17 +30,17 @@
                 }
                 @if(user.isDefined) {
                     @if(space.isDefined) {
-                        @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
-                            @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
-                                <button onclick="confirmRemoveResourceFromResource('space','@(spaceTitle)','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')"
-                                class="btn btn-link" title="Remove the dataset from the @spaceTitle">
+
+                            @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
+                                <button onclick="confirmRemoveResourceFromResource('space','@Messages("space.title")','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')"
+                                class="btn btn-link" title="Remove the dataset from the @Messages("space.title")">
                                     <span class="glyphicon glyphicon-remove"></span></button>
                             } else {
-                                <div class="inline" title="No permission to remove the dataset from the @spaceTitle">
+                                <div class="inline" title="No permission to remove the dataset from the @Messages("space.title")">
                                     <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
                                 </div>
                             }
-                         }
+
                     } else {
                         @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                             <button onclick="confirmDeleteResource('dataset','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',false,'@redirect.url')" class="btn btn-link" title="Delete the dataset and its contents">

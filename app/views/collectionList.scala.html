@@ -1,6 +1,6 @@
 @(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
-
-@main("Collections") {
+@import api.Permission
+@main( Messages("collections.title")) {
 
 @util.masonry()
     
@@ -12,7 +12,7 @@
 <div class="row">
     <div class="col-md-12">
         <h1>@Html(title.getOrElse("Collections"))</h1>
-        <p>Use Collections to bring together multiple datasets and their associated files in an almost unlimited number of ways.</p>
+        <p>@Messages("collection.list.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase)</p>
     </div>
 </div>
 
@@ -20,17 +20,51 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        @if(user.isDefined) {
-            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create</a>
+
+        @user match {
+            case Some(u) => {
+                @(space, owner) match {
+                    case (Some(s), Some(o)) => {
+                        @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, UUID(s)))) {
+                            @if(o.equalsIgnoreCase(u.id.stringify)) {
+
+                                <a id="create-collection" href="@routes.Collections.newCollection(space)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("collection.title"))">
+                                    <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
+                            }
+                        }
+                    }
+                    case (Some(s), _) => {
+                        @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, UUID(s)))) {
+                                <a id="create-collection" href="@routes.Collections.newCollection(space)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("collection.title"))">
+                                    <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
+                        }
+                    }
+                    case (_, Some(o)) => {
+                        @if(o.equalsIgnoreCase(u.id.stringify)) {
+
+                            <a id="create-collection" href="@routes.Collections.newCollection(space)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("collection.title"))">
+                                <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
+                        }
+                    }
+
+                    case (_, _) => {
+                        <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="@Messages("create.title", Messages("collection.title"))"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                    }
+                }
+            }
+
+            case _ => {}
+
         }
 
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">
             <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
-            <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>            
+            <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
         </div>
         <script>
+
             var removeIndicator = false;
 	        var viewMode = '@mode.getOrElse("tile")';
 	        $.cookie.raw = true;

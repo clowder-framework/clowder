@@ -1,2 +1,3 @@
 @(myForm: Form[controllers.spaceFormData])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-@newEditTemplate(myForm, title = "Create New " + spaces.spaceTitle(), submitButton = createButton(), None)
+@import play.api.i18n.Messages
+@newEditTemplate(myForm, title = Messages("create.header", Messages("space.title")), submitButton = createButton(), None, None)

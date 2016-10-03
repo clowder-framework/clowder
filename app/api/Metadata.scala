@@ -6,6 +6,7 @@ import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.ApiOperation
 import models.{ResourceRef, UUID, UserAgent, _}
+import org.apache.commons.lang.WordUtils
 import play.api.Play.current
 import play.api.Logger
 import play.api.libs.json.Json._
@@ -13,6 +14,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WS
 import play.api.mvc.Result
 import services._
+import play.api.i18n.Messages
 
 import scala.concurrent.Future
 
@@ -121,11 +123,17 @@ class Metadata @Inject()(
     implicit val user = request.user
     user match {
       case Some(u) => {
-        val body = request.body
-        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-          val uri = (body \ "uri").as[String]
+        var body = request.body
+        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
+          var uri = (body \ "uri").asOpt[String].getOrElse("")
           spaceService.get(spaceId) match {
             case Some(space) => {
+              // assign a default uri if not specified
+              if(uri == "") {
+                // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
+                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+              }
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
             }
             case None => BadRequest("The space does not exist")
@@ -142,9 +150,15 @@ class Metadata @Inject()(
     implicit request =>
       request.user match {
         case Some(user) => {
-          val body = request.body
-          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-            val uri = (body \ "uri").as[String]
+          var body = request.body
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
+            var uri = (body \ "uri").asOpt[String].getOrElse("")
+            // assign a default uri if not specified
+            if(uri == "") {
+              // http://clowder.ncsa.illinois.edu/metadata#CamelCase
+              uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+              body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+            }
             addDefinitionHelper(uri, body, None, user, None)
           } else {
             BadRequest(toJson("Invalid Resource type"))
@@ -154,7 +168,8 @@ class Metadata @Inject()(
       }
   }
 
-  def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
+  //On GUI, URI is not required, however URI is required in DB. a default one will be generated when needed.
+  private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
     metadataService.getDefinitionByUri(uri) match {
       case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
       case None => {
@@ -289,14 +304,28 @@ class Metadata @Inject()(
 
             //add metadata to mongo
             metadataService.addMetadata(metadata)
+            val mdMap = metadata.getExtractionSummary
+
             attachedTo match {
               case Some(resource) => {
                 resource.resourceType match {
                   case ResourceRef.dataset => {
                     datasets.index(resource.id)
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
+                        dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                    }
                   }
                   case ResourceRef.file => {
                     files.index(resource.id)
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request),
+                        dtkey, mdMap, "", UUID(""), ""))
+                    }
                   }
                   case _ => {}
                 }
@@ -325,6 +354,12 @@ class Metadata @Inject()(
               BadRequest("Curation Object has already submitted")
             } else {
               metadataService.removeMetadata(id)
+              val mdMap = m.getExtractionSummary
+
+              current.plugin[RabbitmqPlugin].foreach { p =>
+                val dtkey = s"${p.exchange}.metadata.removed"
+                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdMap, "", id, ""))
+              }
 
               Logger.debug("re-indexing after metadata removal")
               current.plugin[ElasticsearchPlugin].foreach { p =>
@@ -343,7 +378,6 @@ class Metadata @Inject()(
                   }
                 }
               }
-
 
               Ok(JsObject(Seq("status" -> JsString("ok"))))
             }

@@ -12,12 +12,11 @@
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
   limit: Int, showDownload: Boolean, showAccess:  Boolean, access: String,
-  accessOptions: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  accessOptions: List[String], canAddDatasetToCollection: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
-@import helper._
 @import api.Permission
 @import play.api.Play.current
-@import scala.collection.mutable.{Map => MutableMap}
+@import _root_.util.Formatters._
 
 @main(dataset.name) {
     <script type="text/javascript">
@@ -27,6 +26,40 @@
 		<!-- left column -->
 		<div class="col-md-8">
             <div class="row">
+                <ol class="breadcrumb">
+
+                @datasetSpaces_canRemove match {
+                    case Some(spaces_map) => {
+                        @if(spaces_map.size == 1) {
+                                   <li> <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(spaces_map.head._1.id)" title="@spaces_map.head._1.name"> @Html(ellipsize(spaces_map.head._1.name, 18))</a></li>
+                        } else  {
+                            @if(spaces_map.size > 1) {
+                                <li>
+                                <span class="dropdown">
+                                    <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="true">
+                                        <span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+                                        @spaces_map.map { case (s,v) =>
+                                            <li><a href="@routes.Spaces.getSpace(s.id)" title="@s.name"><span class="glyphicon glyphicon-tent"></span> @Html(ellipsize(s.name, 18))</a></li>
+                                        }
+                                    </ul>
+                                </span>
+                                </li>
+                            } else {
+                                <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
+                            }
+                        }
+
+                    }
+                    case None => {}
+                }
+
+                        <li><span class="glyphicon glyphicon-briefcase"></span> <span title="@dataset.name"> @Html(ellipsize(dataset.name, 18))</span></li>
+
+                </ol>
+
                 <div class="col-md-12 caption break-word dataset-title" id="ds-title">
                     <h1 id="datasettitle" class="inline"> <span class="glyphicon glyphicon-briefcase" ></span> @Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -75,7 +108,12 @@
                     </ul>
                 </div>
                 <div class="col-md-12 box-white-space" id="aboutdesc">
-                    <p id ="ds_description" class="inline">@if(dataset.description.length > 0) { @Html(dataset.description) } else {Add a description}</p>
+                    <p id ="ds_description" class="inline">
+                    @if(dataset.description.length > 0) {
+                        @Html(dataset.description)
+                    } else {
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){Add a description}
+                        }</p>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit description">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
@@ -129,13 +167,13 @@
                     }
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link">
-                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                            <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "Folder")
                         </a>
                         <div class="modal fade" id="folder-modal" tabindex="-1" role ="dialog" aria-labelledby="folder-modal-label">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h4 class="modal-title" id="folder-modal-label"> Create new Folder</h4>
+                                        <h4 class="modal-title" id="folder-modal-label">  @Messages("create.header", "Folder")</h4>
                                     </div>
                                     <div class="modal-body">
                                         <div class="form-group">
@@ -146,7 +184,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the folder">
-                                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                                            <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "Folder")
                                         </button>
                                         <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal" onclick="$('.error').hide();">
                                             <span class="glyphicon glyphicon-remove"></span> Cancel
@@ -211,7 +249,7 @@
 		<!-- right column -->
 		<div class="col-md-4">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
-            @datasets.collections(dataset, collectionsInside)
+            @datasets.collections(dataset, collectionsInside, canAddDatasetToCollection)
             @datasets.tags(dataset, fileList, filesTags)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)

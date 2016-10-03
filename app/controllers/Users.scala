@@ -27,15 +27,15 @@ import util.{Direction, Formatters, Mail}
  */
 class Users @Inject() (users: UserService) extends SecuredController {
   //Custom signup initiation code, to be used if config is set to send signup link emails to admins to forward to users
-  
+
   val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
   val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
   val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
-  
+
   val RegistrationEnabled = "securesocial.registrationEnabled"
   lazy val registrationEnabled = current.configuration.getBoolean(RegistrationEnabled).getOrElse(true)
-  
-  val onHandleStartSignUpGoTo = securesocial.controllers.Registration.onHandleStartSignUpGoTo  
+
+  val onHandleStartSignUpGoTo = securesocial.controllers.Registration.onHandleStartSignUpGoTo
   val Success = securesocial.controllers.Registration.Success
   val ThankYouCheckEmail = securesocial.core.providers.utils.Mailer.SignUpEmailSubject
   
@@ -66,7 +66,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
     securesocial.core.UserService.save(token)
     (uuid, token)
   }
-  
+
 
 
   def getFollowing(index: Int, limit: Int) = AuthenticatedAction { implicit request =>

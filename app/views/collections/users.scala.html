@@ -1,8 +1,12 @@
 @(collection: models.Collection, userListSpaceRoleTupleMap: Map[UUID, List[Tuple2[String,String]]], currUserIsAuthor: Boolean, users: List[User])(implicit user: Option[models.User])
+@import _root_.util.Formatters._
 
 @main("Collection") {
     <div class="row">
-
+        <ol class="breadcrumb">
+            <li><span class="glyphicon glyphicon-th-large"></span><a href= "@routes.Collections.collection(collection.id)" title="@collection.name"> @Html(ellipsize(collection.name, 18))</a></li>
+            <li><span class="glyphicon glyphicon-user"></span> Collaborators</li>
+        </ol>
         <div class="row bottom-padding">
             <div class="col-md-12" id="ds-title">
                 <h1 id="datasettitle">@collection.name</h1>
@@ -24,7 +28,7 @@
                                     <table id='nested-space-role-headers' class="table table-hover">
                                         <thead>
                                             <tr>
-                                                <th class="col-md-6">@{spaces.spaceTitle()}</th>
+                                                <th class="col-md-6">@Messages("space.title")</th>
                                                 <th class="col-md-2">Role</th>
                                             </tr>
                                         </thead>

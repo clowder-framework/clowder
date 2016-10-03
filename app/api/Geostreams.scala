@@ -277,7 +277,7 @@ object Geostreams extends ApiController {
       case None => pluginNotEnabled
     }
   }
-  
+
   @ApiOperation(value = "Delete Geostream Datapoint", notes = "Delete datapoint from geostream database.", responseClass = "None", httpMethod = "DELETE")
   def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete datapoint " + id)
@@ -596,7 +596,7 @@ object Geostreams extends ApiController {
               "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
           } else {
 	    result.put(year + " winter", Json.obj("year" -> year,
-              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))		
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
 	  }
           counter = counter.plusMonths(3)
         }
@@ -1660,7 +1660,7 @@ object Geostreams extends ApiController {
     }
     result
   }
-  
+
   /**
    * Helper function to create list of headers
    */
@@ -1701,7 +1701,7 @@ object Geostreams extends ApiController {
       }
     }
   }
-  
+
   /**
    * Helper function to create list of headers
    */

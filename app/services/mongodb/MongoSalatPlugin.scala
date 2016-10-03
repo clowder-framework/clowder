@@ -19,6 +19,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
 import services.{ByteStorageService, MetadataService, DI, AppConfigurationService}
@@ -124,6 +125,17 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("author._id" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1, "spaces" -> 1, "author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("created" -> -1, "name" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("created" -> -1, "name" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("files" -> 1))
+
+    collection("dtsrequests").ensureIndex(MongoDBObject("fileid" -> 1))
+
+    collection("events").ensureIndex(MongoDBObject("targetuser._id" -> 1))
+    collection("events").ensureIndex(MongoDBObject("object_id" -> 1))
+    collection("events").ensureIndex(MongoDBObject("user._id" -> 1))
+
+    collection("extractions").ensureIndex(MongoDBObject("file_id" -> 1))
 
     collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
 
@@ -376,7 +388,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //add private (the default status) flag for each dataset/collection/space
     updateMongo("add-trial-flag", addTrialFlag)
-    
+
     // instead of user agreeent we now have a terms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 

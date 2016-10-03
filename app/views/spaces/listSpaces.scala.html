@@ -1,6 +1,6 @@
 @(spacesList: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], prev: String, next: String, title: Option[String], showPublic: Boolean, onlyTrial: Boolean)(implicit user: Option[models.User])
-
-@main("Spaces") {
+@import play.api.i18n.Messages
+@main(Messages("spaces.title")) {
 
         @util.masonry()
 
@@ -11,7 +11,7 @@
         <div class="row">
             <div class="col-md-12">
                 <h1>@title</h1>
-                <p>Use @{spaces.spaceTitle()}s to collaboratively work with your team to manage and annotate data.</p>
+                <p>@Messages("space.list.message", Messages("spaces.title"))</p>
             </div>
         </div>
 
@@ -22,10 +22,20 @@
                     <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
                 </div>
 
-                @if(user.isDefined) {
-                    <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @{spaces.spaceTitle()}"><span class="glyphicon glyphicon-ok"></span> Create</a>
-                }
+                @(user, owner) match {
+                    case (Some(u), Some(o)) => {
+                        @if(o.equalsIgnoreCase(u.id.stringify)) {
+                            <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                        }
+                    }
+                    case (Some(u), _) => {
 
+                        <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+
+                    }
+                    case (_,_) => {}
+
+                }
             </div>
         </div>
                 <script>

@@ -86,7 +86,7 @@ class MongoDBFileService @Inject() (
   }
 
   def save(file: File): Unit = {
-    FileDAO.save(file)
+    FileDAO.save(file, WriteConcern.Safe)
   }
 
   /**

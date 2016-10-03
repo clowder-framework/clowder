@@ -31,6 +31,7 @@ GET            /assets/*file                                                    
 # ----------------------------------------------------------------------
 GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
 GET            /users/acceptTermsOfServices                                             @controllers.Users.acceptTermsOfServices(redirect: Option[String] ?= None)
+GET            /login/isLoggedIn                                                        @controllers.Login.isLoggedIn
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -276,7 +277,6 @@ GET            /api-docs.json/:path                                             
 POST           /api/admin/mail                                                          @api.Admin.mail
 POST           /api/admin/users                                                         @api.Admin.users
 POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
-DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
 POST           /api/reindex                                                             @api.Admin.reindex
 POST           /api/admin/configuration                                                 @api.Admin.updateConfiguration
@@ -386,9 +386,9 @@ GET            /api/extractions/extractors_names                                
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
 #API for temporary fix for BD-289
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
-POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL()
+POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL(extract: Boolean ?= true)
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
-POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
+POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel", extract: Boolean ?= true)
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
@@ -429,7 +429,7 @@ GET            /api/spaces/canEdit                                              
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
-POST           /api/spaces/:spaceId/removeCollection/:collectionId                      @api.Spaces.removeCollection(spaceId: UUID, collectionId: UUID)
+POST           /api/spaces/:spaceId/removeCollection/:collectionId                      @api.Spaces.removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean)
 POST           /api/spaces/:spaceId/removeDataset/:datasetId                            @api.Spaces.removeDataset(spaceId: UUID, datasetId: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
@@ -722,6 +722,7 @@ DELETE         /spaces/curations/:id/folders/:curationFolderId                  
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 GET            /spaces/curations/:id/getMetadataDefinitionsByFile                       @api.CurationObjects.getMetadataDefinitionsByFile(id: UUID)
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
+GET            /publishedData                                                           @controllers.CurationObjects.getPublishedData(index: Int ?= 0, limit: Int ?=20)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
 

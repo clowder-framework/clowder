@@ -14,6 +14,7 @@ import netifaces as ni
 import thread
 import threading
 import datetime
+import traceback
 from pymongo import MongoClient
 
 failure_report = ''
@@ -229,7 +230,13 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 			print(input_filename + ' -> !"' + output + '"\t'),
 
 	#Run test
-	metadata = extract(host, port, key, input_filename, 60)
+	try:
+		metadata = extract(host, port, key, input_filename, 60)
+	except requests.RequestException:
+		result = { "error": traceback.format_exc() }
+		if not POSITIVE:
+			result["missing"] = output
+		metadata = json.dumps(result)
 	#print '\n' + metadata
 				
 	#Write derived data to a file for later reference
@@ -251,7 +258,7 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 			if not POSITIVE and metadata.find(output) is -1:
 				total_success += 1
 				print '\033[92m[OK]\033[0m'
-			elif metadata.find(output) > -1:
+			elif POSITIVE and metadata.find(output) > -1:
 				total_success += 1
 				print '\033[92m[OK]\033[0m'
 			else:
@@ -262,7 +269,7 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 		if not enable_threads:
 			total_success += 1
 			print '\033[92m[OK]\033[0m\n'
-	elif metadata.find(output) > -1:
+	elif POSITIVE and metadata.find(output) > -1:
 		if not enable_threads:
 			total_success += 1
 			print '\033[92m[OK]\033[0m\n'

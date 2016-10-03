@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse], isTrialSpace:Boolean)(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse])(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class="row">
         <div class="col-md-12">
@@ -25,25 +25,38 @@
     <div class="row">
         <div class="col-md-3">
             @spaces.curationSummary( curationObject, false)
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <h4>Preferences</h4>
-                    @for((prop, value) <- properties) {
-                        <h5>@prop</h5>
-                           @for(cur<-value) {
-                                @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) || cur == "Testing-Only") {
-                                    <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
-
-                                } else {
-                                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
-                                }
-
+            <div class="panel-body">
+                <h4>Preferences</h4>
+                @for((prop, value) <- properties) {
+                    <h5>@prop</h5>
+                    @if(prop.equalsIgnoreCase("Purpose")) {
+                        <select id="@prop" class="form-control">
+                        @for(cur<-value) {
+                            @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur))) {
+                                <option value="@cur" selected>@cur</option>
+                            } else {
+                                <option value="@cur">@cur</option>
                             }
+
+                        }
+                        </select>
+                    } else {
+                        @for(cur<-value) {
+                            @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur))) {
+                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+
+                            } else {
+                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                            }
+
+                        }
                     }
-                    <div class="center-margin">
-                        <button class="btn btn-sm btn-link" id="updateResults"><span class="glyphicon glyphicon-send"></span> Update Results</button>
-                    </div>
+                }
+
+                <div class="center-margin">
+                    <button class="btn btn-sm btn-link" id="updateResults"><span class="glyphicon glyphicon-send"></span> Update Results</button>
                 </div>
+
             </div>
         </div>
         <div class="col-md-9">
@@ -105,19 +118,32 @@
         var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
         @for(curRepository <- mmResponse) {
             var rules = [];
+            var match = true;
             @for(rule <- curRepository.per_rule_score) {
                 rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
+                @if(rule.Score < 0) {
+                 match = false;
+                }
             }
+            console.log(match);
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), is_match:match, orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
                 $('#mmresults').append(html);
             } else {
 
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), is_match:match, orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
                 $('#mmresults').append(html);
             }
         }
-
+        $('.matchmaker_link').on('click', function() {
+            if($(this).find('span').attr("class").indexOf("glyphicon-plus") > 0) {
+                $(this).find('span').removeClass("glyphicon-plus");
+                $(this).find('span').addClass("glyphicon-minus");
+            } else {
+                $(this).find('span').removeClass("glyphicon-minus");
+                $(this).find('span').addClass("glyphicon-plus");
+            }
+        });
 
         $('#updateResults').on('click', function() {
 
@@ -138,7 +164,16 @@
 
                 for(i in response) {
                     var sel = repository == response[i].orgidentifier;
-                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
+                    var match = true;
+                    for(var j=0; j<response[i].per_rule_score.length; j++) {
+                        if(response[i].per_rule_score[j].score < 0) {
+                            match = false;
+                        }
+
+                    }
+
+                    console.log(match);
+                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, is_match: match, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
                     $('#mmresults').append(html);
 
                 }
@@ -151,10 +186,7 @@
         });
 
         function buildDataMap(){
-            var purpose = [];
-            $("input[name='Purpose']:checkbox:checked").each(function(i){
-                purpose[i] = $(this).val();
-            });
+            var purpose = $('#Purpose').val();
 
             var dataMap={};
             if(purpose !="")
@@ -191,13 +223,8 @@
         });
 
         $(document).ready(function(){
-            if(@isTrialSpace){
-                $("input[value='Testing-Only']").checked;
-                $("input[name='Purpose']").click(function(event){
-                    event.preventDefault();
-                    event.stopPropagation();
-                });
-            }
+            $("#Purpose").select2({ minimumResultsForSearch: -1});
+
         });
 
     </script>

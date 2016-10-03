@@ -82,6 +82,10 @@ trait EventService {
 		*/
 	def getEventsByUser( user: User, limit: Option[Integer]): List[Event]
 
+	/**
+		* Get the comment events
+		*/
+	def getCommentEvent( user: User, limit: Option[Integer]): List[Event]
 
 	/**
 		* Update the object name

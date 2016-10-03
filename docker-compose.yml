@@ -13,6 +13,11 @@ clowder:
     - elasticsearch
 
 # extractors
+file-digest:
+  image: clowder/extractors-digest
+  links:
+    - rabbitmq
+
 audio-preview:
   image: clowder/extractors-audio-preview
   links:
@@ -57,7 +62,7 @@ rabbitmq:
 
 # elasticsearch to allow indexing
 elasticsearch:
-    image: elasticsearch:1.3
+    image: elasticsearch:2
     command: elasticsearch -Des.cluster.name="clowder"
     ports:
         - "9200:9200"
