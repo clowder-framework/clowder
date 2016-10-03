@@ -20,6 +20,7 @@ import play.libs.Akka
 import play.api.libs.json.JsValue
 
 import scala.concurrent.Future
+import scala.util.Try
 
 
 // TODO make optional fields Option[UUID]
@@ -361,7 +362,10 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       val file_id = UUID((json \ "file_id").as[String])
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
-      val startDate = (json \ "start").asOpt[String].map(x => Date.from(ZonedDateTime.parse(x).toInstant))
+      val startDate = (json \ "start").asOpt[String].map(x =>
+        Try(Date.from(ZonedDateTime.parse(x).toInstant)).getOrElse {
+          new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(x)
+        })
       val updatedStatus = status.toUpperCase()
       //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and
       //       other detailed status updates to logs when we start implementing
