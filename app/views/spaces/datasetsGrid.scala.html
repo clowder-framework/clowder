@@ -7,9 +7,18 @@
 <p>
     <span class="small">@Messages("recent.message", Messages("datasets.title").toLowerCase)</span>
     <span class="pull-right">
-        <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link btn-xs">
-            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
-        </a>
+        @isPublic match {
+            case Some(b) => {
+                <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify), Some("publicAll")))" class="btn btn-link btn-xs">
+                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                </a>
+            }
+            case None => {
+                <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link btn-xs">
+                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                </a>
+            }
+        }
     </span>
 </p>
 
