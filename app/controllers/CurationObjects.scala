@@ -16,13 +16,12 @@ import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import play.api.mvc.{MultipartFormData, Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
-import java.net.{URL, URI}
+
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -49,8 +48,9 @@ class CurationObjects @Inject()(
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces.map(id => spaces.get(id)).flatten
-        .filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces
+        .filter (spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
+        .map(id => spaces.get(id)).flatten)
       case None => ("", "", List.empty)
     }
     //default space is the space from which user access to the dataset
@@ -234,8 +234,9 @@ class CurationObjects @Inject()(
       implicit val user = request.user
       curations.get(id) match {
         case Some(c) =>
-          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces.map(id => spaces.get(id)).flatten
-            .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
+          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces
+            .filter(spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
+            .map(id => spaces.get(id)).flatten, spaces.get(c.space))
 
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             true, false, c.creators))
@@ -448,6 +449,7 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
+
     val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
     var aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
@@ -679,6 +681,10 @@ class CurationObjects @Inject()(
             metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
           }
           val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
+          val spaceName = spaces.get(c.space) match {
+            case Some(space) => space.name
+            case None => AppConfiguration.getDisplayName
+          }
           var aggregation = metadataToAdd ++
             Map(
               "Identifier" -> Json.toJson("urn:uuid:"+curationId),
@@ -687,6 +693,7 @@ class CurationObjects @Inject()(
               "Title" -> Json.toJson(c.name),
               "Uploaded By" -> Json.toJson(creator),
               "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+              "Publishing Project Name" -> Json.toJson(spaceName),
               "Creation Date" -> Json.toJson(format.format(c.created))
             )
           if(metadataJson.contains("Creator")) {
@@ -739,6 +746,7 @@ class CurationObjects @Inject()(
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
                     "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
                     "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "Publishing Project Name" -> Json.toJson("http://sead-data.net/terms/publishingProjectName"),
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
@@ -848,6 +856,64 @@ class CurationObjects @Inject()(
     }
 
     out.toMap
+  }
+
+  def getPublishedData(index: Int, limit: Int) = UserAction(needActive=false) { implicit request =>
+    implicit val user = request.user
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    var next = index + 1
+    val endpoint = play.Play.application().configuration().getString("publishData.list.uri").replaceAll("/$", "")
+    Logger.debug(endpoint)
+    val futureResponse = WS.url(endpoint).get()
+    var publishDataList: List[Map[String, String]] = List.empty
+    val result =  futureResponse.map {
+      case response =>
+        if(response.status >= 200 && response.status < 300 || response.status == 304) {
+          val rawDataList = response.json.as[List[JsValue]]
+          publishDataList = rawDataList.map{
+            js =>
+              var resultMap: Map[String, String] = Map(
+                "id" -> (js \ "Identifier").asOpt[String],
+                "title" -> (js \ "Title").asOpt[String],
+                "author" -> (js \ "Creator").asOpt[String],
+                "description" -> (js \ "Abstract").asOpt[String],
+                spaceTitle -> (js \ "Publishing Project Name").asOpt[String],
+                "Published Dataset" -> (js \ "DOI" ).asOpt[String],
+                "Publication Date" -> (js \ "Publication Date").asOpt[String])
+                // remove (key, value) where value ==  None
+                .collect{
+                case (key, Some(value)) => key -> value
+                // do not add "case _ =>" here, otherwise report error:
+                // type mismatch; found : scala.collection.immutable.Iterable[Any] required: Map[String,String]
+              }
+              // add creator as a list of string. do not use .asOpt[List[String]], otherwise nothing will be parsed
+              (js \ "Creator").asOpt[List[JsValue]] match {
+                case Some(authorList) =>  resultMap += ("author" ->  authorList.map(_.as[String]).mkString(", ") )
+                case None =>
+              }
+              // add Abstract as a list of string
+              (js \ "Abstract").asOpt[List[JsValue]] match {
+                case Some(authorList) =>  resultMap += ("description" ->  authorList.map(_.as[String]).mkString(" \n") )
+                case None =>
+              }
+              resultMap
+          }
+
+          if(publishDataList.length < (index * limit +limit ) ) next = 0
+          //sort by Publication time, don't use joda.Datatime here or you have to write a comparaison by yourself
+          val format = new java.text.SimpleDateFormat("MMM dd, yyyy h:mm:ss aaa")
+          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("Sep 14, 2016 10:59:26 AM"))).reverse.take(limit + index * limit).takeRight(limit)
+
+        } else {
+          Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
+          List.empty
+        }
+    }
+
+    val rs = Await.result(result, Duration.Inf)
+
+    Ok(views.html.curations.publishedData(rs, index -1 , next, limit))
+
   }
 }
 

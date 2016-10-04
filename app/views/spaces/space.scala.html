@@ -40,9 +40,9 @@
                     <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", Messages("dataset.title"))</a>
             }
             @if(user.isDefined && Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, space.id))){
-                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))
+                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collection.title"))
                 ">
-                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
+                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collection.title"))</a>
             }
         </div>
     </div>

@@ -405,6 +405,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository,
+        controllers.routes.javascript.CurationObjects.getPublishedData,
         controllers.routes.javascript.Events.getEvents,
         controllers.routes.javascript.Collections.collection
       )

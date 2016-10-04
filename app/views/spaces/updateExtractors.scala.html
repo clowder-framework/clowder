@@ -1,8 +1,15 @@
-@(runningExtractors: List[String], selectedExtractors: List[String], space: UUID)(implicit user: Option[models.User])
-
+@(runningExtractors: List[String], selectedExtractors: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
+@import _root_.util.Formatters._
 @import helper._
 
 @main("Space") {
+	<div>
+		<ol class="breadcrumb">
+			<li><span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space)" title="@spaceName"> @Html(ellipsize(spaceName,18))</a></li>
+			<li><span class="glyphicon glyphicon-fullscreen"></span> Extractors</li>
+
+		</ol>
+	</div>
  @if(runningExtractors.size == 0) {
 	<div class="page-header">
         <h1> No extractors running</h1>
