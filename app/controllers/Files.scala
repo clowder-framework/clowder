@@ -80,8 +80,8 @@ class Files @Inject() (
             if (!p.collection)
             if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
           ) yield {
-              val tabtitle: String = pv.title.getOrElse("")
-              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
+            val tabtitle: String = pv.title.getOrElse("")
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
@@ -105,11 +105,11 @@ class Files @Inject() (
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-        	val p = previews.findBySectionId(s.id)
-        	if(p.length>0)
-        		s.copy(preview = Some(p(0)))
-        	else
-        		s.copy(preview = None)
+          val p = previews.findBySectionId(s.id)
+          if (p.length > 0)
+            s.copy(preview = Some(p(0)))
+          else
+            s.copy(preview = None)
         }
 
         // metadata
@@ -138,9 +138,11 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
-        val allDatasets =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
+        val allDatasets = (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
 
-        val access = if(!allDatasets.head.isDefault) {
+        val access = if (allDatasets == Nil) {
+          "Private"
+        } else if(!allDatasets.head.isDefault) {
           val status = allDatasets.head.status
           status(0).toUpper + status.substring(1).toLowerCase()
         } else {
