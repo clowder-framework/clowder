@@ -25,7 +25,14 @@
         <fieldset  class="editProfileInput">
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
-          @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
+
+          <div class="control-group">
+            <label class="control-label" for="avatarUrl">Avatar URL</label><br/>
+            <input type="radio" name="avatarUrl" id="grav_url_radio" value="" onclick="selectGravatar()"> Use Gravatar</input><br/>
+            <input type="radio" name="avatarUrl" id="custom_url_radio" value="" onclick="updateCustomValue();"> Custom </input>
+            <input type="text" id="custom_url_value" class="form-control" onkeyup="updateCustomValue();"></input>
+          </div>
+
           @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID", 'title -> "ORCID provides a persistent digital identifier that distinguishes you from every other researcher and, through integration in key research workflows such as manuscript and grant submission, supports automated linkages between you and your professional activities ensuring that your work is recognized.")
           @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
 
@@ -56,5 +63,40 @@
   $(document).ready(function() {
     $(".chosen-choices").addClass("form-control");
    });
+
+  // Populate URL initially on startup
+  @user.map { currUser =>
+    var avUrl = '@{currUser.profile match {
+      case Some(pro) => pro.avatarUrl.getOrElse("")
+      case None => ""
+  }}';
+
+  $("custom_url_radio").val(avUrl);
+  if (avUrl == '') {
+      $("#grav_url_radio").prop( "checked", true );
+      $("#custom_url_radio").prop( "checked", false );
+      selectGravatar();
+  } else {
+      $("#grav_url_radio").prop( "checked", false );
+      $("#custom_url_radio").prop( "checked", true );
+      $("#custom_url_value").val(avUrl);
+    }
+  }
+
+  function selectGravatar() {
+    $('custom_url_value').css("display","none")
+  }
+
+  function updateCustomValue() {
+    $('custom_url_value').css("display","")
+    if ($("#custom_url_radio").prop("checked")) {
+      // If Custom URL checked, store the value
+        $('#custom_url_radio').val($('#custom_url_value').val())
+    } else {
+      // Gravatar URL stores blank string
+      $('#custom_url_radio').val('')
+    }
+
+  }
 </script>
 }
