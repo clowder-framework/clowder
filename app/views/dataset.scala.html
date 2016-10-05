@@ -150,18 +150,18 @@
                     }
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                         @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link">
+                            <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
                             @if(toPublish && dataset.spaces.size > 0) {
-                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link">
+                                <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
                             } else {
-                                <button class="btn btn-link" disabled>
+                                <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link disabled">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
-                                </button>
+                                </a>
                             }
                         }
                     }
@@ -310,6 +310,10 @@
 
             getUpdatedFilesAndFolders();
 
+			$('body').on('click', 'a.disabled', function(event) {
+			    event.preventDefault();
+				});
+				
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
             }
