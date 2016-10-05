@@ -26,10 +26,12 @@
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
 
-          <label>Avatar URL</label><br/>
-          <input type="radio" name="avatarUrl" id="grav_url_radio" value="" onclick="selectGravatar()"> Use Gravatar</input><br/>
-          <input type="radio" name="avatarUrl" id="custom_url_radio" value="" onclick="updateCustomValue();"> Custom </input>
-          <input type="text" id="custom_url_value" class="form-control" onkeyup="updateCustomValue();"></input>
+          <div class="control-group">
+            <label class="control-label" for="avatarUrl">Avatar URL</label><br/>
+            <input type="radio" name="avatarUrl" id="grav_url_radio" value="" onclick="selectGravatar()"> Use Gravatar</input><br/>
+            <input type="radio" name="avatarUrl" id="custom_url_radio" value="" onclick="updateCustomValue();"> Custom </input>
+            <input type="text" id="custom_url_value" class="form-control" onkeyup="updateCustomValue();"></input>
+          </div>
 
           @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID")
           @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
