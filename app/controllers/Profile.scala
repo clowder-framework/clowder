@@ -8,7 +8,6 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
-import services.UserService
 import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
 // TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
@@ -68,11 +67,11 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         }
 
         Ok(views.html.profile(existingUser, ownProfile))
-        
+
       }
       case None => {
         Logger.error("no user model exists for " + uuid.stringify)
-        BadRequest("no user model exists for " + uuid.stringify)
+        BadRequest("User does not exist in this " + AppConfiguration.getDisplayName +  " instance.")
       }
     }
   }
@@ -84,7 +83,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       case Some(user) => Redirect(routes.Profile.viewProfileUUID(user.id))
       case None => {
         Logger.error("no user model exists for " + email.getOrElse(""))
-        BadRequest("no user model exists for " + email.getOrElse(""))
+        BadRequest("User does not exist in this " + AppConfiguration.getDisplayName +  " instance.")
       }
     }
   }
