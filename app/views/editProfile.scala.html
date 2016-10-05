@@ -71,31 +71,30 @@
       case None => ""
   }}';
 
-    document.getElementById('custom_url_radio').value = avUrl;
-    if (avUrl == '') {
-      document.getElementById('grav_url_radio').checked = true;
-      document.getElementById('custom_url_radio').checked = false;
+  $("custom_url_radio").val(avUrl);
+  if (avUrl == '') {
+      $("#grav_url_radio").prop( "checked", true );
+      $("#custom_url_radio").prop( "checked", false );
       selectGravatar();
-    } else {
-      document.getElementById('grav_url_radio').checked = false;
-      document.getElementById('custom_url_radio').checked = true;
-      document.getElementById('custom_url_radio').value = avUrl;
-      document.getElementById('custom_url_value').value = avUrl;
+  } else {
+      $("#grav_url_radio").prop( "checked", false );
+      $("#custom_url_radio").prop( "checked", true );
+      $("#custom_url_value").val(avUrl);
     }
   }
 
   function selectGravatar() {
-    document.getElementById('custom_url_value').style.display = 'none'
+    $('custom_url_value').css("display","none")
   }
 
   function updateCustomValue() {
-    document.getElementById('custom_url_value').style.display = ''
-    if (document.getElementById('custom_url_radio').checked) {
+    $('custom_url_value').css("display","")
+    if ($("#custom_url_radio").prop("checked")) {
       // If Custom URL checked, store the value
-      document.getElementById('custom_url_radio').value = document.getElementById('custom_url_value').value
+        $('#custom_url_radio').val($('#custom_url_value').val())
     } else {
       // Gravatar URL stores blank string
-      document.getElementById('custom_url_radio').value = ""
+      $('#custom_url_radio').val('')
     }
 
   }
