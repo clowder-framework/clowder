@@ -61,7 +61,7 @@
                     }
                 </select>
                 @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <p class="help-block">@Messages("create.share.multiple.message", Messages("collecion.title").toLowerCase, Messages("spaces.title"))</p>
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("collection.title").toLowerCase, Messages("spaces.title"))</p>
                 } else {
                     <p class="help-block">@Messages("create.share.one.message", Messages("collection.title").toLowerCase, Messages("space.title"))</p>
                 }
