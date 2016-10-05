@@ -56,7 +56,7 @@ class MongoDBExtractorService extends ExtractorService {
     }
     Logger.debug("[MongoDBExtractorService]- Extractor Name List-")
     Logger.debug(list_queue.toString)
-    list_queue
+    list_queue.distinct
   }
 
 
