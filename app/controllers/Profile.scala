@@ -71,7 +71,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       }
       case None => {
         Logger.error("no user model exists for " + uuid.stringify)
-        BadRequest("User does not exist in this " + AppConfiguration.getDisplayName +  " instance.")
+        BadRequest(views.html.notFound("User does not exist in this " + AppConfiguration.getDisplayName +  " instance."))
       }
     }
   }
@@ -83,7 +83,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       case Some(user) => Redirect(routes.Profile.viewProfileUUID(user.id))
       case None => {
         Logger.error("no user model exists for " + email.getOrElse(""))
-        BadRequest("User does not exist in this " + AppConfiguration.getDisplayName +  " instance.")
+        BadRequest(views.html.notFound("User does not exist in this " + AppConfiguration.getDisplayName +  " instance."))
       }
     }
   }
