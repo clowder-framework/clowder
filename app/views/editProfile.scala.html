@@ -23,7 +23,7 @@
       }
       @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
         <fieldset  class="editProfileInput">
-          @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
+          @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select or enter an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
           @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
           @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID", 'title -> "ORCID provides a persistent digital identifier that distinguishes you from every other researcher and, through integration in key research workflows such as manuscript and grant submission, supports automated linkages between you and your professional activities ensuring that your work is recognized.")
