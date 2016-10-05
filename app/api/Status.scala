@@ -40,7 +40,7 @@ class Status @Inject()(spaces: SpaceService,
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
-      "extractors" -> Json.toJson(extractors.getExtractorNames().toSet[String])))
+      "extractors" -> Json.toJson(extractors.getExtractorNames())))
   }
 
   def getPlugins(user: Option[User]): JsValue = {
