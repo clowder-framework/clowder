@@ -37,7 +37,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
 
     var newsfeedEvents = List.empty[Event]
     if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
-      var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
+      newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
       newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
       if (user.isDefined) {
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(user.get, Some(20)))
