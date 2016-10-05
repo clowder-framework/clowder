@@ -26,7 +26,7 @@
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
           @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
-          @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID")
+          @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID", 'title -> "ORCID provides a persistent digital identifier that distinguishes you from every other researcher and, through integration in key research workflows such as manuscript and grant submission, supports automated linkages between you and your professional activities ensuring that your work is recognized.")
           @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
 
           @select(myForm("currentprojects"), options(allProjectOptions), '_label -> "Current Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
