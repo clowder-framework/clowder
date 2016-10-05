@@ -25,7 +25,12 @@
         <fieldset  class="editProfileInput">
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
-          @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
+
+          <label>Avatar URL</label><br/>
+          <input type="radio" name="avatarUrl" id="grav_url_radio" value="" onclick="selectGravatar()"> Use Gravatar</input><br/>
+          <input type="radio" name="avatarUrl" id="custom_url_radio" value="" onclick="updateCustomValue();"> Custom </input>
+          <input type="text" id="custom_url_value" class="form-control" onkeyup="updateCustomValue();"></input>
+
           @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID")
           @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
 
@@ -56,5 +61,41 @@
   $(document).ready(function() {
     $(".chosen-choices").addClass("form-control");
    });
+
+  // Populate URL initially on startup
+  @user.map { currUser =>
+    var avUrl = '@{currUser.profile match {
+      case Some(pro) => pro.avatarUrl.getOrElse("")
+      case None => ""
+  }}';
+
+    document.getElementById('custom_url_radio').value = avUrl;
+    if (avUrl == '') {
+      document.getElementById('grav_url_radio').checked = true;
+      document.getElementById('custom_url_radio').checked = false;
+      selectGravatar();
+    } else {
+      document.getElementById('grav_url_radio').checked = false;
+      document.getElementById('custom_url_radio').checked = true;
+      document.getElementById('custom_url_radio').value = avUrl;
+      document.getElementById('custom_url_value').value = avUrl;
+    }
+  }
+
+  function selectGravatar() {
+    document.getElementById('custom_url_value').style.display = 'none'
+  }
+
+  function updateCustomValue() {
+    document.getElementById('custom_url_value').style.display = ''
+    if (document.getElementById('custom_url_radio').checked) {
+      // If Custom URL checked, store the value
+      document.getElementById('custom_url_radio').value = document.getElementById('custom_url_value').value
+    } else {
+      // Gravatar URL stores blank string
+      document.getElementById('custom_url_radio').value = ""
+    }
+
+  }
 </script>
 }
