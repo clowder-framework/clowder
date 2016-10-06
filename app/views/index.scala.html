@@ -1,5 +1,5 @@
 @(datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long, filesBytes: Long,
-        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
+        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters._
@@ -18,7 +18,7 @@
               <div class="panel-body">
                   <ul class="list-group">
 
-                        <li class="list-group-item" title="You can access to @humanReadableNumber(spacesCountAccess) @Messages("spaces.title")">
+                        <li class="list-group-item">
                             <a href="@routes.Spaces.list()">@Messages("spaces.title")<span class="badge pull-right">@humanReadableNumber(spacesCount)</span></a>
                         </li>
 
