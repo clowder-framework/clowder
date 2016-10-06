@@ -11,13 +11,14 @@
     @for(pd <- publishedData) {
       <div class="panel panel-default">
         <div class="panel-body">
-            @if(pd.exists(_._1 == "id") && pd("id").contains("uuid")){
-                <p><b>Title:</b> <a href=@routes.CurationObjects.getCurationObject(UUID(pd("id").substring(10)))>@pd("title")</a></p>
-            } else{
-                <p><b>Title:</b> @pd("title")</p>
-            }
+            <p><b>Title:</b> @pd("title")</p>
+
             @for((key, value) <- pd - "title" -"id") {
-                <p><b>@key.capitalize:</b> @value</p>
+                @if(key == "Published Dataset"){
+                    <p><b>@key.capitalize:</b> <a href="@value" target="_blank">@value</a></p>
+                } else {
+                    <p><b>@key.capitalize:</b> @value</p>
+                }
             }
         </div>
       </div>
