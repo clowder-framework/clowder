@@ -67,6 +67,7 @@ class MongoDBDatasetService @Inject() (
    * Return a list of datasets in a space, this does not check for permissions
    */
   def listSpace(limit: Integer, space: String): List[Dataset] = {
+    Logger.debug("User1: No user")
     list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, status=None, showAll=true, owner=None)
   }
 
@@ -74,6 +75,7 @@ class MongoDBDatasetService @Inject() (
    * Return a list of datasets in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = {
+    Logger.debug("User2: No user")
     list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, status=None, showAll=true, owner=None)
   }
 
@@ -81,6 +83,7 @@ class MongoDBDatasetService @Inject() (
     * Return a list of datasets in a space
     */
   def listSpace(limit: Integer, space: String, user:Option[User]): List[Dataset] = {
+    Logger.debug("User3: " + user)
     list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
   }
 
@@ -88,18 +91,25 @@ class MongoDBDatasetService @Inject() (
     * Return a list of datasets in a space starting at a specific date, this does not check for permissions
     */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String, user:Option[User]): List[Dataset] = {
+    Logger.debug("User4: " + user)
     list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
   }
 
   /**
     * Return a list of datasets in a space filtered by status, this does not check for permissions
     */
+  def listSpaceStatus(limit: Integer, space: String, status: String): List[Dataset] = {
+    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, Some(status), showAll=true, owner=None)
+  }
+  /**
+    * Return a list of datasets in a space filtered by status
+    */
   def listSpaceStatus(limit: Integer, space: String, status: String, user:Option[User]): List[Dataset] = {
     list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, Some(status), showAll=true, owner=None)
   }
 
   /**
-    * Return a list of datasets in a space filtered by status, this does not check for permissions
+    * Return a list of datasets in a space filtered by status
     */
   def listSpaceStatus(date: String, nextPage: Boolean, limit: Integer, space: String, status: String, user:Option[User]): List[Dataset] = {
     list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, Some(status), showAll=true, owner=None)

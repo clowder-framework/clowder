@@ -8,6 +8,7 @@ import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
+import play.api.Logger
 import securesocial.core.IdentityProvider
 import securesocial.core.providers.utils.RoutesHelper
 
@@ -29,6 +30,7 @@ trait SecuredController extends Controller {
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
+      Logger.debug("userRequest: " + userRequest.user)
       userRequest.user match {
         case Some(u) if needActive && !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {

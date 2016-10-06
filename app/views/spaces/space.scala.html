@@ -45,11 +45,18 @@
     <div class="row">
         <div class="col-md-8 col-lg-8 col-sm-8">
             <ul class="nav nav-tabs margin-bottom-20" >
-                @if(user.isDefined && play.Play.application().configuration().getBoolean("enablePublic")){
-                    <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
-                    <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                    @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))){
-                        <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                @if(play.Play.application().configuration().getBoolean("enablePublic")){
+                    @if(user.isDefined) {
+                        <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
+                        <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
+                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                        }
+                    } else {
+                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                            <li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
+                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                        }
                     }
                 }
             </ul>
@@ -62,7 +69,7 @@
                     <div role="tabpanel" class="tab-pane fade" id="tab-public">
                         <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
                         @spaces.datasetsBySpace(datasets, space, Option(true))
-                        <!-- collections follow the space status, there is no public, provate flag on a collection -->
+                            <!-- collections follow the space status, there is no public, provate flag on a collection -->
                         @if(space.isPublic) {
                             @spaces.collectionsBySpace(collections, space)
                         } else {
@@ -70,21 +77,24 @@
                             <p>There are no public collections associated with this @Messages("space.title"). </p>
                         }
                     </div>
-                    <div role="tabpanel" class="tab-pane fade" id="tab-publish">
-                        <p>Data published from this @Messages("space.title")</p>
-                        @spaces.curationObjectsBySpace(curationObjects, space)
-                    </div>
                 } else {
-                    @if(space.isPublic) {
-                        <div>
-                            <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
-                            @spaces.datasetsBySpace(datasets, space, Option(true))
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-public">
+                        <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.
+                            You must be logged in to access all the @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase.
+                        </p>
+                        @spaces.datasetsBySpace(datasets, space, Option(true))
+                        @if(space.isPublic) {
                             @spaces.collectionsBySpace(collections, space)
-                        </div>
-                    } else {
-                        <p>This @Messages("space.title") is private. You must be logged in to access the @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase.</p>
-                    }
+                        } else {
+                            <h3>@Messages("a.in.b", Messages("collections.title"), Messages("space.title"))</h3>
+                            <p>There are no public collections associated with this @Messages("space.title"). </p>
+                        }
+                    </div>
                 }
+                <div role="tabpanel" class="tab-pane fade" id="tab-publish">
+                    <p>Data published from this @Messages("space.title")</p>
+                    @spaces.curationObjectsBySpace(curationObjects, space, Option(true))
+                </div>
             </div>
         </div>
         <div class="col-md-4 col-lg-4 col-sm-4">

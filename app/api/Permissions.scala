@@ -203,7 +203,7 @@ object Permission extends Enumeration {
       }
       case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)) // TODO check if dataset is public datasets.get(r.id).isPublic()
       case ResourceRef(ResourceRef.collection, id) =>  collections.get(id).exists(collection => collection.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)
-      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
+      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s => s.isPublic || datasets.listSpaceStatus(1,s.id.stringify,"public").nonEmpty)
       case ResourceRef(ResourceRef.comment, id) => {
         comments.get(id) match {
           case Some(comment) => {

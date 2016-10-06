@@ -1,4 +1,4 @@
-@(curationObjectsList: List[CurationObject], space: ProjectSpace)(implicit user: Option[models.User])
+@(curationObjectsList: List[CurationObject], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.i18n.Messages

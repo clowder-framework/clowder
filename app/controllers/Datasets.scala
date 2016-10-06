@@ -332,6 +332,7 @@ class Datasets @Inject()(
     if(!showPublic) {
       title = Some(Messages("you.title", Messages("datasets.title")))
     }
+    Logger.debug("controllers/Datasets list: " + decodedDatasetList.toList)
     //Pass the viewMode into the view
     space match {
       case Some(s) if datasetSpace.isEmpty =>{

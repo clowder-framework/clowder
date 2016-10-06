@@ -3,7 +3,7 @@
 @import api.Permission
 <h3>@Messages("a.in.b", Messages("datasets.title"), Messages("space.title"))</h3>
 @if(datasets.size == 0) {
-    @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
+    @if(user.isDefined && !isPublic.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
         <p> Please request access to add @Messages("datasets.title").toLowerCase to this @Messages("space.title")</p>
     } else {
         <p> There are no @Messages("datasets.title").toLowerCase associated with this @Messages("space.title")</p>

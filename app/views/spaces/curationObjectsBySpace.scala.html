@@ -1,13 +1,9 @@
-@(curationObjects: List[models.CurationObject], space: ProjectSpace)(implicit user: Option[models.User])
+@(curationObjects: List[models.CurationObject], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
 @import api.Permission
 <h3>Published Curation objects</h3>
 @if(curationObjects.size == 0) {
     <p> There are no published curation objects associated with this @Messages("space.title")</p>
 } else {
-    @if(user.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
-        @spaces.curationObjectsGrid(curationObjects, space)
-    } else {
-        <p>You are not authorized to access the @Messages("space.title")</p>
-    }
+    @spaces.curationObjectsGrid(curationObjects, space, isPublic)
 }

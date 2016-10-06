@@ -22,7 +22,11 @@
         @defining("You are not authorized to access this " + Messages("space.title") + ".") { msg =>
             @if(user.isDefined) {
                 @if(userRoleMap.contains(user.get)) {
-                    <p>You are authorized to access this @{Messages("space.title")}.</p>
+                    @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
+                        <p>You are authorized to access this @{Messages("space.title")}.</p>
+                    } else {
+                        <p>You are authorized to partially access this @{Messages("space.title")}.</p>
+                    }
                 } else {
                     @if(space.requests.contains(RequestResource(user.get.id))) {
                         <p>@msg Authorization request is pending.</p>

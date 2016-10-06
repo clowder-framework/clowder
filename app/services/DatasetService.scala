@@ -44,9 +44,13 @@ trait DatasetService {
   /**
     * Return a list of datasets in a space filtered by status, this does not check for permissions
     */
+  def listSpaceStatus(limit: Integer, space: String, status: String): List[Dataset]
+  /**
+    * Return a list of datasets in a space filtered by status
+    */
   def listSpaceStatus(limit: Integer, space: String, status: String, user:Option[User]): List[Dataset]
   /**
-    * Return a list of datasets in a space filtered by status, this does not check for permissions
+    * Return a list of datasets in a space filtered by status
     */
   def listSpaceStatus(date: String, nextPage: Boolean, limit: Integer, space: String, status: String, user:Option[User]): List[Dataset]
 
