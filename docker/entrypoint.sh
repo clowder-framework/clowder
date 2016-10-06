@@ -53,7 +53,7 @@ function fix_plugin() {
 
     if [ -e /home/clowder/clowder/custom/play.plugins ]; then
         mv /home/clowder/clowder/custom/play.plugins /home/clowder/clowder/custom/play.plugins.old
-        grep -v ":$2" /home/clowder/clowder/custom/play.plugins.old > /home/clowder/clowder/custom/play.plugins
+        grep -v "$2:" /home/clowder/clowder/custom/play.plugins.old > /home/clowder/clowder/custom/play.plugins
         rm /home/clowder/clowder/custom/play.plugins.old
     fi
     if [ "$1" != "" ]; then
@@ -71,13 +71,13 @@ function fix_conf() {
 
     if [ -e /home/clowder/clowder/custom/custom.conf ]; then
         if [ "$3" == "" ]; then
-            query="$1"
+            query="^$1="
         else
-            query="$1|$3"
+            query="-e ^$1= -e ^$3="
         fi
 
         mv /home/clowder/clowder/custom/custom.conf /home/clowder/clowder/custom/custom.conf.old
-        grep -v "^(${query})=" /home/clowder/clowder/custom/custom.conf.old > /home/clowder/clowder/custom/custom.conf
+        grep -v $query /home/clowder/clowder/custom/custom.conf.old > /home/clowder/clowder/custom/custom.conf
         rm /home/clowder/clowder/custom/custom.conf.old
     fi
 
