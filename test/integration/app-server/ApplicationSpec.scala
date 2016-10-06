@@ -56,8 +56,8 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       contentAsString(html) must include("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
       contentAsString(html) must include("Resources")
-      contentAsString(html) must include("You can access to 6 collections")
-      contentAsString(html) must include("You can access to 2 datasets")
+      contentAsString(html) must include("You can access 6 collections")
+      contentAsString(html) must include("You can access 2 datasets")
     }
   }
 }
