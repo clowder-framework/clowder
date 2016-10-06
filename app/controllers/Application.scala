@@ -149,7 +149,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         val collectionsCount = collections.count()
         val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
         val spacesCount = spaces.count()
-        val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
+        val spacesCountAccess =
+          play.Play.application().configuration().getString("permission", "public") match {
+            case "public" => spacesCount
+            case _ => spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
+
+          }
         val usersCount = users.count()
 
         Ok(views.html.index(datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
