@@ -407,6 +407,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Move SHA512 from File object into file.digest metadata
     updateMongo("copy-sha512-to-metadata-and-remove-all", copySha512ToMetadataAndRemove)
+
+    // Change repository in extractors.info collection into a list
+    updateMongo("update-repository-type-in-extractors-info", updateRepositoryType)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1338,6 +1341,29 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
         catch {
           case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
+      }
+    }
+  }
+
+  /**
+    * In order to support adding multiple repositories for an extractor in extractors.info collection, changing the
+    * existing repository type from Repository to List[Repository] in those records that have not been updated yet.
+    */
+  private def updateRepositoryType(): Unit = {
+    val extractorsInfoCollection  = collection("extractors.info")
+
+    extractorsInfoCollection.foreach { extractor =>
+
+      var repository = extractor.get("repository")
+
+      if (!repository.isInstanceOf[BasicDBList]) {
+        extractor.put("repository", MongoDBList(repository))
+
+        try {
+          extractorsInfoCollection.save(extractor, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Failed to update collection extractors.info entry with id " + extractor.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
         }
       }
     }
