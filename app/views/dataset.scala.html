@@ -267,6 +267,7 @@
         var pageIndex = 0;
         var folderId;
         var cur_title;
+        var sortOrder="dateN";
 
         function updateTitle() {
             cur_title = $('#datasettitle').text().trim();
@@ -296,6 +297,9 @@
                     if(temp[0] == 'page'){
                         pageIndex = temp[1];
                         pageSet = true
+                    }
+                    if(temp[0] == 'sort'){
+                        sortOrder = temp[1];
                     }
                 }
             }
@@ -481,7 +485,7 @@
         request.send();
     }
 
-    $(function() {
+    $(function() {	
             $(window).on('fileDelete hashchange', function() {
 
                 getUpdatedFilesAndFolders();
@@ -501,7 +505,7 @@
 
                     var encName  = htmlEncode(name.val());
                     var jsonData = JSON.stringify({"name": encName, "parentId": parentId, "parentType": parentType, "currentSpace": "@currentSpace"});
-                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id").ajax({
+                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id", sortOrder).ajax({
                         data:jsonData,
                         type: 'POST',
                         contentType: "application/json"
@@ -527,11 +531,11 @@
             });
         });
 
-       function updatePageAndFolder(idx, folderIdd){
+       function updatePageAndFolder(idx, folderIdd, sort){
            if(folderIdd != "") {
-               location.hash = "folderId="+folderIdd+"&page="+idx;
+               location.hash = "folderId="+folderIdd+"&page="+idx +"&sort=" + sort;
            } else {
-               location.hash="page="+idx;
+               location.hash="page="+idx+"&sort=" + sort;
            }
            $(window).trigger("hashchange");
        }
@@ -546,7 +550,7 @@
            currentSpace = "@currentSpace";
         }
          var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
-         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex, "@currentSpace").ajax({
+         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex, "@currentSpace", sortOrder).ajax({
             data: jsonData,
             type: 'POST',
             contentType: "application/json"
@@ -606,10 +610,10 @@
             });
             request.done(function(response, textStatus, jsXHR){
                 if(newFolderId == "root") {
-                    updatePageAndFolder(0, '');
+                    updatePageAndFolder(0, '',$(".js-sort-single").val() );
                     notify("The file " + response.fileName + " has been succesfully moved to the dataset.", "success",  false, 2000);
                 } else {
-                    updatePageAndFolder(0, newFolderId);
+                    updatePageAndFolder(0, newFolderId, $(".js-sort-single").val());
                     notify("The file " + response.fileName + " has been succesfully moved to folder: " + response.folderName, "success",  false, 2000);
                 }
 

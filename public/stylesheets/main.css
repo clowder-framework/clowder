@@ -971,3 +971,9 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .goldenrod{
     background-color: goldenrod;
 }
+
+#folderpath {
+	margin-top:-18px;
+	display:inline-block;
+	min-width:72%;
+}

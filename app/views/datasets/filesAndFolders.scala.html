@@ -1,16 +1,42 @@
-@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String])(implicit user: Option[models.User])
-
+@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String], sortOrder: String)(implicit user: Option[models.User])
+<div><h2 id='folderpath'>
 @if(folderHierarchy.length > 0 ) {
-    <h2> <a href="javascript:updatePageAndFolder(0, '')"><span class="glyphicon glyphicon-home"></span></a>
+     <a href="javascript:updatePageAndFolder(0, '', '@sortOrder')"><span class="glyphicon glyphicon-home"></span></a>
         @folderHierarchy.map { cFolder =>
-        > <a href="javascript:updatePageAndFolder(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
+        > <a href="javascript:updatePageAndFolder(0, '@cFolder.id.stringify', '@sortOrder')"> @cFolder.displayName</a>
         }
-    </h2>
+    
 }
+</h2>
+<script type="text/javascript">
+$(document).ready(function() {
+  $(".js-sort-single").select2();
+  $(".js-sort-single").val('@sortOrder').trigger("change");
+  $(".js-sort-single").on('select2:select', function (evt) {    
+  @currentFolder match {
+        case None => { updatePageAndFolder(@filepage,'', $(".js-sort-single").val()); }
+        case Some(s) => { updatePageAndFolder(@filepage,'@s', $(".js-sort-single").val());}
+    }
+	  
+	});
+});
+</script>
+<label for="js-sort-single">Sort By:
+<select class="js-sort-single">
+  <option value="dateN">Date (Newest)</option>
+  <option value="dateO">Date (Oldest)</option>
+  <option value="titleA">Title (A-Z)</option>
+  <option value="titleZ">Title (Z-A)</option>
+  <option value="sizeL">Size (L)</option>
+  <option value="sizeS">Size (S)</option>
+  
+</select>
+</label>
+</div>
 
 <div id="folderListDiv">
 @foldersList.map { folder =>
-    @folders.listitem(folder, dataset.id)
+    @folders.listitem(folder, dataset.id, sortOrder)
 }
 </div>
     @currentFolder match {
@@ -23,10 +49,10 @@
         <ul class="pager">
                 <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(filepage > 0) {
-                <li class="previous"><a id="prevlink" title="Page backwards" href="javascript:updatePageAndFolder(@(filepage-1), '@currentFolder')"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+                <li class="previous"><a id="prevlink" title="Page backwards" href="javascript:updatePageAndFolder(@(filepage-1), '@currentFolder', '@sortOrder')"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
             }
             @if(next) {
-                <li class ="next"><a id="nextlink" title="Page forwards"  href="javascript:updatePageAndFolder(@(filepage+1),'@currentFolder')">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                <li class ="next"><a id="nextlink" title="Page forwards"  href="javascript:updatePageAndFolder(@(filepage+1),'@currentFolder', '@sortOrder')">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>
     </div>

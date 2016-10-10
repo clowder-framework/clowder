@@ -28,7 +28,7 @@ class Folders @Inject()(datasets: DatasetService, folders: FolderService, events
     }
   }
 
-  def createFolder(parentDatasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
+  def createFolder(parentDatasetId: UUID, sortOrder: String) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
     Logger.debug("--- Creating new folder ---- ")
     (request.body \ "name").asOpt[String].map {
        name => {
@@ -119,7 +119,7 @@ class Folders @Inject()(datasets: DatasetService, folders: FolderService, events
                         }
 
                         events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "added_folder")
-                        Ok(views.html.folders.listitem(folder, parentDataset.id) (request.user))
+                        Ok(views.html.folders.listitem(folder, parentDataset.id, sortOrder) (request.user))
                       }
                       case None => InternalServerError(s"Parent Dataset $parentDatasetId not found")
                     }
