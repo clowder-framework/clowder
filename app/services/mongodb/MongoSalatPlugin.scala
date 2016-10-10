@@ -1355,7 +1355,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     extractorsInfoCollection.foreach { extractor =>
 
-      var repository = extractor.get("repository")
+      val repository = extractor.get("repository")
 
       if (!repository.isInstanceOf[BasicDBList]) {
         extractor.put("repository", MongoDBList(repository))
