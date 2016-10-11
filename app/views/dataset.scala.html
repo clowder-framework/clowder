@@ -475,6 +475,7 @@
                     });
                     request.done(function(response, textStatus, jqXHR){
                         $('#folder-modal').modal('hide');
+                        $('#empty-folder-div').hide();
                         $('#folderListDiv').prepend(response);
                         notify("Folder created successfully", "success", false, 2000 );
                         $('#name').val("");
