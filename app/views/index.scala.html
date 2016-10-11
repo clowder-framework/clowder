@@ -1,5 +1,5 @@
-@(datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long, filesBytes: Long,
-        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, usersCount: Long,
+@(datasetsCount: Long, filesCount: Long, filesBytes: Long,
+        collectionsCount: Long, spacesCount: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters._
@@ -18,14 +18,14 @@
               <div class="panel-body">
                   <ul class="list-group">
 
-                        <li class="list-group-item">
+                        <li class="list-group-item" title="@humanReadableNumber(spacesCount) @Messages("spaces.title")">
                             <a href="@routes.Spaces.list()">@Messages("spaces.title")<span class="badge pull-right">@humanReadableNumber(spacesCount)</span></a>
                         </li>
 
-                      <li class="list-group-item" title="You can access @humanReadableNumber(collectionsCountAccess) collections">
+                      <li class="list-group-item" title="@humanReadableNumber(collectionsCount) @Messages("collections.title")">
                           <a href="@routes.Collections.list("")">@Messages("collections.title") <span class="badge pull-right">@humanReadableNumber(collectionsCount)</span></a>
                       </li>
-                      <li class="list-group-item" title="You can access @humanReadableNumber(datasetsCountAccess) datasets">
+                      <li class="list-group-item" title="@humanReadableNumber(datasetsCount) @Messages("datasets.title")">
                           <a href="@routes.Datasets.list("")">@Messages("datasets.title") <span class="badge pull-right">@humanReadableNumber(datasetsCount)</span></a>
                       </li>
                       <li class="list-group-item">
