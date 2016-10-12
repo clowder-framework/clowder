@@ -143,17 +143,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       }
       case _ => {
         val datasetsCount = datasets.count()
-        val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
         val filesCount = files.count()
         val filesBytes = files.bytes()
         val collectionsCount = collections.count()
-        val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
         val spacesCount = spaces.count()
-        val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
         val usersCount = users.count()
 
-        Ok(views.html.index(datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
-          spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+        Ok(views.html.index(datasetsCount, filesCount, filesBytes, collectionsCount,
+          spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
       }
     }
   }
@@ -161,17 +158,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def about = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
     val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
     val filesBytes = files.bytes()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
     val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
 
-    Ok(views.html.index(datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
-        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    Ok(views.html.index(datasetsCount, filesCount, filesBytes, collectionsCount,
+        spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
   def email(subject: String) = UserAction(needActive=false) { implicit request =>
