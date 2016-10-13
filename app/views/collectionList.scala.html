@@ -17,8 +17,17 @@
 </div>
 
 <div class="row">
-    <div class="col-md-10">
-    </div>
+  @space match {
+    case Some(s) => {
+      <div class="col-md-7">
+      </div>
+    }
+    case None => {
+      <div class="col-md-10">
+      </div>
+    }
+  }
+    	
     <div class="col-md-1">
 
         @user match {
@@ -58,6 +67,59 @@
         }
 
     </div>
+  @space match {
+    case Some(s) => {
+      <div class="col-md-3">
+      <label for="js-sort-single">Sort By:
+      <select class="js-sort-single">
+        <option value="dateN">Date (Newest)</option>
+        <option value="dateO">Date (Oldest)</option>
+        <option value="titleA">Title (A-Z)</option>
+        <option value="titleZ">Title (Z-A)</option>
+        <option value="sizeL">Size (L)</option>
+        <option value="sizeS">Size (S)</option>
+      </select>
+      </label>
+<script type="text/javascript">
+  $(function() {
+	$(".js-sort-single").select2();
+  	//Set starting value based on cookie
+  	//removing quotes from around cookie value 
+  	var order = $.cookie('sort-order').replace(/['"]+/g, '');
+    $('.js-sort-single').val(order).trigger("change");
+    
+  
+    @space match {
+      case Some(s) => {
+  	    var currentSpace = null;
+    	currentSpace = '@s';
+  	
+  	    $(".js-sort-single").on('select2:select', function (evt) { 
+             $(window).trigger("sortchange");
+	    });
+	    $(window).on('sortchange', function() {
+	      var sort = $(".js-sort-single").val();
+	      //Update cookie
+          $.cookie('sort-order', sort, { path: '/' });
+          //Go get the list sorted the new way     
+          @if(prev != "") {
+          var request = jsRoutes.controllers.Collections.sortedListInSpace(currentSpace, @prev.toInt, @limit);
+          } else {
+          var request = jsRoutes.controllers.Collections.sortedListInSpace(currentSpace, 0, @limit);
+          }
+          window.location = request.url;
+        });
+      }	
+    }   
+	
+  });
+</script>
+
+    </div>
+    }
+    case None => {}
+    }
+    
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">
             <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
@@ -117,9 +179,26 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
             function updatePage() {
+               @space match {
+      	case None => {
                 $('#nextlink').attr('href', "@(routes.Collections.list("a", next, limit, space, "", owner))");
                 $('#prevlink').attr('href', "@(routes.Collections.list("b", prev, limit, space, "", owner))");
+                }
+        case Some(s) => {
+        	@if(next != "") {
+      	        $('#nextlink').attr('href', "@(routes.Collections.sortedListInSpace(s, next.toInt, limit))");
+      	        }
+				@if(prev != "") {
+                  $('#prevlink').attr('href', "@(routes.Collections.sortedListInSpace(s, prev.toInt-limit, limit))");      	        	}
+      	        }	
+
+                  
+                
+	      	
+    
             }
+            }
+            
         </script>
     </div>
 </div>
