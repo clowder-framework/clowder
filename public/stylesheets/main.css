@@ -977,6 +977,6 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 	display:inline-block;
 	min-width:72%;
 }
-#colsort {
+.sortchoice {
 	float:right;
 }

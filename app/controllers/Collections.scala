@@ -233,6 +233,23 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
+   def sortDatasets(dList: List[Dataset], sortOrder: Option[String]): List[Dataset] = {
+    sortOrder match {
+      case Some(order) => {
+        order match {
+          case "dateN" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
+          case "dateO" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
+          case "titleA" => dList.sortBy(_.name)
+          case "titleZ" => dList.sortBy(_.name).reverse
+          case "sizeL" => dList.sortBy(d => { d.files.length + d.folders.length }).reverse
+          case "sizeS" => dList.sortBy(d => { d.files.length + d.folders.length })
+        }
+      }
+      case None => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
+    }
+  }
+
+   
   /**
    * List collections.
    */
@@ -479,6 +496,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
 
+      val sortOrder: Option[String] =
+        request.cookies.get("sort-order") match {
+          case Some(cookie) => Some(cookie.value)
+          case None => None //If there is no cookie, and an order was not passed in, the view will choose its default
+        }
+      
       collections.get(id) match {
         case Some(collection) => {
           Logger.debug(s"Found collection $id")
@@ -501,7 +524,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = datasets.listCollection(id.stringify, user)
+          val datasetsInside = sortDatasets(datasets.listCollection(id.stringify, user), sortOrder);
           val datasetIdsToUse = datasetsInside.slice(0, limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetIdsToUse) {
@@ -520,18 +543,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             dataset.id -> allComments.size
           }.toMap
 
-          val child_collections_ids = dCollection.child_collection_ids.slice(0, limit)
+          val child_collections = sortCollections(dCollection.child_collection_ids.map(c => collections.get(c)).flatten, sortOrder).slice(0, limit)
           val decodedChildCollections = ListBuffer.empty[models.Collection]
-          for (child_collection_id <- child_collections_ids) {
-            collections.get(child_collection_id) match {
-              case Some(child_collection) => {
+          for (child_collection <- child_collections) {
                 val decodedChild = Utils.decodeCollectionElements(child_collection)
                 decodedChildCollections += decodedChild
-              } case None => {
-                Logger.debug("No child collection found for " + child_collection_id)
-              }
-
-            }
           }
 
           val parent_collection_ids = dCollection.parent_collection_ids
