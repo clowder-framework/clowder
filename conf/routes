@@ -116,13 +116,13 @@ GET            /datasets/getInstances                                           
 GET            /datasets/removeInstance                                                 @controllers.ToolManager.removeInstance(toolType: String, instanceID: UUID)
 GET            /datasets/launchTool                                                     @controllers.ToolManager.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
-POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None, sortOrder: String ?= "dateN")
+POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
-POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID, sortOrder: String)
+POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS
