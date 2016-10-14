@@ -358,6 +358,76 @@ class Datasets @Inject() (
   }
 
   /**
+   * Sorted List of datasets within a space
+   */
+  def sortedListInSpace(space: String, offset: Integer, limit: Integer) = UserAction(needActive = false) { implicit request =>
+    implicit val user = request.user
+    val sortOrder: String =
+      request.cookies.get("sort-order") match {
+        case Some(cookie) => cookie.value
+        case None => "dateN" //a default
+      }
+
+    val datasetSpace = spaceService.get(UUID(space))
+    var title: Option[String] = Some(Messages("resource.in.title", Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
+
+    if (!datasetSpace.isDefined) {
+      Logger.error(s"space with id $space doesn't exist.")
+      BadRequest(views.html.notFound("Space " + space + " not found."))
+    } else {
+      if (!Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", datasetSpace.get.name, "space"))
+      } else {
+
+        val dList = datasets.listSpace(0, space);
+        val len = dList.length
+
+        val datasetList = SortingUtils.sortDatasets(dList, sortOrder).drop(offset).take(limit)
+
+        val commentMap = datasetList.map { dataset =>
+          var allComments = comments.findCommentsByDatasetId(dataset.id)
+          dataset.files.map { file =>
+            allComments ++= comments.findCommentsByFileId(file)
+            sections.findByFileId(file).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+          }
+          dataset.id -> allComments.size
+        }.toMap
+
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the datasets names or descriptions
+        val decodedDatasetList = ListBuffer.empty[models.Dataset]
+        for (aDataset <- datasetList) {
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+        }
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+
+          request.cookies.get("view-mode") match {
+            case Some(cookie) => Some(cookie.value)
+            case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+          }
+        val prev: String = if (offset != 0) {
+          offset.toString()
+        } else {
+          ""
+        }
+        val next: String = if (len > (offset + limit)) {
+          (offset + limit).toString()
+        } else {
+          ""
+        }
+        val date = ""
+        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, Some(space), title, None, "a", date))
+      }
+    }
+  }
+
+  /**
    * Dataset.
    */
   def dataset(id: UUID, currentSpace: Option[String], limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>

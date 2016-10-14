@@ -144,12 +144,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   def sortedListInSpace(space: String, offset: Integer, limit: Integer) = UserAction(needActive = false) { implicit request =>
     {
-      var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("collections.title")))
       implicit val user = request.user
-      val sortOrder: Option[String] =
+      val sortOrder: String =
         request.cookies.get("sort-order") match {
-          case Some(cookie) => Some(cookie.value)
-          case None => None //If there is no cookie, and an order was not passed in, the view will choose its default
+          case Some(cookie) => cookie.value
+          case None => "dateN" //a default
         }
       val mode = ""
       val spaceResource: Option[ProjectSpace] = spaceService.get(UUID(space))
@@ -158,6 +157,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         Logger.error(s"space with id $space doesn't exist.")
         BadRequest(views.html.notFound("Space " + space + " not found."))
       } else {
+        var title: Option[String] = Some(Messages("resource.in.title", Messages("collections.title"), spaceTitle, routes.Spaces.getSpace(spaceResource.get.id), spaceResource.get.name))
 
         if (!Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
           BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", spaceResource.get.name, "space"))
@@ -199,7 +199,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               Some(mode)
             }
           //Pass the viewMode into the view
-          val prev: String = if(offset!=0) {
+          val prev: String = if (offset != 0) {
             offset.toString()
           } else {
             ""
@@ -217,9 +217,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
-
-
-   
   /**
    * List collections.
    */
@@ -466,12 +463,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
 
-      val sortOrder: Option[String] =
+      val sortOrder: String =
         request.cookies.get("sort-order") match {
-          case Some(cookie) => Some(cookie.value)
-          case None => None //If there is no cookie, and an order was not passed in, the view will choose its default
+          case Some(cookie) => cookie.value
+          case None => "dateN" //a default
         }
-      
+
       collections.get(id) match {
         case Some(collection) => {
           Logger.debug(s"Found collection $id")
@@ -516,8 +513,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           val child_collections = SortingUtils.sortCollections(dCollection.child_collection_ids.map(c => collections.get(c)).flatten, sortOrder).slice(0, limit)
           val decodedChildCollections = ListBuffer.empty[models.Collection]
           for (child_collection <- child_collections) {
-                val decodedChild = Utils.decodeCollectionElements(child_collection)
-                decodedChildCollections += decodedChild
+            val decodedChild = Utils.decodeCollectionElements(child_collection)
+            decodedChildCollections += decodedChild
           }
 
           val parent_collection_ids = dCollection.parent_collection_ids

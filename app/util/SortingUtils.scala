@@ -4,35 +4,25 @@ import models._
 
 object SortingUtils {
 
-  def sortCollections(cList: List[Collection], sortOrder: Option[String]): List[Collection] = {
+  def sortCollections(cList: List[Collection], sortOrder: String): List[Collection] = {
     sortOrder match {
-      case Some(order) => {
-        order match {
-          case "dateN" => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-          case "dateO" => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
-          case "titleA" => cList.sortBy(_.name)
-          case "titleZ" => cList.sortBy(_.name).reverse
-          case "sizeL" => cList.sortBy(c => { c.datasetCount + c.childCollectionsCount }).reverse
-          case "sizeS" => cList.sortBy(c => { c.datasetCount + c.childCollectionsCount })
-        }
-      }
-      case None => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
+      case "dateN" => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
+      case "dateO" => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
+      case "titleA" => cList.sortBy(_.name)
+      case "titleZ" => cList.sortBy(_.name).reverse
+      case "sizeL" => cList.sortBy(c => { c.datasetCount + c.childCollectionsCount }).reverse
+      case "sizeS" => cList.sortBy(c => { c.datasetCount + c.childCollectionsCount })
     }
   }
 
-  def sortDatasets(dList: List[Dataset], sortOrder: Option[String]): List[Dataset] = {
+  def sortDatasets(dList: List[Dataset], sortOrder: String): List[Dataset] = {
     sortOrder match {
-      case Some(order) => {
-        order match {
-          case "dateN" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-          case "dateO" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
-          case "titleA" => dList.sortBy(_.name)
-          case "titleZ" => dList.sortBy(_.name).reverse
-          case "sizeL" => dList.sortBy(d => { d.files.length + d.folders.length }).reverse
-          case "sizeS" => dList.sortBy(d => { d.files.length + d.folders.length })
-        }
-      }
-      case None => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
+      case "dateN" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
+      case "dateO" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
+      case "titleA" => dList.sortBy(_.name)
+      case "titleZ" => dList.sortBy(_.name).reverse
+      case "sizeL" => dList.sortBy(d => { d.files.length + d.folders.length }).reverse
+      case "sizeS" => dList.sortBy(d => { d.files.length + d.folders.length })
     }
   }
 
