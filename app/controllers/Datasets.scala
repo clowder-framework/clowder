@@ -8,7 +8,7 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
-import util.{ FileUtils, Formatters, RequiredFieldsConfig }
+import util.{ FileUtils, Formatters, RequiredFieldsConfig, SortingUtils }
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
@@ -517,10 +517,10 @@ class Datasets @Inject() (
     implicit val user = request.user
     val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
     val sortOrder: String =
-        request.cookies.get("sort-order") match {
-          case Some(cookie) => cookie.value
-          case None => "dateN" //If there is no cookie, and an order was not passed in, the view will choose its default
-        }
+      request.cookies.get("sort-order") match {
+        case Some(cookie) => cookie.value
+        case None => "dateN" //If there is no cookie, and an order was not passed in, the view will choose its default
+      }
     datasets.get(datasetId) match {
       case Some(dataset) => {
         val folderId = (request.body \ "folderId").asOpt[String]
@@ -528,8 +528,8 @@ class Datasets @Inject() (
           case Some(fId) => {
             folders.get(UUID(fId)) match {
               case Some(folder) => {
-                val foldersList = sortFolders(folder.folders.map(f => folders.get(f)).flatten, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1))
-                val limitFileList = sortFiles(folder.files.map(f => files.get(f)).flatten, sortOrder).slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length)
+                val foldersList = SortingUtils.sortFolders(folder.folders.map(f => folders.get(f)).flatten, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1))
+                val limitFileList = SortingUtils.sortFiles(folder.files.map(f => files.get(f)).flatten, sortOrder).slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length)
 
                 var folderHierarchy = new ListBuffer[Folder]()
                 folderHierarchy += folder
@@ -560,8 +560,8 @@ class Datasets @Inject() (
           }
           case None => {
 
-            val foldersList = sortFolders(dataset.folders.map(f => folders.get(f)).flatten, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1))
-            val limitFileList = sortFiles(dataset.files.map(f => files.get(f)).flatten, sortOrder).slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length)
+            val foldersList = SortingUtils.sortFolders(dataset.folders.map(f => folders.get(f)).flatten, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1))
+            val limitFileList = SortingUtils.sortFiles(dataset.files.map(f => files.get(f)).flatten, sortOrder).slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length)
 
             val fileComments = limitFileList.map { file =>
               var allComments = comments.findCommentsByFileId(file.id)
@@ -581,27 +581,6 @@ class Datasets @Inject() (
     }
   }
 
-  def sortFolders(fList: List[Folder], sortOrder: String): List[Folder] = {
-    sortOrder match {
-      case "dateN" => fList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-      case "dateO" => fList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
-      case "titleA" => fList.sortBy(_.displayName)
-      case "titleZ" => fList.sortBy(_.displayName).reverse
-      case "sizeL" => fList.sortBy(l => { l.folders.length + l.files.length }).reverse
-      case "sizeS" => fList.sortBy(l => { l.folders.length + l.files.length })
-    }
-  }
-
-  def sortFiles(fList: List[File], sortOrder: String): List[File] = {
-    sortOrder match {
-      case "dateN" => fList.sortWith((left, right) => left.uploadDate.compareTo(right.uploadDate) > 0)
-      case "dateO" => fList.sortWith((left, right) => left.uploadDate.compareTo(right.uploadDate) > 0).reverse
-      case "titleA" => fList.sortBy(_.filename)
-      case "titleZ" => fList.sortBy(_.filename).reverse
-      case "sizeL" => fList.sortBy(_.length).reverse
-      case "sizeS" => fList.sortBy(_.length)
-    }
-  }
   /**
    * Dataset by section.
    */

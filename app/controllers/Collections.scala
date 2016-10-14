@@ -3,7 +3,7 @@ package controllers
 import api.Permission._
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import util.{ Formatters, RequiredFieldsConfig }
+import util.{ Formatters, RequiredFieldsConfig, SortingUtils }
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{ Inject, Singleton }
@@ -166,7 +166,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           val cList = collections.listSpace(0, space);
           val len = cList.length
 
-          val collectionList = sortCollections(cList, sortOrder).drop(offset).take(limit)
+          val collectionList = SortingUtils.sortCollections(cList, sortOrder).drop(offset).take(limit)
 
           val collectionsWithThumbnails = collectionList.map { c =>
             {
@@ -217,37 +217,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
-  def sortCollections(cList: List[Collection], sortOrder: Option[String]): List[Collection] = {
-    sortOrder match {
-      case Some(order) => {
-        order match {
-          case "dateN" => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-          case "dateO" => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
-          case "titleA" => cList.sortBy(_.name)
-          case "titleZ" => cList.sortBy(_.name).reverse
-          case "sizeL" => cList.sortBy(c => { c.datasetCount + c.childCollectionsCount }).reverse
-          case "sizeS" => cList.sortBy(c => { c.datasetCount + c.childCollectionsCount })
-        }
-      }
-      case None => cList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-    }
-  }
 
-   def sortDatasets(dList: List[Dataset], sortOrder: Option[String]): List[Dataset] = {
-    sortOrder match {
-      case Some(order) => {
-        order match {
-          case "dateN" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-          case "dateO" => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0).reverse
-          case "titleA" => dList.sortBy(_.name)
-          case "titleZ" => dList.sortBy(_.name).reverse
-          case "sizeL" => dList.sortBy(d => { d.files.length + d.folders.length }).reverse
-          case "sizeS" => dList.sortBy(d => { d.files.length + d.folders.length })
-        }
-      }
-      case None => dList.sortWith((left, right) => left.created.compareTo(right.created) > 0)
-    }
-  }
 
    
   /**
@@ -524,7 +494,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = sortDatasets(datasets.listCollection(id.stringify, user), sortOrder);
+          val datasetsInside = SortingUtils.sortDatasets(datasets.listCollection(id.stringify, user), sortOrder);
           val datasetIdsToUse = datasetsInside.slice(0, limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetIdsToUse) {
@@ -543,7 +513,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             dataset.id -> allComments.size
           }.toMap
 
-          val child_collections = sortCollections(dCollection.child_collection_ids.map(c => collections.get(c)).flatten, sortOrder).slice(0, limit)
+          val child_collections = SortingUtils.sortCollections(dCollection.child_collection_ids.map(c => collections.get(c)).flatten, sortOrder).slice(0, limit)
           val decodedChildCollections = ListBuffer.empty[models.Collection]
           for (child_collection <- child_collections) {
                 val decodedChild = Utils.decodeCollectionElements(child_collection)
