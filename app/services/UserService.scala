@@ -23,6 +23,12 @@ trait UserService  {
 
   def delete(id: UUID)
 
+  /** Activate all users, and mark them as admin, who are listed in application.conf by email */
+  def updateAdmins()
+
+  /** Return a list of all users that are admins and are active */
+  def getAdmins: List[User]
+
   /**
    * The number of objects that are available based on the filter
    */
@@ -81,9 +87,13 @@ trait UserService  {
 
   /**
    * Updates a value in the User Model
-   * TODO: use UUID instead of email
    */
-  def updateUserField(email: String, field: String, fieldText: Any)
+  def updateUserField(id: UUID, field: String, fieldText: Any)
+
+  /**
+    * Update full name in all mini users (collections, uploads, datasets, curatonObjects, curationFiles, comments,
+    */
+  def updateUserFullName(id: UUID, name: String)
 
   /**
    * Updates the user repository preferences.
@@ -233,4 +243,10 @@ trait UserService  {
    * return List[MiniEntity] - the top N recommendations rooted from sourceID
    */
   def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[MiniEntity]
+
+  /** record the acceptance of the Terms of Service */
+  def acceptTermsOfServices(id: UUID)
+
+  /** new terms of service, all users will need to agree to this */
+  def newTermsOfServices()
 }

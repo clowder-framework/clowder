@@ -1,8 +1,10 @@
 # clowder server
 clowder:
-  image: ncsa/clowder:develop
-  # environment:
-  #   SMTP_HOST: smtp.ncsa.illinois.edu
+  image: clowder/clowder:develop
+#  environment:
+#    CLOWDER_ADMIN: "joe@aol.com"
+#    TOOLMANAGER_URI: "http://192.168.99.100:8080"
+#    SMTP_HOST: smtp.ncsa.illinois.edu
   ports:
     - "9000:9000"
   links:
@@ -11,6 +13,11 @@ clowder:
     - elasticsearch
 
 # extractors
+filedigest:
+  image: clowder/extractors-digest
+  links:
+    - rabbitmq
+
 audiopreview:
   image: ncsa/clowder-extractors-audio-preview
   links:
@@ -55,7 +62,7 @@ rabbitmq:
 
 # elasticsearch to allow indexing
 elasticsearch:
-    image: elasticsearch:1.3
+    image: elasticsearch:2
     command: elasticsearch -Des.cluster.name="clowder"
     ports:
         - "9200:9200"

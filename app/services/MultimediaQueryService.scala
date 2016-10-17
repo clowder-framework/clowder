@@ -56,7 +56,7 @@ abstract class MultimediaQueryService {
 
   def addMultimediaDistance(d: MultimediaDistance)
 
-  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int): List[MultimediaDistance]
+  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance]
 
   def recomputeAllDistances()
 

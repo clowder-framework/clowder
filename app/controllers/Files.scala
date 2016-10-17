@@ -12,6 +12,7 @@ import com.mongodb.DBObject
 import com.wordnik.swagger.annotations.ApiOperation
 import fileutils.FilesUtils
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.{current, configuration}
 import play.api.data.Form
@@ -28,7 +29,7 @@ import views.html.defaultpages.badRequest
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
-
+import play.api.i18n.Messages
 
 
 /**
@@ -50,6 +51,7 @@ class Files @Inject() (
   thumbnails: ThumbnailService,
   metadata: MetadataService,
   contextLDService: ContextLDService,
+  spaces: SpaceService,
   folders: FolderService) extends SecuredController {
 
   /**
@@ -59,39 +61,41 @@ class Files @Inject() (
     mapping(
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
-  )  
-  
+  )
+  val spaceTitle: String = Messages("space.title")
   /**
    * File info.
    */
-  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
+  def file(id: UUID, dataset: Option[String], space: Option[String], folder: Option[String]) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
         val previewsFromDB = previews.findByFileId(file.id)
         val previewers = Previewers.findPreviewers
+
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
           val pvf = for (
-            p <- previewers; pv <- previewsFromDB;
-            if (!p.collection);
+            p <- previewers; pv <- previewsFromDB
+            if (!p.collection)
             if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
           ) yield {
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+              val tabtitle: String = pv.title.getOrElse("")
+              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
           } else {
             val ff = for (
-              p <- previewers;
-              if (!p.collection);
+              p <- previewers
+              if (!p.collection)
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
-              if (file.licenseData.isDownloadAllowed(user)) {
-                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+              if (file.licenseData.isDownloadAllowed(user) || Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length, "")
               }
               else {
-                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
+                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length, "")
               }
             }
             Map(file -> ff)
@@ -134,21 +138,85 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val allDatasets =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
+
+        val access = if(!allDatasets.head.isDefault) {
+          val status = allDatasets.head.status
+          status(0).toUpper + status.substring(1).toLowerCase()
+        } else {
+          var isInPublicSpace = false
+          allDatasets.map{ ds =>
+            ds.spaces.map{ s=>
+              spaces.get(s) match {
+                case Some(space) => {
+                  if(space.isPublic) {
+                    isInPublicSpace = true
+                  }
+                }
+                case None => {}
+              }
+            }
+
+          }
+          if(isInPublicSpace) {
+            "Public (" + spaceTitle + " Default)"
+          } else {
+            "Private (" + spaceTitle + " Default)"
+          }
+        }
+
+        //decodedDatasetsContaining are the datasets where the file is, where the file is not within a folder
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
 
         for (aDataset <- datasetsContainingFile) {
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsContaining += dDataset
         }
+
+        //allDecodedDatasets includes datasets where the file is on the first level (not within a folder) and when the file is in a folder
+        //it includes the parent dataset of the folder.
+        val allDecodedDatasets = ListBuffer.empty[models.Dataset]
+        val decodedSpacesContaining= ListBuffer.empty[models.ProjectSpace]
+        for (aDataset <- allDatasets) {
+          val dDataset = Utils.decodeDatasetElements(aDataset)
+          allDecodedDatasets += dDataset
+          aDataset.spaces.map{
+            sp => spaces.get(sp) match {
+              case Some(s) => {
+                decodedSpacesContaining += Utils.decodeSpaceElements(s)
+              }
+              case None =>
+            }
+          }
+        }
+
+
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
-          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          val extractionsByFile = extractions.findByFileId(id)
-          
-          //call Polyglot to get all possible output formats for this file's content type 
-          
+        val extractionsByFile = extractions.findByFileId(id)
 
-          current.plugin[PolyglotPlugin] match {
+
+        var folderHierarchy = new ListBuffer[Folder]()
+        if(foldersContainingFile.length > 0) {
+          folderHierarchy = folderHierarchy ++ foldersContainingFile
+          var f1: Folder = folderHierarchy.head
+          while(f1.parentType == "folder") {
+            folders.get(f1.parentId) match {
+              case Some(fparent) => {
+                folderHierarchy += fparent
+                f1 = fparent
+              }
+              case None =>
+            }
+          }
+        }
+
+
+
+
+        //call Polyglot to get all possible output formats for this file's content type
+        current.plugin[PolyglotPlugin] match {
             case Some(plugin) => {
               Logger.debug("Polyglot plugin found")
               
@@ -162,21 +230,21 @@ class Files @Inject() (
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                   extractorsActive, decodedDatasetsContaining.toList,foldersContainingFile,
-                  mds, isRDFExportEnabled, extractionsByFile, outputFormats)))
+                  mds, isRDFExportEnabled, extractionsByFile, outputFormats, space,  access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList )))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, None)))
+                mds, isRDFExportEnabled, extractionsByFile, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList)))
           }              
       }
           
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        Future(NotFound(toJson(error_str)))  
+        Future(BadRequest(views.html.notFound("File does not exist.")))
         }
     }
   }
@@ -299,34 +367,6 @@ class Files @Inject() (
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode, None))
   }
 
-  def listByDataset(datasetId: UUID, filepage: Int, limit: Int, mode: String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
-    implicit val user = request.user
-    datasets.get(datasetId) match {
-      case Some(d) => {
-        val next = if (d.files.length > limit * (filepage+1) ) "dataset-" +datasetId.toString + "-next" else "dataset-" +datasetId.toString
-        val currentPage = if(filepage<0) "0" else filepage.toString
-        val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
-        val commentMap = limitFileList.map{file =>
-          var allComments = comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
-          }
-          file.id -> allComments.size
-        }.toMap
-        val viewMode: Option[String] =
-          if (mode == null || mode == "") {
-            request.cookies.get("view-mode") match {
-              case Some(cookie) => Some(cookie.value)
-              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
-            }
-          } else {
-            Some(mode)
-          }
-        Ok(views.html.filesList(limitFileList, commentMap, currentPage, next, limit, viewMode, Some(d)))
-      }
-      case None => BadRequest("Dataset not found")
-    }
-  }
 
   /**
    * Upload file page.
@@ -588,14 +628,15 @@ def uploadExtract() =
 	            
 	            //Correctly set the updated URLs and data that is needed for the interface to correctly 
 	            //update the display after a successful upload.
+              val https = controllers.Utils.https(request)
 	            val retMap = Map("files" ->
 	                Seq(
 	                    toJson(
 	                        Map(
 	                            "name" -> toJson(nameOfFile),
 	                            "size" -> toJson(uploadedFile.ref.file.length()),
-	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
-	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
+	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(https)),
+	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(https)),
 	                            "deleteType" -> toJson("POST")
 	                        )
 	                    )
@@ -652,7 +693,7 @@ def uploadExtract() =
           //Check the license type before doing anything. 
           files.get(id) match {
               case Some(file) => {                                                                                                             
-                  if (file.licenseData.isDownloadAllowed(request.user)) {
+                  if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {
@@ -688,7 +729,7 @@ def uploadExtract() =
                             }
                             Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
-                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=\"UTF-8''" + filenameStar + "\""))
 
                           }
                           }
@@ -740,7 +781,7 @@ def uploadExtract() =
    *  Uses Polyglot service to convert file to a new format and download to user's computer.
    *  
    */                            
-  def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.ViewFile, Some(new ResourceRef(ResourceRef.file, id))).async { implicit request =>
+  def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
       current.plugin[PolyglotPlugin] match {
         case Some(plugin) => {
           if (UUID.isValid(id.stringify)) {
@@ -822,7 +863,7 @@ def uploadExtract() =
       }
   }
 
-  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile) { implicit request =>
+  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
     thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -859,7 +900,7 @@ def uploadExtract() =
 	        }
       }
       case None => {
-        Logger.error("Error getting thumbnail" + id)
+        Logger.error("Error getting thumbnail " + id)
         NotFound
       }      
     }
@@ -995,10 +1036,10 @@ def uploadExtract() =
         var nameOfFile = f.filename
         var flags = ""
         if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+          val thirdSeparatorIndex = nameOfFile.indexOf("__")
           if (thirdSeparatorIndex >= 0) {
-            var firstSeparatorIndex = nameOfFile.indexOf("_")
-            var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+            val firstSeparatorIndex = nameOfFile.indexOf("_")
+            val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
             flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
             nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
           }
@@ -1046,7 +1087,7 @@ def uploadExtract() =
 
             val host = Utils.baseUrl(request)
             val id = f.id
-            val extra = Map("filename" -> f.filename)
+            val extra = Map("filename" -> f.filename, "action" -> "upload")
 
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach {
@@ -1092,7 +1133,7 @@ def uploadExtract() =
   }
 
 
-  def uploaddnd(dataset_id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploaddnd(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
@@ -1254,12 +1295,12 @@ def uploadExtract() =
     }
   }
 
-  def metadataSearch() = PermissionAction(Permission.ViewFile) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileMetadataSearch()) 
   }
 
-  def generalMetadataSearch()  = PermissionAction(Permission.ViewFile) { implicit request =>
+  def generalMetadataSearch()  = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileGeneralMetadataSearch()) 
   }
@@ -1267,7 +1308,7 @@ def uploadExtract() =
   /**
    * File by section.
    */
-  def fileBySection(section_id: UUID) = PermissionAction(Permission.ViewFile) {
+  def fileBySection(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) {
     implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
@@ -1304,7 +1345,7 @@ def uploadExtract() =
   ////            val filename = f.ref.file.getName()
   ////            Logger.debug("Uploading file " + filename)
   ////            mongoFile.filename = filename
-  ////            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+  ////            mongoFile.contentType = FileUtils.getContentType(filename, contentType)
   ////            mongoFile.save
   ////            val id = mongoFile.getAs[ObjectId]("_id").get.toString
   ////            Ok(views.html.file(mongoFile.asDBObject, id))

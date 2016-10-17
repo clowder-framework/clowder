@@ -1,14 +1,14 @@
 @(datasetsList: List[Dataset], space: String)(implicit user: Option[models.User])
 
 @import api.Permission
-
+@import play.api.i18n.Messages
 @util.masonry()
 
 <p>
-    Most recent datasets:
+    <span class="small">@Messages("recent.message", Messages("datasets.title").toLowerCase)</span>
     <span class="pull-right">
         <a href="@(routes.Datasets.list("", "", 12, Some(space)))" class="btn btn-link btn-xs">
-            <span class="glyphicon glyphicon-hand-right"></span> All Datasets
+            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
         </a>
     </span>
 </p>

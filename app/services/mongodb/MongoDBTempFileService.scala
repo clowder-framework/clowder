@@ -36,7 +36,7 @@ class MongoDBTempFileService extends TempFileService {
 object TempFileDAO extends ModelCompanion[TempFile, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[TempFile, ObjectId](collection = x.collection("uploadquery.files")) {}
+    case Some(x) => new SalatDAO[TempFile, ObjectId](collection = x.collection("uploadquery")) {}
   }
 }
 

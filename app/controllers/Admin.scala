@@ -29,8 +29,18 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.admin.customize(theme,
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
-      AppConfiguration.getGoogleAnalytics,
-      AppConfiguration.getUserAgreement))
+      AppConfiguration.getGoogleAnalytics))
+  }
+
+  def tos = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val tosText = AppConfiguration.getTermsOfServicesTextRaw
+    val tosHtml = if (AppConfiguration.isTermOfServicesHtml) {
+      "checked"
+    } else {
+      ""
+    }
+    Ok(views.html.admin.tos(tosText, tosHtml))
   }
 
   def adminIndex = ServerAdminAction { implicit request =>
@@ -55,20 +65,20 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
    * Gets the available Adapters from Versus
    */
   def getAdapters() = ServerAdminAction.async { implicit request =>
-        current.plugin[VersusPlugin] match {
-          case Some(plugin) => {
-            var adapterListResponse = plugin.getAdapters()
-            for {
-              adapterList <- adapterListResponse
-            } yield {
-              Ok(adapterList.json)
-            }
-          }
-
-          case None => {
-            Future(Ok("No Versus Service"))
-          }
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+        val adapterListResponse = plugin.getAdapters()
+        for {
+          adapterList <- adapterListResponse
+        } yield {
+          Ok(adapterList.json)
         }
+      }
+
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
+    }
   }
 
   /**
@@ -86,7 +96,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   def getExtractors() = ServerAdminAction.async { implicit request =>
     current.plugin[VersusPlugin] match {
       case Some(plugin) => {
-        var extractorListResponse = plugin.getExtractors()
+        val extractorListResponse = plugin.getExtractors()
         for {
           extractorList <- extractorListResponse
         } yield {
@@ -104,73 +114,73 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
    * Gets available Measures from Versus
    */
   def getMeasures() = ServerAdminAction.async { implicit request =>
-     	  current.plugin[VersusPlugin] match {
-     		case Some(plugin)=>{
-     			var measureListResponse= plugin.getMeasures()
-     			for{
-     				measureList<-measureListResponse
-     			} yield {
-     				Ok(measureList.json)
-     			}
-     		}
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+        val measureListResponse= plugin.getMeasures()
+        for {
+          measureList <- measureListResponse
+        } yield {
+          Ok(measureList.json)
+        }
+      }
 
-     		case None=>{
-     			Future(Ok("No Versus Service"))
-		    }
-     	  }
-  	}
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
+    }
+  }
 
   /**
    * Gets available Indexers from Versus
    */
   def getIndexers() = ServerAdminAction.async { implicit request =>
-        current.plugin[VersusPlugin] match {
-          case Some(plugin) => {
-            var indexerListResponse = plugin.getIndexers()
-            for {
-              indexerList <- indexerListResponse
-            } yield {
-              Ok(indexerList.json)
-            }
-          }
-
-          case None => {
-            Future(Ok("No Versus Service"))
-          }
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+        val indexerListResponse = plugin.getIndexers()
+        for {
+          indexerList <- indexerListResponse
+        } yield {
+          Ok(indexerList.json)
         }
+      }
+
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
+    }
   }
 
   /**
-   * Gets adapter, extractor,measure and indexer value and sends it to VersusPlugin to create index request to Versus.
+   * Gets adapter, extractor, measure and indexer value and sends it to VersusPlugin to create index request to Versus.
    * If an index has type and/or name, stores type/name in mongo db.
    */
    def createIndex() = ServerAdminAction.async(parse.json) { implicit request =>
-         current.plugin[VersusPlugin] match {
-           case Some(plugin) => {
-             Logger.trace("Contr.Admin.CreateIndex()")
-             val adapter = (request.body \ "adapter").as[String]
-             val extractor = (request.body \ "extractor").as[String]
-             val measure = (request.body \ "measure").as[String]
-             val indexer = (request.body \ "indexer").as[String]
-             val indexType = (request.body \ "indexType").as[String]
-             val indexName = (request.body \ "name").as[String]
-             //create index and get its id
-             val indexIdFuture :Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)
-             //save index type (census sections, face sections, etc) to the mongo db
-             if (indexType != null && indexType.length !=0){
-             	indexIdFuture.map(sectionIndexInfo.insertType(_, indexType))
-             }
-             //save index name to the mongo db
-             if (indexName != null && indexName.length !=0){
-             	indexIdFuture.map(sectionIndexInfo.insertName(_, indexName))
-             }
-              Future(Ok("Index created successfully"))
-           }
-
-           case None => {
-             Future(Ok("No Versus Service"))
-           }
+     current.plugin[VersusPlugin] match {
+       case Some(plugin) => {
+         Logger.trace("Contr.Admin.CreateIndex()")
+         val adapter =    (request.body \ "adapter").as[String]
+         val extractor =  (request.body \ "extractor").as[String]
+         val measure =    (request.body \ "measure").as[String]
+         val indexer =    (request.body \ "indexer").as[String]
+         val indexType =  (request.body \ "indexType").as[String]
+         val indexName =  (request.body \ "name").as[String]
+         //create index and get its id
+         val indexIdFuture: Future[models.UUID] = plugin.createIndex(adapter, extractor, measure, indexer)
+         //save index type (census sections, face sections, etc) to the mongo db
+         if (indexType != null && indexType.length !=0){
+          indexIdFuture.map(sectionIndexInfo.insertType(_, indexType))
          }
+         //save index name to the mongo db
+         if (indexName != null && indexName.length !=0){
+          indexIdFuture.map(sectionIndexInfo.insertName(_, indexName))
+         }
+          Future(Ok("Index created successfully"))
+       }
+
+       case None => {
+         Future(Ok("No Versus Service"))
+       }
+     }
    }
 
   /**
@@ -178,93 +188,93 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
    * have type and/or name. Adds type and/or name to json object and calls view template to display.
    */
   def getIndexes() = ServerAdminAction.async { implicit request =>
-        current.plugin[VersusPlugin] match {
-          case Some(plugin) => {
-           Logger.trace(" Admin.getIndexes()")
-            var indexListResponse = plugin.getIndexes()
-            for {
-              indexList <- indexListResponse
-            } yield {
-            	if(indexList.body.isEmpty())
-            	{
-            		Ok(Json.toJson(""))
-            	}
-                else{
-                  var finalJson :JsValue=null
-                  val jsArray = indexList.json
-                  //make sure we got correctly formatted list of values
-                  jsArray.validate[List[VersusIndexTypeName]].fold(
-                		  // Handle the case for invalid incoming JSON.
-                		  // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName
-                		  error => {
-                		    Logger.error("Admin.getIndexes - validation error")
-                		    InternalServerError("Received invalid JSON response from remote service.")
-                		    },
-
-                		    // Handle a deserialized array of List[VersusIndexTypeName]
-                		    indexes => {
-                		    	val indexesWithNameType = indexes.map{
-                		    		index=>
-                		    		  	//check in mongo for name/type of each index
-                		    			val indType = sectionIndexInfo.getType(UUID(index.indexID)).getOrElse("")
-                		    			val indName = sectionIndexInfo.getName(UUID(index.indexID)).getOrElse("")
-                		    			//add type/name to index
-                		    			VersusIndexTypeName.addTypeAndName(index, indType, indName)
-   								  }
-                		    	indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index with name = " + i))
-                		    	// Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
-                		    	finalJson = Json.toJson(indexesWithNameType)
-                		    }
-                		  ) //end of fold
-                		  Ok(finalJson)
-                	}
-            }
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+        Logger.trace(" Admin.getIndexes()")
+        val indexListResponse = plugin.getIndexes()
+        for {
+          indexList <- indexListResponse
+        } yield {
+          if(indexList.body.isEmpty())
+          {
+            Ok(Json.toJson(""))
           }
+          else{
+            var finalJson: JsValue=null
+            val jsArray = indexList.json
+            //make sure we got correctly formatted list of values
+            jsArray.validate[List[VersusIndexTypeName]].fold(
+              // Handle the case for invalid incoming JSON.
+              // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName
+              error => {
+                Logger.error("Admin.getIndexes - validation error")
+                InternalServerError("Received invalid JSON response from remote service.")
+                },
 
-          case None => {
-            Future(Ok("No Versus Service"))
+                // Handle a deserialized array of List[VersusIndexTypeName]
+                indexes => {
+                  val indexesWithNameType = indexes.map{
+                    index=>
+                        //check in mongo for name/type of each index
+                      val indType = sectionIndexInfo.getType(UUID(index.indexID)).getOrElse("")
+                      val indName = sectionIndexInfo.getName(UUID(index.indexID)).getOrElse("")
+                      //add type/name to index
+                      VersusIndexTypeName.addTypeAndName(index, indType, indName)
+                  }
+                  indexesWithNameType.map(i=> Logger.debug("Admin.getIndexes index with name = " + i))
+                  // Serialize as JSON, requires the implicit `format` defined earlier in VersusIndexTypeName
+                  finalJson = Json.toJson(indexesWithNameType)
+                }
+              ) //end of fold
+              Ok(finalJson)
           }
         }
+      }
+
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
+    }
   }
 
   /**
    * Builds a specific index in Versus
    */
   def buildIndex(id: String) = ServerAdminAction.async { implicit request =>
-        Logger.trace("Inside Admin.buildIndex(), index = " + id)
-        current.plugin[VersusPlugin] match {
-          case Some(plugin) => {
-        	var buildResponse = plugin.buildIndex(UUID(id))
-            for {
-              buildRes <- buildResponse
-            } yield {
-              Ok(buildRes.body)
-            }
-          }
-
-          case None => {
-            Future(Ok("No Versus Service"))
-          }
+    Logger.trace("Inside Admin.buildIndex(), index = " + id)
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+      val buildResponse = plugin.buildIndex(UUID(id))
+        for {
+          buildRes <- buildResponse
+        } yield {
+          Ok(buildRes.body)
         }
+      }
+
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
+    }
   }
 
   /**
    * Deletes a specific index in Versus
    */
   def deleteIndex(id: String) = ServerAdminAction.async { implicit request =>
-        current.plugin[VersusPlugin] match {
-          case Some(plugin)=>{
-        	var deleteIndexResponse= plugin.deleteIndex(UUID(id))
-        	for{
-        	  deleteIndexRes<-deleteIndexResponse
-        	} yield {
-        	 Ok(deleteIndexRes.body)
-        	}
-          }
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+        val deleteIndexResponse= plugin.deleteIndex(UUID(id))
+        for{
+          deleteIndexRes<-deleteIndexResponse
+        } yield {
+         Ok(deleteIndexRes.body)
+        }
+      }
 
-		  case None=>{
-		    Future(Ok("No Versus Service"))
-		  }
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
 		}
   }
 
@@ -272,28 +282,28 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
    * Deletes all indexes in Versus
    */
   def deleteAllIndexes() = ServerAdminAction.async { implicit request =>
-        current.plugin[VersusPlugin] match {
-          case Some(plugin) => {
-            var deleteAllResponse = plugin.deleteAllIndexes()
-            for {
-              deleteAllRes <- deleteAllResponse
-            } yield {
-              Ok(deleteAllRes.body)
-            }
-          }
-
-          case None => {
-            Future(Ok("No Versus Service"))
-          }
+    current.plugin[VersusPlugin] match {
+      case Some(plugin) => {
+        val deleteAllResponse = plugin.deleteAllIndexes()
+        for {
+          deleteAllRes <- deleteAllResponse
+        } yield {
+          Ok(deleteAllRes.body)
         }
+      }
+
+      case None => {
+        Future(Ok("No Versus Service"))
+      }
+    }
   }
 
-  def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
+  private def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
     var permissionMap = SortedMap.empty[String, Boolean]
     Permission.values.map {
       permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
     }
-    return permissionMap;
+    return permissionMap
   }
 
   def listRoles() = ServerAdminAction { implicit request =>
@@ -307,21 +317,13 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   def getMetadataDefinitions() = ServerAdminAction { implicit request =>
     implicit val user = request.user
-    user match {
-      case Some(x) => {
-        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
-          val metadata = metadataService.getDefinitions()
-          Ok(views.html.manageMetadataDefinitions(metadata.toList))
-        } else {
-          Unauthorized("Not authorized")
-        }
-      }
-    }
+    val metadata = metadataService.getDefinitions()
+    Ok(views.html.manageMetadataDefinitions(metadata.toList, None, None))
   }
 
   val roleForm = Form(
     mapping(
-    "id" -> optional(Utils.CustomMappings.uuidType),
+      "id" -> optional(Utils.CustomMappings.uuidType),
       "name" -> nonEmptyText,
       "description" -> nonEmptyText,
       "permissions" -> Forms.list(nonEmptyText)
@@ -332,7 +334,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     implicit val user = request.user
     user match {
       case Some(x) => {
-
         Ok(views.html.roles.createRole(roleForm, getPermissionsMap()))
       }
     }
@@ -340,7 +341,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   def viewDumpers() = ServerAdminAction { implicit request =>
   	implicit val user = request.user
-	Ok(views.html.viewDumpers())
+	  Ok(views.html.viewDumpers())
   }
 
   def submitCreateRole() = ServerAdminAction { implicit request =>
@@ -380,32 +381,32 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   }
 
   def editRole(id: UUID) = ServerAdminAction { implicit request =>
-      implicit val user = request.user
-      userService.findRole(id.stringify) match {
-        case Some(s) => {
-          var permissionMap = SortedMap.empty[String, Boolean]
-          var permissionsSet: SortedSet[String] = SortedSet.empty
-          Permission.values.map{
-            permission =>
-              if(s.permissions.contains(permission.toString))
-              {
-                permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> true)
-              }
-              else {
-                permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
-              }
-              permissionsSet += permission.toString().replace(" ", "")
-          }
-          Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, permissionsSet.toList)), permissionMap))
+    implicit val user = request.user
+    userService.findRole(id.stringify) match {
+      case Some(s) => {
+        var permissionMap = SortedMap.empty[String, Boolean]
+        var permissionsSet: SortedSet[String] = SortedSet.empty
+        Permission.values.map{
+          permission =>
+            if(s.permissions.contains(permission.toString))
+            {
+              permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> true)
+            }
+            else {
+              permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2") -> false)
+            }
+            permissionsSet += permission.toString().replace(" ", "")
         }
-        case None => InternalServerError("Role not found")
+        Ok(views.html.roles.editRole(roleForm.fill(roleFormData(Some(s.id), s.name, s.description, permissionsSet.toList)), permissionMap))
       }
+      case None => InternalServerError("Role not found")
+    }
   }
 
   def updateRole() = ServerAdminAction { implicit request =>
-      implicit val user = request.user
+    implicit val user = request.user
 
-        roleForm.bindFromRequest.fold(
+      roleForm.bindFromRequest.fold(
         errors => BadRequest(views.html.roles.editRole(errors, getPermissionsMap())),
         formData =>
         {
@@ -421,16 +422,16 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
             case None =>
               BadRequest("The role does not exist")
           }
-        })
+        }
+      )
   }
 
   def users() = ServerAdminAction { implicit request =>
     implicit val user = request.user
 
-    val admins = AppConfiguration.getAdmins
     val configAdmins = play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").toList
     val users = userService.list.sortWith(_.lastName.toLowerCase() < _.lastName.toLowerCase())
-    Ok(views.html.admin.users(admins, configAdmins, users))
+    Ok(views.html.admin.users(configAdmins, users))
   }
 }
 

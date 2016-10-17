@@ -13,10 +13,12 @@ import models.{MultimediaDistance, MultimediaFeatures, TempFile, UUID}
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsObject
-import services.MultimediaQueryService
+import services.{MultimediaQueryService, SectionService, SpaceService}
 import services.mongodb.MongoContext.context
+import util.FileUtils
+import javax.inject.Inject
 
-class MongoDBMultimediaQueryService extends MultimediaQueryService {
+class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces: SpaceService) extends MultimediaQueryService {
 
    /**
    * Update thumbnail used to represent this query.
@@ -26,53 +28,49 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     	//because of a bug in Salat have to explicitely cast to ObjectId
     	$set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
   }
-  
-  
+
+
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploadquery")
     }
-    
+
     // required to avoid race condition on save
     files.db.setWriteConcern(WriteConcern.Safe)
-    
+
     val mongoFile = files.createFile(inputStream)
     Logger.debug("MongoDBMultimediaQueryService.save Uploading file " + filename)
     mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
-    mongoFile.contentType = ct
+    mongoFile.contentType = FileUtils.getContentType(filename, contentType)
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
-  
+
    def get(id: UUID): Option[(InputStream, String, String, Long)] = {
-    
+
      val queries = GridFS(MultimediaFeaturesDAO.dao.collection.db, "uploadquery")
-    
+
       queries.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      
+
       case Some(query) => {
         //Logger.debug(query.toString())
         Logger.debug("get: file name: "+query.filename +" Query id ="+ query.id.toString())
-        Some(query.inputStream, 
-          query.getAs[String]("filename").getOrElse("unknown-name"), 
+        Some(query.inputStream,
+          query.getAs[String]("filename").getOrElse("unknown-name"),
           query.getAs[String]("contentType").getOrElse("unknown"),
           query.getAs[Long]("length").getOrElse(0))
           }
       case None => None
     }
   }
-  
+
 def listFiles(): List[TempFile]={
   (for (file <- TempFileDAO.find(MongoDBObject())) yield file).toList
   }
-  
-  
+
+
   /**
    * Get file metadata.
    */
@@ -88,16 +86,13 @@ def getFile(id: UUID): Option[TempFile] = {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploadquery")
     }
-    
+
     // required to avoid race condition on save
     files.db.setWriteConcern(WriteConcern.Safe)
-    
+
     val mongoFile = files.createFile(Array[Byte]())
     mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
+    var ct = FileUtils.getContentType(filename, contentType)
     mongoFile.contentType = ct
     mongoFile.put("path", id)
     mongoFile.save
@@ -105,7 +100,7 @@ def getFile(id: UUID): Option[TempFile] = {
     //mongoFile._id
     Logger.debug("StoreMD id="+ oid)
      Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
-    
+
   }
 
   def findFeatureBySection(sectionId: UUID): Option[MultimediaFeatures] = {
@@ -145,9 +140,20 @@ def getFile(id: UUID): Option[TempFile] = {
     MultimediaDistanceDAO.save(d)
   }
 
-  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int): List[MultimediaDistance] = {
-    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),"representation"->representation))
-      .sort(MongoDBObject("distance" -> 1)).limit(limit).toList
+  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance] = {
+
+    // Converting UUIDs to Object IDs
+    val userSpaceObjectIDs = new MongoDBList()
+    userSpaceIDs.foreach(spaceId => {
+      userSpaceObjectIDs.+=:(new ObjectId(spaceId.toString()))
+    })
+
+    // MongoDB query
+    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),
+      "representation"->representation, "target_spaces" -> MongoDBObject("$in" -> userSpaceObjectIDs)))
+      .sort(MongoDBObject("distance" -> 1))
+      .limit(limit)
+      .toList
   }
 
   def recomputeAllDistances(): Unit = {
@@ -168,17 +174,27 @@ def getFile(id: UUID): Option[TempFile] = {
       outer.close()
       Logger.debug("Done precomputing distances")
     }
+
+    Logger.debug("Started indexing precomputing distances")
+    // Create index for faster search
+    MultimediaDistanceDAO.dao.collection.createIndex(MongoDBObject("source_section"->1, "representation"->1,
+      "distance"->1, "target_spaces"->1))
+    Logger.debug("Completed indexing precomputing distances")
   }
 
   def computeDistances(source: MultimediaFeatures): Unit = {
     Logger.debug("Computing feature distances for section " + source.section_id.get)
     val inner = listAll()
+    val sourceSpaces = sections.getParentSpaces(source.section_id.get) // Get spaces that the source section is belonging to
     // don't let the cursor time out
     inner.underlying.addOption(com.mongodb.Bytes.QUERYOPTION_NOTIMEOUT)
     while (inner.hasNext) {
       val target = inner.next
       Logger.trace("Target section = " + target.section_id.get)
       source.features.foreach { fs =>
+
+        val targetSpaces  = sections.getParentSpaces(target.section_id.get) // Get spaces that the target section is belonging to
+
         if (source.section_id != target.section_id) {
           target.features.find(_.representation == fs.representation) match {
             case Some(ft) => {
@@ -190,9 +206,9 @@ def getFile(id: UUID): Option[TempFile] = {
                   Logger.debug(s"Skipping ${fs.representation} distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 } else {
                   addMultimediaDistance(
-                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance))
+                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance, targetSpaces.toList))
                   addMultimediaDistance(
-                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance)) // Adding reverse distance to complete the matrix
+                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance, sourceSpaces.toList)) // Adding reverse distance to complete the matrix
                   Logger.trace(s"Distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 }
               } else {

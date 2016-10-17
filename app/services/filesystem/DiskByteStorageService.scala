@@ -6,7 +6,6 @@ import java.security.{MessageDigest, DigestInputStream}
 
 import models.UUID
 import org.apache.commons.codec.binary.Hex
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
 import play.Logger
 import play.api.Play
@@ -18,15 +17,15 @@ import services.ByteStorageService
  */
 class DiskByteStorageService extends ByteStorageService {
   /**
-   * Save the bytes to disk, returns (path, sha512, length)
+   * Save the bytes to disk, returns (path, length)
    */
-  def save(inputStream: InputStream, prefix: String, id: UUID): Option[(String, String, Long)] = {
+  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
     Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
         var depth = Play.current.configuration.getInt("medici2.diskStorage.depth").getOrElse(3)
 
         var relativePath = ""
-        var idstr = id.stringify
+        var idstr = UUID.generate().stringify
         // id seems to be same at the start but more variable at the end
         while (depth > 0 && idstr.length > 4) {
           depth -= 1
@@ -39,7 +38,7 @@ class DiskByteStorageService extends ByteStorageService {
         }
 
         // need to use whole id again, to make sure it is unique
-        relativePath += java.io.File.separatorChar + id.stringify
+        relativePath += java.io.File.separatorChar + idstr
 
         // combine all pieces
         val filePath = makePath(root, prefix, relativePath)
@@ -52,18 +51,16 @@ class DiskByteStorageService extends ByteStorageService {
         }
 
         // save actual bytes
-        val md = MessageDigest.getInstance("SHA-512")
         val cis = new CountingInputStream(inputStream)
-        val dis = new DigestInputStream(cis, md)
-        Logger.debug("Saving file to " + filePath)
-        Files.copy(dis, Paths.get(filePath))
-        dis.close()
 
-        val sha512 = Hex.encodeHexString(md.digest())
+        Logger.debug("Saving file to " + filePath)
+        Files.copy(cis, Paths.get(filePath))
+        cis.close()
+
         val length = cis.getByteCount
 
         // store metadata to mongo
-        Some((filePath, sha512, length))
+        Some((filePath, length))
       }
       case None => None
     }

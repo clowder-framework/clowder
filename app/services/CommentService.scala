@@ -35,6 +35,8 @@ trait CommentService {
    * id: The identifier of the comment to remove, as a UUID.
    */
   def removeComment(id: UUID)
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
     
 }
 

@@ -3,7 +3,7 @@
 @import api.Permission
 @import play.api.Play.current
 
-<div class="row border-top bottom-padding">
+<div class="row">
     <div class="col-md-12">
         <h4>Tags</h4>
     </div>
@@ -33,7 +33,7 @@
     <div class="col-md-12">
         <!-- If the user can add tags to the dataset, the form is enabled, otherwise the form is present but disabled to provide consistent UE. -->
         @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
-            <form class="form-inline requiresLogin requiresLoginCommunity">
+            <form class="form-inline">
                 <div class="input-group input-group-sm">
                     <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
@@ -44,7 +44,7 @@
                 </div>
             </form>
         } else {
-            <form class="form-inline requiresLogin requiresLoginCommunity">
+            <form class="form-inline">
                 <div class="input-group input-group-sm">
                     <input disabled type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
@@ -55,38 +55,6 @@
                 </div>
             </form>
         }
-    </div>
-</div>
-
-<div class="row bottom-padding">
-    <div class="col-md-12">
-        <a class="btn btn-link" data-toggle="collapse" href="#tagsFromFiles" aria-expanded="false" aria-controls="collapseExample">
-            <span class="glyphicon glyphicon-collapse-down"></span> Show tags on files in this dataset
-        </a>
-        <div class="collapse" id="tagsFromFiles">
-            <div class="well">
-
-                <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
-                @if(Permission.checkPermission(Permission.ViewTags, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                    @filesTags.map { tag =>
-                        <div class="tag">
-                            <a href="@routes.Tags.search(tag)">@tag</a>
-                        </div>
-                    }
-                    @fileList.map { file =>
-                        @file.sections.map { section =>
-                            @section.tags.map { tag =>
-                                <div class="tag">
-                                    <a href="@routes.Tags.search(tag.name)">@Html(tag.name)</a>
-                                </div>
-                            }
-                        }
-                    }
-                }
-
-
-            </div>
-        </div>
     </div>
 </div>
 
@@ -197,17 +165,3 @@
 
     });
 </script>
-
-@if(user.isEmpty) {
-    <script language="javascript">
-        $(".requiresLogin").css("display","none");
-    </script>
-}
-
-@if(user.isDefined) {
-    @if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-        <script language="javascript">
-            $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-        </script>
-    }
-}

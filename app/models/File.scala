@@ -1,7 +1,8 @@
 package models
 
 import java.util.Date
-import securesocial.core.Identity
+
+import models.FileStatus.FileStatus
 import play.api.libs.json.{JsObject, Json, Writes}
 
 /**
@@ -11,13 +12,12 @@ import play.api.libs.json.{JsObject, Json, Writes}
  */
 case class File(
   id: UUID = UUID.generate,
-  path: Option[String] = None,
+  loader_id: String = "",
   filename: String,
-  author: Identity,
+  author: MiniUser,
   uploadDate: Date,
   contentType: String,
   length: Long = 0,
-  sha512: String = "",
   loader: String = "",
   showPreviews: String = "DatasetLevel",
   sections: List[Section] = List.empty,
@@ -26,10 +26,17 @@ case class File(
   thumbnail_id: Option[String] = None,
   metadataCount: Long = 0,
   description : String = "",
-  @deprecated("will not be used in the future","since the use of jsonld") isIntermediate: Option[Boolean] = None,
+  isIntermediate: Boolean = false,
   @deprecated("use Metadata","since the use of jsonld") xmlMetadata: Map[String, Any] = Map.empty,
   licenseData: LicenseData = new LicenseData(),
-  followers: List[UUID] = List.empty )
+  followers: List[UUID] = List.empty,
+  status: String = FileStatus.UNKNOWN.toString) // can't use enums in salat
+
+// what is the status of the file
+object FileStatus extends Enumeration {
+  type FileStatus = Value
+  val UNKNOWN, CREATED, UPLOADED, PROCESSED = Value
+}
 
 case class Versus(
   fileId: UUID,
@@ -41,7 +48,8 @@ object File {
     def writes(file: File): JsObject = {
       Json.obj(
         "id" -> file.id,
-        "name" -> file.filename)
+        "name" -> file.filename,
+        "status" -> file.status)
     }
   }
 }

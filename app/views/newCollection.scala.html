@@ -1,9 +1,11 @@
-@(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-
+@(errorString: String, spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], spaceName: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@import play.api.i18n.Messages
 @import helper._
+@import _root_.util.Formatters._
+
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@main("Create Collection") {
+@main(Messages("create.title", Messages("collection.title"))) {
   <!-- Custom items for the create collection workflow -->
   <script src="@routes.Assets.at("javascripts/collection-create.js")" type="text/javascript"></script>
   <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -14,19 +16,36 @@
   </script>
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+    <ol class="breadcrumb">
+
+        @(spaceId, spaceName) match {
+            case (Some(id), Some(name)) => {
+                <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
+
+            }
+            case (_, _) => {
+                @user match {
+                    case Some(u) => { <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a> </li>}
+                    case None => {}
+                }
+            }
+        }
+        <li> <span class="glyphicon glyphicon-th-large"></span> @Messages("create.header", Messages("collection.title"))</li>
+
+    </ol>
   <div class="page-header">
-    <h1>Create New Collection</h1>
+    <h1>@Messages("create.header", Messages("collection.title"))</h1>
+      <p>@Messages("collection.create.message", Messages("collections.title"), Messages("datasets.title").toLowerCase, Messages("collection.title").toLowerCase, Messages("space.title"))</p>
+
   </div>
   <div class="row">
-	<div class="col-md-12">
-	
-	<div>
-        <span id="status" class="success hiddencomplete alert alert-success" role="alert">A Status Message</span>     
-        @if(errorString != null){
-            <span class="error alert alert-danger" id="messageerror">@errorString</span>
-        }else{           
-            <span class="error hiddencomplete alert alert-danger" id="messageerror">An Error Message</span>
-        }
+    <div class="col-md-12">
+      <span id="status" class="success hiddencomplete alert alert-success" role="alert">A Status Message</span>
+      @if(errorString != null){
+        <span class="error alert alert-danger" id="messageerror">@errorString</span>
+      }else{
+        <span class="error hiddencomplete alert alert-danger" id="messageerror">An Error Message</span>
+      }
     </div>
     <!-- Basic required elements for creating a new collection. -->
     <table style="width: 100%; margin-bottom: 40px; margin-top: 40px;">
@@ -46,45 +65,52 @@
                 <textarea class="form-control" cols=40 rows=4 type="text" id="description"></textarea>
                 <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
             </td>
-        </tr>        
+        </tr>
         <tr>
-            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with spaces (optional):</td>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with @Messages("spaces.title"):</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <select name="space" id="spaceid" class = "form-control chosen-select" multiple style="width: 342px;">
-                    @spaces.map { space =>
+                <select name="space" id="spaceid" class = "form-control chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple} style="width: 342px;">
+                    @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        <option value="">Select a @Messages("space.title") to share the collection with (Optional)</option>
+                    }
+                    @spaceList.map { space =>
                         <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                 </select>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("collecion.title").toLowerCase, Messages("spaces.title"))</p>
+                } else {
+                    <p class="help-block">@Messages("create.share.one.message", Messages("collection.title").toLowerCase, Messages("space.title"))</p>
+                }
             </td>
         </tr>
         <tr>
-            <td>	                            
+            <td>
             </td>
             <td>
                 <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the collection" onclick="return createCollection();">
-                  <span class="glyphicon glyphicon-ok"></span> Create
+                  <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")
                 </button>
                 <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
                   <span class="glyphicon glyphicon-unchecked"></span> Reset
                 </button>
             </td>
         </tr>
-    </table>	
+    </table>
     <form id="collectioncreate" action='@routes.Collections.submit' method="POST" enctype="multipart/form-data">
-                    <!-- Redirect browsers with JavaScript disabled to the origin page -->
-                    <noscript>Javascript is required in order to use the uploader to create a new collection.</noscript>
-                    
-                    <input type="hidden" name="name" id="hiddenname" value="not set">
-                    <input type="hidden" name="description" id="hiddendescription" value="not set">
-                    <input type="hidden" name="space" id="hiddenspace" value="not set">
-                    <input type="hidden" name = "rootflag" id = "hiddenrootflag" value = "true" >
+            <!-- Redirect browsers with JavaScript disabled to the origin page -->
+        <noscript>Javascript is required in order to use the uploader to create a new collection.</noscript>
+
+        <input type="hidden" name="name" id="hiddenname" value="not set">
+        <input type="hidden" name="description" id="hiddendescription" value="not set">
+        <input type="hidden" name="space" id="hiddenspace" value="not set">
     </form>
     </div>
   </div>
 <script language="javascript">
     $(".chosen-select").chosen({
         width: "100%",
-        placeholder_text_multiple: "Select spaces for this collection."
+        placeholder_text_multiple: "(optional)"
     });
 </script>
 <script language = "javascript">
@@ -99,7 +125,7 @@
     }
 
     $(document).ready(function() {
-        @for(space <- spaces) {
+        @for(space <- spaceList) {
             idNameObj["@space.name"] = "@space.id";
 
         }
@@ -110,8 +136,8 @@
     var targetId = this.getAttribute("id");
     if(!isUndefined(params.selected)) {
         var addedId = params.selected;
-        @for(space <- spaces) {
-            var currentId = "@space";
+        @for(space <- spaceList) {
+            var currentId = "@space.id";
             if(currentId != targetId) {
                 $("#@space.id option [value="+addedId +']').remove();
                 $('#@space.id').trigger("chosen:updated");
@@ -122,8 +148,8 @@
     }
     else if (!isUndefined(params.deselected)) {
         var removedId = params.deselected;
-        @for(space <- spaces) {
-            var currentId = "@space";
+        @for(space <- spaceList) {
+            var currentId = "@space.id";
             if(currentId != targetId) {
                 $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
                 $('#@space.id').trigger("chosen:updated");

@@ -1,23 +1,65 @@
 {{#if selected}}
-          <h4><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h4>
+          <h3><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h3>
       {{else}}
-          <h4><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h4>
+          <h3><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h3>
+{{/if}}
+ {{#if is_match}}
+    <p><span class="glyphicon-stack">
+        <i class="glyphicon glyphicon-circle green-background"> </i>
+    </span>
+     Match: all requirements are satisfied.
+    </p>
+ {{else}}
+    <p>
+     <span class="glyphicon-stack">
+         <i class="glyphicon glyphicon-circle goldenrod"> </i>
+     </span>
+      Possible Match: action advised, see Matchmaker details.
+     </p>
+ {{/if}}
 
-      {{/if}}
-      <div class="indent20" id="{{orgidentifier}}">
-          <a role= "button" data-toggle="collapse" href="#rules_{{orgidentifier}}" aria-expanded="false" aria-controls="rules_{{orgidentifier}}">
-          <span class="glyphicon glyphicon-chevron-down" ></span>  Matchmaker Summary </a>
-          <div class="collapse in" id="rules_{{orgidentifier}}">
+<div class="indent20" id="{{orgidentifier}}">
+  <a role= "button" data-toggle="collapse" href="#rules_{{orgidentifier}}" aria-expanded="false" aria-controls="rules_{{orgidentifier}}" class="matchmaker_link">
+  <span class="glyphicon glyphicon-plus" ></span>  Matchmaker Details</a>
+  <div class="collapse" id="rules_{{orgidentifier}}">
+  <ul class="indent_20 list-unstyled">
 
-          <ul class="indent_20 list-unstyled">
-              {{#each per_rule_score}}
-                  <li>{{this.rule_name}} </li>
-                  {{#lessthan this.score 0}}
-                      <li><span class="red">{{this.message}}</span> <a href='{{../../href_metadata}}'> Edit Metadata</a><br/> </li>
-                  {{else}}
-                      <li><span class="green">All Requirements are satisfied.</span></li>
-              {{/lessthan}}
-              {{/each}}
-          </ul>
-          </div>
-      </div>
+      {{#each per_rule_score}}
+
+          {{#nomorethan this.score 0}}
+              {{#ifCond this.score 0}}
+                    <li><span class="glyphicon glyphicon-ok yellow" > </span> {{this.rule_name}} <span class="yellow">This info is not required</span> </li>
+              {{else}}
+                    <li> <span class="glyphicon glyphicon-remove red" > </span> {{this.rule_name}} <span class="red">{{this.message}}</span>
+                    {{#contains this.rule_name 'metadata'}}
+                         <a href='{{../../../../href_metadata}}'> Edit metadata</a>
+                    {{else}}
+                        {{#contains this.rule_name 'organization'}}
+                                <a href='{{../../../../../href_profile}}'> Edit profile </a>
+                        {{else}}
+                            {{#contains this.rule_name 'data types'}}
+                                     <a href='{{{../../../../../../href_metadata}}}'> Delete unacceptable files </a>
+                            {{else}}
+                                {{#contains this.rule_name 'collection depth'}}
+                                         <a href='{{../../../../../../../href_metadata}}'> Delete folders</a>
+                                {{else}}
+                                    {{#contains this.rule_name 'size'}}
+                                             <a href='{{../../../../../../../../href_metadata}}'> Delete files</a>
+                                         {{else}}
+                                          {{#contains this.rule_name 'rights holder'}}
+                                              <a href='{{../../../../../../../../../href_profile}}'> Edit profile </a>
+                                          {{/contains}}
+                                    {{/contains}}
+                                {{/contains}}
+                            {{/contains}}
+                        {{/contains}}
+                    {{/contains}}
+                   </li>
+              {{/ifCond}}
+          {{else}}
+              <li><span class="glyphicon glyphicon-ok green"> </span> {{this.rule_name}} <span class="green">All Requirements are satisfied.</span></li>
+          {{/nomorethan}}
+      {{/each}}
+  </ul>
+  </div>
+</div>

@@ -1,23 +1,26 @@
 package services.mongodb
 
-import services.{PreviewService, SectionService, CommentService}
-import models.{UUID, Tag, Comment, Section}
+import org.bson.types.ObjectId
+import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
+import models.{UUID, Tag, Comment, Section, User}
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
-import play.api.Play.current
+import play.api.Play._
 import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsValue, Json}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  * USe MongoDB to store sections
  */
 @Singleton
-class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService) extends SectionService {
+class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService, files: FileService, datasets: DatasetService, folders: FolderService) extends SectionService {
   
   def listSections(): List[Section] = {
     SectionDAO.findAll.toList
@@ -63,8 +66,12 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).sort(MongoDBObject("startTime" -> 1)).toList
   }
 
-  def findByTag(tag: String): List[Section] = {
-    SectionDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  def findByTag(tag: String, user: Option[User]): List[Section] = {
+    var filter = MongoDBObject("tags.name" -> tag)
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+      filter = buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)
+    }
+    SectionDAO.find(filter).toList
   }
 
   def removeAllTags(id: UUID) {
@@ -102,12 +109,35 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long] = {
-    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+  def getTags(user: Option[User]): Map[String, Long] = {
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    } else {
+      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    }
+
   }
 
+  private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+
+    user match {
+      case Some(u) => {
+        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+        //Get all datasets you have access to.
+        val datasetsList = datasets.listUser(u)
+        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+        val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+        orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
+      }
+      case None =>
+    }
+    $or(orlist.map(_.asDBObject))
+  }
   /**
    * Update thumbnail used to represent this section.
    */
@@ -115,6 +145,41 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.update(MongoDBObject("_id" -> new ObjectId(sectionId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
    }
+
+  /**
+   * Get the list of spaces that the section (section --> file --> dataset --> [collection] --> space) belongs to
+   */
+  def getParentSpaces(querySectionId: UUID): ArrayBuffer[UUID] = {
+    // Get section
+    get(querySectionId) match {
+
+      case Some(section) => {
+        // Get file ID
+        val fileId = section.file_id
+        Logger.debug("File ID: " + fileId)
+
+        // Get the list of datasets that the file is part of
+        val datasetList = datasets.findByFileId(fileId).toList
+        val spaceList = new ArrayBuffer[UUID]
+
+        // Iterate through each dataset and get the IDs of spaces that it belongs to
+        datasetList.foreach(dataset => {
+          // Iterate through each space ID and add it to the spaceList
+          dataset.spaces.foreach(space => {
+            spaceList.+=(space)
+          })
+        })
+
+        // Return the spaces (after removing duplicates) that the section is belonging to
+        return spaceList.distinct
+
+      }
+      case None => {
+        return ArrayBuffer.empty
+      }
+    }
+    
+  }
   
 }
 

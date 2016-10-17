@@ -1,20 +1,18 @@
 package controllers
 
-import java.io.FileInputStream
-import java.text.SimpleDateFormat
-import java.util.Date
+
 import javax.inject.Inject
 import api.Permission
 import api.Permission.Permission
-import fileutils.FilesUtils
 import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
-import util.{Formatters, RequiredFieldsConfig}
+import util.{FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
+import play.api.i18n.Messages
 
 /**
  * A dataset is a collection of files and streams.
@@ -40,6 +38,11 @@ class Datasets @Inject()(
   object ActivityFound extends Exception {}
 
   /**
+    * String name of the Space such as 'Project space' etc., from conf/messages
+    */
+  val spaceTitle: String = Messages("space.title")
+
+  /**
    * Display the page that allows users to create new datasets
    */
   def newDataset(space: Option[String], collection: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
@@ -53,28 +56,52 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
-    val spaceId = space match {
+
+    var hasVerifiedSpace = false
+    val (spaceId, spaceName) = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) =>  Some(space.id.toString)
-          case None => None
+          case Some(space) => {
+            hasVerifiedSpace = !space.isTrial
+            (Some(space.id.toString), Some(space.name))
+          }
+          case None => (None, None)
         }
       }
-      case None => None
+      case None => (None, None)
     }
+
+    var collectionSpaces : ListBuffer[String] = ListBuffer.empty[String]
 
     val collectionSelected = collection match {
       case Some(c) => {
         collections.get(UUID(c)) match {
-          case Some(collection) =>  Some(collection)
+          case Some(collection) =>  {
+            //if the spaces of the collection are not automatically added to the dataset spaces
+            //they will be preselected in the view, but the user can choose
+            //not to share the dataset with those spaces
+            if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+              for (collection_space <- collection.spaces){
+                spaceService.get(collection_space) match {
+                  case Some(col_space) => {
+                    collectionSpaces += col_space.id.stringify
+                  }
+                  case None => Logger.error("No space found for id " + collection_space)
+                }
+              }
+            }
+            Some(collection)
+          }
           case None => None
         }
       }
       case None => None
     }
+    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") &&
+      (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, spaceName, collectionSelected, collectionSpaces.toList ,showAccess))
 
   }
 
@@ -85,19 +112,19 @@ class Datasets @Inject()(
         Ok(views.html.datasets.createStep2(dataset))
       }
       case None => {
-        InternalServerError(s"Dataset $id not found")
+        InternalServerError(s"$Messages('dataset.title') $id not found")
       }
     }
   }
 
-  def addFiles(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addFiles(id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
         Ok(views.html.datasets.addFiles(dataset, None))
       }
       case None => {
-        InternalServerError(s"Dataset $id not found")
+        InternalServerError(s"$Messages('dataset.title')  $id not found")
       }
     }
   }
@@ -106,7 +133,7 @@ class Datasets @Inject()(
     implicit val user = request.user
     user match {
       case Some(clowderUser)  => {
-        val title: Option[String] = Some("Following Datasets")
+        val title: Option[String] = Some(Messages("following.title", Messages("datasets.title")))
         var datasetList =  new ListBuffer[Dataset]()
         val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
         val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)
@@ -168,45 +195,45 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some("Datasets")
+    var title: Option[String] = Some(Messages("list.title", Messages("datasets.title")))
 
     val datasetList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
-            title = Some(person.get.fullName + "'s Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+          case Some(s) if datasetSpace.isDefined=> {
+            title = Some(Messages("owner.in.resource.title", p.fullName, Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
           }
-          case None => {
-            title = Some(person.get.fullName + "'s Datasets")
+          case _ => {
+            title = Some(Messages("owner.title", p.fullName, play.api.i18n.Messages("datasets.title")))
           }
         }
         if (date != "") {
-          datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
+          datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         } else {
-          datasets.listUser(limit, request.user, request.superAdmin, p)
+          datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         }
       }
       case None => {
         space match {
-          case Some(s) => {
-            title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+          case Some(s) if datasetSpace.isDefined => {
+            title = Some(Messages("resource.in.title", Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
             if (date != "") {
-              datasets.listSpace(date, nextPage, limit, s)
+              datasets.listSpace(date, nextPage, limit, s, user)
             } else {
-              datasets.listSpace(limit, s)
+              datasets.listSpace(limit, s, user)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             }
 
           }
@@ -218,11 +245,11 @@ class Datasets @Inject()(
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -239,11 +266,11 @@ class Datasets @Inject()(
     val next = if (datasetList.nonEmpty) {
       val last = Formatters.iso8601(datasetList.last.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -286,40 +313,49 @@ class Datasets @Inject()(
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some(Messages("you.title", Messages("datasets.title")))
+    }
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+      case Some(s) if datasetSpace.isEmpty =>{
+        NotFound(views.html.notFound(spaceTitle+ " not found."))
+      }
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the "+spaceTitle+".", s, "space"))
+      }
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def addViewer(id: UUID, user: Option[User]) = {
       user match{
-            case Some(viewer) => {
-              implicit val email = viewer.email
-              email match {
-                case Some(addr) => {
-                  implicit val modeluser = users.findByEmail(addr.toString())
-                  modeluser match {
-                    case Some(muser) => {
-                       muser.viewed match {
-                        case Some(viewList) =>{
-                          users.addUserDatasetView(addr, id)
-                        }
-                        case None => {
-                          val newList: List[UUID] = List(id)
-                          users.createNewListInUser(addr, "viewed", newList)
-                        }
-                      }
+        case Some(viewer) => {
+          implicit val email = viewer.email
+          email match {
+            case Some(addr) => {
+              implicit val modeluser = users.findByEmail(addr.toString())
+              modeluser match {
+                case Some(muser) => {
+                   muser.viewed match {
+                    case Some(viewList) =>{
+                      users.addUserDatasetView(addr, id)
+                    }
+                    case None => {
+                      val newList: List[UUID] = List(id)
+                      users.createNewListInUser(addr, "viewed", newList)
+                    }
                   }
-                  case None => {
-                    Ok("NOT WORKS")
-                  }
-                 }
-                }
               }
+              case None => {
+                Ok("NOT WORKS")
+              }
+             }
             }
-
-
           }
+        }
+
+      }
   }
 
   /**
@@ -333,9 +369,9 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $f")
+          val filesInDataset = dataset.files.flatMap(f => files.get(f) match {
+            case Some(file) => Some(file)
+            case None => Logger.debug(s"Unable to find file $f"); None
           }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
@@ -345,7 +381,7 @@ class Datasets @Inject()(
 
           val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
 
-          val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id, request.user, request.user.fold(false)(_.superAdminMode)).sortBy(_.name)
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
@@ -402,15 +438,21 @@ class Datasets @Inject()(
           }
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
+          var isInPublicSpace = false
           dataset.spaces.map{
-                  sp => spaceService.get(sp) match {
-                    case Some(s) => {
-                      datasetSpaces = s :: datasetSpaces
-                    }
-                    case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
-                  }
+            sp => spaceService.get(sp) match {
+              case Some(s) => {
+                decodedSpaces_canRemove +=  (Utils.decodeSpaceElements(s) -> true)
+                datasetSpaces = s :: datasetSpaces
+                if(s.isPublic) {
+                  isInPublicSpace = true
+                }
+              }
+              case None => Logger.error(s"space with id $sp on $Messages('dataset.title') $id doesn't exist.")
+            }
           }
-          val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           val fileList : List[File]= dataset.files.reverse.map(f => files.get(f)).flatten
 
@@ -422,18 +464,59 @@ class Datasets @Inject()(
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
+          var showDownload: Boolean = dataset.files.length > 0
+          if(!showDownload) {
+            val foldersList = folders.findByParentDatasetId(dataset.id)
+            foldersList.map{ folder =>
+              if(folder.files.length > 0) { showDownload = true}
+            }
+          }
+          var showAccess = false
+
+          if(play.Play.application().configuration().getBoolean("verifySpaces")) {
+            showAccess = !dataset.isTRIAL
+          } else {
+            showAccess = play.Play.application().configuration().getBoolean("enablePublic")
+          }
+          val access=if(showAccess) {
+            if(dataset.isDefault && isInPublicSpace) {
+              "Public (" + spaceTitle + " Default)"
+            } else if (dataset.isDefault && !isInPublicSpace) {
+              "Private (" + spaceTitle + " Default)"
+            } else {
+              dataset.status(0).toUpper + dataset.status.substring(1).toLowerCase()
+            }
+          } else {
+            ""
+          }
+          val accessOptions = new ListBuffer[String]()
+          if(isInPublicSpace){
+            accessOptions.append(spaceTitle + " Default (Public)")
+          } else {
+            accessOptions.append(spaceTitle + " Default (Private)")
+          }
+          accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0,1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
+          accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0,1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
+          var canAddDatasetToCollection = Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))
+          if(!canAddDatasetToCollection) {
+            datasetSpaces.map(space =>
+              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
+                canAddDatasetToCollection = true
+             }
+            )
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
-          InternalServerError
+          BadRequest(views.html.notFound(Messages("dataset.title") + " does not exist."))
         }
     }
   }
 
-  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int)  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
+  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int, space: Option[String])  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
     implicit val user = request.user
     val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
     datasets.get(datasetId) match {
@@ -467,7 +550,7 @@ class Datasets @Inject()(
                 }.toMap
                 val next = folder.files.length + folder.folders.length > limit * (filepageUpdate+1)
 
-                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))
 
               }
               case None => InternalServerError(s"No folder with id $fId found")
@@ -489,7 +572,7 @@ class Datasets @Inject()(
 
             val folderHierarchy = new ListBuffer[Folder]()
             val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate+1)
-            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))
           }
         }
       }
@@ -497,16 +580,15 @@ class Datasets @Inject()(
     }
   }
 
-
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
+  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
             case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id))
-            case None => InternalServerError("Dataset not found")
+            case None => InternalServerError(Messages("dataset.title") + " not found")
           }
         }
         case None => InternalServerError("Section not found")
@@ -514,278 +596,62 @@ class Datasets @Inject()(
   }
 
   /**
-   * Controller flow that handles the new multi file uploader workflow for creating a new dataset. Requires name, description, 
+   * Controller flow that handles the new multi file uploader workflow for creating a new dataset. Requires name, description,
    * and id for the dataset. The interface should validate to ensure that these are present before reaching this point, but
-   * the checks are made here as well. 
-   * 
+   * the checks are made here as well.
+   *
    */
   def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    val dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
-    val dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    val dsLevel = request.body.asFormUrlEncoded.getOrElse("datasetLevel", null)
-    val dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
 
-    if (dsName == null || dsDesc == null) {
-      //Changed to return appropriate data and message to the upload interface
-      val retMap = Map("files" ->
-        Seq(
-          toJson(
-            Map(
-              "name" -> toJson("Mising Form Data"),
-              "size" -> toJson(0),
-              "error" -> toJson("Please ensure that there is a name and a description set.")
-            )
-          )
-        )
-      )
-      Ok(toJson(retMap))
-    }
-
-    if (dsId == null) {
-      //Changed to return appropriate data and message to the upload interface
-      val retMap = Map("files" ->
-        Seq(
-          toJson(
-            Map(
-              "name" -> toJson("Dataset was not created correctly."),
-              "size" -> toJson(0),
-              "error" -> toJson("Dataset not created correctly. Please try again.")
-            )
-          )
-        )
-      )
-      Ok(toJson(retMap))
-    }
-
-    user match {
-      case Some(identity) => {
-        var nameOfFile : String = null
-        request.body.file("files[]").map { f =>
-          nameOfFile = f.filename
-        }
-        //The reference for the new dataset
-        datasets.get(UUID(dsId(0))) match {
+    val folder = folderId.flatMap(id => folders.get(UUID(id)))
+    val retMap = request.body.asFormUrlEncoded.get("datasetid").flatMap(_.headOption) match {
+      case Some(ds) => {
+        datasets.get(UUID(ds)) match {
           case Some(dataset) => {
-            request.body.file("files[]").map { f =>
-              var nameOfFile = f.filename
-              var flags = ""
-              if(nameOfFile.toLowerCase().endsWith(".ptm")){
-                val thirdSeparatorIndex = nameOfFile.indexOf("__")
-                if(thirdSeparatorIndex >= 0){
-                  val firstSeparatorIndex = nameOfFile.indexOf("_")
-                  val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-                  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-                }
-              }
-
-              Logger.debug("Dataset submit, new file - uploading file " + nameOfFile)
-
-              // store file
-              Logger.info("Adding file" + identity)
-              val showPreviews = "DatasetLevel"
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-              Logger.debug("Uploaded file id is " + file.get.id)
-              Logger.debug("Uploaded file type is " + f.contentType)
-
-              val uploadedFile = f
-              file match {
-                case Some(f) => {
-
-                  val id = f.id
-                  if(showPreviews.equals("FileLevel"))
-                    flags = flags + "+filelevelshowpreviews"
-                  else if(showPreviews.equals("None"))
-                    flags = flags + "+nopreviews"
-                  var fileType = f.contentType
-                  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")
-                    if(fileType.startsWith("ERROR: ")){
-                      Logger.error(fileType.substring(7))
-                      InternalServerError(fileType.substring(7))
-                    }
-                    if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped") ){
-                      if(fileType.equals("multi/files-ptm-zipped")){
-                        fileType = "multi/files-zipped";
-                      }
-
-                      val thirdSeparatorIndex = nameOfFile.indexOf("__")
-                      if(thirdSeparatorIndex >= 0){
-                        val firstSeparatorIndex = nameOfFile.indexOf("_")
-                        val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-                        flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-                        nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-                        files.renameFile(f.id, nameOfFile)
-                      }
-                      files.setContentType(f.id, fileType)
-                    }
-                  }
-
-                  current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-
-                  // TODO RK need to replace unknown with the server name
-                  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
-
-                  val host = Utils.baseUrl(request)
-
-                  //directly add the file to the dataset via the service
-                  folderId match {
-                    case Some(fId) =>  {
-                      folders.get(UUID(fId)) match {
-                        case Some(folder) => {
-
-                          events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file_folder")
-                          folders.addFile(folder.id, f.id)
-                        }
-                        case None => {
-                          //TODO: Add the file to dataset or don't do anything?
-                          events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
-                          datasets.addFile(dataset.id, f)
-                        }
-                      }
-                    }
-                    case None => {
-                      events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
-                      datasets.addFile(dataset.id, f)
-                    }
-                  }
-
-
-                  val dsId = dataset.id
-                  val dsName = dataset.name
-
-                  // Adding filename to the extractor message. Needed by PyClowder.
-                  val extra = Map("filename" -> f.filename)
-
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dsId, flags))}
-
-                  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
-                  //for metadata files
-                  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-                    val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                    files.addXMLMetadata(f.id, xmlToJSON)
-                    datasets.addXMLMetadata(dsId, f.id, xmlToJSON)
-
-                    Logger.debug("xmlmd=" + xmlToJSON)
-
-                    //index the file
-                    current.plugin[ElasticsearchPlugin].foreach{
-                      _.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dsId.toString()),("datasetName",dsName), ("xmlmetadata", xmlToJSON)))
-
-                    }
-                    // index dataset
-                    current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dsId,
-                      List(("name",dsName), ("description", dataset.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName",""), ("xmlmetadata", xmlToJSON)))}
-                  } else {
-                    //index the file
-
-                    current.plugin[ElasticsearchPlugin].foreach{_.index("data", "file", id, List(("filename",f.filename), ("contentType", fileType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId",dsId.toString),("datasetName",dsName)))}
-
-                    // index dataset
-                    current.plugin[ElasticsearchPlugin].foreach{_.index("data", "dataset", dsId,
-                      List(("name",dsName), ("description", dataset.description), ("author", identity.fullName), ("created", dateFormat.format(new Date())), ("fileId",f.id.toString),("fileName",f.filename), ("collId",""),("collName","")))}
-                  }
-
-                  // index the file using Versus for content-based retrieval
-                  current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-
-                  // TODO RK need to replace unknown with the server name and dataset type
-                  val dtkey = "unknown." + "dataset."+ "unknown"
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dsId, dsId, host, dtkey, Map.empty, "0", dsId, ""))}
-
-                  //add file to RDF triple store if triple store is used
-                  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-                    play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{
-                      case "yes" => {
-                        sparql.addFileToGraph(f.id)
-                        sparql.linkFileToDataset(f.id, dsId)
-                      }
-                      case _ => {}
-                    }
-                  }
-
-                  // Insert DTS Request to the database
-                  val clientIP=request.remoteAddress
-                  val serverIP= request.host
-                  dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-
-                  //Correctly set the updated URLs and data that is needed for the interface to correctly
-                  //update the display after a successful upload.
-                  val retMap = Map("files" ->
-                    Seq(
-                      toJson(
-                        Map(
-                          "name" -> toJson(nameOfFile),
-                          "size" -> toJson(uploadedFile.ref.file.length()),
-                          "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
-                          "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
-                          "deleteType" -> toJson("POST")
-                        )
-                      )
-                    )
-                  )
-                  Ok(toJson(retMap))
-                }
-
-                case None => {
-                  Logger.error("---------- ERROR Could not retrieve file that was just saved.")
-                  //No need to update the service anymore since the dataset has already been created and added earlier.
-                  //Just send the notifications. MMF - 1/15
-                  current.plugin[AdminsNotifierPlugin].foreach{
-                    _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dataset.id.stringify, dataset.name)}
-                  //Changed to return appropriate data and message to the upload interface
-                  val retMap = Map("files" ->
-                    Seq(
-                      toJson(
-                        Map(
-                          "name" -> toJson(nameOfFile),
-                          "size" -> toJson(uploadedFile.ref.file.length()),
-                          "error" -> toJson("Problem in storing the uploaded file.")
-                        )
-                      )
-                    )
-                  )
-                  Ok(toJson(retMap))
-                }
-              }
-            }.getOrElse{
-              val retMap = Map("files" ->
-                Seq(
-                  toJson(
-                    Map(
-                      "name" -> toJson("File not received"),
-                      "size" -> toJson(0),
-                      "error" -> toJson("The file was not correctly received by the server. Please try again.")
-                    )
-                  )
-                )
-              )
-              Ok(toJson(retMap))
-            }
+            val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = "DatasetLevel", dataset = Some(dataset), folder = folder)
+            Map("files" -> uploadedFiles.map(f => toJson(Map(
+              "name" -> toJson(f.filename),
+              "size" -> toJson(f.length),
+              "url" -> toJson(routes.Files.file(f.id).absoluteURL(Utils.https(request))),
+              "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(Utils.https(request))),
+              "deleteType" -> toJson("POST")
+            ))))
           }
           case None => {
-            val retMap = Map("files" ->
+            Map("files" ->
               Seq(
                 toJson(
                   Map(
-                    "name" -> toJson("Dataset ID Invalid."),
+                    "name" -> toJson(Messages("dataset.title") + " ID Invalid."),
                     "size" -> toJson(0),
-                    "error" -> toJson("Dataset with the specified ID was not found. Please try again.")
+                    "error" -> toJson(s"${Messages("dataset.title")} with the specified ID=${ds} was not found. Please try again.")
                   )
                 )
               )
             )
-            Ok(toJson(retMap))
           }
         }
       }
-      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
+      case None => {
+        Map("files" ->
+          Seq(
+            toJson(
+              Map(
+                "name" -> toJson("Missing "+ Messages("dataset.title") +"  ID."),
+                "size" -> toJson(0),
+                "error" -> toJson("No "+ Messages("dataset.title")+"id found. Please try again.")
+              )
+            )
+          )
+        )
+      }
     }
+    Ok(toJson(retMap))
   }
-  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
 
     datasets.get(id) match {
@@ -797,7 +663,7 @@ class Datasets @Inject()(
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for $Messages('dataset.title') $id.")
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -813,13 +679,13 @@ class Datasets @Inject()(
                 usersInCurrSpace.foreach { usr =>
                   spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
                     case Some(role) => userListSpaceRoleTupleMap += ( usr.id -> ((spc.name,role.name) :: userListSpaceRoleTupleMap(usr.id)) )
-                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for dataset $id user $usr.")
+                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for $Messages('dataset.title') $id user $usr.")
                   }
                 }
 
               }
             }
-            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No $spaceTitle found for $Messages('dataset.title') $id.");
           }
         }
         // Clean-up, and sort space-names per user
@@ -827,22 +693,22 @@ class Datasets @Inject()(
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          val currUserIsAuthor = user.get.id.equals(dataset.author.id)
           Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
-        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
+        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for $Messages('dataset.title') $id.")
       }
-      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Dataset $id not found.")
+      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: $Messages('dataset.title') $id not found.")
     }
 
   }
 
-  def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.metadataSearch())
   }
 
-  def generalMetadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def generalMetadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }

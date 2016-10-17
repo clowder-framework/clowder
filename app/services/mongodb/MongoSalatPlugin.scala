@@ -6,6 +6,7 @@ import java.util.{Calendar, Date}
 import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import MongoContext.context
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
@@ -18,9 +19,11 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
-import services.{MetadataService, DI, AppConfigurationService}
+import services.{ByteStorageService, MetadataService, DI, AppConfigurationService}
+import scala.collection.JavaConverters._
 
 /**
  * Mongo Salat service.
@@ -31,6 +34,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   // hold the connection, if connection failed it will be tried to open next time
   var mongoConnection: MongoConnection = null
+
+  lazy val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   override def onStart() {
     mongoURI = if (play.api.Play.configuration.getString("mongodbURI").isDefined) {
@@ -63,6 +68,40 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
       collection("sections").dropIndex("tags.name_text")
     }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("uploadDate_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("author.email_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags.name_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_section_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("section_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("file_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("textures.files").dropIndex("file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("tiles.files").dropIndex("preview_id_1_filename_1_level_1")
+    }
+
 
     // create indices.
     Logger.debug("Ensuring indices exist")
@@ -74,7 +113,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
-    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -84,29 +123,47 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
-    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1, "spaces" -> 1, "author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("created" -> -1, "name" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("created" -> -1, "name" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("files" -> 1))
 
-    collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("dtsrequests").ensureIndex(MongoDBObject("fileid" -> 1))
+
+    collection("events").ensureIndex(MongoDBObject("targetuser._id" -> 1))
+    collection("events").ensureIndex(MongoDBObject("object_id" -> 1))
+    collection("events").ensureIndex(MongoDBObject("user._id" -> 1))
+
+    collection("extractions").ensureIndex(MongoDBObject("file_id" -> 1))
+
+    collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
+
+    collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
+    collection("uploads").ensureIndex(MongoDBObject("status"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
-    collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("section_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("file_id" -> -1))
 
-    collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
-    collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
+    collection("textures").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("tiles").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("file_id" -> 1, "author._id" -> 1))
 
     collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
     collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
-    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo.resourceType" ->1, "attachedTo._id" -> 1))
 
     collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
@@ -114,7 +171,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
-    collection("multimedia.distances").ensureIndex(MongoDBObject("source_section"->1,"representation"->1,"distance"->1))
+    collection("multimedia.distances").ensureIndex(MongoDBObject("source_section"->1,"representation"->1,"distance"->1, "target_spaces"->1))
   }
 
   override def onStop() {
@@ -136,14 +193,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
     * Based on the resourceRef return the mongo collection.
     */
-  def collection(resourceRef: ResourceRef): Option[MongoCollection] = {
-    resourceRef.resourceType match {
+  def collection(resourceRef: ResourceRef): Option[MongoCollection] = collection(resourceRef.resourceType)
+
+  def collection(resourceType: Symbol): Option[MongoCollection] = {
+    resourceType match {
       case ResourceRef.space => Some(collection("spaces.projects"))
       case ResourceRef.dataset => Some(collection("datasets"))
-      case ResourceRef.file => Some(collection("uploads.files"))
+      case ResourceRef.file => Some(collection("uploads"))
       //case ResourceRef.relation => Some(collection("hello"))
-      case ResourceRef.preview => Some(collection("previews.files"))
-      case ResourceRef.thumbnail => Some(collection("thumbnails.files"))
+      case ResourceRef.preview => Some(collection("previews"))
+      case ResourceRef.thumbnail => Some(collection("thumbnails"))
       case ResourceRef.collection => Some(collection("collections"))
       case ResourceRef.user => Some(collection("social.users"))
       case ResourceRef.comment => Some(collection("comments"))
@@ -151,12 +210,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       case ResourceRef.curationObject => Some(collection("curationObjects"))
       case ResourceRef.curationFile => Some(collection("curationFiles"))
       case _ => {
-        Logger.error(s"Can not map resource ${resourceRef.resourceType} to collection.")
+        Logger.error(s"Can not map resource ${resourceType} to collection.")
         None
       }
     }
   }
-  
+
   /**
    * Returns a GridFS for writing files, the files will be placed in
    * two collections that start with the prefix (&lt;prefix&gt;.fs and
@@ -237,10 +296,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def removeFiles(name: String): Unit = {
     // delete blobs
     collection(name + ".files").find(new BasicDBObject("loader", new BasicDBObject("$ne", classOf[MongoDBByteStorage].getName))).foreach { x =>
-      Logger.info(x.getOrElse("_id", "?") + " " + x.getOrElse("path", "?"))
-      x.getAs[ObjectId]("_id") match {
-        case Some(id) => MongoUtils.removeBlob(UUID(id.toString), name, "nevereverused")
-        case None =>
+      (x.getAs[String]("path"), x.getAs[String]("loader")) match {
+        case (Some(p), Some(l)) => ByteStorageService.delete(l, p, name)
+        case _ =>
       }
     }
     collection(name + ".chunks").drop()
@@ -302,11 +360,56 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Add author and creation date to curation folders.
     updateMongo("add-creator-to-curation-folders", addAuthorAndDateToCurationFolders)
+
+    //don't use gridfs for metadata
+    updateMongo("split-gridfs", splitGridFSMetadata)
+
+    //Store admin in database not by email
+    updateMongo("add-admin-to-user-object", addAdminFieldToUser)
+
+    // Change creator in dataset from Identity to MiniUser.
+    updateMongo("use-miniuser", useMiniUser)
+
+    //Whenever a root flag is not set, mark it as true.
+    updateMongo("add-collection-root-map", addRootMapToCollections)
+
+    // update the number of collections in a space
+    updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
+
+    // rename admin to serverAdmin to make clear what type of admin they are
+    updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
+
+    //Update all object_name & source_name in events
+    updateMongo("update-events-name", updateEventObjectName)
+
+    updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
+
+    updateMongo("update-counts-spaces", updateCountsInSpaces)
+
+    //add private (the default status) flag for each dataset/collection/space
+    updateMongo("add-trial-flag", addTrialFlag)
+
+    // instead of user agreeent we now have a terms of services
+    updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
+
+    updateMongo("fix-metadata-count", fixMetadataCount)
+
+    // add status field to files
+    updateMongo("add-file-status", addFileStatus)
+
+    // Duplicate all clowder instance metadata to all existing spaces
+    updateMongo("add-metadata-per-space", addMetadataPerSpace)
+
+    updateMongo("add-trial-flag2",addTrialFlag2)
+
+    // Make sure all email addresses of userpassword are lowercase
+    updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
+
+    // Move SHA512 from File object into file.digest metadata
+    updateMongo("copy-sha512-to-metadata-and-remove-all", copySha512ToMetadataAndRemove)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
     if (!appConfig.hasPropertyValue("mongodb.updates", updateKey)) {
       if (System.getProperty("MONGOUPDATE") != null) {
         Logger.info(s"About to begin update of mongo : ${updateKey}.")
@@ -658,7 +761,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
 
     // no need to fixSha512
-    DI.injector.getInstance(classOf[AppConfigurationService]).addPropertyValue("mongodb.updates", "fixing-mongo-sha512")
+    appConfig.addPropertyValue("mongodb.updates", "fixing-mongo-sha512")
   }
 
   private def fixSha512() {
@@ -795,4 +898,448 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def splitGridFSMetadata() {
+    val ignoreCopyKeys = List[String]("_id", "path", "metadata", "chunkSize", "aliases", "md5")
+    val ignoreRemoveKeys = List[String]("_id", "filename", "contentType", "length", "chunkSize", "uploadDate", "aliases", "md5")
+
+    // fix logos
+    collection("logos").find().snapshot().foreach { x =>
+      val id = MongoDBObject("_id" -> new ObjectId(x.get("file_id").toString))
+      if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+        x.put("loader_id", x.get("file_id").toString)
+        collection("logos.files").find(id).foreach { y =>
+          y.keySet().asScala.toList.foreach { k =>
+            if (!ignoreRemoveKeys.contains(k)) {
+              y.remove(k)
+            }
+          }
+          try {
+            collection("logos.files").save(y, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Unable to save logos.files: " + y.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        }
+      } else {
+        collection("logos.files").find(id).foreach { y =>
+          x.put("loader_id", y.getAsOrElse[String]("path", ""))
+        }
+        try {
+          collection("logos.files").remove(id)
+        } catch {
+          case e: BSONException => Logger.error("Unable to remove logos.files: " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+      x.remove("file_id")
+      try {
+        collection("logos").save(x, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to write cleaned up logo: " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+    }
+
+    for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
+      val oldCollection = collection(prefix + ".files")
+      val newCollection = collection(prefix)
+      oldCollection.find().snapshot().foreach { x =>
+        val id = x.get("_id")
+
+        val c = new MongoDBObject()
+        val r = new MongoDBObject()
+        c.put("_id", id)
+
+        if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+          c.put("loader_id", id.toString)
+        } else {
+          c.put("loader_id", x.get("path"))
+        }
+
+        x.keySet.asScala.toList.foreach { k =>
+          if (!ignoreCopyKeys.contains(k)) {
+            c.put(k, x.get(k))
+          }
+          if (!ignoreRemoveKeys.contains(k)) {
+            r.put(k, "")
+          }
+        }
+
+        try {
+          newCollection.insert(c, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error(s"Unable to write new ${prefix} : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+        if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+          try {
+            oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
+          } catch {
+            case e: BSONException => Logger.error(s"Unable to write cleaned up ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        } else {
+          Logger.info("Removing " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          try {
+            oldCollection.remove(MongoDBObject("_id" -> id))
+          } catch {
+            case e: BSONException => Logger.error(s"Unable to remove ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        }
+      }
+    }
+  }
+
+  private def addAdminFieldToUser() {
+    val admins = collection("app.configuration").findOne(MongoDBObject("key" -> "admins")) match {
+      case Some(x) => {
+        x.get("value") match {
+          case l:BasicDBList => l.toList.asInstanceOf[List[String]]
+          case y => List[String](y.asInstanceOf[String])
+        }
+      }
+      case None => List.empty[String]
+    }
+
+    val users = collection("social.users")
+    admins.foreach{email =>
+      users.find(MongoDBObject("email" -> email)).foreach{ user =>
+        user.put("admin", true)
+        try{
+          users.save(user, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to mark user as admin: " + user._id.toString)
+        }
+      }
+    }
+
+    collection("app.configuration").remove(MongoDBObject("key" -> "admins"))
+  }
+
+  private def useMiniUser(): Unit = {
+    if (!appConfig.hasPropertyValue("mongodb.updates", "split-gridfs")) {
+      throw new Exception("Missing split-gridfs migration.")
+    }
+
+    for (coll <- List[String]("collections", "uploads", "datasets", "curationObjects", "curationFiles", "comments", "comments")) {
+      collection(coll).foreach { c =>
+        val author = c.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+        val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+        val fullName = author.getAsOrElse[String]("fullName", "")
+        val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+        val email = author.getAsOrElse[String]("email", "")
+        val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+        c.remove("author")
+        c.put("author", miniUser)
+        try{
+          collection(coll).save(c, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error(s"Unable to update the user in ${coll} from Identity to MiniUser with id: ${id.toString}")
+        }
+      }
+    }
+
+    collection("curationObjects").foreach { co =>
+      val datasets: MongoDBList = co.getAsOrElse[MongoDBList]("datasets", new MongoDBList())
+      datasets.foreach{
+        case dataset: DBObject => {
+          val author = dataset.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+          val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+          val fullName = author.getAsOrElse[String]("fullName", "")
+          val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+          val email = author.getAsOrElse[String]("email", "")
+          val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+          dataset.remove("author")
+          dataset.put("author", miniUser)
+        }
+        case None => Logger.error("Can not parse the datasets within the curation Object with id: " + co.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+      co.put("datasets", datasets)
+      try{
+        collection("curationObjects").save(co, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset within curation object with Id: " + co.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+    }
+  }
+
+  private def addRootMapToCollections() {
+    collection("collections").foreach{ c =>
+      val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
+      val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
+      val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
+      var parentSpaces = MongoDBList.empty
+      parentCollections.foreach{pc =>
+       pc.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty).foreach{ps => parentSpaces += ps} }
+      val root_spaces= scala.collection.mutable.ListBuffer.empty[ObjectId]
+      spaces.foreach { s =>
+
+        if (!(parentSpaces contains s)) {
+          root_spaces += new ObjectId(s.toString())
+        }
+      }
+
+      c.put("root_spaces", root_spaces.toList)
+      c.remove("root_flag")
+      try {
+        collection("collections").save(c, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to set root flag for collection with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+
+    }
+  }
+
+  private def fixCollectionCounterInSpaces() {
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val collections = collection("collections").find( MongoDBObject("root_spaces" -> spaceId))
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the collection count for space with id: " + spaceId.toString)
+      }
+
+    }
+  }
+
+  private def renameAdminServerAdmin() {
+    val q = MongoDBObject()
+    val o = MongoDBObject("$rename" -> MongoDBObject("admin" -> "serverAdmin"))
+    collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+  }
+
+  private def updateEventObjectName(): Unit = {
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
+      collection(coll).foreach { ds =>
+        (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+          case (Some(id), Some(name)) => {
+            collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+            collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+          }
+          case _ => {}
+        }
+      }
+    }
+  }
+
+  private def removeDeletedSpacesFromUser() {
+    collection("social.users").foreach{ user =>
+      val roles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      val newRoles = MongoDBList.empty
+      roles.foreach{ role =>
+        val resp = collection("spaces.projects").find(MongoDBObject("_id" -> role.asInstanceOf[BasicDBObject].get("spaceId")))
+        if(resp.size > 0) {
+          newRoles += role
+        }
+      }
+      user.put("spaceandrole", newRoles)
+      try{
+        collection("social.users").save(user, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update spaces for user with id:" + user.getAsOrElse("_id", new ObjectId()).toString())
+      }
+    }
+  }
+
+  private def updateCountsInSpaces(){
+
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
+      val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      val datasets = collection("datasets").find(MongoDBObject("spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      space.put("datasetCount", datasets.length)
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the counts for space with id: " + spaceId)
+      }
+    }
+  }
+
+  private def fixMetadataCount(): Unit = {
+    // set everbody metadata to 0
+    for (coll <- List[String]("collections", "curationObjects", "datasets", "uploads", "previews", "sections")) {
+      collection(coll).update(MongoDBObject(), $set("metadataCount" -> 0))
+    }
+
+    // aggregate all metadata and update all records
+    val results = collection("metadata").aggregate(MongoDBObject("$group" ->
+        MongoDBObject("_id" -> "$attachedTo", "count" -> MongoDBObject("$sum" -> 1L)))).results.filter(x => x.containsField("count"))
+    results.foreach{ x =>
+      x.getAs[DBObject]("_id").foreach{ key =>
+        (key.getAs[String]("resourceType"), key.getAs[ObjectId]("_id"), x.getAs[Long]("count")) match {
+          case (Some(rt), Some(id), Some(count)) => {
+            collection(Symbol(rt)).foreach{c =>
+              try{
+                c.update(MongoDBObject("_id" -> id), $set("metadataCount" -> count))
+              } catch {
+                case e: BSONException => Logger.error(s"Unable to update the metadata counts for ${rt} with id ${id} to ${count}")
+              }
+            }
+          }
+          case (_, _, _) => Logger.error(s" Error parsing data : ${x}")
+        }
+      }
+    }
+  }
+
+  private def switchToTermsOfServices(): Unit = {
+    val ua = collection("app.configuration").findOne(MongoDBObject("key" -> "userAgreement.message"))
+    if (ua.isDefined && ua.get("value").toString != "") {
+      collection("app.configuration").insert(MongoDBObject("key" -> "tos.date") ++ MongoDBObject("value" -> new Date()))
+    }
+    collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
+  }
+
+  private def addFileStatus(): Unit = {
+    collection("uploads").update(MongoDBObject(), $set("status" -> FileStatus.PROCESSED.toString), multi=true)
+  }
+
+  private def addMetadataPerSpace(){
+    val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+
+    collection("spaces.projects").foreach{ space =>
+      val metadatas = collection("metadata.definitions").find(MongoDBObject("spaceId" -> null))
+      val spaceId = space.getAsOrElse("_id", new ObjectId())
+      metadatas.foreach{ metadata =>
+
+        val json = metadata.getAsOrElse("json", new BasicDBObject())
+        val md = new BasicDBObject()
+        md.put("_id", new ObjectId())
+        md.put("spaceId", spaceId)
+        md.put("json", json)
+        try {
+          collection("metadata.definitions").insert(md, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to add the metadata definition for space with id: " + spaceId)
+        }
+      }
+    }
+  }
+
+  private def addTrialFlag(): Unit ={
+      val q = MongoDBObject()
+      val s = MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString))
+      val d = MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.PRIVATE.toString))
+      collection("datasets").update(q ,d, multi=true)
+      collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def addTrialFlag2(): Unit ={
+    val q = MongoDBObject()
+
+    val (s ,d ) = if(play.Play.application().configuration().getBoolean("verifySpaces")){
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.TRIAL.toString)) )
+    } else {
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.PRIVATE.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.DEFAULT.toString)))
+    }
+    collection("datasets").update(q ,d, multi=true)
+    collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def updateMongoEmailCase(): Unit = {
+    val userpasses = collection("social.users").find(MongoDBObject("identityId.providerId" -> "userpass"))
+    userpasses.foreach { user =>
+      (user.getAs[ObjectId]("_id"), user.getAs[String]("email"),
+        user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAs[String]("userId")) match {
+        case (Some(userId), Some(email), Some(username)) => {
+          try {
+            // Find if user exists with lowercase email already
+            val conflicts = collection("social.users").count(MongoDBObject(
+              "_id" -> MongoDBObject("$ne" -> userId),
+              "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+            ))
+
+            if (conflicts == 0) {
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject(
+                  "email" -> email.toLowerCase,
+                  "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+                )), upsert = false, multi = true)
+            } else {
+              // If there's already an account with lowercase email, deactivate this account
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert = false, multi = true)
+            }
+          } catch {
+            case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+          }
+        }
+        case _ => Logger.error("Missing user fields when updating email case")
+      }
+    }
+  }
+
+  private def copySha512ToMetadataAndRemove(): Unit = {
+    for (colln <- List[String]("uploads")) {
+      // Iteracte across all files that have a sha512 entry
+      collection(colln).find(MongoDBObject(
+        "sha512" -> MongoDBObject("$exists" -> true))).snapshot().foreach { file =>
+        val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
+        file.getAs[String]("sha512") match {
+          case Some(sha) => {
+            // Check for extractor metadata for a newer SHA512
+            val mdQuery = MongoDBObject("attachedTo._id" -> file._id, "creator.extractorId" -> ".*ncsa.file.digest".r)
+            val attachedMdCount = collection("metadata").count(mdQuery)
+
+            if (attachedMdCount > 0) {
+              // There is file digest metadata for this file, so check it
+              val mdResponse = collection("metadata").find(mdQuery).snapshot()
+              mdResponse.foreach { md =>
+                md.getAs[DBObject]("content") match {
+                  case Some(content) => {
+                    if (sha != content.get("sha512").toString)
+                      Logger.error("Old SHA512 does not match metadata digest for file " + id.toString)
+                  }
+                  case None => Logger.error("no extractorId found in md for file " + id.toString)
+                }
+              }
+            } else {
+              // No file digest metadata for this file, so we will use current SHA512 to imitate extractor
+              val mdObj = Metadata(
+                UUID.generate,
+                ResourceRef(ResourceRef.file, UUID(id.toString)),
+                None, //contextId
+                None, //contentURL,
+                new Date(),
+                new ExtractorAgent(
+                  UUID.generate,
+                  "extractor",
+                  Some("ncsa.file.digest"),
+                  Some(new URL("http://clowder.ncsa.illinois.edu/clowder/api/extractors/ncsa.file.digest"))
+                ),
+                Json.parse("{\"sha512\": \"" + sha + "\"}"),
+                None
+              )
+              val dbmd = com.novus.salat.grater[Metadata].asDBObject(mdObj)
+              collection("metadata").insert(dbmd, WriteConcern.Safe)
+
+              try {
+                val mdCount = file.getOrElse("metadataCount", "0").toString.toLong
+                file.put("metadataCount", mdCount + 1)
+              }
+              catch {
+                case e: Exception => {
+                  // If we can't get metadataCount from file correctly, just set to 1 for newly added md
+                  Logger.error("Unable to update metadataCount; setting to 1", e)
+                  file.put("metadataCount", 1L)
+                }
+              }
+            }
+
+            // Overwrite if not, give error flag if so and they dont match
+            file.remove("sha512")
+          }
+          case None => Logger.error("SHA512 is None for file: " + id.toString)
+        }
+
+        try {
+          collection(colln).save(file, WriteConcern.Safe)
+        }
+        catch {
+          case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
+      }
+    }
+  }
 }

@@ -77,6 +77,25 @@ trait EventService {
 	 */
 	def getRequestEvents( targetuser: Option[User], limit: Option[Integer]): List[Event]
 
+	/**
+		* Get the events by creator
+		*/
+	def getEventsByUser( user: User, limit: Option[Integer]): List[Event]
+
+	/**
+		* Get the comment events
+		*/
+	def getCommentEvent( user: User, limit: Option[Integer]): List[Event]
+
+	/**
+		* Update the object name
+		*/
+	def updateObjectName(id:UUID, name:String)
+
+	/**
+		* Update user fullname
+    */
+	def updateAuthorFullName(userId: UUID, fullName: String)
 }
 
 

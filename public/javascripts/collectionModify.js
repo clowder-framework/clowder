@@ -22,14 +22,21 @@ function addCollectionToParentCollection(id) {
     request.done(function (response, textStatus, jqXHR) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
-            '<div class="col-md-2"></div>' +
-            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div>' +
-            '<div>';
+            '<div class="col-md-2">'+
+            '<a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'">' +
+            '<span class="smallicon glyphicon glyphicon-th-large"></span></a></div>' +
+            '<div class="col-md-10">' +
+            '<div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a>' +
+            '</div>';
+        txt = txt + '<div>';
         if (o.childCollectionsCount == 1) {
             txt = txt + o.childCollectionsCount +' collection';
         } else {
             txt = txt + o.childCollectionsCount +' collections';
         }
+        txt = txt + '</div>';
+        txt = txt + '</div>';
+        txt = txt + '</div>';
         $("#collectionsList").append(txt);
         $("#collectionAddSelect").select2("val", "");
     });
@@ -57,17 +64,23 @@ function addDatasetToCollection(id) {
 
     request.done(function (response, textStatus, jqXHR) {
         var o =$.parseJSON(jqXHR.responseText);
+        // TODO retrieve more information about collection from API and show it in the GUI
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
-            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div>' +
-            '<div>';
+            '<div class="col-md-10">' +
+            '<div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a> ' +
+            '</div>';
+        txt = txt + '<div>';
         if (o.datasetCount == 1) {
             txt = txt + o.datasetCount +' dataset';
         } else {
             txt = txt + o.datasetCount +' datasets';
         }
-        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeDataset(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
-            '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>';
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\'collection\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the collection">' +
+            '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
+        txt = txt + '</div>';
+        txt = txt + '</div>';
+        txt = txt + '</div>';
         $("#collectionsList").append(txt);
         $("#collectionAddSelect").select2("val", "");
     });

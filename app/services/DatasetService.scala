@@ -32,6 +32,16 @@ trait DatasetService {
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
 
   /**
+    * Return a list of datasets in a space
+    */
+  def listSpace(limit: Integer, space: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space starting at a specific date
+    */
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String, user:Option[User]): List[Dataset]
+
+  /**
    * Return a count of datasets in a collection, this does not check for permissions
    */
   def countCollection(collection: String): Long
@@ -50,6 +60,20 @@ trait DatasetService {
    * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
    */
   def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset]
+  /**
+    * Return a list of datasets in a collection
+    */
+  def listCollection(collection: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a collection
+    */
+  def listCollection(limit: Integer, collection: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a collection starting at a specific date
+    */
+  def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String, user:Option[User]): List[Dataset]
 
   /**
    * Return a count of datasets the user has access to.
@@ -59,22 +83,42 @@ trait DatasetService {
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space with specific title the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, title: String, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets  in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date with specific title.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a count of datasets the user has created.
@@ -91,6 +135,10 @@ trait DatasetService {
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
+  /**
+    * Return a list of all the datasets the user can view or has created.
+    */
+  def listUser( user: User): List[Dataset]
   /**
    * Get dataset.
    */
@@ -119,7 +167,7 @@ trait DatasetService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   def modifyRDFOfMetadataChangedDatasets()
 
@@ -134,6 +182,9 @@ trait DatasetService {
   def addXMLMetadata(id: UUID, fileId: UUID, json: String)
 
   def addUserMetadata(id: UUID, json: String)
+
+  /** Change the metadataCount field for a dataset */
+  def incrementMetadataCount(id: UUID, count: Long)
 
   /**
    * Add file to dataset.
@@ -167,6 +218,11 @@ trait DatasetService {
 
   def selectNewThumbnailFromFiles(datasetId: UUID)
 
+  /**
+    * Index dataset, if no id provided, index all datasets.
+    */
+  def index(id: Option[UUID])
+
   def index(id: UUID)
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
@@ -189,9 +245,9 @@ trait DatasetService {
 
   def findNotContainingFile(file_id: UUID): List[Dataset]
 
-  def findByTag(tag: String): List[Dataset]
+  def findByTag(tag: String, user: Option[User]): List[Dataset]
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[Dataset]
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[Dataset]
 
   def getMetadata(id: UUID): Map[String, Any]
 
@@ -243,6 +299,8 @@ trait DatasetService {
   def updateName(id: UUID, name: String)
 
   def updateDescription(id: UUID, description: String)
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
 
   /**
    * Update the license data that is currently associated with the dataset.

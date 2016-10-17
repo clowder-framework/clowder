@@ -4,7 +4,7 @@ import com.mongodb.casbah.Imports._
 import java.util.Date
 import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
-import securesocial.core.Identity
+import play.api.libs.functional.syntax._
 
 /**
  * A dataset is a collection of files, and streams.
@@ -12,7 +12,7 @@ import securesocial.core.Identity
 case class Dataset(
   id: UUID = UUID.generate,
   name: String = "N/A",
-  author: Identity,
+  author: MiniUser,
   description: String = "N/A",
   created: Date,
   files: List[UUID] = List.empty,
@@ -30,7 +30,22 @@ case class Dataset(
   licenseData: LicenseData = new LicenseData(),
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  status: String = DatasetStatus.PRIVATE.toString// dataset has four status: trial, default, private and public. yet editors of the dataset
+  // can only see the default, private and public, where trial equals to private. viewers can only see private and
+  // public, where trial and default equals to private/public of its space
+){
+  def isPublic:Boolean = status == DatasetStatus.PUBLIC.toString
+  def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
+  def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
+  def inSpace:Boolean = spaces.size > 0
+}
+
+object DatasetStatus extends Enumeration {
+  type DatasetStatus = Value
+  val PUBLIC, PRIVATE, DEFAULT, TRIAL = Value
+}
+
 
 object Dataset {
   implicit val datasetWrites = new Writes[Dataset] {
@@ -41,7 +56,7 @@ object Dataset {
         dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
       }
       Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "description" -> dataset.description,
-        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.identityId.userId)
+        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id, "spaces" -> dataset.spaces)
     }
   }
 }

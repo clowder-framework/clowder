@@ -6,10 +6,14 @@ import models.{ResourceRef, Folder}
 import models.UUID
 import javax.inject.{Inject, Singleton}
 import com.wordnik.swagger.annotations.Api
+import play.api.libs.json.JsValue
 import services._
 import play.api.Logger
 import play.api.libs.json.Json._
 import com.wordnik.swagger.annotations.ApiOperation
+
+import scala.collection.mutable.ListBuffer
+
 /**
   * Folders are ways of organizing files within datasets. They can contain files and folders
  */
@@ -18,6 +22,7 @@ import com.wordnik.swagger.annotations.ApiOperation
 class Folders @Inject() (
   folders: FolderService,
   datasets: DatasetService,
+  files: FileService,
   events: EventService) extends ApiController {
 
   @ApiOperation(value = "Create a Folder",
@@ -133,7 +138,7 @@ class Folders @Inject() (
   @ApiOperation(value = "Delete a folder",
     notes = "Deletes all the files and folder within a folder and then deletes itself",
     responseClass= "None", httpMethod ="DELETE")
-  def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
+  def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.RemoveResourceFromDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
     Logger.debug("--- Api Deleting Folder ---")
     datasets.get(parentDatasetId) match {
       case Some(parentDataset) => {
@@ -180,7 +185,10 @@ class Folders @Inject() (
               var displayName = name
               // Avoid folders with the same name within a folder/dataset (parent). Check the name, and display name.
               // And if it already exists, add a (x) with the corresponding number to the display name.
-              val countByName = folders.countByName(name, folder.parentType, folder.parentId.stringify)
+              var countByName = folders.countByName(name, folder.parentType, folder.parentId.stringify)
+              if(name == folder.name) {
+                countByName -=1
+              }
               if(countByName > 0) {
                 displayName = name + " (" + countByName + ")"
               } else {
@@ -200,6 +208,117 @@ class Folders @Inject() (
        }
        case None => InternalServerError(s"Parent dataset $parentDatasetId not found")
      }
-   }
+  }
+
+  def getAllFoldersByDatasetId(datasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+    val response = ListBuffer.empty[JsValue]
+    val foldersList = folders.findByParentDatasetId(datasetId)
+    foldersList.map{ folder =>
+      var folderHierarchy = new ListBuffer[String]()
+      folderHierarchy += folder.displayName
+      var f1: Folder = folder
+      while(f1.parentType == "folder") {
+        folders.get(f1.parentId) match {
+          case Some(fparent) => {
+            folderHierarchy += fparent.displayName
+            f1 = fparent
+          }
+          case None =>
+        }
+      }
+      folderHierarchy +=""
+      response += toJson(Map("id" -> folder.id.stringify, "name" -> folderHierarchy.reverse.mkString("/")))
+
+    }
+    Ok(toJson(response))
+  }
+
+
+  def moveFileBetweenFolders(datasetId: UUID, newFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId)))(parse.json) { implicit request =>
+    implicit val user = request.user
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        val oldFolderId = (request.body \ "folderId").asOpt[String]
+
+        folders.get(newFolderId) match {
+          case Some(newFolder) => {
+            files.get(fileId) match {
+              case Some(file) => {
+                if(newFolder.parentDatasetId == datasetId) {
+
+                  oldFolderId match {
+                    case Some(id) => {
+                      folders.get(UUID(id)) match {
+                        case Some(oldFolder) => {
+                          if(oldFolder.files.contains(fileId)) {
+                            folders.removeFile(oldFolder.id, fileId)
+                            folders.addFile(newFolder.id, fileId)
+                            Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
+                          } else {
+                            BadRequest("Failed to move file. The file with id: " + file.id.stringify + " isn't in folder with id: " + oldFolder.id.stringify  )
+                          }
+
+                        }
+                        case None => BadRequest("Failed to move file with id: " + file.id.stringify + " from folder with id: " + oldFolderId + ". The folder doesn't exist")
+                      }
+                    }
+                    case None => {
+                      if(dataset.files.contains(fileId)) {
+                        folders.addFile(newFolder.id, fileId)
+                        datasets.removeFile(datasetId, fileId)
+                        Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
+                      } else {
+                        BadRequest("Failed to move file. The file with id: " + file.id.stringify + "Isn't in dataset with id: " + dataset.id.stringify  )
+                      }
+
+                    }
+                  }
+
+
+                } else {
+                  BadRequest("Failed to copy file. The destination folder is not in the dataset.")
+                }
+
+              }
+              case None => BadRequest("Failed to copy file. There is no file with id:  " + fileId.stringify)
+            }
+
+          }
+          case None => BadRequest("Failed to copy the file. The destination folder doesn't exist. New folder Id: "+ newFolderId)
+        }
+
+      }
+      case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
+    }
+
+  }
+
+  def moveFileToDataset(datasetId: UUID, oldFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        files.get(fileId) match {
+          case Some(file) => {
+            folders.get(oldFolderId) match {
+              case Some(folder) => {
+                if(folder.files.contains(fileId)) {
+                  datasets.addFile(datasetId, file)
+                  folders.removeFile(oldFolderId, fileId)
+                  Ok(toJson(Map("status" -> "success", "fileName"-> file.filename )))
+                } else {
+                  BadRequest("The file you are trying to move isn't in the folder you are moving it from.")
+                }
+              }
+              case None => BadRequest("Failed to copy the file. The ")
+            }
+
+          }
+          case None => BadRequest("Failure to copy the file. There is no file with id: " + fileId.stringify)
+        }
+      }
+      case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
+    }
+  }
 
 }

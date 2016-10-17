@@ -12,11 +12,12 @@ import models._
 import play.api.Logger
 import play.api.Play.{configuration, current}
 import play.api.http.ContentTypes
-import play.api.libs.MimeTypes
+import play.api.libs.{Files, MimeTypes}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
+import play.api.mvc.MultipartFormData
 import services._
 
 import scala.concurrent.Future
@@ -28,6 +29,7 @@ import scala.concurrent.Future
 @Api(value = "/extractions", listingPath = "/api-docs.json/extractions", description = "Extractions for Files.")
 class Extractions @Inject()(
   files: FileService,
+  datasets: DatasetService,
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
@@ -42,112 +44,15 @@ class Extractions @Inject()(
    * This may change accordingly.
    */
   @ApiOperation(value = "Uploads a file for extraction of metadata and returns file id",
-    notes = "Saves the uploaded file and sends it for extraction to Rabbitmq. Does not index the file. Same as upload() except for upload()",
+    notes = "Saves the uploaded file and sends it for extraction to Rabbitmq. If the optional URL parameter extract is set to false, it does not send the file for extraction. Does not index the file. Same as upload() except for upload()",
     responseClass = "None", httpMethod = "POST")
-  def uploadExtract(showPreviews: String = "DatasetLevel") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-
-      request.user match {
-        case Some(user) => {
-          request.body.file("File").map { f =>
-            try {
-              var nameOfFile = f.filename
-              var flags = ""
-              if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-                var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                if (thirdSeparatorIndex >= 0) {
-                  var firstSeparatorIndex = nameOfFile.indexOf("_")
-                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                  flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                }
-              }
-
-              Logger.debug("Uploading file " + nameOfFile)
-              // store file
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
-              val uploadedFile = f
-              file match {
-                case Some(f) => {
-
-                  val id = f.id
-                  if (showPreviews.equals("FileLevel"))
-                    flags = flags + "+filelevelshowpreviews"
-                  else if (showPreviews.equals("None"))
-                    flags = flags + "+nopreviews"
-                  var fileType = f.contentType
-                  if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
-                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
-                    if (fileType.startsWith("ERROR: ")) {
-                      Logger.error(fileType.substring(7))
-                      InternalServerError(fileType.substring(7))
-                    }
-                    if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")) {
-                      var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                      if (thirdSeparatorIndex >= 0) {
-                        var firstSeparatorIndex = nameOfFile.indexOf("_")
-                        var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                        flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                        nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                        files.renameFile(f.id, nameOfFile)
-                      }
-                      files.setContentType(f.id, fileType)
-                    }
-                  }
-
-                  current.plugin[FileDumpService].foreach {
-                    _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
-                  }
-
-                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  // TODO RK : need figure out if we can use https
-                  //val host = "http://" + request.host + request.path.replaceAll("api/files$", "")
-                  val host = Utils.baseUrl(request)
-
-                  /** Insert DTS Requests   **/
-
-                  val clientIP = request.remoteAddress
-
-                  val serverIP = request.host
-                  dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
-                  val extra = Map("filename" -> f.filename)
-
-                  /*------------------*/
-
-                  current.plugin[RabbitmqPlugin].foreach {
-                    // TODO replace null with None
-                    _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
-                  }
-
-                  //for metadata files
-                  if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                    val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                    files.addXMLMetadata(id, xmlToJSON)
-
-                    Logger.debug("xmlmd=" + xmlToJSON)
-
-                    //add file to RDF triple store if triple store is used
-                    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                      case "yes" => sqarql.addFileToGraph(f.id)
-                      case _ => {}
-                    }
-                  }
-                  Ok(toJson(Map("id" -> id.stringify)))
-                }
-                case None => {
-                  Logger.error("Could not retrieve file that was just saved.")
-                  InternalServerError("Error uploading file")
-                }
-              }
-            } finally {
-              f.ref.clean()
-            }
-          }.getOrElse {
-            BadRequest(toJson("File not attached."))
-          }
-        }
-
-        case None => BadRequest(toJson("Not authorized."))
-      }
+  def uploadExtract(showPreviews: String = "DatasetLevel", extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+    val uploadedFiles = _root_.util.FileUtils.uploadFilesMultipart(request, key="File", index=false, showPreviews=showPreviews, runExtractors=extract, insertDTSRequests = true)
+    uploadedFiles.length match {
+      case 0 => BadRequest("No files uploaded")
+      case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
+      case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
+    }
   }
 
   /**
@@ -155,79 +60,14 @@ class Extractions @Inject()(
    *
    */
   @ApiOperation(value = "Uploads a file for extraction using the file's URL",
-    notes = "Saves the uploaded file and sends it for extraction. Does not index the file.  ",
+    notes = "Saves the uploaded file and sends it for extraction. If the optional URL parameter extract is set to false, it does not send the file for extraction. Does not index the file. ",
     responseClass = "None", httpMethod = "POST")
-  def uploadByURL() = PermissionAction(Permission.AddFile)(parse.json) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        val configuration = play.api.Play.configuration
-        val tmpdir = configuration.getString("tmpdir").getOrElse("")
-
-        val fileurljs = request.body.\("fileurl").asOpt[String]
-        Logger.debug("[uploadURL] file Url=" + fileurljs)
-
-        fileurljs match {
-
-          case Some(fileurl) => {
-            var source: InputStream = null
-            try {
-              /*
-               * Downloads the file using 'fileurl' as specified in the request body
-               * 
-               * Gets the filename by spliting the 'fileurl' and last string being the filename
-               * e.g: if fileurl is : http://isda.ncsa.illinois.edu/drupal/sites/default/files/pictures/picture.jpg, then picture.jpg is the filename
-               * Opens a HTTPConnection, opens an inputstream to download the file using the given url
-               * Gets the file's ContentType 
-               * Saves the file to the database
-               * 
-               */
-              val urlsplit = fileurl.split("/")
-              val filename = urlsplit(urlsplit.length - 1)
-              val url = new URL(fileurl)
-              Logger.debug("UploadbyURL: filename: " + filename)
-              source = url.openConnection().getInputStream()
-              val contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
-              Logger.debug("ContentType of the file: " + contentType)
-              val file = files.save(source, filename, Some(contentType), user, null)
-              file match {
-                case Some(f) => {
-                  var fileType = f.contentType
-                  val id = f.id
-                  fileType = f.contentType
-                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-
-                  val host = Utils.baseUrl(request)
-                  val extra = Map("filename" -> f.filename)
-
-                  current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, ""))
-                  }
-                  /*--- Insert DTS Requests  ---*/
-                  val clientIP = request.remoteAddress
-                  val serverIP = request.host
-                  dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
-                  Ok(toJson(Map("id" -> id.toString)))
-                }
-                case None => {
-                  Logger.error("Could not retrieve file that was just saved.")
-                  InternalServerError("Error uploading file")
-                }
-              } //end of file match
-            } catch {
-              case e: Exception =>
-                Logger.error("File not attached", e)
-                BadRequest(toJson("File not attached"))
-            } finally {
-              if (source != null)
-                source.close
-            } //end of finally
-          } //end of match some file url
-          case None => {
-            Ok("NO Url specified")
-          }
-        } //end of match fielurl 
-      } //end of match user
-      case None => BadRequest(toJson("Not authorized."))
+  def uploadByURL(extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.json) { implicit request =>
+    val uploadedFiles = _root_.util.FileUtils.uploadFilesJSON(request, key="fileurl", index=false, runExtractors=extract, insertDTSRequests = true)
+    uploadedFiles.length match {
+      case 0 => BadRequest("No fileurls uploaded")
+      case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
+      case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
     }
   }
 
@@ -628,8 +468,6 @@ class Extractions @Inject()(
               js = js :+ toJson(ex)
           }
 
-        } else {
-          Logger.debug("----Else block")
         }
 
         jarr = jarr :+ (Json.obj("clientIP" -> dtsreq.clientIP, "fileid" -> dtsreq.fileId.stringify, "filename" -> dtsreq.fileName, "fileType" -> dtsreq.fileType, "filesize" -> dtsreq.fileSize, "uploadDate" -> dtsreq.uploadDate, "extractors" -> js, "startTime" -> dtsreq.startTime, "endTime" -> dtsreq.endTime))
@@ -669,10 +507,101 @@ class Extractions @Inject()(
     )
   }
 
-  /*convert list of JsObject to JsArray*/
-  def getJsonArray(list: List[JsObject]): JsArray = {
-    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  @ApiOperation(value = "Submit file for extraction by a specific extractor", notes = "  ", responseClass = "None",
+    httpMethod = "POST")
+  def submitFileToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
+    file_id)))(parse.json) { implicit request =>
+    Logger.debug(s"Submitting file for extraction with body $request.body")
+    // send file to rabbitmq for processing
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
+        files.get(file_id) match {
+          case Some(file) => {
+            val id = file.id
+            val fileType = file.contentType
+            val idAndFlags = ""
+            val host = Utils.baseUrl(request)
+
+            // if extractor_id is not specified default to execution of all extractors matching mime type
+            val key = (request.body \ "extractor").asOpt[String] match {
+              case Some(extractorId) => "extractors." + extractorId
+              case None => "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+            }
+            // parameters for execution
+            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+
+            // Log request
+            val clientIP = request.remoteAddress
+            val serverIP = request.host
+            dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+
+            val extra = Map("filename" -> file.filename,
+              "parameters" -> parameters.toString,
+              "action" -> "manual-submission")
+            val showPreviews = file.showPreviews
+
+            val newFlags = if (showPreviews.equals("FileLevel"))
+              idAndFlags + "+filelevelshowpreviews"
+            else if (showPreviews.equals("None"))
+              idAndFlags + "+nopreviews"
+            else
+              idAndFlags
+
+            val originalId = if (!file.isIntermediate) {
+              file.id.toString()
+            } else {
+              idAndFlags
+            }
+
+            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+            Ok(Json.obj("status" -> "OK"))
+          }
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
+        }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
   }
 
+  @ApiOperation(value = "Submit dataset for extraction by a specific extractor", notes = "  ", responseClass = "None",
+    httpMethod = "POST")
+  def submitDatasetToExtractor(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
+    ds_id)))(parse.json) { implicit request =>
+    Logger.debug(s"Submitting dataset for extraction with body $request.body")
+    // send file to rabbitmq for processing
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
+        datasets.get(ds_id) match {
+          case Some(ds) => {
+            val id = ds.id
+            val host = Utils.baseUrl(request)
 
+            // if extractor_id is not specified default to execution of all extractors matching mime type
+            val key = (request.body \ "extractor").asOpt[String] match {
+              case Some(extractorId) => "extractors." + extractorId
+              case None => "unknown." + "dataset"
+            }
+            // parameters for execution
+            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+
+            val extra = Map("datasetname" -> ds.name,
+              "parameters" -> parameters.toString,
+              "action" -> "manual-submission")
+
+            p.extract(ExtractorMessage(id, id, host, key, extra, ds.files.length.toString, ds_id, ""))
+            Ok(Json.obj("status" -> "OK"))
+          }
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
+        }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
+  }
+
+  /*convert list of JsObject to JsArray*/
+  private def getJsonArray(list: List[JsObject]): JsArray = {
+    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  }
 }

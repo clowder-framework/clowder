@@ -9,6 +9,8 @@ import com.mongodb.casbah.Imports._
 
 case class Preview(
   id: UUID = UUID.generate,
+  loader_id: String = "",
+  loader: String = "",
   file_id: Option[UUID] = None,
   section_id: Option[UUID] = None,
   dataset_id: Option[UUID] = None,
@@ -16,6 +18,7 @@ case class Preview(
   filename: Option[String] = None,
   contentType: String,
   preview_type: Option[String] = None,
+  title: Option[String] = None,
   annotations: List[ThreeDAnnotation] = List.empty,
   length: Long,
   extractor_id: Option[String] = None,

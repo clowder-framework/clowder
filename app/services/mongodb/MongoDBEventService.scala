@@ -1,9 +1,13 @@
 package services.mongodb
 
+import javax.inject.Inject
+
+import api.Permission
 import models._
 import java.util.Date
 import org.bson.types.ObjectId
-import services.EventService
+import services._
+import api.Permission.Permission
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
@@ -15,7 +19,11 @@ import com.novus.salat.dao.SalatMongoCursor
 /**
   * Use MongoDB for storing events.
  */
-class MongoDBEventService extends EventService {
+class MongoDBEventService @Inject() (
+     userService: UserService,
+     spaces:SpaceService,
+     datasets: DatasetService,
+     Folders:FolderService) extends EventService {
 
 
   def listEvents(): List[Event] = {
@@ -23,7 +31,7 @@ class MongoDBEventService extends EventService {
   }
 
   def addEvent(event: Event) = {
-    Event.insert(event);
+    Event.insert(event)
   }
 
   def addUserEvent(user: Option[User], action_type: String) = {
@@ -72,7 +80,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
     eventsList = eventsList.filter(_.created.after(time))
 
@@ -93,7 +101,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
 
     limit match {
@@ -137,14 +145,14 @@ class MongoDBEventService extends EventService {
         Event.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(n).toList
       }
     }
-
   }
+
+
    def getRequestEvents(targetuser: Option[User], limit: Option[Integer]): List[Event] = {
      targetuser match {
        case Some(modeluser) => {
          val eventList = Event.find(
            MongoDBObject(
-             // "targetuser" -> MongoDBObject( "_id" -> new ObjectId(targetuser.id.stringify))
              "targetuser._id" -> new ObjectId(modeluser.id.stringify)
            )
          ).toList
@@ -159,6 +167,50 @@ class MongoDBEventService extends EventService {
      }
    }
 
+  def getEventsByUser( user: User, limit: Option[Integer]): List[Event] ={
+    val eventList = (Event.find(MongoDBObject(
+      "user._id"-> new ObjectId(user.id.toString()))).toList  :::
+      Event.find(MongoDBObject(
+      "object_id"-> new ObjectId(user.id.toString()))).toList)
+        .distinct.sorted(Ordering.by((_: Event).created).reverse)
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
+  }
+
+  def getCommentEvent( user: User, limit: Option[Integer]): List[Event] ={
+    val roleList = userService.listRoles().filter(_.permissions.contains(Permission.ViewComments.toString))
+    val spaceIdList = user.spaceandrole.filter(x => roleList.contains(x.role)).map(_.spaceId)
+    val datasetList = (datasets.listUser(0,  None, true, user) ::: spaceIdList.map(s => datasets.listSpace(0, s.toString)).flatten).distinct
+    val fileIdList = (datasetList.map(_.files) ::: datasetList.map(d => Folders.findByParentDatasetId(d.id).map(_.files).flatten)).flatten
+    val eventList = (Event.find(MongoDBObject(
+        "event_type" -> "add_comment_dataset") ++
+        ("source_id" $in datasetList.map(x => new ObjectId(x.id.stringify)))
+    ).toList:::
+      Event.find(MongoDBObject(
+        "event_type" -> "comment_file") ++
+        ("source_id" $in fileIdList.map(x => new ObjectId(x.stringify)))).toList)
+      .distinct.sorted(Ordering.by((_: Event).created).reverse)
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
+  }
+
+  def updateObjectName(id:UUID, name:String) = {
+    Event.dao.update(MongoDBObject("object_id" -> new ObjectId(id.stringify)), $set("object_name" -> name), multi = true)
+    Event.dao.update(MongoDBObject("source_id" -> new ObjectId(id.stringify)), $set("source_name" -> name), multi = true)
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Event.update(MongoDBObject("user._id" -> new ObjectId(userId.stringify)),
+      $set("user.fullName" -> fullName), false, true, WriteConcern.Safe)
+    Event.update(MongoDBObject("targetuser._id" -> new ObjectId(userId.stringify)),
+      $set("targetuser.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
 
 }
 

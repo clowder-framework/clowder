@@ -1,4 +1,4 @@
-@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
+@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long, filesBytes: Long,
         collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
 
@@ -17,71 +17,33 @@
               </div>
               <div class="panel-body">
                   <ul class="list-group">
-                      <li class="list-group-item" title="Access to @spacesCountAccess spaces">
-                          <a href="@routes.Spaces.list()">Project Spaces <span class="badge pull-right">@spacesCount</span></a>
-                      </li>
+
+                        <li class="list-group-item" title="Access to @{spacesCountAccess} @Messages("spaces.title")">
+                            <a href="@routes.Spaces.list()">@Messages("spaces.title")<span class="badge pull-right">@spacesCount</span></a>
+                        </li>
+
                       <li class="list-group-item" title="Access to @collectionsCountAccess collections">
-                          <a href="@routes.Collections.list("")">Collections <span class="badge pull-right">@collectionsCount</span></a>
+                          <a href="@routes.Collections.list("")">@Messages("collections.title") <span class="badge pull-right">@collectionsCount</span></a>
                       </li>
                       <li class="list-group-item" title="Access to @datasetsCountAccess datasets">
-                          <a href="@routes.Datasets.list("")">Datasets <span class="badge pull-right">@datasetsCount</span></a>
+                          <a href="@routes.Datasets.list("")">@Messages("datasets.title") <span class="badge pull-right">@datasetsCount</span></a>
                       </li>
                       <li class="list-group-item">
                           Files <span class="badge pull-right">@filesCount</span>
                       </li>
-                      <li class="list-group-item">
+                      <li class="list-group-item" title="Total number of raw bytes stored.">
+                          Bytes <span class="badge pull-right">@_root_.util.FileUtils.humanReadableByteCount(filesBytes)</span>
+                      </li>
+                      <li class="list-group-item" title="Total number users signed up for this server.">
                           @if(user.isDefined) {
                               <a href="@routes.Users.getUsers()"> Users <span class="badge pull-right">@usersCount</span></a>
-                          }else {
+                          } else {
                              Users <span class="badge pull-right">@usersCount</span>
                           }
-
                       </li>
                   </ul>
               </div>
             </div>
         </div>
     </div>
-
-    <script>
-        $(document).ready(function() {
-            /*
-            * Clamped-width.
-            * Usage:
-            *  <div data-clampedwidth=".myParent">This long content will force clamped width</div>
-            *
-            * Author: LV
-            */
-            $('[data-clampedwidth]').each(function () {
-                var elem = $(this);
-                var parentPanel = elem.data('clampedwidth');
-                var resizeFn = function () {
-                    var sideBarNavWidth = $(parentPanel).width() - parseInt(elem.css('paddingLeft')) - parseInt(elem.css('paddingRight')) - parseInt(elem.css('marginLeft')) - parseInt(elem.css('marginRight')) - parseInt(elem.css('borderLeftWidth')) - parseInt(elem.css('borderRightWidth'));
-                    elem.css('width', sideBarNavWidth);
-                };
-
-                resizeFn();
-                $(window).resize(resizeFn);
-            });
-
-            var panel = $('#resources-panel');
-            panel.affix({
-                offset: {
-                    top: panel.offset() - panel.height()
-                }
-            });
-
-            var width = $('.col-md-7').width() * 0.05;
-            $('.media-object' ).each(function() {
-                $(this ).css("width", width);
-                $(this ).css("height", width);
-            });
-        });
-    </script>
-
-    @*******
-    *if(user.isDefined) {
-    *    @carousel(files)
-    *}
-    ********@
 }

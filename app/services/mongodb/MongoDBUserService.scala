@@ -2,23 +2,24 @@ package services.mongodb
 
 import com.mongodb.casbah.WriteConcern
 import java.util.Date
+
 import com.mongodb.DBObject
 import com.mongodb.util.JSON
 import com.novus.salat._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
-import securesocial.core.Identity
+import securesocial.core.{AuthenticationMethod, Identity, _}
 import play.api.Application
 import play.api.Play.current
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
+
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
-import securesocial.core._
 import services._
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
@@ -36,7 +37,12 @@ class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
   collections: CollectionService,
-  spaces: SpaceService) extends services.UserService {
+  spaces: SpaceService,
+  comments: CommentService,
+  events: EventService,
+  folders: FolderService,
+  metadata: MetadataService,
+  curations: CurationService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -48,17 +54,31 @@ class MongoDBUserService @Inject() (
     val user = UserDAO.toDBObject(model)
     // If account does not exist, add enabled option
     if (UserDAO.count(query) == 0) {
+      val register = play.Play.application().configuration().getBoolean("registerThroughAdmins", true)
+      val admins = play.Play.application().configuration().getString("initialAdmins").split("\\s*,\\s*")
       // enable account. Admins are always enabled.
       model.email match {
-        case Some(e) if AppConfiguration.checkAdmin(e) => user.put("active", true)
-        case _ => {
-          val register = play.Play.application().configuration().getBoolean("registerThroughAdmins", true)
-          user.put("active", !register)
+        case Some(e) if admins.contains(e) => {
+          user.put("active", true)
+          user.put("serverAdmin", true)
         }
+        case _ => {
+          user.put("active", !register)
+          user.put("serverAdmin", false)
+        }
+      }
+      if (model.authMethod == AuthenticationMethod.UserPassword) {
+        user.put("termsOfServices", MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString))
       }
     } else {
       user.removeField("_id")
     }
+
+    // always set orcid id if logged in with orcid
+    if (model.identityId.providerId == ORCIDProvider.ORCID) {
+      user.put("profile.orcidID", model.identityId.userId)
+    }
+
     UserDAO.update(query, MongoDBObject("$set" -> user), upsert = true, multi = false, WriteConcern.Safe)
     UserDAO.findOne(query)
   }
@@ -72,6 +92,16 @@ class MongoDBUserService @Inject() (
 
   override def delete(id: UUID): Unit = {
     UserDAO.remove(MongoDBObject("id" -> id))
+  }
+
+  override def updateAdmins() {
+    play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").foreach{e =>
+      UserDAO.dao.update(MongoDBObject("email" -> e), $set("serverAdmin" -> true, "active" -> true), upsert=false, multi=true)
+    }
+  }
+
+  override def getAdmins: List[User] = {
+    UserDAO.find(MongoDBObject("serverAdmin" -> true, "active" -> true)).toList
   }
 
   /**
@@ -187,8 +217,19 @@ class MongoDBUserService @Inject() (
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("profile" -> pson))
   }
 
-  override def updateUserField(email: String, field: String, fieldText: Any) {
-    UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText))
+  override def updateUserField(id: UUID, field: String, fieldText: Any) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify) ), $set(field -> fieldText))
+  }
+
+  override def updateUserFullName(id: UUID, name: String): Unit = {
+    collections.updateAuthorFullName(id, name)
+    comments.updateAuthorFullName(id, name)
+    curations.updateAuthorFullName(id, name)
+    datasets.updateAuthorFullName(id, name)
+    events.updateAuthorFullName(id, name)
+    files.updateAuthorFullName(id, name)
+    folders.updateAuthorFullName(id, name)
+    metadata.updateAuthorFullName(id, name)
   }
 
   override def addUserDatasetView(email: String, dataset: UUID) {
@@ -204,71 +245,71 @@ class MongoDBUserService @Inject() (
   }
   /**
    * @see app.services.UserService
-   * 
+   *
    * Implementation of the UserService trait.
-   * 
+   *
    */
   def addUserToSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
       Logger.debug("add user to space")
       val spaceData = UserSpaceAndRole(spaceId, role)
-      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));
   }
- 
+
   /**
    * @see app.services.UserService
-   * 
+   *
    * Implementation of the UserService trait.
-   * 
+   *
    */
   def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {
       Logger.debug("remove user from space")
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
     		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
   }
-  
+
   /**
    * @see app.services.UserService
-   * 
+   *
    * Implementation of the UserService trait.
-   * 
+   *
    */
   def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify), "spaceandrole.spaceId" -> new ObjectId(spaceId.stringify)),
         $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
   }
-  
+
   /**
    * @see app.services.UserService
-   * 
+   *
    * Implementation of the UserService trait.
-   * 
+   *
    */
   def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role] = {
       var retRole: Option[Role] = None
       var found = false
-      
+
       findById(userId) match {
-          case Some(aUser) => {              
-              for (aSpaceAndRole <- aUser.spaceandrole) {                  
+          case Some(aUser) => {
+              for (aSpaceAndRole <- aUser.spaceandrole) {
                   if (!found) {
                       if (aSpaceAndRole.spaceId == spaceId) {
                           retRole = Some(aSpaceAndRole.role)
                           found = true
-                      }	                  
+                      }
                   }
               }
           }
           case None => Logger.debug("No user found for getRoleInSpace")
       }
-      
+
       retRole
   }
-  
+
   /**
    * @see app.services.UserService
-   * 
+   *
    * Implementation of the UserService trait.
-   * 
+   *
    */
   def listUsersInSpace(spaceId: UUID): List[User] = {
       val retList: ListBuffer[User] = ListBuffer.empty
@@ -276,9 +317,9 @@ class MongoDBUserService @Inject() (
          for (aSpaceAndRole <- aUser.spaceandrole) {
              if (aSpaceAndRole.spaceId == spaceId) {
                  retList += aUser
-             }             
+             }
          }
-      }      
+      }
       retList.toList
   }
 
@@ -407,6 +448,14 @@ class MongoDBUserService @Inject() (
     }
   }
 
+  override def acceptTermsOfServices(id: UUID): Unit = {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("termsOfServices" -> MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString)))
+  }
+
+  override def newTermsOfServices(): Unit = {
+    UserDAO.dao.update(MongoDBObject("termsOfServices" -> MongoDBObject("$exists" -> 1)), $set("termsOfServices.accepted" -> false), multi=true)
+  }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
@@ -554,11 +603,18 @@ class MongoDBUserService @Inject() (
 
 class MongoDBSecureSocialUserService(application: Application) extends UserServicePlugin(application) {
   override def find(id: IdentityId): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
+    // Convert userpass to lowercase so emails aren't case sensitive
+    if (id.providerId == "userpass")
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId.toLowerCase, "identityId.providerId" -> id.providerId))
+    else
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
   }
 
   override def findByEmailAndProvider(email: String, providerId: String): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
+    if (providerId == "userpass")
+      UserDAO.dao.findOne(MongoDBObject("email" -> email.toLowerCase, "identityId.providerId" -> providerId))
+    else
+      UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
   }
 
   override def save(user: Identity): User = {
@@ -568,20 +624,40 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
 
     // replace _typeHint with the right model type so it will get correctly deserialized
     userobj.put("_typeHint", "models.ClowderUser")
+    // replace email with forced lowercase for userpass provider
+    if (user.identityId.providerId == "userpass") {
+      userobj.put("email", user.email.map(_.toLowerCase))
+      val identobj = MongoDBObject("userId" -> user.identityId.userId.toLowerCase(),
+        "providerId" -> user.identityId.providerId)
+      userobj.put("identityId", identobj)
+    }
 
     // query to find the user based on identityId
     val query = MongoDBObject("identityId.userId" -> user.identityId.userId, "identityId.providerId" -> user.identityId.providerId)
 
     // If account does not exist, add enabled option
     if (UserDAO.count(query) == 0) {
+      val register = play.Play.application().configuration().getBoolean("registerThroughAdmins", true)
+      val admins = play.Play.application().configuration().getString("initialAdmins").split("\\s*,\\s*")
       // enable account. Admins are always enabled.
       user.email match {
-        case Some(e) if AppConfiguration.checkAdmin(e) => userobj.put("active", true)
+        case Some(e) if admins.contains(e) => {
+          userobj.put("active", true)
+          userobj.put("serverAdmin", true)
+        }
         case _ => {
-          val register = play.Play.application().configuration().getBoolean("registerThroughAdmins", true)
           userobj.put("active", !register)
+          userobj.put("serverAdmin", false)
         }
       }
+      if (user.authMethod == AuthenticationMethod.UserPassword) {
+        userobj.put("termsOfServices", MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString))
+      }
+    }
+
+    // always set orcid id if logged in with orcid
+    if (user.identityId.providerId == ORCIDProvider.ORCID) {
+      userobj.put("profile.orcidID", user.identityId.userId)
     }
 
     // update all fields from past in user object
@@ -589,6 +665,8 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
 
     // update, if it does not exist do an insert (upsert = true)
     UserDAO.update(query, dbobj, upsert = true, multi = false, WriteConcern.Safe)
+
+    // send email to admins new user is created
 
     // return the user object
     find(user.identityId).get
@@ -665,4 +743,15 @@ object UserSpaceAndRoleData extends ModelCompanion[UserSpaceAndRole, ObjectId] {
     case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceandrole")) {}
   }
 }
+
+/**
+  * Used to store Mini users in MongoDB.
+  */
+object MiniUserDAO extends ModelCompanion[MiniUser, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[MiniUser, ObjectId](collection = x.collection("social.miniusers")) {}
+  }
+}
+
 

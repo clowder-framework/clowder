@@ -1,12 +1,12 @@
 @(collectionsList: List[Collection], space: String)(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
 @import api.Permission
 <p>
-    Most recent collections:
+    <span class="small">@Messages("recent.message", Messages("collections.title").toLowerCase)</small>
     <span class="pull-right">
          <a href="@(routes.Collections.list("", "", 12, Some(space)))" class="btn btn-link btn-xs">
-            <span class="glyphicon glyphicon-hand-right"></span>
-            All Collections
+            <span class="glyphicon glyphicon-th-large"></span>
+             @Messages("view.all", Messages("collections.title"))
         </a>
     </span>
 
@@ -18,7 +18,7 @@
     <div class="col-md-12">
         <div id="masonry-collections">
         @collectionsList.map { collection =>
-                @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), "col-lg-4 col-md-4 col-sm-4", false)
+            @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), Some(space), "col-lg-4 col-md-4 col-sm-4", false)
         }
         </div>
     </div>

@@ -19,7 +19,7 @@ function removeFolder(folderId, parentDataset) {
 var cur_names=[];
 var cur_hrefs=[];
 function updateFolderName(parentDataset, folderId) {
-    cur_names[folderId] = $('#'+folderId+'-name').text();
+    cur_names[folderId] = $('#'+folderId+'-name a').text();
     cur_hrefs[folderId] = $('#'+folderId+'-name a').attr('href');
     var class_name = "edit_title_"+folderId;
     $('<span class="inline '+class_name+'"></span>').insertAfter($('#'+folderId+'-name'));
@@ -40,6 +40,10 @@ function saveFolderName(parentDataset, folderId) {
     }
 
     var name =$('#title_input_'+folderId).val();
+    if(name.trim() == cur_names[folderId].trim()){
+        cancelFolderName(folderId);
+        return false;
+    }
     var encName = htmlEncode(name);
     jsonData = JSON.stringify({"name": encName});
 

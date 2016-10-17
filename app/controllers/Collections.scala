@@ -2,6 +2,7 @@ package controllers
 
 import api.Permission._
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import util.{Formatters, RequiredFieldsConfig}
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,10 +17,16 @@ import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
+import play.api.i18n.Messages
 
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
+
+  /**
+    * String name of the Space such as 'Project space' etc. parsed from conf/messages
+    */
+  val spaceTitle: String = Messages("space.title")
 
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
@@ -35,45 +42,25 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     space match {
       case Some(spaceId) => {
         spaceService.get(UUID(spaceId)) match {
-          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId)))
-          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId), Some(s.name)))
+          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, None))
         }
       }
-      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, None))
     }
 
   }
 
-  def newCollectionWithParent(parentCollectionId: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
+  def newCollectionWithParent(parentCollectionId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, parentCollectionId))) { implicit request =>
     implicit val user = request.user
+    collections.get(parentCollectionId) match {
+      case Some(parentCollection) => {
 
-    val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-    var parentSpaces : List[UUID] = List.empty[UUID]
-
-    for (aSpace <- spacesList) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+        Ok(views.html.newCollectionWithParent(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, Some(parentCollectionId.toString()), Some(parentCollection.name)))
       }
-
-
+      case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
     }
 
-
-    parentCollectionId match {
-      case Some(currentParentCollectionId) =>{
-        collections.get(UUID(currentParentCollectionId)) match {
-          case Some(parentCollection) => {
-            parentSpaces = parentCollection.spaces
-            Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
-          }
-          case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
-        }
-      }
-      case None => Ok(toJson("newCollectionWithParent, no parentCollectionId provided"))
-    }
   }
 
   /**
@@ -98,7 +85,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     user match {
       case Some(clowderUser) => {
 
-        val title: Option[String] = Some("Following Collections")
+        val title: Option[String] = Some(Messages("following.title", Messages("collections.title")))
         val collectionList = new ListBuffer[Collection]()
         val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
         val collectionIdsToUse = collectionIds.slice(index*limit, (index+1) *limit)
@@ -158,46 +145,44 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
-
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some("Collections")
+    var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("collections.title")))
 
     val collectionList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
-            title = Some(person.get.fullName + "'s Collections in Space <a href="
-              + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
+          case Some(s)  if(collectionSpace.isDefined) => {
+            title = Some(Messages("owner.in.resource.title", p.fullName, Messages("collections.title"), spaceTitle, routes.Spaces.getSpace(collectionSpace.get.id), collectionSpace.get.name))
           }
-          case None => {
-            title = Some(person.get.fullName + "'s Collections")
+          case _ => {
+            title = Some(Messages("owner.title", p.fullName, Messages("collections.title")))
           }
         }
         if (date != "") {
-          collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
+          collections.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         } else {
-          collections.listUser(limit, request.user, request.superAdmin, p)
+          collections.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         }
       }
       case None => {
         space match {
-          case Some(s) => {
-            title = Some("Collections in Space <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
+          case Some(s)  if(collectionSpace.isDefined) => {
+            title = Some(Messages("resource.in.title", Messages("collections.title"), spaceTitle, routes.Spaces.getSpace(collectionSpace.get.id), collectionSpace.get.name))
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
               collections.listSpace(limit, s)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
-              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             } else {
-              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             }
 
           }
@@ -209,11 +194,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)
       val c = person match {
-        case Some(p) => collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case Some(p) => collections.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => collections.listSpace(first, nextPage = false, 1, s)
-            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -230,11 +215,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val next = if (collectionList.nonEmpty) {
       val last = Formatters.iso8601(collectionList.last.created)
       val ds = person match {
-        case Some(p) => collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case Some(p) => collections.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => collections.listSpace(last, nextPage = true, 1, s)
-            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -276,9 +261,21 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some(Messages("you.title", Messages("collections.title")))
+    }
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+        //space id is not correct
+      case Some(s) if collectionSpace.isEmpty =>{
+        NotFound(views.html.notFound(Messages("space.title")  + " not found."))
+      }
+        // view the list of collection in a space that you should not access
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle+ ".", s, "space"))
+      }
+      case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def jsonCollection(collection: Collection): JsValue = {
@@ -293,21 +290,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def submit() = PermissionAction(Permission.CreateCollection)(parse.multipartFormData) { implicit request =>
       Logger.debug("------- in Collections.submit ---------")
-      var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
-      var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
-      var colParentCollection = request.body.asFormUrlEncoded.getOrElse("collection", List.empty)
-
-      var colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
-      var colParentSpaces = request.body.asFormUrlEncoded.getOrElse("parentspacesids",List.empty)
-
-      var colRootFlag = request.body.asFormUrlEncoded.getOrElse("rootflag",List.empty)
-
-      var rootFlag = true
-      if (colRootFlag(0) == "false")
-        rootFlag = false
-
-
+      val colName = request.body.asFormUrlEncoded.getOrElse("name", null)
+      val colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+      val colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
+      val colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
 
       implicit val user = request.user
       user match {
@@ -319,70 +305,40 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
             }
             //This case shouldn't happen as it is validated on the client.
-            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+            BadRequest(views.html.newCollection("Name, Description, or " + spaceTitle + " was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, None))
           }
-
-
 
           var parentCollectionIds = List.empty[String]
           try {
-            parentCollectionIds = colParentCollection(0).split(",").toList
+            parentCollectionIds = colParentColId(0).split(",").toList
           }  catch {
             case e : Exception => Logger.debug("error cannot split ")
           }
 
-
-
           var collection : Collection = null
           if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
-              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_flag = rootFlag)
+              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty)
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
             val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
-            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_flag = rootFlag)
+            var root_spaces = List.empty[UUID]
+            if(parentCollectionIds.length == 0) {
+              root_spaces = colSpaces
+            }
+            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_spaces = root_spaces)
           }
 
           Logger.debug("Saving collection " + collection.name)
-          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, datasetCount = 0, created = collection.created, author = collection.author, spaces = collection.spaces, root_flag = collection.root_flag))
+          collections.insert(collection)
           collection.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
-                spaces.addCollection(collection.id, s.id)
+                spaces.addCollection(collection.id, s.id, user)
+                collections.addToRootSpaces(collection.id, s.id)
+                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
               }
               case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
-            }
-          }
-
-          if (parentCollectionIds.length > 0) {
-            for (parentCollectionId <- parentCollectionIds) {
-              try {
-                collections.get(UUID(parentCollectionId)) match {
-                  case Some(parentCollection) => {
-                    collections.addSubCollection(UUID(parentCollectionId), collection.id)
-                  }
-                  case None => {
-                    Logger.error("Unable to add collection to parent collection with id " + parentCollectionId)
-                  }
-                }
-              } catch {
-                case e : Exception => Logger.debug("error cannot convert to UUID")
-              }
-            }
-          }
-
-          if (colParentColId != null && colParentColId.size>0) {
-            try {
-              collections.get(UUID(colParentColId(0))) match {
-                case Some(parentCollection) => {
-                  collections.addSubCollection(UUID(colParentColId(0)), collection.id)
-                }
-                case None => {
-                  Logger.error("Unable to add collection to parent ")
-                }
-              }
-            } catch {
-              case e : Exception => Logger.debug("error with parent collection id " +colParentColId)
             }
           }
 
@@ -397,7 +353,27 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           // redirect to collection page
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
-          Redirect(routes.Collections.collection(collection.id))
+          if (colParentColId != null && colParentColId.size>0) {
+            try {
+              collections.get(UUID(colParentColId(0))) match {
+                case Some(parentCollection) => {
+                  collections.addSubCollection(UUID(colParentColId(0)), collection.id, user)
+                  Redirect(routes.Collections.collection(UUID(colParentColId(0))))
+                }
+                case None => {
+                  Logger.error("Unable to add collection to parent ")
+                  BadRequest(views.html.notFound("Parent collection does not exist."))
+                }
+              }
+
+            } catch {
+              case e : Exception => {
+                InternalServerError("error with parent collection id " + colParentColId)
+              }
+            }
+          } else {
+            Redirect(routes.Collections.collection(collection.id))
+          }
 	      }
 	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
@@ -433,7 +409,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = datasets.listCollection(id.stringify)
+          val datasetsInside = datasets.listCollection(id.stringify, user)
           val datasetIdsToUse = datasetsInside.slice(0, limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetIdsToUse) {
@@ -481,10 +457,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
 
           var collectionSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          var collectionSpaces_canRemove : Map[ProjectSpace,Boolean] = Map.empty
           collection.spaces.map{
             sp=> spaceService.get(sp) match {
               case Some(s) => {
                 collectionSpaces = s :: collectionSpaces
+                var removeFromSpace = removeFromSpaceAllowed(dCollection.id,s.id)
+                collectionSpaces_canRemove += (Utils.decodeSpaceElements(s) -> removeFromSpace)
               }
               case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
             }
@@ -505,11 +484,28 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), prevd,nextd, prevcc, nextcc, limit))
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
+          for (collectionSpace <- collectionSpaces){
+            val decodedSpace = Utils.decodeSpaceElements(collectionSpace)
+            val removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
+            decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
+          }
+          var canAddToParent = Permission.checkOwner(user, ResourceRef(ResourceRef.collection, collection.id))
+          if(!canAddToParent) {
+            collection.spaces.map(space => {
+              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space))) {
+                canAddToParent = true
+              }
+            })
+          }
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
+            Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
+            prevd,nextd, prevcc, nextcc, limit, canAddToParent))
 
         }
         case None => {
-          Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+          Logger.error("Error getting collection " + id)
+          BadRequest(views.html.notFound("Collection does not exist."))
         }
       }
   }
@@ -519,7 +515,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     collections.get(id) match {
       case Some(collection) => {
 
-        val datasetsInside = datasets.listCollection(id.stringify)
+        val datasetsInside = datasets.listCollection(id.stringify, user)
         val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
         val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
         for (aDataset <- datasetIdsToUse) {
@@ -545,7 +541,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         }
         Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next))
       }
-      case None => Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+      case None => Logger.error("Error getting "+ Messages("collection.title") + " " + id); BadRequest(Messages("collection.title") + " not found")
     }
   }
 
@@ -576,14 +572,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
         Ok(views.html.collections.childCollections(decodedChildCollections.toList, collection, prev, next))
       }
-      case None => Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+      case None => Logger.error("Error getting" + Messages("collection.title")  + " " + id); BadRequest(Messages("collection.title") + " not found")
     }
   }
 
   /**
    * Show all users with access to a collection (identified by its id)
    */
-  def users(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
+  def users(id: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
     implicit val user = request.user
 
     collections.get(id) match {
@@ -595,7 +591,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         collection.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No spaces found for collection $id.");
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No $spaceTitle found for collection $id.");
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -617,7 +613,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
               }
             }
-            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No spaces found for collection $id.");
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No $spaceTitle found for collection $id.");
           }
         }
         // Clean-up, and sort space-names per user
@@ -625,7 +621,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(collection.author.identityId.userId)
+          val currUserIsAuthor = user.get.id.equals(collection.author.id)
           Ok(views.html.collections.users(collection, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
         else Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: No users found for collection $id.")
@@ -635,15 +631,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   }
 
-  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection) { implicit request =>
+  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id))) { implicit request =>
       collections.get(collection_id) match {
         case Some(collection) => {
           val previewsByCol = previewsService.findByCollectionId(collection_id)
           Ok(views.html.collectionPreviews(collection_id.toString, previewsByCol, Previewers.findCollectionPreviewers))
         }
         case None => {
-          Logger.error("Error getting collection " + collection_id);
-          BadRequest("Collection not found")
+          Logger.error("Error getting " + Messages("collection.title")  + " " + collection_id);
+          BadRequest(Messages("collection.title") + " not found")
         }
       }
   }
@@ -656,30 +652,30 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
 
     val parentCollection = collections.get(UUID(parentCollectionId))
-    var title: Option[String] = Some("Collections")
+    var title: Option[String] = Some(Messages("collections.title"))
 
-    var collectionList = person match {
+    val collectionList = person match {
       case Some(p) => {
         parentCollection match {
           case Some(parent) => {
-            title = Some(person.get.fullName + "'s Collections in Parent Collection " + parent.name)
+            title = Some(Messages("owner.in.resource.title", p.fullName, Messages("collections.title"),  Messages("collection.parent.title"), routes.Collections.collection(parent.id), parent.name))
           }
           case None => {
-            title = Some(person.get.fullName + "'s Collections")
+            title = Some(Messages("owner.title", p.fullName, Messages("collections.title")))
           }
         }
         if (date != "") {
-          (collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+          (collections.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           //collections.listChildCollections(UUID(parentCollectionId))
         } else {
-          (collections.listUser(limit, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+          (collections.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           //collections.listChildCollections(UUID(parentCollectionId))
         }
       }
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Collections in Parent Collection  " + parentCollection.get.name)
+            title = Some(Messages("resource.in.title", Messages("collections.title"), Messages("collection.parent.title"), routes.Collections.collection(parentCollection.get.id), parentCollection.get.name))
             if (date != "") {
               (collections.listSpace(date, nextPage, limit, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
               //collections.listChildCollections(UUID(parentCollectionId))
@@ -690,9 +686,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           case None => {
             if (date != "") {
-              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
             } else {
-              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
             }
 
           }
@@ -708,11 +704,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)
       val c = person match {
-        case Some(p) => (collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+        case Some(p) => (collections.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
         case None => {
           space match {
             case Some(s) => (collections.listSpace(first, nextPage = false, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -729,11 +725,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val next = if (collectionList.nonEmpty) {
       val last = Formatters.iso8601(collectionList.last.created)
       val ds = person match {
-        case Some(p) => (collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+        case Some(p) => (collections.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
         case None => {
           space match {
             case Some(s) => (collections.listSpace(last, nextPage = true, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -780,7 +776,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
   }
 
-
+  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
+    return !(collections.hasParentInSpace(collectionId, spaceId))
+  }
 
 }
 

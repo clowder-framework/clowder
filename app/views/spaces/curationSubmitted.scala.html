@@ -1,4 +1,5 @@
 @(curationObject: models.CurationObject, repository: String, success: Boolean)(implicit user: Option[models.User] )
+@import play.api.i18n.Messages
 
 @main("Submitted"){
     <div class="row">
@@ -22,7 +23,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            <a class="btn btn-default" href="@routes.Spaces.getSpace(curationObject.space)"><span class="glyphicon glyphicon-circle-arrow-left"></span> Go Back to Space </a>
+            <a class="btn btn-default" href="@routes.Spaces.getSpace(curationObject.space)"><span class="glyphicon glyphicon-circle-arrow-left"></span> Go Back to @Messages("space.title") </a>
             <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-circle-arrow-left"></span> Go Back to Staging Area </a>
             @if(success) {
                 <a id="retract-curation" class="btn btn-danger" onclick="retractCuration('@curationObject.id')"><span class="glyphicon glyphicon-fire"></span> Retract Submission</a>

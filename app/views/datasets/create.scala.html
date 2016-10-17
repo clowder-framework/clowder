@@ -1,22 +1,59 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], spaceName: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
-@main("Create Dataset") {
+@import models.DatasetStatus
+@import play.api.i18n.Messages
+@import _root_.util.Formatters._
+
+@main(Messages("create.title", Messages("dataset.title"))) {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+
     <script type="text/javascript" language="javascript">
             //Global so that the javascript for the dataset creation can reference this.
             var isNameRequired = @isNameRequired;
             var isDescRequired = @isDescriptionRequired;
     </script>
+    <div>
+        <ol class="breadcrumb">
+            @(spaceId, spaceName) match {
+                case (Some(id), Some(name)) => {
+                    <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
+                    @collection match {
+                        case Some(coll) => {
+                            <li><span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)" title="@name"> @Html(ellipsize(coll.name,18))</a></li>
+
+                        }
+                        case None => {}
+                     }
+                }
+                case (_, _) => {
+                    @collection match {
+                        case Some(coll) => {
+                           <li> <span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)" title="@coll.name"> @Html(ellipsize(coll.name, 18))</a></li>
+                        }
+                        case None => {
+                            @user match {
+                                case Some(u) => {<li> <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a></li>}
+                                case None => {}
+                            }
+                        }
+                    }
+
+                }
+            }
+           <li><span class="glyphicon glyphicon-briefcase"></span> @Messages("create.header", Messages("dataset.title"))</li>
+        </ol>
+    </div>
     <div class="page-header">
-        <h1>Create New Dataset</h1>
+        <h1>@Messages("create.header", Messages("dataset.title"))</h1>
     </div>
     <div class="row">
         <div class="col-md-12">
-            <p>A dataset is a container for files and metadata. Create one to upload data to the system.
-                You can keep your data private or share it with other spaces.</p>
+            <p>@Messages("dataset.create.message", Messages("datasets.title"), Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
+
             @if(collection.isDefined){
-                <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
+                <p>@Messages("dataset.create.collection.message", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase) <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }
         </div>
     </div>
@@ -32,27 +69,48 @@
                 <span class="error hiddencomplete" id="nameerror">The name is a required field</span>
             </div>
             <div class="form-group">
-                <label id="desclabel" for="name">Description</label>
+                <label id="desclabel" for="description">Description</label>
                 <textarea cols=40 rows=4 type="text" id="description" class="form-control"
                     placeholder="A longer description"></textarea>
                 <span class="error hiddencomplete" id="descerror">This description is a required field</span>
             </div>
             <div class="form-group">
-                <label id="spacelabel" for="space">Share with spaces</label>
-                <select name="space" id="spaceid" class ="chosen-select" multiple>
-                    @spaces.map { space =>
+                <label id="spacelabel" for="space">Share with
+                    @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        @Messages("spaces.title")
+                     } else {
+                        a @Messages("space.title")
+                    }
+                </label>
+                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
+                @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <option value="">Select a @Messages("space.title") to share the @Messages("dataset.title").toLowerCase with (Optional)</option>
+                }
+                @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
-                <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                    this dataset with members of one or more spaces. This is optional.</p>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("dataset.title").toLowerCase, Messages("spaces.title"))</p>
+                } else {
+                    <p class="help-block">@Messages("create.share.one.message", Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
+                }
+
             </div>
+            @if(showAccess) {
+                <div class="form-group">Access:
+                    <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" checked>Default</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString">Private</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
+                </div>
+            }
+
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
             <button type="submit" class="btn btn-primary start"  id="createdataset" title="Create the Dataset">
-                <span class="glyphicon glyphicon-ok"></span> Create Dataset
+                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")
             </button>
             <button class="btn btn-default" title="Start the dataset creation process over" onclick="return resetValues();">
                 <span class="glyphicon glyphicon-unchecked"></span> Reset
@@ -66,7 +124,7 @@
     <script language = "javascript">
         $(".chosen-select").chosen({
             width: "100%",
-            placeholder_text_multiple: "Spaces that will have access to the dataset (optional)"
+            placeholder_text_multiple: "(optional)"
         })
     </script>
 
@@ -89,7 +147,7 @@
         }
 
         $(document).ready(function() {
-            @for(space <- spaces) {
+            @for(space <- spaceList) {
                 idNameObj["@space.name"] = "@space.id";
             }
              $(".chosen-choices").addClass("form-control");
@@ -99,7 +157,7 @@
             var targetId = this.getAttribute("id");
             if(!isUndefined(params.selected)) {
                 var addedId = params.selected;
-                @for(space <- spaces) {
+                @for(space <- spaceList) {
                 var currentId = "@space.id";
                 if(currentId != targetId) {
                     $('#@space.id option [value='+addedId+']').remove();
@@ -110,7 +168,7 @@
                 $('ul.chosen-choices li.search-field').css("width", "0");
             } else if(!isUndefined(params.deselected)) {
                 var removedId = params.deselected;
-                @for(space <- spaces) {
+                @for(space <- spaceList) {
                     var currentId = "@space.id";
                     if(currentId != targetId) {
                         $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
@@ -125,13 +183,24 @@
             $('#spaceid').trigger("chosen:updated");
         }
 
+        //todd_n add for loop to select id
+        if(!@collectionSpaces.isEmpty){
+            @for(eachId <- collectionSpaces){
+            $('#@eachId').prop('selected','selected');
+            $('#spaceid').trigger("chosen:updated");
+            }
+        }
+
+
         $(function () {
             $('#createdataset').click(function () {
                 var name = $('#name');
                 var desc = $('#description');
                 var spaceList = [];
                 $('#spaceid').find(":selected").each(function(i, selected) {
-                    spaceList[i] = $(selected).val();
+                    if($(selected).val() != "") {
+                        spaceList[i] = $(selected).val();
+                    }
                 });
                 // In case we want choose multiple collections for dataset like spaces in this page, collection is stored in a list here
                 var collectionList = [];
@@ -147,10 +216,12 @@
                     $('#descerror').show();
                     error = true;
                 }
+                var access = $("input[name='access']:checked").val();
+
                 if (!error) {
                     var encName = htmlEncode(name.val());
                     var encDescription = htmlEncode(desc.val());
-                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList});
+                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList, "access":access});
                     var request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
                         data: jsonData,
                         type: 'POST',

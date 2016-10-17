@@ -34,6 +34,13 @@ if [ "$ELASTICSEARCH_SERVICE_PORT" == "" ]; then
     fi
 fi
 
+# toolserver
+if [ "$TOOLMANAGER_URI" == "" ]; then
+    if [ -n "$TOOLSERVER_PORT_8080_TCP_ADDR" ]; then
+        TOOLMANAGER_URI="http://${TOOLSERVER_PORT_8080_TCP_ADDR}:${TOOLSERVER_PORT_8080_TCP_PORT}"
+    fi
+fi
+
 # some helper functions
 
 # add/replace plugin if variable is non empty
@@ -112,6 +119,10 @@ if [ "$1" = 'server' ]; then
     fix_conf   "elasticsearchSettings.clusterName" "$ELASTICSEARCH_SERVICE_CLUSTERNAME"
     fix_conf   "elasticsearchSettings.serverAddress" "$ELASTICSEARCH_SERVICE_SERVER"
     fix_conf   "elasticsearchSettings.serverPort" "$ELASTICSEARCH_SERVICE_PORT"
+
+    # toolmanager
+    fix_plugin "$TOOLMANAGER_URI" "11000" "services.ToolManagerPlugin"
+    fix_conf   "toolmanagerURI" "$TOOLMANAGER_URI"
 
     # start clowder
     /bin/rm -f /home/clowder/clowder/RUNNING_PID

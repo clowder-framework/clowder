@@ -17,6 +17,7 @@
 #10007:securesocial.core.providers.XingProvider
 #10008:securesocial.core.providers.VkProvider
 #10009:securesocial.core.providers.InstagramProvider
+#10010:services.ORCIDProvider
 10020:services.SecureSocialEventListener
 #10050:services.CrowdProvider
 #10051:services.CILogonProvider
@@ -34,5 +35,8 @@
 #10502:services.PostgresPlugin
 #10503:services.irods.IRODSPlugin
 #10700:services.ElasticsearchPlugin
-10800:services.StagingAreaPlugin
+#10800:services.StagingAreaPlugin
+#10901:services.SpaceCopyPlugin
+#10900:services.SpaceSharingPlugin
+#11000:services.ToolManagerPlugin
 

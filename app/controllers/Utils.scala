@@ -4,7 +4,7 @@ import java.net.URL
 import models._
 import play.api.data.format.Formatter
 import play.api.data.{Mapping, Forms, FormError}
-import play.api.mvc.Request
+import play.api.mvc.{RequestHeader, Request}
 import org.apache.commons.lang.StringEscapeUtils
 
 import scala.collection.mutable.ListBuffer
@@ -21,7 +21,7 @@ object Utils {
   /**
     * Returns true if protocol is https
     */
-  def https(request: Request[Any]): Boolean = {
+  def https(request: RequestHeader): Boolean = {
     request.headers.get("x-forwarded-proto") match {
       case Some(p) => (p == "https")
       case None => {
@@ -50,6 +50,20 @@ object Utils {
     val decodedName = StringEscapeUtils.unescapeHtml(space.name)
     val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
     space.copy(name = decodedName, description = decodedDesc)
+  }
+
+  def decodeVocabularyTermElements(vocabularyTerm : VocabularyTerm) = {
+    val decodedKey = StringEscapeUtils.unescapeHtml(vocabularyTerm.key)
+    val decodedDefaultValue = StringEscapeUtils.unescapeHtml(vocabularyTerm.default_value)
+    val decodedUnits = StringEscapeUtils.unescapeHtml(vocabularyTerm.units)
+    val decodedDescription = StringEscapeUtils.unescapeHtml(vocabularyTerm.description)
+    vocabularyTerm.copy(key = decodedKey, default_value = decodedDefaultValue)
+  }
+
+  def decodeString(string : String) : String ={
+    val decodedString = StringEscapeUtils.unescapeHtml(string).replace("\n"," ")
+
+    return decodedString
   }
 
   /**

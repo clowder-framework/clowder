@@ -4,7 +4,6 @@ import java.net.URI
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import securesocial.core.Identity
 
 /**
  * A Curation Object assists researchers and curators to identify sets of resources for publication.
@@ -12,7 +11,7 @@ import securesocial.core.Identity
 case class CurationObject (
   id: UUID = UUID.generate,
   name: String = "",
-  author: Identity,
+  author: MiniUser,
   description: String = "",
   created: Date,
   submittedDate: Option[Date],
@@ -25,7 +24,8 @@ case class CurationObject (
   repository: Option[String],
   status: String,
   externalIdentifier: Option[URI] = None,
-  metadataCount: Long = 0
+  metadataCount: Long = 0,
+  creators: List[String] = List.empty
 )
 
 case class StatusFromRepository(date: String, reporter: String, message: String, stage: String)
@@ -124,9 +124,8 @@ object MatchMakerResponse{
 case class CurationFile(
   id: UUID = UUID.generate,
   fileId: UUID,
-  path: Option[String] = None,
   filename: String,
-  author: Identity,
+  author: MiniUser,
   uploadDate: Date,
   contentType: String,
   length: Long = 0,

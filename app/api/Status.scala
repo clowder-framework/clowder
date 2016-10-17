@@ -38,7 +38,7 @@ class Status @Inject()(spaces: SpaceService,
   def status = UserAction(needActive=false) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
-      "counts" -> getCounts,
+      "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames())))
   }
@@ -115,6 +115,21 @@ class Status @Inject()(spaces: SpaceService,
         })
       }
 
+      case p: ToolManagerPlugin => {
+        val status = if (p.enabled) {
+          "enabled"
+        } else {
+          "disabled"
+        }
+        result.put("toolmanager", if (Permission.checkServerAdmin(user)) {
+          Json.obj("host" -> configuration.getString("toolmanagerURI").getOrElse("").toString,
+            "tools" -> p.getLaunchableTools(),
+            "status" -> status)
+        } else {
+          Json.obj("status" -> status)
+        })
+      }
+
       case p => {
         val name = p.getClass.getName
         if (name.startsWith("services.")) {
@@ -133,11 +148,16 @@ class Status @Inject()(spaces: SpaceService,
     Json.toJson(result.toMap[String, JsValue])
   }
 
-  def getCounts: JsValue = {
+  def getCounts(user: Option[User]): JsValue = {
+    val fileinfo = if (Permission.checkServerAdmin(user)) {
+      Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
+    } else {
+      Json.toJson(files.count())
+    }
     Json.obj("spaces" -> spaces.count(),
       "collections" -> collections.count(),
       "datasets" -> datasets.count(),
-      "files" -> files.count(),
+      "files" -> fileinfo,
       "users" -> users.count())
   }
 

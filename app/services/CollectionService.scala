@@ -26,6 +26,11 @@ trait CollectionService {
   def listSpace(limit: Integer, space: String): List[Collection]
 
   /**
+    * Return a list of collections in a space and checks for permissions
+    */
+  def listInSpaceList(title: Option[String], date: Option[String], limit: Integer, spaces: List[UUID], permissions: Set[Permission], user: Option[User]): List[Collection]
+
+  /**
    * Return a list of collections in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection]
@@ -33,27 +38,27 @@ trait CollectionService {
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return the count of collections the user has created.
@@ -81,6 +86,12 @@ trait CollectionService {
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
   /**
+    * List All Collections (Including childs) a user can view.
+    */
+  def listAllCollections(user: User, showAll: Boolean, limit: Int): List[Collection]
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
+  /**
    * Get collection.
    */
   def get(id: UUID): Option[Collection]
@@ -94,6 +105,13 @@ trait CollectionService {
    * Add datataset to collection
    */
   def addDataset(collectionId: UUID, datasetId: UUID): Try[Unit]
+
+  /**
+    * Add datataset to collection spaces
+    */
+  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]): Try[Unit]
+
+  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) : Try[Unit]
 
   /**
    * Remove dataset from collection
@@ -165,7 +183,7 @@ trait CollectionService {
     * Add subcollection to collection
     *
     */
-  def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
+  def addSubCollection(collectionId: UUID, subCollectionId: UUID, user : Option[User]) : Try[Unit]
 
 
   def getSelfAndAncestors(collectionId :UUID) : List[Collection]
@@ -176,8 +194,6 @@ trait CollectionService {
 
   def removeParentCollectionId(parentCollectionId: UUID, collection: Collection, ignoreNotFound: Boolean = true) : Try[Unit]
 
-  def setRootFlag(collectionId: UUID, isRoot: Boolean) : Try[Unit]
-
   def listChildCollections(parentCollectionId: UUID) : List[Collection]
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[Collection]
@@ -186,5 +202,19 @@ trait CollectionService {
 
   def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 
+  def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean
+
+  def hasRoot(collection: Collection): Boolean
+
+  def addToRootSpaces(collectionId: UUID, spaceId: UUID)
+
+  def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)
+
+  def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID])
+
+  /**
+    * Index collection, if no id provided, index all collections.
+    */
+  def index(id: Option[UUID])
 
 }

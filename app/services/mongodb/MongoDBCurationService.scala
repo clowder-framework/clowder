@@ -8,7 +8,7 @@ import models._
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
-import services.{MetadataService, CurationService, SpaceService}
+import services.{EventService, MetadataService, CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -18,7 +18,7 @@ import com.mongodb.casbah.Imports._
 
 
 @Singleton
-class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: SpaceService)  extends CurationService {
+class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: SpaceService, events: EventService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
 
@@ -79,6 +79,21 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       false, false, WriteConcern.Safe)
   }
 
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    CurationDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+    CurationDAO.update(MongoDBObject("datasets.author._id" -> new ObjectId(userId.stringify)),
+      $set("datasets.0.author.fullName" -> fullName), false, true, WriteConcern.Safe)
+    CurationFileDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+    CurationFolderDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
+
+  /** Change the metadataCount field for a curation object */
+  def incrementMetadataCount(id: UUID, count: Long) = {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+  }
 
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
@@ -125,7 +140,10 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def getCurationByCurationFile(curationFileId: UUID): Option[CurationObject] = {
-    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+    CurationFolderDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify))) match {
+      case Some(cf) =>  CurationDAO.findOne(MongoDBObject("_id" ->  new ObjectId(cf.parentCurationObjectId.stringify)))
+      case None => CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+    }
   }
 
   def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {
@@ -187,13 +205,55 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
-  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
-    val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String]) = {
+    get(id) match {
+      case Some(c) if name != c.name => {
+        events.updateObjectName(id, name)
+      }
+      case _ => 
+    }
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
       false, false, WriteConcern.Safe)
     if(oldSpace != newSpace) {
       spaces.removeCurationObject(oldSpace, id)
       spaces.addCurationObject(newSpace, id)
+    }
+  }
+
+  def maxCollectionDepth(curation: CurationObject ): Int = {
+    val folders = getCurationFolders(curation.folders)
+    if(folders.length == 0) {
+      return 0
+    }
+    var maxValue = 0
+    curation.folders.foreach{ folder =>
+      val depth = maxFolderDepth(folder)
+      if(depth > maxValue) {
+        maxValue = depth
+      }
+    }
+    return maxValue +1
+  }
+
+  private def maxFolderDepth(folderId: UUID): Int = {
+    getCurationFolder(folderId) match {
+      case Some(folder) => {
+        if(folder.folders.length == 0) {
+          return 0
+        }
+        else {
+          var maxValue = 0
+          folder.folders.foreach{ subf =>
+            val depth = maxFolderDepth(subf)
+            if(depth > maxValue) {
+              maxValue = depth
+            }
+          }
+          return maxValue + 1
+        }
+      }
+      case None =>  return 0
     }
   }
 }

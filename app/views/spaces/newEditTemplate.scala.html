@@ -1,12 +1,34 @@
-@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html, spaceId: Option[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-
+@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html, spaceId: Option[UUID], spaceName: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@import play.api.i18n.Messages
 @import helper._
-@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 @import play.api.Play.current
+@import models.SpaceStatus
+@import api.Permission
+@import _root_.util.Formatters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 
-@main("Space") {
+
+@main(title) {
   <div class="page-header">
-    <h1> @title</h1>
+    <ol class="breadcrumb">
+      @(spaceId, spaceName) match {
+        case (Some(s), Some(name)) => {
+          <li> <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @Html(ellipsize(name, 18))</a></li>
+          <li> <span class="glyphicon glyphicon-edit"></span> @Html(title)</li>
+        }
+        case (_,_) => {
+          @user match {
+            case Some(u) => {
+              <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a> </li>
+              <li><span class="glyphicon glyphicon-tent"></span> @Html(title) </li>
+            }
+            case None => {}
+          }
+        }
+      }
+    </ol>
+    <h1>@title</h1>
+    <p>@Messages("space.create.message", Messages("spaces.title"), Messages("datasets.title"))</p>
   </div>
   <div class="row">
     <div class="col-md-12">
@@ -38,16 +60,27 @@
             <div class="external-link-add"><a href="#">add</a></div>
           </div>
           @inputText(myForm("logoUrl"),'class -> "form-control", '_label-> "Logo URL")
+          Recommended image size is 100 x 100
           @inputText(myForm("bannerUrl"),'class -> "form-control", '_label-> "Banner URL")
+          Recommended image size is 1170 x 200
 
           @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
           @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
             <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
           }
           @helper.inputText(myForm("editTime"), 'class -> "form-control", '_label -> "Time to live (hours):")
+          @*do not add class = form-control for this radio button*@
+
+          @helper.inputRadioGroup(myForm("access"),
+            options = options(SpaceStatus.PRIVATE.toString->SpaceStatus.PRIVATE.toString,SpaceStatus.PUBLIC.toString->SpaceStatus.PUBLIC.toString),
+            '_label -> "Access")
+          <p id="help_access">
+            @Messages("crate.space.access.message", Messages("collections.title").toLowerCase(), Messages("datasets.title").toLowerCase, Messages("space.title").toLowerCase, Messages("dataset.title").toLowerCase)
+          </p>
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
           }
+
         </fieldset>
         @submitButton
       }
@@ -55,6 +88,37 @@
   </div>
 
   <script language="javascript">
+  $(document).ready(function() {
+    var verified = @play.Play.application().configuration().getBoolean("verifySpaces");
+    var publicEnabled = @play.Play.application().configuration().getBoolean("enablePublic");
+    if( publicEnabled) {
+
+    if(verified){
+      //enableVerified == true, create a space or still unverified space
+      if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
+
+        $('#access').closest(".control-group").hide();
+        $('#help_access').hide();
+        $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
+      }
+    } else{
+      // enablePublic ==true  && enableVerified == false && update
+      @if(spaceId.isDefined && !Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, spaceId.get))){
+      $('#access').closest(".control-group").hide();
+      $('#help_access').hide();
+      }
+      // enablePublic ==true  && enableVerified == false && create
+      if(typeof $("input[name='access']:checked").val() === "undefined" ){
+        document.getElementById('access_@SpaceStatus.PRIVATE.toString').checked= true;
+      }
+    }
+  } else {
+    // enablePublic == false
+      $('#access').closest(".control-group").hide();
+      $('#help_access').hide();
+      document.getElementById('access_PRIVATE').checked= true;
+  }
+  });
   // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
   // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
   // middle of the list is deleted.
@@ -87,7 +151,7 @@
 
 
   var title = $('.page-header h1').text();
-  if(title.indexOf("Edit Space") > 0)
+  if(title.indexOf("Edit ") >= 0)
   {
     if(!$('.help-inline').text())
     {
@@ -158,5 +222,6 @@
     $("#expiration").closest(".control-group").hide();
     $("#editTime").closest(".control-group").hide();
   }
+
   </script>
 }

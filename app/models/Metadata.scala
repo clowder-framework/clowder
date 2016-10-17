@@ -13,6 +13,7 @@ import org.apache.jena.rdf.model.{Model, ModelFactory}
 import org.apache.jena.riot.system._
 
 
+
 /**
  * A piece of metadata for a section/file/dataset/collection/space
  **/
@@ -24,7 +25,14 @@ case class Metadata (
     createdAt: Date = new Date(),
     creator: Agent,
     content: JsValue,
-    version: Option[String] = None)
+    version: Option[String] = None) {
+
+  def getExtractionSummary: Map[String, Any] = {
+    Map("metadata" -> content,
+      "resourceType" -> attachedTo.resourceType.name,
+      "resourceId" -> attachedTo.id.toString)
+  }
+}
 
 case class MetadataPair(
      label: String,
@@ -144,6 +152,7 @@ object Metadata {
 				"content" -> metadata.content
 				)
 	}
+
 }
 
 object RDFModel {

@@ -55,6 +55,14 @@ trait CurationService {
   def updateRepository(curationId: UUID, repository: String)
 
   /**
+    * Update author full name
+    */
+  def updateAuthorFullName(userId: UUID, fullName: String)
+
+  /** Change the metadataCount field for a curation object */
+  def incrementMetadataCount(id: UUID, count: Long)
+
+  /**
    * Save external Identifier received from repository
    */
   def updateExternalIdentifier(curationId: UUID, externalIdentifier: URI)
@@ -127,5 +135,10 @@ trait CurationService {
   /**
    * Update curation object's name, description, space.
    */
-  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID)
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String])
+
+  /**
+    * Get the maximum depth of a curation object
+    */
+  def maxCollectionDepth(curation: CurationObject ): Int
 }

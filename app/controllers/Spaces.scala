@@ -10,6 +10,7 @@ import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
 import play.api.libs.json.Json
+import play.api.i18n.Messages
 import services._
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
@@ -17,6 +18,7 @@ import play.api.i18n.Messages
 import services.AppConfiguration
 import util.{Mail, Formatters}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import org.apache.commons.lang.StringEscapeUtils.escapeJava
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -30,6 +32,7 @@ case class spaceFormData(
   spaceId:Option[UUID],
   resourceTimeToLive: Long,
   isTimeToLiveEnabled: Boolean,
+  access:String,
   submitButtonValue:String)
 
 case class spaceInviteData(
@@ -38,7 +41,7 @@ case class spaceInviteData(
   message: Option[String])
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService,
-  extractors: ExtractorService) extends SecuredController {
+  extractors: ExtractorService, datasets:DatasetService, collections:CollectionService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -53,14 +56,15 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       "space_id" -> optional(Utils.CustomMappings.uuidType),
       "editTime" -> longNumber,
       "isTimeToLiveEnabled" -> boolean,
+      "access" -> nonEmptyText,
       "submitValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, space_id, editTime, isTimeToLiveEnabled, bvalue) => spaceFormData(name = name, description = description,
-             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, resourceTimeToLive = editTime, isTimeToLiveEnabled = isTimeToLiveEnabled, bvalue)
+          (name, description, logoUrl, bannerUrl, homePages, space_id, editTime, isTimeToLiveEnabled, access, bvalue) => spaceFormData(name = name, description = description,
+             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, resourceTimeToLive = editTime, isTimeToLiveEnabled = isTimeToLiveEnabled, access = access, bvalue)
         )
       (
-          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.resourceTimeToLive, d.isTimeToLiveEnabled, d.submitButtonValue)
+          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.resourceTimeToLive, d.isTimeToLiveEnabled, d.access, d.submitButtonValue)
         )
   )
 
@@ -80,6 +84,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   )
 
   /**
+    * String name of the Space such as 'Project space' etc., parsed from conf/messages
+    */
+  val spaceTitle: String = Messages("space.title")
+
+  /**
    * Gets list of extractors from mongo. Displays the page to add/remove extractors.
    */
    def selectExtractors(id:UUID) = AuthenticatedAction {
@@ -89,16 +98,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id.stringify))
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id, s.name))
         }
-        case None => InternalServerError("Space not found")      
+        case None => InternalServerError(spaceTitle + " not found")
     }
   }
 
   /**
    * Processes POST request. Updates list of extractors associated with this space in mongo.
    */
-  def updateExtractors() = PermissionAction(Permission.EditSpace)(parse.multipartFormData) {
+  def updateExtractors(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id)))(parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
       //form contains space id and list of extractors.
@@ -108,7 +117,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       val dataParts = request.body.dataParts
       if (!dataParts.isDefinedAt("space_id")) {
         Logger.error("space id not defined")
-        BadRequest("Space id not defined")
+        BadRequest(spaceTitle + " id not defined")
       } else {
         //space id passed as hidden parameter
         space_id = dataParts("space_id").head
@@ -124,16 +133,13 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             Redirect(routes.Spaces.getSpace(new UUID(space_id)))
           }
           case None => {
-            BadRequest("The space does not exist")
+            BadRequest("The " + spaceTitle + " does not exist")
           }
         }
 
       }
   }
-  
-                      
-                      
-  
+
   /**
    * Space main page.
    */
@@ -144,7 +150,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
 	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
-	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
+	        val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
@@ -152,7 +158,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            	inSpaceBuffer += theCreator
 	            	creatorActual = theCreator
 	            }
-	            case None => Logger.debug("-------- No creator for space found...")
+	            case None => Logger.error(s" No creator for $spaceTitle $id found...")
 	        }
 
 	        var userRoleMap: Map[User, String] = Map.empty
@@ -182,7 +188,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
 	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
-      case None => InternalServerError("Space not found")
+      case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }
   }
 
@@ -195,12 +201,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update")), Some(s.id)))}
-        case None => InternalServerError("Space not found")
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.status, "Update")), Some(s.id), Some(s.name)))}
+        case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
 
-  def manageUsers(id: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
@@ -213,7 +219,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             inSpaceBuffer += theCreator
             creatorActual = theCreator
           }
-          case None => Logger.debug("-------- No creator for space found...")
+          case None => Logger.error(s" No creator for " + spaceTitle + " $id found...")
         }
 
         var externalUsers = users.list.to[ArrayBuffer]
@@ -256,10 +262,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
         //correct space.userCount according to usersInSpace.length
         spaces.updateUserCount(s.id,usersInSpace.length)
+        val roleDescription = users.listRoles() map (t => t.name -> t.description) toMap
 
-        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
+        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace, roleDescription))
       }
-      case None => InternalServerError("Space not found")
+      case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }
   }
 
@@ -283,7 +290,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val usr = users.findByEmail(email)
                       spaces.addUser(usr.get.id, role, id)
                       val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
-                      Mail.sendEmail("Added to space", request.user, email, theHtml)
+                      Mail.sendEmail("Added to $spaceTitle", request.user, email, theHtml)
                     }
                     case None => {
                       val uuid = UUID.generate()
@@ -311,7 +318,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
           )
         }
-        case None => InternalServerError("Space not found")
+        case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
 
@@ -319,100 +326,47 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
-   def addRequest(id: UUID) = UserAction(needActive = true) { implicit request =>
-      implicit val requestuser = request.user
-
+  def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
+    implicit val requestuser = request.user
     requestuser match{
-      case Some(user) =>  {    spaces.get(id) match {
-        case Some(s) => {
-          // when permission is public, user can reach the authorization request button, so we check if the request is
-          // already inserted
-          if(s.requests.contains(RequestResource(user.id))) {
-            Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
-          }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
-            Ok(views.html.authorizationMessage("You are already part of the space"))
-          } else{
-            Logger.debug("Request submitted in controller.Space.addRequest  ")
-            val subject: String = "Request for access from " + AppConfiguration.getDisplayName
-            val body = views.html.spaces.requestemail(user, id.toString, s.name)
+      case Some(user) =>  {
+        spaces.get(id) match {
+          case Some(s) => {
+            // when permission is public, user can reach the authorization request button, so we check if the request is
+            // already inserted
+            if(s.requests.contains(RequestResource(user.id))) {
+              Ok(views.html.authorizationMessage("Your prior request for " + spaceTitle + " " + s.name + " is active, and pending", s))
+            }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
+              Ok(views.html.authorizationMessage("You are already part of the " + spaceTitle + " " + s.name, s))
+            } else{
+              Logger.debug("Request submitted in controller.Space.addRequest  ")
+              val subject: String = "Request for access from " + AppConfiguration.getDisplayName
+              val body = views.html.spaces.requestemail(user, id.toString, s.name)
 
-            for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
-              spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
-                case Some(aRole) => {
-                  if (aRole.permissions.contains("EditSpace")) {
-                    events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
+              for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+                spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+                  case Some(aRole) => {
+                    if (aRole.permissions.contains("EditSpace")) {
+                      events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
 
-                    //sending emails to the space's Admin && Editor
-                    val recipient: String = requestReceiver.email.get.toString
-                    Mail.sendEmail(subject, request.user, recipient, body)
+                      //sending emails to the space's Admin && Editor
+                      val recipient: String = requestReceiver.email.get.toString
+                      Mail.sendEmail(subject, request.user, recipient, body)
+                    }
                   }
                 }
               }
+              spaces.addRequest(id, user.id, user.fullName)
+              Ok(views.html.authorizationMessage("Request submitted for " + spaceTitle + " " + s.name, s))
             }
-            spaces.addRequest(id, user.id, user.fullName)
-            Ok(views.html.authorizationMessage("Request submitted"))
           }
-        }
-        case None => InternalServerError("Space not found")
-      }
-    }
-
-    case None => InternalServerError("User not found")
-       }
-    }
-
-  /**
-   * accept authorization request with specific Role. Send email to request user.
-   */
-  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
-    implicit val user = request.user
-    spaces.get(id) match {
-      case Some(s) => {
-        Logger.debug("request submitted in controllers.Space.acceptrequest ")
-        users.get(UUID(requestuser)) match {
-          case Some(requestUser) => {
-            events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
-            spaces.removeRequest(id, requestUser.id)
-            users.findRoleByName(role) match {
-              case Some(r) => spaces.addUser(requestUser.id, r, id)
-              case _ => Logger.debug("Role not found" + role)
-            }
-
-            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
-            val recipient: String = requestUser.email.get.toString
-            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
-            Mail.sendEmail(subject, request.user, recipient, body)
-            Ok(Json.obj("status" -> "success"))
-          }
-          case None => InternalServerError("Request user not found")
+          case None => InternalServerError(spaceTitle + " not found")
         }
       }
-      case None => InternalServerError("Space not found")
+
+      case None => InternalServerError("User not found")
     }
   }
-
-  def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
-    implicit val user = request.user
-    spaces.get(id) match {
-      case Some(s) => {
-        Logger.debug("request submitted in controller.Space.rejectRequest")
-        users.get(UUID(requestuser)) match {
-          case Some(requestUser) => {
-            events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
-            spaces.removeRequest(id, requestUser.id)
-            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
-            val recipient: String = requestUser.email.get.toString
-            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
-            Mail.sendEmail(subject, request.user, recipient, body)
-            Ok(Json.obj("status" -> "success"))
-          }
-          case None => InternalServerError("Request user not found")
-        }
-      }
-      case None => InternalServerError("Space not found")
-    }
-  }
-
 
   /**
    * Submit action for new or edit space
@@ -431,46 +385,68 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                 spaceForm.bindFromRequest.fold(
                   errors => BadRequest(views.html.spaces.newSpace(errors)),
                   formData => {
-                    Logger.debug("Creating space " + formData.name)
-                    val newSpace = ProjectSpace(name = formData.name, description = formData.description,
-                                                created = new Date, creator = userId, homePage = formData.homePage,
-                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
-                                                resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                    if (Permission.checkPermission(user, Permission.CreateSpace)) {
+                      Logger.debug("Creating space " + formData.name)
+                      val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                        created = new Date, creator = userId, homePage = formData.homePage,
+                        logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                        collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
+                        resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled,
+                        status = formData.access)
 
-                    // insert space
-                    spaces.insert(newSpace)
-                    val role = Role.Admin
-                    spaces.addUser(userId, role, newSpace.id)
-                    //TODO - Put Spaces in Elastic Search?
-                    // index collection
-                    // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                    //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-                    // Notify admins a new space is created
-                    //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-                    //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-                    // redirect to space page
-                     Redirect(routes.Spaces.getSpace(newSpace.id))
+                      // insert space
+                      spaces.insert(newSpace)
+                      val option_user = users.findByIdentity(identity)
+                      events.addObjectEvent(option_user, newSpace.id, newSpace.name, "create_space")
+                      val role = Role.Admin
+                      spaces.addUser(userId, role, newSpace.id)
+                      //TODO - Put Spaces in Elastic Search?
+                      // index collection
+                      // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                      //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+                      // Notify admins a new space is created
+                      //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                      //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+                      // redirect to space page
+
+                      //Add default metadata to metadata for the space.
+                      val clowder_metadata = metadatas.getDefinitions()
+                      clowder_metadata.foreach{ md=>
+                        val new_metadata = MetadataDefinition(spaceId = Some(newSpace.id), json= md.json)
+                        metadatas.addDefinition(new_metadata)
+                      }
+                      Redirect(routes.Spaces.getSpace(newSpace.id))
+                    } else {  BadRequest("Unauthorized.") }
                   })
               }
               case ("Update") => {
                 spaceForm.bindFromRequest.fold(
-                  errors => BadRequest(views.html.spaces.editSpace(errors, None)),
+                  errors => BadRequest(views.html.spaces.editSpace(errors, None, None)),
                   formData => {
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
                         if (Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id)))) {
-                          val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                            homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                          val updated_space =
+                            // status can only be changed by user who has PublicSpace permission.
+                            Permission.checkPermission(user, Permission.PublicSpace, Some(ResourceRef(ResourceRef.space, existing_space.id))) match {
+                              case true =>
+                                existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                                  homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, status = formData.access)
+                              case false =>
+                                existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                                  homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                            }
                           spaces.update(updated_space)
+                          val option_user = users.findByIdentity(identity)
+                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
                           Redirect(routes.Spaces.getSpace(existing_space.id))
                         } else {
-                          Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this spaces")
+                          Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this $spaceTitle.")
                         }
                       }
                       case None => {
-                        BadRequest("The space does not exist")
+                        BadRequest("The " + spaceTitle + " does not exist")
                       }
                     }
                   })
@@ -482,14 +458,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             case None => {BadRequest("Did not get any submit button value.")}
             }
         } //some identity
-        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
+        case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit $spaceTitle.")
       }
   }
   def followingSpaces(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val title: Option[String] = Some("Following Spaces")
+        val title: Option[String] = Some(Messages("following.title", Messages("spaces.title")))
 
         var spaceList = new ListBuffer[ProjectSpace]()
         val spaceIds = clowderUser.followedEntities.filter(_.objectType == "'space")
@@ -534,16 +510,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = PrivateServerAction { implicit request =>
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean) = UserAction(needActive=true) { implicit request =>
      implicit val user = request.user
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
-     var title: Option[String] = Some("Spaces")
+     var title: Option[String] = Some(Messages("list.title", Messages("spaces.title")))
 
      val spaceList = person match {
        case Some(p) => {
-         title = Some(person.get.fullName + "'s Space")
+         title = Some(Messages("owner.title", p.fullName, Messages("spaces.title")))
          if (date != "") {
            spaces.listUser(date, nextPage, limit, request.user, showAll, p)
          } else {
@@ -551,11 +527,17 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          }
        }
        case None => {
-         if (date != "") {
-           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
-         } else {
-           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         val trialValue  = onlyTrial && Permission.checkServerAdmin(user)
+         if(trialValue) {
+           title = Some(Messages("trial.title", Messages("spaces.title")))
          }
+         if (date != "") {
+           spaces.listAccess (date, nextPage, limit, Set[Permission] (Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
+         } else {
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
+         }
+
+
        }
      }
 
@@ -564,7 +546,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
          case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, onlyTrial)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -580,7 +562,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
          case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, onlyTrial)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
@@ -604,8 +586,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        } else {
          Some(mode)
        }
+     if(!showPublic) {
+       title = Some(Messages("you.title", Messages("spaces.title")))
+     }
 
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title))
+
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
    }
 
 
@@ -614,8 +600,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user  = request.user
       spaces.get(id) match {
         case Some(s) => {
-          val curationIds = s.curationObjects.slice(index*limit, (index+1)*limit)
-          val curationDatasets: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
+          val curationIds = s.curationObjects.reverse.slice(index*limit, (index+1)*limit)
+          val curationObjects: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
 
           val prev = index-1
           val next = if(s.curationObjects.length > (index+1) * limit) {
@@ -623,9 +609,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           } else {
             -1
           }
-          Ok(views.html.spaces.stagingarea(s, curationDatasets, prev, next, limit ))
+          Ok(views.html.spaces.stagingarea(s, curationObjects, prev, next, limit ))
         }
-        case None => InternalServerError("Space Not found")
+        case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
 

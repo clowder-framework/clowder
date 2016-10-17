@@ -1,0 +1,51 @@
+@(resourceId: UUID, resourceType: Symbol, selectId: String, onClick:String, buttonText: String, buttonTitle: String, divId: String)
+@import play.api.i18n.Messages
+<div class="row bottom-padding" id="@divId">
+    <div class="col-xs-12">
+        <div class="form-inline">
+            <div class="input-group input-group-sm col-md-8">
+
+                <select id="@selectId" class="form-control add-resource">
+                </select>
+
+                <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="@buttonTitle" onclick="@onClick">
+                        <span class="glyphicon glyphicon-plus"></span> @buttonText
+                    </a>
+                </span>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script language="javascript">
+        $("#@selectId").select2({
+            theme: "bootstrap",
+            placeholder: "Select a @Messages("space.title")",
+            allowClear: true,
+            ajax: {
+                url: function(params) {
+                    return jsRoutes.api.Spaces.listCanEdit(params.term, null, 5).url;
+                },
+                data: function(params) {
+                    return { title: params.term };
+                },
+                processResults: function(data, page) {
+                    return {results: data.filter(function(x) {
+                        var ids = $('.space').map(function() {
+                            return $(this).attr('id');
+                        });
+                        return $.inArray(x["id"], ids) == -1;
+                    }).map(function(x) {
+                        return {
+                            text: x["name"],
+                            id: x["id"]
+                        }
+                    })};
+                }
+            }
+        });
+
+</script>

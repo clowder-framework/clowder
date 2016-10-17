@@ -14,16 +14,18 @@ ENV CLOWDER_CONTEXT="/" \
     RABBITMQ_MGMT_PORT="" \
     ELASTICSEARCH_SERVICE_CLUSTERNAME="clowder" \
     ELASTICSEARCH_SERVICE_SERVER="" \
-    ELASTICSEARCH_SERVICE_PORT=""
+    ELASTICSEARCH_SERVICE_PORT="" \
+    TOOLMANAGER_URI=""
 
 # create the user
 RUN useradd -s /bin/bash clowder
 
-# copy the build file, this requires sbt dist to be run
+# copy the build file, this requires sbt dist to be run (will be owned by root)
 COPY files entrypoint.sh /home/clowder/
 
-# fix permissions on all files/folders
-RUN chown -R clowder /home/clowder/clowder
+# create some folders owned by clowder user
+RUN mkdir -p /home/clowder/clowder/custom /home/clowder/clowder/logs \
+    && chown clowder /home/clowder/clowder /home/clowder/clowder/custom /home/clowder/clowder/logs
 
 # command to run when starting docker
 ENTRYPOINT ["/home/clowder/entrypoint.sh"]

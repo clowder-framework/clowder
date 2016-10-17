@@ -1,15 +1,15 @@
 package util
 
 import models.User
-import play.Logger
 import play.api.libs.concurrent.Akka
-import play.api.mvc.{AnyContent, Request, RequestHeader}
 import play.api.templates.Html
-import securesocial.core.providers.utils.Mailer
+import play.api.Logger
 import com.typesafe.plugin._
 import play.api.libs.concurrent.Execution.Implicits._
-import services.{DI, UserService, AppConfiguration}
+import services.{DI, UserService}
+
 import scala.collection.immutable.Iterable
+import scala.collection.mutable
 import scala.concurrent.duration._
 import play.api.Play.current
 
@@ -20,22 +20,24 @@ object Mail {
   /**
    * Send email to a single recipient
    */
-  def sendEmail(subject: String, from: String, recipient: String, body: Html) {
-    sendEmail(subject, from, recipient::Nil, body)
-  }
-
-  /**
-   * Send email to a single recipient
-   */
   def sendEmail(subject: String, user: Option[User], recipient: String, body: Html) {
     sendEmail(subject, emailAddress(user), recipient::Nil, body)
   }
 
   /**
-   * Send email to all server admins
+   * Send email to a single recipient
    */
-  def sendEmailAdmins(subject: String, from: String, body: Html): Unit = {
-    sendEmail(subject, from, getAdmins, body)
+  def sendEmail(subject: String, user: Option[User], recipient: Option[User], body: Html) {
+    recipient.foreach(sendEmail(subject, user, _, body))
+  }
+
+  /**
+   * Send email to a single recipient
+   */
+  def sendEmail(subject: String, user: Option[User], recipient: User, body: Html) {
+    if (recipient.email.isDefined) {
+      sendEmail(subject, emailAddress(user), emailAddress(Some(recipient))::Nil, body)
+    }
   }
 
   /**
@@ -56,7 +58,13 @@ object Mail {
    * Send email to all recipients
    */
   def sendEmail(subject: String, from: String, recipients: Iterable[String], body: Html) {
+    // this needs to be done otherwise the request object is lost and this will throw an
+    // error.
     val text = body.body
+    if ( Logger.isDebugEnabled ) {
+      Logger.debug("Sending email to %s".format(recipients.toList:_*))
+      Logger.debug("Mail = [%s]".format(text))
+    }
     Akka.system.scheduler.scheduleOnce(1.seconds) {
       val mail = use[MailerPlugin].email
       mail.setSubject(subject)
@@ -70,22 +78,29 @@ object Mail {
 
   private def getAdmins: List[String] = {
     val userService: UserService = DI.injector.getInstance(classOf[UserService])
-    val admins = AppConfiguration.getAdmins
 
-    userService.list.filter(u => u.active && admins.contains(u.email.getOrElse(""))).map{ u =>
-      emailAddress(Some(u))
-    }.distinct
+    val admins = mutable.ListBuffer[String]()
+    val seen = mutable.HashSet[String]()
+    for (x <- userService.getAdmins) {
+      if (x.email.isDefined && !seen(x.email.get)) {
+        admins += emailAddress(Some(x))
+        seen += x.email.get
+      }
+    }
+    admins.toList
   }
 
   private def emailAddress(user: Option[User]): String = {
+    val from = current.configuration.getString("smtp.from").getOrElse("devnull@ncsa.illinois.edu")
+    val name = current.configuration.getString("smtp.fromName").getOrElse("Clowder")
     user match {
       case Some(u) => {
         u.email match {
-          case Some(e) => s""""${u.fullName}" <${e}>"""
-          case None => Mailer.fromAddress
+          case Some(e) => s""""${u.fullName.replace("\"", "")}" <${e}>"""
+          case None => s""""${u.fullName.replace("\"", "")}" <${from}>"""
         }
       }
-      case None => Mailer.fromAddress
+      case None => s""""${name.replace("\"", "")}" <${from}>"""
     }
   }
 }

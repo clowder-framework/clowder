@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "0.9.2"
+  val version = "0.9.x"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -71,7 +71,7 @@ object ApplicationBuild extends Build {
     "com.rabbitmq" % "amqp-client" % "3.0.0",
 
     // indexing
-    "org.elasticsearch" % "elasticsearch" % "1.3.4",
+    "org.elasticsearch" % "elasticsearch" % "2.3.5" exclude("io.netty", "netty"),
 
     // mongo storage
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
@@ -133,7 +133,7 @@ object ApplicationBuild extends Build {
     "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
 
-  // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
+  // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory
   def customLessEntryPoints(base: File): PathFinder = (
     (base / "app" / "assets" / "stylesheets" / "bootstrap" * "bootstrap.less") +++
     (base / "app" / "assets" / "stylesheets" / "bootstrap" * "responsive.less") +++
@@ -159,7 +159,7 @@ object ApplicationBuild extends Build {
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
-    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
+    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
 
     // add custom folder to the classpath, use this to add/modify medici:
     // custom/public/stylesheets/themes     - for custom themes
@@ -200,4 +200,3 @@ object ApplicationBuild extends Build {
 
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
-
