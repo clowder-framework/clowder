@@ -720,16 +720,10 @@ class  Datasets @Inject()(
                 }
               }
             }
-            case e: JsError => {
-              Logger.error("Error getting creator");
-              BadRequest(toJson(s"Creator data is missing or incorrect."))
-            }
           }
-
+          case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
-        case None => Logger.error(s"Error getting dataset $id"); NotFound
       }
-    }
 
 
   @ApiOperation(value="Retrieve available metadata definitions for a dataset. It is an aggregation of the metadata that a space belongs to.",
