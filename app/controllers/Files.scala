@@ -80,8 +80,8 @@ class Files @Inject() (
             if (!p.collection)
             if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
           ) yield {
-              val tabtitle: String = pv.title.getOrElse("")
-              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
+            val tabtitle: String = pv.title.getOrElse("")
+            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
@@ -105,11 +105,11 @@ class Files @Inject() (
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-        	val p = previews.findBySectionId(s.id)
-        	if(p.length>0)
-        		s.copy(preview = Some(p(0)))
-        	else
-        		s.copy(preview = None)
+          val p = previews.findBySectionId(s.id)
+          if (p.length > 0)
+            s.copy(preview = Some(p(0)))
+          else
+            s.copy(preview = None)
         }
 
         // metadata
@@ -138,9 +138,11 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
-        val allDatasets =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
+        val allDatasets = (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
 
-        val access = if(!allDatasets.head.isDefault) {
+        val access = if (allDatasets == Nil) {
+          "Private"
+        } else if(!allDatasets.head.isDefault) {
           val status = allDatasets.head.status
           status(0).toUpper + status.substring(1).toLowerCase()
         } else {
@@ -748,7 +750,7 @@ def uploadExtract() =
               }
               case None => {
                   //Case where the file could not be found
-                  Logger.info(s"Error getting the file with id $id.")
+                  Logger.error(s"Error getting the file with id $id.")
                   BadRequest("Invalid file ID")
               }
           }
@@ -847,7 +849,7 @@ def uploadExtract() =
               }
               case None => {
                 //File could not be found
-                Logger.info(s"Error getting the file with id $id.")
+                Logger.error(s"Error getting the file with id $id.")
                 Future(BadRequest("Invalid file ID"))
               }
             }
@@ -943,7 +945,7 @@ def uploadExtract() =
         Logger.debug("Controllers/Files Uploading file " + nameOfFile)
 
         // store file       
-        Logger.info("uploadSelectQuery")
+        Logger.debug("uploadSelectQuery")
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
 
@@ -1048,7 +1050,7 @@ def uploadExtract() =
         Logger.debug("Uploading file " + nameOfFile)
 
         // store file
-        Logger.info("uploadDragDrop")
+        Logger.debug("uploadDragDrop")
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
         try {
@@ -1268,7 +1270,7 @@ def uploadExtract() =
                     }
 
                     // redirect to dataset page
-                    Logger.info("Uploading Completed")
+                    Logger.debug("Uploading Completed")
 
                     Redirect(routes.Datasets.dataset(dataset_id))
                   }
@@ -1326,9 +1328,9 @@ def uploadExtract() =
   //  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {
   //        parse.Multipart.handleFilePart {
   //          case parse.Multipart.FileInfo(partName, filename, contentType) =>
-  //            Logger.info("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
+  //            Logger.debug("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
   //            // TODO RK handle exception for instance if we switch to other DB
-  //        Logger.info("myPartHandler")
+  //        Logger.debug("myPartHandler")
   //			val files = current.plugin[MongoSalatPlugin] match {
   //			  case None    => throw new RuntimeException("No MongoSalatPlugin");
   //			  case Some(x) =>  x.gridFS("uploads")
@@ -1374,7 +1376,7 @@ def uploadExtract() =
   //    
   //    // store file
   //    // TODO is this still used? if so replace null with user.
-  //        Logger.info("uploadAjax")
+  //        Logger.debug("uploadAjax")
   //    val file = files.save(new FileInputStream(f.getAbsoluteFile()), filename, None, null)
   //    
   //    file match {

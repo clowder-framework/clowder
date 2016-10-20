@@ -163,10 +163,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
         Charset.forName("UTF-8")))
       httpPost.setEntity(entity)
       val imageUploadResponse = httpclient.execute(httpPost)
-      Logger.info(imageUploadResponse.getStatusLine().toString())
+      Logger.debug(imageUploadResponse.getStatusLine().toString())
 
       val dirEntity = imageUploadResponse.getEntity()
-      Logger.info("IIP server: " + EntityUtils.toString(dirEntity))
+      Logger.debug("IIP server: " + EntityUtils.toString(dirEntity))
     }
 
     if (!p.filename.isEmpty)

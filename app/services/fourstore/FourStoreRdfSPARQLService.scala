@@ -36,7 +36,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
@@ -64,7 +64,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
@@ -93,7 +93,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
@@ -112,7 +112,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val httpDelete = new HttpDelete(queryUrl)
         
         val queryResponse = httpclient.execute(httpDelete)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)        
         Logger.debug("the results: "+resultsString)
@@ -130,7 +130,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val httpDelete = new HttpDelete(queryUrl)
         
         val queryResponse = httpclient.execute(httpDelete)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)        
         Logger.debug("the results: "+resultsString)
@@ -160,7 +160,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
@@ -215,7 +215,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
     
 	    val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/sparql/"
         val httpclient = new DefaultHttpClient()
-	    Logger.info("query text: "+ queryText)
+	    Logger.debug("query text: "+ queryText)
         val httpPost = new HttpPost(queryUrl)
                 
         val urlParameters = new ArrayList[NameValuePair]()
@@ -223,7 +223,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
@@ -252,7 +252,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
-        Logger.info(queryResponse.getStatusLine().toString())
+        Logger.debug(queryResponse.getStatusLine().toString())
         
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)

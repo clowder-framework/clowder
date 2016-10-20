@@ -580,7 +580,7 @@ class  Datasets @Inject()(
               case Some (file) => {
                 attachExistingFileHelper (toDatasetId, fileId, toDataset, file, request.user)
                 detachFileHelper(datasetId, fileId, dataset, request.user)
-                Logger.info ("----- Successfully moved File between datasets.")
+                Logger.debug ("----- Successfully moved File between datasets.")
                 Ok (toJson (Map ("status" -> "success") ) )
               }
               case None => {
@@ -1273,7 +1273,7 @@ class  Datasets @Inject()(
     */
   @ApiOperation(value = "Get the tags associated with this dataset", notes = "Returns a JSON object of multiple fields", responseClass = "None", httpMethod = "GET")
   def getTags(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    Logger.info(s"Getting tags for dataset with id  $id.")
+    Logger.debug(s"Getting tags for dataset with id  $id.")
     /* Found in testing: given an invalid ObjectId, a runtime exception
      * ("IllegalArgumentException: invalid ObjectId") occurs.  So check it first.
      */
@@ -1508,7 +1508,7 @@ class  Datasets @Inject()(
     notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
     responseClass = "None", httpMethod = "POST")
   def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    Logger.info(s"Removing all tags for dataset with id: $id.")
+    Logger.debug(s"Removing all tags for dataset with id: $id.")
     if (UUID.isValid(id.stringify)) {
       datasets.get(id) match {
         case Some(dataset) => {
@@ -2287,7 +2287,7 @@ class  Datasets @Inject()(
     zip.putNextEntry(new ZipEntry("bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
     val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
-    val baggingSize = "Bag-Size: " + _root_.util.FileUtils.humanReadableByteCount(totalbytes) + "\n"
+    val baggingSize = "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
     val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
     val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
     val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"

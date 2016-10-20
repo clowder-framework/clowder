@@ -15,7 +15,7 @@ class Geometry @Inject()(threeD: ThreeDService) extends Controller with ApiContr
    */  
   def uploadGeometry() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>
-        Logger.info("Uploading binary geometry file " + f.filename)
+        Logger.debug("Uploading binary geometry file " + f.filename)
         // store file
         try {
           val id = threeD.saveGeometry(new FileInputStream(f.ref.file), f.filename, f.contentType)

@@ -49,7 +49,7 @@ class MailerPlugin (application: Application) extends Plugin {
   
   def sendMail(subscriberMail : String, html: String, subject: String): Boolean = {
 		  
-	  Logger.info("Sending mail to " + subscriberMail)	  
+	  Logger.debug("Sending mail to " + subscriberMail)
           
       //Authenticate if needed
       var session = Session.getDefaultInstance(properties)     
@@ -71,7 +71,7 @@ class MailerPlugin (application: Application) extends Plugin {
         message.setContent(html, "text/html")
         Transport.send(message)
                                   
-        Logger.info("Sent message successfully.")        
+        Logger.debug("Sent message successfully.")
       }catch {
         case msgex: MessagingException =>{
         	Logger.error(msgex.toString())

@@ -238,7 +238,7 @@ class Extractions @Inject()(
           if (UUID.isValid(id.stringify)) {
             files.get(id) match {
               case Some(file) => {
-                Logger.info("Getting extract info for file with id " + id)
+                Logger.debug("Getting extract info for file with id " + id)
 
                 val l = extractions.getExtractorList(file.id) map {
                   elist => (elist._1, elist._2)

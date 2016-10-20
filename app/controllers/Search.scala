@@ -58,9 +58,9 @@ class Search @Inject() (
             case Some(searchResponse) => {
               for (hit <- searchResponse.getHits().getHits()) {
                 Logger.debug("Computing search result " + hit.getId())
-                Logger.info("Fields: ")
+                Logger.debug("Fields: ")
                 for ((key, value) <- mapAsScalaMap(hit.getFields())) {
-                  Logger.info(value.getName + " = " + value.getValue())
+                  Logger.debug(value.getName + " = " + value.getValue())
                 }
 
                 if (hit.getType() == "file") {

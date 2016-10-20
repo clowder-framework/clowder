@@ -7,7 +7,7 @@ import play.api.{Application, Logger, Plugin}
 class SpaceSharingPlugin(application: Application) extends Plugin {
 
   override def onStart() {
-    Logger.debug("Space Sharing Plugin started")
+    Logger.info("Space Sharing Plugin started")
   }
 
   override def onStop() {
