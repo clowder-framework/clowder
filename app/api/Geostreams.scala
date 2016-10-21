@@ -382,7 +382,6 @@ object Geostreams extends ApiController {
           "sources" -> Json.toJson(sources),
           "attributes" -> Json.toJson(attributes))
 
-        Logger.debug("here")
         cacheFetch(description) match {
           case Some(data) => jsonp(data.through(Enumeratee.map(new String(_))), request)
           case None => {
