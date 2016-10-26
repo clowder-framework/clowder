@@ -484,8 +484,11 @@ class Extractions @Inject()(
   @ApiOperation(value = "Lists information about a specific extractor",
     notes = "  ",
     responseClass = "None", httpMethod = "GET")
-  def getExtractorInfo(extractor_id: UUID) = AuthenticatedAction { implicit request =>
-    Ok(Json.toJson(extractors.getExtractorInfo(extractor_id)))
+  def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
+    extractors.getExtractorInfo(extractorName) match {
+      case Some(info) => Ok(Json.toJson(info))
+      case None => NotFound(Json.obj("status" -> "KO", "message" -> "Extractor info not found"))
+    }
   }
 
   @ApiOperation(value = "Register information about an extractor. Used when an extractor starts up.",
