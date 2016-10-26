@@ -973,6 +973,7 @@ class Files @Inject()(
           }
 
         }
+        files.index(id)
         Ok(Json.obj("status" -> "success"))
       }
       else {

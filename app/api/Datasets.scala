@@ -221,6 +221,7 @@ class  Datasets @Inject()(
       }
       //event will be added whether creation is success.
       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
+      datasets.index(d.id)
 
       (request.body \ "file_id").asOpt[String] match {
         case Some(file_id) => {
@@ -250,6 +251,8 @@ class  Datasets @Inject()(
                   current.plugin[AdminsNotifierPlugin].foreach {
                     _.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
                   }
+
+
                   Ok(toJson(Map("id" -> id)))
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
@@ -317,10 +320,12 @@ class  Datasets @Inject()(
           case Some(id) => {
             //In this case, the dataset has been created and inserted. Now notify the space service and check
             //for the presence of existing files.
+            datasets.index(d.id)
             Logger.debug("About to call addDataset on spaces service")
             d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
               spaces.addDataset(d.id, s.id)
               events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
+
             }
             //Add this dataset to a collection if needed
             (request.body \ "collection").asOpt[List[String]] match {
@@ -1006,6 +1011,7 @@ class  Datasets @Inject()(
           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
         }
       }
+      datasets.index(id)
       Ok(Json.obj("status" -> "success"))
     }
     else {
@@ -1042,6 +1048,10 @@ class  Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+          datasets.index(id)
+          // file in this dataset need to be indexed as well since dataset name will show in file list
+          dataset.files.map(files.index(_))
+          folders.findByParentDatasetId(id).map(_.files).flatten.map(files.index(_))
         }
       }
       Ok(Json.obj("status" -> "success"))
@@ -1082,6 +1092,7 @@ class  Datasets @Inject()(
           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
         }
       }
+      datasets.index(id)
       Ok(Json.obj("status" -> "success"))
     }
     else {
