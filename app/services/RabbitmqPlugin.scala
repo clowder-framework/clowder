@@ -361,7 +361,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
       val startDate = (json \ "start").asOpt[String].map(x =>
-        Try(new SimpleDateFormat("yyyy-MM-xdd'T'HH:mm:ssX").parse(x)).getOrElse {
+        Try(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX").parse(x)).getOrElse {
           new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(x)
         })
       val updatedStatus = status.toUpperCase()
