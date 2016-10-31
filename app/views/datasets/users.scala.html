@@ -20,7 +20,7 @@
                     <thead>
                         <tr>
                             <th class="col-md-4">User</th>
-                            @if(currUserIsAuthor) {
+
                                 <th>
                                     <table id='nested-space-role-headers' class="table table-hover">
                                         <thead>
@@ -31,14 +31,14 @@
                                         </thead>
                                     </table>
                                 </th>
-                            }
+
                         </tr>
                     </thead>
                     <tbody>
                         @users.filter(!_.fullName.isEmpty).map { u =>
                             <tr>
                                 <td class="col-md-4">@u.fullName</td>
-                                @if(currUserIsAuthor && (userListSpaceRoleTupleMap contains u.id)) {
+                                @if(userListSpaceRoleTupleMap contains u.id) {
                                     <td>
                                         <table id='nested-space-role-pairs' class="table table-hover">
                                             <tbody>
