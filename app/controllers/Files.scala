@@ -160,22 +160,58 @@ class Files @Inject() (
           }
         }
 
-
+        //decodedDatasetsContaining are the datasets where the file is, where the file is not within a folder
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
 
         for (aDataset <- datasetsContainingFile) {
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsContaining += dDataset
         }
+
+        //allDecodedDatasets includes datasets where the file is on the first level (not within a folder) and when the file is in a folder
+        //it includes the parent dataset of the folder.
+        val allDecodedDatasets = ListBuffer.empty[models.Dataset]
+        val decodedSpacesContaining= ListBuffer.empty[models.ProjectSpace]
+        for (aDataset <- allDatasets) {
+          val dDataset = Utils.decodeDatasetElements(aDataset)
+          allDecodedDatasets += dDataset
+          aDataset.spaces.map{
+            sp => spaces.get(sp) match {
+              case Some(s) => {
+                decodedSpacesContaining += Utils.decodeSpaceElements(s)
+              }
+              case None =>
+            }
+          }
+        }
+
+
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val extractionsByFile = extractions.findByFileId(id)
-          
-          //call Polyglot to get all possible output formats for this file's content type 
-          
 
-          current.plugin[PolyglotPlugin] match {
+
+        var folderHierarchy = new ListBuffer[Folder]()
+        if(foldersContainingFile.length > 0) {
+          folderHierarchy = folderHierarchy ++ foldersContainingFile
+          var f1: Folder = folderHierarchy.head
+          while(f1.parentType == "folder") {
+            folders.get(f1.parentId) match {
+              case Some(fparent) => {
+                folderHierarchy += fparent
+                f1 = fparent
+              }
+              case None =>
+            }
+          }
+        }
+
+
+
+
+        //call Polyglot to get all possible output formats for this file's content type
+        current.plugin[PolyglotPlugin] match {
             case Some(plugin) => {
               Logger.debug("Polyglot plugin found")
               
@@ -189,14 +225,14 @@ class Files @Inject() (
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                   extractorsActive, decodedDatasetsContaining.toList,foldersContainingFile,
-                  mds, isRDFExportEnabled, extractionsByFile, outputFormats, space,  access)))
+                  mds, isRDFExportEnabled, extractionsByFile, outputFormats, space,  access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList )))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, None, space, access)))
+                mds, isRDFExportEnabled, extractionsByFile, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList)))
           }              
       }
           

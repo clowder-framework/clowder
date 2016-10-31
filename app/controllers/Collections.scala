@@ -42,11 +42,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     space match {
       case Some(spaceId) => {
         spaceService.get(UUID(spaceId)) match {
-          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId)))
-          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId), Some(s.name)))
+          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, None))
         }
       }
-      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, None))
     }
 
   }
@@ -305,7 +305,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
             }
             //This case shouldn't happen as it is validated on the client.
-            BadRequest(views.html.newCollection("Name, Description, or " + spaceTitle + " was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+            BadRequest(views.html.newCollection("Name, Description, or " + spaceTitle + " was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, None))
           }
 
           var parentCollectionIds = List.empty[String]
@@ -490,10 +490,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             val removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
             decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
           }
-
+          var canAddToParent = Permission.checkOwner(user, ResourceRef(ResourceRef.collection, collection.id))
+          if(!canAddToParent) {
+            collection.spaces.map(space => {
+              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space))) {
+                canAddToParent = true
+              }
+            })
+          }
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
             Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
-            prevd,nextd, prevcc, nextcc, limit))
+            prevd,nextd, prevcc, nextcc, limit, canAddToParent))
 
         }
         case None => {

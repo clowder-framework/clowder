@@ -1,4 +1,4 @@
-@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: Map[String,String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -34,6 +34,7 @@
           @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
 
           @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
+          <p>An e-mail digest of activities that involve your followed objects.</p>
 
         </fieldset>
         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {

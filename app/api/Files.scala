@@ -60,7 +60,13 @@ class Files @Inject()(
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.info("GET file with id " + id)
     files.get(id) match {
-      case Some(file) => Ok(jsonFile(file))
+      case Some(file) => {
+        val serveradmin = request.user match {
+          case Some(u) => u.serverAdmin
+          case None => false
+        }
+        Ok(jsonFile(file, serveradmin))
+      }
       case None => {
         Logger.error("Error getting file" + id)
         InternalServerError
@@ -73,7 +79,11 @@ class Files @Inject()(
    */
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = DisabledAction { implicit request =>
-    val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
+    val serveradmin = request.user match {
+      case Some(u) => u.serverAdmin
+      case None => false
+    }
+    val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f, serveradmin)
     Ok(toJson(list))
   }
 
@@ -372,17 +382,47 @@ class Files @Inject()(
   @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
         //get metadata and also fetch context information
-        val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-          .map(JSONLD.jsonMetadataWithContext(_))
+        val listOfMetadata = extFilter match {
+          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.file, id), f)
+            .map(JSONLD.jsonMetadataWithContext(_))
+          case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+            .map(JSONLD.jsonMetadataWithContext(_))
+        }
         Ok(toJson(listOfMetadata))
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        InternalServerError
+        BadRequest(toJson("Error getting file  " + id))
+      }
+    }
+  }
+
+  @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
+    notes = "Remove JSON-LD metadata from file object",
+    responseClass = "None", httpMethod = "GET")
+  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        val num_removed = extFilter match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        }
+        // send extractor message after attached to resource
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.metadata.removed"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+            "resourceType"->ResourceRef.file,
+            "resourceId"->id.toString), "", id, ""))
+        }
+        Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
+      }
+      case None => {
+        Logger.error("Error getting file  " + id);
+        BadRequest(toJson("Error getting file  " + id))
       }
     }
   }
@@ -635,9 +675,37 @@ class Files @Inject()(
         Ok(toJson(Map("status" -> "success")))
   }
 
-  def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
-    		"authorId" -> file.author.id.stringify, "status" -> file.status))
+  def jsonFile(file: File, serverAdmin: Boolean = false): JsValue = {
+    val defaultMap = Map(
+      "id" -> file.id.toString,
+      "filename" -> file.filename,
+      "filedescription" -> file.description,
+      "content-type" -> file.contentType,
+      "date-created" -> file.uploadDate.toString(),
+      "size" -> file.length.toString,
+      "authorId" -> file.author.id.stringify,
+      "status" -> file.status)
+
+    // Only include filepath if using DiskByte storage and user is serverAdmin
+    val jsonMap = file.loader match {
+      case "services.filesystem.DiskByteStorageService" => {
+        if (serverAdmin)
+          Map(
+            "id" -> file.id.toString,
+            "filename" -> file.filename,
+            "filepath" -> file.loader_id,
+            "filedescription" -> file.description,
+            "content-type" -> file.contentType,
+            "date-created" -> file.uploadDate.toString(),
+            "size" -> file.length.toString,
+            "authorId" -> file.author.id.stringify,
+            "status" -> file.status)
+        else
+          defaultMap
+      }
+      case _ => defaultMap
+    }
+    toJson(jsonMap)
   }
 
   def jsonFileWithThumbnail(file: File): JsValue = {

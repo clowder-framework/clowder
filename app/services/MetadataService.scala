@@ -20,6 +20,9 @@ trait MetadataService {
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata]
 
+  /** Get Extractor metadata by attachTo, from a specific extractor if given */
+  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: String): List[Metadata]
+
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent:String): List[Metadata]
 
@@ -27,7 +30,10 @@ trait MetadataService {
   def removeMetadata(metadataId: UUID)
 
   /** Remove metadata by attachTo*/
-  def removeMetadataByAttachTo(resourceRef: ResourceRef)
+  def removeMetadataByAttachTo(resourceRef: ResourceRef): Long
+
+  /** Remove metadata by attachTo from a specific extractor */
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String): Long
   
   /** Get metadata context if available */
   def getMetadataContext(metadataId: UUID): Option[JsValue]

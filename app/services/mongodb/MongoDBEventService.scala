@@ -1,9 +1,13 @@
 package services.mongodb
 
+import javax.inject.Inject
+
+import api.Permission
 import models._
 import java.util.Date
 import org.bson.types.ObjectId
-import services.EventService
+import services._
+import api.Permission.Permission
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
@@ -15,7 +19,11 @@ import com.novus.salat.dao.SalatMongoCursor
 /**
   * Use MongoDB for storing events.
  */
-class MongoDBEventService extends EventService {
+class MongoDBEventService @Inject() (
+     userService: UserService,
+     spaces:SpaceService,
+     datasets: DatasetService,
+     Folders:FolderService) extends EventService {
 
 
   def listEvents(): List[Event] = {
@@ -137,8 +145,9 @@ class MongoDBEventService extends EventService {
         Event.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(n).toList
       }
     }
-
   }
+
+
    def getRequestEvents(targetuser: Option[User], limit: Option[Integer]): List[Event] = {
      targetuser match {
        case Some(modeluser) => {
@@ -164,6 +173,26 @@ class MongoDBEventService extends EventService {
       Event.find(MongoDBObject(
       "object_id"-> new ObjectId(user.id.toString()))).toList)
         .distinct.sorted(Ordering.by((_: Event).created).reverse)
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
+  }
+
+  def getCommentEvent( user: User, limit: Option[Integer]): List[Event] ={
+    val roleList = userService.listRoles().filter(_.permissions.contains(Permission.ViewComments.toString))
+    val spaceIdList = user.spaceandrole.filter(x => roleList.contains(x.role)).map(_.spaceId)
+    val datasetList = (datasets.listUser(0,  None, true, user) ::: spaceIdList.map(s => datasets.listSpace(0, s.toString)).flatten).distinct
+    val fileIdList = (datasetList.map(_.files) ::: datasetList.map(d => Folders.findByParentDatasetId(d.id).map(_.files).flatten)).flatten
+    val eventList = (Event.find(MongoDBObject(
+        "event_type" -> "add_comment_dataset") ++
+        ("source_id" $in datasetList.map(x => new ObjectId(x.id.stringify)))
+    ).toList:::
+      Event.find(MongoDBObject(
+        "event_type" -> "comment_file") ++
+        ("source_id" $in fileIdList.map(x => new ObjectId(x.stringify)))).toList)
+      .distinct.sorted(Ordering.by((_: Event).created).reverse)
 
     limit match {
       case Some(x) => eventList.take(x)

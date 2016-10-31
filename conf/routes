@@ -97,7 +97,7 @@ POST           /uploaddnd/:id                                                   
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
-GET            /files/:file_id/extractions                                              @controllers.Extractors.submitExtraction(file_id: UUID)
+GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS
@@ -123,6 +123,7 @@ POST           /dataset/submit                                                  
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
 POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
+GET            /datasets/:id/extractions                                                @controllers.Extractors.submitDatasetExtraction(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS
@@ -276,7 +277,6 @@ GET            /api-docs.json/:path                                             
 POST           /api/admin/mail                                                          @api.Admin.mail
 POST           /api/admin/users                                                         @api.Admin.users
 POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
-DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
 POST           /api/reindex                                                             @api.Admin.reindex
 POST           /api/admin/configuration                                                 @api.Admin.updateConfiguration
@@ -290,9 +290,11 @@ GET            /api/contexts/:name/context.json                                 
 DELETE         /api/contexts/:id                                                        @api.ContextLD.removeById(id: UUID)
 
 POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
-GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
+DELETE         /api/datasets/:id/metadata.jsonld                                        @api.Datasets.removeMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
 POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
-GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
+DELETE         /api/files/:id/metadata.jsonld                                           @api.Files.removeMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
 
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
 DELETE         /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)
@@ -375,7 +377,8 @@ GET            /api/extractors                                                  
 GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
-POST           /api/files/:file_id/extractions                                          @api.Extractions.submitToExtractor(file_id: UUID)
+POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
+POST           /api/datasets/:ds_id/extractions                                         @api.Extractions.submitDatasetToExtractor(ds_id: UUID)
 
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
@@ -719,6 +722,7 @@ DELETE         /spaces/curations/:id/folders/:curationFolderId                  
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 GET            /spaces/curations/:id/getMetadataDefinitionsByFile                       @api.CurationObjects.getMetadataDefinitionsByFile(id: UUID)
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
+GET            /publishedData                                                           @controllers.CurationObjects.getPublishedData(index: Int ?= 0, limit: Int ?=20)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
 

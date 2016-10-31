@@ -946,14 +946,28 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     margin: 50px 0px;
 }
 
-.glyphicon-one-fine-yellow-dot:before {
-    content:"\25cf";
-    font-size: 2em;
-    color: GoldenRod;
+.glyphicon-stack {
+    position: relative;
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    line-height: 0.75em;
+    vertical-align: middle;
 }
 
-.glyphicon-one-fine-green-dot:before {
-    content:"\25cf";
-    font-size: 2em;
-    color: green;
+.glyphicon-circle{
+    position: relative;
+    border-radius: 50%;
+    width: 100%;
+    height: auto;
+    padding-top: 100%;
+    background: black;
+}
+
+.green-background{
+    background-color: green;
+}
+
+.goldenrod{
+    background-color: goldenrod;
 }

@@ -773,6 +773,11 @@ class MongoDBDatasetService @Inject() (
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
+  /** Change the metadataCount field for a dataset */
+  def incrementMetadataCount(id: UUID, count: Long) = {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+  }
+
   /**
    * Implementation of updateInformation defined in services/DatasetService.scala.
    */

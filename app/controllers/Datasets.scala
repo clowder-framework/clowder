@@ -1,23 +1,17 @@
 package controllers
 
-import java.io.FileInputStream
-import java.text.SimpleDateFormat
-import java.util.Date
+
 import javax.inject.Inject
 import api.Permission
 import api.Permission.Permission
-import fileutils.FilesUtils
 import models._
-import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.current
-import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
+import util.{FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
-import scala.collection.mutable.{ListBuffer, Map => MutableMap}
-import scala.util.matching.Regex
+import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
 
 /**
@@ -64,22 +58,20 @@ class Datasets @Inject()(
       }
 
     var hasVerifiedSpace = false
-    val spaceId = space match {
+    val (spaceId, spaceName) = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
           case Some(space) => {
             hasVerifiedSpace = !space.isTrial
-            Some(space.id.toString)
+            (Some(space.id.toString), Some(space.name))
           }
-          case None => None
+          case None => (None, None)
         }
       }
-      case None => None
+      case None => (None, None)
     }
 
-
     var collectionSpaces : ListBuffer[String] = ListBuffer.empty[String]
-
 
     val collectionSelected = collection match {
       case Some(c) => {
@@ -109,7 +101,7 @@ class Datasets @Inject()(
       (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces.toList ,showAccess))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, spaceName, collectionSelected, collectionSpaces.toList ,showAccess))
 
   }
 
@@ -125,7 +117,7 @@ class Datasets @Inject()(
     }
   }
 
-  def addFiles(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addFiles(id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
@@ -447,7 +439,7 @@ class Datasets @Inject()(
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
 
-          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
           var isInPublicSpace = false
           dataset.spaces.map{
             sp => spaceService.get(sp) match {
@@ -497,7 +489,7 @@ class Datasets @Inject()(
           } else {
             ""
           }
-          var accessOptions = new ListBuffer[String]()
+          val accessOptions = new ListBuffer[String]()
           if(isInPublicSpace){
             accessOptions.append(spaceTitle + " Default (Public)")
           } else {
@@ -505,11 +497,17 @@ class Datasets @Inject()(
           }
           accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0,1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
           accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0,1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
-
-
+          var canAddDatasetToCollection = Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))
+          if(!canAddDatasetToCollection) {
+            datasetSpaces.map(space =>
+              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
+                canAddDatasetToCollection = true
+             }
+            )
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
