@@ -512,6 +512,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
+     val ownerName = person match {
+       case Some(p) => Some(p.fullName)
+       case None => None
+     }
      var title: Option[String] = Some(Messages("list.title", Messages("spaces.title")))
 
      val spaceList = person match {
@@ -588,7 +592,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
      }
 
 
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, ownerName, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
    }
 
 
