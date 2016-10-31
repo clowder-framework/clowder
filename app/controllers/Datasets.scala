@@ -109,7 +109,14 @@ class Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        Ok(views.html.datasets.createStep2(dataset))
+        var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+        dataset.spaces.map(sp =>
+          spaceService.get(sp) match {
+          case Some(s) => datasetSpaces =  s :: datasetSpaces
+          case None =>
+        })
+        Ok(views.html.datasets.createStep2(dataset, datasetSpaces))
       }
       case None => {
         InternalServerError(s"$Messages('dataset.title') $id not found")
@@ -119,9 +126,16 @@ class Datasets @Inject()(
 
   def addFiles(id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
-    datasets.get(id) match {
-      case Some(dataset) => {
-        Ok(views.html.datasets.addFiles(dataset, None))
+        datasets.get(id) match {
+          case Some(dataset) => {
+            var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+            dataset.spaces.map(sp =>
+              spaceService.get(sp) match {
+                case Some(s) => datasetSpaces =  s :: datasetSpaces
+                case None =>
+              })
+            Ok(views.html.datasets.addFiles(dataset, None, datasetSpaces, List.empty))
       }
       case None => {
         InternalServerError(s"$Messages('dataset.title')  $id not found")
@@ -200,7 +214,15 @@ class Datasets @Inject()(
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val ownerName = person match {
+      case Some(p) => Some(p.fullName)
+      case None => None
+    }
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val spaceName = datasetSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }
     var title: Option[String] = Some(Messages("list.title", Messages("datasets.title")))
 
     val datasetList = person match {
@@ -324,7 +346,7 @@ class Datasets @Inject()(
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the "+spaceTitle+".", s, "space"))
       }
-      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, spaceName, title, owner, ownerName, when, date))
     }
   }
 

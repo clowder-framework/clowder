@@ -1,4 +1,4 @@
-@(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], spaceName: Option[String], title: Option[String], owner:Option[String], ownerName: Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import api.Permission
 @main(Messages("datasets.title")) {
@@ -10,6 +10,24 @@
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
+<div class="row">
+    <ol class="breadcrumb">
+        @(owner, ownerName) match {
+            case (Some(o), Some(n)) => {
+                <li> <span class="glyphicon glyphicon-user"></span> <a href="@routes.Profile.viewProfileUUID(UUID(o))"> @n</a></li>
+            }
+            case (_, _) => {}
+        }
+        @(space, spaceName) match {
+            case (Some(s), Some(sn)) => {
+                <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(UUID(s))"> @sn</a></li>
+            }
+            case (_,_) => {}
+        }
+
+        <li><span class="glyphicon glyphicon-briefcase"> </span> Datasets</li>
+    </ol>
+</div>
 <div class="row">
    <div class="col-md-12">
        <h1>@Html(title.getOrElse("Datasets"))</h1>
