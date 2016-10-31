@@ -92,9 +92,9 @@ class Search @Inject() (
       configuration.getString("userdfSPARQLStore").getOrElse("no") match {
         case "yes" => {
           val queryText = request.body.asFormUrlEncoded.get("query").apply(0)
-          Logger.info("whole msg: " + request.toString)
+          Logger.debug("whole msg: " + request.toString)
           val resultsString = sparql.sparqlQuery(queryText)
-          Logger.info("SPARQL query results: " + resultsString)
+          Logger.debug("SPARQL query results: " + resultsString)
           Ok(resultsString)
         }
         case _ => {

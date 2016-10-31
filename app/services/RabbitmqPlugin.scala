@@ -4,8 +4,10 @@ import java.io.IOException
 import java.net.{URI, URL}
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
+import java.time.ZonedDateTime
+import java.util.Date
 
-import akka.actor.{PoisonPill, Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.{Channel, Connection, ConnectionFactory, DefaultConsumer, Envelope}
@@ -16,7 +18,9 @@ import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
 import play.api.libs.json.JsValue
+
 import scala.concurrent.Future
+import scala.util.Try
 
 
 // TODO make optional fields Option[UUID]
@@ -358,17 +362,18 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       val file_id = UUID((json \ "file_id").as[String])
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
-      val start = (json \ "start").asOpt[String]
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-      val startDate = formatter.parse(start.get)
+      val startDate = (json \ "start").asOpt[String].map(x =>
+        Try(Date.from(ZonedDateTime.parse(x).toInstant)).getOrElse {
+          new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(x)
+        })
       val updatedStatus = status.toUpperCase()
       //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and
       //       other detailed status updates to logs when we start implementing
       //       distributed logging
       if (updatedStatus.contains("DONE")) {
-        extractions.insert(Extraction(UUID.generate, file_id, extractor_id, "DONE", Some(startDate), None))
+        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "DONE", startDate, None))
       } else {
-        extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, status, startDate, None))
       }
       Logger.debug("updatedStatus=" + updatedStatus + " status=" + status + " startDate=" + startDate)
       models.ExtractionInfoSetUp.updateDTSRequests(file_id, extractor_id)

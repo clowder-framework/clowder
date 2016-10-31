@@ -187,11 +187,12 @@
   $('.control-label').addClass('h3');
   $('.external-link-add').click(function () {
     var value = $(this).prev().clone();
-
-    $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
-    value.find('input').val('');
-    $(this).before(value);
-    renumberHomePageMap();
+    if (value.find('input').val().trim()) {
+      $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
+      value.find('input').val('');
+      $(this).before(value);
+      renumberHomePageMap();
+    }
   });
 
   //remove blank lines before submitting
