@@ -33,11 +33,9 @@ echo "Add User Account into Clowder"
 echo ""
 echo $(mongo --version)
 echo ""
-echo "firstname:" $firstname, "lastname:" $lastname, "fullname:" $fullname
-echo "hostip:" $hostip, "email:" $emailaddress, "password:" $PASSWORD 
 echo "++++++++++++++++++++++++++++++++++++++"
 
-while [ $(netstat plnt | grep ':9000')]; do
+while [ $(netstat -plnt | grep ':9000')]; do
         sleep 1
 done
 
@@ -50,7 +48,6 @@ if echo $query | grep -q "$emailaddress"; then
 else
         echo "account not found!"
 	hasher=$(python3 passwd)
-	echo "bcrypt hasher: " $hasher
 	mongo $HOSTIP:27017/clowder --eval "db.social.users.remove({email: '"$emailaddress"'})"
         mongo $HOSTIP:27017/clowder --eval "db.social.users.insert(
         {

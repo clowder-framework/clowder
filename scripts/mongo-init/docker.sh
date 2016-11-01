@@ -6,7 +6,7 @@
 PROJECT=${PROJECT:-"browndog"}
 
 mkdir -p docker/files
-${DEBUG} cp entrypoint.sh passwd supervisord.conf docker/files
+${DEBUG} cp entrypoint.sh passwd docker/files
 
 ${DEBUG} docker build -t $PROJECT/create-useraccount docker
 docker push $PROJECT/create-useraccount:latest
