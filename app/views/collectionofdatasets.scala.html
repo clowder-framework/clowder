@@ -184,8 +184,12 @@
 				<script type="text/javascript">
 				  $(document).ready(function() {
   				  $(".js-sort-single").select2();
-  				  var order = $.cookie('sort-order').replace(/['"]+/g, '');
-				  $(".js-sort-single").val(order).trigger("change");
+  				  var order = 'dateN';
+  				  if($.cookie('sort-order') != null) {
+				    //removing quotes from around cookie value 
+			   	    order = $.cookie('sort-order').replace(/['"]+/g, '');
+			  	  } 
+  				  $(".js-sort-single").val(order).trigger("change");
 				  $(".js-sort-single").on('select2:select', function (evt) { 
 		             $(window).trigger("sortchange");
 	    		  });

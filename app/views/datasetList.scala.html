@@ -83,7 +83,10 @@
 	$(".js-sort-single").select2();
   	//Set starting value based on cookie
   	//removing quotes from around cookie value 
-  	var order = $.cookie('sort-order').replace(/['"]+/g, '');
+  	var order = 'dateN';
+  	if($.cookie('sort-order') != null) {
+  	  order = $.cookie('sort-order').replace(/['"]+/g, '');
+  	}
     $('.js-sort-single').val(order).trigger("change");
     
   

@@ -11,7 +11,10 @@
 <script type="text/javascript">
 $(document).ready(function() {
   $(".js-sort-single").select2();
-  var order = $.cookie('sort-order').replace(/['"]+/g, '');
+  var order = 'dateN';
+  if($.cookie('sort-order') != null) {
+    order = $.cookie('sort-order').replace(/['"]+/g, '');
+  }
   $(".js-sort-single").val(order).trigger("change");
   $(".js-sort-single").on('select2:select', function (evt) {   
   $.cookie('sort-order', $(".js-sort-single").val(), { path: '/' }); 
