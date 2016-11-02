@@ -17,7 +17,7 @@ class ZoomIt @Inject()(tiles: TileService) extends Controller with ApiController
   def uploadTile() = PermissionAction(Permission.CreatePreview)(parse.multipartFormData) { implicit request =>
       request.body.file("File").map {
         f =>
-          Logger.info("Uploading pyramid tile " + f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")))
+          Logger.debug("Uploading pyramid tile " + f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")))
           // store file
           try {
             val id = tiles.save(new FileInputStream(f.ref.file), f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")), f.contentType)

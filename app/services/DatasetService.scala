@@ -196,6 +196,9 @@ trait DatasetService {
 
   def addUserMetadata(id: UUID, json: String)
 
+  /** Change the metadataCount field for a dataset */
+  def incrementMetadataCount(id: UUID, count: Long)
+
   /**
    * Add file to dataset.
    */

@@ -586,8 +586,9 @@
 						aria-controls="listExtractions">
 						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
 					</a>
-					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
-						<a href="@routes.Extractors.submitExtraction(UUID(id))" class="btn btn-link" >
+					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))
+							&& play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+						<a href="@routes.Extractors.submitFileExtraction(UUID(id))" class="btn btn-link" >
 							<span class="glyphicon glyphicon-send"></span>
 							Submit file for extraction
 						</a>
@@ -683,7 +684,7 @@
 			<div class="row ds-section-sm file-info">
 				<table class="table table-condensed">
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.humanReadableByteCount(file.length)</td></tr>
+					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@humanReadableByteCount(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
 						<tr><td><b>File&nbsp;location:</b></td>
 							@if(file.loader == "services.mongodb.MongoDBByteStorage") {
@@ -914,8 +915,8 @@
 						<div class="input-group input-group-sm col-md-8">
 							<input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
 							<span class="input-group-btn">
-								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-									<span class="glyphicon glyphicon-tag"></span>
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag" >
+									<span class="glyphicon glyphicon-tag"></span>Tag
 								</button>
 							</span>
 						</div>
@@ -925,8 +926,8 @@
 						<div class="input-group input-group-sm col-md-8">
 							<input disabled type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
 							<span class="input-group-btn">
-								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-									<span class="glyphicon glyphicon-tag"></span>
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag" disabled>
+									<span class="glyphicon glyphicon-tag"></span>Tag
 								</button>
 							</span>
 						</div>
