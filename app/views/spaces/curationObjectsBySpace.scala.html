@@ -3,7 +3,7 @@
 @import api.Permission
 <h3>Published Curation objects</h3>
 @if(curationObjects.size == 0) {
-    <p> There are no published curation objects associated with this @Messages("space.title")</p>
+    <p> There are no published curation objects associated with this @Messages("space.title").</p>
 } else {
     @spaces.curationObjectsGrid(curationObjects, space, isPublic)
 }
