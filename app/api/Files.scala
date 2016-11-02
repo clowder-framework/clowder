@@ -58,7 +58,7 @@ class Files @Inject()(
     notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
     responseClass = "None", httpMethod = "GET")
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    Logger.info("GET file with id " + id)
+    Logger.debug("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
         val serveradmin = request.user match {
@@ -161,7 +161,7 @@ class Files @Inject()(
           }
           case None => {
         	  //Case where the file could not be found
-        	  Logger.info(s"Error getting the file with id $id.")
+        	  Logger.debug(s"Error getting the file with id $id.")
         	  BadRequest("Invalid file ID")
           }
       }
@@ -382,17 +382,47 @@ class Files @Inject()(
   @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
         //get metadata and also fetch context information
-        val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-          .map(JSONLD.jsonMetadataWithContext(_))
+        val listOfMetadata = extFilter match {
+          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.file, id), f)
+            .map(JSONLD.jsonMetadataWithContext(_))
+          case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+            .map(JSONLD.jsonMetadataWithContext(_))
+        }
         Ok(toJson(listOfMetadata))
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        InternalServerError
+        BadRequest(toJson("Error getting file  " + id))
+      }
+    }
+  }
+
+  @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
+    notes = "Remove JSON-LD metadata from file object",
+    responseClass = "None", httpMethod = "GET")
+  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        val num_removed = extFilter match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        }
+        // send extractor message after attached to resource
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.metadata.removed"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+            "resourceType"->ResourceRef.file,
+            "resourceId"->id.toString), "", id, ""))
+        }
+        Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
+      }
+      case None => {
+        Logger.error("Error getting file  " + id);
+        BadRequest(toJson("Error getting file  " + id))
       }
     }
   }
@@ -1133,7 +1163,7 @@ class Files @Inject()(
    */
   @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
   def getTags(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-      Logger.info("Getting tags for file with id " + id)
+      Logger.debug("Getting tags for file with id " + id)
       /* Found in testing: given an invalid ObjectId, a runtime exception
        * ("IllegalArgumentException: invalid ObjectId") occurs in Services.files.get().
        * So check it first.
@@ -1249,7 +1279,7 @@ class Files @Inject()(
       notes = "This is a big hammer -- it does not check the userId or extractor_id and forcefully remove all tags for this file.  It is mainly intended for testing.",
       responseClass = "None", httpMethod = "POST")
   def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-      Logger.info("Removing all tags for file with id: " + id)
+      Logger.debug("Removing all tags for file with id: " + id)
       if (UUID.isValid(id.stringify)) {
         files.get(id) match {
           case Some(file) => {
@@ -1277,7 +1307,7 @@ class Files @Inject()(
   */
   @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
   def extract(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    Logger.info("Getting extract info for file with id " + id)
+    Logger.debug("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
      files.get(id) match {
         case Some(file) =>
@@ -1389,7 +1419,7 @@ class Files @Inject()(
 
             val previewsFromDB = previews.findByFileId(file.id)
             val previewers = Previewers.findPreviewers
-            //Logger.info("Number of previews " + previews.length);
+            //Logger.debug("Number of previews " + previews.length);
             val files = List(file)
             //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
             val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {

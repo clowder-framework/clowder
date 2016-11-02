@@ -12,7 +12,7 @@ import play.api.Logger
 object ApiHelp extends Controller {
 
   def options(path:String) = Action { 
-    Logger.info("ApiHelp: preflight request")
+    Logger.debug("ApiHelp: preflight request")
     Ok("")
     }
    /**

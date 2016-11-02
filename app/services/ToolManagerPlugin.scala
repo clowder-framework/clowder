@@ -318,7 +318,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
         "datasetName" -> datasetName
       ))
       statusRequest.map( response => {
-        Logger.info(response.body.toString)
+        Logger.debug(response.body.toString)
       })
     })
   }

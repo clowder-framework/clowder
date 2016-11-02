@@ -96,6 +96,7 @@ object User {
     email=None,
     authMethod=AuthenticationMethod("SystemUser"),
     active=true,
+    serverAdmin=true,
     termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }

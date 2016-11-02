@@ -151,7 +151,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        var creatorActual: User = null
 	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
 	        val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
+          val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
 	        val usersInSpace = spaces.getUsersInSpace(id)
+          var curationObjectsInSpace: List[CurationObject] = List()
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
 	            case Some(theCreator) => {
@@ -186,7 +188,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
 
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
+          if (play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+            curationObjectsInSpace = curationService.listSpace(Some(size),Some(id.stringify))
+          }
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, curationObjectsInSpace, userRoleMap))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }
@@ -346,12 +351,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
                 spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
                   case Some(aRole) => {
-                    if (aRole.permissions.contains("EditSpace")) {
+                    if (aRole.permissions.contains(Permission.EditSpace.toString)) {
                       events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
-
-                      //sending emails to the space's Admin && Editor
-                      val recipient: String = requestReceiver.email.get.toString
-                      Mail.sendEmail(subject, request.user, recipient, body)
+                      Mail.sendEmail(subject, request.user, requestReceiver, body)
                     }
                   }
                 }

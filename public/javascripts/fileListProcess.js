@@ -12,6 +12,11 @@ function removeFile(fileId, isreload, url){
 			$('#masonry').masonry( 'remove', obj );
 			$('#masonry').masonry( 'layout' );
 			$('#'+ fileId+'-listitem').remove();
+
+			// After deleting the last file from a folder, display the empty message
+			if($("#tile-view").find("div[id$='-listitem']").length == 0){
+				$('#empty-folder-div').show();
+			}
 		}
 	});
 	
