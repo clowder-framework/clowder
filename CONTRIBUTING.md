@@ -26,7 +26,7 @@ contributions directly on GitHub.
 * Make a feature branch
   * If you created the fork on NCSA Bitbucket, use the "Create branch" link in Jira. This will properly name the branch
    and keep the link in the issue
-  * If you created the fork in GitHub, follow the Atlassian Bitbucket [branch naming scheme][1] when naming your branch. 
+  * If you created the fork in GitHub, follow the Atlassian Bitbucket [branch naming scheme][2] when naming your branch. 
     For example `feature/CATS-438-validate-all-jsonld`
   * On your machine use `git checkout -b "cool-new-feature"`
 * Make your cool new feature or bugfix on your branch
@@ -65,12 +65,12 @@ Branches in [Bitbucket][bitbucket] are automatically built with [Bamboo][bamboo]
 
 ## Documentation
 
-Developer documentation is available in [Confluence][]. User documentation (still rought) is available in the source 
+Developer documentation is available in [Confluence][]. User documentation (still rough) is available in the source 
 `/doc/src/sphinx` and [online][userdocs].
 
 [0]: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS
 [1]: https://github.com/ncsa/clowder
-[1]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
+[2]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
 [scalatest]: http://www.scalatest.org/
 [hipchat]: https://hipchat.ncsa.illinois.edu/ggYc5FGDP
 [jira]: https://opensource.ncsa.illinois.edu/jira/projects/CATS
