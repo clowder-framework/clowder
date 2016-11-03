@@ -1,0 +1,11 @@
+@(space: ProjectSpace, classes: String)(implicit user: Option[models.User])
+
+@import play.api.i18n.Messages
+<div class="@classes">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <h3>Statistics</h3>
+        <p><span class="glyphicon glyphicon-user"></span> Members: @space.userCount</p>
+        <p><span class="glyphicon glyphicon-th-list"></span> Collections: @space.collectionCount</p>
+        <p><span class="glyphicon glyphicon-briefcase"></span> Datasets: @space.datasetCount</p>
+    </div>
+</div>
