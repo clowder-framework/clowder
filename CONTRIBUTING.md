@@ -65,7 +65,7 @@ Branches in [NCSA Bitbucket][bitbucket] are automatically built with [Bamboo][ba
 
 ## Documentation
 
-Developer documentation is available in [Confluence][]. User documentation (still rought) is available in the source 
+Developer documentation is available in [Confluence][]. User documentation (still rough) is available in the source 
 `/doc/src/sphinx` and [online][userdocs].
 
 [confluence_signup]: https://opensource.ncsa.illinois.edu/confluence/signup.action
