@@ -1,4 +1,4 @@
-@(extractors: List[ExtractorInfo], file: File)
+@(extractors: List[ExtractorInfo], file: File)(implicit user: Option[models.User])
 
 @main("Extractions") {
     <div class="row">
