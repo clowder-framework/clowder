@@ -3,15 +3,15 @@
 We would love to get contributions from you! To keep the process manageable we please ask you to follow the workflow 
 below. By participating in this project, agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/).
 
-Most of the core development happens on [NCSA Opensource][0]. The `master` and `develop` branches are pushed to 
-[GitHub][1] nightly.
+Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `master` and `develop` branches are pushed to 
+[GitHub][github] nightly.
 
-We encourage contributors to create an account on [NCSA Opensource][0] and make pull requests there. We also accept 
+We encourage contributors to create an account on [NCSA Bitbucket][bitbucket] and make pull requests there. We also accept 
 contributions directly on GitHub.
 
 ## Workflow
 
-* Make sure you have a [Jira account on NCSA Opensource][0]
+* Make sure you have an [NCSA opensource account][confluence_signup]
 * If you want to make your pull request on GitHub make sure you have a [GitHub account](https://github.com/signup/free)
 * If it's a new feature or improvement please discuss your ideas with the community on the 
   [HipChat][hipchat] channel or by sending an email to the 
@@ -26,7 +26,7 @@ contributions directly on GitHub.
 * Make a feature branch
   * If you created the fork on NCSA Bitbucket, use the "Create branch" link in Jira. This will properly name the branch
    and keep the link in the issue
-  * If you created the fork in GitHub, follow the Atlassian Bitbucket [branch naming scheme][1] when naming your branch. 
+  * If you created the fork in GitHub, follow the Atlassian Bitbucket [branch naming scheme][branches] when naming your branch. 
     For example `feature/CATS-438-validate-all-jsonld`
   * On your machine use `git checkout -b "cool-new-feature"`
 * Make your cool new feature or bugfix on your branch
@@ -39,10 +39,10 @@ contributions directly on GitHub.
 
 ## Code Reviews
 
-Code reviews for pull requests in GitHub will happen in GitHub. Code reviews for pull requests in NCSA Opensource 
-Bitbucket will happen in NCSA Opensource Bitbucket. When a pull request is ready to be merged into `develop` it will 
-first be pushed to NCSA Opensource Bitbucket if it's on GitHub. It will then be merged with the `develop` branch in 
-NCSA Opensource Bitbucket. It will become available on `develop` on GitHub overnight with the nightly updates.
+Code reviews for pull requests in GitHub will happen in GitHub. Code reviews for pull requests in NCSA 
+Bitbucket will happen in NCSA Bitbucket. When a pull request is ready to be merged into `develop` it will 
+first be pushed to NCSA Bitbucket if it's on GitHub. It will then be merged with the `develop` branch in 
+NCSA Bitbucket. It will become available on `develop` on GitHub overnight with the nightly updates.
 
 ## Issues
 
@@ -61,16 +61,16 @@ you feel brave enough please consider adding a test for your new feature (or for
 
 ## Continuous Integration
 
-Branches in [Bitbucket][bitbucket] are automatically built with [Bamboo][bamboo].
+Branches in [NCSA Bitbucket][bitbucket] are automatically built with [Bamboo][bamboo].
 
 ## Documentation
 
 Developer documentation is available in [Confluence][]. User documentation (still rought) is available in the source 
 `/doc/src/sphinx` and [online][userdocs].
 
-[0]: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS
-[1]: https://github.com/ncsa/clowder
-[1]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
+[confluence_signup]: https://opensource.ncsa.illinois.edu/confluence/signup.action
+[github]: https://github.com/ncsa/clowder
+[branches]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
 [scalatest]: http://www.scalatest.org/
 [hipchat]: https://hipchat.ncsa.illinois.edu/ggYc5FGDP
 [jira]: https://opensource.ncsa.illinois.edu/jira/projects/CATS
