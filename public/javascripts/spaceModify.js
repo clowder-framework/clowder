@@ -216,8 +216,10 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
             if(!isSharingEnabled && $('#spacesList .row').length == 0) {
                 $("#add-to-space-widget").removeClass("hidden");
                 $('#dataset-users').addClass("hidden");
-                $('#publish').addClass('disabled');
             }
+            if($('#spacesList .row').length == 0) {
+            	$('#publish').addClass('disabled');
+           	}
             if(response.isTrial.valueOf() ==="true"){
                 $('#access').hide();
             }
