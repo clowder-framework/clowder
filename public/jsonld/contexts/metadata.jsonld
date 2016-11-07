@@ -20,6 +20,9 @@
     "extractor": "med:extractor",
     "content": {
       "@id": "http://medici.ncsa.illinois.edu/metadata/content"
+    },
+    "file_id": {
+      "@id": "http://medici.ncsa.illinois.edu/metadata/file_id"
     }
   }
 }
