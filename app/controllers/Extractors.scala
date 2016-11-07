@@ -22,6 +22,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def submitExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     implicit val user = request.user
+
     val extractors = extractorService.listExtractorsInfo()
     fileService.get(file_id) match {
       case Some(file) => Ok(views.html.extractions.submitExtraction(extractors, file))
