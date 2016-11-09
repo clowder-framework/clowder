@@ -349,9 +349,9 @@ class Metadata @Inject()(
       case Some(user) => {
         metadataService.getMetadataById(id) match {
           case Some(m) => {
-            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)
-            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
-              BadRequest("Curation Object has already submitted")
+            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)
+            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)) {
+              BadRequest("Publication Request has already submitted")
             } else {
               metadataService.removeMetadata(id)
               val mdMap = m.getExtractionSummary
