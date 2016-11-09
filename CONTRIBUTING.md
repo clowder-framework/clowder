@@ -1,7 +1,7 @@
 # How to contribute
 
 We would love to get contributions from you! To keep the process manageable we please ask you to follow the workflow 
-below. By participating in this project, agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/).
+below. By participating in this project, you agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/).
 
 Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `master` and `develop` branches are pushed to 
 [GitHub][github] nightly.
@@ -66,7 +66,7 @@ Branches in [NCSA Bitbucket][bitbucket] are automatically built with [Bamboo][ba
 
 ## Documentation
 
-Developer documentation is available in [Confluence][]. User documentation (still rough) is available in the source 
+Developer documentation is available in [Confluence][confluence]. User documentation (still rough) is available in the source 
 `/doc/src/sphinx` and [online][userdocs].
 
 [confluence_signup]: https://opensource.ncsa.illinois.edu/confluence/signup.action
