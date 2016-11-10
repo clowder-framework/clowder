@@ -136,14 +136,9 @@ class Files @Inject()(
 		              }
 		              case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
-                    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
-                      URLEncoder.encode(filename, "UTF-8")
-                    } else {
-                      MimeUtility.encodeWord(filename).replaceAll(",", "%2C")
-                    }
                     Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
-                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
+                      .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
 		              }
 		            }
 		          }
@@ -202,7 +197,7 @@ class Files @Inject()(
               case None => {
                 Ok.chunked(Enumerator.fromStream(inputStream))
                   .withHeaders(CONTENT_TYPE -> contentType)
-                  .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=\"" + filename + "\""))
+                  .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
               }
             }
           }
@@ -622,7 +617,7 @@ class Files @Inject()(
         case Some(resultFile) =>{
           Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
 			            	.withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-			            	.withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=\"" + resultFile.getName() + "\""))
+			            	.withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
         }
         case None => BadRequest(toJson("File not found " + id))
       }
@@ -901,7 +896,7 @@ class Files @Inject()(
                     //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!                  
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
-                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=\"" + filename + "\""))
+                      .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 
                   }
                 }
@@ -957,7 +952,7 @@ class Files @Inject()(
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       //.withHeaders(CONTENT_LENGTH -> contentLength.toString)
-                      .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=\"" + filename + "\""))
+                      .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 
                   }
                 }
