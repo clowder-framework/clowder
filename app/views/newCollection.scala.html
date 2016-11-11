@@ -20,7 +20,7 @@
 
         @(spaceId, spaceName) match {
             case (Some(id), Some(name)) => {
-                <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
+                <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
 
             }
             case (_, _) => {
@@ -78,7 +78,7 @@
                     }
                 </select>
                 @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <p class="help-block">@Messages("create.share.multiple.message", Messages("collecion.title").toLowerCase, Messages("spaces.title"))</p>
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("collection.title").toLowerCase, Messages("spaces.title"))</p>
                 } else {
                     <p class="help-block">@Messages("create.share.one.message", Messages("collection.title").toLowerCase, Messages("space.title"))</p>
                 }

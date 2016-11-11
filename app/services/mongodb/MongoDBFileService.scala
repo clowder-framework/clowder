@@ -112,7 +112,7 @@ class MongoDBFileService @Inject() (
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
-      Logger.info("After " + sinceDate)
+      Logger.debug("After " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
@@ -127,7 +127,7 @@ class MongoDBFileService @Inject() (
     } else {
       order = MongoDBObject("uploadDate" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
-      Logger.info("Before " + sinceDate)
+      Logger.debug("Before " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
@@ -254,6 +254,11 @@ class MongoDBFileService @Inject() (
         for (dataset <- datasets.findByFileId(file.id)) {
           fileDsId = fileDsId + dataset.id.stringify + " %%% "
           fileDsName = fileDsName + dataset.name + " %%% "
+        }
+
+        for (folder <- folders.findByFileId(file.id)) {
+          fileDsId = fileDsId + folder.parentDatasetId.stringify + " %%% "
+          fileDsName = fileDsName + datasets.get(folder.parentDatasetId).map(_.name + " %%% ").getOrElse("")
         }
         
         val formatter = new SimpleDateFormat("dd/MM/yyyy")
@@ -576,7 +581,10 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  
+  /** Change the metadataCount field for a file */
+  def incrementMetadataCount(id: UUID, count: Long) = {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+  }
   
   /**
    *  Add versus descriptors to the Versus.descriptors collection associated to a file
@@ -586,7 +594,7 @@ class MongoDBFileService @Inject() (
     val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject].toMap
               .asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
        VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
-       Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
+       Logger.debug("--Added versus descriptors in json format received from versus to the metadata field --")
   }
  
 /**
@@ -1031,7 +1039,7 @@ class MongoDBFileService @Inject() (
 					      mdMoveFile.getParentFile().mkdirs()
 
 						  if(mdFile.renameTo(mdMoveFile)){
-			            	Logger.info("File metadata dumped and moved to staging directory successfully.")
+			            	Logger.debug("File metadata dumped and moved to staging directory successfully.")
 						  }else{
 			            	Logger.warn("Could not move dumped file metadata to staging directory.")
 			            	throw new Exception("Could not move dumped file metadata to staging directory.")

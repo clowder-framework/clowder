@@ -53,7 +53,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
           BadRequest(toJson("File is empty."))
         }
         case _ => {
-          Logger.info("Uploading thumbnail " + f.filename)
+          Logger.debug("Uploading thumbnail " + f.filename)
         // store file
         val id = thumbnails.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         Ok(toJson(Map("id"->id)))

@@ -1,0 +1,59 @@
+@(extractors: List[ExtractorInfo], ds: Dataset)
+
+@main("Extractions") {
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>Submit dataset for extraction</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <p>Submit this dataset to a specific extractor below by providing parameters as a JSON document and clicking
+                the submit button. The paramaters field can be left empty.</p>
+            <p>Dataset name: <a href="@routes.Datasets.dataset(ds.id)">@ds.name</a></p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Extractor's Name</th>
+                        <th>Parameters</th>
+                        <th>Submit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(e <- extractors) {
+                        <tr>
+                            <td>@e.name</td>
+                            <td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>
+                            <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@ds.id')">Submit</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function submit(extractor_name, textbox_id, ds_id) {
+            var params = $('#'+textbox_id).val();
+            if (params === "") params = "{}";
+            var dataBody = {'extractor': extractor_name, 'parameters': JSON.parse(params)};
+            var request = jsRoutes.api.Extractions.submitDatasetToExtractor(ds_id).ajax({
+                data: JSON.stringify(dataBody),
+                type: 'POST',
+                contentType: "application/json",
+            });
+
+            request.done(function (response, textStatus, jqXHR){
+                notify("Submitted successfully", "success");
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+            });
+        }
+    </script>
+}
+
