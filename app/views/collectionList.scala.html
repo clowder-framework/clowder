@@ -82,7 +82,7 @@
       </label>
 <script type="text/javascript">
   $(function() {
-	$(".js-sort-single").select2();
+	$(".js-sort-single").select2({minimumResultsForSearch: Infinity});
   	//Set starting value based on cookie
   	var order = 'dateN';
   	if($.cookie('sort-order') != null) {

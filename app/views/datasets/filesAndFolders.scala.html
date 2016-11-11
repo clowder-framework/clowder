@@ -10,7 +10,7 @@
 </h2>
 <script type="text/javascript">
 $(document).ready(function() {
-  $(".js-sort-single").select2();
+  $(".js-sort-single").select2({minimumResultsForSearch: Infinity});
   var order = 'dateN';
   if($.cookie('sort-order') != null) {
     order = $.cookie('sort-order').replace(/['"]+/g, '');
