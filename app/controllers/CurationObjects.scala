@@ -25,7 +25,7 @@ import play.api.libs.json.Reads._
 
 
 /**
- * Methods for interacting with the curation objects (Pulication Requests) in the staging area.
+ * Methods for interacting with the curation objects (Publication Requests) in the staging area.
  */
 class CurationObjects @Inject()(
   curations: CurationService,
@@ -344,11 +344,25 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(cOld) => {
-        // this update is not written into MongoDB, only for page view purpose
-        val c = datasets.get(cOld.datasets(0).id) match {
-          case Some(dataset) => cOld.copy(datasets = List(dataset))
-          // dataset is deleted
-          case None => cOld
+        spaces.get(cOld.space) match {
+          case Some(s) => {
+            // this update is not written into MongoDB, only for page view purpose
+            val c = datasets.get(cOld.datasets(0).id) match {
+              case Some(dataset) => cOld.copy(datasets = List(dataset))
+              // dataset is deleted
+              case None => cOld
+            }
+            // metadata of curation files are getting from getUpdatedFilesAndFolders
+            val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
+            val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+            val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
+            if (c.status != "In Preparation") {
+              Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit, s.name ))
+            } else {
+              Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
+            }
+          }
+          case None => BadRequest(views.html.notFound("Space does not exist."))
         }
         // metadata of curation files are getting from getUpdatedFilesAndFolders
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
@@ -359,6 +373,7 @@ class CurationObjects @Inject()(
         } else {
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
+
       }
       case None => BadRequest(views.html.notFound("Publication Request does not exist."))
     }
