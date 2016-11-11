@@ -662,7 +662,7 @@ object Geostreams extends ApiController {
     result.toMap
   }
 
-  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
+  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
@@ -699,7 +699,10 @@ object Geostreams extends ApiController {
               // TODO fix this for better grouping see MMDB-1678
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
-              if (format == "csv") {
+              if(onlyCount) {
+                cacheWrite(description, formatResult(data, format))
+                Ok(toJson(Map("datapointsLength" -> data.length)))
+              } else if (format == "csv") {
                 val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
                 Ok.chunked(cacheWrite(description, jsonToCSV(data)) &> toByteArray  &> Gzip.gzip())
                   .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),
