@@ -16,6 +16,7 @@ import scala.collection.mutable.ListBuffer
 class Extractors  @Inject() (extractions: ExtractionService,
                              extractorService: ExtractorService,
                              fileService: FileService,
+                              datasetService: DatasetService,
                              folders: FolderService,
                              spaces: SpaceService,
                              datasets: DatasetService ) extends Controller with SecuredController {
@@ -26,7 +27,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     Ok(views.html.listAllExtractions(allExtractions))
   }
 
-  def submitExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
+  def submitFileExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     implicit val user = request.user
     val extractors = extractorService.listExtractorsInfo()
     fileService.get(file_id) match {
@@ -63,9 +64,17 @@ class Extractors  @Inject() (extractions: ExtractionService,
             }
           }
         }
-        Ok(views.html.extractions.submitExtraction(extractors, file,  folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList ))
+        Ok(views.html.extractions.submitFileExtraction(extractors, file, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList))
       }
       case None => InternalServerError("File not found")
+    }
+  }
+
+  def submitDatasetExtraction(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, ds_id))) { implicit request =>
+    val extractors = extractorService.listExtractorsInfo()
+    datasetService.get(ds_id) match {
+      case Some(ds) => Ok(views.html.extractions.submitDatasetExtraction(extractors, ds))
+      case None => InternalServerError("Dataset not found")
     }
   }
 }

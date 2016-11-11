@@ -1,6 +1,6 @@
 @(file: models.File, classes: String, redirect: Call, showFollow: Boolean)(implicit user: Option[models.User])
 
-@import _root_.util.FileUtils
+@import _root_.util.Formatters.humanReadableByteCount
 @import api.Permission
 
 <div class="post-box @classes" id="@file.id-tile">
@@ -19,7 +19,7 @@
                 <ul class="list-unstyled">
                     <li>Author: <strong>@file.author.fullName</strong></li>
                     <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
-                    <li>Size: <strong>@FileUtils.humanReadableByteCount(file.length)</strong></li>
+                    <li>Size: <strong>@humanReadableByteCount(file.length)</strong></li>
                 </ul>
             </div>
         </div>

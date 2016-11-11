@@ -2,7 +2,7 @@
 //
 //Created by mo on 2/2/16.
 function confirmDeleteResource(resourceType, resourceTypeName, resourceId, resourceName, isreload, url) {
-    var msg = "Are you sure you want to delete the " + resourceTypeName + " '" + resourceName + "'?";
+    var msg = "Are you sure you want to delete the " + resourceTypeName + " '" + resourceName.replace("<", "&#60;").replace(">", "&#62;") + "'?";
     if (resourceType == "space") {
         msg = msg + " When you delete a " + resourceTypeName + ", the collections, datasets, folders and files will still be available.";
     } else if (resourceType == "collection") {

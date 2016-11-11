@@ -33,14 +33,14 @@ class DatasetsMetadataAutodumpService (application: Application) extends Plugin 
   def dumpAllDatasetMetadata() = {
     val unsuccessfulDumps = datasets.dumpAllDatasetMetadata
     if(unsuccessfulDumps.size == 0)
-      Logger.info("Dumping of datasets metadata was successful for all datasets.")
+      Logger.debug("Dumping of datasets metadata was successful for all datasets.")
     else{
       var unsuccessfulMessage = "Dumping of datasets metadata was successful for all datasets except dataset(s) with id(s) "
       for(badDataset <- unsuccessfulDumps){
         unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
       }
       unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
-      Logger.info(unsuccessfulMessage)  
+      Logger.debug(unsuccessfulMessage)
     } 
     
   }

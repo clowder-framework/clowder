@@ -184,7 +184,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
           vocabularyTermService.insert(current_vocabterm) match {
             case Some(id) => {
-              Logger.info("Vocabulary Term inserted")
+              Logger.debug("Vocabulary Term inserted")
               new_terms += (UUID(id))
             }
             case None => Logger.error("Could not insert vocabulary term")
@@ -233,7 +233,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
           vocabularyTermService.insert(current_vocabterm) match {
             case Some(id) => {
-              Logger.info("Vocabulary Term inserted")
+              Logger.debug("Vocabulary Term inserted")
               terms += (UUID(id))
             }
             case None => Logger.error("Could not insert vocabulary term")
