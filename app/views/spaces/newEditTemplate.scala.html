@@ -13,14 +13,14 @@
     <ol class="breadcrumb">
       @(spaceId, spaceName) match {
         case (Some(s), Some(name)) => {
-          <li> <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @Html(ellipsize(name, 18))</a></li>
+          <li> <span class="glyphicon glyphicon-hdd"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @Html(ellipsize(name, 18))</a></li>
           <li> <span class="glyphicon glyphicon-edit"></span> @Html(title)</li>
         }
         case (_,_) => {
           @user match {
             case Some(u) => {
               <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a> </li>
-              <li><span class="glyphicon glyphicon-tent"></span> @Html(title) </li>
+              <li><span class="glyphicon glyphicon-hdd"></span> @Html(title) </li>
             }
             case None => {}
           }
@@ -187,11 +187,12 @@
   $('.control-label').addClass('h3');
   $('.external-link-add').click(function () {
     var value = $(this).prev().clone();
-
-    $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
-    value.find('input').val('');
-    $(this).before(value);
-    renumberHomePageMap();
+    if (value.find('input').val().trim()) {
+      $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
+      value.find('input').val('');
+      $(this).before(value);
+      renumberHomePageMap();
+    }
   });
 
   //remove blank lines before submitting

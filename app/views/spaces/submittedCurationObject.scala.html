@@ -1,20 +1,17 @@
-@(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata], limit:Int)(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata], limit:Int, spaceName: String)(implicit user: Option[models.User])
 @import play.api.i18n.Messages
-  @import helper._
-  @import collection.JavaConverters._
-  @import play.api.Play.current
+@import helper._
+@import _root_.util.Formatters._
+
   @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
   @main(curationObject.name) {
     <div class="row">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> /
-                    <strong> Submitted Curation</strong>
-                </div>
-            </div>
-        </div>
+        <ol class="breadcrumb">
+            <li> <a href="@routes.Spaces.getSpace(curationObject.space)" title="@spaceName">@Html(ellipsize(spaceName, 18))</a></li>
+            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
+            <li> Submitted Curation</li>
+        </ol>
     </div>
 
     <div class="container row">

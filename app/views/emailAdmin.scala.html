@@ -56,6 +56,8 @@
                     contentType: "application/json"
                 }).done(function() {
                     notify("Email send to admins.", "success", false, 5000);
+                    $("#subject").val('')
+                    $("#body").val('')
                 }).fail(function (jqXHR, textStatus, errorThrown) {
                     console.error("The following error occured: " + textStatus, errorThrown);
                     notify("The application preferences was not updated due to : " + errorThrown, "error", false);

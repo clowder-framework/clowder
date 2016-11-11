@@ -306,6 +306,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           }
 
         }
+        collections.index(Some(id))
         Ok(Json.obj("status" -> "success"))
       }
       else {
@@ -340,6 +341,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           }
 
         }
+        collections.index(Some(id))
         Ok(Json.obj("status" -> "success"))
       }
       else {

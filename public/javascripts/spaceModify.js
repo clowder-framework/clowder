@@ -19,7 +19,7 @@ function addCollectionToSpace(id,spaceTitle) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'">' +
-            '<span class="smallicon glyphicon glyphicon-tent"></span>' +
+            '<span class="smallicon glyphicon glyphicon-hdd"></span>' +
             '</a></div>' +
             '<div class="col-md-10">' +
             '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
@@ -123,7 +123,7 @@ function addDatasetToSpace(id, spaceTitle) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+'>' +
-            '<span class="smallicon glyphicon glyphicon-tent"></span></a></div>' +
+            '<span class="smallicon glyphicon glyphicon-hdd"></span></a></div>' +
             '<div class="col-md-10">' +
             '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
             '</div>';
