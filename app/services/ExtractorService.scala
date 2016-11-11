@@ -31,7 +31,7 @@ trait ExtractorService {
 
   def listExtractorsInfo(): List[ExtractorInfo]
 
-  def getExtractorInfo(extractorId: UUID): Option[ExtractorInfo]
+  def getExtractorInfo(extractorName: String): Option[ExtractorInfo]
 
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo]
 }

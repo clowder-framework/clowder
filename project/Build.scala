@@ -102,6 +102,7 @@ object ApplicationBuild extends Build {
     "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
+    "org.apache.jena" % "apache-jena-libs" % "3.0.1",
 
     // ??
     "commons-io" % "commons-io" % "2.4",

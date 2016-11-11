@@ -1,11 +1,9 @@
 package services
 
 import java.io.IOException
-import java.net.{URI, URL}
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
-import java.time.ZonedDateTime
-import java.util.Date
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import com.ning.http.client.Realm.AuthScheme
@@ -363,7 +361,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
       val startDate = (json \ "start").asOpt[String].map(x =>
-        Try(Date.from(ZonedDateTime.parse(x).toInstant)).getOrElse {
+        Try(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX").parse(x)).getOrElse {
           new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(x)
         })
       val updatedStatus = status.toUpperCase()

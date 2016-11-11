@@ -137,8 +137,8 @@ class MongoDBExtractorService extends ExtractorService {
     ExtractorInfoDAO.findAll().toList
   }
 
-  def getExtractorInfo(extractorId: UUID): Option[ExtractorInfo] = {
-    ExtractorInfoDAO.findOneById(new ObjectId(extractorId.stringify))
+  def getExtractorInfo(extractorName: String): Option[ExtractorInfo] = {
+    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName))
   }
 
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo] = {

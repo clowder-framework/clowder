@@ -376,7 +376,7 @@ POST           /api/files/:id/reindex                                           
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
 GET            /api/extractors                                                          @api.Extractions.listExtractors()
-GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
+GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
