@@ -5,7 +5,7 @@
     @if(!space.logoURL.isEmpty) {
         <div class="row">
             <div class="pull-left col-xs-12">
-                <span class="glyphicon glyphicon-tent"></span>
+                <span class="glyphicon glyphicon-hdd"></span>
             </div>
         </div>
 
@@ -17,7 +17,7 @@
                     <a href="@routes.Spaces.getSpace(space.id)"> <img class="fit-in-space" src="@(space.logoURL)" alt="Thumbnail of @(space.name)"></a>
                 } else {
                     <a href="@routes.Spaces.getSpace(space.id)">
-                        <span class="bigicon glyphicon glyphicon-tent"></span>
+                        <span class="bigicon glyphicon glyphicon-hdd"></span>
                     </a>
                 }
             </div>

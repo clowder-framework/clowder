@@ -31,18 +31,18 @@
                 @datasetSpaces_canRemove match {
                     case Some(spaces_map) => {
                         @if(spaces_map.size == 1) {
-                                   <li> <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(spaces_map.head._1.id)" title="@spaces_map.head._1.name"> @Html(ellipsize(spaces_map.head._1.name, 18))</a></li>
+                                   <li> <span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces_map.head._1.id)" title="@spaces_map.head._1.name"> @Html(ellipsize(spaces_map.head._1.name, 18))</a></li>
                         } else  {
                             @if(spaces_map.size > 1) {
                                 <li>
                                 <span class="dropdown">
                                     <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
                                     aria-haspopup="true" aria-expanded="true">
-                                        <span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+                                        <span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
                                         @spaces_map.map { case (s,v) =>
-                                            <li><a href="@routes.Spaces.getSpace(s.id)" title="@s.name"><span class="glyphicon glyphicon-tent"></span> @Html(ellipsize(s.name, 18))</a></li>
+                                            <li><a href="@routes.Spaces.getSpace(s.id)" title="@s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
                                         }
                                     </ul>
                                 </span>
@@ -73,6 +73,7 @@
                 </div>
                 <div class="col-md-6">
                     <ul class="list-unstyled">
+
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
                             @if(showAccess) {
@@ -227,6 +228,17 @@
                                 @metadatald.view(m, true)
                             </div>
                         </div>
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
+                                && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                            <div class="row bottom-padding">
+                                <div class="col-md-12">
+                                    <h4>Extractions</h4>
+                                    <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
+                                        <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit dataset for extraction
+                                    </a>
+                                </div>
+                            </div>
+                        }
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                         @datasets.previews(dataset, previewers)
@@ -508,6 +520,7 @@
                     });
                     request.done(function(response, textStatus, jqXHR){
                         $('#folder-modal').modal('hide');
+                        $('#empty-folder-div').hide();
                         $('#folderListDiv').prepend(response);
                         notify("Folder created successfully", "success", false, 2000 );
                         $('#name').val("");
