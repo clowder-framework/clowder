@@ -221,6 +221,7 @@ class  Datasets @Inject()(
       }
       //event will be added whether creation is success.
       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
+      datasets.index(d.id)
 
       (request.body \ "file_id").asOpt[String] match {
         case Some(file_id) => {
@@ -250,6 +251,8 @@ class  Datasets @Inject()(
                   current.plugin[AdminsNotifierPlugin].foreach {
                     _.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
                   }
+
+
                   Ok(toJson(Map("id" -> id)))
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
@@ -317,10 +320,12 @@ class  Datasets @Inject()(
           case Some(id) => {
             //In this case, the dataset has been created and inserted. Now notify the space service and check
             //for the presence of existing files.
+            datasets.index(d.id)
             Logger.debug("About to call addDataset on spaces service")
             d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
               spaces.addDataset(d.id, s.id)
               events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
+
             }
             //Add this dataset to a collection if needed
             (request.body \ "collection").asOpt[List[String]] match {
@@ -665,53 +670,65 @@ class  Datasets @Inject()(
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
-            //parse request for agent/creator info
-            //creator can be UserAgent or ExtractorAgent
-            var creator: models.Agent = null
-            json.validate[Agent] match {
-              case s: JsSuccess[Agent] => {
-                creator = s.get
+            // parse request for JSON-LD model
+            var model: RDFModel = null
+            json.validate[RDFModel] match {
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatForm(e))
+                BadRequest(JsError.toFlatJson(e))
+              }
+              case s: JsSuccess[RDFModel] => { 
+                model = s.get 
+                
+                //parse request for agent/creator info
+                //creator can be UserAgent or ExtractorAgent
+                var creator: models.Agent = null
+                json.validate[Agent] match {
+                  case s: JsSuccess[Agent] => {
+                    creator = s.get
+    
+                    // check if the context is a URL to external endpoint
+                    val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+    
+                    // check if context is a JSON-LD document
+                    val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                      .map(contextService.addContext(new JsString("context name"), _))
+    
+                    // when the new metadata is added
+                    val createdAt = new Date()
+    
+                    //parse the rest of the request to create a new models.Metadata object
+                    val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                    val content = (json \ "content")
+                    val version = None
+                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                      content, version)
+    
+                    //add metadata to mongo
+                    metadataService.addMetadata(metadata)
+                    val mdMap = metadata.getExtractionSummary
+    
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                    }
 
-                // check if the context is a URL to external endpoint
-                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
-
-                // check if context is a JSON-LD document
-                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                  .map(contextService.addContext(new JsString("context name"), _))
-
-                // when the new metadata is added
-                val createdAt = new Date()
-
-                //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef(ResourceRef.dataset, id)
-                val content = (json \ "content")
-                val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
-
-                //add metadata to mongo
-                metadataService.addMetadata(metadata)
-                val mdMap = metadata.getExtractionSummary
-
-                //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  val dtkey = s"${p.exchange}.metadata.added"
-                  p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                    datasets.index(id)
+                    Ok(toJson("Metadata successfully added to db"))
+    
+                  }
+                  case e: JsError => {
+                    Logger.error("Error getting creator");
+                    BadRequest(toJson(s"Creator data is missing or incorrect."))
+                  }
                 }
-
-                datasets.index(id)
-                Ok(toJson("Metadata successfully added to db"))
-            }
-            case e: JsError => {
-              Logger.error("Error getting creator");
-              BadRequest(toJson(s"Creator data is missing or incorrect."))
+              }
             }
           }
-
+          case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
-        case None => Logger.error(s"Error getting dataset $id"); NotFound
       }
-    }
 
 
   @ApiOperation(value="Retrieve available metadata definitions for a dataset. It is an aggregation of the metadata that a space belongs to.",
@@ -1038,6 +1055,7 @@ class  Datasets @Inject()(
           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
         }
       }
+      datasets.index(id)
       Ok(Json.obj("status" -> "success"))
     }
     else {
@@ -1074,6 +1092,10 @@ class  Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+          datasets.index(id)
+          // file in this dataset need to be indexed as well since dataset name will show in file list
+          dataset.files.map(files.index(_))
+          folders.findByParentDatasetId(id).map(_.files).flatten.map(files.index(_))
         }
       }
       Ok(Json.obj("status" -> "success"))
@@ -1114,6 +1136,7 @@ class  Datasets @Inject()(
           events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
         }
       }
+      datasets.index(id)
       Ok(Json.obj("status" -> "success"))
     }
     else {

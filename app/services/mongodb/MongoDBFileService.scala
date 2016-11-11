@@ -255,6 +255,11 @@ class MongoDBFileService @Inject() (
           fileDsId = fileDsId + dataset.id.stringify + " %%% "
           fileDsName = fileDsName + dataset.name + " %%% "
         }
+
+        for (folder <- folders.findByFileId(file.id)) {
+          fileDsId = fileDsId + folder.parentDatasetId.stringify + " %%% "
+          fileDsName = fileDsName + datasets.get(folder.parentDatasetId).map(_.name + " %%% ").getOrElse("")
+        }
         
         val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
