@@ -16,9 +16,9 @@
 <div id="folderListDiv">
 @foldersList.map { folder =>
         @if(currentFolder.isDefined) {
-            @curations.listFolder(folder, UUID(currentFolder.getOrElse("")), curation.id, curation.status =="In Curation")
+            @curations.listFolder(folder, UUID(currentFolder.getOrElse("")), curation.id, curation.status =="In Preparation")
         } else {
-            @curations.listFolder(folder, curation.id, curation.id, curation.status =="In Curation")
+            @curations.listFolder(folder, curation.id, curation.id, curation.status =="In Preparation")
         }
 }
 </div>
@@ -30,26 +30,26 @@
 
     <li id="@file.id-listitem">
       <h4><a href=@routes.Files.file(file.fileId)>@file.filename</a>
-        @if(curation.status =="In Curation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
+        @if(curation.status =="In Preparation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
             @if(currentFolder.isDefined){
-              <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file"
-              onclick="confirmDeleteResource('curation file','curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
+              <a id="file-@file.id" title="Remove file from request" class="btn btn-link delete-file"
+              onclick="confirmDeleteResource('curation file','following file from this request','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
                 <span class="glyphicon glyphicon-trash"></span>
               </a>
             } else {
-                <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file"
-                onclick="confirmDeleteResource('curation file','curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
+                <a id="file-@file.id" title="Remove file from request" class="btn btn-link delete-file"
+                onclick="confirmDeleteResource('curation file','following file from this request','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
                     <span class="glyphicon glyphicon-trash"></span>
                 </a>
             }
         }
       </h4>
       <div id ='allMetadata_@(file.id)'>
-        <button class="btn btn-link" type="button">Show curation file metadata</button>
+        <button class="btn btn-link" type="button">Show file metadata in request</button>
         <div style="display:none;">
           <div class="row border-top">
             <div class="col-md-12">
-              @if(curation.status =="In Curation" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curation.id))) {
+              @if(curation.status =="In Preparation" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curation.id))) {
                 <div class="row">
                   <div class="col-md-12">
                   @metadatald.addMetadata("curationFile", file.id.toString, "metadata-content-"+file.id.stringify)
@@ -58,7 +58,7 @@
               }
             <div class="row">
               <div class="col-md-12" id="metadata-content-@file.id.stringify">
-                @if(curation.status =="In Curation") {
+                @if(curation.status =="In Preparation") {
                     @metadatald.view(m.filter(_.attachedTo.id == file.id), true)
                 } else {
                     @metadatald.view(m.filter(_.attachedTo.id == file.id), false)
@@ -76,11 +76,11 @@
                     $("#allMetadata_@(file.id.toString) > button").on('click', function(){
                         if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide curation file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
                         }
                         else{
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show curation file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata in request";
                         }
                     });
 

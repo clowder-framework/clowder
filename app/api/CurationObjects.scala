@@ -246,7 +246,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
           Ok(Json.toJson(parsedValue))
         }
-        case None => InternalServerError("Curation Object not Found");
+        case None => InternalServerError("Publication Request not Found");
       }
 
   }
@@ -277,7 +277,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               }
             }
           }
-          case None => InternalServerError("Curation Object Not found")
+          case None => InternalServerError("Publication Request Not found")
         }
       }
       case None => InternalServerError("User not found")
@@ -330,7 +330,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
     implicit request =>
       curations.get(curationId) match {
         case Some(c) => c.status match {
-          case "In Curation" => {
+          case "In Preparation" => {
             if(curationId == parentId){
               curations.removeCurationFile("dataset", parentId, curationFileId)
             } else {
