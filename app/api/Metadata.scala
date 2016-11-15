@@ -170,7 +170,7 @@ class Metadata @Inject()(
 
   //On GUI, URI is not required, however URI is required in DB. a default one will be generated when needed.
   private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
-    metadataService.getDefinitionByUri(uri) match {
+    metadataService.getDefinitionByUriAndSpace(uri, space map {_.id.toString()} ) match {
       case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
       case None => {
         val definition = MetadataDefinition(json = body, spaceId = spaceId)
