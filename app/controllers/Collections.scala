@@ -149,7 +149,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     implicit val user = request.user
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val ownerName = person match {
+      case Some(p) => Some(p.fullName)
+      case None => None
+    }
     val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val spaceName = collectionSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }
     var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("collections.title")))
 
     val collectionList = person match {
@@ -274,7 +282,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle+ ".", s, "space"))
       }
-      case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+      case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, spaceName, title, owner, ownerName, when, date))
     }
   }
 
@@ -649,7 +657,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
-    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val ownerName = person match {
+      case Some(p) => Some(p.fullName)
+      case None => None
+    }
+    val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val spaceName = collectionSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }
 
     val parentCollection = collections.get(UUID(parentCollectionId))
     var title: Option[String] = Some(Messages("collections.title"))
@@ -773,7 +789,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, spaceName, title, owner, ownerName, when, date))
   }
 
   private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {

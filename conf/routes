@@ -102,7 +102,7 @@ GET            /files/:file_id/extractions                                      
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true)
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, status: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -374,7 +374,7 @@ POST           /api/files/:id/reindex                                           
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
 GET            /api/extractors                                                          @api.Extractions.listExtractors()
-GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
+GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
@@ -702,6 +702,7 @@ GET            /rss/:etype                                                      
 # ----------------------------------------------------------------------
 
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
+GET            /space/curations                                                         @controllers.CurationObjects.list(when: String ?= "", date: String ?= "", limit: Int ?= 4, space: Option[String] ?= None)
 POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID, index: Int ?=0, limit: Int ?= 12)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID, limit: Int ?=5)

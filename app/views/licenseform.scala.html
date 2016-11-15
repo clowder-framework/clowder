@@ -82,9 +82,9 @@ Used By: dataset.scala.html, file.scala.html
         //describing the license rights, the URL for the license, and whether or not downloading is 
         //allowed.        
         var licenseType = "@licenseData.m_licenseType";
-        var rightsHolder = "@licenseData.m_rightsHolder";
-        var licenseText = "@licenseData.m_licenseText";
-        var licenseUrl = "@licenseData.m_licenseUrl";        
+        var rightsHolder = htmlDecode("@licenseData.m_rightsHolder");
+        var licenseText = htmlDecode("@licenseData.m_licenseText");
+        var licenseUrl = htmlDecode("@licenseData.m_licenseUrl");
         var allowDownload = "@licenseData.m_allowDownload";
         var $radios = $('input[name=type]');       
         
@@ -202,9 +202,9 @@ Used By: dataset.scala.html, file.scala.html
         //No matter what, must update the data on the UI. No submission though.
         //Reset the variables based on all the work that the ready function has done. (Primarily for the first license type)
         licenseType = $('input[name=type]:checked', '#form1').val();            
-        rightsHolder = $('input[name=ownername]').val();
-        licenseText = $('input[name=licensedesc]').val();
-        licenseUrl = $('input[name=licenseurl]').val();
+        rightsHolder = htmlEncode($('input[name=ownername]').val());
+        licenseText = htmlEncode($('input[name=licensedesc]').val());
+        licenseUrl = htmlEncode($('input[name=licenseurl]').val());
         allowDownload = $('input[name=allowDownload]').prop('checked');         
         var formImageBase = '@routes.Assets.at("images")';
         var authorName = "@authorName";

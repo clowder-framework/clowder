@@ -12,6 +12,7 @@ import scala.collection.immutable.List
 object SearchUtils {
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
   lazy val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
@@ -21,7 +22,8 @@ object SearchUtils {
     val id = f.id
 
     // Get child_of relationships for File
-    val child_of = datasets.findByFileId(id).map( ds => ds.id.toString )
+    val child_of = datasets.findByFileId(id).map( ds => ds.id.toString ) ++
+      folders.findByFileId(id).map( fld => fld.parentDatasetId.toString )
 
     // Get comments for file
     val fcomments = for (c <- comments.findCommentsByFileId(id)) yield {

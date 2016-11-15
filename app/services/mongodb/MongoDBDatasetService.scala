@@ -67,28 +67,48 @@ class MongoDBDatasetService @Inject() (
    * Return a list of datasets in a space, this does not check for permissions
    */
   def listSpace(limit: Integer, space: String): List[Dataset] = {
-    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, showAll=true, owner=None)
+    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, status=None, showAll=true, owner=None)
   }
 
   /**
    * Return a list of datasets in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, showAll=true, owner=None)
+    list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, status=None, showAll=true, owner=None)
   }
 
   /**
     * Return a list of datasets in a space
     */
   def listSpace(limit: Integer, space: String, user:Option[User]): List[Dataset] = {
-    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, showAll=false, owner=None)
+    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
   }
 
   /**
     * Return a list of datasets in a space starting at a specific date, this does not check for permissions
     */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String, user:Option[User]): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, showAll=false, owner=None)
+    list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
+  }
+
+  /**
+    * Return a list of datasets in a space filtered by status, this does not check for permissions
+    */
+  def listSpaceStatus(limit: Integer, space: String, status: String): List[Dataset] = {
+    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, Some(status), showAll=true, owner=None)
+  }
+  /**
+    * Return a list of datasets in a space filtered by status
+    */
+  def listSpaceStatus(limit: Integer, space: String, status: String, user:Option[User]): List[Dataset] = {
+    list(None, false, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, Some(status), showAll=true, owner=None)
+  }
+
+  /**
+    * Return a list of datasets in a space filtered by status
+    */
+  def listSpaceStatus(date: String, nextPage: Boolean, limit: Integer, space: String, status: String, user:Option[User]): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, None, Some(space), Set[Permission](Permission.ViewDataset), user, Some(status), showAll=true, owner=None)
   }
 
   /**
@@ -102,42 +122,42 @@ class MongoDBDatasetService @Inject() (
    * Return a list of datasets in a collection, this does not check for permissions
    */
   def listCollection(collection: String): List[Dataset] = {
-    list(None, false, 0, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, showAll=false, owner=None)
+    list(None, false, 0, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, status=None, showAll=false, owner=None)
   }
 
   /**
    * Return a list of datasets in a collection, this does not check for permissions
    */
   def listCollection(limit: Integer, collection: String): List[Dataset] = {
-    list(None, false, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, showAll=false, owner=None)
+    list(None, false, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, status=None, showAll=false, owner=None)
   }
 
   /**
    * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
    */
   def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, showAll=false, owner=None)
+    list(Some(date), nextPage, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, status=None, showAll=false, owner=None)
   }
 
   /**
     * Return a list of datasets in a collection
     */
   def listCollection(collection: String, user:Option[User]): List[Dataset] = {
-    list(None, false, 0, None, Some(collection), None, Set[Permission](Permission.ViewDataset), user, showAll=false, owner=None)
+    list(None, false, 0, None, Some(collection), None, Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
   }
 
   /**
     * Return a list of datasets in a collection
     */
   def listCollection(limit: Integer, collection: String, user:Option[User]): List[Dataset] = {
-    list(None, false, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), user, showAll=false, owner=None)
+    list(None, false, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
   }
 
   /**
     * Return a list of datasets in a collection starting at a specific date
     */
   def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String, user:Option[User]): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), user, showAll=false, owner=None)
+    list(Some(date), nextPage, limit, None, Some(collection), None, Set[Permission](Permission.ViewDataset), user, status=None, showAll=false, owner=None)
   }
 
   /**
@@ -151,56 +171,56 @@ class MongoDBDatasetService @Inject() (
    * Return a list of datasets the user has access to.
    */
   def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(None, false, limit, None, None, None, permissions, user, showAll, None, showPublic)
+    list(None, false, limit, None, None, None, permissions, user, None, showAll, None, showPublic)
   }
 
   /**
    * Return a list of datasets the user has access to.
    */
   def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(None, false, limit, Some(title), None, None, permissions, user, showAll, None, showPublic)
+    list(None, false, limit, Some(title), None, None, permissions, user, None, showAll, None, showPublic)
   }
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, None, None, permissions, user, showAll, None, showPublic)
+    list(Some(date), nextPage, limit, None, None, None, permissions, user, None, showAll, None, showPublic)
   }
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, Some(title), None, None, permissions, user, showAll, None, showPublic)
+    list(Some(date), nextPage, limit, Some(title), None, None, permissions, user, None, showAll, None, showPublic)
   }
 
   /**
     * Return a list of datasets in a space the user has access to.
     */
   def listSpaceAccess(limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(None, false, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+    list(None, false, limit, None, None, Some(space), permissions, user, None, showAll, None, showPublic)
   }
 
   /**
     * Return a list of datasets in a space the user has access to.
     */
   def listSpaceAccess(limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(None, false, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+    list(None, false, limit, Some(title), None, Some(space), permissions, user, None, showAll, None, showPublic)
   }
 
   /**
     * Return a list of datasets in a space the user has access to starting at a specific date.
     */
   def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+    list(Some(date), nextPage, limit, None, None, Some(space), permissions, user, None, showAll, None, showPublic)
   }
 
   /**
     * Return a list of datasets in a space the user has access to starting at a specific date.
     */
   def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+    list(Some(date), nextPage, limit, Some(title), None, Some(space), permissions, user, None, showAll, None, showPublic)
   }
 
   /**
@@ -214,14 +234,14 @@ class MongoDBDatasetService @Inject() (
    * Return a list of datasets the user has created.
    */
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset] = {
-    list(None, false, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, showAll, Some(owner))
+    list(None, false, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, None, showAll, Some(owner))
   }
 
   /**
    * Return a list of datasets the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, showAll, Some(owner))
+    list(Some(date), nextPage, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, None, showAll, Some(owner))
   }
 
   /**
@@ -246,7 +266,7 @@ class MongoDBDatasetService @Inject() (
    * return count based on input
    */
   private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, showAll, owner, true)
+    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, None, showAll, owner, true)
     Dataset.count(filter)
   }
 
@@ -254,8 +274,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], showPublic: Boolean = true): List[Dataset] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, permissions, user, showAll, owner, showPublic)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], status: Option[String], showAll: Boolean, owner: Option[User], showPublic: Boolean = true): List[Dataset] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, permissions, user, status, showAll, owner, showPublic)
     if (date.isEmpty || nextPage) {
       Dataset.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -266,7 +286,7 @@ class MongoDBDatasetService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], showPublic: Boolean): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], status:Option[String], showAll: Boolean, owner: Option[User], showPublic: Boolean): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -328,6 +348,19 @@ class MongoDBDatasetService @Inject() (
       case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
+    val filterStatus = status match {
+      case Some("public") => MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
+      case Some("private") => MongoDBObject("status" -> DatasetStatus.PRIVATE.toString)
+      case Some("default") => MongoDBObject("status" -> DatasetStatus.DEFAULT.toString)
+      case Some("trial") => MongoDBObject("status" -> DatasetStatus.TRIAL.toString)
+      case Some("publicAll") => {
+        val mdbolist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+        mdbolist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
+        mdbolist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
+        $or(mdbolist.map(_.asDBObject))
+      }
+      case None => MongoDBObject()
+    }
     val filterCollection = collection match {
       case Some(c) => MongoDBObject("collections" -> new ObjectId(c))
       case None => MongoDBObject()
@@ -353,7 +386,7 @@ class MongoDBDatasetService @Inject() (
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    (filterAccess ++ filterDate ++ filterTitle ++ filterCollection ++ filterSpace ++ filterOwner, sort)
+    (filterAccess ++ filterDate ++ filterTitle ++ filterStatus ++ filterCollection ++ filterSpace ++ filterOwner, sort)
   }
 
   def isInCollection(dataset: Dataset, collection: Collection): Boolean = {

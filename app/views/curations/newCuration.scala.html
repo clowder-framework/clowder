@@ -14,7 +14,7 @@
         <ol class="breadcrumb">
             @defaultspace match {
                 case Some(sp) => {
-                   <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name,18))</a></li>
+                   <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name,18))</a></li>
                 }
                 case None => {
                     @user match {
@@ -36,7 +36,7 @@
         <ol class="breadcrumb">
             @defaultspace match {
                 case Some(sp) => {
-                    <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name, 18))</a></li>
+                    <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name, 18))</a></li>
                 }
                 case None => {
                     //Right now this is not used. It is a placeholder for when we have a personal space/ private space/ user space where you can publish stuff into.
