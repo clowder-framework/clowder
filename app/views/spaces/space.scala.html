@@ -50,7 +50,7 @@
                     @if(user.isDefined) {
                         <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
                         <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                            <!-- Published Data tab and code is disabled, currently it showns Curation objects with Published status.
+                            <!-- Published Data tab and code is disabled, currently it shows Curation objects with Published status.
                             The use of DOI and remote repositories is being discussed.
                         if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) -->
                         @if(false){
@@ -59,7 +59,7 @@
                     } else {
                         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                             <li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                            <!-- Published Data tab and code is disabled, currently it showns Curation objects with Published status.
+                            <!-- Published Data tab and code is disabled, currently it shows Curation objects with Published status.
                             The use of DOI and remote repositories is being discussed.
                             <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li> -->
                         }
