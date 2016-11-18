@@ -1,4 +1,4 @@
-@(collection: models.Collection, userListSpaceRoleTupleMap: Map[UUID, List[Tuple2[String,String]]], currUserIsAuthor: Boolean, users: List[User])(implicit user: Option[models.User])
+@(collection: models.Collection, userListSpaceRoleTupleMap: Map[UUID, List[Tuple2[String,String]]], users: List[User])(implicit user: Option[models.User])
 
 @main("Collection") {
     <div class="row">
@@ -19,7 +19,7 @@
                     <thead>
                         <tr>
                             <th class="col-md-4">User</th>
-                            @if(currUserIsAuthor) {
+
                                 <th>
                                     <table id='nested-space-role-headers' class="table table-hover">
                                         <thead>
@@ -30,14 +30,14 @@
                                         </thead>
                                     </table>
                                 </th>
-                            }
+
                         </tr>
                     </thead>
                     <tbody>
                         @users.filter(!_.fullName.isEmpty).map { u =>
                             <tr>
                                 <td class="col-md-4">@u.fullName</td>
-                                @if(currUserIsAuthor && (userListSpaceRoleTupleMap contains u.id)) {
+                                @if(userListSpaceRoleTupleMap contains u.id) {
                                     <td>
                                         <table id='nested-space-role-pairs' class="table table-hover">
                                             <tbody>
