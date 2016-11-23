@@ -74,7 +74,7 @@
                 <div class="col-md-6">
                     <ul class="list-unstyled">
 
-                        <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
+                        <li>Owner: <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
                             @if(showAccess) {
                                 @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -121,6 +121,34 @@
                         </a>
                     }
             </div>
+            <div class="col-md-12 box-white-space" id='aboutcreators'>
+                <label id="creators-label" title="Ordered list of those responsible for this dataset"> Creator(s): </label>
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a id="add-creator" class="hiddencomplete" href="javascript:addCreator()" title="Click to add a Creator">
+                            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                        </a>
+                    }
+
+            <div id="ds_creators" class="inline">
+
+                @if(dataset.creators.length !=0) {
+            @for(i <- 0 to (dataset.creators.length  - 2) ) {
+                <span class="creator" class="author">
+                  <span class="authname">@dataset.creators(i).trim</span>
+                  <span class="glyphicon-remove creator-delete hiddencomplete"></span>
+                	<span>, </span>
+                </span>
+                
+            }
+                <span class="creator" class="author">
+                  <span class="authname">@dataset.creators(dataset.creators.length-1).trim</span>
+                  <span class="glyphicon-remove creator-delete hiddencomplete"></span>
+                </span>
+ 
+                }
+            </div>
+		</div>    
+       
                 <div class="col-xs-12">
                     <hr/>
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
@@ -320,6 +348,8 @@
         }
         $(document).ready(function(){
 
+
+
             getUpdatedFilesAndFolders();
 
             if(@dataset.spaces.size < 1 ) {
@@ -341,6 +371,20 @@
                  }).on('mouseleave', '#aboutdesc', function() {
                     $('#edit-description').removeClass("inline");
                     $('#edit-description').addClass("hiddencomplete");
+                 });
+                 
+                  $(document).on('mouseenter', '#aboutcreators', function() {
+                    $('#add-creator').removeClass("hiddencomplete");
+                    $('#add-creator').addClass("inline");
+                    $('.creator-delete').removeClass("hiddencomplete");
+                    $('.creator-delete').addClass("glyphicon");
+                    
+                 }).on('mouseleave', '#aboutcreators', function() {
+                    $('#add-creator').removeClass("inline");
+                    $('#add-creator').addClass("hiddencomplete");
+                    $('.creator-delete').removeClass("glyphicon");
+                    $('.creator-delete').addClass("hiddencomplete");
+                    
                  });
             }
 
@@ -494,6 +538,9 @@
     }
 
     $(function() {
+    
+    
+    
             $(window).on('fileDelete hashchange', function() {
 
                 getUpdatedFilesAndFolders();
@@ -678,6 +725,161 @@
 
         }
 
+    
+    function addCreator() {
+
+		$('<div class="add_creator"> </div>').insertAfter($('#ds_creators'));
+		$('.add_creator').append('<select id="reatorAddSelect" class="form-control add-resource select2-hidden-accessible" tabindex="-1" aria-hidden="true">');
+		$('.add_creator').append('<button id = "creator_add" class= "btn btn-sm btn-primary btn-margins" onclick = "saveCreator()"> <span class="glyphicon glyphicon-send"> </span> Save </button>');
+		$('.add_creator').append('<button id="cancel_creator_add" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelAddCreator()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
+    $("#creatorAddSelect").select2({
+        theme: "bootstrap",
+        placeholder: "Add a Creator",
+        allowClear: true,
+        ajax: {
+            url: function(params) {
+                return jsRoutes.api.Datasets.searchCreators("@dataset.id", params.term, null, 5).url;
+            },
+            data: function(params) {
+                return { title: params.term };
+            },
+            processResults: function(data, page) {
+                return {results: data.filter(function(x) {
+                    var names = $('.creator').map(function() {
+                        return $(this).children('.authname').text();
+                    });
+                    return $.inArray(x.name, names) == -1;
+                }).map(function(x) {
+                    return {
+                        text: x.name,
+                        id: x.id
+                    }
+                })};
+            }
+        }
+    });
+
+		
+	}
+
+    function cancelAddCreator() {
+        $('.add_creator').remove();
+        $('#add-creator').removeClass("inline");
+        $('#add-creator').css("display", "");
+        $('#ds-creators').mouseleave();
+    }
+
+var creatorCount = @dataset.creators.length -1;
+
+	function saveCreator() {
+		var newAuthor = $('#creator_input').val().trim();
+		if($('.authname').filter(function(){return $(this).text() === newAuthor;}).length==0) {
+		var encCreator = htmlEncode(newAuthor);
+		jsonData = JSON.stringify({"creator": encCreator});
+
+		var request = jsRoutes.api.Datasets.addCreator("@dataset.id").ajax({
+			data: jsonData,
+			type: 'PUT',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus,jqXHR) {
+			//Add new creator to the end of the list
+			if(creatorCount!=0) {
+			  $('#author_' + creatorCount).append('<span>,</span>');
+			}
+			$('#ds_creators').append('<span class="creator" id="author"><span class="authname">' + 
+									htmlDecode(encCreator) + 
+									'</span><span class="glyphicon glyphicon-remove creator-delete"></span></span>');
+			creatorCount = creatorCount+1;						
+			//Remove the edit box
+			$('.add_creator').remove();
+			$('#add-creator').removeClass("inline");
+            $('#add-creator').css("display", "");
+            $('#ds-creators').mouseleave();
+            notify("Creator added.", "success", false, 2000 );
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = " You must be logged in to update the information about a dataset.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The dataset information was not updated due to: " + errorThrown, "error");
+			}
+		});
+		} else {
+		  notify(newAuthor + " is already in the list of Creators", "error");
+		}  
+	 }
+
+
+	 
+	  $(document).on("click",".creator-delete", function(){
+        var target = $(this).parent().children('.authname').text().trim();
+
+
+
+    var request = jsRoutes.api.Datasets.removeCreator('@dataset.id', target).ajax({
+        type : 'DELETE'
+    });
+    
+    request.done ( function ( response, textStatus, jqXHR ) {
+        console.log("Successful remove user " + target);
+              $('.authname').filter(function(){return $(this).text() === target;}).parent().remove();
+              notify("Creator: " + target + " removed.", "success", false, 2000 );
+              var lastAuth = $('.authname').last().parent();
+              if(lastAuth.children().length == 3) {
+                lastAuth.children().last().remove();
+              } 
+    });
+    
+    request.fail(function(jqXHR) {
+        console.error("ERROR occurs when deleting user "+ target);
+    });
+    });
+
+    $(function() {
+ 		$("#ds_creators").sortable({
+            revert: true,
+            //containment:"parent",
+            placeholder: "sortable-placeholder-highlight",
+            forcePlaceholderSize:true,
+            forceHelperSize:true, 
+   			beforeStop: function( event, ui ) {
+              //placeholder is a child of the element under the cursor
+              var newIndex = $(ui.placeholder).index()-1;
+              
+              var creatorname = $(ui.helper).children('.authname').text();
+            var request = jsRoutes.api.Datasets.moveCreator("@dataset.id", $(ui.helper).children('.authname').text(), newIndex).ajax({
+					type: 'PUT',
+				});
+
+			request.done(function(response, textStatus,jqXHR) {
+				// Arrange commas
+				if(newIndex!=($('.authname').length-1)) {
+					//Add a comma if needed
+					var movedAuth = $('.authname').eq(newIndex).parent();
+              		if(movedAuth.children().length != 3) {
+                		movedAuth.append("<span>,</span>");
+		            }
+				}
+				//Remove comma on last entry if it exists
+				var lastAuth = $('.authname').last().parent();
+              	if(lastAuth.children().length == 3) {
+                	lastAuth.children().last().remove();
+	            } 
+				//Send event
+				notify("Creator moved.", "success", false, 2000 );	
+			});
+
+			request.fail(function(jqXHR, textStatus, errorThrown) {
+				console.error("The following error occurred: " + textStatus, errorThrown);
+				$('#ds_creators').sortable("cancel");
+			  });
+			  }
+        }); 
+        $( "#ds_creators" ).disableSelection();
+      });
     </script>
 }
 

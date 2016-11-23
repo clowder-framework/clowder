@@ -979,3 +979,17 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .goldenrod{
     background-color: goldenrod;
 }
+
+.sortable-placeholder-highlight {
+	display:inline-block;
+	width:10px;
+	background-color: #cb4f00;
+}
+
+.creator-delete {
+	color:#2e6ca2;
+}
+
+.creator {
+	margin-left:5px;
+}

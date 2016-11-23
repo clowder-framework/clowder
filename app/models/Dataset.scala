@@ -20,20 +20,16 @@ case class Dataset(
   streams_id: List[ObjectId] = List.empty,
   tags: List[Tag] = List.empty,
   metadataCount: Long = 0,
-  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata: List[Metadata] = List.empty,
-  @deprecated("use Metadata","since the use of jsonld") metadata: Map[String, Any] = Map.empty,
-  @deprecated("use Metadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,
   collections: List[UUID] = List.empty,
   thumbnail_id: Option[String] = None,
-  @deprecated("use Metadata","since the use of jsonld") datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
-  @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty,
-  status: String = DatasetStatus.PRIVATE.toString// dataset has four status: trial, default, private and public. yet editors of the dataset
+  status: String = DatasetStatus.PRIVATE.toString, // dataset has four status: trial, default, private and public. yet editors of the dataset
   // can only see the default, private and public, where trial equals to private. viewers can only see private and
   // public, where trial and default equals to private/public of its space
+  creators: List[String] = List.empty
 ){
   def isPublic:Boolean = status == DatasetStatus.PUBLIC.toString
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
