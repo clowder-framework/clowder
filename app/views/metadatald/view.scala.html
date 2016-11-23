@@ -82,7 +82,11 @@
                                             } else {
                                                 @key:
                                             }
-                                        @printContent(agent,value,contextId,contextURL,resourceId)
+                                            @if(key.equals("Creator")||key.equals("Contact")) {
+                        						@printPerson(agent,value,contextId,contextURL,resourceId)
+						                    } else {
+                                                @printContent(agent,value,contextId,contextURL,resourceId)
+                                            }
                                     }
                                 } else {
                                     @contextURL match {
@@ -117,6 +121,23 @@
             case _ => {@content}
         }
     }
+
+    @printPerson(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID) = {
+    	@content match {
+    		case s: JsString => {
+    			@if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+    				<span class='person'>@s.value</span>
+    			} else {
+    				@if(s.value.startsWith("http")) {
+                    	<a target="_blank" href="@s.value">@s.value</a>
+                	} else {
+                    	@s.value
+	                }
+                }
+            }
+            case _ => {@content}
+        }
+	}
 
     @printHeader(agent: Agent, date: java.util.Date) = {
         @agent.operation by
@@ -173,6 +194,10 @@
     }
 
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+    <script src="@routes.Assets.at("javascripts/people.js")" type="text/javascript"></script>
+    }
+       
     <script>
         $(function () {
             $('[data-toggle="tooltip"]').tooltip();
