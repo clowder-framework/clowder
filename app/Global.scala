@@ -2,10 +2,11 @@ import java.io.{PrintWriter, StringWriter}
 
 import play.api.{Application, GlobalSettings}
 import play.api.Logger
+import play.api.libs.json.JsValue
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
 import securesocial.core.SecureSocial
-import services.{AppConfiguration, DI, UserService}
+import services.{AppConfiguration, DI, UserService, AppConfigurationService}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

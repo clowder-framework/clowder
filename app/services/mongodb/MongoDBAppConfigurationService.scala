@@ -9,23 +9,41 @@ import play.api.Play.current
   * App Configuration Service.
  */
 class MongoDBAppConfigurationService extends AppConfigurationService {
-  def addPropertyValue(key: String, value: AnyRef) {
+  def addPropertyValue(key: String, value: Any) {
     getCollection.update(MongoDBObject("key" -> key), $addToSet("value" -> value), upsert=true, concern=WriteConcern.Safe)
   }
 
-  def removePropertyValue(key: String, value: AnyRef) {
+  def removePropertyValue(key: String, value: Any) {
     getCollection.update(MongoDBObject("key" -> key), $pull("value" -> value), concern=WriteConcern.Safe)
   }
 
-  def hasPropertyValue(key: String, value: AnyRef) = {
+  def hasPropertyValue(key: String, value: Any) = {
     getCollection.findOne(("value" $in value :: Nil) ++ ("key" -> key)).nonEmpty
+  }
+
+  /** Increment configuration property with specified key by value. **/
+  def incrementCounts(datasetsCount: Long=0, filesCount: Long=0, filesBytes: Long=0, collectionsCount: Long=0,
+                             spacesCount: Long=0, usersCount: Long=0) = {
+    Logger.debug(s"Incrementing instance counts")
+    getCollection.update(MongoDBObject("key" -> "countof.datasets"), $inc("value" -> datasetsCount),
+      upsert=true, concern=WriteConcern.Safe)
+    getCollection.update(MongoDBObject("key" -> "countof.files"), $inc("value" -> filesCount),
+      upsert=true, concern=WriteConcern.Safe)
+    getCollection.update(MongoDBObject("key" -> "countof.bytes"), $inc("value" -> filesBytes),
+      upsert=true, concern=WriteConcern.Safe)
+    getCollection.update(MongoDBObject("key" -> "countof.collections"), $inc("value" -> collectionsCount),
+      upsert=true, concern=WriteConcern.Safe)
+    getCollection.update(MongoDBObject("key" -> "countof.spaces"), $inc("value" -> spacesCount),
+      upsert=true, concern=WriteConcern.Safe)
+    getCollection.update(MongoDBObject("key" -> "countof.users"), $inc("value" -> usersCount),
+      upsert=true, concern=WriteConcern.Safe)
   }
 
   /**
    * Gets the configuration property with the specified key. If the key is not found
    * it wil return None.
    */
-  def getProperty[objectType <: AnyRef](key: String): Option[objectType] = {
+  def getProperty[objectType <: Any](key: String): Option[objectType] = {
     Logger.debug(s"Getting value for $key")
     getCollection.findOne(MongoDBObject("key" -> key)) match {
       case Some(x) => {
@@ -42,7 +60,7 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
    * Sets the configuration property with the specified key to the specified value. If the
    * key already existed it will return the old value, otherwise it returns None.
    */
-  def setProperty(key: String, value: AnyRef): Option[AnyRef] = {
+  def setProperty(key: String, value: Any): Option[Any] = {
     Logger.debug(s"Setting $key to $value")
     val old = getProperty(key)
     getCollection.update(MongoDBObject("key" -> key), $set("value" -> value), upsert=true, concern=WriteConcern.Safe)
@@ -53,7 +71,7 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
    * Remove the configuration property with the specified key and returns the value if any
    * was set, otherwise it will return None.
    */
-  def removeProperty(key: String): Option[AnyRef] = {
+  def removeProperty(key: String): Option[Any] = {
     Logger.debug(s"Removing value for $key")
     val collection = getCollection
     collection.findOne(MongoDBObject("key" -> key)) match {
