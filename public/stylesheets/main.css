@@ -993,3 +993,11 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .creator {
 	margin-left:5px;
 }
+
+.select2-rendered__match {
+  font-weight: bold;
+}
+
+#creatorAddSelect {
+	width:90%!important;
+}

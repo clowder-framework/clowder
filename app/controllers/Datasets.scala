@@ -543,6 +543,7 @@ class Datasets @Inject()(
              }
             )
           }
+          Logger.debug(datasetWithFiles.creators.foldRight(""){(a,b) => a+b} );
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
             filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
