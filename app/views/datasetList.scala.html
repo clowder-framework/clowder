@@ -33,7 +33,7 @@
             <h1>@Html(title.getOrElse("Datasets"))</h1>
             @status match {
                 case Some("publicAll") => {
-                    <p>@Messages("space.title") owner has made the following @Messages("datasets.title").toLowerCase publicly available.</p>
+                    <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase publicly available.</p>
                 }
                 case _ => {
                     <p>@Messages("dataset.list.message", Messages("datasets.title").toLowerCase, Messages("dataset.title").toLowerCase)</p>
