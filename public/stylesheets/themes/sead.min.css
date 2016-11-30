@@ -7035,6 +7035,10 @@ fieldset[disabled] .btn-default.active {
   padding-bottom: 5px;
 }
 
+.js-sort-single {
+	min-width:100px;
+}
+
 .select2-results__option
 {
 	padding-bottom: 1px!important;
