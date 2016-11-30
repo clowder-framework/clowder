@@ -407,25 +407,31 @@ class Metadata @Inject() (
   def getPerson(pid: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-    val endpoint = (play.Play.application().configuration().getString("people.uri") + "/" + URLEncoder.encode(pid, "UTF-8"))
-    val futureResponse = WS.url(endpoint).get()
-    var jsonResponse: play.api.libs.json.JsValue = new JsArray()
-    var success = false
-    val result = futureResponse.map {
-      case response =>
-        if (response.status >= 200 && response.status < 300 || response.status == 304) {
-          Ok(response.json).as("application/json")
-        } else {
-          if (response.status == 404) {
-
-            NotFound(toJson(Map("failure" -> { "Person with identifier " + pid + " not found" }))).as("application/json")
-
+    val peopleEndpoint = (play.Play.application().configuration().getString("people.uri"))
+    if (peopleEndpoint != null) {
+      val endpoint = (peopleEndpoint + "/" + URLEncoder.encode(pid, "UTF-8"))
+      val futureResponse = WS.url(endpoint).get()
+      var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+      var success = false
+      val result = futureResponse.map {
+        case response =>
+          if (response.status >= 200 && response.status < 300 || response.status == 304) {
+            Ok(response.json).as("application/json")
           } else {
-            InternalServerError(toJson(Map("failure" -> { "Status: " + response.status.toString() + " returned from SEAD /api/people/<id> service" }))).as("application/json")
+            if (response.status == 404) {
+
+              NotFound(toJson(Map("failure" -> { "Person with identifier " + pid + " not found" }))).as("application/json")
+
+            } else {
+              InternalServerError(toJson(Map("failure" -> { "Status: " + response.status.toString() + " returned from SEAD /api/people/<id> service" }))).as("application/json")
+            }
           }
-        }
+      }
+      result
+    } else {
+      //TBD - see what Clowder knows
+      Future(NotFound(toJson(Map("failure" -> { "Person with identifier " + pid + " not found" }))).as("application/json"))
     }
-    result
   }
 
   @ApiOperation(value = "Get list of known people from SEAD PDT, eventually using term and limit to constrain the response ", httpMethod = "GET")
@@ -447,22 +453,22 @@ class Metadata @Inject() (
               val fName = t \ ("givenName")
               val lName = t \ ("familyName")
               val name = JsString(fName.as[String] + " " + lName.as[String])
-              val email =   t \ ("email") match {
+              val email = t \ ("email") match {
                 case JsString(_) => t \ ("email")
                 case _ => JsString("")
               }
               Map("name" -> name, "@id" -> t \ ("@id"), "email" -> email)
 
             }.filter((x) => {
-              if(term.length == 0) {
+              if (term.length == 0) {
                 true
               } else {
-              Logger.debug(lcTerm)
-              
-              ((x.getOrElse("name", new JsString("")).as[String].toLowerCase().contains(lcTerm)) || 
-                  x.getOrElse("@id", new JsString("")).as[String].toLowerCase().contains(lcTerm) || 
+                Logger.debug(lcTerm)
+
+                ((x.getOrElse("name", new JsString("")).as[String].toLowerCase().contains(lcTerm)) ||
+                  x.getOrElse("@id", new JsString("")).as[String].toLowerCase().contains(lcTerm) ||
                   x.getOrElse("email", new JsString("")).as[String].toLowerCase().contains(lcTerm))
-            }
+              }
             }).take(limit))).as("application/json")
           } else {
             if (response.status == 404) {
