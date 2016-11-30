@@ -188,7 +188,7 @@ $(document).on(
 				});
 
 			} else {
-				deleteCreatorFromList(creator);
+				deleteCreatorFromList(target);
 			}
 		});
 
