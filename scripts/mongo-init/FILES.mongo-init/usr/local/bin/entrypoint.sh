@@ -47,7 +47,7 @@ if echo $query | grep -q "$emailaddress"; then
         echo "account found"
 else
         echo "account not found!"
-	hasher=$(python3 passwd)
+	hasher=$(python3 /usr/local/bin/passwd)
 	mongo $HOSTIP:27017/clowder --eval "db.social.users.remove({email: '"$emailaddress"'})"
         mongo $HOSTIP:27017/clowder --eval "db.social.users.insert(
         {

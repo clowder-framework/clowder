@@ -1,6 +1,5 @@
 FROM ubuntu:16.04
 MAINTAINER Bing Zhang <bing@illinois.edu>
-USER root
 
 ENV EMAIL_ADDRESS=""\
     PASSWORD=""\
@@ -8,7 +7,6 @@ ENV EMAIL_ADDRESS=""\
     FIRST_NAME=""\
     LAST_NAME=""
 
-RUN useradd -s /bin/bash user
 
 RUN mkdir -p /data/db && \
     apt-get update && \
@@ -22,11 +20,6 @@ RUN mkdir -p /data/db && \
     pip3 install passlib bcrypt
 
 #Copy files
-COPY files/entrypoint.sh files/passwd /home/user/
+COPY FILES.mongo-init /
 
-#Change owner and group
-RUN chown user /home/user && chown user /home/user/passwd && chown user /home/user/entrypoint.sh && chmod u+x /home/user/passwd && chmod u+x /home/user/entrypoint.sh
-#Set workdir
-WORKDIR "/home/user"
-
-ENTRYPOINT ["/home/user/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
