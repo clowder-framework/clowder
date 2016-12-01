@@ -54,6 +54,7 @@ trait AppConfigurationService {
   def removeProperty(key: String): Option[Any]
 
   /** Try to get counts from appConfig, and if generate is true initialize them if not found there **/
+  def getIndexCounts(): DBCounts
 
   /** Increment configuration property with specified key by value. **/
   def incrementCount(key: String, value: Long)
