@@ -52,7 +52,8 @@ class Files @Inject()(
   events: EventService,
   folders: FolderService,
   spaces: SpaceService,
-  userService: UserService) extends ApiController {
+  userService: UserService,
+  appConfig: AppConfigurationService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
     notes = "Get metadata of the file object (not the resource it describes) as JSON. For example, size of file, date created, content type, filename.",
@@ -1537,6 +1538,8 @@ class Files @Inject()(
           }
           Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
+          appConfig.incrementCount("countof.files", -1)
+          appConfig.incrementCount("countof.bytes", -file.length)
 
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)

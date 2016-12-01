@@ -21,7 +21,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import java.text.SimpleDateFormat
@@ -52,7 +51,8 @@ class Files @Inject() (
   metadata: MetadataService,
   contextLDService: ContextLDService,
   spaces: SpaceService,
-  folders: FolderService) extends SecuredController {
+  folders: FolderService,
+  appConfig: AppConfigurationService) extends SecuredController {
 
   /**
    * Upload form.
@@ -385,6 +385,10 @@ def uploadExtract() =
             val uploadedFile = f
             file match {
               case Some(f) => {
+                // Add new file & byte count to appConfig
+                appConfig.incrementCount("countof.files", 1)
+                appConfig.incrementCount("countof.bytes", f.length)
+
                 current.plugin[FileDumpService].foreach {
                   _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
                 }
@@ -501,6 +505,10 @@ def uploadExtract() =
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
+              // Add new file & byte count to appConfig
+              appConfig.incrementCount("countof.files", 1)
+              appConfig.incrementCount("countof.bytes", f.length)
+
               val option_user = users.findByIdentity(identity)
               events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
 	            if(showPreviews.equals("FileLevel"))
@@ -1127,6 +1135,9 @@ def uploadExtract() =
                 // submit file for extraction
                 file match {
                   case Some(f) => {
+                    // Add new file & byte count to appConfig
+                    appConfig.incrementCount("countof.files", 1)
+                    appConfig.incrementCount("countof.bytes", f.length)
 
                     if (showPreviews.equals("FileLevel"))
                       flags = flags + "+filelevelshowpreviews"

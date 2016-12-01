@@ -6,6 +6,7 @@ import java.util.Date
 import models.UserTermsOfServices
 import org.apache.commons.io.IOUtils
 import util.ResourceLister
+import controllers.DBCounts
 
 /**
  * Application wide configuration options. This class contains the service definition
@@ -22,10 +23,6 @@ trait AppConfigurationService {
 
   /** Checks to see if the value is part of the property with the specified key. */
   def hasPropertyValue(key: String, value: Any): Boolean
-
-  /** Increment instance counts with specified values. **/
-  def incrementCounts(datasetsCount: Long=0, filesCount: Long=0, filesBytes: Long=0, collectionsCount: Long=0,
-                      spacesCount: Long=0, usersCount: Long=0)
 
   /**
    * Gets the configuration property with the specified key. If the key is not found
@@ -55,6 +52,12 @@ trait AppConfigurationService {
    * was set, otherwise it will return None.
    */
   def removeProperty(key: String): Option[Any]
+
+  /** Try to get counts from appConfig, and if generate is true initialize them if not found there **/
+
+  /** Increment configuration property with specified key by value. **/
+  def incrementCount(key: String, value: Long)
+
 }
 
 /**

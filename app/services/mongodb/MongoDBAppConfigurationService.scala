@@ -1,9 +1,11 @@
 package services.mongodb
 
-import services.AppConfigurationService
+import services._
 import play.api.Logger
 import com.mongodb.casbah.Imports._
 import play.api.Play.current
+import javax.inject.{Inject, Singleton}
+import controllers.DBCounts
 
 /**
   * App Configuration Service.
@@ -19,24 +21,6 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
 
   def hasPropertyValue(key: String, value: Any) = {
     getCollection.findOne(("value" $in value :: Nil) ++ ("key" -> key)).nonEmpty
-  }
-
-  /** Increment configuration property with specified key by value. **/
-  def incrementCounts(datasetsCount: Long=0, filesCount: Long=0, filesBytes: Long=0, collectionsCount: Long=0,
-                             spacesCount: Long=0, usersCount: Long=0) = {
-    Logger.debug(s"Incrementing instance counts")
-    getCollection.update(MongoDBObject("key" -> "countof.datasets"), $inc("value" -> datasetsCount),
-      upsert=true, concern=WriteConcern.Safe)
-    getCollection.update(MongoDBObject("key" -> "countof.files"), $inc("value" -> filesCount),
-      upsert=true, concern=WriteConcern.Safe)
-    getCollection.update(MongoDBObject("key" -> "countof.bytes"), $inc("value" -> filesBytes),
-      upsert=true, concern=WriteConcern.Safe)
-    getCollection.update(MongoDBObject("key" -> "countof.collections"), $inc("value" -> collectionsCount),
-      upsert=true, concern=WriteConcern.Safe)
-    getCollection.update(MongoDBObject("key" -> "countof.spaces"), $inc("value" -> spacesCount),
-      upsert=true, concern=WriteConcern.Safe)
-    getCollection.update(MongoDBObject("key" -> "countof.users"), $inc("value" -> usersCount),
-      upsert=true, concern=WriteConcern.Safe)
   }
 
   /**
@@ -92,4 +76,32 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
       case Some(mongo) => mongo.collection("app.configuration")
     }
   }
+
+  /** Try to get counts from appConfig, returning 0 if not found **/
+  def getIndexCounts(): DBCounts = {
+    getProperty[Long]("countof.users") match {
+      case Some(usersCount) => {
+        Logger.debug("Loading instance counts from appConfig")
+        new DBCounts(
+          getProperty[Long]("countof.datasets").getOrElse(0),
+          getProperty[Long]("countof.files").getOrElse(0),
+          getProperty[Long]("countof.bytes").getOrElse(0),
+          getProperty[Long]("countof.collections").getOrElse(0),
+          getProperty[Long]("countof.spaces").getOrElse(0),
+          getProperty[Long]("countof.users").getOrElse(0)
+        )
+      }
+      case None => {
+        Logger.debug("User count not found in appConfig; restart Clowder to initialize recount")
+        new DBCounts(0,0,0,0,0,0)
+      }
+    }
+  }
+
+  /** Increment configuration property with specified key by value. **/
+  def incrementCount(key: String, value: Long) = {
+    getCollection.update(MongoDBObject("key" -> key), $inc("value" -> value),
+      upsert=true, concern=WriteConcern.Safe)
+  }
+
 }

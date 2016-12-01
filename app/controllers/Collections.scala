@@ -21,7 +21,8 @@ import play.api.i18n.Messages
 
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
-                            spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
+                            spaceService: SpaceService, users: UserService, events: EventService,
+                            appConfig: AppConfigurationService) extends SecuredController {
 
   /**
     * String name of the Space such as 'Project space' etc. parsed from conf/messages
@@ -331,6 +332,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           Logger.debug("Saving collection " + collection.name)
           collections.insert(collection)
+          appConfig.incrementCount("countof.collections", 1)
           collection.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {

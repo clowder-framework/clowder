@@ -10,9 +10,9 @@ import services._
 import models.{UUID, User, Event}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
+import controllers.DBCounts
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 
 /**
  * Main application controller.
@@ -39,6 +39,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
    * Main page.
    */
   def index = UserAction(needActive = false) { implicit request =>
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
   	implicit val user = request.user
 
     var newsfeedEvents = List.empty[Event]
@@ -148,72 +150,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
        followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
       }
       case _ => {
-        val counts = getIndexCounts
-        Ok(views.html.index(
-          counts.getOrElse("datasets", 0),
-          counts.getOrElse("files", 0),
-          counts.getOrElse("bytes", 0),
-          counts.getOrElse("collections", 0),
-          counts.getOrElse("spaces", 0),
-          counts.getOrElse("users", 0),
-          // TODO: Update the config counts as these counts are altered
+        val counts = appConfig.getIndexCounts()
+        Ok(views.html.index(counts.numDatasets, counts.numFiles, counts.numBytes,
+          counts.numCollections, counts.numSpaces, counts.numUsers,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
       }
     }
-  }
-
-  /** Try to get counts from appConfig, initialize them if not found there **/
-  def getIndexCounts(): Map[String, Long] = {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    val zeroMap: Map[String, Long] = Map(
-      "datasets"->0, "files"->0, "bytes"->0, "collections"->0, "spaces"->0, "users"->0
-    )
-
-    appConfig.getProperty[Long]("countof.users") match {
-      case Some(usersCount) => {
-        if (usersCount > 0) {
-          Logger.debug("Loading instance counts from appConfig")
-          Map(
-            "datasets"->appConfig.getProperty[Long]("countof.spaces").getOrElse(0),
-            "files"->appConfig.getProperty[Long]("countof.files").getOrElse(0),
-            "bytes"->appConfig.getProperty[Long]("countof.bytes").getOrElse(0),
-            "collections"->appConfig.getProperty[Long]("countof.collections").getOrElse(0),
-            "spaces"->appConfig.getProperty[Long]("countof.spaces").getOrElse(0),
-            "users"->appConfig.getProperty[Long]("countof.users").getOrElse(0)
-          )
-        } else {
-          generateIndexCounts
-          zeroMap
-        }
-      }
-      case None => {
-        generateIndexCounts
-        zeroMap
-      }
-    }
-  }
-
-  /** Perform initial counting of data for index page; can be slow on large instances so is asynchronous **/
-  def generateIndexCounts() = {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-    Logger.debug("initializing appConfig counts")
-
-    val countList: Future[List[Long]] = scala.concurrent.Future {
-      val datasetsCount = datasets.count()
-      val filesCount = files.count()
-      val filesBytes = files.bytes()
-      val collectionsCount = collections.count()
-      val spacesCount = spaces.count()
-      val usersCount = users.count()
-
-      List(datasetsCount, filesCount, filesBytes, collectionsCount, spacesCount, usersCount)
-    }
-
-    // Store the results in appConfig so they can be fetched quickly later
-    countList.map(l =>
-      appConfig.incrementCounts(l(0), l(1), l(2), l(3), l(4), l(5))
-    )
   }
 
   def about = UserAction(needActive = false) { implicit request =>
@@ -471,5 +413,21 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       )
     ).as(JSON) 
   }
-  
+
+}
+
+/** Small class that contains a set of Long counts for various types of data in the database **/
+case class DBCounts(numDatasets: Long=0, numFiles: Long=0, numBytes: Long=0, numCollections: Long=0,
+                    numSpaces: Long=0, numUsers: Long=0) {
+
+  def getMap(): Map[String, Long] = {
+    Map(
+      "datasets"->numDatasets,
+      "files"->numFiles,
+      "bytes"->numBytes,
+      "collections"->numCollections,
+      "spaces"->numSpaces,
+      "users"->numUsers
+    )
+  }
 }
