@@ -531,7 +531,7 @@ class CurationObjects @Inject()(
       aggregation = aggregation ++ Map("Creator" -> Json.toJson(c.creators))
     }
     if(!metadataDefsMap.contains("Creator")){
-      metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+      metadataDefsMap("Creator") = Json.toJson(Map("@id" -> "http://purl.org/dc/terms/creator", "@container" -> "@list"))
     }
     if(metadataJson.contains("Abstract")) {
       val value = List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
@@ -767,7 +767,7 @@ class CurationObjects @Inject()(
             aggregation = aggregation ++ Map("Creator" -> Json.toJson(c.creators))
           }
           if(!metadataDefsMap.contains("Creator")){
-            metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+            metadataDefsMap("Creator") = Json.toJson(Map("@id" -> "http://purl.org/dc/terms/creator", "@container" -> "@list"))
           }
 
           val rightsholder = user.map ( usr => usr.profile match {
