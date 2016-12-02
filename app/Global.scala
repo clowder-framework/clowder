@@ -84,20 +84,13 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
           val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
           val users: UserService = DI.injector.getInstance(classOf[UserService])
 
-          val datasetsCount = datasets.count()
-          val filesCount = files.count()
-          val filesBytes = files.bytes()
-          val collectionsCount = collections.count()
-          val spacesCount = spaces.count()
-          val usersCount = users.count()
-
           // Store the results in appConfig so they can be fetched quickly later
-          appConfig.incrementCount("countof.datasets", datasetsCount)
-          appConfig.incrementCount("countof.files", filesCount)
-          appConfig.incrementCount("countof.bytes", filesBytes)
-          appConfig.incrementCount("countof.collections", collectionsCount)
-          appConfig.incrementCount("countof.spaces", spacesCount)
-          appConfig.incrementCount("countof.users", usersCount)
+          appConfig.incrementCount("countof.datasets", datasets.count())
+          appConfig.incrementCount("countof.files", files.count())
+          appConfig.incrementCount("countof.bytes", files.bytes())
+          appConfig.incrementCount("countof.collections", collections.count())
+          appConfig.incrementCount("countof.spaces", spaces.count())
+          appConfig.incrementCount("countof.users", users.count())
         }
       }
     }

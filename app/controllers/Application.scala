@@ -31,10 +31,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     MovedPermanently("/" + path)
   }
 
-  //def indexUser
-
-  //def indexNotLoggedIn
-
   /**
    * Main page.
    */

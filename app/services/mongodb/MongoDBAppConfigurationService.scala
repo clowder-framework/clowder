@@ -79,23 +79,15 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
 
   /** Try to get counts from appConfig, returning 0 if not found **/
   def getIndexCounts(): DBCounts = {
-    getProperty[Long]("countof.users") match {
-      case Some(usersCount) => {
-        Logger.debug("Loading instance counts from appConfig")
-        new DBCounts(
-          getProperty[Long]("countof.datasets").getOrElse(0),
-          getProperty[Long]("countof.files").getOrElse(0),
-          getProperty[Long]("countof.bytes").getOrElse(0),
-          getProperty[Long]("countof.collections").getOrElse(0),
-          getProperty[Long]("countof.spaces").getOrElse(0),
-          getProperty[Long]("countof.users").getOrElse(0)
-        )
-      }
-      case None => {
-        Logger.debug("User count not found in appConfig; restart Clowder to initialize recount")
-        new DBCounts(0,0,0,0,0,0)
-      }
-    }
+    Logger.debug("Loading instance counts from appConfig")
+    new DBCounts(
+      getProperty[Long]("countof.datasets").getOrElse(0),
+      getProperty[Long]("countof.files").getOrElse(0),
+      getProperty[Long]("countof.bytes").getOrElse(0),
+      getProperty[Long]("countof.collections").getOrElse(0),
+      getProperty[Long]("countof.spaces").getOrElse(0),
+      getProperty[Long]("countof.users").getOrElse(0)
+    )
   }
 
   /** Increment configuration property with specified key by value. **/
