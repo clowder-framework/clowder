@@ -5,7 +5,7 @@ import play.api.Logger
 import com.mongodb.casbah.Imports._
 import play.api.Play.current
 import javax.inject.{Inject, Singleton}
-import controllers.DBCounts
+import models.{DBCounts, ResourceRef}
 
 /**
   * App Configuration Service.
@@ -91,8 +91,17 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
   }
 
   /** Increment configuration property with specified key by value. **/
-  def incrementCount(key: String, value: Long) = {
-    getCollection.update(MongoDBObject("key" -> key), $inc("value" -> value),
+  def incrementCount(key: Symbol, value: Long) = {
+    val fullKey = key match {
+      case 'users => "countof.users"
+      case 'files => "countof.files"
+      case 'bytes => "countof.bytes"
+      case 'datasets => "countof.datasets"
+      case 'collections => "countof.collections"
+      case 'spaces => "countof.spaces"
+      case _ => ""
+    }
+    getCollection.update(MongoDBObject("key" -> fullKey), $inc("value" -> value),
       upsert=true, concern=WriteConcern.Safe)
   }
 

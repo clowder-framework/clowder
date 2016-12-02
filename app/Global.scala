@@ -74,7 +74,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
         Logger.debug("user counts found in appConfig; skipping database counting")
       case None => {
         // Write 0 to users count, so other instances can see this and not trigger additional counts
-        appConfig.incrementCount("countof.users", 0)
+        appConfig.incrementCount('users, 0)
 
         Akka.system().scheduler.scheduleOnce(10 seconds) {
           Logger.debug("initializing appConfig counts")
@@ -85,12 +85,12 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
           val users: UserService = DI.injector.getInstance(classOf[UserService])
 
           // Store the results in appConfig so they can be fetched quickly later
-          appConfig.incrementCount("countof.datasets", datasets.count())
-          appConfig.incrementCount("countof.files", files.count())
-          appConfig.incrementCount("countof.bytes", files.bytes())
-          appConfig.incrementCount("countof.collections", collections.count())
-          appConfig.incrementCount("countof.spaces", spaces.count())
-          appConfig.incrementCount("countof.users", users.count())
+          appConfig.incrementCount('datasets, datasets.count())
+          appConfig.incrementCount('files, files.count())
+          appConfig.incrementCount('bytes, files.bytes())
+          appConfig.incrementCount('collections, collections.count())
+          appConfig.incrementCount('spaces, spaces.count())
+          appConfig.incrementCount('users, users.count())
         }
       }
     }

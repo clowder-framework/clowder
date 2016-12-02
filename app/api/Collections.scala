@@ -55,7 +55,7 @@ class Collections @Inject() (datasets: DatasetService,
 
           collections.insert(c) match {
             case Some(id) => {
-              appConfig.incrementCount("countof.collections", 1)
+              appConfig.incrementCount('collections, 1)
               c.spaces.map(spaceId => spaces.get(spaceId)).flatten.map{ s =>
                 spaces.addCollection(c.id, s.id, user)
                 collections.addToRootSpaces(c.id, s.id)
@@ -159,7 +159,7 @@ class Collections @Inject() (datasets: DatasetService,
       case Some(collection) => {
         events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
         collections.delete(collectionId)
-        appConfig.incrementCount("countof.collections", -1)
+        appConfig.incrementCount('collections, -1)
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
         }
@@ -521,7 +521,7 @@ class Collections @Inject() (datasets: DatasetService,
 
           collections.insert(c) match {
             case Some(id) => {
-              appConfig.incrementCount("countof.collections", 1)
+              appConfig.incrementCount('collections, 1)
               c.spaces.map{ spaceId =>
                 spaces.get(spaceId)}.flatten.map{ s =>
                   spaces.addCollection(c.id, s.id, request.user)

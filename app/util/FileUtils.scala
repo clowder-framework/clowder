@@ -541,8 +541,8 @@ object FileUtils {
             val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, length=length, author=realUser)
             files.save(fixedfile)
             //Update counts
-            appConfig.incrementCount("countof.files", 1)
-            appConfig.incrementCount("countof.bytes", f.length)
+            appConfig.incrementCount('files, 1)
+            appConfig.incrementCount('bytes, f.length)
             Logger.debug("Uploading Completed")
             Some(fixedfile)
           }
@@ -565,8 +565,8 @@ object FileUtils {
     files.get(file.id) match {
       case Some(f) => {
         //Update counts
-        appConfig.incrementCount("countof.files", 1)
-        appConfig.incrementCount("countof.bytes", f.length)
+        appConfig.incrementCount('files, 1)
+        appConfig.incrementCount('bytes, f.length)
         return Some(f)
       }
       case None => {
@@ -586,8 +586,8 @@ object FileUtils {
           case Some(f) => {
             val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
             files.save(fixedfile)
-            appConfig.incrementCount("countof.files", 1)
-            appConfig.incrementCount("countof.bytes", f.length)
+            appConfig.incrementCount('files, 1)
+            appConfig.incrementCount('bytes, f.length)
             Logger.debug("Uploading Completed")
             Some(fixedfile)
           }

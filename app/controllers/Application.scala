@@ -10,7 +10,7 @@ import services._
 import models.{UUID, User, Event}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import controllers.DBCounts
+import models.DBCounts
 
 import scala.collection.mutable.ListBuffer
 
@@ -410,20 +410,4 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     ).as(JSON) 
   }
 
-}
-
-/** Small class that contains a set of Long counts for various types of data in the database **/
-case class DBCounts(numDatasets: Long=0, numFiles: Long=0, numBytes: Long=0, numCollections: Long=0,
-                    numSpaces: Long=0, numUsers: Long=0) {
-
-  def getMap(): Map[String, Long] = {
-    Map(
-      "datasets"->numDatasets,
-      "files"->numFiles,
-      "bytes"->numBytes,
-      "collections"->numCollections,
-      "spaces"->numSpaces,
-      "users"->numUsers
-    )
-  }
 }

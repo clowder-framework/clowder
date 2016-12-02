@@ -96,8 +96,8 @@ class Extractions @Inject()(
                 file match {
                   case Some(f) => {
                     // Add new file & byte count to appConfig
-                    appConfig.incrementCount("countof.files", 1)
-                    appConfig.incrementCount("countof.bytes", f.length)
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
 
                     var fileType = f.contentType
                     val id = f.id

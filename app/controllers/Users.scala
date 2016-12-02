@@ -63,7 +63,7 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
       isSignUp = isSignUp
     )
     securesocial.core.UserService.save(token)
-    appConfig.incrementCount("countof.users", 1)
+    appConfig.incrementCount('users, 1)
     (uuid, token)
   }
 

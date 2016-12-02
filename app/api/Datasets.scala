@@ -220,7 +220,7 @@ class  Datasets @Inject()(
         }
         case None => InternalServerError("User Not found")
       }
-      appConfig.incrementCount("countof.datasets", 1)
+      appConfig.incrementCount('datasets, 1)
 
       //event will be added whether creation is success.
       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
@@ -323,7 +323,7 @@ class  Datasets @Inject()(
           case Some(id) => {
             //In this case, the dataset has been created and inserted. Now notify the space service and check
             //for the presence of existing files.
-            appConfig.incrementCount("countof.datasets", 1)
+            appConfig.incrementCount('datasets, 1)
 
             datasets.index(d.id)
             Logger.debug("About to call addDataset on spaces service")
@@ -1727,7 +1727,7 @@ class  Datasets @Inject()(
         }
         events.addObjectEvent(request.user, dataset.id, dataset.name, "delete_dataset")
         datasets.removeDataset(id)
-        appConfig.incrementCount("countof.datasets", -1)
+        appConfig.incrementCount('datasets, -1)
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "dataset", id.stringify)

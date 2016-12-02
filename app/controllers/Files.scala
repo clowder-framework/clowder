@@ -386,8 +386,8 @@ def uploadExtract() =
             file match {
               case Some(f) => {
                 // Add new file & byte count to appConfig
-                appConfig.incrementCount("countof.files", 1)
-                appConfig.incrementCount("countof.bytes", f.length)
+                appConfig.incrementCount('files, 1)
+                appConfig.incrementCount('bytes, f.length)
 
                 current.plugin[FileDumpService].foreach {
                   _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
@@ -506,8 +506,8 @@ def uploadExtract() =
 	        file match {
 	          case Some(f) => {
               // Add new file & byte count to appConfig
-              appConfig.incrementCount("countof.files", 1)
-              appConfig.incrementCount("countof.bytes", f.length)
+              appConfig.incrementCount('files, 1)
+              appConfig.incrementCount('bytes, f.length)
 
               val option_user = users.findByIdentity(identity)
               events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
@@ -1136,8 +1136,8 @@ def uploadExtract() =
                 file match {
                   case Some(f) => {
                     // Add new file & byte count to appConfig
-                    appConfig.incrementCount("countof.files", 1)
-                    appConfig.incrementCount("countof.bytes", f.length)
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
 
                     if (showPreviews.equals("FileLevel"))
                       flags = flags + "+filelevelshowpreviews"

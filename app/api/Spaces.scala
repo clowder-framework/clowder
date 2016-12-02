@@ -48,7 +48,7 @@ class Spaces @Inject()(spaces: SpaceService,
           datasetCount = 0, userCount = 0, metadata = List.empty)
         spaces.insert(c) match {
           case Some(id) => {
-            appConfig.incrementCount("countof.spaces", 1)
+            appConfig.incrementCount('spaces, 1)
             events.addObjectEvent(request.user, c.id, c.name, "create_space")
             Ok(toJson(Map("id" -> id)))
           }
@@ -67,7 +67,7 @@ class Spaces @Inject()(spaces: SpaceService,
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
-        appConfig.incrementCount("countof.spaces", -1)
+        appConfig.incrementCount('spaces, -1)
         events.addObjectEvent(request.user , space.id, space.name, "delete_space")
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request), "Space", "removed", space.id.stringify, space.name)

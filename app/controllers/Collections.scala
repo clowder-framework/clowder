@@ -332,7 +332,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           Logger.debug("Saving collection " + collection.name)
           collections.insert(collection)
-          appConfig.incrementCount("countof.collections", 1)
+          appConfig.incrementCount('collections, 1)
           collection.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {

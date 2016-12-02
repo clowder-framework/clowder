@@ -6,7 +6,7 @@ import java.util.Date
 import models.UserTermsOfServices
 import org.apache.commons.io.IOUtils
 import util.ResourceLister
-import controllers.DBCounts
+import models.{DBCounts, ResourceRef}
 
 /**
  * Application wide configuration options. This class contains the service definition
@@ -57,7 +57,7 @@ trait AppConfigurationService {
   def getIndexCounts(): DBCounts
 
   /** Increment configuration property with specified key by value. **/
-  def incrementCount(key: String, value: Long)
+  def incrementCount(key: Symbol, value: Long)
 
 }
 
