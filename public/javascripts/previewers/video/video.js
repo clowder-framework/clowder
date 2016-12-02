@@ -18,7 +18,7 @@
   //Thus, show the file as a single video.
   if(confId == fileId){
 	  $(useTab).append(			  
-			     "<video width='750px' id='ourvideo' controls><source src='" + referenceUrl + "'></source></video>"
+			     "<video width='100%' id='ourvideo' controls><source src='" + referenceUrl + "'></source></video>"
 			  );
   }
   else{	//Showing a preview, so have to check if it is a multi-option cross-browser compatibility combination (new video extractor versions)
@@ -30,7 +30,7 @@
       	    success: function (data) {
       	    	  var videosIds = data.split("\n");	        	    		
       	    	  $(useTab).append(			  
-      	    	     "<video width='750px' id='ourvideo' controls>" +
+      	    	     "<video width='100%' id='ourvideo' controls>" +
       	    	     		"<source src='" + jsRoutes.api.Previews.download(videosIds[0]).url  + "' type='video/mp4'></source>" +
       	    	     		"<source src='" + jsRoutes.api.Previews.download(videosIds[1]).url  + "' type='video/webm'></source>"+
       	    	     		"<p>Your browser cannot play MP4 or WebM (maybe no codex), cannot play video.</p>"+
@@ -45,7 +45,7 @@
       }
       else{
       	$(useTab).append(			  
- 			     "<video width='750px' id='ourvideo' controls><source src='" + referenceUrl + "'></source></video>"
+ 			     "<video width='100%' id='ourvideo' controls><source src='" + referenceUrl + "'></source></video>"
  			  );
       }
   }
