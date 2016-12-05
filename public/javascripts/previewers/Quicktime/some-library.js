@@ -17,10 +17,10 @@
       }
   }
   
-  if(!haveqt&&(!Configuration.fileType || Configuration.fileType === "video/quicktime")) {
-	  //No Quicktime and it is a video (or at least has not been identified as X3d, Oni, or other types that <video/> may not handle)
-	  $(Configuration.tab).append("<video width='100%' id='ourvideo' controls><source src='" + Configuration.url + 
-			  					   "'></source><p>Your browser cannot play this video.</p></video>");
+  if(!haveqt) {
+	  //No Quicktime 
+	  $(Configuration.tab).append("<br/><p>Quicktime support not available: To preview Quicktime VR panoramas (QTVR), your browser must have the Quicktime plug-in." +
+		" If you have an applications that can view Quicktime VR panoramas (QTVR), you can download the file and view it on your desktop.</p>");
   } else {
     $(Configuration.tab).append("<p>For panoramic images viewed through Quicktime, Shift can be used to zoom in and Ctrl to zoom out.</p>");
   
