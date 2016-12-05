@@ -761,7 +761,9 @@ object FileUtils {
                                   ,"utf-8","Q")
                             }
     Logger.debug(userAgent + ": " + filenameStar.substring(10, filenameStar.length()-2))
-                           "attachment; filename*=UTF-8''" + filenameStar
+    
+    //Return the complete attachement header info
+    "attachment; filename*=UTF-8''" + filenameStar
   }
   
 }
