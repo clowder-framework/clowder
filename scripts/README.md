@@ -1,4 +1,4 @@
-Setup, Interface, and Helper Scripts for Medici
+Setup, Interface, and Helper Scripts for Clowder
 ===============================================
 
 exinfo.py
@@ -22,7 +22,7 @@ Output:
 extract.py
 ----------
 
-Pass a file to the Medici extraction bus for metadata extraction.  Prints returned JSON to the screen.
+Pass a file to the Clowder extraction bus for metadata extraction.  Prints returned JSON to the screen.
 
 Usage:
 
@@ -31,7 +31,7 @@ Usage:
 geostream.py
 ------------
 
-A simple example script showing how to query the Medici geostreaming API.
+A simple example script showing how to query the Clowder geostreaming API.
 
 mongo-exec.sh
 --------------
@@ -57,5 +57,5 @@ Usage:
 upload.py
 ---------
 
-Upload a directory of files to Medici.
+Upload a directory of files to Clowder.
 

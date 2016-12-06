@@ -28,7 +28,7 @@ class MongoDBContextLDSpec extends PlaySpec with OneServerPerSuite {
     "@type" -> "@id"),
     "score" -> "http://www.vision.caltech.edu/Image_Datasets/Caltech101/score",
     "category" -> "http://www.vision.caltech.edu/Image_Datasets/Caltech101/category")
-  val context = Json.arr("http://medici.ncsa.illinois.edu/metadata.jsonld", contextExtractor)
+  val context = Json.arr("http://clowder.ncsa.illinois.edu/contexts/metadata.jsonld", contextExtractor)
   val testContextld = ContextLD(
     id = UUID.generate,
     contextName = JsString("ncsa.cv.caltech101"),
