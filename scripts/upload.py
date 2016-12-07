@@ -16,8 +16,8 @@ def main():
         print "File uploaded: %s -> %s" % (file_path, file_url)
 
 def parse_arguments():
-    """ Must specify a directory path, a Medici url and a service key"""
-    parser = argparse.ArgumentParser(description='Upload nested folders to medici')
+    """ Must specify a directory path, a Clowder url and a service key"""
+    parser = argparse.ArgumentParser(description='Upload nested folders to clowder')
     parser.add_argument('--path', required=True)
     parser.add_argument('--host', required=True)
     parser.add_argument('--key', required=True)

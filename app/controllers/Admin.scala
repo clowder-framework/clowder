@@ -184,7 +184,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
    }
 
   /**
-   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on Medici side if these indexes
+   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on clowder side if these indexes
    * have type and/or name. Adds type and/or name to json object and calls view template to display.
    */
   def getIndexes() = ServerAdminAction.async { implicit request =>
@@ -205,7 +205,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
             //make sure we got correctly formatted list of values
             jsArray.validate[List[VersusIndexTypeName]].fold(
               // Handle the case for invalid incoming JSON.
-              // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName
+              // Note: JSON created in Versus IndexResource.listJson must have the same names as clowder models.VersusIndexTypeName
               error => {
                 Logger.error("Admin.getIndexes - validation error")
                 InternalServerError("Received invalid JSON response from remote service.")

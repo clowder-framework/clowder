@@ -1,12 +1,12 @@
 {
   "@context": {
-    "med": "http://medici.ncsa.illinois.edu/",
+    "cat": "https://clowder.ncsa.illinois.edu/#",
     "extractor_id": {
-      "@id": "med:extractor/id",
+      "@id": "cat:extractor/id",
       "@type": "@id"
     },
     "user_id": {
-      "@id": "med:user/id",
+      "@id": "cat:user/id",
       "@type": "@id"
     },
     "created_at": {
@@ -16,10 +16,12 @@
     "agent": {
       "@id": "http://www.w3.org/ns/prov#Agent"
     },
-    "user": "med:user",
-    "extractor": "med:extractor",
+    "user": "cat:user",
+    "extractor": "cat:extractor",
     "content": {
-      "@id": "http://medici.ncsa.illinois.edu/metadata/content"
+      "@id": "https://clowder.ncsa.illinois.edu/metadata#content"
     }
   }
 }
+
+

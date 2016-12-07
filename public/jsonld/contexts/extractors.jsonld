@@ -1,0 +1,22 @@
+  "@context":{
+	"@vocab": "https://clowder.ncsa.illinois.edu",
+	"extractor": "https://clowder.ncsa.illinois.edu/contexts/extractor#",
+	"id":"extractor/internal_id",
+	"name": {"@id": "extractor:extractor/id", "@type": "@id"},
+	"version": "extractor:version"
+	"created_at": {
+	      "@id": "extractor:updated",
+	      "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+	    },
+	"description": "http://purl.org/dc/terms/description",
+	"author": "http://purl.org/dc/terms/creator",
+	"contributors": "http://purl.org/dc/terms/contributor",
+	"contexts": "http://json-ld.org/contexts",
+	"repository": "extractor:repository",
+	"repType": "extractor:repository_type",
+	"repUrl": "extractor:repository_url",
+	"external_services": "extractor:external_services",
+	"libraries": "extractor:libraries",
+	"bibtex": "extractor:bibtex",
+	"dependencies":"extractor:dependencies"
+}

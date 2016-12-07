@@ -415,7 +415,7 @@ class MongoDBDatasetService @Inject() (
         val theJSON = getUserMetadataJSON(id)
         val fileSep = System.getProperty("file.separator")
         val tmpDir = System.getProperty("java.io.tmpdir")
-        var resultDir = tmpDir + fileSep + "medici__rdfuploadtemporaryfiles" + fileSep + new ObjectId().toString
+        var resultDir = tmpDir + fileSep + "clowder__rdfuploadtemporaryfiles" + fileSep + new ObjectId().toString
         val resultDirFile = new java.io.File(resultDir)
         resultDirFile.mkdirs()
 
