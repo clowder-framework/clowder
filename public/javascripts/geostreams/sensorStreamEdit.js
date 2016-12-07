@@ -117,9 +117,9 @@ $(document).ready(function() {
       return;
     }
 
-    var mediciSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
-    var mediciStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
-    var mediciUpdateSensorMetadataURL = jsRoutes.api.Geostreams.updateSensorMetadata($("#sensor-id").val()).url;
+    var clowderSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
+    var clowderStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
+    var clowderUpdateSensorMetadataURL = jsRoutes.api.Geostreams.updateSensorMetadata($("#sensor-id").val()).url;
     var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
@@ -131,7 +131,7 @@ $(document).ready(function() {
     data.properties.type.sensorType = +$("#sensorType").val();
     data.properties.region = $("#sensorRegion").val();
 
-    var sensorPUTpromise = deferredPut(mediciUpdateSensorMetadataURL, JSON.stringify(data.properties));
+    var sensorPUTpromise = deferredPut(clowderUpdateSensorMetadataURL, JSON.stringify(data.properties));
 
     $.when(sensorPUTpromise).done(function(data) {
         var sensorJSON = data;
@@ -156,11 +156,11 @@ $(document).ready(function() {
           streamJSON['sensor_id'] = sensorJSON['id'].toString();
           streamJSON['type'] = sensorJSON['type'];
           if (streamJSON.id) {
-            var mediciUpdateStreamMetadataURL = jsRoutes.api.Geostreams.patchStreamMetadata(streamJSON.id).url;
-            var streamDeferred = deferredPut(mediciUpdateStreamMetadataURL, JSON.stringify(streamJSON.properties));
+            var clowderUpdateStreamMetadataURL = jsRoutes.api.Geostreams.patchStreamMetadata(streamJSON.id).url;
+            var streamDeferred = deferredPut(clowderUpdateStreamMetadataURL, JSON.stringify(streamJSON.properties));
             deferredStreams.push(streamDeferred);
           } else {
-            var postDeferred = deferredPost(mediciStreamsURL, JSON.stringify(streamJSON));
+            var postDeferred = deferredPost(clowderStreamsURL, JSON.stringify(streamJSON));
             deferredStreams.push(postDeferred);
           }
 

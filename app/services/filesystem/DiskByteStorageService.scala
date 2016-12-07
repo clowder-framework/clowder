@@ -20,9 +20,9 @@ class DiskByteStorageService extends ByteStorageService {
    * Save the bytes to disk, returns (path, length)
    */
   def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
-    Play.current.configuration.getString("medici2.diskStorage.path") match {
+    Play.current.configuration.getString("clowder.diskStorage.path") match {
       case Some(root) => {
-        var depth = Play.current.configuration.getInt("medici2.diskStorage.depth").getOrElse(3)
+        var depth = Play.current.configuration.getInt("clowder.diskStorage.depth").getOrElse(3)
 
         var relativePath = ""
         var idstr = UUID.generate().stringify
@@ -83,7 +83,7 @@ class DiskByteStorageService extends ByteStorageService {
    * Delete actualy bytes from disk
    */
   def delete(path: String, prefix: String): Boolean = {
-    Play.current.configuration.getString("medici2.diskStorage.path") match {
+    Play.current.configuration.getString("clowder.diskStorage.path") match {
       case Some(root) => {
         if (path.startsWith(makePath(root, prefix, ""))) {
           // delete the bytes

@@ -5,15 +5,22 @@
       <h2>
         Sorry, there was an internal error rendering this page!
       </h2>
-
     </div>
     <div class="col-sm-12 col-md-12 col-lg-12 text-center">
-      <button id="error-button" class="btn btn-default"><span class="glyphicon glyphicon-envelope"></span> Submit Exception</button> <p id="success" hidden>Message sent.</p>
+        <button id="show-button" class="btn btn-default"><span class="glyphicon glyphicon-envelope"></span> Show Exception</button>
+        <button id="error-button" class="btn btn-default"><span class="glyphicon glyphicon-envelope"></span> Submit Exception</button>
+    </div>
+    <div class="col-sm-12 col-md-12 col-lg-12" id="exception" hidden>
+        <h3>@re.toString()</h3>
+        <pre>@ex</pre>
     </div>
   </div>
   <script>
-    $('#error-button').on('click', function(){
-                var jsonData = JSON.stringify({"badRequest": '@re.toString', "exceptions":'@ex'});
+          $('#show-button').on('click', function() {
+              $("#exception").toggle();
+          });
+          $('#error-button').on('click', function(){
+                var jsonData = JSON.stringify({"badRequest": '@re.toString', "exceptions":'@ex.replace("\n", "\\n")'});
                 var request = jsRoutes.api.Events.sendExceptionEmail().ajax({
                     data: jsonData,
                     type: 'POST',

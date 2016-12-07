@@ -143,7 +143,7 @@ $(document).ready(function() {
     }
 
 
-    var mediciSensorPutURL = jsRoutes.api.Geostreams.updateSensorMetadata($("#sensor-id").val()).url;
+    var clowderSensorPutURL = jsRoutes.api.Geostreams.updateSensorMetadata($("#sensor-id").val()).url;
     var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
     data.id = $("#sensor-id").val();
     data.name = $("#sensor_name").val();
@@ -155,7 +155,7 @@ $(document).ready(function() {
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.region = $("#sensorRegion").val();
 
-    var sensorPUTpromise = deferredPut(mediciSensorPutURL, JSON.stringify(data.properties));
+    var sensorPUTpromise = deferredPut(clowderSensorPutURL, JSON.stringify(data.properties));
 
 
     $.when(sensorPUTpromise).done(function() {

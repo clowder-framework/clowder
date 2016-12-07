@@ -18,6 +18,7 @@ import play.api.mvc.Results._
 import akka.actor.Cancellable
 import filters.CORSFilter
 import julienrf.play.jsonp.Jsonp
+import play.api.libs.json.Json._
 
 /**
  * Configure application. Ensure mongo indexes if mongo plugin is enabled.
@@ -85,28 +86,44 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     val sw = new StringWriter()
     val pw = new PrintWriter(sw)
     ex.printStackTrace(pw)
-    implicit val user = SecureSocial.currentUser(request) match{
-      case Some(identity) =>  users.findByIdentity(identity)
-      case None => None
+
+    if (request.path.contains("/api/")) {
+      Future(InternalServerError(toJson(Map("status" -> "error",
+        "request" -> request.toString(),
+        "exception" -> sw.toString.replace("\n", "\\n")))))
+    } else {
+      implicit val user = SecureSocial.currentUser(request) match{
+        case Some(identity) =>  users.findByIdentity(identity)
+        case None => None
+      }
+      Future(InternalServerError(views.html.errorPage(request, sw.toString)(user)))
     }
-    Future(InternalServerError(
-      views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
-    implicit val user = SecureSocial.currentUser(request) match{
-      case Some(identity) =>  users.findByIdentity(identity)
-      case None => None
+    if (request.path.contains("/api/")) {
+      Future(InternalServerError(toJson(Map("status" -> "not found",
+        "request" -> request.toString()))))
+    } else {
+      implicit val user = SecureSocial.currentUser(request) match {
+        case Some(identity) => users.findByIdentity(identity)
+        case None => None
+      }
+      Future(NotFound(views.html.errorPage(request, "Not found")(user)))
     }
-    Future(NotFound(
-      views.html.errorPage(request, "Not found")(user)))
   }
 
   override def onBadRequest(request: RequestHeader, error: String) = {
-    implicit val user = SecureSocial.currentUser(request) match{
-      case Some(identity) =>  users.findByIdentity(identity)
-      case None => None
+    if (request.path.contains("/api/")) {
+      Future(InternalServerError(toJson(Map("status" -> "bad request",
+        "message" -> error,
+        "request" -> request.toString()))))
+    } else {
+      implicit val user = SecureSocial.currentUser(request) match {
+        case Some(identity) => users.findByIdentity(identity)
+        case None => None
+      }
+      Future(BadRequest(views.html.errorPage(request, error)(user)))
     }
-    Future(BadRequest(views.html.errorPage(request, error)(user)))
   }
 }

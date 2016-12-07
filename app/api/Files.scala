@@ -532,7 +532,7 @@ class Files @Inject()(
    * Send job for file preview(s) generation at a later time.
    */
   @ApiOperation(value = "(Re)send preprocessing job for file",
-      notes = "Force Medici to (re)send preprocessing job for selected file, processing the file as a file of the selected MIME type. Returns file id on success. In the requested file type, replace / with __ (two underscores).",
+      notes = "Force Clowder to (re)send preprocessing job for selected file, processing the file as a file of the selected MIME type. Returns file id on success. In the requested file type, replace / with __ (two underscores).",
       responseClass = "None", httpMethod = "POST")
   def sendJob(file_id: UUID, fileType: String) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     files.get(file_id) match {

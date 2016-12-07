@@ -40,7 +40,7 @@ class Extractions @Inject()(
   /**
    * Uploads file for extraction and returns a file id ; It does not index the file.
    * This is very similar to upload().
-   * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Medici for curation and storage.
+   * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Clowder for curation and storage.
    * This may change accordingly.
    */
   @ApiOperation(value = "Uploads a file for extraction of metadata and returns file id",
@@ -556,7 +556,11 @@ class Extractions @Inject()(
               idAndFlags
             }
 
-            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+            var datasetId: UUID = null
+            datasets.findByFileId(file_id).map(ds => {
+              datasetId = ds.id
+            })
+            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, datasetId, newFlags))
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>
