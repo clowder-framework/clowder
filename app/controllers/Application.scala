@@ -144,7 +144,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       case _ => {
         val datasetsCount = datasets.count()
         val filesCount = files.count()
-        val filesBytes = files.bytes()
+        val filesBytes = 0
         val collectionsCount = collections.count()
         val spacesCount = spaces.count()
         val usersCount = users.count()
@@ -159,7 +159,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     implicit val user = request.user
     val datasetsCount = datasets.count()
     val filesCount = files.count()
-    val filesBytes = files.bytes()
+    val filesBytes = 0
     val collectionsCount = collections.count()
     val spacesCount = spaces.count()
     val usersCount = users.count()
