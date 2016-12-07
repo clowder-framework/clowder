@@ -28,7 +28,7 @@
                         <tr>
                             <td>@e.name</td>
                             @*<td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>*@
-                            <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@file.id')">Submit</button></td>
+                            <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@ds.id')">Submit</button></td>
                         </tr>
                     }
                 </tbody>
