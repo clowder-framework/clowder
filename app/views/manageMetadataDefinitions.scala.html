@@ -1,5 +1,8 @@
 @(metadata: List[models.MetadataDefinition], spaceId: Option[UUID], spaceName: Option[String])(implicit user: Option[models.User])
+
 @import play.api.i18n.Messages
+@import _root_.util.Formatters._
+
 @main("Metadata Definitions") {
     <script src="@routes.Assets.at("javascripts/metadata/manageDefinitions.js")" type="text/javascript"></script>
 	<script>
@@ -135,13 +138,22 @@
     </script>
 
 	<div class="page-header">
-		<h1>Metadata Terms & Definitions</h1>
+
+
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
-                <h4><strong>@Messages("space.title"): </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
-                <p> The following metadata terms will be available for this @Messages("space.title")'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>
+                <ol class="breadcrumb">
+                    <li><span class="glyphicon glyphicon-hdd"></span><a href="@routes.Spaces.getSpace(space_id)" title="@space_name"> @Html(ellipsize(space_name, 18))</a></li>
+                    <li><span class="glyphicon glyphicon-list"></span> Metadata Definitions</li>
+                </ol>
+                <h1>Metadata Terms & Definitions</h1>
+
+                <p> The following metadata terms will be available for this @Messages("space.title")'s @Messages("datasets.title")', files, and curation objects. To add a new term scroll to the bottom of the page.</p>
             }
-            case (_, _) => {<p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new @Messages("spaces.title").</p>}
+            case (_, _) => {
+                <h1>Metadata Terms & Definitions</h1>
+                <p>The following metadata definitions will be available in @Messages("datasets.title")' and files that are not in a @Messages("space.title")', and inherited by new @Messages("spaces.title").</p>
+                }
         }
 
 	</div>
@@ -216,20 +228,21 @@
                 <div class="panel-body">
                     <form id="addDefinition" class="form-horizontal">
                         <div class="form-group has-feedback">
-                            <div class="col-md-3"><label for="label">Label </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-md-3"><label for="label">Label </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label (required)" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="label" placeholder="Label" required />
                                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                             </div>
                         </div>
                         <div class="form-group">
-                           <div  class="col-sm-3"> <label for="uri">URI </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference." data-original-title="URI"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div  class="col-sm-3"> <label for="uri">URI </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="@Messages("metadata.uri", Messages("space.title"))" data-original-title="URI"><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-9">
-                                <input type="url" class="form-control" id="uri" placeholder="http://" required />
+                                <input type="url" class="form-control" id="uri" placeholder="http://" />
                             </div>
+
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>" data-original-title="Metadata Type"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>" data-original-title="Metadata Type (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-4">
                                 <select name="type" id="type" class="form-control" required>
                                     <option value="string">String</option>

@@ -98,7 +98,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id))
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id, s.name))
         }
         case None => InternalServerError(spaceTitle + " not found")
     }
@@ -151,7 +151,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        var creatorActual: User = null
 	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
 	        val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
+          val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
 	        val usersInSpace = spaces.getUsersInSpace(id)
+          var curationObjectsInSpace: List[CurationObject] = List()
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
 	            case Some(theCreator) => {
@@ -186,7 +188,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
 
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
+          if (play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+            curationObjectsInSpace = curationService.listSpace(Some(size),Some(id.stringify))
+          }
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, curationObjectsInSpace, userRoleMap))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }
@@ -201,7 +206,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.status, "Update")), Some(s.id)))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.status, "Update")), Some(s.id), Some(s.name)))}
         case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
@@ -418,7 +423,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               }
               case ("Update") => {
                 spaceForm.bindFromRequest.fold(
-                  errors => BadRequest(views.html.spaces.editSpace(errors, None)),
+                  errors => BadRequest(views.html.spaces.editSpace(errors, None, None)),
                   formData => {
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
@@ -512,6 +517,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
+     val ownerName = person match {
+       case Some(p) => Some(p.fullName)
+       case None => None
+     }
      var title: Option[String] = Some(Messages("list.title", Messages("spaces.title")))
 
      val spaceList = person match {
@@ -588,7 +597,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
      }
 
 
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, ownerName, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
    }
 
 
@@ -598,7 +607,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       spaces.get(id) match {
         case Some(s) => {
           val curationIds = s.curationObjects.reverse.slice(index*limit, (index+1)*limit)
-          val curationDatasets: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
+          val curationObjects: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
 
           val prev = index-1
           val next = if(s.curationObjects.length > (index+1) * limit) {
@@ -606,7 +615,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           } else {
             -1
           }
-          Ok(views.html.spaces.stagingarea(s, curationDatasets, prev, next, limit ))
+          Ok(views.html.spaces.stagingarea(s, curationObjects, prev, next, limit ))
         }
         case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }

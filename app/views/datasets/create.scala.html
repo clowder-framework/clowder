@@ -1,7 +1,8 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], spaceName: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
 @import play.api.i18n.Messages
+@import _root_.util.Formatters._
 
 @main(Messages("create.title", Messages("dataset.title"))) {
     <!-- Custom items for the create dataset workflow -->
@@ -13,6 +14,37 @@
             var isNameRequired = @isNameRequired;
             var isDescRequired = @isDescriptionRequired;
     </script>
+    <div>
+        <ol class="breadcrumb">
+            @(spaceId, spaceName) match {
+                case (Some(id), Some(name)) => {
+                    <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
+                    @collection match {
+                        case Some(coll) => {
+                            <li><span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)" title="@name"> @Html(ellipsize(coll.name,18))</a></li>
+
+                        }
+                        case None => {}
+                     }
+                }
+                case (_, _) => {
+                    @collection match {
+                        case Some(coll) => {
+                           <li> <span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)" title="@coll.name"> @Html(ellipsize(coll.name, 18))</a></li>
+                        }
+                        case None => {
+                            @user match {
+                                case Some(u) => {<li> <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a></li>}
+                                case None => {}
+                            }
+                        }
+                    }
+
+                }
+            }
+           <li><span class="glyphicon glyphicon-briefcase"></span> @Messages("create.header", Messages("dataset.title"))</li>
+        </ol>
+    </div>
     <div class="page-header">
         <h1>@Messages("create.header", Messages("dataset.title"))</h1>
     </div>

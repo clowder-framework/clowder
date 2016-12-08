@@ -40,6 +40,8 @@ add.to = Add Files to {0}
 create.step2.message=  The {0}
 create.step2.message.2 = was successfully created. Please follow the instructions below to add files to the {0} or view the {0}.
 crate.space.access.message=This sets the privacy level for {0}, {1}, and files in the {2}. Access can be overwritten at the individual {3} level. By marking access "Public" you make the {2}''s content available to users outside of your project team.
+metadata.uri= A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference. If URI is not specified, Clowder will generate a URI for the new term which will appear in the listing above.
+
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.

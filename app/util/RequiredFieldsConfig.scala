@@ -14,7 +14,7 @@ object RequiredFieldsConfig {
      * @return A boolean, true if name should be required. False otherwise. Default is true.
      */
     def isNameRequired(): Boolean = {
-        configuration.getBoolean("medici2.requiredfields.isNameRequired").getOrElse(true)
+        configuration.getBoolean("clowder.requiredfields.isNameRequired").getOrElse(true)
     }
     
     /**
@@ -24,7 +24,7 @@ object RequiredFieldsConfig {
      * 
      */
     def isDescriptionRequired(): Boolean = {
-        configuration.getBoolean("medici2.requiredfields.isDescriptionRequired").getOrElse(false)        
+        configuration.getBoolean("clowder.requiredfields.isDescriptionRequired").getOrElse(false)        
     }
 
     

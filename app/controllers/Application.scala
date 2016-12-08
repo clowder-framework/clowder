@@ -54,6 +54,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
+        newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
+        if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
+        newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -158,7 +161,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     implicit val user = request.user
     val datasetsCount = datasets.count()
     val filesCount = files.count()
-    val filesBytes = files.bytes()
+    val filesBytes = 0
     val collectionsCount = collections.count()
     val spacesCount = spaces.count()
     val usersCount = users.count()
@@ -372,7 +375,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Events.sendExceptionEmail,
-        api.routes.javascript.Extractions.submitToExtractor,
+        api.routes.javascript.Extractions.submitFileToExtractor,
+        api.routes.javascript.Extractions.submitDatasetToExtractor,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -404,6 +408,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository,
+        controllers.routes.javascript.CurationObjects.getPublishedData,
         controllers.routes.javascript.Events.getEvents,
         controllers.routes.javascript.Collections.collection
       )

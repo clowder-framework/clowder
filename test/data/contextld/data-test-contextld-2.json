@@ -1,5 +1,5 @@
 {
-  "context_name": "MediciPerson",
+  "context_name": "ClowderPerson",
   "@context":
   {
     "name": "http://schema.org/name",

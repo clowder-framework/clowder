@@ -2,6 +2,7 @@ package controllers
 
 import java.util.Date
 import javax.inject.Inject
+import api.Permission._
 import api.{UserRequest, Permission}
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
@@ -13,16 +14,15 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import services._
-import _root_.util.RequiredFieldsConfig
+import _root_.util.{Formatters, RequiredFieldsConfig}
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import play.api.mvc.{MultipartFormData, Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
-import java.net.{URL, URI}
+
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -49,8 +49,9 @@ class CurationObjects @Inject()(
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces.map(id => spaces.get(id)).flatten
-        .filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces
+        .filter (spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
+        .map(id => spaces.get(id)).flatten)
       case None => ("", "", List.empty)
     }
     //default space is the space from which user access to the dataset
@@ -69,6 +70,63 @@ class CurationObjects @Inject()(
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
       true, true, mdCreators))
+  }
+
+  /**
+    * List curation objects.
+    */
+  def list(when: String, date: String, limit: Int, space:Option[String]) = UserAction(needActive=false) { implicit request =>
+      implicit val user = request.user
+
+      val nextPage = (when == "a")
+      val curationObjectSpace = space.flatMap(o => spaces.get(UUID(o)))
+      val title: Option[String] = Some(curationObjectSpace.get.name)
+
+      val curationObjectList: List[CurationObject] = {
+          if (date != "") {
+              curations.listSpace(date, nextPage, Some(limit), space)
+          } else {
+              curations.listSpace(Some(limit), space)
+          }
+      }
+
+      // check to see if there is a prev page
+      val prev = if (curationObjectList.nonEmpty && date != "") {
+          val first = Formatters.iso8601(curationObjectList.head.created)
+          val ds = curations.listSpace(first, nextPage = false, Some(1), space)
+
+          if (ds.nonEmpty && ds.head.id != curationObjectList.head.id) {
+              first
+          } else {
+              ""
+          }
+      } else {
+          ""
+      }
+
+      // check to see if there is a next page
+      val next = if (curationObjectList.nonEmpty) {
+          val last = Formatters.iso8601(curationObjectList.last.created)
+          val ds = curations.listSpace(last, nextPage=true, Some(1), space)
+          if (ds.nonEmpty && ds.head.id != curationObjectList.last.id) {
+              last
+          } else {
+              ""
+          }
+      } else {
+          ""
+      }
+
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+      val viewMode: Option[String] =
+          request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+          }
+
+      Ok(views.html.curationObjectList(curationObjectList, prev, next, limit, viewMode, space, title))
   }
 
   /**
@@ -234,8 +292,9 @@ class CurationObjects @Inject()(
       implicit val user = request.user
       curations.get(id) match {
         case Some(c) =>
-          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces.map(id => spaces.get(id)).flatten
-            .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
+          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces
+            .filter(spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
+            .map(id => spaces.get(id)).flatten, spaces.get(c.space))
 
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             true, false, c.creators))
@@ -285,21 +344,27 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(cOld) => {
-        // this update is not written into MongoDB, only for page view purpose
-        val c = datasets.get(cOld.datasets(0).id) match {
-          case Some(dataset) => cOld.copy(datasets = List(dataset))
-          // dataset is deleted
-          case None => cOld
+        spaces.get(cOld.space) match {
+          case Some(s) => {
+            // this update is not written into MongoDB, only for page view purpose
+            val c = datasets.get(cOld.datasets(0).id) match {
+              case Some(dataset) => cOld.copy(datasets = List(dataset))
+              // dataset is deleted
+              case None => cOld
+            }
+            // metadata of curation files are getting from getUpdatedFilesAndFolders
+            val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
+            val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+            val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
+            if (c.status != "In Curation") {
+              Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit, s.name ))
+            } else {
+              Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
+            }
+          }
+          case None => BadRequest(views.html.notFound("Space does not exist."))
         }
-        // metadata of curation files are getting from getUpdatedFilesAndFolders
-        val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-        val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
-        if (c.status != "In Curation") {
-          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit ))
-        } else {
-          Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
-        }
+
       }
       case None => BadRequest(views.html.notFound("Curation Object does not exist."))
     }
@@ -448,6 +513,7 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
+
     val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
     var aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
@@ -551,6 +617,7 @@ class CurationObjects @Inject()(
     }
 
     val rs = Await.result(result, Duration.Inf)
+
 
     jsonResponse.as[List[MatchMakerResponse]]
   }
@@ -678,6 +745,10 @@ class CurationObjects @Inject()(
             metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
           }
           val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
+          val spaceName = spaces.get(c.space) match {
+            case Some(space) => space.name
+            case None => AppConfiguration.getDisplayName
+          }
           var aggregation = metadataToAdd ++
             Map(
               "Identifier" -> Json.toJson("urn:uuid:"+curationId),
@@ -686,6 +757,7 @@ class CurationObjects @Inject()(
               "Title" -> Json.toJson(c.name),
               "Uploaded By" -> Json.toJson(creator),
               "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+              "Publishing Project Name" -> Json.toJson(spaceName),
               "Creation Date" -> Json.toJson(format.format(c.created))
             )
           if(metadataJson.contains("Creator")) {
@@ -738,6 +810,7 @@ class CurationObjects @Inject()(
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
                     "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
                     "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "Publishing Project Name" -> Json.toJson("http://sead-data.net/terms/publishingProjectName"),
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
@@ -847,6 +920,64 @@ class CurationObjects @Inject()(
     }
 
     out.toMap
+  }
+
+  def getPublishedData(index: Int, limit: Int) = UserAction(needActive=false) { implicit request =>
+    implicit val user = request.user
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    var next = index + 1
+    val endpoint = play.Play.application().configuration().getString("publishData.list.uri").replaceAll("/$", "")
+    Logger.debug(endpoint)
+    val futureResponse = WS.url(endpoint).get()
+    var publishDataList: List[Map[String, String]] = List.empty
+    val result =  futureResponse.map {
+      case response =>
+        if(response.status >= 200 && response.status < 300 || response.status == 304) {
+          val rawDataList = response.json.as[List[JsValue]]
+          publishDataList = rawDataList.map{
+            js =>
+              var resultMap: Map[String, String] = Map(
+                "id" -> (js \ "Identifier").asOpt[String],
+                "title" -> (js \ "Title").asOpt[String],
+                "author" -> (js \ "Creator").asOpt[String],
+                "description" -> (js \ "Abstract").asOpt[String],
+                spaceTitle -> (js \ "Publishing Project Name").asOpt[String],
+                "Published Dataset" -> (js \ "DOI" ).asOpt[String],
+                "Publication Date" -> (js \ "Publication Date").asOpt[String])
+                // remove (key, value) where value ==  None
+                .collect{
+                case (key, Some(value)) => key -> value
+                // do not add "case _ =>" here, otherwise report error:
+                // type mismatch; found : scala.collection.immutable.Iterable[Any] required: Map[String,String]
+              }
+              // add creator as a list of string. do not use .asOpt[List[String]], otherwise nothing will be parsed
+              (js \ "Creator").asOpt[List[JsValue]] match {
+                case Some(authorList) =>  resultMap += ("author" ->  authorList.map(_.as[String]).mkString(", ") )
+                case None =>
+              }
+              // add Abstract as a list of string
+              (js \ "Abstract").asOpt[List[JsValue]] match {
+                case Some(authorList) =>  resultMap += ("description" ->  authorList.map(_.as[String]).mkString(" \n") )
+                case None =>
+              }
+              resultMap
+          }
+
+          if(publishDataList.length < (index * limit +limit ) ) next = 0
+          //sort by Publication time, don't use joda.Datatime here or you have to write a comparaison by yourself
+          val format = new java.text.SimpleDateFormat("MMM dd, yyyy h:mm:ss aaa")
+          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("Sep 14, 2016 10:59:26 AM"))).reverse.take(limit + index * limit).takeRight(limit)
+
+        } else {
+          Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
+          List.empty
+        }
+    }
+
+    val rs = Await.result(result, Duration.Inf)
+
+    Ok(views.html.curations.publishedData(rs, index -1 , next, limit))
+
   }
 }
 

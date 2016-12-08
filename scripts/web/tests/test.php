@@ -16,7 +16,7 @@ if($prefix) {
 	$output_file = $temp_path . $output_filename;
 }
 
-//Run file through Medici's extractors
+//Run file through Clowder's extractors
 if($run) {
 	$username = "";
 	$password = "";

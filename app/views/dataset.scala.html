@@ -14,10 +14,9 @@
   limit: Int, showDownload: Boolean, showAccess:  Boolean, access: String,
   accessOptions: List[String], canAddDatasetToCollection: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
-@import helper._
 @import api.Permission
 @import play.api.Play.current
-@import scala.collection.mutable.{Map => MutableMap}
+@import _root_.util.Formatters._
 
 @main(dataset.name) {
     <script type="text/javascript">
@@ -27,6 +26,40 @@
 		<!-- left column -->
 		<div class="col-md-8">
             <div class="row">
+                <ol class="breadcrumb">
+
+                @datasetSpaces_canRemove match {
+                    case Some(spaces_map) => {
+                        @if(spaces_map.size == 1) {
+                                   <li> <span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces_map.head._1.id)" title="@spaces_map.head._1.name"> @Html(ellipsize(spaces_map.head._1.name, 18))</a></li>
+                        } else  {
+                            @if(spaces_map.size > 1) {
+                                <li>
+                                <span class="dropdown">
+                                    <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="true">
+                                        <span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+                                        @spaces_map.map { case (s,v) =>
+                                            <li><a href="@routes.Spaces.getSpace(s.id)" title="@s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
+                                        }
+                                    </ul>
+                                </span>
+                                </li>
+                            } else {
+                                <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
+                            }
+                        }
+
+                    }
+                    case None => {}
+                }
+
+                        <li><span class="glyphicon glyphicon-briefcase"></span> <span title="@dataset.name"> @Html(ellipsize(dataset.name, 18))</span></li>
+
+                </ol>
+
                 <div class="col-md-12 caption break-word dataset-title" id="ds-title">
                     <h1 id="datasettitle" class="inline"> <span class="glyphicon glyphicon-briefcase" ></span> @Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -40,6 +73,7 @@
                 </div>
                 <div class="col-md-6">
                     <ul class="list-unstyled">
+
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
                             @if(showAccess) {
@@ -117,18 +151,18 @@
                     }
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                         @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link">
+                            <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
                             @if(toPublish && dataset.spaces.size > 0) {
-                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link">
+                                <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
                             } else {
-                                <button class="btn btn-link" disabled>
+                                <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link disabled">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
-                                </button>
+                                </a>
                             }
                         }
                     }
@@ -194,6 +228,17 @@
                                 @metadatald.view(m, true)
                             </div>
                         </div>
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
+                                && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                            <div class="row bottom-padding">
+                                <div class="col-md-12">
+                                    <h4>Extractions</h4>
+                                    <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
+                                        <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit dataset for extraction
+                                    </a>
+                                </div>
+                            </div>
+                        }
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                         @datasets.previews(dataset, previewers)
@@ -277,6 +322,10 @@
 
             getUpdatedFilesAndFolders();
 
+			$('body').on('click', 'a.disabled', function(event) {
+			    event.preventDefault();
+				});
+				
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
             }

@@ -1,0 +1,66 @@
+@(space:models.ProjectSpace, userRoleMap: Map[User, String], classes: String)(implicit user: Option[models.User])
+@import play.api.i18n.Messages
+@import api.Permission
+
+<div class="@classes">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <h3>Access</h3>
+        <p><span class="label label-default">@space.status.capitalize</span></p>
+        @if(space.isTrial){
+            @if(play.Play.application().configuration().getBoolean("verifySpaces") &&
+                    Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, space.id))) {
+                <div id="verify">
+                    <p>@play.api.i18n.Messages("trial.space")</p>
+                    @if(api.Permission.checkServerAdmin(user)){
+                        <button class="btn btn-link" title="Verify this space" >
+                            <span class="glyphicon glyphicon-ok" ></span> Verify</button>
+                    }
+                </div>
+            }
+        }
+        <!-- user has submit request -->
+        @defining("You are not authorized to access this " + Messages("space.title")) { msg =>
+            @if(user.isDefined) {
+                @if(userRoleMap.contains(user.get)) {
+                    @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space.id.stringify)))) {
+                        <p>You are authorized to access this @{Messages("space.title")}.</p>
+                    } else {
+                        <p>You are authorized to partially access this @{Messages("space.title")}.</p>
+                    }
+                } else {
+                    @if(space.requests.contains(RequestResource(user.get.id))) {
+                        <p>@msg Authorization request is pending.</p>
+                    } else {
+                        <div>
+                            <p>@msg @spaces.requestAuthorization(space.id)</p>
+                        </div>
+                    }
+                }
+            } else {
+                @if(!space.isPublic){
+                    <div>
+                        <p>@msg @spaces.requestAuthorization(space.id)</p>
+                    </div>
+                }
+            }
+        }
+    </div>
+</div>
+<script>
+    $("#verify").find("button").click(function() {
+        var request = jsRoutes.api.Spaces.verifySpace("@space.id").ajax({
+            type: 'PUT'
+        });
+        request.done(function(response, textStatus, jsXHR){
+            $("#verify").hide();
+            notify("@space.name"+" is verified and set to private", "success", false, 2000);
+        });
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occurred: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to verify";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Error in verifying due to : " + errorThrown, "error");
+            }
+        });
+    });
+</script>

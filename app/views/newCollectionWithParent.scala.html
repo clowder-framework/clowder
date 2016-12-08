@@ -1,9 +1,12 @@
 @(errorString: String, isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], parentId : Option[String], parentName : Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
+@import play.api.i18n.Messages
+@import _root_.util.Formatters._
+
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-@main("Collection") {
+@main(Messages("collection.title")) {
   <!-- Custom items for the create collection workflow -->
   <script src="@routes.Assets.at("javascripts/collection-create.js")" type="text/javascript"></script>
   <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -15,6 +18,15 @@
   </script>
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+    <ol class="breadcrumb">
+        @(parentId, parentName) match {
+            case (Some(id), Some(name)) => {
+                <li>  <span class="glyphicon glyphicon-th-large"></span> <a href="@routes.Collections.collection(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
+                <li><span class="glyphicon glyphicon-th-large"></span> Create Child Collection</li>
+            }
+            case (_, _) => {}
+        }
+    </ol>
   <div class="page-header">
     <h1>Create Child Collection in @parentName </h1>
   </div>
