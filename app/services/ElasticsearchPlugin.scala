@@ -12,16 +12,21 @@ import play.api.{Plugin, Logger, Application}
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
-import java.net.InetAddress;
-import org.elasticsearch.common.transport.TransportAddress
+import java.net.InetAddress
+
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
+
 import models.{Collection, Dataset, File, UUID, ResourceRef, Section}
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
+
+import org.elasticsearch.index.query.QueryBuilders
+
+import org.elasticsearch.ElasticsearchException
 
 
 /**
@@ -201,9 +206,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        val response = x.admin().indices().prepareDelete("_all").get()
-        if (!response.isAcknowledged())
-          Logger.error("Did not delete all data from elasticsearch.")
+        try {
+          val response = x.admin().indices().prepareDelete("_all").get()
+          if (!response.isAcknowledged())
+            Logger.error("Did not delete all data from elasticsearch.")
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
@@ -214,9 +227,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        val response = x.prepareDelete(index, docType, id).execute().actionGet()
-        Logger.debug("Deleting document: " + response.getId)
-
+        try {
+          val response = x.prepareDelete(index, docType, id).execute().actionGet()
+          Logger.debug("Deleting document: " + response.getId)
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }

@@ -99,9 +99,9 @@ if [ "$1" = 'server' ]; then
 
     # rabbitmq
     fix_plugin "$RABBITMQ_URI" "9992" "services.RabbitmqPlugin"
-    fix_conf   "clowder.rabbitmq.uri" "$RABBITMQ_URI" "medici2.rabbitmq.uri"
-    fix_conf   "clowder.rabbitmq.exchange" "$RABBITMQ_EXCHANGE" "medici2.rabbitmq.exchange"
-    fix_conf   "clowder.rabbitmq.managmentPort" "$RABBITMQ_MGMT_PORT" "medici2.rabbitmq.managmentPort"
+    fix_conf   "clowder.rabbitmq.uri" "$RABBITMQ_URI" "clowder.rabbitmq.uri"
+    fix_conf   "clowder.rabbitmq.exchange" "$RABBITMQ_EXCHANGE" "clowder.rabbitmq.exchange"
+    fix_conf   "clowder.rabbitmq.managmentPort" "$RABBITMQ_MGMT_PORT" "clowder.rabbitmq.managmentPort"
 
     # mongo
     fix_conf   "mongodbURI" "$MONGO_URI"

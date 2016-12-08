@@ -317,7 +317,7 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 			threads -= 1
 
 def extract(host, port, key, file, wait):
-	"""Pass file to Medici extraction bus."""
+	"""Pass file to Clowder extraction bus."""
 	username = ''
 	password = ''
 

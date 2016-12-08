@@ -1794,7 +1794,7 @@ class  Datasets @Inject()(
           case Some(resultFile) =>{
             Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + resultFile.getName()))
+              .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
           }
           case None => BadRequest(toJson("Dataset not found " + id))
         }
@@ -2362,8 +2362,8 @@ class  Datasets @Inject()(
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
             Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(
-              "Content-Type" -> "application/zip",
-              "Content-Disposition" -> ("attachment; filename=\"" + dataset.name+ ".zip\"")
+              CONTENT_TYPE -> "application/zip",
+              CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
             )
           }
           // If the dataset wasn't found by ID

@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "0.9.x"
+  val version = "1.x"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -161,7 +161,7 @@ object ApplicationBuild extends Build {
     //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
 
-    // add custom folder to the classpath, use this to add/modify medici:
+    // add custom folder to the classpath, use this to add/modify clowder:
     // custom/public/stylesheets/themes     - for custom themes
     // custom/public/javascripts/previewers - for custom previewers
     // custom/custom.conf                   - to customize application.conf
@@ -182,7 +182,7 @@ object ApplicationBuild extends Build {
     batScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\""
 
     // license report
-//    licenseReportTitle := "Medici Licenses",
+//    licenseReportTitle := "Clowder Licenses",
 //    licenseConfigurations := Set("compile", "provided"),
 //    licenseSelection := Seq(LicenseCategory("NCSA"), LicenseCategory("Apache")) ++ LicenseCategory.all,
 //    licenseOverrides := licenseOverrides.value orElse {
@@ -194,7 +194,7 @@ object ApplicationBuild extends Build {
 //      case DepModuleInfo("org.reflections", _, _) => LicenseInfo(LicenseCategory.PublicDomain, "WTFPL", "http://www.wtfpl.net/txt/copying")
 //    },
 //    licenseReportMakeHeader := {
-//      case Html => Html.header1(licenseReportTitle.value) + "<p>Medici is licensed under the <a href='http://opensource.org/licenses/NCSA'>University of Illinois/NCSA Open Source License</a>.</p><p>Below are the libraries that Medici depends on and their licenses.<br></p>"
+//      case Html => Html.header1(licenseReportTitle.value) + "<p>Clowder is licensed under the <a href='http://opensource.org/licenses/NCSA'>University of Illinois/NCSA Open Source License</a>.</p><p>Below are the libraries that Clowder depends on and their licenses.<br></p>"
 //      case l => l.header1(licenseReportTitle.value)
 //    }
 

@@ -21,7 +21,7 @@ public class FilesUtils {
 		String mainFileType = "multi/files-zipped";
 		
 		try {
-			if(filename.startsWith("MEDICI2ZIPPED_"))
+			if(filename.startsWith("CLOWDERZIPPED_"))
 				return "multi/files-zipped";
 			
 			ZipFile zipFile = new ZipFile(compressedFile);			
