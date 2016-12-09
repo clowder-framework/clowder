@@ -44,7 +44,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
 
-  val mustOperators = List(":", "==", "<", ">")
+  val mustOperators = List("==", "<", ">")
   val mustNotOperators = List("!=")
 
 
@@ -124,7 +124,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Search using a simple text string */
   def search(query: String, index: String = nameOfIndex): List[ResourceRef] = {
-    val specialOperators = List(":", "==", "!=", "<", ">")
+    val specialOperators = mustOperators ++ mustNotOperators
     val queryObj = if (specialOperators.exists(query.contains(_))) {
       // Parse search string into object based on special operators
       prepareElasticJsonQuery(query)
@@ -338,6 +338,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               .field("created", eso.created)
               .field("resource_type", eso.resource.resourceType.name)
               .field("name", eso.name)
+              .field("description", eso.description)
 
             // PARENT_OF/CHILD_OF
             builder.startArray("parent_of")
@@ -609,12 +610,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
     // TODO: Suppert lte, gte (<=, >=)
     operator match {
-      case ":" => {
+      /**case ":" => {
         // TODO: Elasticsearch recommends not starting query with wildcard
         // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
         //builder.startObject("wildcard").field(key, value+"*").endObject()
         builder.startObject().startObject("match").field(key, value).endObject().endObject()
-      }
+      }**/
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
       case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
       case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
@@ -710,7 +711,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**Convert search string into an Elasticsearch-ready JSON query object**/
   def prepareElasticJsonQuery(query: String): XContentBuilder = {
     /** OPERATORS
-      *  :   contains (partial match)
       *  ==  equals (exact match)
       *  !=  not equals (partial matches OK)
       *  <   less than
