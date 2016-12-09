@@ -1,4 +1,4 @@
-@(extractors: List[ExtractorInfo], ds: Dataset)
+@(extractors: List[ExtractorInfo], ds: Dataset)(implicit user: Option[models.User])
 
 @main("Extractions") {
     <div class="row">
