@@ -108,9 +108,17 @@ object SearchUtils {
       } else {
         // If we already have some metadata from this creator, merge the results; otherwise, create new entry
         if (metadata.keySet.exists(_ == creator))
-          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+          // Merge must check for JsObject or JsArray separately - they cannot be merged or converted to JsValue directly
+          try {
+            metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+          } catch {
+            case _ => {
+              metadata += (creator -> (metadata(creator).as[JsArray] ++ (md.content.as[JsArray])))
+            }
+          }
         else
-          metadata += (creator -> md.content.as[JsObject])
+          // However for first entry JsValue is OK - will be converted to Object or Array for later merge if needed
+          metadata += (creator -> md.content.as[JsValue])
       }
     }
 
