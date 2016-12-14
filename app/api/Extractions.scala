@@ -496,7 +496,15 @@ class Extractions @Inject()(
     notes = "  ",
     responseClass = "None", httpMethod = "POST")
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
-    val extractionInfoResult = request.body.validate[ExtractorInfo]
+
+    // If repository is of type object, change it into an array.
+    // This is for backward compatibility with requests from existing extractors.
+    val requestJson = request.body \ "repository" match {
+      case rep: JsObject => request.body.as[JsObject] ++ Json.obj("repository" ->  Json.arr(rep))
+      case _ => request.body
+    }
+
+    val extractionInfoResult = requestJson.validate[ExtractorInfo]
     extractionInfoResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
