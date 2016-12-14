@@ -65,7 +65,7 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     filters,
     // login
-    "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
 
     // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",
