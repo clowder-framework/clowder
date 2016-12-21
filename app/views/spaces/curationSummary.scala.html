@@ -11,14 +11,11 @@
                 	@if(curationObject.creators.length !=0) {
             			@for(i <- 0 to (curationObject.creators.length  - 2) ) {
                 			<span class="creator" >
-                  				<span class="authname person  break-word" data-creator="@curationObject.creators(i).trim">@curationObject.creators(i).trim</span>
-                  				<span class="glyphicon-remove creator-delete hiddencomplete"></span>
-                				<span>, </span>
+                  				<span class="authname person  break-word" data-creator="@curationObject.creators(i).trim">@curationObject.creators(i).trim</span><span>, </span>
                 			</span>
             			}
                 		<span class="creator" >
 	                  		<span class="authname person  break-word" data-creator="@curationObject.creators(curationObject.creators.length-1).trim">@curationObject.creators(curationObject.creators.length-1).trim</span>
-    	              		<span class="glyphicon-remove creator-delete hiddencomplete"></span>
         	        	</span>
                 	}	
                 </li>

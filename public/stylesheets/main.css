@@ -990,8 +990,12 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 	color:#2e6ca2;
 }
 
+.creator-label {
+	display: inline;
+}
+
 .creator {
-	margin-left:5px;
+	margin-right: 5px;
 }
 
 .select2-rendered__match {

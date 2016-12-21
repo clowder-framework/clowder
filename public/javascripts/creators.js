@@ -10,7 +10,8 @@ function addCreator() {
 	$('.add_creator')
 			.append(
 					'<button id="cancel_creator_add" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelAddCreator()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
-
+	$('#add-creator').css("display", "none");
+	$('#add-creator').addClass("hiddencomplete");
 	$("#creatorAddSelect").select2({
 		theme : "bootstrap",
 		tags : true,
@@ -63,6 +64,8 @@ function addCreator() {
 		}
 	});
 
+	$("#creatorAddSelect").select2('open');
+	
 	function markMatch(text, term) {
 		// Find where the match is
 		var match = text.toUpperCase().indexOf(term.toUpperCase());
@@ -120,6 +123,9 @@ function saveCreator() {
 
 			request.done(function(response, textStatus, jqXHR) {
 				addCreatorToList(newAuthor);
+				$("#creatorlabel").removeClass("creator-label");
+				$("#creatorlabel").addClass("hiddencomplete");
+				
 				notify("Creator added.", "success", false, 2000);
 			});
 
@@ -179,6 +185,10 @@ $(document).on(
 				request.done(function(response, textStatus, jqXHR) {
 					console.log("Successful remove user " + target);
 					deleteCreatorFromList(target);
+					if($("#ds_creators").children().length == 0) {
+						$("#creatorlabel").removeClass("hiddencomplete");
+						$("#creatorlabel").addClass("creator-label");
+					}
 					notify("Creator: " + target + " removed.", "success",
 							false, 2000);
 				});

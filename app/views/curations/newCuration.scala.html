@@ -64,20 +64,11 @@
                 <input type="text" class="form-control" id="name" placeholder="A short name" value="@name">
                 <span class="error hiddencomplete" id="nameerror">The name is a required field.</span>
             </div>
-            <div class="form-group">
-                <label id="desclabel" for="description"> Abstract (Description)</label>
-                <textarea rows="4" type="text" id="description" class="form-control" >@desc</textarea>
-                <span class="error hiddencomplete" id="descerror">The abstract is a required field.</span>
-            </div>
+           
             <div class="form-group">
 			  <div id='aboutcreators'>
                 <label id="creators-label" title="Ordered list of those responsible for this publication"> Creator(s): </label>
-                    @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, id))) {
-                        <a id="add-creator" class="hiddencomplete" href="javascript:addCreator()" title="Click to add a Creator">
-                            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-                        </a>
-                    }
-
+                        
             	<div id="ds_creators" class="inline">
 
                 	@if(creators.length !=0) {
@@ -94,10 +85,19 @@
         	        	</span>
                 	}	
             	</div>
+            				    
+			  <a id="add-creator" class="hiddencomplete" href="javascript:addCreator()" title="Click to add a Creator">
+                            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                        </a>
 				<div><span class="error hiddencomplete" id="creatorerror">A creator is required </span></div>
-			  </div>    
-			</div>	                
 
+			  </div>  
+			</div>	                
+ 			<div class="form-group">
+                <label id="desclabel" for="description"> Abstract (Description)</label>
+                <textarea rows="4" type="text" id="description" class="form-control" >@desc</textarea>
+                <span class="error hiddencomplete" id="descerror">The abstract is a required field.</span>
+            </div>
             @if(!spaceList.isEmpty) {
                 <div class="form-group">
                     <label id="spacelabel" for="space"> Create in @Messages("space.title") </label>
