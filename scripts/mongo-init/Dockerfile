@@ -2,12 +2,10 @@ FROM ubuntu:16.04
 MAINTAINER Bing Zhang <bing@illinois.edu>
 
 ENV EMAIL_ADDRESS=""\
-    PASSWORD=""\
-    MONGO_URI="" \
-    HOSTIP=""\
     FIRST_NAME=""\
-    LAST_NAME=""
-
+    LAST_NAME="" \
+    PASSWORD=""\
+    MONGO_URI=""
 
 RUN mkdir -p /data/db && \
     apt-get update && \
