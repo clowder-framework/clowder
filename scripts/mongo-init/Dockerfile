@@ -3,6 +3,7 @@ MAINTAINER Bing Zhang <bing@illinois.edu>
 
 ENV EMAIL_ADDRESS=""\
     PASSWORD=""\
+    MONGO_URI="" \
     HOSTIP=""\
     FIRST_NAME=""\
     LAST_NAME=""

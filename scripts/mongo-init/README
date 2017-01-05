@@ -1,10 +1,8 @@
-run docker.sh to create docker image and push to browndog/create-account on docker hub.
-
 to create a user account into clowder.
 
 example to run:
-1) 
-docker run --rm -it -e "PASSWORD=youpassword" -e "EMAIL_ADDRESS=youremailaddress" -e "HOSTIP=hostipofmongo" --name create-useraccount browndog/create-useraccount
+1) create admin account 
+docker run --rm -it -e "PASSWORD=youpassword" -e "EMAIL_ADDRESS=youremailaddress" -e "ADMIN=true" --name create-useraccount browndog/create-useraccount
 
-2)
-docker run --rm -it -e "FIRST_NAME=John" -e "LAST_NAME=Smith" -e "PASSWORD=yourpassword" -e "EMAIL_ADDRESS=youremailaddress" -e "HOSTIP=hostipofmongo" --name create-useraccount browndog/create-useraccount
+2) create normal user account
+docker run --rm -it -e "PASSWORD=yourpassword" -e "EMAIL_ADDRESS=youremailaddress" --name create-useraccount browndog/create-useraccount
