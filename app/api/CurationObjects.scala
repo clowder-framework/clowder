@@ -365,7 +365,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
   }
 
   /**
-    * Endpoint for receiving publication success+PID message from SEAD services.
+    * Endpoint for receiving publication success+PID message from publication services.
     */
   def savePublishedObject(id: UUID) = AuthenticatedAction (parse.json) {
     implicit request =>
