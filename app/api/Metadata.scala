@@ -362,7 +362,7 @@ class Metadata @Inject()(
           case Some(m) => {
             if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)
             || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)) {
-              BadRequest("Publication Request has already submitted")
+              BadRequest("Publication Request has already been submitted")
             } else {
               metadataService.removeMetadata(id)
               val mdMap = m.getExtractionSummary

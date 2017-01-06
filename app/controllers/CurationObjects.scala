@@ -25,7 +25,7 @@ import play.api.libs.json.Reads._
 
 
 /**
- * Methods for interacting with the curation objects (Publication Requests) in the staging area.
+ * Methods for interacting with the Curation Objects (now referred to as Publication Requests) in the staging area.
  */
 class CurationObjects @Inject()(
   curations: CurationService,
@@ -73,7 +73,7 @@ class CurationObjects @Inject()(
   }
 
   /**
-    * List curation objects/publication requests.
+    * List Publication Requests.
     */
   def list(when: String, date: String, limit: Int, space:Option[String]) = UserAction(needActive=false) { implicit request =>
       implicit val user = request.user
