@@ -50,7 +50,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               case Some(f) => f.length
               case None => 0
             }
-
+  
             var tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson("urn:uuid:"+file.id),
@@ -155,6 +155,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
           if(commentsJson.size > 0) {
             aggregation = metadataJson ++ Map( "Comment" -> Json.toJson(JsArray(commentsJson)))
           }
+          if(c.datasets(0).tags.size > 0) {
+            aggregation = aggregation ++ Map("Keyword" -> Json.toJson(
+              Json.toJson(c.datasets(0).tags.map(_.name))
+            ))
+          }
           var parsedValue =
             Map(
               "@context" -> Json.toJson(Seq(
@@ -235,14 +240,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
             )
-
-
-          if(c.datasets(0).tags.size > 0) {
-            parsedValue = parsedValue ++ Map("Keyword" -> Json.toJson(
-              Json.toJson(c.datasets(0).tags.map(_.name))
-            ))
-          }
-
 
           Ok(Json.toJson(parsedValue))
         }

@@ -1,23 +1,24 @@
 package services
 
-import play.api.{Plugin, Logger, Application}
+import play.api.{Application, Logger, Plugin}
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
-import java.net.InetAddress;
-import org.elasticsearch.common.transport.TransportAddress
+import java.net.InetAddress
+
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.index.query.QueryBuilders
-import models.{UUID, Collection, Dataset, File}
+import models.{Collection, Dataset, File, UUID}
+
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
+
+import org.elasticsearch.ElasticsearchException
 import play.api.Play.current
-import org.elasticsearch.index.query.QueryStringQueryBuilder
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 
 
 /**
@@ -98,16 +99,24 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     client match {
       case Some(x) => {
-        Logger.debug("Searching ElasticSearch for " + query)
-        val response = x.prepareSearch(index)
-          .setTypes("file", "dataset","collection")
-          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(QueryBuilders.queryStringQuery(query).analyzer("snowball"))
-          .setFrom(0).setSize(60).setExplain(true)
-          .execute()
-          .actionGet()
-        Logger.debug("Search hits: " + response.getHits().getTotalHits())
-        response
+        try {
+          Logger.debug("Searching ElasticSearch for " + query)
+          val response = x.prepareSearch(index)
+            .setTypes("file", "dataset","collection")
+            .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            .setQuery(QueryBuilders.queryStringQuery(query).analyzer("snowball"))
+            .setFrom(0).setSize(60).setExplain(true)
+            .execute()
+            .actionGet()
+          Logger.debug("Search hits: " + response.getHits().getTotalHits())
+          response
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => {
         Logger.error("Could not call search because we are not connected.")
@@ -120,20 +129,28 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        Logger.debug("Searching ElasticSearch for " + query)
-        var qbqs = QueryBuilders.queryStringQuery(query)
-        for (f <- fields) {
-          qbqs.field(f.trim())
+        try {
+          Logger.debug("Searching ElasticSearch for " + query)
+          var qbqs = QueryBuilders.queryStringQuery(query)
+          for (f <- fields) {
+            qbqs.field(f.trim())
+          }
+          val response = x.prepareSearch(index)
+            .setTypes("file", "dataset","collection")
+            .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            .setQuery(qbqs.analyzer("snowball"))
+            .setFrom(0).setSize(60).setExplain(true)
+            .execute()
+            .actionGet()
+          Logger.debug("Search hits: " + response.getHits().getTotalHits())
+          response
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
         }
-        val response = x.prepareSearch(index)
-          .setTypes("file", "dataset","collection")
-          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(qbqs.analyzer("snowball"))
-          .setFrom(0).setSize(60).setExplain(true)
-          .execute()
-          .actionGet()
-        Logger.debug("Search hits: " + response.getHits().getTotalHits())
-        response
       }
       case None => {
         Logger.error("Could not call search because we are not connected.")
@@ -149,15 +166,22 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        val builder = jsonBuilder()
-          .startObject()
-        fields.map(fv => builder.field(fv._1, fv._2))
-        builder.endObject()
-        val response = x.prepareIndex(index, docType, id.toString())
-          .setSource(builder)
-          .execute()
-          .actionGet()
-        Logger.debug("Indexing document: " + response.getId)
+        try {
+          val builder = jsonBuilder()
+            .startObject()
+          fields.map(fv => builder.field(fv._1, fv._2))
+          builder.endObject()
+          val response = x.prepareIndex(index, docType, id.toString())
+            .setSource(builder)
+            .execute()
+            .actionGet()
+          Logger.debug("Indexing document: " + response.getId)
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call index.", e)
+            client = None
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
@@ -168,9 +192,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        val response = x.admin().indices().prepareDelete("_all").get()
-        if (!response.isAcknowledged())
-          Logger.error("Did not delete all data from elasticsearch.")
+        try {
+          val response = x.admin().indices().prepareDelete("_all").get()
+          if (!response.isAcknowledged())
+            Logger.error("Did not delete all data from elasticsearch.")
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
@@ -180,9 +212,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        val response = x.prepareDelete(index, docType, id).execute().actionGet()
-        Logger.debug("Deleting document: " + response.getId)
-
+        try {
+          val response = x.prepareDelete(index, docType, id).execute().actionGet()
+          Logger.debug("Deleting document: " + response.getId)
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
@@ -194,7 +233,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    * also reindex all datasets and files.
    */
   def index(collection: Collection, recursive: Boolean) {
-    connect
     var dsCollsId = ""
     var dsCollsName = ""
 
@@ -221,7 +259,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    * also reindex all files.
    */
   def index(dataset: Dataset, recursive: Boolean) {
-    connect
     var tagListBuffer = new ListBuffer[String]()
 
     for (tag <- dataset.tags) {
@@ -296,7 +333,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    * Reindex the given file.
    */
   def index(file: File) {
-    connect
     var tagListBuffer = new ListBuffer[String]()
 
     for (tag <- file.tags) {

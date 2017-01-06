@@ -150,7 +150,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the updateLicense(id: UUID) function routed by POST /api/datasets/:id/license" in {
       val req = FakeRequest(POST, "/api/datasets/" + datasetId + "/license?key=" + secretKey).
-              withJsonBody(Json.toJson(Map("licenseType" -> "NCSA Open Source", "rightsHolder" -> "API Test Suite", "licenseText" -> "by", "licenseUrl" -> "https://medici.ncsa.illinois.edu", "allowDownload" -> "True")))
+              withJsonBody(Json.toJson(Map("licenseType" -> "NCSA Open Source", "rightsHolder" -> "API Test Suite", "licenseText" -> "by", "licenseUrl" -> "https://clowder.ncsa.illinois.edu", "allowDownload" -> "True")))
       val result_get = route(req).get
 
       status(result_get) mustEqual OK
@@ -193,7 +193,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
       //link up json file here before fake request.
       val Some(result_get) = route(FakeRequest(POST, "/api/datasets/" + datasetId + "/tags?key=" + secretKey).withJsonBody(json_tags))
-         // withJsonBody(Json.toJson(Map("tags" -> List("Dataset", "Test Suite", "Medici"), "extractor_id" -> "ncsa.cv.face")))
+         // withJsonBody(Json.toJson(Map("tags" -> List("Dataset", "Test Suite", "Clowder"), "extractor_id" -> "ncsa.cv.face")))
       ///val result_get = route(req).get
 
       status(result_get) mustEqual OK
@@ -264,7 +264,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
       //link up json file here before fake request.
       val Some(result_get) = route(FakeRequest(POST, "/api/datasets/" + datasetId + "/tags?key=" + secretKey).withJsonBody(json_tags))
-         // withJsonBody(Json.toJson(Map("tags" -> List("Dataset", "Test Suite", "Medici"), "extractor_id" -> "ncsa.cv.face")))
+         // withJsonBody(Json.toJson(Map("tags" -> List("Dataset", "Test Suite", "Clowder"), "extractor_id" -> "ncsa.cv.face")))
       ///val result_get = route(req).get
 
       status(result_get) mustEqual OK

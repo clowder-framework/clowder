@@ -13,7 +13,7 @@ import services.mongodb.MongoSalatPlugin
 import scala.collection.mutable
 
 /**
- * class that contains all status/version information about medici.
+ * class that contains all status/version information about clowder.
  */
 class Status @Inject()(spaces: SpaceService,
                        collections: CollectionService,
@@ -164,8 +164,8 @@ class Status @Inject()(spaces: SpaceService,
   def getVersionInfo: JsValue = {
     val sha1 = sys.props.getOrElse("build.gitsha1", default = "unknown")
 
-    // TODO use the following URL to indicate if there updates to Medici.
-    // if returned object has an empty values medici is up to date
+    // TODO use the following URL to indicate if there updates to clowder.
+    // if returned object has an empty values clowder is up to date
     // need to figure out how to pass in the branch
     //val checkurl = "https://opensource.ncsa.illinois.edu/stash/rest/api/1.0/projects/CATS/repos/clowder/commits?since=" + sha1
 
