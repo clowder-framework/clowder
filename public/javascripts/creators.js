@@ -123,8 +123,8 @@ function saveCreator() {
 
 			request.done(function(response, textStatus, jqXHR) {
 				addCreatorToList(newAuthor);
-				$("#creatorlabel").removeClass("creator-label");
-				$("#creatorlabel").addClass("hiddencomplete");
+				$("#creatorlabel").text("Creator(s): ");
+
 				
 				notify("Creator added.", "success", false, 2000);
 			});
@@ -186,8 +186,7 @@ $(document).on(
 					console.log("Successful remove user " + target);
 					deleteCreatorFromList(target);
 					if($("#ds_creators").children().length == 0) {
-						$("#creatorlabel").removeClass("hiddencomplete");
-						$("#creatorlabel").addClass("creator-label");
+						$("#creatorlabel").text("Add creator(s)");
 					}
 					notify("Creator: " + target + " removed.", "success",
 							false, 2000);

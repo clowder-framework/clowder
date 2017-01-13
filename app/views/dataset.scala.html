@@ -112,13 +112,13 @@
             <div class="col-md-12 box-white-space" id='aboutcreators' data-dataset='@dataset.id'>
                 
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                    	<p id="creatorlabel"
+                    	<p id="creatorlabel"   class="creator-label" title="Ordered list of those responsible for this dataset">
                     	@if(dataset.creators.length >0) { 
-                    	  class="hiddencomplete" 
+                    	  Creator(s):  
                     	} else { 
-                    	  class="creator-label" 
+                    	  Add creator(s)
                     	} 
-                    	title="Ordered list of those responsible for this dataset">Add creator(s)</p>
+                    	</p>
                     }
 
             <div id="ds_creators" class="inline">
