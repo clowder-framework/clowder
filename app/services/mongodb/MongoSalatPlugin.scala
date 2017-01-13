@@ -29,7 +29,7 @@ import scala.collection.JavaConverters._
  * Mongo Salat service.
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
-  // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/medici
+  // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/clowder
   var mongoURI: MongoURI = null
 
   // hold the connection, if connection failed it will be tried to open next time
@@ -44,8 +44,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       Logger.info("mongodb.default is deprecated, please use mongodbURI")
       MongoURI(play.api.Play.configuration.getString("mongodb.default").get)
     } else {
-      Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/medici")
-      MongoURI("mongodb://127.0.0.1:27017/medici")
+      Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/clowder")
+      MongoURI("mongodb://127.0.0.1:27017/clowder")
     }
     Logger.info("Connecting to : " + mongoURI.toString())
 
@@ -183,7 +183,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
    * Returns the database for the connection
    */
-  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("medici"))
+  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("clowder"))
 
   /**
    * Returns a collection in the database
@@ -407,6 +407,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Move SHA512 from File object into file.digest metadata
     updateMongo("copy-sha512-to-metadata-and-remove-all", copySha512ToMetadataAndRemove)
+
+    // Change repository in extractors.info collection into a list
+    updateMongo("update-repository-type-in-extractors-info", updateRepositoryType)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -697,7 +700,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addLengthSha512PathFile() {
     val dbss = new DiskByteStorageService()
-    lazy val rootPath = Play.current.configuration.getString("medici2.diskStorage.path").getOrElse("")
+    lazy val rootPath = Play.current.configuration.getString("clowder.diskStorage.path").getOrElse("")
     for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
       val files = gridFS(prefix)
       collection(prefix + ".files").foreach { file =>
@@ -1338,6 +1341,29 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
         catch {
           case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
+      }
+    }
+  }
+
+  /**
+    * In order to support adding multiple repositories for an extractor in extractors.info collection, changing the
+    * existing repository type from Repository to List[Repository] in those records that have not been updated yet.
+    */
+  private def updateRepositoryType(): Unit = {
+    val extractorsInfoCollection  = collection("extractors.info")
+
+    extractorsInfoCollection.foreach { extractor =>
+
+      val repository = extractor.get("repository")
+
+      if (!repository.isInstanceOf[BasicDBList]) {
+        extractor.put("repository", MongoDBList(repository))
+
+        try {
+          extractorsInfoCollection.save(extractor, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Failed to update collection extractors.info entry with id " + extractor.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
         }
       }
     }

@@ -14,7 +14,7 @@ object SpaceConfig {
      * @return A boolean, true if resources should expire. False otherwise.
      */
     def getIsTimeToLiveEnabled(): Boolean = {
-        configuration.getBoolean("medici2.space.isTimeToLiveEnabled").getOrElse(false)
+        configuration.getBoolean("clowder.space.isTimeToLiveEnabled").getOrElse(false)
     }
     
     /**
@@ -24,7 +24,7 @@ object SpaceConfig {
      * 
      */
     def getTimeToLive(): Long = {
-        val timeString = configuration.getInt("medici2.space.timeToLive").getOrElse(720)
+        val timeString = configuration.getInt("clowder.space.timeToLive").getOrElse(720)
         (timeString * 60 * 60 * 1000L)
     }
 }

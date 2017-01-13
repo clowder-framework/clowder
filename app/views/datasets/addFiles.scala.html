@@ -31,7 +31,7 @@
         }
             <li><span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(dataset.id)"> <span title="@dataset.name"> @Html(ellipsize(dataset.name, 18))</span> </a> </li>
             @folderHierarchy.map { folder =>
-              <li><span class="glyphicon glyphivon-folder-close"> <a href="@routes.Datasets.dataset(dataset.id)#folderId=@folder.id"> @folder.displayName</a></span></li>
+              <li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(dataset.id)#folderId=@folder.id"> @folder.displayName</a></li>
 
             }
             <li> <span class="glyphicon glyphicon-upload"></span> Add Files to
