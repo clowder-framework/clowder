@@ -145,15 +145,15 @@
                         </a>
             }
 		</div>    
-        <div class="col-md-12 box-white-space" id="aboutdesc">
-                    <p id ="ds_description" class="inline">
+        <div class="col-md-12 box-white-space" id="aboutdesc">@Messages("dataset.description"): 
+                    <p id ="ds_description" class="inline"> 
                     @if(dataset.description.length > 0) {
                         @Html(dataset.description)
                     } else {
-                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){Add a description}
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){Add a @Messages("dataset.description").toLowerCase}
                     }</p>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit description">
+                        <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit @Messages("dataset.description").toLowerCase">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
                     }

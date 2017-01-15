@@ -5,7 +5,7 @@
             <h4>@curationObject.name <h4>
             <h5>@Messages("dataset.title"): <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h5>
             <ul class="list-unstyled">
-                <li>Abstract: @curationObject.description</li>
+                <li>@Messages("publicationrequest.description"): @curationObject.description</li>
                 <li>Creator(s): 
 
                 	@if(curationObject.creators.length !=0) {
