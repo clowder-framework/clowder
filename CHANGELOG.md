@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability to add specific metadata to a space. [SEAD-1133](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1133), 
   [SEAD-1134](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1134)
 - Metadata context popups now always properly disappear on mouse out.
+- User metadata @context properly filled to required mappings. [CATS-717](https://opensource.ncsa.illinois.edu/jira/browse/CATS-717)
 
 ## [1.0.0] - 2016-12-07
 
