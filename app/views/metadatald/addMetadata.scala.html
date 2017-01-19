@@ -97,7 +97,7 @@ line-height: 1.5;
 </script>
 
 <script language="javascript">
-    // submit metadata value to server
+    // submit metadata entry to server
     function submit_@id
     (event){
         event.preventDefault();
@@ -115,15 +115,15 @@ line-height: 1.5;
             console.log("Wrong field type: " + field_type);
         }
 
-        // submit metadata to server
-        // console.log("field type: " + field_type + ", field_value: " + field_value);
         var error = false;
         if (field_value != "") {
+            // define contexts
+            var contexts = [];
+            contexts.push("https://clowder.ncsa.illinois.edu/contexts/metadata.jsonld");
             var context = {};
             context[field_label] = field_id;
-            // FIXME replace with real context terms
-            context["file_id"] = "http://medici.ncsa.illinois.edu/metadata/file_id";
-            context["content"] = "http://medici.ncsa.illinois.edu/metadata/content";
+            contexts.push(context);
+
             var content = {};
             if (field_type === "listgeocode") {
                 // geocode example: "Champaign, IL, USA: 40.12, -88.24"
@@ -151,13 +151,12 @@ line-height: 1.5;
             }
 
             var body = {
-                    "@@context": context,
+                    "@@context": contexts,
                     "@(resType)_id": "@id",
                     "content": content
             };
 
             if (!error) {
-
                 var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
                     data: JSON.stringify(body),
                     type: 'POST',

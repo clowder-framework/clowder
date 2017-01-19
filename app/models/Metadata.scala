@@ -93,7 +93,7 @@ object Agent {
           case profile(id) => {
             try {
               userService.get(UUID(id)) match {
-                case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
+                case Some(u) => MiniUser(u.id, u.fullName, u.getAvatarUrl(), u.email)
                 case None => MiniUser(UUID("000000000000000000000000"), name.getOrElse("Unknown"), "", None)
               }
             } catch {

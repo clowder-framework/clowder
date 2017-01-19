@@ -123,7 +123,7 @@
         @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                 @if(user.isDefined) {
-                    <a href= "@routes.Profile.viewProfileUUID(agent.id)">@agent.displayName</a>
+                    <a href= "@routes.Profile.viewProfileUUID(agent.asInstanceOf[UserAgent].user.id)">@agent.displayName</a>
                 } else {
                     @agent.displayName
                 }

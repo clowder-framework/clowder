@@ -760,9 +760,9 @@ object FileUtils {
                                   .replaceAll("\\*","%2A")
                                   ,"utf-8","Q")
                             }
-    Logger.debug(userAgent + ": " + filenameStar.substring(10, filenameStar.length()-2))
+    Logger.debug(userAgent + ": " + filenameStar)
     
-    //Return the complete attachement header info
+    //Return the complete attachment header info
     "attachment; filename*=UTF-8''" + filenameStar
   }
   
