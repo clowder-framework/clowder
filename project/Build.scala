@@ -65,7 +65,7 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     filters,
     // login
-    "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
 
     // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",
@@ -102,11 +102,11 @@ object ApplicationBuild extends Build {
     "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
-    "org.apache.jena" % "apache-jena-libs" % "3.0.1",
+    "org.apache.jena" % "apache-jena-libs" % "3.1.1",
 
     // ??
     "commons-io" % "commons-io" % "2.4",
-    "commons-logging" % "commons-logging" % "1.1.1",
+    "commons-logging" % "commons-logging" % "1.1.3",
 
     // RDF
     "gr.forth.ics" % "flexigraph" % "1.0",
