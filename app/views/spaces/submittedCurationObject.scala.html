@@ -10,7 +10,7 @@
         <ol class="breadcrumb">
             <li> <a href="@routes.Spaces.getSpace(curationObject.space)" title="@spaceName">@Html(ellipsize(spaceName, 18))</a></li>
             <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-            <li> Submitted Curation</li>
+            <li> Submitted Publication Request</li>
         </ol>
     </div>
 
@@ -18,8 +18,9 @@
       <div class="col-md-6">
       <div>
         <h2>@curationObject.name</h2>
-        
-          <b>@Messages("publicationrequest.description")</b>: @curationObject.description
+        <p class= "inline"><b>@Messages("publicationrequest.description"):</b></p>
+        <p class= "inline">
+        @curationObject.description</p>
         <br/><br/>
         <span><b>Creator(s)</b>: 
           	@if(curationObject.creators.length !=0) {
@@ -38,15 +39,15 @@
         </span><br/>
         <b>Owner</b>: @curationObject.author.fullName <br/>
         <b>Created</b>: @curationObject.created.date.format("MMM dd, yyyy") <br/>
-        <b>Repository</b>: @curationObject.repository.getOrElse("Not select.") <br/>
-        <b>Submmitted</b>: @{curationObject.submittedDate match {
+        <b>Repository</b>: @curationObject.repository.getOrElse("Not selected.") <br/>
+        <b>Submitted</b>: @{curationObject.submittedDate match {
         case Some(d) => d.format("MMM dd, yyyy")
-        case None => "Not submmited"
+        case None => "Not submitted"
       }
       }  <br/>
         <b>Published</b>: @{curationObject.publishedDate match {
         case Some(d) => d.format("MMM dd, yyyy")
-        case None => "Not published"
+        case None => "Not published."
       }
       }  <br/>
 
