@@ -10,6 +10,15 @@
       //Global so that the javascript for the collection creation can reference this.
       var isNameRequired = @isNameRequired;
       var isDescRequired = @isDescriptionRequired;
+      var origName = "@name";
+      
+      var origCreators = [
+	  @if(creators.length !=0) {
+      	@for(i <- 0 to (creators.length  - 2) ) {
+      		"@creators(i).trim",
+  		}
+   		"@creators(creators.length-1).trim"
+   		} ];
     </script>
     @if(isNew) {
         <ol class="breadcrumb">
@@ -71,19 +80,7 @@
                         
             	<div id="ds_creators" class="inline">
 
-                	@if(creators.length !=0) {
-            			@for(i <- 0 to (creators.length  - 2) ) {
-                			<span class="creator" >
-                  				<span class="authname person" data-creator="@creators(i).trim">@creators(i).trim</span>
-                  				<span class="glyphicon-remove creator-delete hiddencomplete"></span>
-                				<span>, </span>
-                			</span>
-            			}
-                		<span class="creator" >
-	                  		<span class="authname person" data-creator="@creators(creators.length-1).trim">@creators(creators.length-1).trim</span>
-    	              		<span class="glyphicon-remove creator-delete hiddencomplete"></span>
-        	        	</span>
-                	}	
+                	
             	</div>
             				    
 			  <a id="add-creator" class="hiddencomplete" href="javascript:addCreator()" title="Click to add a Creator">
@@ -158,7 +155,7 @@
                     <button class="btn btn-primary btn-margins" title="Create the CO" onclick="return createCuration();">
                         <span class="glyphicon glyphicon-upload"></span> Create
                     </button>
-                    <button class="btn btn-default btn-margins" title="Clear the input fields" onclick="return clearFields();">
+                    <button class="btn btn-default btn-margins" title="Reset the input fields" onclick="return resetFields();">
                         <span class="glyphicon glyphicon-unchecked"></span> Reset
                     </button>
                 } else {
@@ -174,7 +171,7 @@
                     <button class="btn btn-primary btn-margins disabled" title="Create the CO">
                         <span class="glyphicon glyphicon-upload"></span> Create
                     </button>
-                    <button class="btn btn-default btn-margins disabled" title="Clear the input fields">
+                    <button class="btn btn-default btn-margins disabled" title="Reset the input fields">
                         <span class="glyphicon glyphicon-unchecked"></span> Reset
                     </button>
                 } else {
@@ -198,6 +195,8 @@
             width: "80%",
             placeholder_text_multiple: "Select live objects for this curation object."
         });
+        var origDesc = $('#description').val();
+        displayCreators(origCreators);
 	</script>
 
 }

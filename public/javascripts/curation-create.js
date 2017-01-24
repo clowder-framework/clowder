@@ -1,12 +1,23 @@
 
 //Clear the input fields that are associated with this panel
-function clearFields() {
-    $('#name').val("");
-    $('#description').val("");
-    $('.creators .creator-delete a').click();
-    $('.creators .control-group input').each(function (index) {
-        $(this).val("");
-    });
+function resetFields() {
+    $('#name').val(origName);
+    $('#description').val(origDesc);
+    displayCreators(origCreators);
+    expandPeople();
+}
+
+function displayCreators(cList) {
+	$('#ds_creators').html("");
+	if(cList.length !=0) {
+		for(var i = 0; i <= cList.length-2; i++ ) {
+			$('#ds_creators').append($('<span>').addClass("creator").append($('<span>').addClass("authname person").attr('data-creator', cList[i].trim()).text(cList[i].trim()))
+					.append($('<span>').addClass("glyphicon-remove creator-delete hiddencomplete")).append($('<span>').text(", ")));
+		}
+		$('#ds_creators').append($('<span>').addClass("creator").append($('<span>').addClass("authname person")
+				.attr('data-creator', cList[cList.length-1].trim()).text(cList[cList.length-1].trim()))
+				.append($('<span>').addClass("glyphicon-remove creator-delete hiddencomplete")));
+	}
 }
 
 // Call on Create button click. Move to create a curation object as specified
