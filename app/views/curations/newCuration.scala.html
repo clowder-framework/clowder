@@ -86,8 +86,9 @@
 			  <a id="add-creator" class="hiddencomplete" href="javascript:addCreator()" title="Click to add a Creator">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
-				<div><span class="error hiddencomplete" id="creatorerror">A creator is required </span></div>
-
+				<div><span class="error 
+				  @if(creators.length >0 ) {hiddencomplete}
+					" id="creatorerror">One or more creators are required </span></div>
 			  </div>  
 			</div>	                
  			<div class="form-group">
@@ -99,7 +100,9 @@
 				}                		
                 </label>
                 <textarea rows="4" type="text" id="description" class="form-control" >@desc</textarea>
-                <span class="error hiddencomplete" id="descerror">The abstract is a required field.</span>
+                <span class="error 
+                @if(desc.length >0 ) {hiddencomplete}
+                " id="descerror">The abstract is a required field.</span>
             </div>
             @if(!spaceList.isEmpty) {
                 <div class="form-group">
@@ -197,6 +200,27 @@
         });
         var origDesc = $('#description').val();
         displayCreators(origCreators);
+        $("#name").change( function() {
+            if($("#name").val().length == 0) {
+              $("#nameerror").show();
+            } else {
+              $("#nameerror").hide();
+            }
+        });
+        $("#description").change( function() {
+            if($("#description").val().length == 0) {
+              $("#descerror").show();
+            } else {
+              $("#descerror").hide();
+            }
+        });
+        setCreatorChangeCallback( function() {
+            if($("#ds_creators .creator").length == 0) {
+              $("#creatorerror").show();
+            } else {
+              $("#creatorerror").hide();
+            }
+        });
 	</script>
 
 }

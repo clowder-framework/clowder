@@ -10,6 +10,7 @@ function resetFields() {
 function displayCreators(cList) {
 	$('#ds_creators').html("");
 	if(cList.length !=0) {
+        $('#creatorerror').hide();
 		for(var i = 0; i <= cList.length-2; i++ ) {
 			$('#ds_creators').append($('<span>').addClass("creator").append($('<span>').addClass("authname person").attr('data-creator', cList[i].trim()).text(cList[i].trim()))
 					.append($('<span>').addClass("glyphicon-remove creator-delete hiddencomplete")).append($('<span>').text(", ")));
@@ -17,6 +18,8 @@ function displayCreators(cList) {
 		$('#ds_creators').append($('<span>').addClass("creator").append($('<span>').addClass("authname person")
 				.attr('data-creator', cList[cList.length-1].trim()).text(cList[cList.length-1].trim()))
 				.append($('<span>').addClass("glyphicon-remove creator-delete hiddencomplete")));
+	} else {
+        $('#creatorerror').show();
 	}
 }
 

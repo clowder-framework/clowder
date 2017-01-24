@@ -167,6 +167,10 @@ function addCreatorToList(newCreator) {
 	$('#add-creator').removeClass("inline");
 	$('#add-creator').css("display", "");
 	$('#aboutcreators').mouseleave();
+	if(changeCallback != null) {
+		changeCallback();
+	}
+
 }
 
 $(document).on(
@@ -209,7 +213,17 @@ function deleteCreatorFromList(creator) {
 	if (lastAuth.children().length == 3) {
 		lastAuth.children().last().remove();
 	}
+	if(changeCallback != null) {
+		changeCallback();
+	}
 }
+
+var changeCallback =null;
+function setCreatorChangeCallback(callback) {
+	changeCallback = callback;
+}
+
+
 
 $(function() {
 
