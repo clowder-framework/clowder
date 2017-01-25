@@ -313,6 +313,7 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
           .contentType("application\\json")
           .correlationId(corrId)
           .replyTo(replyQueueName)
+          .deliveryMode(2)
           .build()
       try {
         channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
