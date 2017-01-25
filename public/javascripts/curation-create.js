@@ -2,7 +2,9 @@
 //Clear the input fields that are associated with this panel
 function resetFields() {
     $('#name').val(origName);
+    $('#name').trigger('change');
     $('#description').val(origDesc);
+    $('#description').trigger('change');
     displayCreators(origCreators);
     expandPeople();
 }
