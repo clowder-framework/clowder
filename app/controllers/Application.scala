@@ -9,6 +9,8 @@ import play.api.mvc.Action
 import services._
 import models.{UUID, User, Event}
 import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+import models.DBCounts
 
 import scala.collection.mutable.ListBuffer
 
@@ -33,6 +35,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
    * Main page.
    */
   def index = UserAction(needActive = false) { implicit request =>
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
   	implicit val user = request.user
 
     var newsfeedEvents = List.empty[Event]
@@ -145,15 +149,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
        followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
       }
       case _ => {
-        val datasetsCount = datasets.count()
-        val filesCount = files.count()
-        val filesBytes = 0
-        val collectionsCount = collections.count()
-        val spacesCount = spaces.count()
-        val usersCount = users.count()
-
-        Ok(views.html.index(datasetsCount, filesCount, filesBytes, collectionsCount,
-          spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+        val counts = appConfig.getIndexCounts()
+        Ok(views.html.index(counts.numDatasets, counts.numFiles, counts.numBytes,
+          counts.numCollections, counts.numSpaces, counts.numUsers,
+          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
       }
     }
   }
@@ -415,5 +414,5 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       )
     ).as(JSON) 
   }
-  
+
 }
