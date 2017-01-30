@@ -35,23 +35,24 @@ import java.net.URLEncoder
  * Manage files.
  */
 class Files @Inject() (
-    files: FileService,
-    datasets: DatasetService,
-    queries: MultimediaQueryService,
-    comments: CommentService,
-    sections: SectionService,
-    extractions: ExtractionService,
-    dtsrequests: ExtractionRequestsService,
-    previews: PreviewService,
-    threeD: ThreeDService,
-    sparql: RdfSPARQLService,
-    users: UserService,
-    events: EventService,
-    thumbnails: ThumbnailService,
-    metadata: MetadataService,
-    contextLDService: ContextLDService,
-    spaces: SpaceService,
-    folders: FolderService) extends SecuredController {
+  files: FileService,
+  datasets: DatasetService,
+  queries: MultimediaQueryService,
+  comments: CommentService,
+  sections: SectionService,
+  extractions: ExtractionService,
+  dtsrequests: ExtractionRequestsService,
+  previews: PreviewService,
+  threeD: ThreeDService,
+  sparql: RdfSPARQLService,
+  users: UserService,
+  events: EventService,
+  thumbnails: ThumbnailService,
+  metadata: MetadataService,
+  contextLDService: ContextLDService,
+  spaces: SpaceService,
+  folders: FolderService,
+  appConfig: AppConfigurationService) extends SecuredController {
 
   /**
    * Upload form.
@@ -408,14 +409,18 @@ class Files @Inject() (
 
             var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
-            // store file
-            val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-            val uploadedFile = f
-            file match {
-              case Some(f) => {
-                current.plugin[FileDumpService].foreach {
-                  _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
-                }
+              // store file
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+              val uploadedFile = f
+              file match {
+                case Some(f) => {
+                  // Add new file & byte count to appConfig
+                  appConfig.incrementCount('files, 1)
+                  appConfig.incrementCount('bytes, f.length)
+
+                  current.plugin[FileDumpService].foreach {
+                    _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
+                  }
 
                 if (showPreviews.equals("FileLevel"))
                   flags = flags + "+filelevelshowpreviews"
@@ -504,27 +509,31 @@ class Files @Inject() (
     Logger.debug("--------- in upload ------------ ")
     user match {
       case Some(identity) => {
-        request.body.file("files[]").map { f =>
-          var nameOfFile = f.filename
-          var flags = ""
-          if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-            val thirdSeparatorIndex = nameOfFile.indexOf("__")
-            if (thirdSeparatorIndex >= 0) {
-              val firstSeparatorIndex = nameOfFile.indexOf("_")
-              val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-              flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-              nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-            }
-          }
-          Logger.debug("Uploading file " + nameOfFile)
+        request.body.file("files[]").map { f =>                     
+	          var nameOfFile = f.filename
+	          var flags = ""	          
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
+		          val thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                val firstSeparatorIndex = nameOfFile.indexOf("_")
+	                val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+	          }	       
+	        Logger.debug("Uploading file " + nameOfFile)
 
-          val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
-          // store file       
-          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-          val uploadedFile = f
-          file match {
-            case Some(f) => {
+	        // store file       
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val uploadedFile = f
+	        file match {
+	          case Some(f) => {
+              // Add new file & byte count to appConfig
+              appConfig.incrementCount('files, 1)
+              appConfig.incrementCount('bytes, f.length)
+
               val option_user = users.findByIdentity(identity)
               events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
               if (showPreviews.equals("FileLevel"))
@@ -1120,6 +1129,9 @@ class Files @Inject() (
                 // submit file for extraction
                 file match {
                   case Some(f) => {
+                    // Add new file & byte count to appConfig
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
 
                     if (showPreviews.equals("FileLevel"))
                       flags = flags + "+filelevelshowpreviews"
