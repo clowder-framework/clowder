@@ -5,14 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
-
+- Docker container to add normal/admin users for Clowder. [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167)
 ### Changed
 - Updated the POST endpoint `/api/extractors` to accept a list of extractor repositories (git, docker, svn, etc) instead of only one. [BD-1253](https://opensource.ncsa.illinois.edu/jira/browse/BD-1253)
 
 ## 1.1.0
 
 ### Added
-- Docker container to add normal/admin users for Clowder. [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167)
 - Breadcrumbs at the top of the page. [SEAD-1025](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1025)
 - Ability to submit datasets to specific extractors. [CATS-697](https://opensource.ncsa.illinois.edu/jira/browse/CATS-697)
 - Ability to ask for just number of datapoints in query. [GEOD-783](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-783)
