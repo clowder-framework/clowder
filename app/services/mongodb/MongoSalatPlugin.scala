@@ -29,7 +29,7 @@ import scala.collection.JavaConverters._
  * Mongo Salat service.
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
-  // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/medici
+  // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/clowder
   var mongoURI: MongoURI = null
 
   // hold the connection, if connection failed it will be tried to open next time
@@ -44,8 +44,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       Logger.info("mongodb.default is deprecated, please use mongodbURI")
       MongoURI(play.api.Play.configuration.getString("mongodb.default").get)
     } else {
-      Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/medici")
-      MongoURI("mongodb://127.0.0.1:27017/medici")
+      Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/clowder")
+      MongoURI("mongodb://127.0.0.1:27017/clowder")
     }
     Logger.info("Connecting to : " + mongoURI.toString())
 
@@ -183,7 +183,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
    * Returns the database for the connection
    */
-  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("medici"))
+  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("clowder"))
 
   /**
    * Returns a collection in the database
@@ -407,6 +407,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Move SHA512 from File object into file.digest metadata
     updateMongo("copy-sha512-to-metadata-and-remove-all", copySha512ToMetadataAndRemove)
+
+    // Change repository in extractors.info collection into a list
+    updateMongo("update-repository-type-in-extractors-info", updateRepositoryType)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -443,7 +446,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       val collections = Collection.count(new MongoDBObject())
       val users = SocialUserDAO.count(new MongoDBObject())
       if ((datasets != 0) || (collections != 0)) {
-        Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
+        Logger.debug("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
 
         // create roles (this is called before Global)
         if (RoleDAO.count() == 0) {
@@ -472,21 +475,21 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         collection("social.users").update(MongoDBObject(), $push("spaceandrole" -> spaceRole), multi=true)
 
       } else {
-        Logger.info("[MongoDBUpdate] : No datasets/collections found, will not create default space")
+        Logger.debug("[MongoDBUpdate] : No datasets/collections found, will not create default space")
       }
     } else {
-      Logger.info("[MongoDBUpdate] : Found spaces, will not create default space")
+      Logger.debug("[MongoDBUpdate] : Found spaces, will not create default space")
     }
   }
 
   def updateTagLength() {
     val q = MongoDBObject("tags" -> MongoDBObject("$exists" -> true, "$not" -> MongoDBObject("$size" -> 0)))
     val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
-    Logger.info("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
+    Logger.debug("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
     collection("datasets").find(q).foreach { x =>
       x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
         if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
-          Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+          Logger.debug(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
           tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
         }
       }
@@ -501,7 +504,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads.files").find(q).foreach { x =>
       x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
         if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
-          Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+          Logger.debug(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
           tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
         }
       }
@@ -516,7 +519,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("sections").find(q).foreach { x =>
       x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
         if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
-          Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+          Logger.debug(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
           tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
         }
       }
@@ -697,7 +700,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addLengthSha512PathFile() {
     val dbss = new DiskByteStorageService()
-    lazy val rootPath = Play.current.configuration.getString("medici2.diskStorage.path").getOrElse("")
+    lazy val rootPath = Play.current.configuration.getString("clowder.diskStorage.path").getOrElse("")
     for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
       val files = gridFS(prefix)
       collection(prefix + ".files").foreach { file =>
@@ -974,7 +977,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             case e: BSONException => Logger.error(s"Unable to write cleaned up ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
           }
         } else {
-          Logger.info("Removing " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          Logger.debug("Removing " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
           try {
             oldCollection.remove(MongoDBObject("_id" -> id))
           } catch {
@@ -1338,6 +1341,29 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
         catch {
           case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
+      }
+    }
+  }
+
+  /**
+    * In order to support adding multiple repositories for an extractor in extractors.info collection, changing the
+    * existing repository type from Repository to List[Repository] in those records that have not been updated yet.
+    */
+  private def updateRepositoryType(): Unit = {
+    val extractorsInfoCollection  = collection("extractors.info")
+
+    extractorsInfoCollection.foreach { extractor =>
+
+      val repository = extractor.get("repository")
+
+      if (!repository.isInstanceOf[BasicDBList]) {
+        extractor.put("repository", MongoDBList(repository))
+
+        try {
+          extractorsInfoCollection.save(extractor, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Failed to update collection extractors.info entry with id " + extractor.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
         }
       }
     }

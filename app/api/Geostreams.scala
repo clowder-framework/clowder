@@ -381,6 +381,7 @@ object Geostreams extends ApiController {
           "sensor_id" -> sensor_id.getOrElse("").toString,
           "sources" -> Json.toJson(sources),
           "attributes" -> Json.toJson(attributes))
+
         cacheFetch(description) match {
           case Some(data) => jsonp(data.through(Enumeratee.map(new String(_))), request)
           case None => {
@@ -501,7 +502,7 @@ object Geostreams extends ApiController {
 
     // combine results
     val result = properties.map{p =>
-      val elements = for(bin <- p._2.values if bin.doubles.length > 0) yield {
+      val elements = for(bin <- p._2.values if bin.doubles.length > 0 || bin.strings.size > 0) yield {
         val base = Json.obj("depth" -> bin.depth, "label" -> bin.label, "sources" -> bin.sources.toList)
 
         val raw = if (keepRaw) {
@@ -511,7 +512,11 @@ object Geostreams extends ApiController {
         }
 
         val dlen = bin.doubles.length
-        val average = Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
+        val average = if(dlen > 0) {
+          Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
+        } else {
+          Json.obj("strings" -> bin.strings.toList, "count" -> bin.strings.size)
+        }
 
         // return object combining all pieces
         base ++ bin.timeInfo ++ bin.extras ++ raw ++ average
@@ -657,7 +662,7 @@ object Geostreams extends ApiController {
     result.toMap
   }
 
-  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
+  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
@@ -694,7 +699,10 @@ object Geostreams extends ApiController {
               // TODO fix this for better grouping see MMDB-1678
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
-              if (format == "csv") {
+              if(onlyCount) {
+                cacheWrite(description, formatResult(data, format))
+                Ok(toJson(Map("datapointsLength" -> data.length)))
+              } else if (format == "csv") {
                 val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
                 Ok.chunked(cacheWrite(description, jsonToCSV(data)) &> toByteArray  &> Gzip.gzip())
                   .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),

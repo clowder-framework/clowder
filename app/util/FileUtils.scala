@@ -22,6 +22,9 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+import javax.mail.internet.MimeUtility
+import java.net.URLEncoder
+
 object FileUtils {
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
@@ -34,26 +37,6 @@ object FileUtils {
   lazy val events: EventService = DI.injector.getInstance(classOf[EventService])
   lazy val userService: UserService = DI.injector.getInstance(classOf[UserService])
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
-
-  /**
-   * Given a number return a human readable count, unlike apache.commons this will not round down. This
-   * can either return as multiples of 1000 (si=true) or 1024 (si=false).
-   */
-  def humanReadableByteCount(bytes:Long, precision:Integer=1, si:Boolean=true): String = {
-    val unit = if (si) 1000 else 1024
-    if (bytes < unit) {
-      s"${bytes} B"
-    } else {
-      val exp = (Math.log(bytes)/ Math.log(unit)).toInt
-      val pre = if (si) {
-        "kMGTPE".charAt(exp-1)
-      } else {
-        "KMGTPE".charAt(exp-1) + "i"
-      }
-      val format="%%.%df".format(precision)
-      "%.1f %sB".format(bytes / Math.pow(unit, exp), pre)
-    }
-  }
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
     getContentType(filename.getOrElse(""), contentType)
@@ -307,7 +290,7 @@ object FileUtils {
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
       licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
-    Logger.info(s"created file ${file.id}")
+    Logger.debug(s"created file ${file.id}")
 
     associateMetaData(creator, file, metadata, clowderurl)
     associateDataset(file, dataset, folder, user, multipleFile)
@@ -559,7 +542,7 @@ object FileUtils {
           case Some(f) => {
             val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, length=length, author=realUser)
             files.save(fixedfile)
-            Logger.info("Uploading Completed")
+            Logger.debug("Uploading Completed")
             Some(fixedfile)
           }
           case None => {
@@ -599,7 +582,7 @@ object FileUtils {
           case Some(f) => {
             val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
             files.save(fixedfile)
-            Logger.info("Uploading Completed")
+            Logger.debug("Uploading Completed")
             Some(fixedfile)
           }
           case None => {
@@ -746,4 +729,41 @@ object FileUtils {
   // ----------------------------------------------------------------------
   // END File upload
   // ----------------------------------------------------------------------
+  
+  //Download CONTENT-DISPOSITION encoding
+  //
+  def encodeAttachment(filename: String, userAgent: String) : String = {
+    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
+                              URLEncoder.encode(filename, "UTF-8")
+                            } else if (userAgent.indexOf("Edge") > -1){
+                              MimeUtility.encodeText(filename
+                                  .replaceAll(",","%2C")
+                                  .replaceAll("\"","%22")
+                                  .replaceAll("/","%2F")
+                                  .replaceAll("=","%3D")
+                                  .replaceAll("&","%26")
+                                  .replaceAll(":","%3A")
+                                  .replaceAll(";","%3B")
+                                  .replaceAll("\\?","%3F")
+                                  .replaceAll("\\*","%2A")
+                                  ,"utf-8","Q")
+                            } else {
+                              MimeUtility.encodeText(filename
+                                  .replaceAll("%","%25")
+                                  .replaceAll(" ","%20")
+                                  .replaceAll("\"","%22")
+                                  .replaceAll(",","%2C")
+                                  .replaceAll("/","%2F")
+                                  .replaceAll("=","%3D")
+                                  .replaceAll(":","%3A")
+                                  .replaceAll(";","%3B")
+                                  .replaceAll("\\*","%2A")
+                                  ,"utf-8","Q")
+                            }
+    Logger.debug(userAgent + ": " + filenameStar.substring(10, filenameStar.length()-2))
+    
+    //Return the complete attachement header info
+    "attachment; filename*=UTF-8''" + filenameStar
+  }
+  
 }

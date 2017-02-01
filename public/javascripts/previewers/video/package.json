@@ -1,4 +1,4 @@
 { "name" : "Video",
   "main" : "video.js",
-  "contentType" : ["video/webm", "video/mp4", "video/videoalternativeslist"]
+  "contentType" : ["video/webm", "video/mp4", "video/videoalternativeslist", "video/quicktime", "ambiguous/mov"]
   } 

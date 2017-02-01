@@ -1,4 +1,4 @@
 {
-    "tags" : [ "Dataset", "Test Suite", "Medici" ],
+    "tags" : [ "Dataset", "Test Suite", "Clowder" ],
     "extractor_id" : "ncsa.cv.face"
 }
