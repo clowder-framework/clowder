@@ -1341,6 +1341,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
         catch {
           case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }  
       }
     }
   }
