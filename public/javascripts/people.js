@@ -10,7 +10,7 @@
 
                 request.done(function (person) {
                 	var name = person.familyName + ", " + person.givenName;
-    				var html = "<a href='" + person['@@id'] + "' target=_blank>" + name
+    				var html = "<a href='" + person['@id'] + "' target=_blank>" + name
     						+ "</a>";
     				personElement.innerHTML = html;
     				if(person.hasOwnProperty('email')) {
@@ -25,7 +25,9 @@
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: " + textStatus, errorThrown);
+                	if(jqXHR.status != 404) {
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                  	}
                 });
                 }
             });
