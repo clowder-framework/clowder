@@ -13,4 +13,12 @@ case class Tag(
   extractor_id: Option[String],
   created: Date)
 
-
+object Tag {
+  implicit def toElasticsearchTag(t: Tag): ElasticsearchTag = {
+    new ElasticsearchTag(
+      t.userId.getOrElse(""),
+      t.created,
+      t.name
+    )
+  }
+}

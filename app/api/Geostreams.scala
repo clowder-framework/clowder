@@ -486,11 +486,22 @@ object Geostreams extends ApiController {
           // add values to array
           Parsers.parseDouble(f._2) match {
             case Some(v) => bin.doubles += v
-            case None => {
-              val s = Parsers.parseString(f._2)
-              if (s != "") {
-                bin.strings += s
+            case None =>
+              f._2 match {
+                case JsObject(_) => {
+                  val s = Parsers.parseString(f._2)
+                  if (s != "") {
+                    bin.array += s
+                  }
+                }
+
+                case _ => {
+                  val s = Parsers.parseString(f._2)
+                  if (s != "") {
+                    bin.strings += s
+                  }
               }
+
             }
           }
         })
@@ -502,7 +513,7 @@ object Geostreams extends ApiController {
 
     // combine results
     val result = properties.map{p =>
-      val elements = for(bin <- p._2.values if bin.doubles.length > 0 || bin.strings.size > 0) yield {
+      val elements = for(bin <- p._2.values if bin.doubles.length > 0 || bin.array.size > 0) yield {
         val base = Json.obj("depth" -> bin.depth, "label" -> bin.label, "sources" -> bin.sources.toList)
 
         val raw = if (keepRaw) {
@@ -515,7 +526,7 @@ object Geostreams extends ApiController {
         val average = if(dlen > 0) {
           Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
         } else {
-          Json.obj("strings" -> bin.strings.toList, "count" -> bin.strings.size)
+          Json.obj("array" -> bin.array.toList, "count" -> bin.array.size)
         }
 
         // return object combining all pieces
@@ -533,6 +544,7 @@ object Geostreams extends ApiController {
                        extras: JsObject,
                        timeInfo: JsObject,
                        doubles: collection.mutable.ListBuffer[Double] = collection.mutable.ListBuffer.empty[Double],
+                       array: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
                        strings: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
                        sources: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String])
 

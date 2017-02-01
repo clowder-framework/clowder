@@ -7,9 +7,11 @@ import javax.inject.{ Inject, Singleton }
 
 import com.wordnik.swagger.annotations.ApiOperation
 import models.{ ResourceRef, UUID, UserAgent, _ }
+import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
 import play.api.Play.current
 import play.api.Logger
+import play.api.Play._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.WS
@@ -17,6 +19,9 @@ import play.api.mvc.Result
 import services._
 import play.api.i18n.Messages
 
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 /**
@@ -33,34 +38,6 @@ class Metadata @Inject() (
     events: EventService,
     spaceService: SpaceService) extends ApiController {
 
-  def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
-    Logger.debug("Searching metadata")
-    val results = metadataService.search(request.body)
-    Ok(toJson(results))
-  }
-
-  def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) = PermissionAction(Permission.ViewDataset) {
-    implicit request =>
-      implicit val user = request.user
-      val response = for {
-        k <- key
-        v <- value
-      } yield {
-        val results = metadataService.search(k, v, count, user)
-        val datasetsResults = results.flatMap { d =>
-          if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-        }
-        val filesResults = results.flatMap { f =>
-          if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-        }
-        import Dataset.datasetWrites
-        import File.FileWrites
-        // Use "distinct" to remove duplicate results.
-        Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
-      }
-      response getOrElse BadRequest(toJson("You must specify key and value"))
-  }
-
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       val vocabularies = metadataService.getDefinitions()
@@ -72,6 +49,39 @@ class Metadata @Inject() (
       implicit val user = request.user
       val vocabularies = metadataService.getDefinitionsDistinctName(user)
       Ok(toJson(vocabularies))
+  }
+
+  /** Get set of metadata fields containing filter substring for autocomplete */
+  def getAutocompleteName(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
+    implicit val user = request.user
+
+    var listOfTerms = ListBuffer.empty[String]
+
+    // First, get regular vocabulary matches
+    val definitions = metadataService.getDefinitionsDistinctName(user)
+    for (md_def <- definitions) {
+      val currVal = (md_def.json \ "label").as[String]
+      if (currVal.toLowerCase startsWith query.toLowerCase) {
+        listOfTerms.append("metadata."+currVal)
+      }
+    }
+
+    // Next get Elasticsearch metadata fields if plugin available
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        val mdTerms = plugin.getAutocompleteMetadataFields(query)
+        for (term <- mdTerms) {
+          // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terra.plantcv.angle",
+          //      "metadata.Jane Doe.Alternative Title"
+          if (!(listOfTerms contains term))
+            listOfTerms.append(term)
+        }
+        Ok(toJson(listOfTerms.distinct))
+      }
+      case None => {
+        BadRequest("Elasticsearch plugin is not enabled")
+      }
+    }
   }
 
   def getDefinitionsByDataset(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
