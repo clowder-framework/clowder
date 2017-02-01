@@ -32,13 +32,13 @@
       <h4><a href=@routes.Files.file(file.fileId)>@file.filename</a>
         @if(curation.status =="In Preparation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
             @if(currentFolder.isDefined){
-              <a id="file-@file.id" title="Remove file from Publication Request" class="btn btn-link delete-file"
-              onclick="confirmDeleteResource('curation file','following file from this Publication Request','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
+              <a id="file-@file.id" title="Remove file from @Messages("curationobject.label")" class="btn btn-link delete-file"
+              onclick="confirmDeleteResource('curation file','following file from this @Messages("curationobject.label")','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
                 <span class="glyphicon glyphicon-trash"></span>
               </a>
             } else {
-                <a id="file-@file.id" title="Remove file from Publication Request" class="btn btn-link delete-file"
-                onclick="confirmDeleteResource('curation file','following file from this Publication Request','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
+                <a id="file-@file.id" title="Remove file from @Messages("curationobject.label")" class="btn btn-link delete-file"
+                onclick="confirmDeleteResource('curation file','following file from this @Messages("curationobject.label")','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
                     <span class="glyphicon glyphicon-trash"></span>
                 </a>
             }
