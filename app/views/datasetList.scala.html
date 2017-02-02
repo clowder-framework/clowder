@@ -43,9 +43,13 @@
     </div>
 
 <div class="row">
-    <div class="col-md-10">
-    </div>
-    <div class="col-md-1">
+    <div class="btn-toolbar">
+        <div class="btn-group btn-group-sm pull-right">
+            <div class="btn-group btn-group-sm pull-right">
+                <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+                <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+            </div>
+        </div>
     @status match {
         case Some(st) => {}
         case None => {
@@ -73,18 +77,18 @@
                         }
                     }
 
-                                case (_, _) => {
-                                    <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))">
-                                        <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
-                                }
-                            }
-                        }
-                        case _ => {}
+                    case (_, _) => {
+                        <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))">
+                            <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
                     }
                 }
             }
-        </div>
+            case _ => {}
+        }
+                }
+    }
     </div>
+</div>
 
         <script type="text/javascript" language="javascript">
             var removeIndicator = false;

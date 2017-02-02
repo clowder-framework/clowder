@@ -35,7 +35,8 @@ class Extractions @Inject()(
   extractors: ExtractorService,
   previews: PreviewService,
   sqarql: RdfSPARQLService,
-  thumbnails: ThumbnailService) extends ApiController {
+  thumbnails: ThumbnailService,
+  appConfig: AppConfigurationService) extends ApiController {
 
   /**
    * Uploads file for extraction and returns a file id ; It does not index the file.
@@ -95,6 +96,10 @@ class Extractions @Inject()(
                 val file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
+                    // Add new file & byte count to appConfig
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
+
                     var fileType = f.contentType
                     val id = f.id
                     fileType = f.contentType

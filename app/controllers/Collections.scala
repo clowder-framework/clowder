@@ -3,7 +3,7 @@ package controllers
 import api.Permission._
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import util.{Formatters, RequiredFieldsConfig}
+import util.{Formatters, RequiredFieldsConfig, SearchUtils}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
@@ -21,7 +21,8 @@ import play.api.i18n.Messages
 
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
-                            spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
+                            spaceService: SpaceService, users: UserService, events: EventService,
+                            appConfig: AppConfigurationService) extends SecuredController {
 
   /**
     * String name of the Space such as 'Project space' etc. parsed from conf/messages
@@ -339,6 +340,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           Logger.debug("Saving collection " + collection.name)
           collections.insert(collection)
+          appConfig.incrementCount('collections, 1)
           collection.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
@@ -351,9 +353,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
 
           //index collection
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index(SearchUtils.getElasticsearchObject(collection))
+            }
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)

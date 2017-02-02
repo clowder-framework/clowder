@@ -6,7 +6,7 @@ import java.util.{ ArrayList, Date }
 import javax.inject.{ Inject, Singleton }
 
 import Transformation.LidoToCidocConvertion
-import util.{ Parsers, Formatters }
+import util.{Parsers, Formatters, SearchUtils}
 import api.Permission
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
@@ -456,7 +456,8 @@ class MongoDBDatasetService @Inject() (
           val xmlFile = jsonToXML(theJSON)
           new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
           xmlFile.delete()
-        } else {
+        }
+        else{
           new java.io.File(resultDir + fileSep + "Results.rdf").createNewFile()
         }
         val resultFile = new java.io.File(resultDir + fileSep + "Results.rdf")
@@ -599,7 +600,8 @@ class MongoDBDatasetService @Inject() (
         }
         case None => orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
       }
-    } else {
+    }
+    else {
       orlist += MongoDBObject()
     }
     $or(orlist.map(_.asDBObject))
@@ -668,6 +670,7 @@ class MongoDBDatasetService @Inject() (
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
 
+  // TODO: This is apparently not called anywhere, can we remove?
   def findByTag(tag: String, user: Option[User]): List[Dataset] = {
     if (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
       Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
@@ -678,6 +681,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[Dataset] = {
+    // TODO: Re-implement this using Elasticsearch
     var filter = if (start == "") {
       MongoDBObject("tags.name" -> tag)
     } else {
@@ -964,7 +968,8 @@ class MongoDBDatasetService @Inject() (
         queryMap.add(MongoDBObject("$and" -> builder))
         builder = MongoDBList()
         orFound = true
-      } else {
+      }
+      else {
         var actualKey = keyTrimmed
         if (keyTrimmed.endsWith("__not")) {
           actualKey = actualKey.substring(0, actualKey.length() - 5)
@@ -987,10 +992,12 @@ class MongoDBDatasetService @Inject() (
                   realValue = "(?i)" + realValue;
                 }
                 builder += MongoDBObject(actualKey -> MongoDBObject("$not" -> realValue.r))
-              } else {
+              }
+              else{
                 builder += MongoDBObject(actualKey -> MongoDBObject("$ne" -> currValue))
               }
-            } else {
+            }
+            else {
               if (currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")) {
                 var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if (!currValue.contains(" ANYWHERE")) {
@@ -1000,7 +1007,8 @@ class MongoDBDatasetService @Inject() (
                   realValue = "(?i)" + realValue;
                 }
                 builder += MongoDBObject(actualKey -> realValue.r)
-              } else {
+              }
+              else{
                 builder += MongoDBObject(actualKey -> currValue)
               }
             }
@@ -1010,7 +1018,8 @@ class MongoDBDatasetService @Inject() (
               val currValue = searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String, Any]], "")
               val elemMatch = actualKey $elemMatch currValue
               builder.add(elemMatch)
-            } else {
+            }
+            else {
               val currValue = searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String, Any]], actualKey)
               builder += currValue
             }
@@ -1034,10 +1043,12 @@ class MongoDBDatasetService @Inject() (
                       realValue = "(?i)" + realValue;
                     }
                     objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" -> realValue.r))
-                  } else {
+                  }
+                  else{
                     objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" -> currValue))
                   }
-                } else {
+                }
+                else {
                   if (currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")) {
                     var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                     if (!currValue.contains(" ANYWHERE")) {
@@ -1047,7 +1058,8 @@ class MongoDBDatasetService @Inject() (
                       realValue = "(?i)" + realValue;
                     }
                     objectForEach += MongoDBObject(tempActualKey -> realValue.r)
-                  } else {
+                  }
+                  else{
                     objectForEach += MongoDBObject(tempActualKey -> currValue)
                   }
                 }
@@ -1057,7 +1069,8 @@ class MongoDBDatasetService @Inject() (
                   val currValue = searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String, Any]], "")
                   val elemMatch = tempActualKey $elemMatch currValue
                   objectForEach.add(elemMatch)
-                } else {
+                }
+                else {
                   val currValue = searchMetadataFormulateQuery(reqValue.asInstanceOf[java.util.LinkedHashMap[String, Any]], tempActualKey)
                   objectForEach += currValue
                 }
@@ -1073,11 +1086,14 @@ class MongoDBDatasetService @Inject() (
     if (orFound) {
       queryMap.add(MongoDBObject("$and" -> builder))
       return MongoDBObject("$or" -> queryMap)
-    } else if (!builder.isEmpty) {
+    }
+    else if (!builder.isEmpty) {
       return MongoDBObject("$and" -> builder)
-    } else if (!root.equals("")) {
+    }
+    else if (!root.equals("")) {
       return (root $exists true)
-    } else {
+    }
+    else {
       return new MongoDBObject()
     }
   }
@@ -1096,7 +1112,8 @@ class MongoDBDatasetService @Inject() (
           return true
         else
           allMatch = true
-      } else {
+      }
+      else {
         if (allMatch) {
           var isNot = false
           if (reqKeyCompare.endsWith("__not")) {
@@ -1118,12 +1135,14 @@ class MongoDBDatasetService @Inject() (
                         throw MustBreak
                       }
                     }
-                  } else {
+                  }
+                  else {
                     if (reqValue.asInstanceOf[String].trim().equals("*") || reqValue.asInstanceOf[String].trim().equalsIgnoreCase(currValue.asInstanceOf[String].trim())) {
                       matchFound = true
                     }
                   }
-                } //If search subtree remaining is not a string (ie we haven't reached a leaf yet), then remaining subtree currently examined is bound to not be a string, as the path so far was the same.
+                }
+                //If search subtree remaining is not a string (ie we haven't reached a leaf yet), then remaining subtree currently examined is bound to not be a string, as the path so far was the same.
                 //Therefore, we do maps (actually subtrees) comparison.
                 else {
                   if (currValue.isInstanceOf[com.mongodb.BasicDBList]) {
@@ -1134,7 +1153,8 @@ class MongoDBDatasetService @Inject() (
                         throw MustBreak
                       }
                     }
-                  } else {
+                  }
+                  else {
                     val currValueMap = currValue.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]]
                     if (searchMetadata(id, reqValue.asInstanceOf[java.util.LinkedHashMap[String, Any]], currValueMap)) {
                       matchFound = true
@@ -1187,8 +1207,7 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
         val filesInDataset = dataset.files map {
-          f =>
-            {
+          f => {
               files.get(f).getOrElse {
                 None
               }
@@ -1247,65 +1266,8 @@ class MongoDBDatasetService @Inject() (
   def index(id: UUID) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
-        var tagListBuffer = new ListBuffer[String]()
-
-        for (tag <- dataset.tags) {
-          tagListBuffer += tag.name
-        }
-
-        val tagsJson = new JSONArray(tagListBuffer.toList)
-
-        val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(id, false)) yield {
-          comment.text
-        }
-        val commentJson = new JSONArray(commentsByDataset)
-
-        val usrMd = getUserMetadataJSON(id)
-        val techMd = getTechnicalMetadataJSON(id)
-        val xmlMd = getXMLMetadataJSON(id)
-
-        // Create mapping in JSON-LD metadata from name -> contents
-        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-        var allMd = Map[String, JsArray]()
-        for (md <- metadataMap) {
-          if (allMd.keySet.exists(_ == md.creator.displayName)) {
-            // If we already have metadata from this creator, add this metadata to their array
-            var existingMd = allMd(md.creator.displayName).as[JsArray]
-            existingMd = existingMd :+ md.content
-            allMd += (md.creator.displayName -> existingMd)
-          } else {
-            // Otherwise add a new entry for this creator
-            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
-          }
-        }
-        val allMdStr = Json.toJson(allMd).toString()
-
-        var fileDsId = ""
-        var fileDsName = ""
-        for (fileId <- dataset.files) {
-          fileDsId = fileDsId + fileId.stringify + "  "
-          files.get(fileId).foreach(file => fileDsName = fileDsName + file.filename + "  ")
-
-        }
-
-        var dsCollsId = ""
-        var dsCollsName = ""
-
-        dataset.collections.foreach(c => {
-          collections.get(c) match {
-            case Some(collection) => {
-              dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-              dsCollsName = dsCollsName + collection.name + " %%% "
-            }
-            case None =>
-          }
-        })
-
-        val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("author", dataset.author.fullName), ("created", formatter.format(dataset.created)), ("fileId", fileDsId), ("fileName", fileDsName), ("collId", dsCollsId), ("collName", dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd), ("metadata", allMdStr)))
+          _.index(dataset, false)
         }
       }
       case None => Logger.error("Dataset not found: " + id)
@@ -1353,7 +1315,8 @@ class MongoDBDatasetService @Inject() (
     var dsMdDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
     if (dsMdDumpMoveDir.equals("")) {
       Logger.warn("Will not move dumped datasets metadata to staging directory. No staging directory set.")
-    } else {
+			}
+			else{
       if (!dsMdDumpMoveDir.endsWith(fileSep))
         dsMdDumpMoveDir = dsMdDumpMoveDir + fileSep
     }
@@ -1389,8 +1352,7 @@ class MongoDBDatasetService @Inject() (
                 Logger.warn("Could not move dumped dataset metadata to staging directory.")
                 throw new Exception("Could not move dumped dataset metadata to staging directory.")
               }
-            } catch {
-              case ex: Exception => {
+					  }catch {case ex:Exception =>{
                 val badDatasetId = dataset.id.toString
                 Logger.error("Unable to stage dumped metadata of dataset with id " + badDatasetId + ": " + ex.printStackTrace())
                 unsuccessfulDumps += badDatasetId
@@ -1423,7 +1385,8 @@ class MongoDBDatasetService @Inject() (
     var dsDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
     if (dsDumpMoveDir.equals("")) {
       Logger.warn("Will not move dumped dataset groupings to staging directory. No staging directory set.")
-    } else {
+			}
+			else{
       if (!dsDumpMoveDir.endsWith(fileSep))
         dsDumpMoveDir = dsDumpMoveDir + fileSep
     }

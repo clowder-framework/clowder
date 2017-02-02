@@ -23,12 +23,9 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
-import _root_.util.{FileUtils, JSONLD, License}
-import _root_.util.{JSONLD, License}
-import views.html.dataset
+import _root_.util.{FileUtils, JSONLD, License, SearchUtils}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
-import org.apache.commons.io.input.CountingInputStream
 
 /**
  * Dataset API.
@@ -51,7 +48,8 @@ class  Datasets @Inject()(
   spaces: SpaceService,
   folders: FolderService,
   relations: RelationService,
-  userService: UserService) extends ApiController {
+  userService: UserService,
+  appConfig: AppConfigurationService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
     notes = "This will return a sepcific dataset requested",
@@ -219,6 +217,8 @@ class  Datasets @Inject()(
         }
         case None => InternalServerError("User Not found")
       }
+      appConfig.incrementCount('datasets, 1)
+
       //event will be added whether creation is success.
       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
       datasets.index(d.id)
@@ -239,12 +239,11 @@ class  Datasets @Inject()(
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
                     current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id),
-                        List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
+                      _.index(SearchUtils.getElasticsearchObject(d))
                     }
                   } else {
                     current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
+                      _.index(SearchUtils.getElasticsearchObject(d))
                     }
                   }
 
@@ -320,6 +319,8 @@ class  Datasets @Inject()(
           case Some(id) => {
             //In this case, the dataset has been created and inserted. Now notify the space service and check
             //for the presence of existing files.
+            appConfig.incrementCount('datasets, 1)
+
             datasets.index(d.id)
             Logger.debug("About to call addDataset on spaces service")
             d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
@@ -1858,6 +1859,7 @@ class  Datasets @Inject()(
         }
         events.addObjectEvent(request.user, dataset.id, dataset.name, "delete_dataset")
         datasets.removeDataset(id)
+        appConfig.incrementCount('datasets, -1)
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "dataset", id.stringify)
