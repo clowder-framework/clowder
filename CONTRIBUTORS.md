@@ -9,6 +9,7 @@ Following is a list of contributors in alphabetical order:
 - Gregory Jansen
 - Indira Gutierrez
 - Inna Zharnitsky
+- Jim Myers
 - Jong Lee
 - Kenton McHenry
 - Luigi Marini

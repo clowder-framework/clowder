@@ -61,26 +61,37 @@ if [ $? -ne 0 ]; then
   exit -1
 fi
 
+${DEBUG} docker build --pull --tag mongo-init-$$ scripts/mongo-init
+if [ $? -ne 0 ]; then
+  echo "FAILED build of mongo-init"
+  exit -1
+fi
+
+
 # tag all versions and push if need be
 for v in $VERSION; do
   if [ "$PROJECT" = "" ]; then
     ${DEBUG} docker tag clowder-$$ clowder:${v}
     ${DEBUG} docker tag toolserver-$$ toolserver:${v}
-    echo "Tagged clowder and toolserver with ${v}"
+    ${DEBUG} docker tag mongo-init-$$ mongo-init:${v}
+    echo "Tagged clowder and toolserver and mongo-init with ${v}"
   else
     for p in ${PROJECT}; do
       ${DEBUG} docker tag clowder-$$ ${p}/clowder:${v}
       ${DEBUG} docker tag toolserver-$$ ${p}/toolserver:${v}
+      ${DEBUG} docker tag mongo-init-$$ ${p}/mongo-init:${v}
       echo "Tagged clowder toolserver with ${v}"
+      echo "Tagged clowder mongo-init with ${v}"
       if [ ! -z "$PUSH" ]; then
         ${DEBUG} docker push ${p}/clowder:${v}
         ${DEBUG} docker push ${p}/toolserver:${v}
-        echo "Pushed clowder and toolserver to dockerhub $p"
+        ${DEBUG} docker push ${p}/mongo-init:${v}
+        echo "Pushed clowder and toolserver and mongo-init to dockerhub $p"
       fi
     done
   fi
 done
 
 # cleanup
-${DEBUG} docker rmi toolserver-$$ clowder-$$
+${DEBUG} docker rmi toolserver-$$ clowder-$$ mongo-init-$$
 ${DEBUG} rm -rf docker/files

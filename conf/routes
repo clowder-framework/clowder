@@ -301,11 +301,9 @@ DELETE         /api/metadata.jsonld/:id                                         
 
 #GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
 
-GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], count: Int ?= 10)
-POST           /api/metadata/search                                                     @api.Metadata.search()
-
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/distinctdefinitions                                        @api.Metadata.getDefinitionsDistinctName()
+GET            /api/metadata/autocompletenames                                          @api.Metadata.getAutocompleteName(filter: String)
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
 PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID, spaceId: Option[String] ?= None)
@@ -588,7 +586,9 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 # SEARCH ENDPOINT
 # ----------------------------------------------------------------------
+GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND")
 GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
+GET            /api/search                                                              @api.Search.search(query: String ?= "")
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -661,7 +661,6 @@ DELETE         /api/relations/:id                                               
 POST           /api/tiles                                                               @api.ZoomIt.uploadTile
 POST           /api/geometries                                                          @api.Geometry.uploadGeometry
 POST           /api/3dTextures                                                          @api.ThreeDTexture.uploadTexture
-GET            /api/search                                                              @api.Search.search(query: String ?= "")
 POST           /api/sparqlquery                                                         @api.Search.querySPARQL
 POST           /api/projects/addproject                                                 @api.Projects.addproject(project: String)
 POST           /api/institutions/addinstitution                                         @api.Institutions.addinstitution(institution: String)
@@ -675,7 +674,6 @@ GET            /api/users/:id                                                   
 GET            /api/me                                                                  @api.Users.getUser()
 POST           /api/users/:id/updateName                                                @api.Users.updateName(id: UUID, firstName: String, lastName: String)
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
-POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID)
