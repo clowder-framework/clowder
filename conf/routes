@@ -310,7 +310,7 @@ PUT            /api/metadata/definitions/:id                                    
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition()
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
-
+GET            /api/metadata/people/:pid 		                                        @api.Metadata.getPerson(pid: String)
 # ----------------------------------------------------------------------
 # LOGOS ENDPOINT
 # ----------------------------------------------------------------------
