@@ -1,6 +1,7 @@
 package api
 
 import java.net.URL
+import java.net.URLEncoder
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
