@@ -16,9 +16,9 @@ import play.api.Logger
 import play.api.Play.current
 
 /**
- * Manipulates curation objects.
+ * Manipulates publication requests curation objects.
  */
-@Api(value="/curations", listingPath= "/api-docs.json/curations", description = "A curation object is a dataset ready for publication")
+@Api(value="/curations", listingPath= "/api-docs.json/curations", description = "A curation object is a request for publication that captures the state of a dataset ready for publication")
 @Singleton
 class CurationObjects @Inject()(datasets: DatasetService,
       curations: CurationService,
@@ -30,7 +30,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
       curationObjectController: controllers.CurationObjects,
       metadatas: MetadataService
       ) extends ApiController {
-  @ApiOperation(value = " Get Curation object ORE map",
+  @ApiOperation(value = " Get the ORE map for the proposed publication",
     httpMethod = "GET")
   def getCurationObjectOre(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
@@ -50,7 +50,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               case Some(f) => f.length
               case None => 0
             }
-
+  
             var tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson("urn:uuid:"+file.id),
@@ -155,6 +155,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
           if(commentsJson.size > 0) {
             aggregation = metadataJson ++ Map( "Comment" -> Json.toJson(JsArray(commentsJson)))
           }
+          if(c.datasets(0).tags.size > 0) {
+            aggregation = aggregation ++ Map("Keyword" -> Json.toJson(
+              Json.toJson(c.datasets(0).tags.map(_.name))
+            ))
+          }
           var parsedValue =
             Map(
               "@context" -> Json.toJson(Seq(
@@ -236,17 +241,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
             )
 
-
-          if(c.datasets(0).tags.size > 0) {
-            parsedValue = parsedValue ++ Map("Keyword" -> Json.toJson(
-              Json.toJson(c.datasets(0).tags.map(_.name))
-            ))
-          }
-
-
           Ok(Json.toJson(parsedValue))
         }
-        case None => InternalServerError("Curation Object not Found");
+        case None => InternalServerError("Publication Request not Found");
       }
 
   }
@@ -277,7 +274,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               }
             }
           }
-          case None => InternalServerError("Curation Object Not found")
+          case None => InternalServerError("Publication Request Not found")
         }
       }
       case None => InternalServerError("User not found")
@@ -285,7 +282,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   }
 
-  @ApiOperation(value = "Retract the curation object from the repository", notes = "",
+  @ApiOperation(value = "Retract the publication request", notes = "",
     responseClass = "None", httpMethod = "DELETE")
   def retractCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
@@ -299,19 +296,19 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val responseStatus = response.getStatusLine().getStatusCode()
 
           if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304 ) {
-            curations.updateStatus(curationId, "In Curation")
-            Ok(toJson(Map("status"->"success", "message"-> "Curation object retracted successfully")))
-          } else if (responseStatus == 404 && EntityUtils.toString(response.getEntity, "UTF-8") == s"RO with ID urn:uuid:$curationId does not exist") {
-            BadRequest(toJson(Map("status" -> "error", "message" ->"Curation object not found in external server")))
+            curations.updateStatus(curationId, "In Preparation")
+            Ok(toJson(Map("status"->"success", "message"-> "Publication Request successfully retracted")))
+          } else if (responseStatus == 404 && EntityUtils.toString(response.getEntity, "UTF-8") == s"Publication Request with ID urn:uuid:$curationId does not exist") {
+            BadRequest(toJson(Map("status" -> "error", "message" ->"Publication Request not found in external server")))
           } else {
             InternalServerError("Unknown error")
           }
         }
-        case None => BadRequest("Curation Object Not found")
+        case None => BadRequest("Publication Request Not found")
       }
   }
 
-  @ApiOperation(value = "Get files in curation", notes = "",
+  @ApiOperation(value = "Get files in publication request", notes = "",
     responseClass = "None", httpMethod = "GET")
   def getCurationFiles(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
@@ -320,17 +317,17 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case Some(c) => {
           Ok(toJson(Map("cf" -> curations.getCurationFiles(curations.getAllCurationFileIds(c.id)))))
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("Publication Request Not found")
       }
   }
 
-  @ApiOperation(value = "Delete a file in curation object", notes = "",
+  @ApiOperation(value = "Delete a file from a publication request", notes = "",
     responseClass = "None", httpMethod = "DELETE")
   def deleteCurationFile(curationId:UUID, parentId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       curations.get(curationId) match {
         case Some(c) => c.status match {
-          case "In Curation" => {
+          case "In Preparation" => {
             if(curationId == parentId){
               curations.removeCurationFile("dataset", parentId, curationFileId)
             } else {
@@ -339,20 +336,20 @@ class CurationObjects @Inject()(datasets: DatasetService,
             curations.deleteCurationFile( curationFileId)
             Ok(toJson("Success"))
           }
-          case _ => InternalServerError("Cannot modify Curation Object ")
+          case _ => InternalServerError("Cannot modify Publication Request")
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("Publication Request Not found")
       }
 
   }
 
-  @ApiOperation(value = "Delete a folder in curation object", notes = "",
+  @ApiOperation(value = "Delete a folder from a publication request", notes = "",
     responseClass = "None", httpMethod = "DELETE")
   def deleteCurationFolder(curationId:UUID, parentId: UUID, curationFolderId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       curations.get(curationId) match {
         case Some(c) => c.status match {
-          case "In Curation" => {
+          case "In Preparation" => {
             if(curationId == parentId){
               curations.removeCurationFolder("dataset", parentId, curationFolderId)
             } else {
@@ -361,27 +358,27 @@ class CurationObjects @Inject()(datasets: DatasetService,
             curations.deleteCurationFolder( curationFolderId)
             Ok(toJson("Success"))
           }
-          case _ => InternalServerError("Cannot modify Curation Object ")
+          case _ => InternalServerError("Cannot modify Publication Request")
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("Publication Request Not found")
       }
   }
 
   /**
-    * Endpoint for receiving status/ uri from repository.
+    * Endpoint for receiving publication success+PID message from publication services.
     */
   def savePublishedObject(id: UUID) = AuthenticatedAction (parse.json) {
     implicit request =>
-      Logger.debug("get infomation from repository")
+      Logger.debug("get infomation from SEAD services")
 
       curations.get(id) match {
 
         case Some(c) => {
           c.status match {
 
-            case "In Curation" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object hasn't been submitted yet.")))
+            case "In Preparation" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Publication Request hasn't been submitted yet.")))
             //sead2 receives status once from repository,
-            case "Published" | "ERROR" | "Reject" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object already received status from repository.")))
+            case "Published" | "ERROR" | "Reject" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Final status already received for this Publication Request.")))
             case "Submitted" => {
               //parse status from request's body
               val statusList = (request.body \ "status").asOpt[String]
@@ -396,7 +393,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                         //set published when uri is provided
                         curations.setPublished(id)
                         if (externalIdentifier.startsWith("doi:") || externalIdentifier.startsWith("10.")) {
-                          val DOI_PREFIX = "http://dx.doi.org/"
+                          val DOI_PREFIX = "http://doi.org/"
                           curations.updateExternalIdentifier(id, new URI(DOI_PREFIX + externalIdentifier.replaceAll("^doi:", "")))
                         } else {
                           curations.updateExternalIdentifier(id, new URI(externalIdentifier))
@@ -420,7 +417,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   (request.body \ "uri").asOpt[String].map {
                     externalIdentifier => {
                       if (externalIdentifier.startsWith("doi:") || externalIdentifier.startsWith("10.")) {
-                        val DOI_PREFIX = "http://dx.doi.org/"
+                        val DOI_PREFIX = "http://doi.org/"
                         curations.updateExternalIdentifier(id, new URI(DOI_PREFIX + externalIdentifier.replaceAll("^doi:", "")))
                       } else {
                         curations.updateExternalIdentifier(id, new URI(externalIdentifier))
@@ -430,13 +427,13 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   Ok(toJson(Map("status" -> "OK")))
                 }
                 //multiple status
-                case _ => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object has unrecognized status.")))
+                case _ => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Publication Request has unrecognized status.")))
               }
 
             }
           }
         }
-        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
+        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Publication Request not found.")))
       }
   }
 
@@ -447,7 +444,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
         val metadataDefinitions  = metadatas.getDefinitions(Some(curationObject.space))
         Ok(toJson(metadataDefinitions.toList))
       }
-      case None => BadRequest(toJson("The requested curation object does not exist"))
+      case None => BadRequest(toJson("The publication request does not exist"))
     }
   }
 
@@ -458,7 +455,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
         val metadataDefinitions = metadatas.getDefinitions(Some(curationObject.space))
         Ok(toJson(metadataDefinitions.toList))
       }
-      case None => BadRequest(toJson("There is no curation object associated with that curationFile"))
+      case None => BadRequest(toJson("There is no publication request associated with this File"))
     }
   }
 

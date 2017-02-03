@@ -2,6 +2,7 @@ package controllers
 
 import java.util.Date
 import javax.inject.Inject
+import api.Permission._
 import api.{UserRequest, Permission}
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
@@ -13,7 +14,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import services._
-import _root_.util.RequiredFieldsConfig
+import _root_.util.{Formatters, RequiredFieldsConfig}
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Future, Await}
@@ -24,7 +25,7 @@ import play.api.libs.json.Reads._
 
 
 /**
- * Methods for interacting with the curation objects in the staging area.
+ * Methods for interacting with the Curation Objects (now referred to as Publication Requests) in the staging area.
  */
 class CurationObjects @Inject()(
   curations: CurationService,
@@ -72,8 +73,65 @@ class CurationObjects @Inject()(
   }
 
   /**
-   * Controller flow to create a new curation object. On success,
-   * the browser is redirected to the new Curation page.
+    * List Publication Requests.
+    */
+  def list(when: String, date: String, limit: Int, space:Option[String]) = UserAction(needActive=false) { implicit request =>
+      implicit val user = request.user
+
+      val nextPage = (when == "a")
+      val curationObjectSpace = space.flatMap(o => spaces.get(UUID(o)))
+      val title: Option[String] = Some(curationObjectSpace.get.name)
+
+      val curationObjectList: List[CurationObject] = {
+          if (date != "") {
+              curations.listSpace(date, nextPage, Some(limit), space)
+          } else {
+              curations.listSpace(Some(limit), space)
+          }
+      }
+
+      // check to see if there is a prev page
+      val prev = if (curationObjectList.nonEmpty && date != "") {
+          val first = Formatters.iso8601(curationObjectList.head.created)
+          val ds = curations.listSpace(first, nextPage = false, Some(1), space)
+
+          if (ds.nonEmpty && ds.head.id != curationObjectList.head.id) {
+              first
+          } else {
+              ""
+          }
+      } else {
+          ""
+      }
+
+      // check to see if there is a next page
+      val next = if (curationObjectList.nonEmpty) {
+          val last = Formatters.iso8601(curationObjectList.last.created)
+          val ds = curations.listSpace(last, nextPage=true, Some(1), space)
+          if (ds.nonEmpty && ds.head.id != curationObjectList.last.id) {
+              last
+          } else {
+              ""
+          }
+      } else {
+          ""
+      }
+
+      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+      val viewMode: Option[String] =
+          request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+          }
+
+      Ok(views.html.curationObjectList(curationObjectList, prev, next, limit, viewMode, space, title))
+  }
+
+  /**
+   * Controller flow to create a new publication request/curation object. On success,
+   * the browser is redirected to the new Publication Request page.
    */
   def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
 
@@ -136,7 +194,7 @@ class CurationObjects @Inject()(
                 files = newFiles,
                 folders = List.empty,
                 repository = None,
-                status = "In Curation",
+                status = "In Preparation",
                 creators = COCreators(0).split(",").toList)
 
               // insert curation
@@ -223,7 +281,7 @@ class CurationObjects @Inject()(
         folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId, requestHost))
       }
       case None => {
-        Logger.error("Curation Folder Not found")
+        Logger.error("Folder Not found in Publication Request")
 
       }
     }
@@ -241,7 +299,7 @@ class CurationObjects @Inject()(
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             true, false, c.creators))
 
-        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+        case None => BadRequest(views.html.notFound("Publication Request does not exist."))
       }
   }
 
@@ -258,12 +316,12 @@ class CurationObjects @Inject()(
 
               Redirect(routes.CurationObjects.getCurationObject(id))
           }
-          case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+          case None => BadRequest(views.html.notFound("Publication Request does not exist."))
       }
   }
 
   /**
-   * Delete curation object.
+   * Delete publication request / curation object.
    */
   def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
@@ -271,14 +329,14 @@ class CurationObjects @Inject()(
 
       curations.get(id) match {
         case Some(c) => {
-          Logger.debug("delete Curation object: " + c.id)
+          Logger.debug("delete Publication Request / Curation object: " + c.id)
           val spaceId = c.space
 
           curations.remove(id)
           //spaces.get(spaceId) is checked in Space.stagingArea
           Redirect(routes.Spaces.stagingArea(spaceId))
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("Publication Request Not found")
       }
   }
 
@@ -286,23 +344,28 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(cOld) => {
-        // this update is not written into MongoDB, only for page view purpose
-        val c = datasets.get(cOld.datasets(0).id) match {
-          case Some(dataset) => cOld.copy(datasets = List(dataset))
-          // dataset is deleted
-          case None => cOld
-        }
-        // metadata of curation files are getting from getUpdatedFilesAndFolders
-        val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-        val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
-        if (c.status != "In Curation") {
-          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit ))
-        } else {
-          Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
+        spaces.get(cOld.space) match {
+          case Some(s) => {
+            // this update is not written into MongoDB, only for page view purpose
+            val c = datasets.get(cOld.datasets(0).id) match {
+              case Some(dataset) => cOld.copy(datasets = List(dataset))
+              // dataset is deleted
+              case None => cOld
+            }
+            // metadata of curation files are getting from getUpdatedFilesAndFolders
+            val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
+            val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+            val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
+            if (c.status != "In Preparation") {
+              Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit, s.name ))
+            } else {
+              Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
+            }
+          }
+          case None => BadRequest(views.html.notFound("Space does not exist."))
         }
       }
-      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+      case None => BadRequest(views.html.notFound("Publication Request does not exist."))
     }
   }
 
@@ -354,14 +417,14 @@ class CurationObjects @Inject()(
                 val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
                 Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
               }
-              case None => BadRequest(views.html.notFound("Curation Folder does not exist."))
+              case None => BadRequest(views.html.notFound("Folder does not exist in Publication Request."))
             }
           }
 
         }
 
       }
-      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+      case None => BadRequest(views.html.notFound("Publication Request does not exist."))
     }
   }
 
@@ -394,7 +457,7 @@ class CurationObjects @Inject()(
               }
 
             }
-            case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+            case None => BadRequest(views.html.notFound("Publication Request does not exist."))
           }
   }
 
@@ -603,7 +666,7 @@ class CurationObjects @Inject()(
               val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository, repPreferences))
             }
-            case None => InternalServerError("Curation Object not found")
+            case None => InternalServerError("Publication Request not found")
           }
         }
         case None => InternalServerError("User not found")
@@ -818,7 +881,7 @@ class CurationObjects @Inject()(
             }
         }
       }
-      case None => Future(InternalServerError(toJson("Curation object not found.")))
+      case None => Future(InternalServerError(toJson("Publication Request not found.")))
     }
   }
 

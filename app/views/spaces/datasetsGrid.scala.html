@@ -1,4 +1,4 @@
-@(datasetsList: List[Dataset], space: String)(implicit user: Option[models.User])
+@(datasetsList: List[Dataset], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.i18n.Messages
@@ -7,9 +7,19 @@
 <p>
     <span class="small">@Messages("recent.message", Messages("datasets.title").toLowerCase)</span>
     <span class="pull-right">
-        <a href="@(routes.Datasets.sortedListInSpace(space,0,12))" class="btn btn-link btn-xs">
-            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
-        </a>
+    
+            @isPublic match {
+            case Some(b) => {
+                <a href="@(routes.Datasets.sortedListInSpace(Some(space.id.stringify),0,12, Some("publicAll")))" class="btn btn-link btn-xs">
+		            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+        		</a>
+         	}
+            case None => {
+                <a href="@(routes.Datasets.sortedListInSpace(Some(space.id.stringify),0,12)" class="btn btn-link btn-xs">
+                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                </a>
+            }
+        }
     </span>
 </p>
 
@@ -17,8 +27,7 @@
     <div class="col-md-12">
         <div id="masonry-datasets">
         @datasetsList.map { dataset =>
-          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
-
+                @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)))
         }
         </div>
     </div>

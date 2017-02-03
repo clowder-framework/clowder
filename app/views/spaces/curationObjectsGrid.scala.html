@@ -1,0 +1,30 @@
+@(curationObjectsList: List[CurationObject], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
+
+@import api.Permission
+@import play.api.i18n.Messages
+@util.masonry()
+
+<p>
+    <span class="small">@Messages("recent.message", "publications")</span>
+    <span class="pull-right">
+        <a href="@routes.CurationObjects.list("", "", 4, Some(space.id.stringify))" class="btn btn-link btn-xs">
+            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", "Published Datasets")
+        </a>
+    </span>
+</p>
+
+<div class="row" id="tile-view">
+    <div class="col-md-12">
+        <div id="masonry-datasets">
+            @curationObjectsList.map { curationObject =>
+                @curations.tile(curationObject, Some(space.id.stringify), "col-lg-4 col-md-4 col-sm-4")
+            }
+        </div>
+    </div>
+</div>
+
+@if(!user.isDefined) {
+    <script type="text/javascript">
+            $('#create-dataset').addClass('disabled');
+    </script>
+}

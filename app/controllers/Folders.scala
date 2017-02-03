@@ -1,25 +1,50 @@
 package controllers
 
 import api.Permission
-import models.{Folder, ResourceRef, UUID}
+import models.{ProjectSpace, Folder, ResourceRef, UUID}
 import play.api.Logger
 import play.api.libs.json.Json._
 import services._
 import javax.inject.Inject
 import java.util.Date
 
+import scala.collection.immutable.List
+import scala.collection.mutable.ListBuffer
+
+
 /**
   * * Folders are ways of organizing files within datasets. They can contain files and folders
   */
-class Folders @Inject()(datasets: DatasetService, folders: FolderService, events: EventService) extends SecuredController{
+class Folders @Inject()(datasets: DatasetService, folders: FolderService, events: EventService, spaceService: SpaceService) extends SecuredController{
 
   def addFiles(id: UUID, folderId: String) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
+        var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+        dataset.spaces.map(sp =>
+          spaceService.get(sp) match {
+            case Some(s) => datasetSpaces =  s :: datasetSpaces
+            case None =>
+          })
         folders.get(UUID(folderId)) match {
-          case Some(folder) => Ok(views.html.datasets.addFiles(dataset, Some(folder)))
-          case None => Ok(views.html.datasets.addFiles(dataset, None))
+          case Some(folder) => {
+            var folderHierarchy = new ListBuffer[Folder]()
+            folderHierarchy += folder
+            var f1: Folder = folder
+            while(f1.parentType == "folder") {
+              folders.get(f1.parentId) match {
+                case Some(fparent) => {
+                  folderHierarchy += fparent
+                  f1 = fparent
+                }
+                case None =>
+              }
+            }
+            Ok(views.html.datasets.addFiles(dataset, Some(folder), datasetSpaces, folderHierarchy.reverse.toList))
+          }
+          case None => Ok(views.html.datasets.addFiles(dataset, None, datasetSpaces, List.empty))
         }
       }
       case None => {

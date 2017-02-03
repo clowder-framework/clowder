@@ -18,7 +18,7 @@
         <ol class="breadcrumb">
             @(spaceId, spaceName) match {
                 case (Some(id), Some(name)) => {
-                    <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
+                    <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a></li>
                     @collection match {
                         case Some(coll) => {
                             <li><span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)" title="@name"> @Html(ellipsize(coll.name,18))</a></li>

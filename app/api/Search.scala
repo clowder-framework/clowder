@@ -6,100 +6,47 @@ import scala.collection.mutable.{ListBuffer, HashMap}
 import scala.collection.JavaConversions.mapAsScalaMap
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import util.DistancePriorityQueue
-import util.SearchResult
-import util.MultimediaIndex
-import play.api.libs.json.JsValue
+import util.{SearchUtils, SearchResult}
+import play.api.libs.json.{JsObject, Json, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{Inject, Singleton}
 import play.api.Play.current
 import play.api.Play.configuration
-import models.{ResourceRef, UUID, MultimediaDistance}
+import models._
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 @Singleton
-class Search @Inject() (files: FileService, datasets: DatasetService, collections: CollectionService, previews: PreviewService, queries: MultimediaQueryService, sparql: RdfSPARQLService)  extends ApiController {
-  /**
-   * Search results.
-   */
+class Search @Inject() (
+   files: FileService,
+   datasets: DatasetService,
+   collections: CollectionService,
+   previews: PreviewService,
+   queries: MultimediaQueryService,
+   sparql: RdfSPARQLService)  extends ApiController {
+
+  /** Search using a simple text string */
   def search(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        Logger.debug("Searching for: " + query)
+        var filesFound = ListBuffer.empty[String]
+        var datasetsFound = ListBuffer.empty[String]
+        var collectionsFound = ListBuffer.empty[String]
 
-        var filesFound = ListBuffer.empty[models.File]
-        var datasetsFound = ListBuffer.empty[models.Dataset]
-        var collectionsFound = ListBuffer.empty[models.Collection]
+        val response = plugin.search(query.replaceAll("([:/\\\\])", "\\\\$1"))
 
-        if (query != "") {
-          
-          val result = current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([:/\\\\])", "\\\\$1"))}
-          
-          result match {
-            case Some(searchResponse) => {
-              for (hit <- searchResponse.getHits().getHits()) {
-                Logger.debug("Computing search result " + hit.getId())
-                Logger.info("Fields: ")
-                for ((key, value) <- mapAsScalaMap(hit.getFields())) {
-                  Logger.info(value.getName + " = " + value.getValue())
-                }
-                if (hit.getType() == "file") {
-                  files.get(UUID(hit.getId())) match {
-                    case Some(file) => {
-                      Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
-                      Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
-                      //Logger.debug("Search result found file " + hit.getId()); files += file
-
-                      filesFound += file
-
-                    }
-                    case None => Logger.debug("File not found " + hit.getId())
-                   }
-                  } else if (hit.getType() == "dataset") {
-                    Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
-                    Logger.debug("DATASETS:Dataset.id=" + hit.getId());
-                    datasets.get(UUID(hit.getId())) match {
-                      case Some(dataset) =>
-                        Logger.debug("Search result found dataset" + hit.getId()); datasetsFound += dataset
-                      case None => {
-                        Logger.debug("Dataset not found " + hit.getId())
-                        //Redirect(routes.Datasets.dataset(hit.getId))
-                      }
-                    }
-                  }
-                else if (hit.getType() == "collection") {
-                  Logger.debug("COLLECTIONS:hits.hits._source: Search result found collection " + hit.getSource().get("name"))
-                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId())
-                  
-                  collections.get(UUID(hit.getId())) match {
-                    case Some(collection) =>
-                      Logger.debug("Search result found collection" + hit.getId()); collectionsFound += collection
-                    case None => {
-                      Logger.debug("Collection not found " + hit.getId())
-                    }
-                  }
-                  
-                }
-              }
-             }
-              case None => Logger.debug("Search returned no results")
-              
-            }
+        for (resource <- response) {
+          resource.resourceType match {
+            case ResourceRef.file => filesFound += resource.id.stringify
+            case ResourceRef.dataset => datasetsFound += resource.id.stringify
+            case ResourceRef.collection => collectionsFound += resource.id.stringify
+          }
         }
-        
-        val filesJson = toJson(for(currFile <- filesFound.toList) yield {
-          currFile.id.stringify
-        } )
-        val datasetsJson = toJson(for(currDataset <- datasetsFound.toList) yield {
-          currDataset.id.stringify
-        } )
-        val collectionsJson = toJson(for(currCollection <- collectionsFound.toList) yield {
-          currCollection.id.stringify
-        } )
-        
-        val fullJSON = toJson(Map[String,JsValue]("files" -> filesJson, "datasets" -> datasetsJson, "collections" -> collectionsJson))
-        
-        Ok(fullJSON)
+
+        Ok(toJson( Map[String,JsValue](
+          "files" -> toJson(filesFound),
+          "datasets" -> toJson(datasetsFound),
+          "collections" -> toJson(collectionsFound)
+        )))
       }
      case None => {
        Logger.debug("Search plugin not enabled")
@@ -107,14 +54,47 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
        }
     }
   }
-  
+
+  /** Search using string-encoded Json object (e.g. built by Advanced Search form) */
+  def searchJson(query: String, grouping: String) = PermissionAction(Permission.ViewDataset) {
+    implicit request =>
+      implicit val user = request.user
+
+      current.plugin[ElasticsearchPlugin] match {
+        case Some(plugin) => {
+          val queryList = Json.parse(query).as[List[JsValue]]
+          val results = plugin.search(queryList, grouping)
+
+          val collectionsResults = results.flatMap { c =>
+            if (c.resourceType == ResourceRef.collection) collections.get(c.id) else None
+          }
+          val datasetsResults = results.flatMap { d =>
+            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
+          }
+          val filesResults = results.flatMap { f =>
+            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
+          }
+
+          // Use "distinct" to remove duplicate results.
+          Ok(JsObject(Seq(
+            "datasets" -> toJson(datasetsResults.distinct),
+            "files" -> toJson(filesResults.distinct),
+            "collections" -> toJson(collectionsResults.distinct)
+          )))
+        }
+        case None => {
+          BadRequest("Elasticsearch plugin could not be reached")
+        }
+      }
+  }
+
   def querySPARQL() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       configuration.getString("userdfSPARQLStore").getOrElse("no") match {
         case "yes" => {
           val queryText = request.body.asFormUrlEncoded.get("query").apply(0)
-          Logger.info("whole msg: " + request.toString)
+          Logger.debug("whole msg: " + request.toString)
           val resultsString = sparql.sparqlQuery(queryText)
-          Logger.info("SPARQL query results: " + resultsString)
+          Logger.debug("SPARQL query results: " + resultsString)
           Ok(resultsString)
         }
         case _ => {
@@ -123,7 +103,6 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
         }
       }
   }
-
 
   /**
    * Search MultimediaFeatures.

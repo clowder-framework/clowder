@@ -3,7 +3,7 @@ package controllers
 import api.Permission._
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import util.{ Formatters, RequiredFieldsConfig, SortingUtils }
+import util.{ Formatters, RequiredFieldsConfig, SortingUtils, SearchUtils }
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{ Inject, Singleton }
@@ -21,7 +21,8 @@ import play.api.i18n.Messages
 
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
-    spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
+                            spaceService: SpaceService, users: UserService, events: EventService,
+                            appConfig: AppConfigurationService) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc. parsed from conf/messages
@@ -224,7 +225,15 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     implicit val user = request.user
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val ownerName = person match {
+      case Some(p) => Some(p.fullName)
+      case None => None
+    }
     val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val spaceName = collectionSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }
     var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("collections.title")))
 
     val collectionList = person match {
@@ -348,7 +357,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", s, "space"))
       }
-      case _ => Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+      case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, spaceName, title, owner, ownerName, when, date))
     }
   }
 
@@ -392,7 +401,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         var collection: Collection = null
         if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
           collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty)
-        } else {
+          }
+          else {
           val stringSpaces = colSpace(0).split(",").toList
           val colSpaces: List[UUID] = stringSpaces.map(aSpace => if (aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
           var root_spaces = List.empty[UUID]
@@ -404,9 +414,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         Logger.debug("Saving collection " + collection.name)
         collections.insert(collection)
+          appConfig.incrementCount('collections, 1)
         collection.spaces.map {
-          sp =>
-            spaceService.get(sp) match {
+            sp => spaceService.get(sp) match {
               case Some(s) => {
                 spaces.addCollection(collection.id, s.id, user)
                 collections.addToRootSpaces(collection.id, s.id)
@@ -417,11 +427,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         }
 
         //index collection
-        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "collection", collection.id,
-            List(("name", collection.name), ("description", collection.description), ("created", dateFormat.format(new Date()))))
-        }
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index(SearchUtils.getElasticsearchObject(collection))
+            }
 
         //Add to Events Table
         val option_user = users.findByIdentity(identity)
@@ -697,8 +705,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         for (k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += (k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase))
 
         if (userList.nonEmpty) {
-          val currUserIsAuthor = user.get.id.equals(collection.author.id)
-          Ok(views.html.collections.users(collection, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
+          Ok(views.html.collections.users(collection, userListSpaceRoleTupleMap, userList))
         } else Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: No users found for collection $id.")
       }
       case None => Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: Collection $id not found.")
@@ -724,7 +731,15 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
-    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val ownerName = person match {
+      case Some(p) => Some(p.fullName)
+      case None => None
+    }
+    val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val spaceName = collectionSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }
 
     val parentCollection = collections.get(UUID(parentCollectionId))
     var title: Option[String] = Some(Messages("collections.title"))

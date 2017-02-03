@@ -23,8 +23,13 @@ import scala.util.Try
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService,
-  collectionService: CollectionService, events: EventService, datasets: DatasetService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService,
+                       userService: UserService,
+                       datasetService: DatasetService,
+                       collectionService: CollectionService,
+                       events: EventService,
+                       datasets: DatasetService,
+                       appConfig: AppConfigurationService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -43,6 +48,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           datasetCount = 0, userCount = 0, metadata = List.empty)
         spaces.insert(c) match {
           case Some(id) => {
+            appConfig.incrementCount('spaces, 1)
             events.addObjectEvent(request.user, c.id, c.name, "create_space")
             Ok(toJson(Map("id" -> id)))
           }
@@ -61,7 +67,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
-
+        appConfig.incrementCount('spaces, -1)
         events.addObjectEvent(request.user , space.id, space.name, "delete_space")
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request), "Space", "removed", space.id.stringify, space.name)

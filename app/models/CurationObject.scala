@@ -6,7 +6,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 
 /**
- * A Curation Object assists researchers and curators to identify sets of resources for publication.
+ * A Curation Object represents a Publication Request, assisting researchers and curators in identifying sets of resources for publication.
  */
 case class CurationObject (
   id: UUID = UUID.generate,

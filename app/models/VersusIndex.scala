@@ -1,5 +1,5 @@
 /*
- * Used to pass information about an index between Medici and Versus.
+ * Used to pass information about an index between Clowder and Versus.
  * Used by VersusPlugin.
  */
 package models

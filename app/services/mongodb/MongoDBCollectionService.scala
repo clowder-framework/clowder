@@ -13,7 +13,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
 import play.api.Logger
-import util.Formatters
+import util.{Formatters, SearchUtils}
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import services._
@@ -362,7 +362,7 @@ class MongoDBCollectionService @Inject() (
     	Collection.find(filter).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
-      Logger.info("After " + sinceDate)
+      Logger.debug("After " + sinceDate)
       Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
@@ -381,7 +381,7 @@ class MongoDBCollectionService @Inject() (
     } else {
       order = MongoDBObject("created" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
-      Logger.info("Before " + sinceDate)
+      Logger.debug("Before " + sinceDate)
       Collection.find(filter ++ ("created" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
@@ -397,7 +397,7 @@ class MongoDBCollectionService @Inject() (
       collectionList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Logger.info("After " + sinceDate)
+      Logger.debug("After " + sinceDate)
       var collectionList = Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
       collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
@@ -416,7 +416,7 @@ class MongoDBCollectionService @Inject() (
     } else {
       order = MongoDBObject("created"-> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
-      Logger.info("Before " + sinceDate)
+      Logger.debug("Before " + sinceDate)
       var collectionList = Collection.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
       collectionList = collectionList.filter(_ != collectionList.last)
       collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
@@ -530,7 +530,7 @@ class MongoDBCollectionService @Inject() (
                     if (Permission.checkPermission(user, Permission.AddResourceToSpace,ResourceRef(ResourceRef.space, space.id))){
                       spaceService.addDataset(datasetId, collectionSpace)
                     } else
-                      Logger.info("User does not have permission to add datasets to space " + space.id)
+                      Logger.debug("User does not have permission to add datasets to space " + space.id)
                   }
                 }
                 case None => Logger.error("No space found for : " + collectionSpace)
@@ -716,10 +716,10 @@ class MongoDBCollectionService @Inject() (
 	        	  }
 	          }
 
-              Logger.info("Removing dataset from collection completed")
+              Logger.debug("Removing dataset from collection completed")
             }
             else{
-              Logger.info("Dataset was already out of the collection.")
+              Logger.debug("Dataset was already out of the collection.")
             }
             Success
           }
@@ -821,20 +821,8 @@ class MongoDBCollectionService @Inject() (
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
       case Some(collection) => {
-
-        var dsCollsId = ""
-        var dsCollsName = ""
-
-        for(dataset <- datasets.listCollection(id.stringify)){
-          dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
-          dsCollsName = dsCollsName + dataset.name + " %%% "
-        }
-
-	    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "collection", id,
-            List(("name", collection.name), ("description", collection.description), ("created",formatter.format(collection.created)), ("datasetId",dsCollsId),("datasetName",dsCollsName)))
+          _.index(collection, false)
         }
       }
       case None => Logger.error("Collection not found: " + id.stringify)
@@ -902,10 +890,10 @@ class MongoDBCollectionService @Inject() (
               //Check if any of the remaining spaces come from a parent or not. If not, add it to the root_spaces
               syncUpRootSpaces(sub_collection.id, sub_collection.root_spaces)
 
-              Logger.info("Removing subcollection from collection completed")
+              Logger.debug("Removing subcollection from collection completed")
             }
             else{
-              Logger.info("Subcollection was already out of the collection.")
+              Logger.debug("Subcollection was already out of the collection.")
             }
             Success
           }

@@ -20,6 +20,9 @@ trait MetadataService {
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata]
 
+  /** Get Extractor metadata by attachTo, from a specific extractor if given */
+  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: String): List[Metadata]
+
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent:String): List[Metadata]
 
@@ -27,7 +30,10 @@ trait MetadataService {
   def removeMetadata(metadataId: UUID)
 
   /** Remove metadata by attachTo*/
-  def removeMetadataByAttachTo(resourceRef: ResourceRef)
+  def removeMetadataByAttachTo(resourceRef: ResourceRef): Long
+
+  /** Remove metadata by attachTo from a specific extractor */
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String): Long
   
   /** Get metadata context if available */
   def getMetadataContext(metadataId: UUID): Option[JsValue]
@@ -61,12 +67,6 @@ trait MetadataService {
 
   /** Delete vocabulary definitions**/
   def deleteDefinition(id: UUID)
-
-  /** Search for resources matching a particular query **/
-  def search(query: JsValue): List[ResourceRef]
-
-  /** Search for resources by key value pairs in the content of the metadata document **/
-  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef]
 
   /** Search for metadata that have a key in a dataset **/
   def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata]

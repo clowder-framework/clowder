@@ -6,8 +6,10 @@ Following is a list of contributors in alphabetical order:
 - Chris Navarro
 - Constantinos Sophocleous
 - Gene Roeder
+- Gregory Jansen
 - Indira Gutierrez
 - Inna Zharnitsky
+- Jim Myers
 - Jong Lee
 - Kenton McHenry
 - Luigi Marini

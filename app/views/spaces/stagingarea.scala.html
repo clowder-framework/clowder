@@ -6,7 +6,7 @@
     <div class="row">
         <div class="col-md-12">
             <ol class="breadcrumb">
-                <li><span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name,18))</a></li>
+                <li><span class="glyphicon glyphicon-hdd"></span>  <a href="@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name,18))</a></li>
                 <li><span class="glyphicon glyphicon-book"></span> Staging Area</li>
 
             </ol>
@@ -23,7 +23,7 @@
                             @if(curObject.status == "Submitted") {
                                 <div id="@curObject.id" class="panel-heading text-center submitted">
                             } else {
-                                @if(curObject.status == "In Curation") {
+                                @if(curObject.status == "In Preparation") {
                                 <div id="@curObject.id" class="panel-heading text-center in-curation">
                                     } else {
                                 <div id="@curObject.id" class="panel-heading text-center publish">

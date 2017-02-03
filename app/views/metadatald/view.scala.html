@@ -82,7 +82,11 @@
                                             } else {
                                                 @key:
                                             }
-                                        @printContent(agent,value,contextId,contextURL,resourceId)
+                                            @if(key.equals("Creator")||key.equals("Contact")) {
+                        						@printPerson(agent,value,contextId,contextURL,resourceId)
+						                    } else {
+                                                @printContent(agent,value,contextId,contextURL,resourceId)
+                                            }
                                     }
                                 } else {
                                     @contextURL match {
@@ -118,12 +122,29 @@
         }
     }
 
+    @printPerson(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID) = {
+    	@content match {
+    		case s: JsString => {
+    			@if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+    				<span class='person'>@s.value</span>
+    			} else {
+    				@if(s.value.startsWith("http")) {
+                    	<a target="_blank" href="@s.value">@s.value</a>
+                	} else {
+                    	@s.value
+	                }
+                }
+            }
+            case _ => {@content}
+        }
+	}
+
     @printHeader(agent: Agent, date: java.util.Date) = {
         @agent.operation by
         @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                 @if(user.isDefined) {
-                    <a href= "@routes.Profile.viewProfileUUID(agent.id)">@agent.displayName</a>
+                    <a href= "@routes.Profile.viewProfileUUID(agent.asInstanceOf[UserAgent].user.id)">@agent.displayName</a>
                 } else {
                     @agent.displayName
                 }
@@ -173,6 +194,10 @@
     }
 
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+    <script src="@routes.Assets.at("javascripts/people.js")" type="text/javascript"></script>
+    }
+       
     <script>
         $(function () {
             $('[data-toggle="tooltip"]').tooltip();
@@ -235,22 +260,27 @@
                 type: 'GET',
                 contentType: "application/json"
             });
-
+            $("#"+mid).addClass("popping");
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
                 var context = "Context is not defined.";
                 if (fields['@@context']) {
                     context = JSON.stringify(fields['@@context'][key]);
                 }
+                
                 $("#"+mid).popover({
                     content:context,
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
                 });
                 $("#"+mid).popover('show');
+                if (!$("#"+mid).hasClass("popping")) {
+                    setTimeout(leaveMetadataContext, 500, mid);
+                }
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
+            	$("#"+mid).removeClass("popping");
                 console.error("The following error occured: " + textStatus, errorThrown);
                 var errMsg = "You must be logged in to retrieve metadata definitions";
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
@@ -258,7 +288,9 @@
                 }
             });
         }
+        
         function leaveMetadataContext(mid) {
+            $("#"+mid).removeClass("popping");
             $("#"+mid).popover('hide');
         }
     </script>

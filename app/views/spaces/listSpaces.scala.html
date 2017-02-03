@@ -1,4 +1,4 @@
-@(spacesList: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], prev: String, next: String, title: Option[String], showPublic: Boolean, onlyTrial: Boolean)(implicit user: Option[models.User])
+@(spacesList: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], ownerName: Option[String], showAll: Boolean, mode: Option[String], prev: String, next: String, title: Option[String], showPublic: Boolean, onlyTrial: Boolean)(implicit user: Option[models.User])
 @import play.api.i18n.Messages
 @main(Messages("spaces.title")) {
 
@@ -8,12 +8,27 @@
         <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+
+    <div class="row">
+        <ol class="breadcrumb">
+            @(owner, ownerName) match {
+                case (Some(o), Some(n)) => {
+                    <li> <span class="glyphicon glyphicon-user"></span> <a href="@routes.Profile.viewProfileUUID(UUID(o))"> @n</a></li>
+                }
+                case (_, _) => {}
+            }
+
+
+            <li><span class="glyphicon glyphicon-hdd"> </span> @Messages("spaces.title")</li>
+        </ol>
+    </div>
         <div class="row">
             <div class="col-md-12">
                 <h1>@title</h1>
                 <p>@Messages("space.list.message", Messages("spaces.title"))</p>
             </div>
         </div>
+
 
         <div class="row">
             <div class="btn-toolbar">

@@ -29,17 +29,19 @@ import scala.concurrent.Future
 @Api(value = "/extractions", listingPath = "/api-docs.json/extractions", description = "Extractions for Files.")
 class Extractions @Inject()(
   files: FileService,
+  datasets: DatasetService,
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
   previews: PreviewService,
   sqarql: RdfSPARQLService,
-  thumbnails: ThumbnailService) extends ApiController {
+  thumbnails: ThumbnailService,
+  appConfig: AppConfigurationService) extends ApiController {
 
   /**
    * Uploads file for extraction and returns a file id ; It does not index the file.
    * This is very similar to upload().
-   * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Medici for curation and storage.
+   * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Clowder for curation and storage.
    * This may change accordingly.
    */
   @ApiOperation(value = "Uploads a file for extraction of metadata and returns file id",
@@ -94,6 +96,10 @@ class Extractions @Inject()(
                 val file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
+                    // Add new file & byte count to appConfig
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
+
                     var fileType = f.contentType
                     val id = f.id
                     fileType = f.contentType
@@ -237,7 +243,7 @@ class Extractions @Inject()(
           if (UUID.isValid(id.stringify)) {
             files.get(id) match {
               case Some(file) => {
-                Logger.info("Getting extract info for file with id " + id)
+                Logger.debug("Getting extract info for file with id " + id)
 
                 val l = extractions.getExtractorList(file.id) map {
                   elist => (elist._1, elist._2)
@@ -484,15 +490,26 @@ class Extractions @Inject()(
   @ApiOperation(value = "Lists information about a specific extractor",
     notes = "  ",
     responseClass = "None", httpMethod = "GET")
-  def getExtractorInfo(extractor_id: UUID) = AuthenticatedAction { implicit request =>
-    Ok(Json.toJson(extractors.getExtractorInfo(extractor_id)))
+  def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
+    extractors.getExtractorInfo(extractorName) match {
+      case Some(info) => Ok(Json.toJson(info))
+      case None => NotFound(Json.obj("status" -> "KO", "message" -> "Extractor info not found"))
+    }
   }
 
   @ApiOperation(value = "Register information about an extractor. Used when an extractor starts up.",
     notes = "  ",
     responseClass = "None", httpMethod = "POST")
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
-    val extractionInfoResult = request.body.validate[ExtractorInfo]
+
+    // If repository is of type object, change it into an array.
+    // This is for backward compatibility with requests from existing extractors.
+    val requestJson = request.body \ "repository" match {
+      case rep: JsObject => request.body.as[JsObject] ++ Json.obj("repository" ->  Json.arr(rep))
+      case _ => request.body
+    }
+
+    val extractionInfoResult = requestJson.validate[ExtractorInfo]
     extractionInfoResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
@@ -508,7 +525,7 @@ class Extractions @Inject()(
 
   @ApiOperation(value = "Submit file for extraction by a specific extractor", notes = "  ", responseClass = "None",
     httpMethod = "POST")
-  def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
+  def submitFileToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
     file_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting file for extraction with body $request.body")
     // send file to rabbitmq for processing
@@ -552,7 +569,47 @@ class Extractions @Inject()(
               idAndFlags
             }
 
-            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+            var datasetId: UUID = null
+            datasets.findByFileId(file_id).map(ds => {
+              datasetId = ds.id
+            })
+            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, datasetId, newFlags))
+            Ok(Json.obj("status" -> "OK"))
+          }
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
+        }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
+  }
+
+  @ApiOperation(value = "Submit dataset for extraction by a specific extractor", notes = "  ", responseClass = "None",
+    httpMethod = "POST")
+  def submitDatasetToExtractor(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
+    ds_id)))(parse.json) { implicit request =>
+    Logger.debug(s"Submitting dataset for extraction with body $request.body")
+    // send file to rabbitmq for processing
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
+        datasets.get(ds_id) match {
+          case Some(ds) => {
+            val id = ds.id
+            val host = Utils.baseUrl(request)
+
+            // if extractor_id is not specified default to execution of all extractors matching mime type
+            val key = (request.body \ "extractor").asOpt[String] match {
+              case Some(extractorId) => "extractors." + extractorId
+              case None => "unknown." + "dataset"
+            }
+            // parameters for execution
+            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+
+            val extra = Map("datasetname" -> ds.name,
+              "parameters" -> parameters.toString,
+              "action" -> "manual-submission")
+
+            p.extract(ExtractorMessage(id, id, host, key, extra, ds.files.length.toString, ds_id, ""))
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>

@@ -3,7 +3,7 @@ import requests
 import urllib
 import sys
 
-exchange='medici'
+exchange='clowder'
 rabbitmq='http://guest:guest@localhost:15672/api'
 
 r = requests.get('%s/bindings' % rabbitmq)

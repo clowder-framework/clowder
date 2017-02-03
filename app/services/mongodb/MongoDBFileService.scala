@@ -6,7 +6,7 @@ import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 
-import _root_.util.{License, Parsers}
+import _root_.util.{License, Parsers, SearchUtils}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -112,7 +112,7 @@ class MongoDBFileService @Inject() (
       FileDAO.find("isIntermediate" $ne true).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
-      Logger.info("After " + sinceDate)
+      Logger.debug("After " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
@@ -127,7 +127,7 @@ class MongoDBFileService @Inject() (
     } else {
       order = MongoDBObject("uploadDate" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
-      Logger.info("Before " + sinceDate)
+      Logger.debug("Before " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
@@ -214,55 +214,9 @@ class MongoDBFileService @Inject() (
   def index(id: UUID) {
     get(id) match {
       case Some(file) => {
-        var tagListBuffer = new ListBuffer[String]()
-
-        for (tag <- file.tags) {
-          tagListBuffer += tag.name
-        }
-
-        val tagsJson = new JSONArray(tagListBuffer.toList)
-
-        val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield {
-          comment.text
-        }
-        val commentJson = new JSONArray(commentsByFile)
-
-        val usrMd = getUserMetadataJSON(id)
-        val techMd = getTechnicalMetadataJSON(id)
-        val xmlMd = getXMLMetadataJSON(id)
-
-
-        // Create mapping in JSON-LD metadata from name -> contents
-        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-        var allMd = Map[String, JsArray]()
-        for (md <- metadataMap) {
-          if (allMd.keySet.exists(_ == md.creator.displayName)) {
-            // If we already have metadata from this creator, add this metadata to their array
-            var existingMd = allMd(md.creator.displayName).as[JsArray]
-            existingMd = existingMd :+ md.content
-            allMd += (md.creator.displayName -> existingMd)
-          } else {
-            // Otherwise add a new entry for this creator
-            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
-          }
-        }
-        val allMdStr = Json.toJson(allMd).toString()
-
-        var fileDsId = ""
-        var fileDsName = ""
-
-        for (dataset <- datasets.findByFileId(file.id)) {
-          fileDsId = fileDsId + dataset.id.stringify + " %%% "
-          fileDsName = fileDsName + dataset.name + " %%% "
-        }
-        
-        val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd), ("metadata", allMdStr)))
+          _.index(file)
         }
-        
       }
       case None => Logger.error("File not found: " + id)
     }
@@ -324,7 +278,7 @@ class MongoDBFileService @Inject() (
         val theJSON = getUserMetadataJSON(id)
         val fileSep = System.getProperty("file.separator")
         val tmpDir = System.getProperty("java.io.tmpdir")
-        var resultDir = tmpDir + fileSep + "medici__rdfuploadtemporaryfiles" + fileSep + UUID.generate.stringify
+        var resultDir = tmpDir + fileSep + "clowder__rdfuploadtemporaryfiles" + fileSep + UUID.generate.stringify
         val resultDirFile = new java.io.File(resultDir)
         resultDirFile.mkdirs()
 
@@ -576,7 +530,10 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  
+  /** Change the metadataCount field for a file */
+  def incrementMetadataCount(id: UUID, count: Long) = {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+  }
   
   /**
    *  Add versus descriptors to the Versus.descriptors collection associated to a file
@@ -586,7 +543,7 @@ class MongoDBFileService @Inject() (
     val doc = JSON.parse(Json.stringify(json)).asInstanceOf[DBObject].toMap
               .asScala.asInstanceOf[scala.collection.mutable.Map[String,Any]].toMap
        VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
-       Logger.info("--Added versus descriptors in json format received from versus to the metadata field --")
+       Logger.debug("--Added versus descriptors in json format received from versus to the metadata field --")
   }
  
 /**
@@ -793,7 +750,7 @@ class MongoDBFileService @Inject() (
 
     val tmpDir = System.getProperty("java.io.tmpdir")
     val filesep = System.getProperty("file.separator")
-    val rdfTmpDir = new java.io.File(tmpDir + filesep + "medici__rdfdumptemporaryfiles")
+    val rdfTmpDir = new java.io.File(tmpDir + filesep + "clowder__rdfdumptemporaryfiles")
     if(!rdfTmpDir.exists()){
       rdfTmpDir.mkdir()
     }
@@ -1031,7 +988,7 @@ class MongoDBFileService @Inject() (
 					      mdMoveFile.getParentFile().mkdirs()
 
 						  if(mdFile.renameTo(mdMoveFile)){
-			            	Logger.info("File metadata dumped and moved to staging directory successfully.")
+			            	Logger.debug("File metadata dumped and moved to staging directory successfully.")
 						  }else{
 			            	Logger.warn("Could not move dumped file metadata to staging directory.")
 			            	throw new Exception("Could not move dumped file metadata to staging directory.")

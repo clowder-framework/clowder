@@ -118,8 +118,8 @@ $(document).ready(function() {
     }
 
 
-    var mediciSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
-    var mediciStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
+    var clowderSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
+    var clowderStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
     var data = {geometry: { type: "Point", coordinates: [0,0,0]}, properties: { type: {id: "", "title": ""}}, type: "Feature"};
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
@@ -131,12 +131,12 @@ $(document).ready(function() {
     data.properties.type.sensorType = +$("#sensorType").val();
     data.properties.region = $("#sensorRegion").val();
 
-    var sensorPOSTpromise = deferredPost(mediciSensorsURL, JSON.stringify(data));
+    var sensorPOSTpromise = deferredPost(clowderSensorsURL, JSON.stringify(data));
 
     var deferredStreams = [];
 
     $.when(sensorPOSTpromise).done(function() {
-      var sensorGETpromise = deferredGet(mediciSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
+      var sensorGETpromise = deferredGet(clowderSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
       $.when(sensorGETpromise).done(function(sensorData) {
         var sensorJSON = sensorData[0];
         $(".stream-tmpl").each(function() {
@@ -154,7 +154,7 @@ $(document).ready(function() {
           streamJSON['geometry'] = sensorJSON['geometry'];
           streamJSON['sensor_id'] = sensorJSON['id'].toString();
           streamJSON['type'] = sensorJSON['type'];
-          deferredStreams.push(deferredPost(mediciStreamsURL, JSON.stringify(streamJSON)));
+          deferredStreams.push(deferredPost(clowderStreamsURL, JSON.stringify(streamJSON)));
         });
 
         $.when.apply($, deferredStreams).done(function(data) {

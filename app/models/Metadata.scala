@@ -2,9 +2,16 @@ package models
 
 import java.net.URL
 import java.util.Date
+import play.api.Logger
 import play.api.libs.json._
 import play.api.data.validation.ValidationError
-import services.{UserService, DI}
+import services.{UserService, DI, FileService}
+import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.riot.RDFLanguages
+import org.apache.jena.riot.ReaderRIOT
+import org.apache.jena.rdf.model.{Model, ModelFactory}
+import org.apache.jena.riot.system._
+
 
 
 /**
@@ -39,6 +46,8 @@ trait Agent {
   def typeOfAgent: String
   def typeOfAgent_= (s: String): Unit
 }
+
+case class RDFModel(model: org.apache.jena.rdf.model.Model)
 
 // User through the GUI
 case class UserAgent(id: UUID, var typeOfAgent: String = "user", user: MiniUser, userId: Option[URL]) extends Agent {
@@ -84,7 +93,7 @@ object Agent {
           case profile(id) => {
             try {
               userService.get(UUID(id)) match {
-                case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
+                case Some(u) => MiniUser(u.id, u.fullName, u.getAvatarUrl(), u.email)
                 case None => MiniUser(UUID("000000000000000000000000"), name.getOrElse("Unknown"), "", None)
               }
             } catch {
@@ -144,4 +153,32 @@ object Metadata {
 				)
 	}
 
+}
+
+object RDFModel {
+
+  implicit object RDFModelReads extends Reads[models.RDFModel] {
+
+    def reads(json: JsValue) = {
+      var model: Option[models.RDFModel] = None
+      var in: java.io.InputStream = new java.io.ByteArrayInputStream( Json.stringify(json).getBytes )
+      
+      // Parse JSON-LD
+      var m: Model = ModelFactory.createDefaultModel()
+      var error: String = null
+      try {
+        m.read(in, "http://example/base", "JSON-LD")
+        if(!m.isEmpty) model = Some(RDFModel(m))
+      } catch {
+        case e: Exception => error = e.getLocalizedMessage
+      }
+      if(error != null) JsError(ValidationError(error))
+      else
+        model match {
+          case Some(c) => JsSuccess(c)
+          case None => JsError(ValidationError("Parse succeeded, but JSON-LD RDF model was empty. Try setting a default @vocab in your @context node."))
+        }
+    }
+    
+  }
 }

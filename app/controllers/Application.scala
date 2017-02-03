@@ -9,6 +9,8 @@ import play.api.mvc.Action
 import services._
 import models.{UUID, User, Event}
 import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+import models.DBCounts
 
 import scala.collection.mutable.ListBuffer
 
@@ -33,20 +35,20 @@ class Application @Inject() (files: FileService, collections: CollectionService,
    * Main page.
    */
   def index = UserAction(needActive = false) { implicit request =>
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
   	implicit val user = request.user
-  	val latestFiles = files.latest(5)
-    val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
-    val filesCount = files.count()
-    val filesBytes = files.bytes()
-    val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
-    val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
-    val usersCount = users.count()
-    //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
-    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
-    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
+
+    var newsfeedEvents = List.empty[Event]
+    if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
+      newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
+      newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
+      if (user.isDefined) {
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(user.get, Some(20)))
+          .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+      }
+    }
+
     user match {
       case Some(clowderUser) if !clowderUser.active => {
         Redirect(routes.Error.notActivated())
@@ -146,26 +148,26 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
        followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
       }
-      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
-        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+      case _ => {
+        val counts = appConfig.getIndexCounts()
+        Ok(views.html.index(counts.numDatasets, counts.numFiles, counts.numBytes,
+          counts.numCollections, counts.numSpaces, counts.numUsers,
+          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+      }
     }
   }
 
   def about = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
-    val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
-    val filesBytes = files.bytes()
+    val filesBytes = 0
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
     val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
 
-    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
-        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    Ok(views.html.index(datasetsCount, filesCount, filesBytes, collectionsCount,
+        spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
   def email(subject: String) = UserAction(needActive=false) { implicit request =>
@@ -184,7 +186,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
-    Logger.info("---controller: PreFlight Information---")
+    Logger.debug("---controller: PreFlight Information---")
     Ok("")
    }
 
@@ -290,6 +292,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Previews.download,
         api.routes.javascript.Previews.getMetadata,
         api.routes.javascript.Search.searchMultimediaIndex,
+        api.routes.javascript.Search.search,
+        api.routes.javascript.Search.searchJson,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.delete,
         api.routes.javascript.Sections.comment,
@@ -362,18 +366,20 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.ContextLD.removeById,
         api.routes.javascript.ContextLD.getContextById,
         api.routes.javascript.Metadata.addUserMetadata,
-        api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
         api.routes.javascript.Metadata.getDefinition,
         api.routes.javascript.Metadata.getDefinitionsDistinctName,
+        api.routes.javascript.Metadata.getAutocompleteName,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
         api.routes.javascript.Metadata.addDefinitionToSpace,
         api.routes.javascript.Metadata.editDefinition,
         api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
+        api.routes.javascript.Metadata.getPerson,
         api.routes.javascript.Events.sendExceptionEmail,
-        api.routes.javascript.Extractions.submitToExtractor,
+        api.routes.javascript.Extractions.submitFileToExtractor,
+        api.routes.javascript.Extractions.submitDatasetToExtractor,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -413,5 +419,5 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       )
     ).as(JSON) 
   }
-  
+
 }

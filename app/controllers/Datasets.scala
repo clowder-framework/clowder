@@ -108,7 +108,14 @@ class Datasets @Inject() (
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        Ok(views.html.datasets.createStep2(dataset))
+        var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+        dataset.spaces.map(sp =>
+          spaceService.get(sp) match {
+          case Some(s) => datasetSpaces =  s :: datasetSpaces
+          case None =>
+        })
+        Ok(views.html.datasets.createStep2(dataset, datasetSpaces))
       }
       case None => {
         InternalServerError(s"$Messages('dataset.title') $id not found")
@@ -120,7 +127,14 @@ class Datasets @Inject() (
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        Ok(views.html.datasets.addFiles(dataset, None))
+            var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+            dataset.spaces.map(sp =>
+              spaceService.get(sp) match {
+                case Some(s) => datasetSpaces =  s :: datasetSpaces
+                case None =>
+              })
+            Ok(views.html.datasets.addFiles(dataset, None, datasetSpaces, List.empty))
       }
       case None => {
         InternalServerError(s"$Messages('dataset.title')  $id not found")
@@ -194,12 +208,20 @@ class Datasets @Inject() (
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], status: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val ownerName = person match {
+      case Some(p) => Some(p.fullName)
+      case None => None
+    }
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val spaceName = datasetSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }
     var title: Option[String] = Some(Messages("list.title", Messages("datasets.title")))
 
     val datasetList = person match {
@@ -223,9 +245,15 @@ class Datasets @Inject() (
           case Some(s) if datasetSpace.isDefined => {
             title = Some(Messages("resource.in.title", Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
             if (date != "") {
-              datasets.listSpace(date, nextPage, limit, s, user)
+              status match {
+                case Some(st) => datasets.listSpaceStatus(date, nextPage, limit, s, st, user)
+                case None => datasets.listSpace(date, nextPage, limit, s, user)
+              }
             } else {
-              datasets.listSpace(limit, s, user)
+              status match {
+                case Some(st) => datasets.listSpaceStatus(limit, s, st, user)
+                case None => datasets.listSpace(limit, s, user)
+              }
             }
           }
           case _ => {
@@ -247,7 +275,12 @@ class Datasets @Inject() (
         case Some(p) => datasets.listUser(first, nextPage = false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
+            case Some(s) => {
+              status match {
+                case Some(st) => datasets.listSpaceStatus(first, nextPage=false, 1, s, st, user)
+                case None => datasets.listSpace(first, nextPage=false, 1, s, user)
+              }
+            }
             case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
@@ -268,7 +301,12 @@ class Datasets @Inject() (
         case Some(p) => datasets.listUser(last, nextPage = true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(last, nextPage = true, 1, s, user)
+            case Some(s) => {
+                status match {
+                  case Some(st) => datasets.listSpaceStatus(last, nextPage=true, 1, s, st, user)
+                  case None => datasets.listSpace(last, nextPage=true, 1, s, user)
+                }
+              }
             case None => datasets.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
@@ -323,7 +361,7 @@ class Datasets @Inject() (
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", s, "space"))
       }
-      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, spaceName, status, title, owner, ownerName, when, date))
     }
   }
 
@@ -570,7 +608,8 @@ class Datasets @Inject() (
           datasetSpaces.map(space =>
             if (Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
               canAddDatasetToCollection = true
-            })
+           }
+          )
         }
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove), fileList,
@@ -696,7 +735,11 @@ class Datasets @Inject() (
                   Map(
                     "name" -> toJson(Messages("dataset.title") + " ID Invalid."),
                     "size" -> toJson(0),
-                    "error" -> toJson(s"${Messages("dataset.title")} with the specified ID=${ds} was not found. Please try again.")))))
+                    "error" -> toJson(s"${Messages("dataset.title")} with the specified ID=${ds} was not found. Please try again.")
+                  )
+                )
+              )
+            )
           }
         }
       }
@@ -707,7 +750,11 @@ class Datasets @Inject() (
               Map(
                 "name" -> toJson("Missing " + Messages("dataset.title") + "  ID."),
                 "size" -> toJson(0),
-                "error" -> toJson("No " + Messages("dataset.title") + "id found. Please try again.")))))
+                "error" -> toJson("No "+ Messages("dataset.title")+"id found. Please try again.")
+              )
+            )
+          )
+        )
       }
     }
     Ok(toJson(retMap))
@@ -755,9 +802,9 @@ class Datasets @Inject() (
         for (k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += (k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase))
 
         if (userList.nonEmpty) {
-          val currUserIsAuthor = user.get.id.equals(dataset.author.id)
-          Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
-        } else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for $Messages('dataset.title') $id.")
+          Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, userList))
+      }
+        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for $Messages('dataset.title') $id.")
       }
       case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: $Messages('dataset.title') $id not found.")
     }

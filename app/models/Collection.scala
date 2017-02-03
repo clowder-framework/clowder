@@ -20,7 +20,8 @@ case class Collection(
   root_spaces: List[UUID] = List.empty,
   metadataCount: Long = 0,
   childCollectionsCount: Integer = 0,
-  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty)
+  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty
+)
 
 object Collection {
   implicit val collectionWrites = new Writes[Collection] {

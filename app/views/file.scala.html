@@ -157,7 +157,7 @@
 			<div class="row">
 				<ol class="breadcrumb">
 					@if(spaces.length == 1 ) {
-							<li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
+							<li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
 
 					} else {
 						@if(spaces.length > 1) {
@@ -165,11 +165,11 @@
 							<span class="dropdown">
 								<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
 								aria-haspopup="true" aria-expanded="true">
-									<span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+									<span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
 								</button>
 								<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
 									@spaces.map{ s =>
-										<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-tent"></span> @Html(ellipsize(s.name, 18))</a></li>
+										<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
 									}
 								</ul>
 
@@ -586,8 +586,9 @@
 						aria-controls="listExtractions">
 						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
 					</a>
-					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
-						<a href="@routes.Extractors.submitExtraction(UUID(id))" class="btn btn-link" >
+					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))
+							&& play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+						<a href="@routes.Extractors.submitFileExtraction(UUID(id))" class="btn btn-link" >
 							<span class="glyphicon glyphicon-send"></span>
 							Submit file for extraction
 						</a>
@@ -683,7 +684,7 @@
 			<div class="row ds-section-sm file-info">
 				<table class="table table-condensed">
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.humanReadableByteCount(file.length)</td></tr>
+					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@humanReadableByteCount(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
 						<tr><td><b>File&nbsp;location:</b></td>
 							@if(file.loader == "services.mongodb.MongoDBByteStorage") {
@@ -914,8 +915,8 @@
 						<div class="input-group input-group-sm col-md-8">
 							<input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
 							<span class="input-group-btn">
-								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-									<span class="glyphicon glyphicon-tag"></span>
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag" >
+									<span class="glyphicon glyphicon-tag"></span>Tag
 								</button>
 							</span>
 						</div>
@@ -925,8 +926,8 @@
 						<div class="input-group input-group-sm col-md-8">
 							<input disabled type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
 							<span class="input-group-btn">
-								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-									<span class="glyphicon glyphicon-tag"></span>
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag" disabled>
+									<span class="glyphicon glyphicon-tag"></span>Tag
 								</button>
 							</span>
 						</div>
