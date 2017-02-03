@@ -143,7 +143,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   }
 
-  def sortedListInSpace(space: String, offset: Integer, limit: Integer) = UserAction(needActive = false) { implicit request =>
+  def sortedListInSpace(space: String, offset: Integer, limit: Integer, showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
     {
       implicit val user = request.user
       val sortOrder: String =
@@ -169,7 +169,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", spaceResource.get.name, "space"))
         } else {
 
-          val cList = collections.listSpace(0, space);
+          
+        val cList = collections.listSpaceAccess(0, space, Set[Permission](Permission.ViewCollection), user, false, showPublic)
+        
+
           val len = cList.length
 
           val collectionList = SortingUtils.sortCollections(cList, sortOrder).drop(offset).take(limit)

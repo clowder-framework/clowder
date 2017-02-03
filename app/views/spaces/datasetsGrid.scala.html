@@ -10,7 +10,7 @@
     
             @isPublic match {
             case Some(b) => {
-                <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify,0,12, Some("publicAll")))" class="btn btn-link btn-xs">
+                <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify,0,12, isPublic))" class="btn btn-link btn-xs">
 		            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
         		</a>
          	}
