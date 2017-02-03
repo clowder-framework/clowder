@@ -151,6 +151,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           case Some(cookie) => cookie.value
           case None => "dateN" //a default
         }
+      val datasetSpace = spaceService.get(UUID(space))
+    val spaceName = datasetSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    } 
       val mode = ""
       val spaceResource: Option[ProjectSpace] = spaceService.get(UUID(space))
 
@@ -211,7 +216,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             ""
           }
           val date = ""
-          Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, Some(space), title, None, "a", date))
+          Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, Some(space), spaceName, None, None, title, "a", date))
 
         }
       }
@@ -860,7 +865,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, spaceName, title, owner, ownerName, when, date))
   }
 
   private def removeFromSpaceAllowed(collectionId: UUID, spaceId: UUID): Boolean = {

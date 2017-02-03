@@ -405,8 +405,12 @@ class Datasets @Inject() (
         case Some(cookie) => cookie.value
         case None => "dateN" //a default
       }
-
     val datasetSpace = spaceService.get(UUID(space))
+    val spaceName = datasetSpace match {
+      case Some(s) => Some(s.name)
+      case None => None
+    }  
+
     var title: Option[String] = Some(Messages("resource.in.title", Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
 
     if (!datasetSpace.isDefined) {
@@ -460,7 +464,7 @@ class Datasets @Inject() (
           ""
         }
         val date = ""
-        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, Some(space), title, None, "a", date))
+        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, Some(space), spaceName, None, title, None, None, "a", date))
       }
     }
   }
@@ -608,9 +612,8 @@ class Datasets @Inject() (
           datasetSpaces.map(space =>
             if (Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
               canAddDatasetToCollection = true
+            })
            }
-          )
-        }
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove), fileList,
           filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
