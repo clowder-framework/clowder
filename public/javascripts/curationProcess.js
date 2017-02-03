@@ -17,15 +17,15 @@ function removeCuration(id, isreload, url){
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to delete a curation object from the system.";
+        var errMsg = "You must be logged in to delete a publication request from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The curation object was not deleted from the system due to : " + errorThrown, "error");
+            notify("The publication request was not deleted from the system due to : " + errorThrown, "error");
         }
     });
 }
 
 function retractCuration(curationId) {
-    console.log("Retracting curation Object: " + curationId);
+    console.log("Retracting publication request: " + curationId);
 
     var request = jsRoutes.api.CurationObjects.retractCurationObject(curationId).ajax({
         type: 'Delete'
@@ -41,7 +41,7 @@ function retractCuration(curationId) {
 
     request.fail(function(jqXHR, textStatus, errorThrown) {
        console.error("The following error ocurred: " + textStatus, errorThrown);
-        notify("The curation object could not be retracted due to: " + jqXHR.responseJSON.message, "error" );
+        notify("The publication request could not be retracted due to: " + jqXHR.responseJSON.message, "error" );
     });
 }
 
@@ -57,9 +57,9 @@ function removeCurationFile(id, currentFolder, curationid){
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to delete curation file";
+        var errMsg = "You must be logged in to remove a file from the publication request";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Curation file was not removed due to : " + jqXHR.textResponse, "error");
+            notify("File was not removed from the request due to : " + jqXHR.textResponse, "error");
         }
     });
 }
@@ -76,9 +76,9 @@ function removeCurationFolder(id, parentCurationObject, parentId){
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to delete curation file";
+        var errMsg = "You must be logged in to remove a folder from the publication request";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Curation folder was not removed due to : " + errorThrown, "error");
+            notify("Folder was not removed due to : " + errorThrown, "error");
         }
     });
 }

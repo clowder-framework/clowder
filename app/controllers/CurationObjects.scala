@@ -27,7 +27,7 @@ import play.api.libs.json.Reads._
 
 
 /**
- * Methods for interacting with the curation objects in the staging area.
+ * Methods for interacting with the Curation Objects (now referred to as Publication Requests) in the staging area.
  */
 class CurationObjects @Inject()(
   curations: CurationService,
@@ -73,7 +73,7 @@ class CurationObjects @Inject()(
   }
 
   /**
-    * List curation objects.
+    * List Publication Requests.
     */
   def list(when: String, date: String, limit: Int, space:Option[String]) = UserAction(needActive=false) { implicit request =>
       implicit val user = request.user
@@ -130,8 +130,8 @@ class CurationObjects @Inject()(
   }
 
   /**
-   * Controller flow to create a new curation object. On success,
-   * the browser is redirected to the new Curation page.
+   * Controller flow to create a new publication request/curation object. On success,
+   * the browser is redirected to the new Publication Request page.
    */
   def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
 
@@ -194,7 +194,7 @@ class CurationObjects @Inject()(
                 files = newFiles,
                 folders = List.empty,
                 repository = None,
-                status = "In Curation",
+                status = "In Preparation",
                 creators = COCreators(0).split(",").toList.map(x => URLDecoder.decode(x, "UTF-8")))
 
               // insert curation
@@ -281,7 +281,7 @@ class CurationObjects @Inject()(
         folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId, requestHost))
       }
       case None => {
-        Logger.error("Curation Folder Not found")
+        Logger.error("Folder Not found in Publication Request")
 
       }
     }
@@ -299,7 +299,7 @@ class CurationObjects @Inject()(
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             true, false, c.creators))
 
-        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+        case None => BadRequest(views.html.notFound("Publication Request does not exist."))
       }
   }
 
@@ -316,12 +316,12 @@ class CurationObjects @Inject()(
 
               Redirect(routes.CurationObjects.getCurationObject(id))
           }
-          case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+          case None => BadRequest(views.html.notFound("Publication Request does not exist."))
       }
   }
 
   /**
-   * Delete curation object.
+   * Delete publication request / curation object.
    */
   def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
@@ -329,14 +329,14 @@ class CurationObjects @Inject()(
 
       curations.get(id) match {
         case Some(c) => {
-          Logger.debug("delete Curation object: " + c.id)
+          Logger.debug("delete Publication Request / Curation object: " + c.id)
           val spaceId = c.space
 
           curations.remove(id)
           //spaces.get(spaceId) is checked in Space.stagingArea
           Redirect(routes.Spaces.stagingArea(spaceId))
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("Publication Request Not found")
       }
   }
 
@@ -356,7 +356,7 @@ class CurationObjects @Inject()(
             val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
             val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
             val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
-            if (c.status != "In Curation") {
+            if (c.status != "In Preparation") {
               Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit, s.name ))
             } else {
               Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
@@ -366,7 +366,7 @@ class CurationObjects @Inject()(
         }
 
       }
-      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+      case None => BadRequest(views.html.notFound("Publication Request does not exist."))
     }
   }
 
@@ -418,14 +418,14 @@ class CurationObjects @Inject()(
                 val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
                 Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
               }
-              case None => BadRequest(views.html.notFound("Curation Folder does not exist."))
+              case None => BadRequest(views.html.notFound("Folder does not exist in Publication Request."))
             }
           }
 
         }
 
       }
-      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+      case None => BadRequest(views.html.notFound("Publication Request does not exist."))
     }
   }
 
@@ -458,7 +458,7 @@ class CurationObjects @Inject()(
               }
 
             }
-            case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+            case None => BadRequest(views.html.notFound("Publication Request does not exist."))
           }
   }
 
@@ -667,7 +667,7 @@ class CurationObjects @Inject()(
               val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository, repPreferences))
             }
-            case None => InternalServerError("Curation Object not found")
+            case None => InternalServerError("Publication Request not found")
           }
         }
         case None => InternalServerError("User not found")
@@ -882,7 +882,7 @@ class CurationObjects @Inject()(
             }
         }
       }
-      case None => Future(InternalServerError(toJson("Curation object not found.")))
+      case None => Future(InternalServerError(toJson("Publication Request not found.")))
     }
   }
 

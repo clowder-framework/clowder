@@ -2,7 +2,7 @@
 @if(curationObjects.size > 0) {
     <div class="row bottom-padding">
         <div class="col-md-12">
-            <h4>Related Curation Objects</h4>
+            <h4>Related @Messages("curationobject.label")s</h4>
 
             <table class="table">
                 <thead>
@@ -10,6 +10,7 @@
                         <th>Name</th>
                         <th>Owner</th>
                         <th>Created</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -22,6 +23,7 @@
                         </td>
                         <td>@curObject.author.fullName</td>
                         <td>@curObject.created.format("MMM dd, yyyy")</td>
+                        <td>@curObject.status</td>
                     </tr>
                 }
                 </tbody>

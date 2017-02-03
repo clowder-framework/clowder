@@ -32,9 +32,9 @@
                         <span class="glyphicon glyphicon-chevron-left"></span> Go to Edit Metadata</a>
                 }
                 <a class="btn btn-sm btn-link"  href ="@(routes.CurationObjects.editCuration(curationObject.id))"  >
-                    <span class="glyphicon glyphicon-edit"></span> Edit Curation Object</a>
+                    <span class="glyphicon glyphicon-edit"></span> Edit @Messages("curationobject.label")</a>
                 <a class="btn btn-sm btn-link" onclick="confirmDeleteResource('curation object','curation object','@(curationObject.id)','@(curationObject.name.replace("'","&#39;"))',true, '@routes.Spaces.stagingArea(curationObject.space)')"  >
-                    <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
+                    <span class="glyphicon glyphicon-trash"></span> Delete @Messages("curationobject.label")</a>
             }
         </div>
     </div>

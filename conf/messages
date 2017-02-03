@@ -24,6 +24,7 @@ collection.parent.title=Parent Collection
 collection.child.title = Child Collection
 spaces.title=Spaces
 space.title=Space
+curationobject.label = Publication Request
 dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
 dataset.create.collection.message=This {0} will be added to {1}
 collection.create.message={0} allow you to bring together multiple {1} and their associated files in an almost unlimited number of ways. Share a {2} to a {3} to work with your team. Permissions will be applied according to the {3}''s settings.
