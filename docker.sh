@@ -4,13 +4,13 @@
 # DEBUG   : set to echo to print command and not execute
 # PUSH    : set to push to push, anthing else not to push. If not set
 #           the program will push if master or develop.
-# PROJECT : the project to add to the image, default is ncsa and clowder
+# PROJECT : the project to add to the image, default is clowder
 
 #DEBUG=echo
 #BUILT=doit
 
 # set default for clowder
-PROJECT=${PROJECT:-"ncsa clowder"}
+PROJECT=${PROJECT:-"clowder"}
 
 # copy dist file to docker folder
 ZIPFILE=$( /bin/ls -1rt target/universal/clowder-*.zip 2>/dev/null | tail -1 )
