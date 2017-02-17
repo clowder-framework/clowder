@@ -41,12 +41,12 @@
 
             request.done(function(response, texStatus, jqXHR) {
                 $('#retract-curation').addClass('disabled');
-                notify("Curation retracted");
+                notify("@Messages("curationobject.label") retracted");
             });
 
             request.fail(function(jqXHR, textStatus, errorThrown) {
                console.error("The following error ocurred: " + textStatus, errorThrown);
-                notify("The curation object could not be retracted due to: " + errorThrown, "Error" );
+                notify("The @Messages("curationobject.label") could not be retracted due to: " + errorThrown, "Error" );
             });
         }
     </script>

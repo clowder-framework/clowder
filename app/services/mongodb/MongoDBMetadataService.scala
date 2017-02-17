@@ -1,7 +1,7 @@
 package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
-import org.bson.types.ObjectId
+import org.elasticsearch.action.search.SearchResponse
 import play.api.Logger
 import play.api.Play._
 import models._
@@ -9,14 +9,12 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.Files
-import play.api.libs.json.{JsObject, JsString, Json, JsValue}
-import play.api.mvc.MultipartFormData
+import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.MetadataService
-import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, CurationService}
+
+import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, MetadataService, ElasticsearchPlugin, CurationService}
 import api.{UserRequest, Permission}
 
 /**
@@ -273,7 +271,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
   }
 
-
   def editDefinition(id: UUID, json: JsValue) = {
     MetadataDefinitionDAO.update(MongoDBObject("_id" ->new ObjectId(id.stringify)),
       $set("json" -> JSON.parse(json.toString()).asInstanceOf[DBObject]) , false, false, WriteConcern.Safe)
@@ -281,41 +278,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   def deleteDefinition(id :UUID): Unit = {
     MetadataDefinitionDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
-  }
-
-  /**
-    * Search by metadata. Uses mongodb query structure.
-    */
-  def search(query: JsValue): List[ResourceRef] = {
-    val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
-    val resources: List[ResourceRef] = MetadataDAO.find(doc).map(_.attachedTo).toList
-    resources
-  }
-
-  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef] = {
-    val field = "content." + key.trim
-    val trimOr = value.trim().replaceAll(" ", "|")
-    // for some reason "/"+value+"/i" doesn't work because it gets translate to
-    // { "content.Abstract" : { "$regex" : "/test/i"}}
-    val regexp = (s"""(?i)$trimOr""").r
-    val doc = MongoDBObject(field -> regexp)
-    var filter = doc
-    if (!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
-      user match {
-        case Some(u) => {
-          val datasetsList = datasets.listUser(u)
-          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
-          val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
-          val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-          datasetsList.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify)) }
-          fileIds.flatten.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify)) }
-          filter = $or(orlist.map(_.asDBObject)) ++ doc
-        }
-        case None => List.empty
-      }
-    }
-    val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
-    resources
   }
 
   def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata] = {

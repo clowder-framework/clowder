@@ -13,7 +13,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
 import play.api.Logger
-import util.Formatters
+import util.{Formatters, SearchUtils}
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import services._
@@ -821,20 +821,8 @@ class MongoDBCollectionService @Inject() (
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
       case Some(collection) => {
-
-        var dsCollsId = ""
-        var dsCollsName = ""
-
-        for(dataset <- datasets.listCollection(id.stringify)){
-          dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
-          dsCollsName = dsCollsName + dataset.name + " %%% "
-        }
-
-	    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "collection", id,
-            List(("name", collection.name), ("description", collection.description), ("created",formatter.format(collection.created)), ("datasetId",dsCollsId),("datasetName",dsCollsName)))
+          _.index(collection, false)
         }
       }
       case None => Logger.error("Collection not found: " + id.stringify)

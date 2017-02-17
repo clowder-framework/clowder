@@ -1,14 +1,16 @@
 package api
 
-import java.net.URL
+import java.net.{URL, URLEncoder}
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.ApiOperation
 import models.{ResourceRef, UUID, UserAgent, _}
+import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
 import play.api.Play.current
 import play.api.Logger
+import play.api.Play._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.WS
@@ -16,6 +18,9 @@ import play.api.mvc.Result
 import services._
 import play.api.i18n.Messages
 
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 /**
@@ -31,34 +36,6 @@ class Metadata @Inject()(
   curations:CurationService,
   events: EventService,
   spaceService: SpaceService) extends ApiController {
-  
-  def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
-    Logger.debug("Searching metadata")
-    val results = metadataService.search(request.body)
-    Ok(toJson(results))
-  }
-
-  def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) = PermissionAction(Permission.ViewDataset) {
-      implicit request =>
-        implicit val user = request.user
-        val response = for {
-          k <- key
-          v <- value
-        } yield {
-          val results = metadataService.search(k, v, count, user)
-          val datasetsResults = results.flatMap { d =>
-            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-          }
-          val filesResults = results.flatMap { f =>
-            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-          }
-          import Dataset.datasetWrites
-          import File.FileWrites
-          // Use "distinct" to remove duplicate results.
-          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
-        }
-        response getOrElse BadRequest(toJson("You must specify key and value"))
-  }
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -71,6 +48,39 @@ class Metadata @Inject()(
       implicit val user = request.user
       val vocabularies = metadataService.getDefinitionsDistinctName(user)
       Ok(toJson(vocabularies))
+  }
+
+  /** Get set of metadata fields containing filter substring for autocomplete */
+  def getAutocompleteName(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
+    implicit val user = request.user
+
+    var listOfTerms = ListBuffer.empty[String]
+
+    // First, get regular vocabulary matches
+    val definitions = metadataService.getDefinitionsDistinctName(user)
+    for (md_def <- definitions) {
+      val currVal = (md_def.json \ "label").as[String]
+      if (currVal.toLowerCase startsWith query.toLowerCase) {
+        listOfTerms.append("metadata."+currVal)
+      }
+    }
+
+    // Next get Elasticsearch metadata fields if plugin available
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        val mdTerms = plugin.getAutocompleteMetadataFields(query)
+        for (term <- mdTerms) {
+          // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terra.plantcv.angle",
+          //      "metadata.Jane Doe.Alternative Title"
+          if (!(listOfTerms contains term))
+            listOfTerms.append(term)
+        }
+        Ok(toJson(listOfTerms.distinct))
+      }
+      case None => {
+        BadRequest("Elasticsearch plugin is not enabled")
+      }
+    }
   }
 
   def getDefinitionsByDataset(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -360,9 +370,9 @@ class Metadata @Inject()(
       case Some(user) => {
         metadataService.getMetadataById(id) match {
           case Some(m) => {
-            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)
-            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
-              BadRequest("Curation Object has already submitted")
+            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)
+            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)) {
+              BadRequest("Publication Request has already been submitted")
             } else {
               metadataService.removeMetadata(id)
               val mdMap = m.getExtractionSummary
@@ -399,4 +409,30 @@ class Metadata @Inject()(
       case None => BadRequest("Not authorized.")
     }
   }
+
+  @ApiOperation(value = "Get information about a person from SEAD PDT given an person ID", httpMethod = "GET")
+  def getPerson(pid: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
+
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    val endpoint = (play.Play.application().configuration().getString("people.uri") + "/" + URLEncoder.encode(pid, "UTF-8"))
+    val futureResponse = WS.url(endpoint).get()
+    var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+    var success = false
+    val result = futureResponse.map {
+      case response =>
+        if (response.status >= 200 && response.status < 300 || response.status == 304) {
+          Ok(response.json).as("application/json")
+        } else {
+          if (response.status == 404) {
+             
+            NotFound(toJson(Map("failure" -> {"Person with identifier " + pid + " not found"}))).as("application/json")
+
+          } else {
+            InternalServerError(toJson(Map("failure" -> {"Status: " + response.status.toString() + " returned from SEAD /api/people/<id> service"}))).as("application/json")
+          }
+        }
+    }
+    result
+  }
+
 }

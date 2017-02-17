@@ -1,14 +1,11 @@
 package controllers
 
 import java.io._
-
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
-import com.mongodb.DBObject
-import com.wordnik.swagger.annotations.ApiOperation
 import fileutils.FilesUtils
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
@@ -16,16 +13,15 @@ import play.api.Logger
 import play.api.Play.{ current, configuration }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee._
-import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
+import util.SearchUtils
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import play.api.i18n.Messages
@@ -39,23 +35,24 @@ import java.net.URLEncoder
  * Manage files.
  */
 class Files @Inject() (
-    files: FileService,
-    datasets: DatasetService,
-    queries: MultimediaQueryService,
-    comments: CommentService,
-    sections: SectionService,
-    extractions: ExtractionService,
-    dtsrequests: ExtractionRequestsService,
-    previews: PreviewService,
-    threeD: ThreeDService,
-    sparql: RdfSPARQLService,
-    users: UserService,
-    events: EventService,
-    thumbnails: ThumbnailService,
-    metadata: MetadataService,
-    contextLDService: ContextLDService,
-    spaces: SpaceService,
-    folders: FolderService) extends SecuredController {
+  files: FileService,
+  datasets: DatasetService,
+  queries: MultimediaQueryService,
+  comments: CommentService,
+  sections: SectionService,
+  extractions: ExtractionService,
+  dtsrequests: ExtractionRequestsService,
+  previews: PreviewService,
+  threeD: ThreeDService,
+  sparql: RdfSPARQLService,
+  users: UserService,
+  events: EventService,
+  thumbnails: ThumbnailService,
+  metadata: MetadataService,
+  contextLDService: ContextLDService,
+  spaces: SpaceService,
+  folders: FolderService,
+  appConfig: AppConfigurationService) extends SecuredController {
 
   /**
    * Upload form.
@@ -390,111 +387,111 @@ class Files @Inject() (
     Ok(views.html.uploadExtract(extractForm))
   }
 
-  def uploadExtract() =
-    PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-      implicit val user = request.user
-      user match {
-        case Some(identity) => {
-          request.body.file("File").map { f =>
-            try {
-              var nameOfFile = f.filename
-              var flags = ""
-              if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-                var thirdSeparatorIndex = nameOfFile.indexOf("__")
-                if (thirdSeparatorIndex >= 0) {
-                  var firstSeparatorIndex = nameOfFile.indexOf("_")
-                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-                  flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-                }
+  def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(identity) => {
+        request.body.file("File").map { f =>
+          try {
+            var nameOfFile = f.filename
+            var flags = ""
+            if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+              if (thirdSeparatorIndex >= 0) {
+                var firstSeparatorIndex = nameOfFile.indexOf("_")
+                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
               }
+            }
 
-              Logger.debug("Uploading file " + nameOfFile)
+            Logger.debug("Uploading file " + nameOfFile)
 
-              var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+            var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
               // store file
               val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
               val uploadedFile = f
               file match {
                 case Some(f) => {
+                  // Add new file & byte count to appConfig
+                  appConfig.incrementCount('files, 1)
+                  appConfig.incrementCount('bytes, f.length)
+
                   current.plugin[FileDumpService].foreach {
                     _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
                   }
 
-                  if (showPreviews.equals("FileLevel"))
-                    flags = flags + "+filelevelshowpreviews"
-                  else if (showPreviews.equals("None"))
-                    flags = flags + "+nopreviews"
-                  var fileType = f.contentType
-                  if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
-                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
-                    if (fileType.startsWith("ERROR: ")) {
-                      Logger.error(fileType.substring(7))
-                      InternalServerError(fileType.substring(7))
-                    }
+                if (showPreviews.equals("FileLevel"))
+                  flags = flags + "+filelevelshowpreviews"
+                else if (showPreviews.equals("None"))
+                  flags = flags + "+nopreviews"
+                var fileType = f.contentType
+                if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+                  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
+                  if (fileType.startsWith("ERROR: ")) {
+                    Logger.error(fileType.substring(7))
+                    InternalServerError(fileType.substring(7))
                   }
+                }
 
-                  // TODO RK need to replace unknown with the server name
-                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+                // TODO RK need to replace unknown with the server name
+                val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-                  val host = Utils.baseUrl(request)
-                  val id = f.id
-                  val extra = Map("filename" -> f.filename)
-                  current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
+                val host = Utils.baseUrl(request)
+                val id = f.id
+                val extra = Map("filename" -> f.filename)
+                current.plugin[RabbitmqPlugin].foreach {
+                  _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
+                }
+                /** *** Inserting DTS Requests   **/
+                val clientIP = request.remoteAddress
+                val domain = request.domain
+                val keysHeader = request.headers.keys
+
+                Logger.debug("clientIP:" + clientIP + "   domain:= " + domain + "  keysHeader=" + keysHeader.toString + "\n")
+                Logger.debug("Origin: " + request.headers.get("Origin") + "  Referer=" + request.headers.get("Referer") + " Connections=" + request.headers.get("Connection") + "\n \n")
+                val serverIP = request.host
+                dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+
+                /** **************************/
+                //for metadata files
+                if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+                  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                  files.addXMLMetadata(id, xmlToJSON)
+
+                  current.plugin[ElasticsearchPlugin].foreach {
+                    _.index(SearchUtils.getElasticsearchObject(f))
                   }
-                  /** *** Inserting DTS Requests   **/
-                  val clientIP = request.remoteAddress
-                  val domain = request.domain
-                  val keysHeader = request.headers.keys
-
-                  Logger.debug("clientIP:" + clientIP + "   domain:= " + domain + "  keysHeader=" + keysHeader.toString + "\n")
-                  Logger.debug("Origin: " + request.headers.get("Origin") + "  Referer=" + request.headers.get("Referer") + " Connections=" + request.headers.get("Connection") + "\n \n")
-                  val serverIP = request.host
-                  dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
-
-                  /** **************************/
-                  //for metadata files
-                  if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                    val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                    files.addXMLMetadata(id, xmlToJSON)
-
-                    Logger.debug("xmlmd=" + xmlToJSON)
-
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", ""), ("xmlmetadata", xmlToJSON)))
-                    }
                 }
                 else {
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", "")))
-                    }
+                  current.plugin[ElasticsearchPlugin].foreach {
+                    _.index(SearchUtils.getElasticsearchObject(f))
                   }
-                  current.plugin[VersusPlugin].foreach {
-                    _.index(f.id.toString, fileType)
-                  }
+                }
+                current.plugin[VersusPlugin].foreach {
+                  _.index(f.id.toString, fileType)
+                }
 
-                  // redirect to extract page
-                  Ok(views.html.extract(f.id))
-                }
-                case None => {
-                  Logger.error("Could not retrieve file that was just saved.")
-                  InternalServerError("Error uploading file")
-                }
+                // redirect to extract page
+                Ok(views.html.extract(f.id))
               }
-            } finally {
-              f.ref.clean()
+              case None => {
+                Logger.error("Could not retrieve file that was just saved.")
+                InternalServerError("Error uploading file")
+              }
             }
-          }.getOrElse {
-            BadRequest("File not attached.")
-
+          } finally {
+            f.ref.clean()
           }
-        }
-        case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
-      }
-    }
+        }.getOrElse {
+          BadRequest("File not attached.")
 
+        }
+      }
+      case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new files.")
+    }
+  }
   /*def extraction(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
  
 
@@ -512,27 +509,31 @@ class Files @Inject() (
     Logger.debug("--------- in upload ------------ ")
     user match {
       case Some(identity) => {
-        request.body.file("files[]").map { f =>
-          var nameOfFile = f.filename
-          var flags = ""
-          if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-            val thirdSeparatorIndex = nameOfFile.indexOf("__")
-            if (thirdSeparatorIndex >= 0) {
-              val firstSeparatorIndex = nameOfFile.indexOf("_")
-              val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-              flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-              nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-            }
-          }
-          Logger.debug("Uploading file " + nameOfFile)
+        request.body.file("files[]").map { f =>                     
+	          var nameOfFile = f.filename
+	          var flags = ""	          
+	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
+		          val thirdSeparatorIndex = nameOfFile.indexOf("__")
+	              if(thirdSeparatorIndex >= 0){
+	                val firstSeparatorIndex = nameOfFile.indexOf("_")
+	                val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+	              }
+	          }	       
+	        Logger.debug("Uploading file " + nameOfFile)
 
-          val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
-          // store file       
-          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-          val uploadedFile = f
-          file match {
-            case Some(f) => {
+	        // store file       
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val uploadedFile = f
+	        file match {
+	          case Some(f) => {
+              // Add new file & byte count to appConfig
+              appConfig.incrementCount('files, 1)
+              appConfig.incrementCount('bytes, f.length)
+
               val option_user = users.findByIdentity(identity)
               events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
               if (showPreviews.equals("FileLevel"))
@@ -589,26 +590,22 @@ class Files @Inject() (
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
               /****************************/
               // TODO replace null with None
-              current.plugin[RabbitmqPlugin].foreach { _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags)) }
-
-              val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
-              //for metadata files
-              if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-                files.addXMLMetadata(id, xmlToJSON)
-
-                Logger.debug("xmlmd=" + xmlToJSON)
-
-                current.plugin[ElasticsearchPlugin].foreach {
-                  _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", ""), ("datasetName", ""), ("xmlmetadata", xmlToJSON)))
+	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
+	            
+	            //for metadata files
+	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+	              files.addXMLMetadata(id, xmlToJSON)
+	              
+	              current.plugin[ElasticsearchPlugin].foreach{
+		              _.index(SearchUtils.getElasticsearchObject(f))
                 }
 	            }
 	            else{
-                current.plugin[ElasticsearchPlugin].foreach {
-                  _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", ""), ("datasetName", "")))
+		            current.plugin[ElasticsearchPlugin].foreach{
+		              _.index(SearchUtils.getElasticsearchObject(f))
                 }
-              }
+	            }
 
               current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
 
@@ -897,6 +894,7 @@ class Files @Inject() (
    * Gets type of index and list of sections, and passes on to the Search controller
    */
   def uploadSelectQuery() = PermissionAction(Permission.ViewDataset)(parse.multipartFormData) { implicit request =>
+    val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
     //=== processing searching within files or sections of files or both ===
     //dataParts are from the seach form in view/multimediasearch
     //get type of index and list of sections, and pass on to the Search controller
@@ -926,9 +924,8 @@ class Files @Inject() (
           }
         }
         Logger.debug("Controllers/Files Uploading file " + nameOfFile)
-
-        // store file       
-        Logger.debug("uploadSelectQuery")
+        
+        // store file
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
 
@@ -969,29 +966,18 @@ class Files @Inject() (
             val key = "unknown." + "query." + fileType.replace("/", ".")
             val host = Utils.baseUrl(request)
             val id = f.id
-            val path = f.path
 
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach {
               _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
             }
 
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
-              Logger.debug("xmlmd=" + xmlToJSON)
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
-              }
             }
-            else {
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
-              }
-            }
+
             //add file to RDF triple store if triple store is used
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
@@ -1079,20 +1065,18 @@ class Files @Inject() (
               _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
             }
 
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
-              Logger.debug("xmlmd=" + xmlToJSON)
+
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+                _.index(SearchUtils.getElasticsearchObject(f))
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
+                _.index(SearchUtils.getElasticsearchObject(f))
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1145,6 +1129,9 @@ class Files @Inject() (
                 // submit file for extraction
                 file match {
                   case Some(f) => {
+                    // Add new file & byte count to appConfig
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
 
                     if (showPreviews.equals("FileLevel"))
                       flags = flags + "+filelevelshowpreviews"
@@ -1206,22 +1193,18 @@ class Files @Inject() (
                       _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dataset_id, flags))
                     }
 
-                    val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
                     //for metadata files
                     if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                       val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
                       files.addXMLMetadata(id, xmlToJSON)
 
-                      Logger.debug("xmlmd=" + xmlToJSON)
-
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString()), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
+                        _.index(SearchUtils.getElasticsearchObject(f))
                       }
                     }
                     else {
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString()), ("datasetName", dataset.name)))
+                        _.index(SearchUtils.getElasticsearchObject(f))
                       }
                     }
 

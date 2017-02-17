@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Docker container to add normal/admin users for Clowder. [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167)
+- ORCID/other ID expansion - uses SEAD's PDT service to expand user ids entered as creator/contact metadata so they show as a name, link to profile, and email(if available)[SEAD-1126] (https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1126) 
+### Changed
+- Updated the POST endpoint `/api/extractors` to accept a list of extractor repositories (git, docker, svn, etc) instead of only one. [BD-1253](https://opensource.ncsa.illinois.edu/jira/browse/BD-1253)
+- Changed default labels in Staging Area plugin, e.g. "Curation Objects" to "Publication Requests" and make them configurable [SEAD-1131] (https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1131)
+
 ## 1.1.0
 
 ### Added
