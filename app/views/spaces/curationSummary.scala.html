@@ -21,7 +21,7 @@
                 </li>
                 <li><div id="size">Size: </div> <li/>
                 <li><div id="format">File Formats: </div></li>
-                <li>Owner: @curationObject.author.fullName</li>
+                <li>@Messages("owner.label"): @curationObject.author.fullName</li>
                 <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
                             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){

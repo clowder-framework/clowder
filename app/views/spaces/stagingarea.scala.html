@@ -37,7 +37,7 @@
                                 <div class="caption break-word">
                                     <h4> <a href="@routes.CurationObjects.getCurationObject( curObject.id)">@curObject.name</a></h4>
 
-                                    Owner: @curObject.author.fullName
+                                    @Messages("owner.label"): @curObject.author.fullName
                                     <p>Created: @curObject.created.format("MMM dd, yyyy")</p>
                                     <p>@curObject.description</p>
                                 </div>

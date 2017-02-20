@@ -37,7 +37,7 @@
    	        	</span>
            	}	
         </span><br/>
-        <b>Owner</b>: @curationObject.author.fullName <br/>
+        <b>@Messages("owner.label")</b>: @curationObject.author.fullName <br/>
         <b>Created</b>: @curationObject.created.date.format("MMM dd, yyyy") <br/>
         <b>Repository</b>: @curationObject.repository.getOrElse("Not selected.") <br/>
         <b>Submitted</b>: @{curationObject.submittedDate match {
@@ -66,7 +66,7 @@
         Note: The links in this page redirect to the live objects.<br/>
         <b>Size</b>: @{files.map(_.length).sum /1024} KB <br/>
         <b>File Formats</b>: @files.map(_.contentType).toSet.mkString(", ") <br/>
-        <b>Owner</b>: @curationObject.datasets(0).author.fullName <br/>
+        <b>@Messages("owner.label")</b>: @curationObject.datasets(0).author.fullName <br/>
 
 
         @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@

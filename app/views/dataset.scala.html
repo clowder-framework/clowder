@@ -75,7 +75,7 @@
                 <div class="col-md-6">
                     <ul class="list-unstyled">
 
-                        <li>Owner: <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
+                        <li>@Messages("owner.label"): <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
                             @if(showAccess) {
                                 @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {

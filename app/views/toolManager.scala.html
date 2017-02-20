@@ -67,7 +67,7 @@
                       <ul class="list-unstyled">
                         @inst.owner match {
                           case Some(u) => {
-                            <li>Owner: <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a></li>
+                            <li>@Messages("owner.label"): <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a></li>
                           }
                           case None => {}
                         }
