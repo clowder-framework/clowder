@@ -98,10 +98,10 @@
   case "updated_folder" => {
     updated a folder in @linkForObject("dataset", event.object_id, event.object_name)
   }
-  case "add_file" | "add_file_1" => {
+  case "add_file" | "add_file_1" | "add_file_2" | "add_file_3" => {
     added a file to @linkForObject("dataset", event.object_id, event.object_name)
   }
-  case "add_file_folder" | "add_file_folder_1" => {
+  case "add_file_folder" | "add_file_folder_1" | "add_file_folder_2" | "add_file_folder_3" => {
     added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "add_sub_collection" => {
@@ -168,14 +168,14 @@
             }
           }
         }
-          case 4 =>{
-            @*parse add multiple files in a folder events*@
-            @if(event.event_type.indexOf("file")>=0 && event.event_type.indexOf("dataset") < 0) {
-              added @event_type_split(3) files to a folder within @linkForObject("dataset", event.object_id, event.object_name)
-            } else {
-              @event_type_split(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @event_type_split(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
-            }
+        case 4 =>{
+          @*parse add multiple files in a folder events*@
+          @if(event.event_type.indexOf("file")>=0 && event.event_type.indexOf("dataset") < 0) {
+            added @event_type_split(3) files to a folder within @linkForObject("dataset", event.object_id, event.object_name)
+          } else {
+            @event_type_split(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @event_type_split(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
           }
+        }
       }
     }
   }
