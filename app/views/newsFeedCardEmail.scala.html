@@ -45,7 +45,7 @@
     case "download" => "downloaded "
     case "postrequest" => "requested access to"
     case _ => {
-      Logger.debug("unknown event type prefix in actionTextForEvent: "+event_type_prefix)
+      Logger.warn("unknown event type prefix in actionTextForEvent: "+event_type_prefix)
       event_type_prefix
     }
   }
@@ -58,7 +58,7 @@
     case "remove" => List("removed ", " from ")
     case "detach" => List("detached ", " from ")
     case _ => {
-      Logger.debug("unknown event type prefix in actionTextsForEvent: "+event_type_prefix)
+      Logger.warn("unknown event type prefix in actionTextsForEvent: "+event_type_prefix)
       event_type_prefix
     }
   }
@@ -180,7 +180,7 @@
           }
         }
         case _ => {
-          @Logger.debug("unknown event type encountered: "+event.event_type)
+          @Logger.warn("unknown event type encountered: "+event.event_type)
           @event.event_type
         }
       }
