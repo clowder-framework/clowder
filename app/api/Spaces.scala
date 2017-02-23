@@ -16,6 +16,7 @@ import util.Mail
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
+import play.api.i18n.Messages
 
 import scala.util.Try
 
