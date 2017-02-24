@@ -35,7 +35,8 @@ class Extractions @Inject()(
   extractors: ExtractorService,
   previews: PreviewService,
   sqarql: RdfSPARQLService,
-  thumbnails: ThumbnailService) extends ApiController {
+  thumbnails: ThumbnailService,
+  appConfig: AppConfigurationService) extends ApiController {
 
   /**
    * Uploads file for extraction and returns a file id ; It does not index the file.
@@ -95,6 +96,10 @@ class Extractions @Inject()(
                 val file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
+                    // Add new file & byte count to appConfig
+                    appConfig.incrementCount('files, 1)
+                    appConfig.incrementCount('bytes, f.length)
+
                     var fileType = f.contentType
                     val id = f.id
                     fileType = f.contentType
@@ -496,7 +501,15 @@ class Extractions @Inject()(
     notes = "  ",
     responseClass = "None", httpMethod = "POST")
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
-    val extractionInfoResult = request.body.validate[ExtractorInfo]
+
+    // If repository is of type object, change it into an array.
+    // This is for backward compatibility with requests from existing extractors.
+    val requestJson = request.body \ "repository" match {
+      case rep: JsObject => request.body.as[JsObject] ++ Json.obj("repository" ->  Json.arr(rep))
+      case _ => request.body
+    }
+
+    val extractionInfoResult = requestJson.validate[ExtractorInfo]
     extractionInfoResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))

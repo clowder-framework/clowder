@@ -13,8 +13,8 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.1.1"
-  val jvm = "1.8"
+  val version = "1.x"
+  val jvm = "1.7"
 
   def appVersion: String = {
     if (gitBranchName == "master") {
@@ -65,7 +65,7 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     filters,
     // login
-    "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
 
     // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",

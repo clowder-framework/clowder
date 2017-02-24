@@ -26,11 +26,11 @@
                 }
             }
 
-            <li><span class="glyphicon glyphicon-globe"></span> Create New Curation Object</li>
+            <li><span class="glyphicon glyphicon-globe"></span> Create New @Messages("curationobject.label")</li>
         </ol>
         <div class="page-header">
 
-            <h1>Create New Curation Object</h1>
+            <h1>Create New @Messages("curationobject.label")</h1>
         </div>
     } else {
         <ol class="breadcrumb">
@@ -48,10 +48,10 @@
                     }
                 }
             }
-            <li><span class="glyphicon glyphicon-edit"></span> Edit Curation Object</li>
+            <li><span class="glyphicon glyphicon-edit"></span> Edit @Messages("curationobject.label")</li>
         </ol>
         <div class="page-header">
-            <h1>Edit Curation Object</h1>
+            <h1>Edit @Messages("curationobject.label")</h1>
         </div>
     }
 
@@ -126,7 +126,7 @@
                 <div class="form-group">
                     <label id="spacelabel" for="space"> Create in @Messages("space.title") </label>
                     <select  name="space" id="spaceid" class = "chosen-select">
-                        No @Messages("spaces.title") available for creating Curation Object. Please add this @Messages("dataset.title").toLowerCase to a @Messages("space.title") first
+                        No @Messages("spaces.title") available for creating a @Messages("curationobject.label"). Please add this @Messages("dataset.title").toLowerCase to a @Messages("space.title") first
                     </select>
                     <span class="error hiddencomplete" id="spaceerror"> Please select a @Messages("space.title").</span><br>
                 </div>
@@ -134,7 +134,7 @@
             </fieldset>
             <form id="curationcreate"  method="POST" enctype="multipart/form-data">
                     <!-- Redirect browsers with JavaScript disabled to the origin page -->
-                <noscript>Javascript is required in order to use the uploader to create a new curation object.</noscript>
+                <noscript>Javascript is required in order to create a new @Messages("curationobject.label").</noscript>
 
                 <input type="hidden" name="name" id="hiddenname" value="not set">
                 <input type="hidden" name="description" id="hiddendescription" value="not set">
@@ -147,14 +147,14 @@
         <div class="col-md-12">
             @if(!spaceList.isEmpty) {
                 @if(isNew) {
-                    <button class="btn btn-primary btn-margins" title="Create the CO" onclick="return createCuration();">
+                    <button class="btn btn-primary btn-margins" title="Create the @Messages("curationobject.label")" onclick="return createCuration();">
                         <span class="glyphicon glyphicon-upload"></span> Create
                     </button>
                     <button class="btn btn-default btn-margins" title="Clear the input fields" onclick="return clearFields();">
                         <span class="glyphicon glyphicon-unchecked"></span> Reset
                     </button>
                 } else {
-                    <button class="btn btn-default btn-margins" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                    <button class="btn btn-default btn-margins" title="Edit @Messages("curationobject.label")" onclick="return updateCuration('@id');">
                         <span class="glyphicon glyphicon-upload"></span> Update
                     </button>
                     <button class="btn btn-default btn-margins" title="cancel edit" onclick="return cancelEdit('@id');">
@@ -163,14 +163,14 @@
                 }
             } else {
                 @if(isNew) {
-                    <button class="btn btn-primary btn-margins disabled" title="Create the CO">
+                    <button class="btn btn-primary btn-margins disabled" title="Create the @Messages("curationobject.label")">
                         <span class="glyphicon glyphicon-upload"></span> Create
                     </button>
                     <button class="btn btn-default btn-margins disabled" title="Clear the input fields">
                         <span class="glyphicon glyphicon-unchecked"></span> Reset
                     </button>
                 } else {
-                    <button class="btn btn-default btn-margins disabled" title="Edit Curation Object">
+                    <button class="btn btn-default btn-margins disabled" title="Edit @Messages("curationobject.label")">
                         <span class="glyphicon glyphicon-upload"></span> Update
                     </button>
                     <button class="btn btn-default btn-margins disabled" title="cancel edit">
@@ -185,8 +185,7 @@
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <script language="javascript">
         $(".chosen-select").chosen({
-            width: "100%",
-            placeholder_text_multiple: "Select live objects for this curation object."
+            width: "100%"
         });
 
         $('.creators').on('click', '.creator-delete a', function() {

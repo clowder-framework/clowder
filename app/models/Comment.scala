@@ -21,3 +21,12 @@ case class Comment(
   id: UUID = UUID.generate,
   @Ignore replies: List[Comment] = List.empty)
 
+object Comment {
+  implicit def toElasticsearchComment(c: Comment): ElasticsearchComment = {
+    new ElasticsearchComment(
+      c.author.id.toString,
+      c.posted,
+      c.text
+    )
+  }
+}

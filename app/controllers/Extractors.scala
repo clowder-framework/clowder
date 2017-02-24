@@ -71,6 +71,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
   }
 
   def submitDatasetExtraction(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, ds_id))) { implicit request =>
+    implicit val user = request.user
     val extractors = extractorService.listExtractorsInfo()
     datasetService.get(ds_id) match {
       case Some(ds) => Ok(views.html.extractions.submitDatasetExtraction(extractors, ds))

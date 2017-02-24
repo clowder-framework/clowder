@@ -1,0 +1,8 @@
+to create a user account into clowder.
+
+example to run:
+1) create admin account 
+docker run --rm -it -e "PASSWORD=youpassword" -e "EMAIL_ADDRESS=youremailaddress" -e "ADMIN=true" --name create-useraccount browndog/create-useraccount
+
+2) create normal user account
+docker run --rm -it -e "PASSWORD=yourpassword" -e "EMAIL_ADDRESS=youremailaddress" --name create-useraccount browndog/create-useraccount
