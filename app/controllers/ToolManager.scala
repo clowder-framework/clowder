@@ -53,8 +53,8 @@ class ToolManager extends SecuredController {
     */
   def launchTool(instanceName: String, tooltype: String, datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-
-    val hostURL = request.headers.get("Host").getOrElse("")
+    
+    val hostURL = controllers.Utils.baseUrl(request)
     val userId: Option[UUID] = user match {
       case Some(u) => Some(u.id)
       case None => None
