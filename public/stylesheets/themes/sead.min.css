@@ -7034,3 +7034,21 @@ fieldset[disabled] .btn-default.active {
   text-decoration: underline;
   padding-bottom: 5px;
 }
+
+.js-sort-single {
+	min-width:100px;
+}
+
+.select2-results__option
+{
+	padding-bottom: 1px!important;
+	padding-top: 1px!important;
+}
+
+.select2-results__options
+{
+	padding-bottom: 3px!important;
+	padding-top: 3px!important;
+}
+
+

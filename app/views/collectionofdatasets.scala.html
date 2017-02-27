@@ -179,6 +179,44 @@
 				</div>
 			</div>
 			<div class="row">
+			  <div class="col-md-8"></div>
+			  <div class="col-md-4">
+				<script type="text/javascript">
+				  $(document).ready(function() {
+  				  $(".js-sort-single").select2({minimumResultsForSearch: Infinity});
+  				  var order = 'dateN';
+  				  if($.cookie('sort-order') != null) {
+				    //removing quotes from around cookie value 
+			   	    order = $.cookie('sort-order').replace(/['"]+/g, '');
+			  	  } 
+  				  $(".js-sort-single").val(order).trigger("change");
+				  $(".js-sort-single").on('select2:select', function (evt) { 
+		             $(window).trigger("sortchange");
+	    		  });
+	    		  $(window).on('sortchange', function() {
+				      var sort = $(".js-sort-single").val();
+	      			  //Update cookie
+			          $.cookie('sort-order', sort, { path: '/' });
+			          //Go get the list sorted the new way     
+          	          var request = jsRoutes.controllers.Collections.collection('@collection.id.toString()');
+			          window.location = request.url;
+        		   });
+				  });
+				</script>
+				<label class='sortchoice' for="js-sort-single">Sort By:
+					<select class="js-sort-single">
+					  <option value="dateN">Newest</option>
+					  <option value="dateO">Oldest</option>
+					  <option value="titleA">Title (A-Z)</option>
+					  <option value="titleZ">Title (Z-A)</option>
+					  <option value="sizeL">Size (L)</option>
+					  <option value="sizeS">Size (S)</option>
+					</select>
+				</label>
+					
+			  </div>
+			</div>
+			<div class="row">
 				<div class="col-xs-12">
 					<div class="row">
 						<div class="col-xs-8">

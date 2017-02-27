@@ -28,7 +28,7 @@
         <li><span class="glyphicon glyphicon-briefcase"> </span> Datasets</li>
     </ol>
 </div>
-    <div class="row">
+
         <div class="col-md-12">
             <h1>@Html(title.getOrElse("Datasets"))</h1>
             @status match {
@@ -40,17 +40,73 @@
                 }
             }
         </div>
-    </div>
 
 <div class="row">
+
     <div class="btn-toolbar">
+     <!-- pull-right class stacks things to the right - first item to the farthest right -->
         <div class="btn-group btn-group-sm pull-right">
-            <div class="btn-group btn-group-sm pull-right">
                 <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
             </div>
-        </div>
-    @status match {
+
+  @space match {
+    case Some(s) => {
+      <div class="btn-group btn-group-sm pull-right">
+      <label class = "sortchoice" for="js-sort-single">Sort By:
+      <select class="js-sort-single">
+        <option value="dateN">Newest</option>
+        <option value="dateO">Oldest</option>
+        <option value="titleA">Title (A-Z)</option>
+        <option value="titleZ">Title (Z-A)</option>
+        <option value="sizeL">Size (L)</option>
+        <option value="sizeS">Size (S)</option>
+      </select>
+      </label>
+<script type="text/javascript">
+  $(function() {
+	$(".js-sort-single").select2({minimumResultsForSearch: Infinity});
+  	//Set starting value based on cookie
+  	var order = 'dateN';
+  	if($.cookie('sort-order') != null) {
+  	  //removing quotes from around cookie value 
+  	  order = $.cookie('sort-order').replace(/['"]+/g, '');
+  	}
+    $('.js-sort-single').val(order).trigger("change");
+    
+  
+    @space match {
+      case Some(s) => {
+  	    var currentSpace = null;
+    	currentSpace = '@s';
+  	
+  	    $(".js-sort-single").on('select2:select', function (evt) { 
+             $(window).trigger("sortchange");
+	    });
+	    $(window).on('sortchange', function() {
+	      var sort = $(".js-sort-single").val();
+	      //Update cookie
+          $.cookie('sort-order', sort, { path: '/' });
+          //Go get the list sorted the new way     
+          @if(prev != "") {
+          var request = jsRoutes.controllers.Datasets.sortedListInSpace(currentSpace, @prev.toInt, @limit);
+          } else {
+          var request = jsRoutes.controllers.Datasets.sortedListInSpace(currentSpace, 0, @limit);
+          }
+          window.location = request.url;
+        });
+      }	
+    }   
+	
+  });
+</script>
+
+    </div>
+    }
+    case None => {}
+    }
+    
+        @status match {
         case Some(st) => {}
         case None => {
 
@@ -87,9 +143,9 @@
         }
                 }
     }
-    </div>
-</div>
+    
 
+        </div>
         <script type="text/javascript" language="javascript">
             var removeIndicator = false;
 	        var viewMode = '@mode.getOrElse("tile")';
