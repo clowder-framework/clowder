@@ -59,7 +59,7 @@
     case "detach" => List("detached ", " from ")
     case _ => {
       Logger.warn("unknown event type prefix in actionTextsForEvent: "+event_type_prefix)
-      event_type_prefix
+      List(event_type_prefix+" ", " ")
     }
   }
 }
