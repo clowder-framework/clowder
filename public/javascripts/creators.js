@@ -1,9 +1,18 @@
 function addCreator() {
 
 	$('<div class="add_creator"> </div>').insertAfter($('#ds_creators'));
-	$('.add_creator')
-			.append(
-					'<select id="creatorAddSelect" class="form-control add-resource select2" tabindex="-1" aria-hidden="true">');
+	
+	//simple means there is no service to query for people name/email/ids and the input should be a simple text box
+	if ($('#add-creator').hasClass("simple")) {
+		$('.add_creator')
+				.append(
+						'<input type="text" id="creatorAddSelect" class="form-control add-resource" tabindex="-1" aria-hidden="true">');
+
+	} else {
+		$('.add_creator')
+				.append(
+						'<select id="creatorAddSelect" class="form-control add-resource select2" tabindex="-1" aria-hidden="true">');
+	}
 	$('.add_creator')
 			.append(
 					'<button id = "creator_add" class= "btn btn-sm btn-primary btn-margins" onclick = "saveCreator()"> <span class="glyphicon glyphicon-send"> </span> Add </button>');
@@ -12,60 +21,85 @@ function addCreator() {
 					'<button id="cancel_creator_add" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelAddCreator()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
 	$('#add-creator').css("display", "none");
 	$('#add-creator').addClass("hiddencomplete");
-	$("#creatorAddSelect").select2({
-		theme : "bootstrap",
-		tags : true,
-		delay : 500,
-		templateResult : function(item) {
-			// No need to template the searching text
-			if (item.loading) {
-				return item.text;
-			}
+	if (!$('#add-creator').hasClass("simple")) {
+		$("#creatorAddSelect")
+				.select2(
+						{
+							theme : "bootstrap",
+							tags : true,
+							delay : 500,
+							templateResult : function(item) {
+								// No need to template the searching text
+								if (item.loading) {
+									return item.text;
+								}
 
-			var term = query.term || '';
-			var $result = markMatch(item.text, term);
+								var term = query.term || '';
+								var $result = markMatch(item.text, term);
 
-			return $result;
-		},
-		language : {
-			searching : function(params) {
-				// Intercept the query as it is happening
-				query = params;
+								return $result;
+							},
+							language : {
+								searching : function(params) {
+									// Intercept the query as it is happening
+									query = params;
 
-				// Change this to be appropriate for your application
-				return 'Searching…';
-			}
-		},
-		placeholder : "Add a Creator",
-		allowClear : true,
-		ajax : {
-			url : function(params) {
-				var term = params.term;
-				if (!term) {
-					term = "";
-				}
-				return jsRoutes.api.Metadata.listPeople(term, 25).url;
-			},
-			processResults : function(data, page) {
-				return {
-					results : data.filter(function(x) {
-						var names = $('.creator').map(function() {
-							return $(this).children('.authname').text();
+									// Change this to be appropriate for your
+									// application
+									return 'Searching…';
+								}
+							},
+							placeholder : "Add a Creator",
+							allowClear : true,
+							ajax : {
+								url : function(params) {
+									var term = params.term;
+									if (!term) {
+										term = "";
+									}
+									return jsRoutes.api.Metadata.listPeople(
+											term, 25).url;
+								},
+								processResults : function(data, page) {
+									return {
+										results : data
+												.filter(
+														function(x) {
+															var names = $(
+																	'.creator')
+																	.map(
+																			function() {
+																				return $(
+																						this)
+																						.children(
+																								'.authname')
+																						.text();
+																			});
+															return $.inArray(
+																	x.name,
+																	names) == -1;
+														})
+												.map(
+														function(x) {
+															return {
+																text : x.name
+																		+ ", "
+																		+ x['@id']
+																		+ ", "
+																		+ x.email,
+																id : x['@id']
+															}
+														})
+									};
+								}
+							}
 						});
-						return $.inArray(x.name, names) == -1;
-					}).map(function(x) {
-						return {
-							text : x.name + ", " + x['@id'] + ", " + x.email,
-							id : x['@id']
-						}
-					})
-				};
-			}
-		}
-	});
 
-	$("#creatorAddSelect").select2('open');
-	
+		$("#creatorAddSelect").select2('open');
+	} else {
+		$("#creatorAddSelect").focus();
+	}
+
 	function markMatch(text, term) {
 		// Find where the match is
 		var match = text.toUpperCase().indexOf(term.toUpperCase());
@@ -125,7 +159,6 @@ function saveCreator() {
 				addCreatorToList(newAuthor);
 				$("#creatorlabel").text("Creator(s): ");
 
-				
 				notify("Creator added.", "success", false, 2000);
 			});
 
@@ -167,7 +200,7 @@ function addCreatorToList(newCreator) {
 	$('#add-creator').removeClass("inline");
 	$('#add-creator').css("display", "");
 	$('#aboutcreators').mouseleave();
-	if(changeCallback != null) {
+	if (changeCallback != null) {
 		changeCallback();
 	}
 
@@ -189,7 +222,7 @@ $(document).on(
 				request.done(function(response, textStatus, jqXHR) {
 					console.log("Successful remove user " + target);
 					deleteCreatorFromList(target);
-					if($("#ds_creators").children().length == 0) {
+					if ($("#ds_creators").children().length == 0) {
 						$("#creatorlabel").text("Add creator(s)");
 					}
 					notify("Creator: " + target + " removed.", "success",
@@ -213,17 +246,15 @@ function deleteCreatorFromList(creator) {
 	if (lastAuth.children().length == 3) {
 		lastAuth.children().last().remove();
 	}
-	if(changeCallback != null) {
+	if (changeCallback != null) {
 		changeCallback();
 	}
 }
 
-var changeCallback =null;
+var changeCallback = null;
 function setCreatorChangeCallback(callback) {
 	changeCallback = callback;
 }
-
-
 
 $(function() {
 

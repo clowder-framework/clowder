@@ -544,9 +544,10 @@ class Datasets @Inject()(
             )
           }
           Logger.debug(datasetWithFiles.creators.foldRight(""){(a,b) => a+b} );
+          val stagingAreaDefined = play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection, stagingAreaDefined))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

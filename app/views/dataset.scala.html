@@ -12,7 +12,7 @@
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
   limit: Int, showDownload: Boolean, showAccess:  Boolean, access: String,
-  accessOptions: List[String], canAddDatasetToCollection: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  accessOptions: List[String], canAddDatasetToCollection: Boolean, stagingAreaDefined: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import api.Permission
 @import play.api.Play.current
@@ -141,7 +141,7 @@
                 }
             </div>
             @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-              <a id="add-creator" class="hiddencomplete" href="javascript:addCreator()" title="Click to add a Creator">
+              <a id="add-creator" class="hiddencomplete @if(!stagingAreaDefined) { simple } " href="javascript:addCreator()" title="Click to add a Creator">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
             }

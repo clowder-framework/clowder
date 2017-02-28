@@ -1,11 +1,11 @@
 package api
 
-import java.net.{URL, URLEncoder}
+import java.net.{ URL, URLEncoder }
 import java.util.Date
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{ResourceRef, UUID, UserAgent, _}
+import models.{ ResourceRef, UUID, UserAgent, _ }
 import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
 import play.api.Play.current
@@ -29,15 +29,15 @@ import scala.concurrent.Future
  * Manipulate generic metadata.
  */
 @Singleton
-class Metadata @Inject()(
-  metadataService: MetadataService,
-  contextService: ContextLDService,
-  userService: UserService,
-  datasets: DatasetService,
-  files: FileService,
-  curations:CurationService,
-  events: EventService,
-  spaceService: SpaceService) extends ApiController {
+class Metadata @Inject() (
+    metadataService: MetadataService,
+    contextService: ContextLDService,
+    userService: UserService,
+    datasets: DatasetService,
+    files: FileService,
+    curations: CurationService,
+    events: EventService,
+    spaceService: SpaceService) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -63,7 +63,7 @@ class Metadata @Inject()(
     for (md_def <- definitions) {
       val currVal = (md_def.json \ "label").as[String]
       if (currVal.toLowerCase startsWith query.toLowerCase) {
-        listOfTerms.append("metadata."+currVal)
+        listOfTerms.append("metadata." + currVal)
       }
     }
 
@@ -92,12 +92,12 @@ class Metadata @Inject()(
         val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
-            case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
+            case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach { definition => metadataDefinitions += definition }
             case None =>
           }
         }
-        if(dataset.spaces.length == 0) {
-          metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
+        if (dataset.spaces.length == 0) {
+          metadataService.getDefinitions().foreach { definition => metadataDefinitions += definition }
         }
         Ok(toJson(metadataDefinitions.toList))
       }
@@ -131,17 +131,17 @@ class Metadata @Inject()(
     }
   }
 
-  def addDefinitionToSpace(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.json){ implicit request =>
+  def addDefinitionToSpace(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(u) => {
         var body = request.body
-        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
+        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined) {
           var uri = (body \ "uri").asOpt[String].getOrElse("")
           spaceService.get(spaceId) match {
             case Some(space) => {
               // assign a default uri if not specified
-              if(uri == "") {
+              if (uri == "") {
                 // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
                 uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
                 body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
@@ -163,10 +163,10 @@ class Metadata @Inject()(
       request.user match {
         case Some(user) => {
           var body = request.body
-          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined) {
             var uri = (body \ "uri").asOpt[String].getOrElse("")
             // assign a default uri if not specified
-            if(uri == "") {
+            if (uri == "") {
               // http://clowder.ncsa.illinois.edu/metadata#CamelCase
               uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
               body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
@@ -182,7 +182,7 @@ class Metadata @Inject()(
 
   //On GUI, URI is not required, however URI is required in DB. a default one will be generated when needed.
   private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
-    metadataService.getDefinitionByUriAndSpace(uri, space map {_.id.toString()} ) match {
+    metadataService.getDefinitionByUriAndSpace(uri, space map { _.id.toString() }) match {
       case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
       case None => {
         val definition = MetadataDefinition(json = body, spaceId = spaceId)
@@ -200,7 +200,7 @@ class Metadata @Inject()(
     }
   }
 
-  def editDefinition(id:UUID, spaceId: Option[String]) = ServerAdminAction (parse.json) {
+  def editDefinition(id: UUID, spaceId: Option[String]) = ServerAdminAction(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -208,7 +208,7 @@ class Metadata @Inject()(
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
             val uri = (body \ "uri").as[String]
             metadataService.getDefinitionByUriAndSpace(uri, spaceId) match {
-              case Some(metadata)  => if( metadata.id != id) {
+              case Some(metadata) => if (metadata.id != id) {
                 BadRequest(toJson("Metadata definition with same uri exists."))
               } else {
                 metadataService.editDefinition(id, body)
@@ -261,7 +261,7 @@ class Metadata @Inject()(
             Ok(JsObject(Seq("status" -> JsString("ok"))))
           }
           case None => BadRequest(toJson("Invalid metadata definition"))
-          }
+        }
 
       }
       case None => BadRequest(toJson("Invalid user"))
@@ -367,13 +367,13 @@ class Metadata @Inject()(
 
   @ApiOperation(value = "Delete the metadata represented in Json-ld format",
     responseClass = "None", httpMethod = "DELETE")
-  def removeMetadata(id:UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
+  def removeMetadata(id: UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
     request.user match {
       case Some(user) => {
         metadataService.getMetadataById(id) match {
           case Some(m) => {
-            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)
-            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)) {
+            if (m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)
+              || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Preparation").getOrElse(false)) {
               BadRequest("Publication Request has already been submitted")
             } else {
               metadataService.removeMetadata(id)
@@ -448,7 +448,7 @@ class Metadata @Inject()(
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val endpoint = (play.Play.application().configuration().getString("people.uri"))
-    if (endpoint != null) {
+    if (play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && endpoint != null) {
 
       val futureResponse = WS.url(endpoint).get()
       var jsonResponse: play.api.libs.json.JsValue = new JsArray()
@@ -491,8 +491,27 @@ class Metadata @Inject()(
       }
       result
     } else { //TBD - just get list of Clowder users
+    /*  val lcTerm = term.toLowerCase()
+      Future(Ok(Json.toJson(userService.list.map(jsonPerson).filter((x) => {
+        if (term.length == 0) {
+          true
+        } else {
+          Logger.debug(lcTerm)
+
+          (((x \ "name").as[String].toLowerCase().contains(lcTerm)) ||
+            (x \ "@id").as[String].toLowerCase().contains(lcTerm) ||
+            (x \ "email").as[String].toLowerCase().contains(lcTerm))
+        }
+      }).take(limit))).as("application/json"))
+      */
       Future(NotFound(toJson(Map("failure" -> { "People not found" }))).as("application/json"))
     }
   }
 
+  def jsonPerson(user: User): JsObject = {
+    Json.obj(
+      "name" -> user.fullName,
+      "@id" -> user.id.stringify,
+      "email" -> user.email)
+  }
 }
