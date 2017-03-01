@@ -9,7 +9,7 @@
     <div class="col-md-12">
         @if(creator.isDefined) {
             <h3>
-                Owner: <a href= "@routes.Profile.viewProfileUUID(space.creator)" title="@creator.get.email"> @creator.get.fullName</a>
+                @Messages("owner.label"): <a href= "@routes.Profile.viewProfileUUID(space.creator)" title="@creator.get.email"> @creator.get.fullName</a>
             </h3>
 
             <br />
