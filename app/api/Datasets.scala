@@ -1147,6 +1147,98 @@ class  Datasets @Inject()(
   }
   //End, Update Dataset Information code
 
+    @ApiOperation(value = "Add a creator to the Dataset's list of Creators.",
+    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pair for creator.",
+    responseClass = "None", httpMethod = "POST")
+  def addCreator(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {
+
+      //Set up the vars we are looking for
+      var creator: String = null
+
+      val aResult: JsResult[String] = (request.body \ "creator").validate[String]
+
+      // Pattern matching
+      aResult match {
+        case s: JsSuccess[String] => {
+          creator = s.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson(s"creator data is missing."))
+        }
+      }
+      Logger.debug(s"updateInformation for dataset with id  $id. New creator is:  $creator ")
+
+      datasets.addCreator(id, creator)
+      datasets.get(id) match {
+        case Some(dataset) => {
+          events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+        }
+      }
+      datasets.index(id)
+      Ok(Json.obj("status" -> "success"))
+    }
+    else {
+      Logger.error(s"The given id $id is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+    }
+  }
+  //End, Update Dataset Information code  
+    
+    @ApiOperation(value = "Remove a creator from the Dataset's list of Creators.",
+    
+    notes = "Takes the UUID of the dataset and the entry to delete (a String).",
+    responseClass = "None", httpMethod = "DELETE")
+  def removeCreator(id: UUID, creator: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {
+
+      Logger.debug(s"Remove Creator for dataset with id  $id. :  $creator ")
+
+      datasets.removeCreator(id, creator)
+      datasets.get(id) match {
+        case Some(dataset) => {
+          events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+        }
+      }
+      datasets.index(id)
+      Ok(Json.obj("status" -> "success"))
+    }
+    else {
+      Logger.error(s"The given id $id is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+    }
+  }
+  //End, removeCreator  
+    
+    @ApiOperation(value = "Move a creator in a Dataset's list of creators.",
+  
+    notes = "Takes the UUID of the dataset, the creator to move (a String) and the new position of the creator in the overall list of creators.",
+    responseClass = "None", httpMethod = "PUT")
+  def moveCreator(id: UUID, creator: String, newPos: Int) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {
+      
+      Logger.debug(s"Move Creator for dataset with id  $id. :  $creator  to $newPos")
+      datasets.moveCreator(id, creator, newPos)
+      datasets.get(id) match {
+        case Some(dataset) => {
+          events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+        }
+      }
+      datasets.index(id)
+      Ok(Json.obj("status" -> "success"))
+    }
+    else {
+      Logger.error(s"The given id $id is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+    }
+  }
+  //End, move Creator
+  
+  
   //Update License code
   /**
     * REST endpoint: POST: update the license data associated with a specific Dataset

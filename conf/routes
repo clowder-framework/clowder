@@ -313,6 +313,7 @@ PUT            /api/metadata/definitions/:id                                    
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition()
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
+GET            /api/metadata/people		                                        		@api.Metadata.listPeople(term: String, limit:Int)
 GET            /api/metadata/people/:pid 		                                        @api.Metadata.getPerson(pid: String)
 # ----------------------------------------------------------------------
 # LOGOS ENDPOINT
@@ -538,6 +539,9 @@ POST           /api/datasets/:id/tags/remove_all                                
 DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
 PUT            /api/datasets/:id/title                                                  @api.Datasets.updateName(id:UUID)
 PUT            /api/datasets/:id/description                                            @api.Datasets.updateDescription(id: UUID)
+POST           /api/datasets/:id/creator	                                            @api.Datasets.addCreator(id: UUID)
+DELETE		   /api/datasets/:id/creator/remove											@api.Datasets.removeCreator(id: UUID, creator: String)
+PUT			   /api/datasets/:id/creator/reorder										@api.Datasets.moveCreator(id: UUID, creator: String, newPos: Int)
 POST           /api/datasets/:id/editing                                                @api.Datasets.updateInformation(id: UUID)
 POST           /api/datasets/:id/license                                                @api.Datasets.updateLicense(id: UUID)
 GET            /api/datasets/:id/isBeingProcessed                                       @api.Datasets.isBeingProcessed(id: UUID)

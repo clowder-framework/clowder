@@ -8,7 +8,7 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
-import util.{ FileUtils, Formatters, RequiredFieldsConfig, SortingUtils }
+import util.{FileUtils, Formatters, RequiredFieldsConfig, SortingUtils }
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
@@ -527,7 +527,9 @@ class Datasets @Inject() (
 
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-        filesInDataset.map {
+
+          filesInDataset.map
+          {
           file =>
             file.tags.map {
               tag => filesTags += tag.name
@@ -557,8 +559,7 @@ class Datasets @Inject() (
         var decodedSpaces_canRemove: Map[ProjectSpace, Boolean] = Map.empty
         var isInPublicSpace = false
         dataset.spaces.map {
-          sp =>
-            spaceService.get(sp) match {
+            sp => spaceService.get(sp) match {
               case Some(s) => {
                 decodedSpaces_canRemove += (Utils.decodeSpaceElements(s) -> true)
                 datasetSpaces = s :: datasetSpaces
@@ -618,11 +619,13 @@ class Datasets @Inject() (
           datasetSpaces.map(space =>
             if (Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
               canAddDatasetToCollection = true
-            })
            }
+          )
+        }
+        val stagingAreaDefined = play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove), fileList,
-          filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
+          filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection, stagingAreaDefined))
       }
       case None => {
         Logger.error("Error getting dataset" + id)
@@ -735,7 +738,8 @@ class Datasets @Inject() (
               "size" -> toJson(f.length),
               "url" -> toJson(routes.Files.file(f.id).absoluteURL(Utils.https(request))),
               "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(Utils.https(request))),
-              "deleteType" -> toJson("POST")))))
+              "deleteType" -> toJson("POST")
+            ))))
           }
           case None => {
             Map("files" ->

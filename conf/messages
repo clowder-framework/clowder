@@ -8,6 +8,7 @@ create.title= Create {0}
 create.header = Create New {0}
 following.title=Following {0}
 trial.title = Trial {0}
+owner.label=Owner
 owner.title = {0}''s {1}
 owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
 resource.in.title= {0} in {1} <a href="{2}">{3}</a>

@@ -16,6 +16,7 @@ import util.Mail
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
+import play.api.i18n.Messages
 
 import scala.util.Try
 
@@ -158,7 +159,7 @@ class Spaces @Inject()(spaces: SpaceService,
         case (Some(s), Some(c)) => {
           // TODO this needs to be cleaned up when do permissions for adding to a resource
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.collection, collectionId))) {
-            Forbidden(toJson(s"You are not the owner of the collection"))
+            Forbidden(toJson(s"You are not the ${Messages("owner").toLowerCase()} of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId, request.user)
             collectionService.addToRootSpaces(collectionId, spaceId)
@@ -188,7 +189,7 @@ class Spaces @Inject()(spaces: SpaceService,
         case (Some(s), Some(d)) => {
           // TODO this needs to be cleaned up when do permissions for adding to a resource
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, datasetId))) {
-            Forbidden(toJson(s"You are not the owner of the dataset"))
+            Forbidden(toJson(s"You are not the ${Messages("owner").toLowerCase()} of the dataset"))
           } else {
             spaces.addDataset(datasetId, spaceId)
             events.addSourceEvent(request.user,  d.id, d.name, s.id, s.name, "add_dataset_space")
