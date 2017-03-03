@@ -189,20 +189,20 @@
             //viewMode style, as well as on initial load of page.
             function updatePage() {
                @space match {
-      	case None => {
-                $('#nextlink').attr('href', "@(routes.Collections.list("a", next, limit, space, "", owner))");
-                $('#prevlink').attr('href', "@(routes.Collections.list("b", prev, limit, space, "", owner))");
-                }
-        case Some(s) => {
-        	@if(next != "") {
-      	        $('#nextlink').attr('href', "@(routes.Collections.sortedListInSpace(s, next.toInt, limit))");
-      	        }
-				@if(prev != "") {
-                  $('#prevlink').attr('href', "@(routes.Collections.sortedListInSpace(s, prev.toInt-limit, limit))");      	        	}
-      	        }	
-            }
-        }
-            
+      			  case None => {
+                	$('#nextlink').attr('href', "@(routes.Collections.list("a", next, limit, space, "", owner))");
+                	$('#prevlink').attr('href', "@(routes.Collections.list("b", prev, limit, space, "", owner))");
+                  }
+        		  case Some(s) => {
+        			@if(next != "") {
+      	        		$('#nextlink').attr('href', "@(routes.Collections.sortedListInSpace(s, next.toInt, limit))");
+      	        	}
+					@if(prev != "") {
+                  		$('#prevlink').attr('href', "@(routes.Collections.sortedListInSpace(s, prev.toInt-limit, limit))");
+                	}
+      	    	  }	
+          	  }
+        	}
         </script>
     </div>
 </div>

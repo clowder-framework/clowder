@@ -136,7 +136,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             metadataJson = metadataJson ++ Map("Creator" -> Json.toJson(c.creators))
           }
           if(!metadataDefsMap.contains("Creator")){
-            metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+            metadataDefsMap("Creator") = Json.toJson(Map("@id" -> "http://purl.org/dc/terms/creator", "@container" -> "@list"))
           }
           val publicationDate = c.publishedDate match {
             case None => ""
