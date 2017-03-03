@@ -219,8 +219,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             ""
           }
           val date = ""
-          Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, Some(space), spaceName, None, None, title, "a", date))
-
+          Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, Some(space), spaceName, title, None, None, "a", date))
         }
       }
     }
@@ -507,7 +506,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = SortingUtils.sortDatasets(datasets.listCollection(id.stringify, user), sortOrder);
+          val datasetsInside = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+            SortingUtils.sortDatasets(datasets.listCollection(id.stringify, user), sortOrder)
+          } else {
+            datasets.listCollection(id.stringify, user)
+          }
           val datasetIdsToUse = datasetsInside.slice(0, limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetIdsToUse) {
@@ -526,7 +529,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             dataset.id -> allComments.size
           }.toMap
 
-          val child_collections = SortingUtils.sortCollections(dCollection.child_collection_ids.map(c => collections.get(c)).flatten, sortOrder).slice(0, limit)
+          val child_collections = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+            SortingUtils.sortCollections(dCollection.child_collection_ids.flatMap(c => collections.get(c)), sortOrder).slice(0, limit)
+          } else {
+            dCollection.child_collection_ids.slice(0, limit).flatMap(c  => collections.get(c))
+          }
           val decodedChildCollections = ListBuffer.empty[models.Collection]
           for (child_collection <- child_collections) {
             val decodedChild = Utils.decodeCollectionElements(child_collection)

@@ -10,14 +10,26 @@
     
             @isPublic match {
             case Some(b) => {
-                <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify,0,12, isPublic))" class="btn btn-link btn-xs">
-		            <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
-        		</a>
+                @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+                    <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify, 0, 12, isPublic))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                } else {
+                    <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify), Some("publicAll")))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                }
          	}
             case None => {
-                <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify,0,12))" class="btn btn-link btn-xs">
-                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
-                </a>
+                @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+                    <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify, 0, 12))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                } else {
+                    <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                }
             }
         }
     </span>

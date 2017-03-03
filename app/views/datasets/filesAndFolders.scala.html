@@ -8,6 +8,7 @@
     
 }
 </h2>
+@if(play.Play.application().configuration().getBoolean("sortInMemory")) {
 <script type="text/javascript">
 $(document).ready(function() {
   $(".js-sort-single").select2({minimumResultsForSearch: Infinity});
@@ -36,6 +37,7 @@ $(document).ready(function() {
   
 </select>
 </label>
+}
 </div>
 
 <div id="folderListDiv">
