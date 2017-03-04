@@ -195,7 +195,7 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-@if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+@if(play.Play.application().configuration().getBoolean("sortInMemory")&&space.isDefined) {
                 @if(next != "") {
                     $('#nextlink').attr('href', "@(routes.Datasets.sortedListInSpace(space.getOrElse(""), next.toInt, limit))");
                 }

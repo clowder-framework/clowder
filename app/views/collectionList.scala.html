@@ -182,24 +182,16 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
             function updatePage() {
-@if(play.Play.application().configuration().getBoolean("sortInMemory")) {
-    @space match {
-        case Some(s) => {
-            @if(next != "") {
-                $('#nextlink').attr('href', "@(routes.Collections.sortedListInSpace(s, next.toInt, limit))");
-            }
-            @if(prev != "") {
-                $('#prevlink').attr('href', "@(routes.Collections.sortedListInSpace(s, prev.toInt-limit, limit))");
-            }
-        }
-        case None => {
-                $('#nextlink').attr('href', "@(routes.Collections.list("a", next, limit, space, "", owner))");
-                $('#prevlink').attr('href', "@(routes.Collections.list("b", prev, limit, space, "", owner))");
-        }
-    }
+@if(play.Play.application().configuration().getBoolean("sortInMemory")&&space.isDefined) {
+              @if(next != "") {
+                $('#nextlink').attr('href', "@(routes.Collections.sortedListInSpace(space.getOrElse(""), next.toInt, limit))");
+              }
+              @if(prev != "") {
+                $('#prevlink').attr('href', "@(routes.Collections.sortedListInSpace(space.getOrElse(""), prev.toInt-limit, limit))");
+              }
 } else {
-                $('#nextlink').attr('href', "@(routes.Collections.list("a", next, limit, space, "", owner))");
-                $('#prevlink').attr('href', "@(routes.Collections.list("b", prev, limit, space, "", owner))");
+              $('#nextlink').attr('href', "@(routes.Collections.list("a", next, limit, space, "", owner))");
+              $('#prevlink').attr('href', "@(routes.Collections.list("b", prev, limit, space, "", owner))");
 }
             }
         </script>
