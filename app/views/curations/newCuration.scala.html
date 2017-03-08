@@ -73,8 +73,7 @@
                 <input type="text" class="form-control" id="name" placeholder="A short name" value="@name">
                 <span class="error hiddencomplete" id="nameerror">The name is a required field.</span>
             </div>
-           
-            <div class="form-group">
+                        <div class="form-group">
 			  <div id='aboutcreators'>
                 <label id="creators-label" title="Ordered list of those responsible for this publication"> Creator(s): </label>
                         
@@ -91,19 +90,21 @@
 					" id="creatorerror">One or more creators are required </span></div>
 			  </div>  
 			</div>	                
- 			<div class="form-group">
-                <label id="desclabel" for="description"> 
+            
+            <div class="form-group">
+ 				<label id="desclabel" for="description"> 
                 @if(Messages("dataset.description").toLowerCase == Messages("publicationrequest.description").toLowerCase) {
                 	@Messages("publicationrequest.description")
                 } else {
                 		@Messages("publicationrequest.description") (@Messages("dataset.description"))
 				}                		
                 </label>
-                <textarea rows="4" type="text" id="description" class="form-control" >@desc</textarea>
-                <span class="error 
+                <textarea rows="4" type="text" id="description" class="form-control" >@Html(desc)</textarea>
+                               <span class="error 
                 @if(desc.length >0 ) {hiddencomplete}
                 " id="descerror">The abstract is a required field.</span>
             </div>
+
             @if(!spaceList.isEmpty) {
                 <div class="form-group">
                     <label id="spacelabel" for="space"> Create in @Messages("space.title") </label>
@@ -220,6 +221,6 @@
               $("#creatorerror").hide();
             }
         });
-	</script>
+</script>
 
 }

@@ -16,13 +16,21 @@
             @for((key, value) <- pd - "title" -"id") {
                 @if(key == "Published Dataset"){
                     <p><b>@key.capitalize:</b> <a href="@value" target="_blank">@value</a></p>
-                } else {
+                } else { 
                   @if(key == "author") {
                     <p><b>Creator(s)</b> @value</p>
                   } else {
-                    <p><b>@key.capitalize:</b> @value</p>
+                    @if(key == "Abstract") {
+                      <div><b>@key.capitalize:</b> <span style="width 100%"><div class="published
+                      @if(value.contains("\n")) {
+                      	 panel
+                      }
+                      ">@Html(value.replace("\n","<br>"))</div></span></div>
+                    } else {
+                      <p><b>@key.capitalize:</b> @value</p>
+                    }  
                   }
-                }
+                }  
             }
         </div>
       </div>

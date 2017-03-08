@@ -940,7 +940,7 @@ class CurationObjects @Inject()(
                 "id" -> (js \ "Identifier").asOpt[String],
                 "title" -> (js \ "Title").asOpt[String],
                 "author" -> (js \ "Creator").asOpt[String],
-                "description" -> (js \ "Abstract").asOpt[String],
+                "Abstract" -> (js \ "Abstract").asOpt[String],
                 spaceTitle -> (js \ "Publishing Project Name").asOpt[String],
                 "Published Dataset" -> (js \ "DOI" ).asOpt[String],
                 "Publication Date" -> (js \ "Publication Date").asOpt[String])

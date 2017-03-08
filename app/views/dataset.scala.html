@@ -109,7 +109,7 @@
                         @datasets.editLicense(dataset)
                     </ul>
                 </div>
-                
+                                
             <div class="col-md-12 box-white-space" id='aboutcreators' data-dataset='@dataset.id'>
                 
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -153,7 +153,11 @@
         			} else {
         			@Messages("dataset.description"):
         			}</span> 
-                    <p id ="ds_description" class="inline">
+                    <p id ="ds_description" class="inline abstract
+                    @if(dataset.description.contains("<br>")) {
+                    	abstract-panel
+                    }
+                    "> 
                     @if(dataset.description.length > 0) {
                         @Html(dataset.description)
                     }
@@ -490,13 +494,14 @@
 		$('#ds_description').text("");
 		$('#edit-description').css("display", "none");
 		$('#edit-description').addClass("hiddencomplete");
+		$('#ds_description').css("display", "none");
 		$("#desc_input").select();
 	}
 
     function cancelDescription() {
         $('#ds_description').html(cur_description);
         $('.edit_desc').remove();
-        $('#ds_description').css("display", "inline");
+        $('#ds_description').css("display","");
         $('#edit-description').removeClass("inline");
         $('#edit-description').css("display", "");
         $('#ds-description').mouseleave();
@@ -515,13 +520,19 @@
 
 		request.done(function(response, textStatus,jqXHR) {
 			$('#ds_description').html(urlify(htmlEncode(description).replace(/\n/g, "<br>")));
-			if($('#ds_description').html().length == 0) {
+						if($('#ds_description').html().length == 0) {
 			   $('#aboutdesc > span').text("Add a " + descLabel.toLowerCase());
 			 } else {
 			   $('#aboutdesc > span').text(descLabel + ":");
 			 }
 			$('.edit_desc').remove();
-			$('#ds_description').css("display", "inline");
+			//multiline add classes else remove them
+			if ($('#ds_description').html().indexOf("<br>")>=0) {
+			$('#ds_description').addClass("abstract-panel");
+			} else {
+			$('#ds_description').removeClass("abstract-panel");
+			}
+			$('#ds_description').css("display", "");
 			$('#edit-description').removeClass("inline");
             $('#edit-description').css("display", "");
             $('#ds-description').mouseleave();
@@ -558,7 +569,7 @@
         request.send();
     }
 
-    $(function() {	
+    $(function() {
             $(window).on('fileDelete hashchange', function() {
 
                 getUpdatedFilesAndFolders();
@@ -615,14 +626,14 @@
             $(window).trigger("hashchange");
         }
         } else {
-        function updatePageAndFolder(idx, folderIdd) {
-            if (folderIdd != "") {
-                location.hash = "folderId=" + folderIdd + "&page=" + idx;
-            } else {
-                location.hash = "page=" + idx;
-            }
-            $(window).trigger("hashchange");
-        }
+       function updatePageAndFolder(idx, folderIdd){
+           if(folderIdd != "") {
+               location.hash = "folderId="+folderIdd+"&page="+idx;
+           } else {
+               location.hash="page="+idx;
+           }
+           $(window).trigger("hashchange");
+       }
         }
 
        function getUpdatedFilesAndFolders() {
