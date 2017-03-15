@@ -18,8 +18,31 @@
       <div class="col-md-6">
       <div>
         <h2>@curationObject.name</h2>
-        @curationObject.description<br/><br/>
-        <b>Creator</b>: @curationObject.author.fullName <br/>
+        <p class= "inline"><b>@Messages("publicationrequest.description"):</b></p>
+        <p class= "inline abstract
+        @if(curationObject.description.contains("\n")) {
+        	  abstract-panel
+        	}
+        "><br/>
+        @Html(curationObject.description.replace("\n","<br>"))</p>
+        <br/><br/>
+        <span><b>Creator(s)</b>: 
+          	@if(curationObject.creators.length !=0) {
+       			@for(i <- 0 to (curationObject.creators.length  - 2) ) {
+           			<span class="creator" >
+           				<span class="authname person  break-word" data-creator="@curationObject.creators(i).trim">@curationObject.creators(i).trim</span>
+           				<span class="glyphicon-remove creator-delete hiddencomplete"></span>
+          				<span>, </span>
+           			</span>
+       			}
+           		<span class="creator" >
+              		<span class="authname person  break-word" data-creator="@curationObject.creators(curationObject.creators.length-1).trim">@curationObject.creators(curationObject.creators.length-1).trim</span>
+              		<span class="glyphicon-remove creator-delete hiddencomplete"></span>
+   	        	</span>
+           	}	
+        </span><br/>
+        
+        <b>@Messages("owner.label")</b>: @curationObject.author.fullName <br/>
         <b>Created</b>: @curationObject.created.date.format("MMM dd, yyyy") <br/>
         <b>Repository</b>: @curationObject.repository.getOrElse("Not selected.") <br/>
         <b>Submitted</b>: @{curationObject.submittedDate match {
@@ -42,15 +65,14 @@
           }
         }
         case None => {Not Set}
-      }<br/>
-          <b>Abstract</b>: @curationObject.description
+      }
 
         <br/>
         <h4> @Messages("dataset.title") <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
         Note: The links in this page redirect to the live objects.<br/>
         <b>Size</b>: @{files.map(_.length).sum /1024} KB <br/>
         <b>File Formats</b>: @files.map(_.contentType).toSet.mkString(", ") <br/>
-        <b>Creator</b>: @curationObject.datasets(0).author.fullName <br/>
+        <b>@Messages("owner.label")</b>: @curationObject.datasets(0).author.fullName <br/>
 
 
         @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@

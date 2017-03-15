@@ -1,4 +1,4 @@
- $(function () {
+ function expandPeople() {
             $('.person').each(function() {
                 var personElement = this;
                 if(!$(personElement).hasClass('expanded')) {
@@ -32,4 +32,8 @@
                 }
             });
             
-        })
+        }
+ 
+ $( function() {
+	 expandPeople();
+ })

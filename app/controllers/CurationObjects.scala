@@ -1,6 +1,8 @@
 package controllers
 
 import java.util.Date
+import java.net.URLDecoder
+
 import javax.inject.Inject
 import api.Permission._
 import api.{UserRequest, Permission}
@@ -48,11 +50,11 @@ class CurationObjects @Inject()(
 
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-    val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces
+    val (name, desc, creators, spaceByDataset) = datasets.get(datasetId) match {
+      case Some(dataset) => (dataset.name, dataset.description, dataset.creators, dataset.spaces
         .filter (spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
         .map(id => spaces.get(id)).flatten)
-      case None => ("", "", List.empty)
+      case None => ("", "", List.empty, List.empty)
     }
     //default space is the space from which user access to the dataset
     val defaultspace = spaceId match {
@@ -66,10 +68,8 @@ class CurationObjects @Inject()(
       case _ => spaces.get(UUID(spaceId))
     }
 
-    val mdCreators = metadatas.searchbyKeyInDataset("Creator", datasetId).map(x => ((x.content)\"Creator").as[String])
-
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      true, true, mdCreators))
+      true, true, creators))
   }
 
   /**
@@ -195,7 +195,7 @@ class CurationObjects @Inject()(
                 folders = List.empty,
                 repository = None,
                 status = "In Preparation",
-                creators = COCreators(0).split(",").toList)
+                creators = COCreators(0).split(",").toList.map(x => URLDecoder.decode(x, "UTF-8")))
 
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)
@@ -311,7 +311,7 @@ class CurationObjects @Inject()(
           val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
           val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
           val COCreators = request.body.asFormUrlEncoded.getOrElse("creators", List.empty)
-          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId, COCreators(0).split(",").toList)
+          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId, COCreators(0).split(",").toList.map(x => URLDecoder.decode(x, "UTF-8")))
           events.addObjectEvent(user, id, COName(0), "update_curation_information")
 
               Redirect(routes.CurationObjects.getCurationObject(id))
@@ -364,6 +364,7 @@ class CurationObjects @Inject()(
           }
           case None => BadRequest(views.html.notFound("Space does not exist."))
         }
+
       }
       case None => BadRequest(views.html.notFound("Publication Request does not exist."))
     }
@@ -530,7 +531,7 @@ class CurationObjects @Inject()(
       aggregation = aggregation ++ Map("Creator" -> Json.toJson(c.creators))
     }
     if(!metadataDefsMap.contains("Creator")){
-      metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+      metadataDefsMap("Creator") = Json.toJson(Map("@id" -> "http://purl.org/dc/terms/creator", "@container" -> "@list"))
     }
     if(metadataJson.contains("Abstract")) {
       val value = List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
@@ -766,7 +767,7 @@ class CurationObjects @Inject()(
             aggregation = aggregation ++ Map("Creator" -> Json.toJson(c.creators))
           }
           if(!metadataDefsMap.contains("Creator")){
-            metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+            metadataDefsMap("Creator") = Json.toJson(Map("@id" -> "http://purl.org/dc/terms/creator", "@container" -> "@list"))
           }
 
           val rightsholder = user.map ( usr => usr.profile match {
@@ -939,7 +940,7 @@ class CurationObjects @Inject()(
                 "id" -> (js \ "Identifier").asOpt[String],
                 "title" -> (js \ "Title").asOpt[String],
                 "author" -> (js \ "Creator").asOpt[String],
-                "description" -> (js \ "Abstract").asOpt[String],
+                "Abstract" -> (js \ "Abstract").asOpt[String],
                 spaceTitle -> (js \ "Publishing Project Name").asOpt[String],
                 "Published Dataset" -> (js \ "DOI" ).asOpt[String],
                 "Publication Date" -> (js \ "Publication Date").asOpt[String])

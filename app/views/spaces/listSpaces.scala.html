@@ -8,6 +8,8 @@
         <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+        
+    	
 
     <div class="row">
         <ol class="breadcrumb">
@@ -109,6 +111,7 @@
                 function updatePage() {
                     $('#nextlink').attr('href', "@(routes.Spaces.list("a", next, limit, "", owner, showAll, showPublic, onlyTrial))");
                     $('#prevlink').attr('href', "@(routes.Spaces.list("b", prev, limit, "", owner, showAll, showPublic, onlyTrial))");
+                    doSummarizeAbstracts();
                 }
             </script>
 
@@ -142,5 +145,6 @@
                     </ul>
                 </div>
             </div>
-
+		<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/descriptionSummary.js")" type="text/javascript"></script>
 }

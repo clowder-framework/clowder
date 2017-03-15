@@ -16,7 +16,7 @@
             }
         <div class="caption break-word">
             <h4 class="no-overflow oneline"><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h4>
-            <p>@ellipsize(space.description, 200)</p>
+            <p class = 'abstractsummary'>@Html(space.description.replace("\n","<br>"))</p>
         </div>
         </div>
             <!-- Space Info -->
