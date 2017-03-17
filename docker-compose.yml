@@ -19,27 +19,27 @@ filedigest:
     - rabbitmq
 
 audiopreview:
-  image: ncsa/clowder-extractors-audio-preview
+  image: clowder/extractors-audio-preview
   links:
     - rabbitmq
 
 imagepreview:
-  image: ncsa/clowder-extractors-image-preview
+  image: clowder/extractors-image-preview
   links:
     - rabbitmq
 
 imagemetadata:
-  image: ncsa/clowder-extractors-image-metadata
+  image: clowder/extractors-image-metadata
   links:
     - rabbitmq
 
 pdfpreview:
-  image: ncsa/clowder-extractors-pdf-preview
+  image: clowder/extractors-pdf-preview
   links:
     - rabbitmq
 
 videopreview:
-  image: ncsa/clowder-extractors-video-preview
+  image: clowder/extractors-video-preview
   links:
     - rabbitmq
 
