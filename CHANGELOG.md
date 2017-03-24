@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Updated the POST endpoint `/api/extractors` to accept a list of extractor repositories (git, docker, svn, etc) instead of only one. [BD-1253](https://opensource.ncsa.illinois.edu/jira/browse/BD-1253)
 - Changed default labels in Staging Area plugin, e.g. "Curation Objects" to "Publication Requests" and make them configurable [SEAD-1131] (https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1131)
+### Fixed
+- Fixed email newsfeed template for new events, so that instances with malfunctioning email digest subscriptions can correctly generate digest emails. [SEAD-1108](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1108)
 
 ## 1.1.0
 
