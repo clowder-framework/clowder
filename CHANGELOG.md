@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ### Changed
-<<<<<<< HEAD
 - Updated the POST endpoint `/api/extractors` to accept a list of extractor repositories (git, docker, svn, etc) instead 
   of only one. [BD-1253](https://opensource.ncsa.illinois.edu/jira/browse/BD-1253)
 - Changed default labels in Staging Area plugin, e.g. "Curation Objects" to "Publication Requests" and make them configurable. 
