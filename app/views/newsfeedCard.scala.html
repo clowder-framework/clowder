@@ -1,6 +1,7 @@
 @(event: models.Event)(implicit user: Option[models.User] = None)
 @import services.AppConfiguration
 @import play.api.i18n.Messages
+@import play.Logger
 @linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
   @obj_type match {
     case "file" => {
@@ -48,7 +49,10 @@
     case "edit" => "edited their comment to "
     case "download" => "downloaded "
     case "postrequest" => "requested access to"
-    case _ => event_type_prefix
+    case _ => {
+      Logger.warn("unknown event type prefix in actionTextForEvent: "+event_type_prefix)
+      event_type_prefix
+    }
   }
 }
 
@@ -58,6 +62,10 @@
     case "attach" => List("attached ", " to ")
     case "remove" => List("removed ", " from ")
     case "detach" => List("detached ", " from ")
+    case _ => {
+      Logger.warn("unknown event type prefix in actionTextsForEvent: "+event_type_prefix)
+      List(event_type_prefix+" ", " ")
+    }
   }
 }
 
@@ -98,10 +106,10 @@
   case "updated_folder" => {
     updated a folder in @linkForObject("dataset", event.object_id, event.object_name)
   }
-  case "add_file" | "add_file_1" => {
+  case "add_file" | "add_file_1" | "add_file_2" | "add_file_3" => {
     added a file to @linkForObject("dataset", event.object_id, event.object_name)
   }
-  case "add_file_folder" | "add_file_folder_1" => {
+  case "add_file_folder" | "add_file_folder_1" | "add_file_folder_2" | "add_file_folder_3" => {
     added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "add_sub_collection" => {
@@ -168,14 +176,18 @@
             }
           }
         }
-          case 4 =>{
-            @*parse add multiple files in a folder events*@
-            @if(event.event_type.indexOf("file")>=0 && event.event_type.indexOf("dataset") < 0) {
-              added @event_type_split(3) files to a folder within @linkForObject("dataset", event.object_id, event.object_name)
-            } else {
-              @event_type_split(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @event_type_split(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
-            }
+        case 4 =>{
+          @*parse add multiple files in a folder events*@
+          @if(event.event_type.indexOf("file")>=0 && event.event_type.indexOf("dataset") < 0) {
+            added @event_type_split(3) files to a folder within @linkForObject("dataset", event.object_id, event.object_name)
+          } else {
+            @event_type_split(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @event_type_split(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
           }
+        }
+        case _ => {
+          @Logger.warn("unknown event type encountered: "+event.event_type)
+          @event.event_type
+        }
       }
     }
   }

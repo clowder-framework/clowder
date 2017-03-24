@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improved handling of special characters and long descriptions for datasets and Staging Area publication requests [SEAD-1143](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1143), [CAT-692](https://opensource.ncsa.illinois.edu/jira/browse/CATS-692)
 - Default for clowder.diskStorage.path changed from /tmp/clowder to /home/clowder/data [CATS-748](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1143)
 
+### Fixed
+- Fixed email newsfeed template for new events, so that instances with malfunctioning email digest subscriptions can correctly generate digest emails. [SEAD-1108](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1108)
+
+
 ## 1.1.0
 
 ### Added
