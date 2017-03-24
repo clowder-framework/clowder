@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.2.0
 
 ### Added
 - Docker container to add normal/admin users for Clowder. [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167)
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ### Changed
+- Clowder now requires Java 8.
 - Updated the POST endpoint `/api/extractors` to accept a list of extractor repositories (git, docker, svn, etc) instead 
   of only one. [BD-1253](https://opensource.ncsa.illinois.edu/jira/browse/BD-1253)
 - Changed default labels in Staging Area plugin, e.g. "Curation Objects" to "Publication Requests" and make them configurable. 

@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.x"
+  val version = "1.2"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -145,7 +145,7 @@ object ApplicationBuild extends Build {
     javacOptions ++= Seq("-source", jvm, "-target", jvm),
     initialize := {
       val current  = sys.props("java.specification.version")
-      assert(current >= jvm, s"Unsupported JDK: java.specification.version $current != $jvm")
+      assert(current >= "1.8", s"Unsupported JDK: java.specification.version $current != $jvm")
     },
     offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
