@@ -1,5 +1,5 @@
 @(dataset: models.Dataset, space: Option[String], comments: Map[UUID, Int],classes:String, isFollowing: Boolean, isSpace: Boolean, redirect: Call)(implicit user: Option[models.User])
-@import _root_.util.Formatters.ellipsize
+
 @import api.Permission
 @import play.api.i18n.Messages
 <div class="post-box @classes" id="@dataset.id-tile">
@@ -15,7 +15,7 @@
             }
             <div class="caption break-word">
                 <h4><a href="@(routes.Datasets.dataset(dataset.id, space))">@Html(dataset.name)</a></h4>
-                <p>@Html(ellipsize(dataset.description, 200))</p>
+                <p class='abstractsummary'>@Html(dataset.description.replace("\n", "<br>"))</p>
             </div>
         </div>
             <!-- Dataset Info -->

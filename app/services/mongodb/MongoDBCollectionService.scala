@@ -141,6 +141,10 @@ class MongoDBCollectionService @Inject() (
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
     list(Some(date), nextPage, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
+  
+  def listSpaceAccess(limit: Integer, space: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean) = {
+    list(None, false, 0, None, Option(space), permissions, user, showAll, None, showPublic)
+  }
 
   /**
    * Return count of the requested collections

@@ -21,7 +21,8 @@
 
             <div class="col-md-12 col-lg-12 col-sm-12">
                 <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-hdd"></span> @space.name</h1>
-            <p><span id="spacedescdisplay">@space.description</span></p>
+                
+            <p><span id="spacedescdisplay" class='abstract'>@Html(space.description.replace("\n","<br>"))</span></p>
             @if(user.isDefined) {
                 <hr/>
                 @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
@@ -117,6 +118,8 @@
             }
         </div>
     </div>
+    <script src="@routes.Assets.at("javascripts/descriptionSummary.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
     <script>
         function activateOne(id) {
             // initialize Masonry
@@ -134,6 +137,7 @@
         function activate(){
             activateOne("masonry-datasets");
             activateOne("masonry-collections");
+            doSummarizeAbstracts();
         }
 
         $(document).ready(function () {
@@ -152,4 +156,5 @@
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" language="javascript"></script>
+
 }

@@ -25,20 +25,21 @@ class DiskByteStorageService extends ByteStorageService {
         var depth = Play.current.configuration.getInt("clowder.diskStorage.depth").getOrElse(3)
 
         var relativePath = ""
-        var idstr = UUID.generate().stringify
+        val id = UUID.generate().stringify
+        var folders = id
         // id seems to be same at the start but more variable at the end
-        while (depth > 0 && idstr.length > 4) {
+        while (depth > 0 && folders.length > 4) {
           depth -= 1
           if (relativePath == "") {
-            relativePath = idstr.takeRight(2)
+            relativePath = folders.takeRight(2)
           } else {
-            relativePath += java.io.File.separatorChar + idstr.takeRight(2)
+            relativePath += java.io.File.separatorChar + folders.takeRight(2)
           }
-          idstr = idstr.dropRight(2)
+          folders = folders.dropRight(2)
         }
 
         // need to use whole id again, to make sure it is unique
-        relativePath += java.io.File.separatorChar + idstr
+        relativePath += java.io.File.separatorChar + id
 
         // combine all pieces
         val filePath = makePath(root, prefix, relativePath)

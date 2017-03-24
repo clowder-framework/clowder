@@ -1,5 +1,5 @@
 @(curationObject: models.CurationObject, space: Option[String], classes:String)(implicit user: Option[models.User])
-@import _root_.util.Formatters.ellipsize
+
 <div class="post-box @classes" id="@curationObject.id-tile">
     <div class="panel panel-default dataset-panel">
         <div class="pull-left">
@@ -8,7 +8,7 @@
         <div class="panel-body">
             <div class="caption break-word">
                 <h4><a href="@(routes.CurationObjects.getCurationObject(curationObject.id))">@Html(curationObject.name)</a></h4>
-                <p>@Html(ellipsize(curationObject.description, 200))<br/><br/>
+                <p class='abstractsummary'>@Html(curationObject.description)<br/><br/>
                     Creator: @curationObject.author.fullName <br/>
                     Created on: @curationObject.created.date.format("MMM dd, yyyy") <br/>
                     Repository: @curationObject.repository.getOrElse("") <br/>

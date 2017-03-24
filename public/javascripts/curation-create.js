@@ -1,31 +1,58 @@
 
 //Clear the input fields that are associated with this panel
-function clearFields() {
-    $('#name').val("");
-    $('#description').val("");
-    $('.creators .creator-delete a').click();
-    $('.creators .control-group input').each(function (index) {
-        $(this).val("");
-    });
+function resetFields() {
+    $('#name').val(origName);
+    $('#name').trigger('change');
+    $('#description').val(origDesc);
+    $('#description').trigger('change');
+    displayCreators(origCreators);
+    expandPeople();
 }
 
-//Call on Create button click. Move to create a curation object as specified after validating input fields
+function displayCreators(cList) {
+	$('#ds_creators').html("");
+	if(cList.length !=0) {
+        $('#creatorerror').hide();
+		for(var i = 0; i <= cList.length-2; i++ ) {
+			$('#ds_creators').append($('<span>').addClass("creator").append($('<span>').addClass("authname person").attr('data-creator', cList[i].trim()).text(cList[i].trim()))
+					.append($('<span>').addClass("glyphicon-remove creator-delete hiddencomplete")).append($('<span>').text(", ")));
+		}
+		$('#ds_creators').append($('<span>').addClass("creator").append($('<span>').addClass("authname person")
+				.attr('data-creator', cList[cList.length-1].trim()).text(cList[cList.length-1].trim()))
+				.append($('<span>').addClass("glyphicon-remove creator-delete hiddencomplete")));
+	} else {
+        $('#creatorerror').show();
+	}
+}
+
+// Call on Create button click. Move to create a curation object as specified
+// after validating input fields
 function createCuration() {
-    //Remove error messages if present
+    document.getElementById('curationcreate').setAttribute('action', 'spaces/'+$('#spaceid option:selected').val() +'/submit');
+    return changeCuration();
+}
+
+// Call on Create button click. Move to create a curation object as specified
+// after validating input fields
+function updateCuration() {
+    document.getElementById('curationcreate').setAttribute('action', 'spaces/'+$('#spaceid option:selected').val()+'/update');
+    return changeCuration();
+}
+
+// Common code for create and update
+function changeCuration() {
+    // Remove error messages if present
     $('.error').hide();
 
-    //Update the input we are adding to the form programmatically
+    // Update the input we are adding to the form programmatically
     var name = $('#name');
     var desc = $('#description');
-
-    var space = document.getElementById("spaceid");
-
-    var i = space.selectedIndex;
-    var spaceId =  space.options[i].value;
+    var spaceId=$('#spaceid option:selected').val();
 
 
-    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
-    //variables.
+    // Add errors and return false if validation fails. Validation comes from
+	// the host page, passing in the isNameRequired and isDescRequired
+    // variables.
     var error = false;
     if (!name.val() && isNameRequired) {
         $('#nameerror').show();
@@ -41,9 +68,9 @@ function createCuration() {
         error = true;
     }
     var creators = [];
-    $('.creators .control-group input').each(function (index) {
-        if($(this).val().trim() != "") {
-            creators.push($(this).val().trim());
+    $('.authname').each(function (index) {
+        if($(this).attr('data-creator').trim() != "") {
+            creators.push(encodeURIComponent($(this).attr('data-creator').trim()));
         }
     });
 
@@ -62,9 +89,7 @@ function createCuration() {
     $('#hiddendescription').val(encDescription);
     $('#hiddencreators').val(creators);
 
-    document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId +'/submit');
-
-    //Submit the form
+    // Submit the form
     $('#curationcreate').submit();
 
     return true;
@@ -74,63 +99,3 @@ function cancelEdit(id){
     window.location.href = "/spaces/curations/"+ id ;
 }
 
-//Call on Create button click. Move to create a curation object as specified after validating input fields
-function updateCuration(id) {
-    //Remove error messages if present
-    $('.error').hide();
-
-    //Update the input we are adding to the form programmatically
-    var name = $('#name');
-    var desc = $('#description');
-
-    var space = document.getElementById("spaceid");
-
-    var i = space.selectedIndex;
-    var spaceId =  space.options[i].value;
-
-
-    //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
-    //variables.
-    var error = false;
-    if (!name.val() && isNameRequired) {
-        $('#nameerror').show();
-        error = true;
-    }
-    if (!desc.val() && isDescRequired) {
-        $('#descerror').show();
-        error = true;
-    }
-
-    if(spaceId.search("Select the space") == 0) {
-        $('#spaceerror').show();
-        error = true;
-    }
-    var creators = [];
-    $('.creators .control-group input').each(function (index) {
-        if($(this).val().trim() != "") {
-            creators.push($(this).val().trim());
-        }
-    });
-
-    if(creators.length == 0) {
-        $('#creatorerror').show();
-        error = true
-    }
-
-    if (error) {
-        return false;
-    }
-
-    var encName = htmlEncode(name.val());
-    var encDescription = htmlEncode(desc.val());
-    $('#hiddenname').val(encName);
-    $('#hiddendescription').val(encDescription);
-    $('#hiddencreators').val(creators);
-    //document.getElementById('curationcreate').removeAttribute('action');
-    document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId+'/update');
-
-    //Submit the form
-    $('#curationcreate').submit();
-
-    return true;
-}

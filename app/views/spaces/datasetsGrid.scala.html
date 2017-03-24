@@ -7,16 +7,29 @@
 <p>
     <span class="small">@Messages("recent.message", Messages("datasets.title").toLowerCase)</span>
     <span class="pull-right">
-        @isPublic match {
+    
+            @isPublic match {
             case Some(b) => {
-                <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify), Some("publicAll")))" class="btn btn-link btn-xs">
-                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
-                </a>
-            }
+                @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+                    <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify, 0, 12, isPublic))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                } else {
+                    <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify), Some("publicAll")))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                }
+         	}
             case None => {
-                <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link btn-xs">
-                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
-                </a>
+                @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+                    <a href="@(routes.Datasets.sortedListInSpace(space.id.stringify, 0, 12))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                } else {
+                    <a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link btn-xs">
+                        <span class="glyphicon glyphicon-briefcase"></span> @Messages("view.all", Messages("datasets.title"))
+                    </a>
+                }
             }
         }
     </span>
@@ -25,9 +38,9 @@
 <div class="row" id="tile-view">
     <div class="col-md-12">
         <div id="masonry-datasets">
-            @datasetsList.map { dataset =>
+        @datasetsList.map { dataset =>
                 @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)))
-            }
+        }
         </div>
     </div>
 </div>
@@ -37,3 +50,5 @@
         $('#create-dataset').addClass('disabled');
     </script>
 }
+		<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/descriptionSummary.js")" type="text/javascript"></script>
