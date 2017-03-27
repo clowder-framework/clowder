@@ -67,6 +67,7 @@ class Spaces @Inject()(spaces: SpaceService,
   def removeSpace(spaceId: UUID) = PermissionAction(Permission.DeleteSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     spaces.get(spaceId) match {
       case Some(space) => {
+        removeContentsFromSpace(spaceId,request.user)
         spaces.delete(spaceId)
         appConfig.incrementCount('spaces, -1)
         events.addObjectEvent(request.user , space.id, space.name, "delete_space")
@@ -247,6 +248,22 @@ class Spaces @Inject()(spaces: SpaceService,
         }
       }
       case None => Logger.error("no collection found with id " + collectionId)
+    }
+  }
+
+  private def removeContentsFromSpace(spaceId : UUID, user : Option[User]){
+    spaces.get(spaceId) match {
+      case Some(space) => {
+        val collectionsInSpace = spaces.getCollectionsInSpace(Some(space.id.stringify),Some(0))
+        val datasetsInSpace = spaces.getDatasetsInSpace(Some(space.id.stringify),Some(0))
+        for (col <- collectionsInSpace){
+          collectionService.removeFromSpace(col.id,space.id)
+        }
+        for (ds <- datasetsInSpace){
+          datasets.removeFromSpace(ds.id,space.id)
+        }
+      }
+      case None => Logger.error("No space exists with that id")
     }
   }
 
