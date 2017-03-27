@@ -263,7 +263,7 @@ class Spaces @Inject()(spaces: SpaceService,
           datasets.removeFromSpace(ds.id,space.id)
         }
       }
-      case None => Logger.error("No space exists with that id")
+      case None => Logger.error("Cannot remove contents. No space exists with id : " + spaceId )
     }
   }
 
