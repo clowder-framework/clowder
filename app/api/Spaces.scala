@@ -255,12 +255,10 @@ class Spaces @Inject()(spaces: SpaceService,
     spaces.get(spaceId) match {
       case Some(space) => {
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(space.id.stringify),Some(0))
-        val datasetsInSpace = spaces.getDatasetsInSpace(Some(space.id.stringify),Some(0))
         for (col <- collectionsInSpace){
-          collectionService.removeFromSpace(col.id,space.id)
-        }
-        for (ds <- datasetsInSpace){
-          datasets.removeFromSpace(ds.id,space.id)
+          spaces.removeCollection(col.id,space.id)
+          collectionService.removeFromRootSpaces(col.id, spaceId)
+          updateSubCollectionsAndDatasets(spaceId, col.id, user)
         }
       }
       case None => Logger.error("Cannot remove contents. No space exists with id : " + spaceId )
