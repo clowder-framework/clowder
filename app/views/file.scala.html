@@ -5,7 +5,7 @@
 		mds: List[models.Metadata],
 		rdfExported: Boolean,
 		extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
-		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset])(implicit user: Option[models.User])
+		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset])(implicit user: Option[models.User], request: RequestHeader)
 
 @import helper._
 @import play.api.Play.current
@@ -603,7 +603,7 @@
 				<div class="col-md-12">
 					<h4>Comments</h4>
 					@if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.file, file.id))) {
-						@commentform(file.id.toString, "file")
+						@commentform(file.id.toString, "file", file.filename)
 					}
 					<ol class="list-unstyled" id="reply_@file.id.toString">
 					@comment(comments)

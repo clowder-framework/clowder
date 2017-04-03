@@ -56,3 +56,10 @@ object Dataset {
     }
   }
 }
+
+
+case class DatasetAccess(
+  showAccess:  Boolean = false,
+  access: String = "N/A",
+  accessOptions: List[String] = List.empty
+)

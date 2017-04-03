@@ -17,6 +17,7 @@ import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
+import play.api.i18n.Messages
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
@@ -2600,6 +2601,51 @@ class  Datasets @Inject()(
       }
 
     }
+  }
+
+
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    val spaceTitle: String = Messages("space.title")
+
+    datasets.get(id) match {
+      case Some(dataset) => {
+        var userList: List[User] = List.empty
+        var userListSpaceRoleTupleMap = Map[UUID, List[Tuple2[String, String]]]() // Map( User-id -> List((Space-name,Role-name)) )
+
+        // Setup userList, add all users of all spaces associated with the dataset
+        dataset.spaces.foreach { spaceId =>
+          spaces.get(spaceId) match {
+            case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
+            case None => NotFound(s"Error: No $spaceTitle found for $id.")
+          }
+        }
+        userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+
+        if (userList.nonEmpty) {
+          Ok(Json.toJson(userList.map(user => Json.obj(
+            "@context" -> Json.toJson(
+              Map(
+                "firstName" -> Json.toJson("http://schema.org/Person/givenName"),
+                "lastName" -> Json.toJson("http://schema.org/Person/familyName"),
+                "email" -> Json.toJson("http://schema.org/Person/email"),
+                "affiliation" -> Json.toJson("http://schema.org/Person/affiliation")
+              )
+            ),
+            "id" -> user.id.stringify,
+            "firstName" -> user.firstName,
+            "lastName" -> user.lastName,
+            "fullName" -> user.fullName,
+            "email" -> user.email,
+            "avatar" -> user.getAvatarUrl(),
+            "identityProvider" -> user.format(true)
+          ))))
+        }
+        else NotFound(s"Error: No users found for $id.")
+      }
+      case None => NotFound(s"Error: No dataset with $id found.")
+    }
+
   }
 }
 

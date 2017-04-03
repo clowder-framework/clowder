@@ -32,6 +32,7 @@ GET            /assets/*file                                                    
 GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
 GET            /users/acceptTermsOfServices                                             @controllers.Users.acceptTermsOfServices(redirect: Option[String] ?= None)
 GET            /login/isLoggedIn                                                        @controllers.Login.isLoggedIn
+POST           /users/sendEmail                                                         @controllers.Users.sendEmail(subject: String, from: String, recipient: String, body: String)
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -372,6 +373,8 @@ POST           /api/files/:id/license                                           
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 PUT            /api/files/:id/filename                                                  @api.Files.updateFileName(id: UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
+GET            /api/files/:id/users                                                     @api.Files.users(id: UUID)
+
 
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
@@ -552,6 +555,7 @@ POST           /api/datasets/:id/detachdelete                                   
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
 PUT            /api/datasets/:id/access                                                 @api.Datasets.updateAccess(id:UUID, aceess:String ?="PRIVATE")
 POST           /api/datasets/:id/addFileEvent                                           @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
+GET            /api/datasets/:id/users                                                  @api.Datasets.users(id:UUID)
 
 
 # ----------------------------------------------------------------------
@@ -648,6 +652,7 @@ DELETE         /api/sensors/:id                                                 
 # ----------------------------------------------------------------------
 # COMMENTS ENDPOINT
 # ----------------------------------------------------------------------
+POST           /api/comment/mention                                                     @api.Comments.mentionInComment(userID: UUID, resourceID: UUID, resourceName: String, resourceType: String, commenterId: UUID)
 POST           /api/comment/:id                                                         @api.Comments.comment(id: UUID)
 DELETE         /api/comment/:id/removeComment                                           @api.Comments.removeComment(id: UUID)
 POST           /api/comment/:id/editComment                                             @api.Comments.editComment(id: UUID)

@@ -11,8 +11,11 @@
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
-  limit: Int, showDownload: Boolean, showAccess:  Boolean, access: String,
-  accessOptions: List[String], canAddDatasetToCollection: Boolean, stagingAreaDefined: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  limit: Int,
+  showDownload: Boolean,
+  accessData: models.DatasetAccess,
+  canAddDatasetToCollection: Boolean,
+  stagingAreaDefined: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
 
 @import api.Permission
 @import play.api.Play.current
@@ -77,16 +80,16 @@
 
                         <li>@Messages("owner.label"): <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
-                            @if(showAccess) {
+                            @if(accessData.showAccess) {
                                 @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                                     <li id="access">Access:
-                                        <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@accessOptions(0)</label>
-                                        <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@accessOptions(1)</label>
-                                        <label class="radio-inline"><input type="radio" name="access" id="access-PUBLIC" value="@DatasetStatus.PUBLIC.toString">@accessOptions(2)</label>
+                                        <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@accessData.accessOptions(0)</label>
+                                        <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@accessData.accessOptions(1)</label>
+                                        <label class="radio-inline"><input type="radio" name="access" id="access-PUBLIC" value="@DatasetStatus.PUBLIC.toString">@accessData.accessOptions(2)</label>
                                     </li>
 
                             } else {
-                                    <li>Access: @access</li>
+                                    <li>Access: @accessData.access</li>
                             }
                         }
 
@@ -258,7 +261,7 @@
                     <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                             <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
                         @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                            @commentform(dataset.id.stringify, "dataset")
+                            @commentform(dataset.id.stringify, "dataset", dataset.name)
                         }
                         <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>

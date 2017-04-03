@@ -197,7 +197,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
         "fullName" -> user.fullName,
         "email" -> user.email,
         "avatar" -> user.getAvatarUrl(),
-        "profile" -> Json.toJson(profile)
+        "profile" -> Json.toJson(profile),
+        "identityProvider" -> user.format(true)
     )
 
 

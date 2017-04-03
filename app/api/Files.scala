@@ -14,6 +14,7 @@ import jsonutils.JsonUtil
 import models._
 import play.api.Logger
 import play.api.Play.{configuration, current}
+import play.api.i18n.Messages
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
@@ -1768,6 +1769,48 @@ class Files @Inject()(
     }
   }
 
+
+  def users(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
+    val spaceTitle: String = Messages("space.title")
+
+    var userList: List[User] = List.empty
+    files.get(id) match {
+      case Some(file) => {
+        datasets.findByFileId(id).foreach(dataset => {
+          dataset.spaces.foreach { spaceId =>
+            spaces.get(spaceId) match {
+              case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
+              case None => NotFound(s"Error: No $spaceTitle found for $id.")
+            }
+          }
+          userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+        })
+
+        if (userList.nonEmpty) {
+          Ok(Json.toJson(userList.map(user => Json.obj(
+            "@context" -> Json.toJson(
+              Map(
+                "firstName" -> Json.toJson("http://schema.org/Person/givenName"),
+                "lastName" -> Json.toJson("http://schema.org/Person/familyName"),
+                "email" -> Json.toJson("http://schema.org/Person/email"),
+                "affiliation" -> Json.toJson("http://schema.org/Person/affiliation")
+              )
+            ),
+            "id" -> user.id.stringify,
+            "firstName" -> user.firstName,
+            "lastName" -> user.lastName,
+            "fullName" -> user.fullName,
+            "email" -> user.email,
+            "avatar" -> user.getAvatarUrl(),
+            "identityProvider" -> user.format(true)
+          ))))
+        }
+        else NotFound(s"Error: No user found for $id.")
+      }
+      case None => NotFound(s"File $id not found")
+    }
+  }
 }
 
 object MustBreak extends Exception {}

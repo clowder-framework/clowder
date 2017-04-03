@@ -17,7 +17,7 @@ import play.api.i18n.Messages
  * Comments on datasets.
  *
  */
-class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: EventService) extends ApiController {
+class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: EventService, users: UserService) extends ApiController {
 
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
       Logger.trace("Adding comment")
@@ -192,5 +192,23 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService, eve
 	  }
   }
   //End, remove comment code
-  
+
+	/**
+		* This will create an event in the specified user's feed indicating they were mentioned in a comment
+		* on the specified resource.
+    */
+	def mentionInComment(userid: UUID, resourceID: UUID, resourceName: String, resourceType: String, commenterId: UUID) =
+		PermissionAction(Permission.AddComment, Some(ResourceRef(Symbol(resourceType), resourceID))) {
+			users.get(commenterId) match {
+				case Some(u) => {
+					events.addRequestEvent(users.get(userid), u, resourceID, resourceName, "mention_"+resourceType+"_comment")
+					Ok(s"Mention event added to user id $userid's feed")
+				}
+				case None => {
+					events.addObjectEvent(users.get(userid), resourceID, resourceName, "mention_"+resourceType+"_comment")
+					Ok(s"Mention event added to user id $userid's feed")
+				}
+			}
+
+	}
 }

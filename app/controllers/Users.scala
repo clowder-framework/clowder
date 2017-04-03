@@ -11,6 +11,7 @@ import play.api.data.Forms._
 import play.api.data.validation.{Constraint, Invalid, Valid, ValidationError}
 import play.api.i18n.Messages
 import play.api.Play
+import play.api.templates.Html
 import securesocial.controllers.TemplatesPlugin
 import securesocial.core.providers.utils.Mailer
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
@@ -185,5 +186,10 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
       }
       case None => InternalServerError("User not defined")
     }
+  }
+
+  def sendEmail(subject: String, from: String, recipient: String, body: String) = AuthenticatedAction { implicit request =>
+    util.Mail.sendEmail(subject, from, List(recipient), Html(body))
+    Ok("Successfully emailed "+recipient)
   }
 }

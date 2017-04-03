@@ -1,27 +1,33 @@
-@(id: String, resourceType: String)(implicit user: Option[models.User])
+@(id: String, resourceType: String, resourceName: String)(implicit user: Option[models.User], request: RequestHeader)
+<link href="@routes.Assets.at("javascripts/mention/jquery.mentionsInput.css")" rel='stylesheet' type='text/css'>
 
 <form class="form-inline">
-<textarea id="commentField_@id" class="comment-input-box"></textarea>
+<textarea id="commentField_@id" class="comment-input-box mention"></textarea>
 <br />
 <button class="btn btn-primary" onclick="return postComment('@id', '@resourceType');" title="Post Comment"><span class="glyphicon glyphicon-comment"></span> Post</button>
 </form>
   <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+  <script src='//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js' type='text/javascript'></script>
+  <script src="@routes.Assets.at("javascripts/mention/jquery.elastic.js")" language="javascript"></script>
+  <script src="@routes.Assets.at("javascripts/mention/jquery.mentionsInput.js")" language="javascript"></script>
   <script language="javascript">
        var origText = "";
+       $("#commentField_@id").mentionsInput(getMentionsInputParams('@resourceType', '@id'));
   
      function showEditComment(id) {
        var commentText = $("#comment-body_" + id).html().replace(/<br>/g, "\n");
        origText = commentText;
        commentText = htmlDecode(commentText.replace(/<br>/g, "\n"));
        if ($("#commentField_" + id).length == 0) {
-               var form="<form class=\"form-inline\">";               
-               form += "<textarea id=\"editField_" + id + "\" class=\"comment-input-box\"></textarea>";
+               var form="<form class=\"form-inline\">";
+               form += "<textarea id=\"editField_" + id + "\" class=\"comment-input-box mention\"></textarea>";
                form += "<br />";
                form += "<button class=\"btn btn-primary btn-sm\" title=\"Submit Edit\" onclick=\"return updateComment('" + id + "');\" style=\"margin-right:5px;\"><span class=\"glyphicon glyphicon-saved\"></span> Submit</button>";
                form += "<button class=\"btn btn-default btn-sm\" title=\"Cancel\" onclick=\"return cancelEditComment('" + id + "');\"><span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
                form += "</form>";
                $("#comment-body_" + id).html("<div class=\"comment-edit\" id=\"edit-form_" + id + "\">" + form + "</div>");
-               $("#editField_" + id).val(commentText);               
+               $("#editField_" + id).mentionsInput(getMentionsInputParams());
+               $("#editField_" + id).val(commentText);
            }
        else {
          notify("Error editing comment", "error");
@@ -32,7 +38,7 @@
  function updateComment(id) {
    var text = $("#editField_" + id).val();
    text = htmlEncode(text);
-   editComment(id, text);
+   editComment(id, text, "@user.get.fullName", "@user.get.email.getOrElse("")", "@routes.Datasets.dataset(UUID(id)).absoluteURL()");
    return false;
  }
 
@@ -44,7 +50,7 @@
 function showReplyComment(id) {
   if ($("#commentField_" + id).length == 0) {
     var form="<form class=\"form-inline\">";
-    form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box\"></textarea>";
+    form += "<textarea id=\"commentField_" + id + "\" class=\"comment-input-box mention\"></textarea>";
     form += "<br />";
     form += "<button class=\"btn btn-primary btn-sm\" onclick=\"return replyComment('" + id + "')\" title=\"Confirm\" style=\"margin-right:5px;\">";
     form += "<span class=\"glyphicon glyphicon-ok\"></span> Submit</button>";
@@ -52,13 +58,15 @@ function showReplyComment(id) {
     form += "<span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
     form += "</form>";
     $("#reply_" + id).prepend("<div class=\"comment-thread\" id=\"form_" + id + "\">" + form + "</div>");
+
+    $("#commentField_" + id).mentionsInput(getMentionsInputParams());
+
   }
   return false;
 }
 
 function replyComment(id) {
   postComment(id, "comment");
-  $("#form_" + id).remove();
   return false;
 }
 
@@ -105,6 +113,41 @@ function postComment(id, resourceType) {
     }
 
     request.done ( function ( response, textStatus, jqXHR ) {
+        $('#commentField_' + id).mentionsInput('getMentions', function(data) {
+            // Send email to any users tagged in this comment, and subscribe them to this resource
+            data.forEach(function(mentioned){
+                var emailtext = "";
+                var commenterId = @user match {
+                    case Some(u) => {
+                        "@u.id"
+                    } case None => {
+                        ""
+                    }
+                }
+                @resourceType match {
+                    case "dataset" => {
+                        emailtext += '@user.get.fullName mentioned you in a comment: @routes.Datasets.dataset(UUID(id)).absoluteURL()\n\n';
+                        jsRoutes.api.Comments.mentionInComment(mentioned.id, id, "@resourceName", "dataset", commenterId).ajax({type: 'POST'});
+                    }
+                    case "file" => {
+                        emailtext += '@user.get.fullName mentioned you in a comment: @routes.Files.file(UUID(id)).absoluteURL()\n\n';
+                        jsRoutes.api.Comments.mentionInComment(mentioned.id, id, "@resourceName", "file", commenterId).ajax({type: 'POST'});
+                    }
+                    case _ => {
+                        emailtext += '@user.get.fullName mentioned you in a comment\n\n';
+                    }
+
+                }
+
+                emailtext += text
+                request = jsRoutes.controllers.Users.sendEmail("New Clowder comment", "@user.get.email.getOrElse("")", mentioned.email, emailtext).ajax({
+                    type: 'POST'
+                }).done(function(response){
+                    console.log(response);
+                })
+            })
+        });
+
       var dateNow = new Date();
       var hour = ('0'+dateNow.getHours()).slice(-2);
       var minute = ('0'+dateNow.getMinutes()).slice(-2)
@@ -134,6 +177,8 @@ function postComment(id, resourceType) {
       post += "</div>";
       post += "</div>";
       $("#reply_" + id).prepend("<div class=\"comment-thread\">" + post + "</div>");
+
+      $("#form_" + id).remove();
     });
 
     request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -146,5 +191,42 @@ function postComment(id, resourceType) {
   }
   return false;
 }
+
+       function getMentionsInputParams(resourceType, resourceId) {
+           if (resourceType == "dataset") {
+               var geturl = jsRoutes.api.Datasets.users(resourceId).url
+           } else if (resourceType == "file") {
+               var geturl = jsRoutes.api.Files.users(resourceId).url
+           } else {
+               var geturl = jsRoutes.api.Users.list().url
+           }
+
+           return {
+               onDataRequest:function (mode, query, callback) {
+                   $.ajax({
+                       type : 'GET',
+                       url: geturl,
+                       success : function(apidata) {
+                           var data= [];
+                           console.log(apidata)
+                           apidata.forEach(function(userRecord){
+                               data.push({
+                                   id: userRecord.id,
+                                   name: userRecord.identityProvider,
+                                   value: userRecord.fullName,
+                                   avatar: userRecord.avatar,
+                                   email: userRecord.email,
+                                   type: 'contact'
+                               })
+                           });
+                           data = _.filter(data, function(item) { return item.name.toLowerCase().indexOf(query.toLowerCase()) > -1 });
+                           callback.call(this, data);
+                       }
+                   });
+               },
+               "elastic": false,
+               "allowRepeat": true
+           }
+       }
 </script>
 

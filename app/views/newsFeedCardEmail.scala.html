@@ -147,6 +147,26 @@
   case "delete_metadata_instance" => {
     deleted a metadata definition from @(AppConfiguration.getDisplayName)
   }
+  case "mention_file_comment" => {
+    @event.targetuser match {
+      case Some(u) => {
+        was mentioned by @linkForObject("user", Some(u.id), Some(u.fullName)) in a comment on @linkForObject("file", event.object_id, event.object_name)
+      }
+      case None => {
+        was mentioned in a comment on @linkForObject("file", event.object_id, event.object_name)
+      }
+    }
+  }
+  case "mention_dataset_comment" => {
+    @event.targetuser match {
+      case Some(u) => {
+        was mentioned by @linkForObject("user", Some(u.id), Some(u.fullName)) in a comment on @linkForObject("dataset", event.object_id, event.object_name)
+      }
+      case None => {
+        was mentioned in a comment on @linkForObject("dataset", event.object_id, event.object_name)
+      }
+    }
+  }
   case _ => {
     @defining(event.event_type.split("_")) { event_type_split =>
       @event_type_split.length match {

@@ -614,6 +614,9 @@ class Datasets @Inject() (
         }
         accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0, 1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
         accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0, 1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
+
+        val accessData = new models.DatasetAccess(showAccess, access, accessOptions.toList)
+
         var canAddDatasetToCollection = Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))
         if (!canAddDatasetToCollection) {
           datasetSpaces.map(space =>
@@ -625,7 +628,7 @@ class Datasets @Inject() (
         val stagingAreaDefined = play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove), fileList,
-          filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection, stagingAreaDefined))
+          filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, accessData, canAddDatasetToCollection, stagingAreaDefined))
       }
       case None => {
         Logger.error("Error getting dataset" + id)

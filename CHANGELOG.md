@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   type-in support for adding a creator by name, email, or ID, and adjusts the layout/labeling of the owner(was creator) 
   field, and creator and descirption fields. [SEAD-1071](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1071), 
   [SEAD-610](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-610) 
+- Ability to mention other users using '@' in a comment on a file or dataset. Mentioned users will receive a notification email 
+  and a notice in their event feed. [SEAD-781](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-781)
 
 ### Changed
 - Clowder now requires Java 8.
