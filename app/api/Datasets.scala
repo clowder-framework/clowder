@@ -2453,10 +2453,11 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Download dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "GET")
-  def download(id: UUID, bagit: Boolean,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
         datasets.get(id) match {
           case Some(dataset) => {
+            val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
             Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(

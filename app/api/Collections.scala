@@ -1,20 +1,31 @@
 package api
 
+import java.io.{ByteArrayInputStream, InputStream, ByteArrayOutputStream}
+import java.security.{DigestInputStream, MessageDigest}
+import java.text.SimpleDateFormat
+import java.util.zip.{ZipEntry, ZipOutputStream, Deflater}
+
+import Iterators.RootCollectionIterator
+import _root_.util.JSONLD
 import api.Permission.Permission
+import org.apache.commons.codec.binary.Hex
 import play.api.Logger
 import play.api.Play.current
 import models._
+import play.api.libs.iteratee.Enumerator
 import services._
 import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject}
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.{Future, ExecutionContext}
+import play.api.libs.concurrent.Execution.Implicits._
 import scala.util.parsing.json.JSONArray
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
-import java.util.Date
+import java.util.{Calendar, Date}
 import controllers.Utils
 
 
@@ -29,7 +40,10 @@ class Collections @Inject() (datasets: DatasetService,
                              userService: UserService,
                              events: EventService,
                              spaces:SpaceService,
-                             appConfig: AppConfigurationService) extends ApiController {
+                             appConfig: AppConfigurationService,
+                             folders : FolderService,
+                             files: FileService,
+                             metadataService : MetadataService) extends ApiController {
 
   @ApiOperation(value = "Create a collection",
       notes = "",
@@ -206,6 +220,20 @@ class Collections @Inject() (datasets: DatasetService,
     }
     Ok(toJson(collectionList))
   }
+
+  private def getNextLevelCollections(current_collections : List[Collection]) : List[Collection] = {
+    val next_level_collections : ListBuffer[Collection] = ListBuffer.empty[Collection]
+    for (current_collection : Collection <- current_collections){
+      for (child_id <- current_collection.child_collection_ids){
+        collections.get(child_id) match {
+          case Some(child_col) => next_level_collections += child_col
+          case None =>
+        }
+      }
+    }
+    next_level_collections.toList
+  }
+
 
 
   @ApiOperation(value = "List all collections the user can edit except itself and its parent collections",
@@ -767,6 +795,96 @@ class Collections @Inject() (datasets: DatasetService,
       }
       case None => Ok(toJson(false))
     }
+  }
+
+  @ApiOperation(value = "Download collection",
+    notes = "Downloads all child collections, datasets and files in a collection.",
+    responseClass = "None", httpMethod = "GET")
+  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
+    implicit val user = request.user
+    collections.get(id) match {
+      case Some(collection) => {
+        val bagit = play.api.Play.configuration.getBoolean("downloadCollectionBagit").getOrElse(true)
+        // Use custom enumerator to create the zip file on the fly
+        // Use a 1MB in memory byte array
+        Ok.chunked(enumeratorFromCollection(collection,1024*1024, compression,bagit,user)).withHeaders(
+          "Content-Type" -> "application/zip",
+          "Content-Disposition" -> ("attachment; filename=\"" + collection.name+ ".zip\"")
+        )
+      }
+      // If the dataset wasn't found by ID
+      case None => {
+        NotFound
+      }
+    }
+  }
+
+
+  def enumeratorFromCollection(collection: Collection, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : Option[User])
+                              (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+
+    implicit val pec = ec.prepare()
+    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest]
+    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest]
+
+    var totalBytes = 0L
+
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val zip = new ZipOutputStream(byteArrayOutputStream)
+
+    var bytesSet = false
+
+    //val datasetsInCollection = getDatasetsInCollection(collection,user.get)
+    var current_iterator = new RootCollectionIterator(collection.name,collection,zip,md5Files,md5Bag,user, totalBytes,bagit,collections,
+    datasets,files,folders,metadataService,spaces)
+
+
+
+    //var current_iterator = new FileIterator(folderNameMap(inputFiles(1).id),inputFiles(1), zip,md5Files)
+    var is = current_iterator.next()
+
+    Enumerator.generateM({
+      is match {
+        case Some(inputStream) => {
+          if (current_iterator.isBagIt() && bytesSet == false){
+            current_iterator.setBytes(totalBytes)
+            bytesSet = true
+          }
+          val buffer = new Array[Byte](chunkSize)
+          val bytesRead = scala.concurrent.blocking {
+            inputStream.read(buffer)
+
+          }
+          val chunk = bytesRead match {
+            case -1 => {
+              zip.closeEntry()
+              inputStream.close()
+              Some(byteArrayOutputStream.toByteArray)
+              if (current_iterator.hasNext()){
+                is = current_iterator.next()
+              } else{
+                zip.close()
+                is = None
+              }
+              Some(byteArrayOutputStream.toByteArray)
+            }
+            case read => {
+              if (!current_iterator.isBagIt()){
+                totalBytes += bytesRead
+              }
+              zip.write(buffer, 0, read)
+              Some(byteArrayOutputStream.toByteArray)
+            }
+          }
+          byteArrayOutputStream.reset()
+          Future.successful(chunk)
+        }
+        case None => {
+          Future.successful(None)
+        }
+      }
+    })(pec)
+
   }
 
 }

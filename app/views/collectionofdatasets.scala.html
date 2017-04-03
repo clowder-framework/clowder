@@ -127,6 +127,20 @@
 							<a href="@routes.Collections.users(collection.id)" class="btn btn-link">
 								<span class="glyphicon glyphicon-user"></span> Collaborators</a>
 						}
+						@if(Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.collection, collection.id))) {
+							<a id='download-url' href="#"
+							onclick="window.open(jsRoutes.api.Collections.download('@collection.id').url, '_blank');"
+							class="btn btn-link" title="Download All Files as Zip" role="button">
+								<span class="glyphicon glyphicon-download-alt"></span>
+								Download All Files
+							</a>
+						} else {
+							<a id='download-url' href="#" disabled
+							class="btn btn-link disabled" title="You don't have permission to Download this collection" role="button">
+								<span class="glyphicon glyphicon-download-alt"></span>
+								Download All Files
+							</a>
+						}
 						<hr/>
 					</div>
 				</div>

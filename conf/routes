@@ -459,7 +459,7 @@ POST           /api/collections                                                 
 GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
 GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
 GET            /api/collections/allCollections                                          @api.Collections.getAllCollections(limit : Int ?= 0, showAll: Boolean ?=false)
-
+GET            /api/collections/:id/download                                            @api.Collections.download(id: UUID, compression: Int ?= -1)
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID)
@@ -525,7 +525,7 @@ GET            /api/datasets/:id/listAllFiles                                   
 GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID)
 POST           /api/datasets/:id/files                                                  @api.Datasets.uploadToDatasetFile(id: UUID)
 POST           /api/datasets/:id/urls                                                   @api.Datasets.uploadToDatasetJSON(id: UUID)
-GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, bagit : Boolean ?= false, compression: Int ?= -1)
+GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID)
