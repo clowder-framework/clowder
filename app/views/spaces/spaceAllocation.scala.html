@@ -102,6 +102,9 @@
         } else {
             @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('" + resourceId + "')", "Add", "Add dataset to " + Messages("space.title"), "add-to-space-widget")
         }
+    }
+    @if(Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(resourceType, resourceId)) &&
+        Permission.checkPermission(user, Permission.ViewDataset, ResourceRef(resourceType, resourceId))) {
         @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
             @if(resourceType == ResourceRef.dataset) {
                 <h4 class="bottom-padding">Copy Dataset to @Messages("spaces.title")</h4>
