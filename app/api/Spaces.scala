@@ -255,6 +255,10 @@ class Spaces @Inject()(spaces: SpaceService,
     spaces.get(spaceId) match {
       case Some(space) => {
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(space.id.stringify),Some(0))
+        val datasetsInSpace = spaces.getDatasetsInSpace(Some(space.id.stringify),Some(0))
+        for (ds <- datasetsInSpace){
+          datasets.removeFromSpace(ds.id,space.id)
+        }
         for (col <- collectionsInSpace){
           spaces.removeCollection(col.id,space.id)
           collectionService.removeFromRootSpaces(col.id, spaceId)
