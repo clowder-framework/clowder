@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Only show spaces, collections and datasets that are shared with other users under 'explore' tab. 
+  In application.conf, this is set by the showOnlySharedInExplore whose default value is false. 
 - Added ability to download Collection. Download Collection and Dataset both use BagIt by default. [CATS-571] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-571)
 ### Changed
 ### Fixed

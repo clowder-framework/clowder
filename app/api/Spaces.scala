@@ -119,25 +119,25 @@ class Spaces @Inject()(spaces: SpaceService,
         if (mine)
           spaces.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, t, permission, user, superAdmin, showPublic)
+          spaces.listAccess(d, true, limit, t, permission, user, superAdmin, showPublic, showOnlyShared = false)
       }
       case (Some(t), None) => {
         if (mine)
           spaces.listUser(limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, t, permission, user, superAdmin, showPublic)
+          spaces.listAccess(limit, t, permission, user, superAdmin, showPublic, showOnlyShared = false)
       }
       case (None, Some(d)) => {
         if (mine)
           spaces.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic, onlyTrial)
+          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic, onlyTrial, showOnlyShared = false)
       }
       case (None, None) => {
         if (mine)
           spaces.listUser(limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, permission, user, superAdmin, showPublic, onlyTrial)
+          spaces.listAccess(limit, permission, user, superAdmin, showPublic, onlyTrial, showOnlyShared = false)
       }
     }
   }

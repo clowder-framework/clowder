@@ -103,10 +103,10 @@ class  Datasets @Inject()(
                 if (d.spaces.isEmpty) {
                   title match {
                     case Some(t) => {
-                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
                     }
                     case None => {
-                      datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+                      datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true,false)
                     }
                   }
                 } else {
@@ -132,10 +132,10 @@ class  Datasets @Inject()(
         if (x.spaces.isEmpty) {
           title match {
             case Some(t) => {
-              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
             }
             case None => {
-              datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+              datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true,false)
             }
           }
         } else {
@@ -161,16 +161,16 @@ class  Datasets @Inject()(
   private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true)
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false)
       }
       case (Some(t), None) => {
-        datasets.listAccess(limit, t, permission, user, superAdmin, true)
+        datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
       }
       case (None, Some(d)) => {
-        datasets.listAccess(d, true, limit, permission, user, superAdmin, true)
+        datasets.listAccess(d, true, limit, permission, user, superAdmin, true,false)
       }
       case (None, None) => {
-        datasets.listAccess(limit, permission, user, superAdmin, true)
+        datasets.listAccess(limit, permission, user, superAdmin, true,false)
       }
     }
   }
@@ -181,12 +181,12 @@ class  Datasets @Inject()(
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false); if (!datasets.isInCollection(dataset, collection)))
+        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false,false); if (!datasets.isInCollection(dataset, collection)))
           yield dataset
         Ok(toJson(list))
       }
       case None => {
-        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false)
+        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false,false)
         Ok(toJson(list))
       }
     }

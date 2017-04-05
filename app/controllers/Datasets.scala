@@ -208,7 +208,7 @@ class Datasets @Inject() (
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], status: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], status: Option[String], mode: String, owner: Option[String], showPublic: Boolean, showOnlyShared : Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -227,7 +227,7 @@ class Datasets @Inject() (
     val datasetList = person match {
       case Some(p) => {
         space match {
-          case Some(s) if datasetSpace.isDefined => {
+          case Some(s) if datasetSpace.isDefined=> {
             title = Some(Messages("owner.in.resource.title", p.fullName, Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
           }
           case _ => {
@@ -258,9 +258,9 @@ class Datasets @Inject() (
           }
           case _ => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic, showOnlyShared)
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic, showOnlyShared)
             }
 
           }
@@ -272,7 +272,7 @@ class Datasets @Inject() (
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(first, nextPage = false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => {
@@ -281,7 +281,7 @@ class Datasets @Inject() (
                 case None => datasets.listSpace(first, nextPage=false, 1, s, user)
               }
             }
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic, showOnlyShared)
           }
         }
       }
@@ -298,7 +298,7 @@ class Datasets @Inject() (
     val next = if (datasetList.nonEmpty) {
       val last = Formatters.iso8601(datasetList.last.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(last, nextPage = true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => {
@@ -307,7 +307,7 @@ class Datasets @Inject() (
                   case None => datasets.listSpace(last, nextPage=true, 1, s, user)
                 }
               }
-            case None => datasets.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic, showOnlyShared)
           }
         }
       }

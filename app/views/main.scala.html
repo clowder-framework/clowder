@@ -96,15 +96,15 @@
                             @user match {
                                 case Some(x) => {
                                     @if(play.Play.application().configuration().getBoolean("verifySpaces") && api.Permission.checkServerAdmin(user)) {
-                                        <li><a href="@routes.Spaces.list(onlyTrial=true)"><span class="glyphicon glyphicon-hdd"> </span> Trial @Messages("spaces.title")</a></li>
+                                        <li><a href="@routes.Spaces.list(onlyTrial=true, showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-hdd"> </span> Trial @Messages("spaces.title")</a></li>
                                     }
                                 }
                                 case None => {
 
                                 }
                             }
-                            <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> @Messages("datasets.title")</a></li>
-                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-large"> </span> @Messages("collections.title")</a></li>
+                            <li><a href="@routes.Datasets.list(showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-briefcase"> </span> @Messages("datasets.title")</a></li>
+                            <li><a href="@routes.Collections.list(showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-th-large"> </span> @Messages("collections.title")</a></li>
                             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined){
                                 <li><a href="@routes.CurationObjects.getPublishedData()"><span class="glyphicon glyphicon-book"></span> Published Data</a></li>
                             }
