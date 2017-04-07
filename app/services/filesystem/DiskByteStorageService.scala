@@ -97,7 +97,7 @@ class DiskByteStorageService extends ByteStorageService {
 
           // cleanup folder
           file = file.getParentFile
-          while (file.list().isEmpty && file.getName != prefix) {
+          while (file != null && file.list() != null && file.list().isEmpty && file.getName != prefix) {
             file.delete()
             file = file.getParentFile
           }
