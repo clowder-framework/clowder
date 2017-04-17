@@ -1,5 +1,5 @@
 (function($, Configuration) {
-	console.log("Geospatial dataset previewer for " + Configuration.dataset_id);
+	//console.log("Geospatial dataset previewer for " + Configuration.dataset_id);
 	$.getScript(Configuration.path + "/../../../openlayers/ol.js", function () {
 
 		var dataset_id = Configuration.dataset_id;
@@ -15,7 +15,7 @@
 
 		file_req.done(function (files) {
 
-			console.log(files);
+			//console.log(files);
 
 			for (var i in files) {
 
@@ -36,19 +36,19 @@
 				});
 
 				meta_req.done(function (metadata) {
-					console.log("file metadata");
-					console.log(metadata);
+					//console.log("file metadata");
+					//console.log(metadata);
                     // skip files without wms metadata
                     if (metadata == null) {
-                        console.log("NO - null");
+                        //console.log("NO - null");
                         return;
                     }
                     if (metadata == undefined) {
-                        console.log("NO - undefined");
+                        //console.log("NO - undefined");
                         return;
                     }
                     if (metadata.length == undefined) {
-                        console.log("NO - length undefined");
+                        //console.log("NO - length undefined");
                         return;
                     }
 
@@ -57,11 +57,11 @@
                     for (var i=0;i<metadata.length;i++)
                     {
                         if (metadata[i]["WMS Layer URL"] == undefined) {
-                            console.log("NO - wms metadata is empty");
+                            //console.log("NO - wms metadata is empty");
                             continue;
                         }
                         if (metadata[i]["WMS Layer URL"] == "") {
-                            console.log("NO - no wms metadata");
+                            //console.log("NO - no wms metadata");
                             continue;
                         }
                         geoMetadataIndex = i;
@@ -72,14 +72,14 @@
                     if (geoMetadataIndex == -1)
                         return;
 
-                    console.log("YES - it is a geospatial data");
+                    //console.log("YES - it is a geospatial data");
 
                     var wmsUrl = metadata[geoMetadataIndex]["WMS Service URL"];
                     var layerName = metadata[geoMetadataIndex]["WMS Layer Name"];
                     var wmsLayerUrl = metadata[geoMetadataIndex]["WMS Layer URL"];
 
                     if (wmsUrl != null && layerName != null && wmsLayerUrl != null) {
-                        console.log("found layer " + wmsUrl);
+                        //console.log("found layer " + wmsUrl);
                         addLayer(this.fileId, this.fileName, wmsUrl, layerName, wmsLayerUrl, current_coord);
                     }
 				});
@@ -153,7 +153,7 @@
 		}
 
 		if (map != null) {
-			console.log("adding new layer to map");
+			//console.log("adding new layer to map");
 			// remove the 'wssi:' (workspace prefix)
 			var name = layerName.split(":")
 
@@ -195,7 +195,7 @@
 				if (coord[3] > current_coord[3]) current_coord[3] = coord[3];
 			}
 
-			console.log("bounding box " + current_coord);
+			//console.log("bounding box " + current_coord);
 
 			var defaultOpacity = 0.5;
 

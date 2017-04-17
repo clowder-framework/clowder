@@ -65,8 +65,10 @@ object Geostreams extends ApiController {
         case (name, geoType, longlat, metadata) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata))
-              jsonp(toJson("success"), request)
+              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata)) match {
+                case Some(d) => jsonp(d, request)
+                case None => BadRequest(s"Failed to create sensor $name")
+              }
             }
             case None => pluginNotEnabled
           }
@@ -215,8 +217,10 @@ object Geostreams extends ApiController {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              jsonp(Json.obj("status"->"ok","id"->id), request)
+              plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id) match {
+                case Some(d) => jsonp(d, request)
+                case None => BadRequest(s"Failed to create a stream $name")
+              }
             }
             case None => pluginNotEnabled
           }
@@ -273,7 +277,7 @@ object Geostreams extends ApiController {
       case None => pluginNotEnabled
     }
   }
-  
+
   @ApiOperation(value = "Delete Geostream Datapoint", notes = "Delete datapoint from geostream database.", responseClass = "None", httpMethod = "DELETE")
   def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete datapoint " + id)
@@ -310,22 +314,37 @@ object Geostreams extends ApiController {
       }
     }
 
-  def addDatapoint()  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
+  def addDatapoint(invalidateCache: Boolean)  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
     Logger.debug("Adding datapoint: " + request.body)
     request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
       case (start_time, end_time, geoType, longlat, data, streamId) =>
+
         current.plugin[PostgresPlugin] match {
           case Some(plugin) => {
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
             val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
             val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
             if (longlat.length == 3) {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId) match {
+                case Some(d) => {
+                  if (invalidateCache) {
+                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                  }
+                  jsonp(d, request)
+                }
+                case None => BadRequest("Failed to create datapoint")
+              }
             } else {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId) match {
+                case Some(d) => {
+                  if (invalidateCache) {
+                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                  }
+                  jsonp(d, request)
+                }
+                case None => BadRequest("Failed to create datapoint")
+              }
             }
-            cacheInvalidate(None, None)
-            jsonp(toJson("success"), request)
           }
           case None => pluginNotEnabled
         }
@@ -362,6 +381,7 @@ object Geostreams extends ApiController {
           "sensor_id" -> sensor_id.getOrElse("").toString,
           "sources" -> Json.toJson(sources),
           "attributes" -> Json.toJson(attributes))
+
         cacheFetch(description) match {
           case Some(data) => jsonp(data.through(Enumeratee.map(new String(_))), request)
           case None => {
@@ -466,11 +486,22 @@ object Geostreams extends ApiController {
           // add values to array
           Parsers.parseDouble(f._2) match {
             case Some(v) => bin.doubles += v
-            case None => {
-              val s = Parsers.parseString(f._2)
-              if (s != "") {
-                bin.strings += s
+            case None =>
+              f._2 match {
+                case JsObject(_) => {
+                  val s = Parsers.parseString(f._2)
+                  if (s != "") {
+                    bin.array += s
+                  }
+                }
+
+                case _ => {
+                  val s = Parsers.parseString(f._2)
+                  if (s != "") {
+                    bin.strings += s
+                  }
               }
+
             }
           }
         })
@@ -482,7 +513,7 @@ object Geostreams extends ApiController {
 
     // combine results
     val result = properties.map{p =>
-      val elements = for(bin <- p._2.values if bin.doubles.length > 0) yield {
+      val elements = for(bin <- p._2.values if bin.doubles.length > 0 || bin.array.size > 0) yield {
         val base = Json.obj("depth" -> bin.depth, "label" -> bin.label, "sources" -> bin.sources.toList)
 
         val raw = if (keepRaw) {
@@ -492,7 +523,11 @@ object Geostreams extends ApiController {
         }
 
         val dlen = bin.doubles.length
-        val average = Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
+        val average = if(dlen > 0) {
+          Json.obj("average" -> toJson(bin.doubles.sum / dlen), "count" -> dlen)
+        } else {
+          Json.obj("array" -> bin.array.toList, "count" -> bin.array.size)
+        }
 
         // return object combining all pieces
         base ++ bin.timeInfo ++ bin.extras ++ raw ++ average
@@ -509,6 +544,7 @@ object Geostreams extends ApiController {
                        extras: JsObject,
                        timeInfo: JsObject,
                        doubles: collection.mutable.ListBuffer[Double] = collection.mutable.ListBuffer.empty[Double],
+                       array: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
                        strings: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
                        sources: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String])
 
@@ -577,7 +613,7 @@ object Geostreams extends ApiController {
               "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
           } else {
 	    result.put(year + " winter", Json.obj("year" -> year,
-              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))		
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
 	  }
           counter = counter.plusMonths(3)
         }
@@ -638,7 +674,7 @@ object Geostreams extends ApiController {
     result.toMap
   }
 
-  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
+  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
@@ -675,7 +711,10 @@ object Geostreams extends ApiController {
               // TODO fix this for better grouping see MMDB-1678
               val data = calculate(operator, filtered, since, until, semi.isDefined)
 
-              if (format == "csv") {
+              if(onlyCount) {
+                cacheWrite(description, formatResult(data, format))
+                Ok(toJson(Map("datapointsLength" -> data.length)))
+              } else if (format == "csv") {
                 val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
                 Ok.chunked(cacheWrite(description, jsonToCSV(data)) &> toByteArray  &> Gzip.gzip())
                   .withHeaders(("Content-Disposition", "attachment; filename=datapoints.csv"),
@@ -1641,7 +1680,7 @@ object Geostreams extends ApiController {
     }
     result
   }
-  
+
   /**
    * Helper function to create list of headers
    */
@@ -1682,7 +1721,7 @@ object Geostreams extends ApiController {
       }
     }
   }
-  
+
   /**
    * Helper function to create list of headers
    */
@@ -1791,7 +1830,7 @@ object Geostreams extends ApiController {
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
         Ok(Json.obj(
-          "userAgreement" -> Json.toJson(AppConfiguration.getUserAgreement),
+          "userAgreement" -> Json.toJson(AppConfiguration.getTermsOfServicesText),
           "sensorsTitle" -> Json.toJson(AppConfiguration.getSensorsTitle),
           "sensorTitle" -> Json.toJson(AppConfiguration.getSensorTitle),
           "parametersTitle" -> Json.toJson(AppConfiguration.getParametersTitle),

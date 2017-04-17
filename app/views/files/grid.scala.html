@@ -1,4 +1,4 @@
-@(filesList: List[File], fileComments: Map[UUID, Int], dsId: UUID, parent: ResourceRef)(implicit user: Option[models.User])
+@(filesList: List[File], fileComments: Map[UUID, Int], dsId: UUID, space: Option[String], parent: ResourceRef, showMove: Boolean)(implicit user: Option[models.User])
 
 @util.masonry()
 
@@ -7,9 +7,9 @@
 
         @filesList.map { file =>
             @if(parent.resourceType == ResourceRef.folder) {
-                @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)), Some(parent.id.stringify))
+                @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, Some(parent.id.stringify), showMove)
             } else {
-                @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)), None)
+                @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, None,showMove)
             }
 
         }

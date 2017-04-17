@@ -24,7 +24,7 @@
             <div id="selected_field" class="row"></div>
         </div>
     </div>
-}
+
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-timepicker-addon.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
@@ -32,6 +32,8 @@
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery-ui-timepicker-addon.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/terraformer/terraformer-1.0.5.min.js")"></script>
+<script src="@routes.Assets.at("javascripts/terraformer/terraformer-wkt-parser-1.1.0.min.js")"></script>
 
 <style>
 .ui-autocomplete-category {
@@ -95,7 +97,7 @@ line-height: 1.5;
 </script>
 
 <script language="javascript">
-    // submit metadata value to server
+    // submit metadata entry to server
     function submit_@id
     (event){
         event.preventDefault();
@@ -103,7 +105,8 @@ line-height: 1.5;
         var field_id = $("#@id  #field-value").data("id");
         var field_type = $("#@id  #add-metadata-select option:selected").data("type");
         var field_value = "";
-        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1, "datetime": 1};
+        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1,
+            "datetime": 1, "wkt": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#@id  #field-value").val();
         } else if (field_type === "list") {
@@ -111,10 +114,16 @@ line-height: 1.5;
         }  else {
             console.log("Wrong field type: " + field_type);
         }
-        // console.log("field type: " + field_type + ", field_value: " + field_value);
+
+        var error = false;
         if (field_value != "") {
+            // define contexts
+            var contexts = [];
+            contexts.push("https://clowder.ncsa.illinois.edu/contexts/metadata.jsonld");
             var context = {};
             context[field_label] = field_id;
+            contexts.push(context);
+
             var content = {};
             if (field_type === "listgeocode") {
                 // geocode example: "Champaign, IL, USA: 40.12, -88.24"
@@ -129,16 +138,25 @@ line-height: 1.5;
                 if (unit_val) {
                     content["Unit"] = unit_val;
                 }
+            } else if (field_type === "wkt") {
+                try {
+                    var primitive = Terraformer.WKT.parse(field_value);
+                    content["GeoJSON"] = primitive;
+                } catch(err) {
+                    notify("There is an error in your WKT. " + err, "error", false, 2000);
+                    error = true;
+                }
             } else {
                 content[field_label] = field_value;
             }
 
-                var body = {
-                        "@@context": context,
-                        "@(resType)_id": "@id",
-                        "content": content
-                    };
+            var body = {
+                    "@@context": contexts,
+                    "@(resType)_id": "@id",
+                    "content": content
+            };
 
+            if (!error) {
                 var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
                     data: JSON.stringify(body),
                     type: 'POST',
@@ -163,12 +181,34 @@ line-height: 1.5;
                       notify("Metadata was not added due to : " + errorThrown, "error");
                     }
                 });
+            }
 
         }
     }
+    var url = jsRoutes.api.Metadata.getDefinitions();
+    var showSpaceInfo = false;
+    if("@resType" == "dataset") {
+        if(spaceId == "") {
+            url = jsRoutes.api.Datasets.getMetadataDefinitions("@id");
+            showSpaceInfo = true;
+        } else {
+            url = jsRoutes.api.Datasets.getMetadataDefinitions("@id", spaceId);
+        }
+    } else if ("@resType" == "file") {
+        if(spaceId == "") {
+            showSpaceInfo = true;
+            url = jsRoutes.api.Files.getMetadataDefinitions("@id");
+        } else {
+            url = jsRoutes.api.Files.getMetadataDefinitions("@id", spaceId);
+        }
 
+    } else if ("@resType" == "curationObject") {
+        url = jsRoutes.api.CurationObjects.getMetadataDefinitions("@id");
+    } else if ("@resType" == "curationFile") {
+        url = jsRoutes.api.CurationObjects.getMetadataDefinitionsByFile("@id");
+    }
     // get metadata definitions
-    var request = jsRoutes.api.Metadata.getDefinitions().ajax({
+    var request = url.ajax({
         type: 'GET',
         contentType: "application/json"
     });
@@ -180,12 +220,12 @@ line-height: 1.5;
             elem.attr("data-type", fields[i].json.type);
             elem.attr("data-id", fields[i].id);
             elem.attr("value", fields[i].json.uri);
+            elem.attr("space_id", fields[i].spaceId);
             elem.text(fields[i].json.label);
             $("#@id  #add-metadata-select").append(elem);
         }
         // chosen pulldown configuration
         $("#@id  #add-metadata-select").chosen({
-            no_results_text: "Not found. Press enter to add ",
             search_contains: true,
             width: "100%",
             placeholder_text_single: "Select field"});
@@ -196,6 +236,7 @@ line-height: 1.5;
                 var field_label = $(this).text();
                 var field_id = $(this).val();
                 var field_type = $(this).data("type");
+                var space_id = $(this).attr("space_id");
                 // Create the template and HTML content.
                 var template_map =
                     {"string": "add_metadata_string",
@@ -203,14 +244,36 @@ line-height: 1.5;
                      "listjquery": "add_metadata_listjquery",
                      "listgeocode": "add_metadata_string",
                      "scientific_variable": "add_metadata_scientific_variable",
-                     "datetime": "add_metadata_datetime"
+                     "datetime": "add_metadata_datetime",
+                     "wkt": "add_metadata_wktlocation"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
-                $('#@id  #selected_field').html(html);
-                //console.log("field_type: ", field_type, ", modalTemplate: ", template_map[field_type], ", html: ", html);
-                // register submit listener
-                $("#@id  #add-metadata-button").click(submit_@id);
+                var footerHtml = "";
+                if(typeof space_id !== 'undefined' && showSpaceInfo) {
+                    var request2 = jsRoutes.api.Spaces.get(space_id).ajax({
+                        type: 'GET',
+                        contentType: "application/json"
+                    });
+                    request2.done(function (response, textStatus, jqXHR) {
+                        var footerTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/footer")");
+                        var spaceName= response.name;
+                        footerHtml = footerTemplate({'space_name': spaceName, 'space_url': jsRoutes.controllers.Spaces.getSpace(space_id).url, 'uri':field_id });
+                        $('#@id  #selected_field').html(html + footerHtml);
+                        // register submit listener
+                        $("#@id  #add-metadata-button").click(submit_@id);
+                    });
+                    request2.fail(function (jqXHR, textStatus, errorThrown){
+                        $('#@id  #selected_field').html(html);
+                        // register submit listener
+                        $("#@id  #add-metadata-button").click(submit_@id);
+                    });
+                } else {
+                    $('#@id  #selected_field').html(html);
+                    // register submit listener
+                    $("#@id  #add-metadata-button").click(submit_@id);
+                }
+
 
                 if (field_type === "scientific_variable") {
                     // Find the field with the specific uri.
@@ -335,10 +398,11 @@ line-height: 1.5;
                         // modalTemplate was assigned above using the map.
                         var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type,
                             'options': vocabulary});
-                        $("#@id  #selected_field").html(html);
+                        $("#@id  #selected_field").html(html + footerHtml);
                         // chosen pulldown configuration
                         $("#@id  #field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",
+                            add_search_option: true,
                             search_contains: true,
                             width: "100%",
                             placeholder_text_single: "Select field"});
@@ -363,3 +427,4 @@ line-height: 1.5;
         });
     });
 </script>
+}

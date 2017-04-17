@@ -1,10 +1,8 @@
-@(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], userRoleMap: Map[User, String], userSelections: List[String])(implicit user: Option[models.User])
+@(space: ProjectSpace, collections: List[Collection], publicDatasets: List[Dataset], datasets: List[Dataset], curationObjects: List[CurationObject], userRoleMap: Map[User, String], userSelections: List[String])(implicit user: Option[models.User])
 @import play.api.Play.current
 @import api.Permission
-
+@import play.api.i18n.Messages
 @main(space.name) {
-
-
     @if( space.bannerURL.isDefined || space.logoURL.isDefined){
         <div class="row">
         @if(space.bannerURL.isDefined) {
@@ -19,43 +17,110 @@
         </div>
     }
 
-    <div class="row space-head vertical-align">
-        <div class="col-md-12 col-lg-12 col-sm-12">
-            <h1 id="spacenamedisplay">@space.name</h1>
-            <p><span id="spacedescdisplay">@space.description</span></p>
-            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-            @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                    class="btn btn-link btn-sm" title="Delete the space but not its contents">
-                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
-            } else {
-                <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete the space but not its contents">
-                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
-            }
-            @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
-                <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create dataset">
-                    <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="Create collection">
-                    <span class="glyphicon glyphicon-ok"></span> Create Collection</a>
+    <div class="row vertical-align">
+
+            <div class="col-md-12 col-lg-12 col-sm-12">
+                <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-hdd"></span> @space.name</h1>
+                
+            <p><span id="spacedescdisplay" class='abstract'>@Html(space.description.replace("\n","<br>"))</span></p>
+            @if(user.isDefined) {
+                <hr/>
+                @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                    <button id="deleteButton" onclick="confirmDeleteResource('space','@Messages("space.title")','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
+                    class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
+                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                }
+                @if(Permission.checkPermission(Permission.CreateDataset, ResourceRef(ResourceRef.space, space.id))) {
+                    <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="@Messages("create.title", Messages("dataset.title"))">
+                        <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
+                }
+                @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, space.id))) {
+                    <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))">
+                        <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
+                }
+                @if(play.Play.application().configuration().getBoolean("enablePublic") && (Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) || Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)))){
+                    <hr/>
+                }
             }
         </div>
     </div>
-
     <div class="row">
-        <div class="col-md-8 col-lg-8 col-sm-8 space-col-left">
-            @spaces.collectionsBySpace(collections, space.id.stringify)
-            @spaces.datasetsBySpace(datasets, space.id.stringify, userSelections)
+        <div class="col-md-8 col-lg-8 col-sm-8">
+            <ul class="nav nav-tabs margin-bottom-20" >
+                @if(play.Play.application().configuration().getBoolean("enablePublic")){
+                    @if(user.isDefined) {
+                        <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
+                        <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
+                            <!-- Published Data tab and code is disabled, currently it shows Curation objects with Published status.
+                            The use of DOI and remote repositories is being discussed.
+                        if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) -->
+                        @if(false){
+                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                        }
+                    } else {
+                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                            <li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
+                            <!-- Published Data tab and code is disabled, currently it shows Curation objects with Published status.
+                            The use of DOI and remote repositories is being discussed.
+                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li> -->
+                        }
+                    }
+                }
+            </ul>
+            <div class="tab-content">
+                @if(user.isDefined){
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-all">
+                        @spaces.datasetsBySpace(datasets, space, None, userSelections)
+                        @spaces.collectionsBySpace(collections, space, None)
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-public">
+                        <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
+                        @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
+                            <!-- collections follow the space status, there is no public, provate flag on a collection -->
+                        @if(space.isPublic) {
+                            @spaces.collectionsBySpace(collections, space, Some(true))
+                        } else {
+                            <h3>@Messages("collections.title")</h3>
+                            <p>There are no public collections associated with this @Messages("space.title"). </p>
+                        }
+                    </div>
+                } else {
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-public">
+                        <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.
+                            You must be a logged-in member of the @Messages("space.title") to access all the @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase.
+                        </p>
+                        @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
+                        @if(space.isPublic) {
+                            @spaces.collectionsBySpace(collections, space, Some(true))
+                        } else {
+                            <h3>@Messages("collections.title")</h3>
+                            <p>There are no public collections associated with this @Messages("space.title"). </p>
+                        }
+                    </div>
+                }
+                <div role="tabpanel" class="tab-pane fade" id="tab-publish">
+                    @spaces.curationObjectsBySpace(curationObjects, space, Some(true))
+                </div>
+            </div>
         </div>
-        <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
-            @spaces.otherActions(space, userRoleMap)
-            @spaces.externalLinks(space.homePage)
+        <div class="col-md-4 col-lg-4 col-sm-4">
+            @if(user.isDefined) {
+                @spaces.otherActions(space)
+            } else {
+                @spaces.statistics(space, "row ds-section-sm space-col-right")
+            }
+            @spaces.externalLinks(space.homePage, space, "row ds-section-sm break-word space-col-right")
+            @if(play.Play.application().configuration().getBoolean("enablePublic")) {
+                @spaces.access(space, userRoleMap, "row ds-section-sm break-word space-col-right")
+            }
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }
         </div>
     </div>
+    <script src="@routes.Assets.at("javascripts/descriptionSummary.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
     <script>
-
         function activateOne(id) {
             // initialize Masonry
             var $container = $('#'+id).masonry();
@@ -72,10 +137,12 @@
         function activate(){
             activateOne("masonry-datasets");
             activateOne("masonry-collections");
+            doSummarizeAbstracts();
         }
 
         $(document).ready(function () {
             activate();
+
         });
 
         // fire when showing from tab

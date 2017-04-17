@@ -1,10 +1,16 @@
 @(space: models.ProjectSpace, curationObjects: List[models.CurationObject], prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
+@import play.api.i18n.Messages
+@import _root_.util.Formatters._
 
 @main("Staging Area") {
     <div class="row">
         <div class="col-md-12">
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-hdd"></span>  <a href="@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name,18))</a></li>
+                <li><span class="glyphicon glyphicon-book"></span> Staging Area</li>
+
+            </ol>
             <h1>Staging Area</h1>
-            <h5>Space: <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
         </div>
     </div>
     @util.masonry()
@@ -17,7 +23,7 @@
                             @if(curObject.status == "Submitted") {
                                 <div id="@curObject.id" class="panel-heading text-center submitted">
                             } else {
-                                @if(curObject.status == "In Curation") {
+                                @if(curObject.status == "In Preparation") {
                                 <div id="@curObject.id" class="panel-heading text-center in-curation">
                                     } else {
                                 <div id="@curObject.id" class="panel-heading text-center publish">
@@ -31,9 +37,9 @@
                                 <div class="caption break-word">
                                     <h4> <a href="@routes.CurationObjects.getCurationObject( curObject.id)">@curObject.name</a></h4>
 
-                                    Author: @curObject.author.fullName
+                                    @Messages("owner.label"): @curObject.author.fullName
                                     <p>Created: @curObject.created.format("MMM dd, yyyy")</p>
-                                    <p>@curObject.description</p>
+                                    <p class="abstractsummary">@Html(curObject.description.replace("\n","<br>"))</p>
                                 </div>
                             </div>
                             <ul class="list-group">
@@ -41,7 +47,7 @@
                                     <span class="glyphicon glyphicon-folder-close" title="@curObject.folders.size folders"></span> @curObject.folders.size
                                     <span class="glyphicon glyphicon-file" title="@curObject.files.size files"></span> @curObject.files.size
                                     <span class="glyphicon glyphicon-list" title="@(curObject.metadataCount) metadata fields"></span> @(curObject.metadataCount)
-                                    <button onclick="confirmDeleteResource('curation object','@(curObject.id)','@(curObject.name.replace("'","&#39;"))',false, '/')"  type="button" class="btn btn-link">
+                                    <button onclick="confirmDeleteResource('curation object','curation object','@(curObject.id)','@(curObject.name.replace("'","&#39;"))',false, '/')"  type="button" class="btn btn-link">
                                         <span class="glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
                                 </li>
                             </ul>
@@ -71,6 +77,9 @@
     </div>
     <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/descriptionSummary.js")" type="text/javascript"></script>
+    
     <script>
         $(document).ready(function(){
             updatePage();

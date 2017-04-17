@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "0.9.2"
+  val version = "1.x"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -65,13 +65,13 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     filters,
     // login
-    "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
 
     // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",
 
     // indexing
-    "org.elasticsearch" % "elasticsearch" % "1.3.4",
+    "org.elasticsearch" % "elasticsearch" % "2.3.5" exclude("io.netty", "netty"),
 
     // mongo storage
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
@@ -102,10 +102,11 @@ object ApplicationBuild extends Build {
     "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
+    "org.apache.jena" % "apache-jena-libs" % "3.1.1",
 
     // ??
     "commons-io" % "commons-io" % "2.4",
-    "commons-logging" % "commons-logging" % "1.1.1",
+    "commons-logging" % "commons-logging" % "1.1.3",
 
     // RDF
     "gr.forth.ics" % "flexigraph" % "1.0",
@@ -132,7 +133,7 @@ object ApplicationBuild extends Build {
     "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
 
-  // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
+  // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory
   def customLessEntryPoints(base: File): PathFinder = (
     (base / "app" / "assets" / "stylesheets" / "bootstrap" * "bootstrap.less") +++
     (base / "app" / "assets" / "stylesheets" / "bootstrap" * "responsive.less") +++
@@ -144,7 +145,7 @@ object ApplicationBuild extends Build {
     javacOptions ++= Seq("-source", jvm, "-target", jvm),
     initialize := {
       val current  = sys.props("java.specification.version")
-      assert(current >= jvm, s"Unsupported JDK: java.specification.version $current != $jvm")
+      assert(current >= "1.8", s"Unsupported JDK: java.specification.version $current != $jvm")
     },
     offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
@@ -158,9 +159,9 @@ object ApplicationBuild extends Build {
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
-    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
+    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
 
-    // add custom folder to the classpath, use this to add/modify medici:
+    // add custom folder to the classpath, use this to add/modify clowder:
     // custom/public/stylesheets/themes     - for custom themes
     // custom/public/javascripts/previewers - for custom previewers
     // custom/custom.conf                   - to customize application.conf
@@ -181,7 +182,7 @@ object ApplicationBuild extends Build {
     batScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\""
 
     // license report
-//    licenseReportTitle := "Medici Licenses",
+//    licenseReportTitle := "Clowder Licenses",
 //    licenseConfigurations := Set("compile", "provided"),
 //    licenseSelection := Seq(LicenseCategory("NCSA"), LicenseCategory("Apache")) ++ LicenseCategory.all,
 //    licenseOverrides := licenseOverrides.value orElse {
@@ -193,10 +194,9 @@ object ApplicationBuild extends Build {
 //      case DepModuleInfo("org.reflections", _, _) => LicenseInfo(LicenseCategory.PublicDomain, "WTFPL", "http://www.wtfpl.net/txt/copying")
 //    },
 //    licenseReportMakeHeader := {
-//      case Html => Html.header1(licenseReportTitle.value) + "<p>Medici is licensed under the <a href='http://opensource.org/licenses/NCSA'>University of Illinois/NCSA Open Source License</a>.</p><p>Below are the libraries that Medici depends on and their licenses.<br></p>"
+//      case Html => Html.header1(licenseReportTitle.value) + "<p>Clowder is licensed under the <a href='http://opensource.org/licenses/NCSA'>University of Illinois/NCSA Open Source License</a>.</p><p>Below are the libraries that Clowder depends on and their licenses.<br></p>"
 //      case l => l.header1(licenseReportTitle.value)
 //    }
 
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
-

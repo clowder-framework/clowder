@@ -22,7 +22,7 @@ import services.DI
  	source_id: Option[UUID] = None,
  	source_name: Option[String] = None,
  	event_type: String,
- 	created: Date
+ 	created: Date = new Date()
  )
 
 
@@ -61,6 +61,7 @@ import services.DI
  *
  * download_file => "user downladed object_name" (not working)
  *
+ * tos_update => "Terms of Service were updated"
  *
  * To get all events use:
  * var events = events.getAllEvents(muser.followedUsers, muser.followedCollections, muser.followedDatasets, muser.followedFiles)
@@ -91,15 +92,20 @@ object Events {
                case Some(date) => {
                  events.getEventsByTime(user.followedEntities, date, None) match {
                    case Nil => Logger.debug("No news specified for user " + user.fullName + " at " + date)
-                   case alist => sendDigestEmail(user, alist)
+                   case alist => {
+                     Logger.debug("Total " + alist.length + " news specified for user " + user.fullName + " at " + date)
+                     sendDigestEmail(user, alist)
+                   }
                  }
                }
-               case None => {}
+               case None => Logger.debug("LastJobTime not found")
              }
            }
+           case None => Logger.debug("User not found")
          }
-       }
          scheduler.updateLastRun("Digest[" + id + "]")
+       }
+       case None => Logger.debug("Parameters (User) not found")
      }
    }
  }
@@ -110,7 +116,6 @@ object Events {
   def sendDigestEmail(user: User, events: List[Event]) = {
     val eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
     val body = views.html.emailEvents(eventsList)
-
     util.Mail.sendEmail("Clowder Email Digest", None, user, body)
   }
 }

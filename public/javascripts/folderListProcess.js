@@ -6,6 +6,10 @@ function removeFolder(folderId, parentDataset) {
     request.done(function (response, textStatus, jqXHR) {
         $('#'+response.folderId+'-listitem').remove();
         notify("Folder removed successfully", "success", false, 2000 );
+        // After deleting the last folder from a folder, display the empty message
+        if($("#folderListDiv").children("div[id$='-listitem']").length == 0){
+            $('#empty-folder-div').show();
+        }
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: "+textStatus, errorThrown);

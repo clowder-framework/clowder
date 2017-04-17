@@ -1,11 +1,11 @@
 package services
 
 import java.io.IOException
-import java.net.{URI, URL}
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
 
-import akka.actor.{PoisonPill, Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.{Channel, Connection, ConnectionFactory, DefaultConsumer, Envelope}
@@ -15,7 +15,10 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
+import play.api.libs.json.JsValue
+
 import scala.concurrent.Future
+import scala.util.Try
 
 
 // TODO make optional fields Option[UUID]
@@ -25,7 +28,7 @@ case class ExtractorMessage(
   intermediateId: UUID,
   host: String,
   key: String,
-  metadata: Map[String, String],
+  metadata: Map[String, Any],
   fileSize: String,
   datasetId: UUID,
   flags: String,
@@ -294,7 +297,14 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
         "secretKey" -> Json.toJson(secretKey)
       )
       // add extra fields
-      metadata.foreach(kv => msgMap.put(kv._1, Json.toJson(kv._2)))
+      metadata.foreach(kv =>
+        kv._2 match {
+          case x: JsValue => msgMap.put(kv._1, x)
+          case x: String => msgMap.put(kv._1, Json.toJson(x))
+          case _ => msgMap.put(kv._1, Json.toJson(kv._2.toString))
+        }
+
+      )
       val msg = Json.toJson(msgMap.toMap)
       // correlation id used for rpc call
       val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?
@@ -303,6 +313,7 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
           .contentType("application\\json")
           .correlationId(corrId)
           .replyTo(replyQueueName)
+          .deliveryMode(2)
           .build()
       try {
         channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
@@ -350,17 +361,18 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       val file_id = UUID((json \ "file_id").as[String])
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
-      val start = (json \ "start").asOpt[String]
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-      val startDate = formatter.parse(start.get)
+      val startDate = (json \ "start").asOpt[String].map(x =>
+        Try(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX").parse(x)).getOrElse {
+          new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(x)
+        })
       val updatedStatus = status.toUpperCase()
       //TODO : Enforce consistent status updates: STARTED, DONE, ERROR and
       //       other detailed status updates to logs when we start implementing
       //       distributed logging
       if (updatedStatus.contains("DONE")) {
-        extractions.insert(Extraction(UUID.generate, file_id, extractor_id, "DONE", Some(startDate), None))
+        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "DONE", startDate, None))
       } else {
-        extractions.insert(Extraction(UUID.generate, file_id, extractor_id, status, Some(startDate), None))
+        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, status, startDate, None))
       }
       Logger.debug("updatedStatus=" + updatedStatus + " status=" + status + " startDate=" + startDate)
       models.ExtractionInfoSetUp.updateDTSRequests(file_id, extractor_id)

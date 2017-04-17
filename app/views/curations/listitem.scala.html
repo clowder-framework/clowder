@@ -1,0 +1,65 @@
+@(curationObject: models.CurationObject, space: Option[String])(implicit user: Option[models.User])
+
+<div class = "panel panel-default dataset-panel" id="@curationObject.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-2">
+                <span class="bigicon glyphicon glyphicon-briefcase"></span>
+            </div>
+            <div class="col-xs-10">
+                <div class="row">
+                    <div class="col-md-8 col-lg-8 col-sm-8">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <span class="h2"><a href="@(routes.CurationObjects.getCurationObject(curationObject.id))">@Html(curationObject.name)</a></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">@Html(curationObject.description)</div>
+                        </div>
+                        <div class="row top-padding">
+                            <div class="col-xs-12">
+                                @Messages("owner.label"): <a href= "@routes.Profile.viewProfileUUID(curationObject.author.id)"> @curationObject.author.fullName </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">Created on: @curationObject.created.date.format("MMM dd, yyyy")</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">Repository: @curationObject.repository.getOrElse("")</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">Published on:
+                                @{curationObject.publishedDate match {
+                                    case Some(d) => d.format("MMM dd, yyyy")
+                                    case None =>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">External identifier:
+                                @curationObject.externalIdentifier match {
+                                    case Some(e) => {
+                                        @if(e.toString.startsWith("http://") || e.toString.startsWith("https://")) {
+                                            <a href=@e>@e</a>
+                                        } else {
+                                            @e
+                                        }
+                                    }
+                                    case None => {}
+                                }
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <h5>@Messages("dataset.title"): <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

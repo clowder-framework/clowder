@@ -25,10 +25,6 @@ object MetadataDefinition {
     Logger.debug("Adding core metadata vocabulary definitions to database")
     val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
     val default = List(
-      Json.parse("""
-        {"label":"Abstract",
-          "uri":"http://purl.org/dc/terms/abstract",
-          "type":"string"}"""),
       Json.parse("""{"label":"Alternative Title",
           "uri":"http://purl.org/dc/terms/alternative",
           "type":"string"}"""),
@@ -81,10 +77,6 @@ object MetadataDefinition {
             "uri":"http://sead-data.net/terms/GrantNumber",
             "type":"string"}"""),
         Json.parse("""
-          {"label":"Keywords",
-            "uri":"http://sead-data.net/terms/Keywords",
-            "type":"string"}"""),
-        Json.parse("""
           {"label":"Related Publications",
             "uri":"http://sead-data.net/terms/RelatedPublications",
             "type":"string"}"""),
@@ -95,7 +87,11 @@ object MetadataDefinition {
         Json.parse("""
           {"label":"Primary/Initial Publication",
             "uri":"http://sead-data.net/terms/PrimaryPublication",
-            "type":"string"}""")
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"GeoJSON",
+            "uri":"http://geojson.org/geojson-spec.html",
+            "type":"wkt"}""")
       )
     // Add the default definitions, do not update if they already exist.
     if(metadataService.getDefinitions().size == 0) {

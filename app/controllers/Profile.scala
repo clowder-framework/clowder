@@ -8,7 +8,6 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
-import services.UserService
 import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
 // TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
@@ -37,7 +36,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         val newbioForm = bioForm.fill(muser.profile.getOrElse(new models.Profile()))
         val allProjectOptions: List[String] = "" :: projects.getAllProjects()
         val allInstitutionOptions: List[String] = "" :: institutions.getAllInstitutions()
-        val emailtimes: List[String] = List("daily", "hourly", "weekly", "none")
+        val emailtimes: Map[String,String] = Map("none" -> "none", "hourly" -> "hourly (send on the hour)", "daily" -> "daily (send at 7:00 am)", "weekly" -> "weekly (send on Monday at 7:00 am)")
         Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions, emailtimes))
       }
       case None => {
@@ -68,15 +67,15 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         }
 
         Ok(views.html.profile(existingUser, ownProfile))
-        
+
       }
       case None => {
         Logger.error("no user model exists for " + uuid.stringify)
-        BadRequest("no user model exists for " + uuid.stringify)
+        BadRequest(views.html.notFound("User does not exist in this " + AppConfiguration.getDisplayName +  " instance."))
       }
     }
   }
-                /** @deprecated use viewProfileUUID(uuid) */
+  /** @deprecated use viewProfileUUID(uuid) */
   def viewProfile(email: Option[String]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
@@ -84,7 +83,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       case Some(user) => Redirect(routes.Profile.viewProfileUUID(user.id))
       case None => {
         Logger.error("no user model exists for " + email.getOrElse(""))
-        BadRequest("no user model exists for " + email.getOrElse(""))
+        BadRequest(views.html.notFound("User does not exist in this " + AppConfiguration.getDisplayName +  " instance."))
       }
     }
   }
@@ -94,7 +93,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     user match {
       case Some(x: User) => {
         bioForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty, List.empty)),
+          errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty, Map.empty)),
           profile => {
             users.updateProfile(x.id, profile)
 

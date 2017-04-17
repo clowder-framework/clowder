@@ -77,7 +77,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
     ByteStorageService.save(inputStream, PreviewDAO.COLLECTION) match {
       case Some(x) => {
-        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._4)
+        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._3)
         PreviewDAO.save(preview)
         preview.id.stringify
       }
@@ -163,10 +163,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
         Charset.forName("UTF-8")))
       httpPost.setEntity(entity)
       val imageUploadResponse = httpclient.execute(httpPost)
-      Logger.info(imageUploadResponse.getStatusLine().toString())
+      Logger.debug(imageUploadResponse.getStatusLine().toString())
 
       val dirEntity = imageUploadResponse.getEntity()
-      Logger.info("IIP server: " + EntityUtils.toString(dirEntity))
+      Logger.debug("IIP server: " + EntityUtils.toString(dirEntity))
     }
 
     if (!p.filename.isEmpty)

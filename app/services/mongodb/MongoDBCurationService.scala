@@ -3,6 +3,8 @@ package services.mongodb
 import java.net.URI
 import javax.inject.{Inject, Singleton}
 
+import api.Permission
+import api.Permission._
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models._
 import org.bson.types.ObjectId
@@ -15,6 +17,7 @@ import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
+import util.Formatters
 
 
 @Singleton
@@ -90,6 +93,65 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
+  /**
+    * Return a list of curation objects in a space, this does not check for permissions
+    */
+  def listSpace(limit: Option[Integer], space: Option[String]): List[CurationObject] = {
+    val (filter, sort) = filteredQuery(None, false, space, None, None)
+    CurationDAO.find(filter).sort(sort).limit(limit.get).toList
+  }
+
+  def listSpace(date: String, nextPage: Boolean, limit: Option[Integer], space: Option[String]): List[CurationObject] = {
+    val (filter, sort) = filteredQuery(Some(date), nextPage, space, None, None)
+    if (date.isEmpty || nextPage) {
+      CurationDAO.find(filter).sort(sort).limit(limit.get).toList
+      //val space = Option("111")
+      //CurationDAO.find(MongoDBObject("space" -> new ObjectId(space.get)) ++ ("created" $lt Formatters.iso8601("2016-09-28T01:04:12.749-05"))).limit(limit.get).toList
+    } else {
+      CurationDAO.find(filter).sort(sort).limit(limit.get).toList.reverse
+    }
+  }
+
+  /**
+    * Create a filters and sorts based on the given parameters
+    */
+  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], status: Option[String], owner: Option[User]): (DBObject, DBObject) = {
+    val filterStatus = status match {
+      case Some(fs) => MongoDBObject ("status" -> new ObjectId(fs))
+      case None => MongoDBObject()
+    }
+    val filterOwner = owner match {
+      case Some(o) => MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
+      case None => MongoDBObject()
+    }
+    val filterSpace = space match {
+      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    val filterDate = date match {
+      case Some(d) => {
+        if (nextPage) {
+          ("created" $lt Formatters.iso8601(d))
+        } else {
+          ("created" $gt Formatters.iso8601(d))
+        }
+      }
+      case None => MongoDBObject()
+    }
+    val sort = if (date.isDefined && !nextPage) {
+      MongoDBObject("created"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
+    }
+
+    (filterStatus ++ filterDate ++ filterSpace ++ filterOwner, sort)
+  }
+
+  /** Change the metadataCount field for a curation object */
+  def incrementMetadataCount(id: UUID, count: Long) = {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+  }
+
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
   }
@@ -135,7 +197,10 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def getCurationByCurationFile(curationFileId: UUID): Option[CurationObject] = {
-    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+    CurationFolderDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify))) match {
+      case Some(cf) =>  CurationDAO.findOne(MongoDBObject("_id" ->  new ObjectId(cf.parentCurationObjectId.stringify)))
+      case None => CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+    }
   }
 
   def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {

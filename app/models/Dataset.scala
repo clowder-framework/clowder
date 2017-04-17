@@ -20,17 +20,28 @@ case class Dataset(
   streams_id: List[ObjectId] = List.empty,
   tags: List[Tag] = List.empty,
   metadataCount: Long = 0,
-  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata: List[Metadata] = List.empty,
-  @deprecated("use Metadata","since the use of jsonld") metadata: Map[String, Any] = Map.empty,
-  @deprecated("use Metadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,
   collections: List[UUID] = List.empty,
   thumbnail_id: Option[String] = None,
-  @deprecated("use Metadata","since the use of jsonld") datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
-  @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  status: String = DatasetStatus.PRIVATE.toString, // dataset has four status: trial, default, private and public. yet editors of the dataset
+  // can only see the default, private and public, where trial equals to private. viewers can only see private and
+  // public, where trial and default equals to private/public of its space
+  creators: List[String] = List.empty
+){
+  def isPublic:Boolean = status == DatasetStatus.PUBLIC.toString
+  def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
+  def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
+  def inSpace:Boolean = spaces.size > 0
+}
+
+object DatasetStatus extends Enumeration {
+  type DatasetStatus = Value
+  val PUBLIC, PRIVATE, DEFAULT, TRIAL = Value
+}
+
 
 object Dataset {
   implicit val datasetWrites = new Writes[Dataset] {
@@ -41,7 +52,14 @@ object Dataset {
         dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
       }
       Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "description" -> dataset.description,
-        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
+        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id, "spaces" -> dataset.spaces)
     }
   }
 }
+
+
+case class DatasetAccess(
+  showAccess:  Boolean = false,
+  access: String = "N/A",
+  accessOptions: List[String] = List.empty
+)

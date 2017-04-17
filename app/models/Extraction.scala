@@ -77,8 +77,8 @@ case class ExtractorInfo(
   description: String,
   author: String,
   contributors: List[String],
-  contexts: List[UUID],
-  repository: Repository,
+  contexts: JsValue,
+  repository: List[Repository],
   external_services: List[String],
   libraries: List[String],
   bibtex: List[String]
@@ -103,8 +103,8 @@ object ExtractorInfo {
       (JsPath \ "description").read[String] and
       (JsPath \ "author").read[String] and
       (JsPath \ "contributors").read[List[String]].orElse(Reads.pure(List.empty)) and
-      (JsPath \ "contexts").read[List[UUID]].orElse(Reads.pure(List.empty)) and
-      (JsPath \ "repository").read[Repository] and
+      (JsPath \ "contexts").read[JsValue] and
+      (JsPath \ "repository").read[List[Repository]] and
       (JsPath \ "external_services").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty))

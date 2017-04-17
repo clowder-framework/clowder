@@ -1,5 +1,5 @@
 @(dataset: Dataset, folderId: Option[String])(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
 <!--
 The sections of this file dealing with the multi file uploader library are loosely based on the demo
 of the blueimp jQuery File Upload library. An open source project located here: http://blueimp.github.io/jQuery-File-Upload/
@@ -29,13 +29,14 @@ of the blueimp jQuery File Upload library. An open source project located here: 
 <div class="row">
     <div class="col-md-12">
         <p>Select files using the button below or drag files directly from the desktop to this window.
-        Then click the upload button to upload them to the dataset.</p>
+        Then click the upload button to upload them to the @Messages("dataset.title").toLowerCase.</p>
             <!-- The file upload form used as target for the file upload widget -->
         <form id="fileupload" action='@routes.Datasets.submit(folderId)' method="POST" enctype="multipart/form-data">
                 <!-- Redirect browsers with JavaScript disabled to the origin page -->
             <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
 
             <input type="hidden" name="datasetid" id="hiddenid" value="@dataset.id">
+            <input type="hidden" name="multiple" id="hiddenmt" value=false>
                 <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
             <div class="row fileupload-buttonbar button-margins upload-files-buttons">
                 <div class="col-lg-7">
@@ -46,7 +47,7 @@ of the blueimp jQuery File Upload library. An open source project located here: 
                             <!-- The file input had "multiple" removed for the current dataset creation method. -->
                         <input type="file" name="files[]" multiple>
                     </span>
-                    <button type="submit" class="btn btn-primary start" id="uploadcreate" onclick="checkZeroFiles();" title="Upload selected files">
+                    <button type="submit" class="btn btn-primary start" id="uploadcreate" onclick="checkZeroFiles('@dataset.id',  @folderId.isDefined);" title="Upload selected files">
                         <span class="glyphicon glyphicon-upload"></span> Upload
                     </button>
                     <button type="submit" class="btn btn-default cancel">

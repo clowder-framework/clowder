@@ -1,4 +1,4 @@
-@(currentCollection: models.Collection, resourceId: UUID, resourceType: Symbol, parentCollections: List[models.Collection])(implicit user: Option[models.User])
+@(currentCollection: models.Collection, resourceId: UUID, resourceType: Symbol, parentCollections: List[models.Collection], canAddToParent: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
@@ -11,9 +11,12 @@
         <div id="collectionsList" class="col-md-12">
         @parentCollections.map { p =>
             <div id="col_@p.id" class="row bottom-padding">
-                <div class="col-md-2">
+                <div class="col-xs-2">
+                    <a href="@routes.Collections.collection(p.id)">
+                        <span class="smallicon glyphicon glyphicon-th-large"></span>
+                    </a>
                 </div>
-                <div class="col-md-10">
+                <div class="col-xs-10">
                     <div>
                         <a href="@routes.Collections.collection(p.id)" id='@p.id' class ="collection">@Html(p.name)</a>
                     </div>
@@ -32,8 +35,8 @@
 
 
 
-    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
+    <!--The owner of the collection and users with the AddResourceToCollection permission in at least one of the spaces the collection is part of can add a collection to a parent collection. -->
+    @if(canAddToParent) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
                 <select id="collectionAddSelect" class="form-control add-resource">
@@ -59,11 +62,11 @@
 <script language="javascript">
     $("#collectionAddSelect").select2({
         theme: "bootstrap",
-        placeholder: "Select a collection",
+        placeholder: "Select a Collection",
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Collections.listPossibleParents( '@resourceId', params.term,null, 10).url;
+                return jsRoutes.api.Collections.listPossibleParents( '@resourceId', params.term,null, 5).url;
             },
             data: function(params) {
                 return { title: params.term };

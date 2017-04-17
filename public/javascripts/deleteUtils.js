@@ -1,8 +1,17 @@
 // Functions to Confirm deleting or removing resources.
 //
 //Created by mo on 2/2/16.
-function confirmDeleteResource(resourceType, resourceId, resourceName, isreload, url) {
-    var msg = "Are you sure you want to delete the " + resourceType + " '" + resourceName + "'?";
+function confirmDeleteResource(resourceType, resourceTypeName, resourceId, resourceName, isreload, url) {
+    var msg = "Are you sure you want to delete the " + resourceTypeName + " '" + resourceName.replace("<", "&#60;").replace(">", "&#62;") + "'?";
+    if (resourceType == "space") {
+        msg = msg + " When you delete a " + resourceTypeName + ", the collections, datasets, folders and files will still be available.";
+    } else if (resourceType == "collection") {
+        msg = msg + " When you delete a collection, the datasets, folders and files will still be available.";
+    } else if (resourceType == "dataset") {
+        msg += " When you delete a dataset you also delete the folders and files contained within it.";
+    } else if (resourceType == "folder") {
+        msg += " When you delete a folder you also delete the files contained within it.";
+    }
     var modalHTML = confirmDeleteTemplate(msg, resourceType, resourceId, isreload, url);
     var confirmModal = $(modalHTML);
     confirmModal.modal();
@@ -31,12 +40,12 @@ function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url)
     return modalHTML;
 }
 
-function confirmRemoveResourceFromResource(resourceFromType, resourceFromId, resourceType, resourceId, resourceName, isreload, url) {
+function confirmRemoveResourceFromResource(resourceFromType, resourceFromTypeName, resourceFromId, resourceType, resourceId, resourceName, isreload, url) {
     var msg = "Are you sure you want to remove the ";
     if (resourceFromType == "collection" && resourceType == "collection") {
-        msg = msg + "child collection" + " '" + resourceName + "' from the parent " + resourceFromType + "?";
+        msg = msg + "child collection" + " '" + resourceName + "' from the parent " + resourceFromTypeName + "?";
     } else {
-        msg = msg + resourceType + " '" + resourceName + "' from the " + resourceFromType + "?";
+        msg = msg + resourceType + " '" + resourceName + "' from the " + resourceFromTypeName + "?";
     }
     var modalHTML = confirmRemoveTemplate(msg,resourceFromType,resourceFromId,resourceType,resourceId,isreload,url);
     var confirmModal = $(modalHTML);
@@ -54,10 +63,17 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
     modalHTML += '</div>';
     modalHTML += '<div class="modal-body">';
     modalHTML += '<p>' + message + '</p>';
-    modalHTML += '</div>';
+
+    if (resourceFromType == "space" && resourceType == "collection"){
+        modalHTML += '<p><input type="checkbox" name="removedatasets" id="removedatasets" checked> Remove datasets of this collection from space.</input></p></div>'
+    }
+    else {
+        modalHTML += '</div>';
+    }
+
     modalHTML += '<div class="modal-footer">';
     modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
-    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\',\''+resourceFromType+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
     modalHTML += '</div>';
     modalHTML += '</div>';
     modalHTML += '</div>';
@@ -66,30 +82,32 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
     return modalHTML;
 }
 
-function confirmRemoveResourceFromResourceEvent(resourceFromType, resourceFromId, resourceType, resourceId, event) {
-    var msg = "Are you sure you want to remove the " + resourceType + " from the " + resourceFromType + "?";
+function confirmRemoveResourceFromResourceEvent(resourceFromType, resourceFromTypeName, resourceFromId, resourceType, resourceId, event) {
+    var msg = "Are you sure you want to remove the " + resourceType + " from the " + resourceFromTypeName + "?";
     var modalHTML = confirmRemoveTemplate(msg,resourceFromType,resourceFromId,resourceType,resourceId,event);
     var confirmModal = $(modalHTML);
     confirmModal.modal();
     confirmModal.modal("show");
 }
 
-function DeleteTemplate(resourceType, resourceId, isreload, url) {
+
+
+function DeleteTemplate(resourceType, resourceId, isreload, url, resourceFromType) {
     $('.modal').modal('hide');
     if (resourceType == "file") {
         removeFile(resourceId,isreload, url);
     } else if (resourceType == "dataset") {
         removeDataset(resourceId, isreload, url);
     } else if (resourceType == "collection") {
-        removeCollection(resourceId, isreload, url);
+        removeCollection(resourceId, isreload, url, resourceFromType);
     } else if (resourceType == "space") {
         removeSpace(resourceId, isreload, url);
     } else if(resourceType == "folder" ) {
         //no redirect provided
         removeFolder(resourceId, isreload );
-    } else if(resourceType == "curation object" ) {
+    } else if(resourceType == "curation object") {
         removeCuration(resourceId, isreload, url);
-    } else if(resourceType == "curation file" ) {
+    } else if(resourceType == "curation file") {
         //no redirect provided
         removeCurationFile(resourceId, isreload, url);
     } else if(resourceType == "curation folder" ) {
@@ -98,10 +116,11 @@ function DeleteTemplate(resourceType, resourceId, isreload, url) {
     }
 }
 
-function RemoveTemplate(resourceFromType,resourceFromId,resourceType,resourceId,isreload,url) {
+function RemoveTemplate(resourceFromType,resourceFromId,resourceType,resourceId,isreload,url,removeDatasets) {
     //console.log(resourceFromType, resourceFromId, resourceType, resourceId, isreload, url);
     $('.modal').modal('hide');
     //console.log(url);
+    console.log(removeDatasets);
     if (resourceFromType == "collection") {
         if (resourceType == "collection") {
             removeChildCollectionFromParent(resourceFromId,resourceId,url);

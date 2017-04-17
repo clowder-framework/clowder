@@ -1,8 +1,8 @@
-@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: Map[String,String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
-
+  <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 
 @main("Edit Profile") {
@@ -21,13 +21,19 @@
           <p>@message</p>
         </div>
       }
-      
-      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {   
+      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
         <fieldset  class="editProfileInput">
-          @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
+          @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select or enter an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
-          @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
-          @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID")
+
+          <div class="control-group">
+            <label class="control-label" for="avatarUrl">Avatar URL</label><br/>
+            <input type="radio" name="avatarUrl" id="grav_url_radio" value="" onclick="selectGravatar()"> Use Gravatar</input><br/>
+            <input type="radio" name="avatarUrl" id="custom_url_radio" value="" onclick="updateCustomValue();"> Custom </input>
+            <input type="text" id="custom_url_value" class="form-control" onkeyup="updateCustomValue();"></input>
+          </div>
+
+          @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID", 'title -> "ORCID provides a persistent digital identifier that distinguishes you from every other researcher and, through integration in key research workflows such as manuscript and grant submission, supports automated linkages between you and your professional activities ensuring that your work is recognized.")
           @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
 
           @select(myForm("currentprojects"), options(allProjectOptions), '_label -> "Current Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
@@ -35,8 +41,12 @@
           @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
 
           @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
+          <p>An e-mail digest of activities that involve your followed objects.</p>
 
         </fieldset>
+        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+          <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
+        }
         <div class="form-actions" style="margin-top: 16px;">
           <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-saved"></span> Submit Changes</button>
         </div>
@@ -45,9 +55,48 @@
   </div>
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script language="javascript">
-  $(".chosen-select").chosen({no_results_text: "Not found. Press enter to add", allow_single_deselect: true});
+  $(".chosen-select").chosen({
+    add_search_option: true,
+    no_results_text: "Not found. Press enter to add",
+    allow_single_deselect: true
+  });
   $(document).ready(function() {
     $(".chosen-choices").addClass("form-control");
    });
+
+  // Populate URL initially on startup
+  @user.map { currUser =>
+    var avUrl = '@{currUser.profile match {
+      case Some(pro) => pro.avatarUrl.getOrElse("")
+      case None => ""
+  }}';
+
+  $("custom_url_radio").val(avUrl);
+  if (avUrl == '') {
+      $("#grav_url_radio").prop( "checked", true );
+      $("#custom_url_radio").prop( "checked", false );
+      selectGravatar();
+  } else {
+      $("#grav_url_radio").prop( "checked", false );
+      $("#custom_url_radio").prop( "checked", true );
+      $("#custom_url_value").val(avUrl);
+    }
+  }
+
+  function selectGravatar() {
+    $('custom_url_value').css("display","none")
+  }
+
+  function updateCustomValue() {
+    $('custom_url_value').css("display","")
+    if ($("#custom_url_radio").prop("checked")) {
+      // If Custom URL checked, store the value
+        $('#custom_url_radio').val($('#custom_url_value').val())
+    } else {
+      // Gravatar URL stores blank string
+      $('#custom_url_radio').val('')
+    }
+
+  }
 </script>
 }

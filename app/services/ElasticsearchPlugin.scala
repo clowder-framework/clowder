@@ -1,21 +1,32 @@
 package services
 
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
+import org.elasticsearch.common.xcontent.XContentBuilder
+import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
+import scala.util.Try
+import scala.collection.mutable.{MutableList, ListBuffer}
+import scala.collection.immutable.List
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.{Plugin, Logger, Application}
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
+import java.net.InetAddress
+
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
-import org.elasticsearch.index.query.QueryBuilders
-import models.{UUID, Collection, Dataset, File}
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
-import java.text.SimpleDateFormat
+
+import models.{Collection, Dataset, File, UUID, ResourceRef, Section}
 import play.api.Play.current
-import org.elasticsearch.index.query.QueryStringQueryBuilder
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
+import play.api.libs.json._
+import _root_.util.SearchUtils
+
+import org.elasticsearch.index.query.QueryBuilders
+
+import org.elasticsearch.ElasticsearchException
 
 
 /**
@@ -31,55 +42,53 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
+  val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
+
+  val mustOperators = List("==", "<", ">")
+  val mustNotOperators = List("!=")
+
 
   override def onStart() {
-    Logger.debug("Elasticsearchplugin started but not yet connected to Elasticsearch")
+    Logger.debug("ElasticsearchPlugin started but not yet connected")
+    connect
   }
 
   def connect(): Boolean = {
     if (client.isDefined) {
-      Logger.debug("Already Connected to Elasticsearch")
+      //Logger.debug("Already connected to Elasticsearch")
       return true
     }
     try {
-      val settings = ImmutableSettings.settingsBuilder().put("cluster.name", nameOfCluster).build()
-      client = Some(new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(serverAddress, serverPort)))
-      Logger.debug("--- ElasticSearch Client is being created----")
+      val settings = if (nameOfCluster != "") {
+        Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+      } else {
+        Settings.settingsBuilder().build()
+      }
+      client = Some(TransportClient.builder().settings(settings).build()
+        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(serverAddress), serverPort)))
+      Logger.debug("--- Elasticsearch Client is being created----")
       client match {
         case Some(x) => {
-          Logger.debug("Index \"data\"  is being created if it does not exist ---")
-          val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
-            .startObject()
-            .startObject("analysis")
-            .startObject("analyzer")
-            .startObject("default")
-            .field("type", "snowball")
-            .endObject()
-            .endObject()
-            .endObject()
-            .endObject().string())
-          val indexExists = x.admin().indices().prepareExists("data").execute().actionGet().isExists()
-          if (!indexExists) {
-            x.admin().indices().prepareCreate("data").setSettings(indexSettings).execute().actionGet()
-          }
+          val indexExists = x.admin().indices().prepareExists(nameOfIndex).execute().actionGet().isExists()
+          if (!indexExists) createIndex()
           Logger.info("Connected to Elasticsearch")
           true
         }
         case None => {
-          Logger.error("Error connecting to elasticsearch: No Client Created")
+          Logger.error("Error connecting to Elasticsearch: No client created")
           false
         }
       }
 
     } catch {
       case nn: NoNodeAvailableException => {
-        Logger.error("Error connecting to elasticsearch: " + nn)
+        Logger.error("Error connecting to Elasticsearch: " + nn)
         client.map(_.close())
         client = None
         false
       }
       case _: Throwable => {
-        Logger.error("Unknown exception connecting to elasticsearch")
+        Logger.error("Unknown exception connecting to Elasticsearch")
         client.map(_.close())
         client = None
         false
@@ -87,102 +96,181 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
-  def search(index: String, query: String): SearchResponse = {
-    connect
-    Logger.info("Searching ElasticSearch for " + query)
+  /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
+  def search(query: List[JsValue], grouping: String): List[ResourceRef] = {
+    /** Each item in query list has properties:
+      *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
+      *   "operator":       type of query for this term, e.g. '=='
+      *   "field_value":    value to search for using specified field & operator
+      *   "extractor_key":  name of extractor component only, e.g. 'extractors.wordCount'
+      *   "field_leaf_key": name of immediate field only, e.g. 'lines'
+      */
+    val queryObj = prepareElasticJsonQuery(query, grouping)
+    val response: SearchResponse = _search(queryObj)
 
-    client match {
-      case Some(x) => {
-        Logger.info("Searching ElasticSearch for " + query)
-        val response = x.prepareSearch(index)
-          .setTypes("file", "dataset","collection")
-          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(QueryBuilders.queryString(query).analyzer("snowball"))
-          .setFrom(0).setSize(60).setExplain(true)
-          .execute()
-          .actionGet()
-        Logger.info("Search hits: " + response.getHits().getTotalHits())
-        response
-      }
-      case None => {
-        Logger.error("Could not call search because we are not connected.")
-        new SearchResponse()
-      }
-    }
-  }
-
-  def search(index: String, fields: Array[String], query: String): SearchResponse = {
-    connect
-    Logger.info("Searching ElasticSearch for " + query)
-    client match {
-      case Some(x) => {
-        Logger.info("Searching ElasticSearch for " + query)
-        var qbqs = QueryBuilders.queryString(query)
-        for (f <- fields) {
-          qbqs.field(f.trim())
+    var results = MutableList[ResourceRef]()
+    Option(response.getHits()) match {
+      case Some(hits) => {
+        for (hit <- hits.getHits()) {
+          val resource_type = hit.getSource().get("resource_type").toString
+          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
         }
+      }
+      case None => {}
+    }
+
+    results.toList
+  }
+
+  /** Search using a simple text string */
+  def search(query: String, index: String = nameOfIndex): List[ResourceRef] = {
+    val specialOperators = mustOperators ++ mustNotOperators
+    val queryObj = if (specialOperators.exists(query.contains(_))) {
+      // Parse search string into object based on special operators
+      prepareElasticJsonQuery(query)
+    } else {
+      // Plain text search with no field qualifiers
+      jsonBuilder().startObject()
+        .startObject("match").field("_all", query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
+      .endObject()
+    }
+
+    val response = _search(queryObj, index)
+
+    var results = MutableList[ResourceRef]()
+    Option(response.getHits()) match {
+      case Some(hits) => {
+        for (hit <- hits.getHits()) {
+          val resource_type = hit.getSource().get("resource_type").toString
+          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+        }
+      }
+      case None => {}
+    }
+
+
+    results.toList
+  }
+
+  /*** Execute query */
+  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Int = 0, to: Int = 60): SearchResponse = {
+    connect
+    client match {
+      case Some(x) => {
+        Logger.info("Searching Elasticsearch: "+queryObj.string())
         val response = x.prepareSearch(index)
-          .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(qbqs.analyzer("snowball"))
-          .setFrom(0).setSize(60).setExplain(true)
+          .setQuery(queryObj)
+          .setFrom(from).setSize(to).setExplain(true)
           .execute()
           .actionGet()
-        Logger.info("Search hits: " + response.getHits().getTotalHits())
+        Logger.debug("Search hits: " + response.getHits().getTotalHits())
         response
       }
       case None => {
-        Logger.error("Could not call search because we are not connected.")
+        Logger.error("Could not call search because Elasticsearch is not connected.")
         new SearchResponse()
       }
     }
   }
 
-  /**
-   * Index document using an arbitrary map of fields.
-   */
-  def index(index: String, docType: String, id: UUID, fields: List[(String, String)]) {
-    connect
+
+  /** Create a new index with preconfigured mappgin */
+  def createIndex(index: String = nameOfIndex): Unit = {
+    val indexSettings = Settings.settingsBuilder().loadFromSource(jsonBuilder()
+      .startObject()
+        .startObject("analysis")
+          .startObject("analyzer")
+            .startObject("default")
+              .field("type", "snowball")
+            .endObject()
+          .endObject()
+        .endObject()
+        .startObject("index")
+          .startObject("mapping")
+            .field("ignore_malformed", true)
+          .endObject()
+        .endObject()
+      .endObject().string())
+
     client match {
       case Some(x) => {
-        val builder = jsonBuilder()
-          .startObject()
-        fields.map(fv => builder.field(fv._1, fv._2))
-        builder.endObject()
-        val response = x.prepareIndex(index, docType, id.toString())
-          .setSource(builder)
-          .execute()
-          .actionGet()
-        Logger.info("Indexing document: " + response.getId)
+        Logger.debug("Index \""+index+"\" does not exist; creating now ---")
+        x.admin().indices().prepareCreate(index)
+          .setSettings(indexSettings)
+          .addMapping("clowder_object", getElasticsearchObjectMappings())
+          .execute().actionGet()
       }
-      case None => Logger.error("Could not call index because we are not connected.")
+      case None =>
     }
+
   }
 
-  /** delete all indices */
+  /** Delete all indices */
   def deleteAll {
     connect
     client match {
       case Some(x) => {
-        val response = x.admin().indices().prepareDelete("_all").get()
-        if (!response.isAcknowledged())
-          Logger.error("Did not delete all data from elasticsearch.")
+        try {
+          val response = x.admin().indices().prepareDelete("_all").get()
+          if (!response.isAcknowledged())
+            Logger.error("Did not delete all data from elasticsearch.")
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
   }
 
+  /** Delete an index */
   def delete(index: String, docType: String, id: String) {
     connect
     client match {
       case Some(x) => {
-        val response = x.prepareDelete(index, docType, id).execute().actionGet()
-        Logger.info("Deleting document: " + response.getId)
-
+        try {
+          val response = x.prepareDelete(index, docType, id).execute().actionGet()
+          Logger.debug("Deleting document: " + response.getId)
+        } catch {
+          case e: ElasticsearchException => {
+            Logger.error("Could not call search.", e)
+            client = None
+            new SearchResponse()
+          }
+        }
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }
 
+  }
+
+  /** Traverse metadata field mappings to get unique list for autocomplete */
+  def getAutocompleteMetadataFields(query: String, index: String = nameOfIndex): List[String] = {
+    connect
+
+    var listOfTerms = ListBuffer.empty[String]
+    client match {
+      case Some(x) => {
+        if (query != "") {
+          val response = x.admin.indices.getMappings(new GetMappingsRequest().indices(index)).get()
+          val maps = response.getMappings().get(index).get("clowder_object")
+          val resultList = convertJsMappingToFields(Json.parse(maps.source().toString).as[JsObject], None, Some("metadata"))
+
+          resultList.foreach(term => {
+            val leafKey = term.split('.').last
+            if ((leafKey.toLowerCase startsWith query.toLowerCase) && !(listOfTerms contains term))
+              listOfTerms += term
+          })
+        }
+      }
+      case None => Logger.error("Could not get metadata autocomplete suggestions; Elasticsearch is not connected.")
+    }
+
+    listOfTerms.toList
   }
 
   /**
@@ -191,25 +279,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(collection: Collection, recursive: Boolean) {
     connect
-    var dsCollsId = ""
-    var dsCollsName = ""
-
-    for (dataset <- datasets.listCollection(collection.id.stringify)) {
-      if (recursive) {
+    // Perform recursion first if necessary
+    if (recursive) {
+      for (dataset <- datasets.listCollection(collection.id.toString)) {
         index(dataset, recursive)
       }
-      dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
-      dsCollsName = dsCollsName + dataset.name + " %%% "
     }
-
-    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
-    index("data", "collection", collection.id,
-      List(("name", collection.name),
-        ("description", collection.description),
-        ("created", formatter.format(collection.created)),
-        ("datasetId", dsCollsId),
-        ("datasetName", dsCollsName)))
+    index(SearchUtils.getElasticsearchObject(collection))
   }
 
   /**
@@ -218,129 +294,476 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(dataset: Dataset, recursive: Boolean) {
     connect
-    var tagListBuffer = new ListBuffer[String]()
-
-    for (tag <- dataset.tags) {
-      tagListBuffer += tag.name
-    }
-
-    val tagsJson = new JSONArray(tagListBuffer.toList)
-
-    Logger.debug("tagStr=" + tagsJson)
-
-    val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(dataset.id, false)) yield {
-      comment.text
-    }
-    val commentJson = new JSONArray(commentsByDataset)
-
-    Logger.debug("commentStr=" + commentJson.toString())
-
-    val usrMd = datasets.getUserMetadataJSON(dataset.id)
-    Logger.debug("usrmd=" + usrMd)
-
-    val techMd = datasets.getTechnicalMetadataJSON(dataset.id)
-    Logger.debug("techmd=" + techMd)
-
-    val xmlMd = datasets.getXMLMetadataJSON(dataset.id)
-    Logger.debug("xmlmd=" + xmlMd)
-
-    var fileDsId = ""
-    var fileDsName = ""
-    for (fileId <- dataset.files) {
-      files.get(fileId) match {
-        case Some(f) => {
-          if (recursive) {
+    // Perform recursion first if necessary
+    if (recursive) {
+      for (fileId <- dataset.files) {
+        files.get(fileId) match {
+          case Some(f) => {
             index(f)
           }
-          fileDsId = fileDsId + f.id.stringify + "  "
-          fileDsName = fileDsName + f.filename + "  "
+          case None => Logger.error(s"Error getting file $fileId for recursive indexing")
         }
-        case None => Logger.error(s"Error getting file $fileId")
-
       }
     }
-
-    var dsCollsId = ""
-    var dsCollsName = ""
-
-    dataset.collections.foreach(c => {
-      collections.get(c).foreach(collection => {
-        dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-        dsCollsName = dsCollsName + collection.name + " %%% "
-      })
-    })
-
-    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
-    index("data", "dataset", dataset.id,
-      List(("name", dataset.name),
-        ("description", dataset.description),
-        ("author", dataset.author.fullName),
-        ("created", formatter.format(dataset.created)),
-        ("fileId", fileDsId),
-        ("fileName", fileDsName),
-        ("collId", dsCollsId),
-        ("collName", dsCollsName),
-        ("tag", tagsJson.toString()),
-        ("comments", commentJson.toString()),
-        ("usermetadata", usrMd),
-        ("technicalmetadata", techMd),
-        ("xmlmetadata", xmlMd)))
+    index(SearchUtils.getElasticsearchObject(dataset))
   }
 
-  /**
-   * Reindex the given file.
-   */
+  /** Reindex the given file. */
   def index(file: File) {
     connect
-    var tagListBuffer = new ListBuffer[String]()
+    // Index sections first so they register for tag counts
+    for (section <- file.sections) {
+      index(section)
+    }
+    index(SearchUtils.getElasticsearchObject(file))
+  }
 
-    for (tag <- file.tags) {
-      tagListBuffer += tag.name
+  def index(section: Section) {
+    connect
+    index(SearchUtils.getElasticsearchObject(section))
+  }
+
+  /** Index document using an arbitrary map of fields. */
+  def index(esObj: Option[models.ElasticsearchObject], index: String = nameOfIndex) {
+    esObj match {
+      case Some(eso) => {
+        connect
+        client match {
+          case Some(x) => {
+            // Construct the JSON document for indexing
+            val builder = jsonBuilder()
+              .startObject()
+              // BASIC INFO
+              .field("creator", eso.creator)
+              .field("created", eso.created)
+              .field("resource_type", eso.resource.resourceType.name)
+              .field("name", eso.name)
+              .field("description", eso.description)
+
+            // PARENT_OF/CHILD_OF
+            builder.startArray("parent_of")
+            eso.parent_of.foreach( parent_id => builder.value(parent_id) )
+            builder.endArray()
+            builder.startArray("child_of")
+            eso.child_of.foreach( child_id => builder.value(child_id) )
+            builder.endArray()
+
+            // TAGS
+            builder.startArray("tags")
+            eso.tags.foreach( t => {
+              builder.startObject()
+                .field("creator", t.creator)
+                .field("created", t.created)
+                .field("name", t.name)
+                .endObject()
+            })
+            builder.endArray()
+
+            // COMMENTS
+            builder.startArray("comments")
+            eso.comments.foreach( c => {
+              builder.startObject()
+                .field("creator", c.creator)
+                .field("created", c.created)
+                .field("name", c.text)
+                .endObject()
+            })
+            builder.endArray()
+
+            // METADATA
+            builder.startObject("metadata")
+            for ((k,v) <- eso.metadata) {
+              // Elasticsearch 2 does not allow periods in field names
+              val clean_k = k.replace(".", "_")
+              v match {
+                case jv: JsObject => {
+                  builder.startObject(clean_k)
+                  convertJsObjectToBuilder(builder, jv)
+                  builder.endObject()
+                }
+                case jv: JsArray => {
+                  builder.startArray(clean_k)
+                  jv.value.foreach(subv => {
+                    builder.value(subv.toString.replace("\"",""))
+                  })
+                  builder.endArray()
+                }
+                case _ => {}
+              }
+            }
+            builder.endObject()
+              .endObject()
+
+            val response = x.prepareIndex(index, "clowder_object", eso.resource.id.toString)
+              .setSource(builder).execute().actionGet()
+          }
+          case None => Logger.error("Could not index because Elasticsearch is not connected.")
+        }
+      }
+      case None => Logger.error("No ElasticsearchObject found to index")
+    }
+  }
+
+  /** Return map of distinct value/count for tags **/
+  def listTags(resourceType: String = "", index: String = nameOfIndex): Map[String, Long] = {
+    val results = scala.collection.mutable.Map[String, Long]()
+
+    connect
+    client match {
+      case Some(x) => {
+        val searcher = x.prepareSearch(index)
+          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            .addAggregation(AggregationBuilders.terms("by_tag").field("tags.name"))
+            // Don't return actual documents; we only care about aggregation here
+            .setSize(0)
+        // Filter to tags on a particular type of resource if given
+        if (resourceType != "") searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+""))
+        val response = searcher.execute().actionGet()
+
+        // Extract value/counts from Aggregation object
+        val aggr = response.getAggregations
+          .get[org.elasticsearch.search.aggregations.bucket.terms.StringTerms]("by_tag")
+        aggr.getBuckets().toArray().foreach(bucket => {
+          val term = bucket.asInstanceOf[Bucket].getKey
+          val count = bucket.asInstanceOf[Bucket].getDocCount
+          results.update(term.toString, count)
+        })
+        results.toMap
+      }
+      case None => {
+        Logger.error("Could not call search because we are not connected.")
+        Map[String, Long]()
+      }
+    }
+  }
+
+
+  /** Take a JsObject and parse into an XContentBuilder JSON object for indexing into Elasticsearch */
+  def convertJsObjectToBuilder(builder: XContentBuilder, json: JsObject): XContentBuilder = {
+    json.keys.map(k => {
+      // Iterate across keys of the JsObject to parse each value as appropriate
+      (json \ k) match {
+        case v: JsArray => {
+          // Elasticsearch 2 does not allow periods in field names
+          builder.startArray(k.toString.replace(".", "_"))
+          v.value.foreach(jv => {
+            // Try to interpret numeric value from each String if possible
+            parseDouble(jv.toString) match {
+              case Some(d) => builder.value(d)
+              case None => builder.value(jv)
+            }
+          })
+          builder.endArray()
+        }
+        case v: JsNumber => builder.field(k, v.value.doubleValue)
+        case v: JsString => {
+          // Try to interpret numeric value from String if possible
+          parseDouble(v.value) match {
+            case Some(d) => builder.field(k, d)
+            case None => {
+              // Elasticsearch 2 does not allow periods in field names
+              builder.field(k.replace(".", "_"), v.value.replace("\"",""))
+            }
+          }
+        }
+        case v: JsObject => {
+          builder.startObject(k)
+          convertJsObjectToBuilder(builder, v)
+          builder.endObject()
+        }
+        case v: JsValue => {
+          // Try to interpret numeric value from String if possible
+          parseDouble(v.toString) match {
+            case Some(d) => builder.field(k, d)
+            case None => {
+              // Elasticsearch 2 does not allow periods in field names
+              builder.field(k.replace(".", "_"), v.toString.replace("\"",""))
+            }
+          }
+        }
+        case _ => {}
+      }
+    })
+    builder
+  }
+
+  /** Take a JsObject and list all unique fields under targetObject field, except those in ignoredFields */
+  def convertJsMappingToFields(json: JsObject, parentKey: Option[String] = None,
+                               targetObject: Option[String] = None, foundTarget: Boolean = false): List[String] = {
+
+    var fields = ListBuffer.empty[String]
+    // TODO: These are Elasticsearch mapping-internal fields but might also appear in metadata...
+    val ignoredFields = List("type", "format", "properties")
+
+    // If targetObject given, only list fields from that level down
+    var foundTargetObjectRootLevel = false
+    var foundTargetObject = targetObject match {
+      case Some(targ) => foundTarget
+      case None => true
     }
 
-    val tagsJson = new JSONArray(tagListBuffer.toList)
+    json.keys.map(k => {
+      // Check whether to start collecting fields yet
+      if (!foundTargetObject) {
+        targetObject match {
+          case Some(targ) => if (k == targ) {
+            foundTargetObject = true
+            foundTargetObjectRootLevel = true
+          }
+          case None => {}
+        }
+      }
 
-    Logger.debug("tagStr=" + tagsJson)
+      // Get fully qualified field path, with dot-notation (only generated inside metadata fields)
+      var longKey = (parentKey match {
+        case Some(pk) => {
+          if (pk contains "metadata")
+            pk+'.'+k
+          else k
+        }
+        case None => k
+      })
 
-    val commentsByFile = for (comment <- comments.findCommentsByFileId(file.id)) yield {
-      comment.text
+      // Remove ignored fields
+      ignoredFields.foreach(ig => {
+          if (longKey.indexOf("."+ig+".") > -1)
+            longKey = longKey.replace("."+ig+".", ".")
+          if (longKey.endsWith("."+ig))
+            longKey = longKey.stripSuffix("."+ig)
+        }
+      )
+
+      // Process value of field depending on type
+      val okToAppend = (!(ignoredFields contains k) && foundTargetObject)
+      (json \ k) match {
+        case v: JsArray => if (okToAppend) fields.append(longKey)
+        case v: JsNumber => {}
+        case v: JsString => if (okToAppend) fields.append(longKey)
+        case v: JsObject => {
+          // For objects, recursively get keys from sub-objects
+          val subList = convertJsMappingToFields(v, Some(longKey), targetObject, foundTargetObject)
+          if (subList.length > 0)
+            fields = fields ++ subList
+          else if (okToAppend) fields.append(longKey)
+        }
+        case v: JsValue => if (okToAppend) fields.append(longKey)
+        case _ => {}
+      }
+
+      // Finally, stop capturing fields if we are done at the target object root level
+      if (foundTargetObjectRootLevel) {
+        val rootCheck = fields.indexOf(targetObject.get)
+        if (rootCheck > -1) fields.remove(rootCheck)
+        foundTargetObject = false
+      }
+
+    })
+
+    fields.toList.distinct
+  }
+
+  /** Return string-encoded JSON object describing field types */
+  def getElasticsearchObjectMappings(): String = {
+    """dynamic_templates": [
+    { "nonindexer": {
+      "match": "*",
+      "match_mapping_type":"string",
+      "mapping": {
+      "type": "string",
+      "index": "not_analyzed"
     }
-    val commentJson = new JSONArray(commentsByFile)
+    }}
+    ],"""
 
-    Logger.debug("commentStr=" + commentJson.toString())
+    """{"clowder_object": {
+          |"properties": {
+            |"resource_type": {"type": "string"},
+            |"child_of": {"type": "string"},
+            |"parent_of": {"type": "string"},
+            |"creator": {"type": "string"},
+            |"created": {"type": "date", "format": "dateOptionalTime"},
+            |"metadata": {"type": "object"},
+            |"comments": {
+              |"properties": {
+                |"created": {"type": "date", "format": "dateOptionalTime"},
+                |"creator": {"type": "string"},
+                |"name": {"type": "string", "index": "not_analyzed"}
+              |}
+            |},
+            |"tags": {
+              |"properties": {
+                |"created": {"type":"date", "format":"dateOptionalTime"},
+                |"creator": {"type": "string"},
+                |"name": {"type": "string", "index":"not_analyzed"}
+              |}
+            |}
+          |}
+    |}}""".stripMargin
+  }
 
-    val usrMd = files.getUserMetadataJSON(file.id)
-    Logger.debug("usrmd=" + usrMd)
+  /**Attempt to cast String into Double, returning None if not possible**/
+  def parseDouble(s: String): Option[Double] = {
+    Try { s.toDouble }.toOption
+  }
 
-    val techMd = files.getTechnicalMetadataJSON(file.id)
-    Logger.debug("techmd=" + techMd)
+  /** Create appropriate search object based on operator */
+  def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    // TODO: Suppert lte, gte (<=, >=)
+    operator match {
+      /**case ":" => {
+        // TODO: Elasticsearch recommends not starting query with wildcard
+        // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
+        //builder.startObject("wildcard").field(key, value+"*").endObject()
+        builder.startObject().startObject("match").field(key, value).endObject().endObject()
+      }**/
+      case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
+      case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
+      case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      case _ => {}
+    }
+    builder
+  }
 
-    val xmlMd = files.getXMLMetadataJSON(file.id)
-    Logger.debug("xmlmd=" + xmlMd)
+  /** Create appropriate search object based on operator */
+  def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    operator match {
+      case "!=" => builder.startObject().startObject("match").field(key, value).endObject().endObject()
+      case _ => {}
+    }
+    builder
+  }
 
-    var fileDsId = ""
-    var fileDsName = ""
+  /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
+  def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
+    /** OPERATORS
+      *  :   contains (partial match)
+      *  ==  equals (exact match)
+      *  !=  not equals (partial matches OK)
+      *  <   less than
+      *  >   greater than
+      **/
 
-    for (dataset <- datasets.findByFileId(file.id)) {
-      fileDsId = fileDsId + dataset.id.stringify + " %%% "
-      fileDsName = fileDsName + dataset.name + " %%% "
+    // Separate query terms into two groups based on operator - must know ahead of time how many of each we have
+    val mustList = ListBuffer.empty[JsValue]
+    val mustNotList = ListBuffer.empty[JsValue]
+    query.foreach(jv => {
+      val operator = (jv \ "operator").toString.replace("\"","")
+      if (mustOperators.contains(operator))
+        mustList.append(jv)
+      else if (mustNotOperators.contains(operator))
+        mustNotList.append(jv)
+    })
+
+    // 1) Wrap entire object in BOOL query - everything within must match
+    var builder = jsonBuilder().startObject().startObject("bool")
+
+    // -- Wrap MUST/MUST_NOT subqueries in BOOL+SHOULD query if matching ANY term and != is used
+    if (grouping == "OR" && mustNotList.length > 0)
+      builder.startArray("should").startObject().startObject("bool")
+
+    // 2) populate the MUST/SHOULD portion
+    if (mustList.length > 0) {
+      grouping match {
+        case "AND" => builder.startArray("must")
+        case "OR" => builder.startArray("should")
+      }
+      mustList.foreach(jv => {
+        val key = (jv \ "field_key").toString.replace("\"","")
+        val operator = (jv \ "operator").toString.replace("\"", "")
+        val value = (jv \ "field_value").toString.replace("\"", "")
+        builder = parseMustOperators(builder, key, value, operator)
+      })
+      builder.endArray()
     }
 
-    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+    // 3) populate the MUST_NOT portion
+    if (mustNotList.length > 0) {
+      // -- Again, special handling for mixing OR grouping with != operator so it behaves as user expects
+      if (grouping == "OR")
+        builder.endObject().endObject().startObject().startObject("bool").startArray("should")
+      else
+        builder.startArray("must_not")
 
-    index("data", "file", file.id,
-      List(("filename", file.filename),
-        ("contentType", file.contentType),
-        ("author", file.author.fullName),
-        ("uploadDate", formatter.format(file.uploadDate)),
-        ("datasetId", fileDsId),
-        ("datasetName", fileDsName),
-        ("tag", tagsJson.toString()),
-        ("comments", commentJson.toString()),
-        ("usermetadata", usrMd),
-        ("technicalmetadata", techMd),
-        ("xmlmetadata", xmlMd)))
+      mustNotList.foreach(jv => {
+        if (grouping == "OR")
+          builder.startObject().startObject("bool").startArray("must_not")
+
+        val key = (jv \ "field_key").toString.replace("\"","")
+        val operator = (jv \ "operator").toString.replace("\"", "")
+        val value = (jv \ "field_value").toString.replace("\"", "")
+        builder = parseMustNotOperators(builder, key, value, operator)
+
+        if (grouping == "OR")
+          builder.endArray().endObject().endObject()
+      })
+
+      if (grouping == "OR")
+        builder.endArray().endObject().endObject().endArray()
+      else
+        builder.endArray()
+    }
+
+    // Close the bool/query objects and return
+    builder.endObject().endObject()
+    builder
+  }
+
+  /**Convert search string into an Elasticsearch-ready JSON query object**/
+  def prepareElasticJsonQuery(query: String): XContentBuilder = {
+    /** OPERATORS
+      *  ==  equals (exact match)
+      *  !=  not equals (partial matches OK)
+      *  <   less than
+      *  >   greater than
+      **/
+    // TODO: Make this more robust, perhaps with some RegEx or something, to support quoted phrases
+    val terms = query.split(" ")
+
+    var builder = jsonBuilder().startObject().startObject("bool")
+
+    // First, populate the MUST portion of Bool query
+    var populatedMust = false
+    terms.map(term => {
+      for (operator <- mustOperators) {
+        if (term.contains(operator)) {
+          val key = term.substring(0, term.indexOf(operator))
+          val value = term.substring(term.indexOf(operator)+1, term.length)
+
+          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+          if (mustOperators.contains(operator) && !populatedMust) {
+            builder.startArray("must")
+            populatedMust = true
+          }
+
+          builder = parseMustOperators(builder, key, value, operator)
+        }
+      }
+    })
+    if (populatedMust) builder.endArray()
+
+    // Second, populate the MUST NOT portion of Bool query
+    var populatedMustNot = false
+    terms.map(term => {
+      for (operator <- mustNotOperators) {
+        if (term.contains(operator)) {
+          val key = term.substring(0, term.indexOf(operator))
+          val value = term.substring(term.indexOf(operator), term.length)
+
+          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+          if (mustNotOperators.contains(operator) && !populatedMustNot) {
+            builder.startArray("must_not")
+            populatedMustNot = true
+          }
+
+          builder = parseMustNotOperators(builder, key, value, operator)
+        }
+      }
+    })
+    if (populatedMustNot) builder.endArray()
+
+    // Close the bool/query objects and return
+    builder.endObject().endObject()
+    builder
   }
 
   override def onStop() {

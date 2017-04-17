@@ -23,7 +23,7 @@
 		    	<div class="col-md-6">
 		    }
 		   
-		    <h3>Files</h3>
+		    <h3 id="search-file-title"><span class="glyphicon glyphicon-file"></span> Files</h3>
 		    @for(file <- files) {
 			  <div class="row elasticsearchResult" id="filediv_@file.id.toString">
 				<div class="col-md-2">
@@ -66,7 +66,7 @@
 		    	<div class="col-md-6">
 		    }
 						    
-	       <h3>Datasets</h3>
+	       <h3 id="search-dataset-title"> <span class="glyphicon glyphicon-briefcase"></span> Datasets</h3>
 	    @for(dataset <- datasets) {
 		  <div class="row elasticsearchResult" id="datasetdiv_@dataset.id.toString">
 		    <div class="col-md-2">
@@ -80,8 +80,8 @@
 				<dl class="dl-horizontal">
 					<dt> Name:</dt>
 					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></dd>
-					<dt>  Descriptions:</dt>
-					<dd> @Html(dataset.description)</dd>
+					<dt>  Description:</dt>
+					<dd> @Html(dataset.description.replace("\n","<br/>"))</dd>
 					<dt>Collection name(s):</dt>
 					<dd>
 						@for(currMapping <- mapcollectionIds.get(dataset.id.toString).get){
@@ -106,7 +106,7 @@
 		    	<div class="col-md-6">
 		    }
 			    
-	       <h3>Collections</h3>
+	       <h3 id="search-collection-title"> <span class="glyphicon glyphicon-th-large"></span> Collections</h3>
 	    @for(collection <- collections) {
 		  <div class="row elasticsearchResult">
 		    <div class="col-md-2">
@@ -121,7 +121,7 @@
 					<dt> Name:</dt>
 					<dd><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></dd>
 					<dt>  Description:</dt>
-					<dd> @Html(collection.description)</dd>
+					<dd> @Html(collection.description.replace("\n","<br>"))</dd>
 				</dl>
 			</div>
 		</div>
@@ -137,10 +137,10 @@
 		$(".dl-horizontal").css("position", "relative");
 		
 		$(".col-md-4 .dl-horizontal").each(function () {
-	        this.style.top = (-parseInt(this.parentNode.clientHeight * 9/100)) + "px"   ;
+	        this.style.top = "-10px"   ;
 	    });
 		$(".col-md-6 .dl-horizontal").each(function () {
-	        this.style.top = (-parseInt(this.parentNode.clientHeight * 12/100)) + "px"   ;
+	        this.style.top = "-10px"   ;
 	    });
 		
 	</script>

@@ -32,6 +32,29 @@ trait DatasetService {
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
 
   /**
+    * Return a list of datasets in a space
+    */
+  def listSpace(limit: Integer, space: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space starting at a specific date
+    */
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space filtered by status, this does not check for permissions
+    */
+  def listSpaceStatus(limit: Integer, space: String, status: String): List[Dataset]
+  /**
+    * Return a list of datasets in a space filtered by status
+    */
+  def listSpaceStatus(limit: Integer, space: String, status: String, user:Option[User]): List[Dataset]
+  /**
+    * Return a list of datasets in a space filtered by status
+    */
+  def listSpaceStatus(date: String, nextPage: Boolean, limit: Integer, space: String, status: String, user:Option[User]): List[Dataset]
+
+  /**
    * Return a count of datasets in a collection, this does not check for permissions
    */
   def countCollection(collection: String): Long
@@ -50,6 +73,20 @@ trait DatasetService {
    * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
    */
   def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset]
+  /**
+    * Return a list of datasets in a collection
+    */
+  def listCollection(collection: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a collection
+    */
+  def listCollection(limit: Integer, collection: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a collection starting at a specific date
+    */
+  def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String, user:Option[User]): List[Dataset]
 
   /**
    * Return a count of datasets the user has access to.
@@ -59,22 +96,42 @@ trait DatasetService {
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space with specific title the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, title: String, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets  in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date with specific title.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a count of datasets the user has created.
@@ -138,6 +195,9 @@ trait DatasetService {
   def addXMLMetadata(id: UUID, fileId: UUID, json: String)
 
   def addUserMetadata(id: UUID, json: String)
+
+  /** Change the metadataCount field for a dataset */
+  def incrementMetadataCount(id: UUID, count: Long)
 
   /**
    * Add file to dataset.
@@ -286,6 +346,21 @@ trait DatasetService {
    * Remove follower from a dataset.
    */
   def removeFollower(id: UUID, userId: UUID)
+  
+  /**
+   * Add a creator to the end of the dataset's list of creators
+   */
+  def addCreator(id: UUID, creator: String)
+  
+  /**
+   * Remove a creator from the dataset's list of creators
+   */
+  def removeCreator(id: UUID, creator: String)
+  
+  /**
+   * Move a creator to a new position in the dataset's list of creators
+   */
+  def moveCreator(id: UUID, creator: String, position: Integer)
 
 }
 

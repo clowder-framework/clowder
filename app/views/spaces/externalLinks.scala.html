@@ -1,14 +1,22 @@
-@(links: List[java.net.URL])
+@(links: List[java.net.URL], space:models.ProjectSpace, classes: String)(implicit user: Option[models.User])
+@import play.api.i18n.Messages
+@import api.Permission
 
-<div class="row ds-section-sm border-top">
-<h3>External Links</h3>
-@if(links.size == 0) {
-    <p>Edit space to add links</p>
-} else {
-    <ul class="list-unstyled">
-    @for(link <- links) {
-        <li><a href="@link">@link</a></li>
-    }
-    </ul>
-}
+<div class="@classes">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <h3>External Links</h3>
+        @if(links.size == 0) {
+            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+                <p>Edit @Messages("space.title") to add links</p>
+            } else {
+                <p>No External Links</p>
+            }
+        } else {
+            <ul class="list-unstyled">
+            @for(link <- links) {
+                <li><a href="@link">@link</a></li>
+            }
+            </ul>
+        }
+    </div>
 </div>

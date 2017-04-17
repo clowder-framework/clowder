@@ -37,22 +37,22 @@ trait SpaceService {
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean, showOnlyShared : Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to matching title.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean, showOnlyShared : Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to starting at a specific date and  matching title.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[ProjectSpace]
 
   /**
    * Return a count of spaces the user has created.
@@ -79,7 +79,12 @@ trait SpaceService {
     */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
-  def addCollection(collection: UUID, space: UUID)
+  /**
+    * Return a list of spaces with specific status
+    */
+  def listByStatus(status: String):List[ProjectSpace]
+
+  def addCollection(collection: UUID, space: UUID, user : Option[User])
 
   def removeCollection(collection: UUID, space:UUID)
 
@@ -146,10 +151,10 @@ trait SpaceService {
    * @param name The updated name information, HTMLEncoded since it is free text
    * @param description The updated description information, HTMLEncoded since it is free text
    * @param timeToLive The updated amount of time, in milliseconds, that resources should be preserved in the space
-   * @param expireEnabled The updated flag, indicating whether or not the space should allow resources to expire
-   *
+   * @param expireEnabled The updated flag, indicating whether or not the space should allow resources to expire*
+   * @param access The updated flag indicate the space is private or public
    */
-  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean)
+  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean, access:String)
 
   /**
    * Add a user to the space, along with an associated role.

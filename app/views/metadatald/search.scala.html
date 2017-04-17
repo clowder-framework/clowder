@@ -1,24 +1,38 @@
 @()(implicit user: Option[models.User])
 
 @main("Search metadata") {
-    <h2>Search by metadata</h2>
+    <h2>Advanced Search</h2>
     <div class="row">
         <div class="panel panel-default">
             <div class="panel-body">
                 <form class="form top-padding" id="metadata-search">
-                    <div class="form-group col-lg-4 col-md-4">
-                        <select id="add-metadata-select">
-                            <option value=""></option>
-                        </select>
+
+                    <div id="basic-search-container">
+                        <!-- ANY/ALL DROPDOWN -->
+                        <div class='form-group col-lg-4 col-md-4'>
+                            <select id='add-metadata-grouping'>
+                                <option value='AND'>Match ALL of the selected terms</option>
+                                <option value='OR'>Match ANY of the selected terms</option>
+                            </select>
+                        </div>
+
+                        <!-- ADD TERM BTN -->
+                        <div class="form-group col-lg-8 col-md-8">
+                            <a class='btn btn-default' id='add-clause' onclick='getBasicDefinitions(2)'>
+                                <span class='glyphicon glyphicon-plus'></span> Add term</a>
+                        </div>
+
+                        <!-- SET OF TERM ROWS (populated in script below) -->
+                        <div id="metadata-search-rows"></div>
                     </div>
-                    <div class="form-group col-lg-4 col-md-4">
-                        <input type="text" class="form-control" id="v" placeholder="Type value here">
-                    </div>
+
+                    <!-- SUBMIT BTN -->
                     <div class="form-group col-lg-4 col-md-4">
                         <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Search</button>
                         <span id="mt-search-feedback"></span>
                     </div>
                 </form>
+
             </div>
         </div>
     </div>
@@ -34,58 +48,210 @@
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
-        // metadata definitions
-        var request = jsRoutes.api.Metadata.getDefinitions().ajax({
-            type: 'GET',
-            contentType: "application/json"
-        });
+        var row_list = [];
+        $("#add-metadata-grouping").select2({
+            theme: "bootstrap",
+            allowClear: false,
+            width: "100%"
+        })
 
-        request.done(function (response, textStatus, jqXHR) {
-            var fields = response;
-            for (var i = 0; i < fields.length; i++) {
-                var elem = $("<option></option>");
-                elem.attr("data-type", fields[i].json.type);
-                elem.attr("data-id", fields[i].id);
-                elem.attr("value", fields[i].json.uri);
-                elem.text(fields[i].json.label);
-                $("#add-metadata-select").append(elem);
+        getBasicDefinitions(1)
+
+        // Add a new row to the set of criteria
+        function getBasicDefinitions(rowId) {
+            var rowStr = String(rowId);
+
+            // Basic row definition
+            $("#metadata-search-rows").append(
+                $("<p><div id='metadata-clause-"+rowStr+"'>" +
+                    <!-- FIELD SELECTOR DROPDOWN -->
+                    "<div class='form-group col-lg-4 col-md-4'>" +
+                        "<select id='add-metadata-select-"+rowStr+"'><option value=''></option></select></div>" +
+                    <!-- OPERATOR DROPDOWN -->
+                    "<div class='form-group col-lg-2 col-md-2'> <select id='add-metadata-operator-"+rowStr+"'>" +
+                        // "<option value=':'>contains</option>" +
+                        "<option value='=='>equals</option>" +
+                        "<option value='!='>does not equal</option>" +
+                        "<option value='>'>greater than</option>" +
+                        "<option value='<'>less than</option>" +
+                    "</select></div>" +
+                    <!-- VALUE FIELD -->
+                    "<div class='form-group col-lg-4 col-md-4'>" +
+                        "<input type='text' class='form-control' id='v-"+rowStr+"' placeholder='Type value here'>" +
+                    "</div>" +
+                    <!-- REMOVE ROW BUTTON -->
+                    "<div class='form-group col-lg-2 col-md-2'>" +
+                    "<button class='btn' id='remove-"+rowStr+"' onclick='removeRow("+rowStr+")'>" +
+                    "<span class='glyphicon glyphicon-minus'></span></button></div>" +
+                "</div>"
+                )
+            );
+            document.getElementById("add-clause").onclick = function () { getBasicDefinitions(rowId+1); };
+            document.getElementById("v-"+rowStr).onkeydown = function(evt) {
+                // Allow Enter key to perform search on any value box
+                if (evt.keyCode == 13) {
+                    search()
+                    return false
+                } else return true
+            };
+            row_list.push(rowStr);
+
+            // Add theme to operator/grouping dropdowns
+            $("#add-metadata-operator-"+rowStr).select2({
+                theme: "bootstrap",
+                allowClear: false,
+                width: "100%"
+            });
+            $("#add-metadata-grouping-"+rowStr).select2({
+                theme: "bootstrap",
+                allowClear: false,
+                width: "100%"
+            });
+
+            // fetch metadata definitions
+            var request = jsRoutes.api.Metadata.getDefinitionsDistinctName().ajax({
+                type: 'GET',
+                contentType: "application/json"
+            });
+            request.done(function (response, textStatus, jqXHR) {
+                var fields = response;
+
+                $("#add-metadata-select-"+rowStr).empty()
+                for (var i = 0; i < fields.length; i++) {
+                    var elem = $("<option></option>");
+                    elem.attr("data-type", fields[i].json.type);
+                    elem.attr("data-id", fields[i].json.label);
+                    elem.attr("value", "metadata."+fields[i].json.label);
+                    elem.text(fields[i].json.label);
+                    $("#add-metadata-select-"+String(rowId)).append(elem);
+                }
+
+                // Select box will populate as user types, with metadata field autocomplete suggestions
+                $("#add-metadata-select-"+rowStr).select2({
+                    theme: "bootstrap",
+                    placeholder: "Select a type or field key",
+                    allowClear: true,
+                    width: "100%",
+                    ajax: {
+                        url: function(filter) {
+                            // Get autocomplete results if typing; otherwise return standard set of definitions
+                            if (filter.term == null || filter.term == "") {
+                                return jsRoutes.api.Metadata.getDefinitionsDistinctName().url
+                            }
+                            else {
+                                return jsRoutes.api.Metadata.getAutocompleteName(filter.term).url
+                            }
+                        },
+                        // Populate autocomplete as user types
+                        processResults: function(data, page) {
+                            var outMap = {}
+
+                            for (var rez=0; rez<data.length; rez++) {
+                                var entry = data[rez];
+
+                                // Metadata Definitions
+                                if (typeof(entry) == 'object') {
+                                    var entryGroup = "Metadata Definitions";
+                                    var entryData = {text: entry.json.label, id: "metadata."+entry.json.label};
+                                // suggestions from elasticsearch
+                                } else {
+                                    if (entry.indexOf('.') > -1) {
+                                        if (entry.indexOf('/extractors/') > -1) {
+                                            // Group extractor-specific fields together under extractor
+                                            var entryGroup = entry.substring(entry.indexOf('/extractors/')+12, entry.lastIndexOf('.'))+" (Extractor)";
+                                        }
+                                        else if (entry.split('.').length > 2 ){
+                                            // Group user-submitted metadata under user's name
+                                            var entryGroup = entry.substring(entry.indexOf('.')+1, entry.lastIndexOf('.'))+" (User)";
+                                        }
+                                        else {
+                                            // This should be metadata definitions otherwise
+                                            var entryGroup = "Metadata Definitions";
+                                        }
+                                        var entryData = {id: entry, text: entry.substring(entry.lastIndexOf('.')+1, entry.length)}
+                                    } else {
+                                        // Simple entry
+                                        var entryGroup = ""
+                                        var entryData = {text: entry, id: entry}
+                                    }
+                                }
+                                if (!outMap.hasOwnProperty(entryGroup))
+                                    outMap[entryGroup] = [];
+                                outMap[entryGroup].push(entryData)
+                            }
+
+                            var outList = []
+                            for (var group in outMap) {
+                                if (group == "") {
+                                    for (var ungrouped=0; ungrouped<outMap[group].length; ungrouped++)
+                                        outList.push(outMap[group][ungrouped])
+                                } else
+                                    outList.push({"text":group, "children": outMap[group]})
+                            }
+
+                            console.log(outList)
+                            return {
+                                results: outList
+                            };
+                        }
+                    }
+                })
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to retrieve metadata definitions";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("Metadata was not added due to : " + errorThrown, "error");
+                }
+            });
+        }
+
+        // Construct a JSON object with search information
+        function generateSearchObject() {
+            var searchObj = [];
+            for (var row=0; row<row_list.length; row++) {
+                var rowkey = $("#add-metadata-select-"+row_list[row]+" :selected").val();
+                var rowop = $("#add-metadata-operator-"+row_list[row]).val();
+                var rowval = $("#v-"+row_list[row]).val();
+
+                // Ignore any terms without a value
+                if (rowval != "") {
+                    if (rowkey.indexOf('.') > -1) {
+                        var keyvals = rowkey.split('.')
+                        var extractorKey = keyvals[0]
+                        var leafKey = keyvals[keyvals.length-1]
+                    } else {
+                        var extractorKey = null
+                        var leafKey = rowkey
+                    }
+
+                    searchObj.push({
+                        "field_key": rowkey,
+                        "operator": rowop,
+                        "field_value": rowval,
+                        "extractor_key": extractorKey,
+                        "field_leaf_key": leafKey
+                    });
+                }
             }
-            // chosen pulldown configuration
-            $("#add-metadata-select").chosen({
-                no_results_text: "Press enter to define new key",
-                search_contains: true,
-                width: "100%",
-                placeholder_text_single: "Select or type field key"});
-        });
 
-        function search(key, value, count) {
+            return searchObj;
+        }
+
+        // Submit contents of basic search rows
+        function search(count) {
             count = count || 10;
-            if ( key != "" && value != "" ) {
-                var request = jsRoutes.api.Metadata.searchByKeyValue(key, value, count).ajax({
+            var query = generateSearchObject();
+            console.log(query)
+            var grouping = $("#add-metadata-grouping").val()
+            if (query != []) {
+                var request = jsRoutes.api.Search.searchJson(JSON.stringify(query), grouping, count).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });
 
-                request.done(function (response, textStatus, jqXHR){
-                    $( "#datasets-results" ).empty();
-                    $( "#files-results" ).empty();
-                    var datasets = response.datasets;
-                    var files = response.files;
-                    if (datasets.length == 0) $('#datasets-results').append("No datasets found");
-                    for (var i=0; i<datasets.length; i++) {
-                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
-                        var html = modalTemplate({'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url, 'name': datasets[i].name});
-                        $('#datasets-results').append(html);
-                    }
-                    if (files.length == 0) $('#files-results').append("No files found");
-                    for (var i=0; i<files.length; i++) {
-                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
-                        var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
-                        $('#files-results').append(html);
-                    }
-                    $('#getmore').html('<a id="showmore" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>');
-                    $('#showmore').click( function() { search(key, value, count+10); } );
-                });
+                request.done(parseSearchResults);
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
                     console.error("The following error occured: " + textStatus, errorThrown);
@@ -94,24 +260,46 @@
                 return;
             }
 
-            $( "#mt-search-feedback" ).text( "Not valid!" ).show().fadeOut( 2000 );
+            $( "#mt-search-feedback" ).text( " Not valid!" ).show().fadeOut( 2000 );
         }
 
-        request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
-            var errMsg = "You must be logged in to retrieve metadata definitions";
-            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                notify("Metadata was not added due to : " + errorThrown, "error");
+        function removeRow(rowId) {
+            var rowStr = String(rowId);
+            $("#metadata-clause-"+rowStr).remove();
+            row_list.splice(row_list.indexOf(rowStr), 1);
+        }
+
+        function parseSearchResults(response, textStatus, jqXHR) {
+            $( "#datasets-results" ).empty();
+            $( "#files-results" ).empty();
+
+            var datasets = response.datasets;
+            if (datasets.length == 0) $('#datasets-results').append("No datasets found");
+            for (var i=0; i<datasets.length; i++) {
+                var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
+                var html = modalTemplate({'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url, 'name': datasets[i].name});
+                $('#datasets-results').append(html);
             }
-        });
+
+            var files = response.files;
+            if (files.length == 0) $('#files-results').append("No files found");
+            for (var i=0; i<files.length; i++) {
+                var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
+                var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
+                $('#files-results').append(html);
+                // TODO: example search strings
+                // TODO: Support API direct calls
+            }
+
+            $('#getmore').html('<a id="showmore" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>');
+            $('#showmore').click( function() { search(key, value, count+10); } );
+        }
 
         // form submission
         $( "form[id='metadata-search']").submit(function( event ) {
             event.preventDefault();
-            var k = $("#add-metadata-select option:selected").text();
-            var predicate = $("#add-metadata-select option:selected").val();
-            var v = $( "#v" ).val();
-            search(k, v);
+            search();
+
         });
     </script>
 }

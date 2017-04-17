@@ -1,21 +1,60 @@
-@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int])(implicit user: Option[models.User])
-
+@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String])(implicit user: Option[models.User])
+<div><h2 id='folderpath'>
 @if(folderHierarchy.length > 0 ) {
-    <h2> <a href="javascript:updatePageAndFolder(0, '')"><span class="glyphicon glyphicon-home"></span></a>
+     <a href="javascript:updatePageAndFolder(0, '')"><span class="glyphicon glyphicon-home"></span></a>
         @folderHierarchy.map { cFolder =>
         > <a href="javascript:updatePageAndFolder(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
         }
-    </h2>
+    
 }
+</h2>
+@if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+<script type="text/javascript">
+$(document).ready(function() {
+  $(".js-sort-single").select2({minimumResultsForSearch: Infinity});
+  var order = 'dateN';
+  if($.cookie('sort-order') != null) {
+    order = $.cookie('sort-order').replace(/['"]+/g, '');
+  }
+  $(".js-sort-single").val(order).trigger("change");
+  $(".js-sort-single").on('select2:select', function (evt) {   
+  $.cookie('sort-order', $(".js-sort-single").val(), { path: '/' }); 
+  @currentFolder match {
+        case None => { updatePageAndFolder(@filepage,'', $(".js-sort-single").val()); }
+        case Some(s) => { updatePageAndFolder(@filepage,'@s', $(".js-sort-single").val());}
+    }
+	});
+});
+</script>
+<label class="sortchoice" for="js-sort-single">Sort By:
+<select class="js-sort-single">
+  <option value="dateN">Newest</option>
+  <option value="dateO">Oldest</option>
+  <option value="titleA">Title (A-Z)</option>
+  <option value="titleZ">Title (Z-A)</option>
+  <option value="sizeL">Size (L)</option>
+  <option value="sizeS">Size (S)</option>
+  
+</select>
+</label>
+}
+</div>
 
 <div id="folderListDiv">
 @foldersList.map { folder =>
     @folders.listitem(folder, dataset.id)
 }
 </div>
+    <div style="display: none" id="empty-folder-div"><h4>Folder is empty</h4></div>
+
+    <!-- Show message when the folder is empty -->
+    @if(foldersList.size == 0 && fileList.size == 0 ){
+        <script>$("#empty-folder-div").show();</script>
+    }
+
     @currentFolder match {
-        case None => {  @files.grid(fileList, fileComments, dataset.id, ResourceRef(ResourceRef.dataset, dataset.id)) }
-        case Some(s) => { @files.grid(fileList, fileComments, dataset.id, ResourceRef(ResourceRef.folder, UUID(s)))}
+        case None => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id), dataset.folders.length > 0) }
+        case Some(s) => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)), dataset.folders.length > 0)}
     }
 
 <div class="row">

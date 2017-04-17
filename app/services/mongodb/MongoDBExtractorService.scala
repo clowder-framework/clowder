@@ -56,7 +56,7 @@ class MongoDBExtractorService extends ExtractorService {
     }
     Logger.debug("[MongoDBExtractorService]- Extractor Name List-")
     Logger.debug(list_queue.toString)
-    list_queue
+    list_queue.distinct
   }
 
 
@@ -137,8 +137,8 @@ class MongoDBExtractorService extends ExtractorService {
     ExtractorInfoDAO.findAll().toList
   }
 
-  def getExtractorInfo(extractorId: UUID): Option[ExtractorInfo] = {
-    ExtractorInfoDAO.findOneById(new ObjectId(extractorId.stringify))
+  def getExtractorInfo(extractorName: String): Option[ExtractorInfo] = {
+    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName))
   }
 
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo] = {

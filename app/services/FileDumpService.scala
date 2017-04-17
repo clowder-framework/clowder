@@ -57,7 +57,7 @@ class FileDumpService(application: Application) extends Plugin {
             movedFile.getParentFile().mkdirs()
             
             if(copiedFile.renameTo(movedFile)){
-            	Logger.info("File dumped and moved to staging directory successfully.")
+            	Logger.debug("File dumped and moved to staging directory successfully.")
             }else{
             	Logger.warn("Could not move dumped file to staging directory.")
     	    }

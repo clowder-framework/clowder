@@ -29,8 +29,18 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.admin.customize(theme,
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
-      AppConfiguration.getGoogleAnalytics,
-      AppConfiguration.getUserAgreement))
+      AppConfiguration.getGoogleAnalytics))
+  }
+
+  def tos = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val tosText = AppConfiguration.getTermsOfServicesTextRaw
+    val tosHtml = if (AppConfiguration.isTermOfServicesHtml) {
+      "checked"
+    } else {
+      ""
+    }
+    Ok(views.html.admin.tos(tosText, tosHtml))
   }
 
   def adminIndex = ServerAdminAction { implicit request =>
@@ -174,7 +184,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
    }
 
   /**
-   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on Medici side if these indexes
+   * Gets indexes from Versus, using VersusPlugin. Checks in mongo on clowder side if these indexes
    * have type and/or name. Adds type and/or name to json object and calls view template to display.
    */
   def getIndexes() = ServerAdminAction.async { implicit request =>
@@ -195,7 +205,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
             //make sure we got correctly formatted list of values
             jsArray.validate[List[VersusIndexTypeName]].fold(
               // Handle the case for invalid incoming JSON.
-              // Note: JSON created in Versus IndexResource.listJson must have the same names as Medici models.VersusIndexTypeName
+              // Note: JSON created in Versus IndexResource.listJson must have the same names as clowder models.VersusIndexTypeName
               error => {
                 Logger.error("Admin.getIndexes - validation error")
                 InternalServerError("Received invalid JSON response from remote service.")
@@ -308,7 +318,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   def getMetadataDefinitions() = ServerAdminAction { implicit request =>
     implicit val user = request.user
     val metadata = metadataService.getDefinitions()
-    Ok(views.html.manageMetadataDefinitions(metadata.toList))
+    Ok(views.html.manageMetadataDefinitions(metadata.toList, None, None))
   }
 
   val roleForm = Form(

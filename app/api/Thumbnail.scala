@@ -5,7 +5,7 @@ import java.io.FileInputStream
 import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
-import models.{Thumbnail, UUID}
+import models.{ResourceRef, Thumbnail, UUID}
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
@@ -29,7 +29,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
   @ApiOperation(value = "Delete thumbnail",
     notes = "Remove thumbnail file from system).",
     responseClass = "None", httpMethod = "POST")
-  def removeThumbnail(id: UUID) = PrivateServerAction { implicit request =>
+  def removeThumbnail(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
     thumbnails.get(id) match {
       case Some(thumbnail) => {
         Logger.debug("Deleting file: " + thumbnail.filename)
@@ -45,7 +45,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
 
   /**
    * Upload a file thumbnail.
-   */  
+   */
   def uploadThumbnail() = PermissionAction(Permission.CreatePreview)(parse.multipartFormData) { implicit request =>
     request.body.file("File").map { f =>
       f.ref.file.length() match{
@@ -53,7 +53,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
           BadRequest(toJson("File is empty."))
         }
         case _ => {
-          Logger.info("Uploading thumbnail " + f.filename)
+          Logger.debug("Uploading thumbnail " + f.filename)
         // store file
         val id = thumbnails.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
         Ok(toJson(Map("id"->id)))

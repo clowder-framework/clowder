@@ -1,10 +1,15 @@
-function removeCollection(id, isreload, url){
-	var request = jsRoutes.api.Collections.removeCollection(id).ajax({
+function removeCollection(id, isreload, newurl, resourceFromType){
+	var url = jsRoutes.api.Collections.removeCollection(id);
+	if(resourceFromType == 'space'){
+		var removeDatasets = $('#removedatasets').val();
+		url = jsRoutes.api.Collections.removeCollection(id , removeDatasets)
+	}
+	var request = url.ajax({
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
 		if(isreload === "true")
-			window.location.href=url;
+			window.location.href=newurl;
 		else {
 			$('#'+ id+'-listitem').remove();
 			var obj = $('#'+ id+'-tile');

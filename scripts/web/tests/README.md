@@ -1,7 +1,7 @@
 tests.php
 --------
 
-Web application to test the functionality of the extraction service behind a specified Medici instance. Note, test.php
+Web application to test the functionality of the extraction service behind a specified Clowder instance. Note, test.php
 is a helper script for this script.
 	
 Usage:

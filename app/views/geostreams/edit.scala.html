@@ -98,6 +98,7 @@
             var definitionElement = $('select[data-id="' + targetID + '"][data-group="' + group + '"]');
 
             $(definitionElement).chosen({
+                add_search_option: true,
                 no_results_text: "Not found. Press enter to add ",
                 search_contains: true,
                 width: "100%",

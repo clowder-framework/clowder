@@ -1,0 +1,64 @@
+@(tosText: String, tosHtml: String)(implicit user: Option[models.User])
+
+@main("Terms of Service") {
+    <div class="page-header">
+        <h1>Terms of Service</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            This page allows you to change the Terms of Service. When you save the Terms of Service all users
+            will need to agreee to the new terms of service. If you leave the text blank it will default to
+            the default Terms of Service as provided by Clowder. You can use @@@@NAME in the text which will
+            be replaced with the server name (currently @services.AppConfiguration.getDisplayName).
+        </div>
+    </div>
+    <br/>
+
+    <form role="form-horizontal">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label for="tosText">Terms Of Service</label>
+                    <textarea class="form-control" id="tosText" rows="20">@(tosText)</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label for="tosHtml">Format text as HTML</label>
+                    <input type="checkbox" class="form-control" id="tosHTML" @(tosHtml) />
+                </div>
+            </div>
+        </div>
+
+        <br/>
+        <button class="btn btn-primary" onclick="return submitForm();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+        <br/>
+    </form>
+
+    <script language="javascript">
+            function submitForm() {
+                var tosHtml = $("#tosHTML").is(':checked');
+                var tosText = $("#tosText").val().trim();
+
+                $.ajax({
+                    url:  "@api.routes.Admin.updateConfiguration",
+                    data: JSON.stringify({
+                        tosHtml: tosHtml,
+                        tosText: tosText
+                    }),
+                    type: "POST",
+                    contentType: "application/json"
+                }).done(function() {
+                    notify("The terms of service have been updated", "success");
+                }).fail(function(jqXHR) {
+                    console.error("The following error occured: " + jqXHR.responseText);
+                    notify("The terms of service are not updated", "error");
+                });
+
+                return false;
+            }
+    </script>
+}

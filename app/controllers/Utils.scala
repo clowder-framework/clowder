@@ -52,6 +52,20 @@ object Utils {
     space.copy(name = decodedName, description = decodedDesc)
   }
 
+  def decodeVocabularyTermElements(vocabularyTerm : VocabularyTerm) = {
+    val decodedKey = StringEscapeUtils.unescapeHtml(vocabularyTerm.key)
+    val decodedDefaultValue = StringEscapeUtils.unescapeHtml(vocabularyTerm.default_value)
+    val decodedUnits = StringEscapeUtils.unescapeHtml(vocabularyTerm.units)
+    val decodedDescription = StringEscapeUtils.unescapeHtml(vocabularyTerm.description)
+    vocabularyTerm.copy(key = decodedKey, default_value = decodedDefaultValue)
+  }
+
+  def decodeString(string : String) : String ={
+    val decodedString = StringEscapeUtils.unescapeHtml(string).replace("\n"," ")
+
+    return decodedString
+  }
+
   /**
    * Default formatter for the `String` type.
    */

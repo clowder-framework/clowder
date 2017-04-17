@@ -13,7 +13,7 @@ import services.mongodb.MongoSalatPlugin
 import scala.collection.mutable
 
 /**
- * class that contains all status/version information about medici.
+ * class that contains all status/version information about clowder.
  */
 class Status @Inject()(spaces: SpaceService,
                        collections: CollectionService,
@@ -38,7 +38,7 @@ class Status @Inject()(spaces: SpaceService,
   def status = UserAction(needActive=false) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
-      "counts" -> getCounts,
+      "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames())))
   }
@@ -96,7 +96,7 @@ class Status @Inject()(spaces: SpaceService,
         } else {
           "disconnected"
         }
-        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
+        result.put("postgres", if (Permission.checkServerAdmin(user)) {
           Json.obj("catalog" -> p.conn.getCatalog,
             "schema" -> p.conn.getSchema,
             "updates" -> appConfig.getProperty[List[String]]("postgres.updates", List.empty[String]),
@@ -148,19 +148,24 @@ class Status @Inject()(spaces: SpaceService,
     Json.toJson(result.toMap[String, JsValue])
   }
 
-  def getCounts: JsValue = {
+  def getCounts(user: Option[User]): JsValue = {
+    val fileinfo = if (Permission.checkServerAdmin(user)) {
+      Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
+    } else {
+      Json.toJson(files.count())
+    }
     Json.obj("spaces" -> spaces.count(),
       "collections" -> collections.count(),
       "datasets" -> datasets.count(),
-      "files" -> files.count(),
+      "files" -> fileinfo,
       "users" -> users.count())
   }
 
   def getVersionInfo: JsValue = {
     val sha1 = sys.props.getOrElse("build.gitsha1", default = "unknown")
 
-    // TODO use the following URL to indicate if there updates to Medici.
-    // if returned object has an empty values medici is up to date
+    // TODO use the following URL to indicate if there updates to clowder.
+    // if returned object has an empty values clowder is up to date
     // need to figure out how to pass in the branch
     //val checkurl = "https://opensource.ncsa.illinois.edu/stash/rest/api/1.0/projects/CATS/repos/clowder/commits?since=" + sha1
 

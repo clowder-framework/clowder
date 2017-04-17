@@ -4,6 +4,7 @@ import org.scalatestplus.play.{PlaySpec, _}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.{Application, Play}
+import play.api.i18n.Messages
 
 /**
  * Functional test. This throws an java.lang.IllegalStateException: cannot enqueue after timer shutdown due to the Akka timer
@@ -43,7 +44,11 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
     }
 
     "render index template" in {
-      val html = views.html.index(List.empty, 1, 2, 3, 4, 5, 6, 7, 8, 3, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+      val html = views.html.index(1, 2, 3, 4, 5, 6, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+      /**
+        * String name of the Space such as 'Project space' etc., parsed from the config file
+        */
+      val spaceTitle: String = Messages("spaces.title")
 
       contentType(html) mustEqual ("text/html")
 
@@ -51,9 +56,9 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       contentAsString(html) must include("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
       contentAsString(html) must include("Resources")
-      contentAsString(html) must include("Access to 8 spaces")
-      contentAsString(html) must include("Access to 6 collections")
-      contentAsString(html) must include("Access to 2 datasets")
+      contentAsString(html) must include("5 " + Messages("spaces.title"))
+      contentAsString(html) must include("4 " + Messages("collections.title"))
+      contentAsString(html) must include("1 " + Messages("datasets.title"))
     }
   }
 }

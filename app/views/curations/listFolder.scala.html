@@ -1,7 +1,7 @@
-@(folder: CurationFolder, parentId:UUID, parentCurationObject: UUID, inCuration: Boolean)(implicit user: Option[models.User])
+@(folder: CurationFolder, parentId:UUID, parentCurationObject: UUID, inPreparation: Boolean)(implicit user: Option[models.User])
 
 @import api.Permission
-<div class="panel panel-default" id="@folder.id-listitem">
+<div class="panel panel-default folder-panel" id="@folder.id-listitem">
   <div class="panel-body">
     <div class="row">
       <div class="col-md-2 col-sm-2 col-lg-2">
@@ -18,10 +18,10 @@
               <li>
                 <span class="glyphicon glyphicon-folder-close"></span> @folder.folders.length
                 <span class="glyphicon glyphicon-file"></span> @folder.files.length
-                @if(user.isDefined && inCuration) {
+                @if(user.isDefined && inPreparation) {
                   @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, parentCurationObject))){
                     <button id="folder-@folder.id" class="btn btn-link delete-folder" style="text-align:right" title="Delete"
-                    onclick="confirmDeleteResource('curation folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentCurationObject', '@parentId')">
+                    onclick="confirmDeleteResource('curation folder','following folder from this request','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentCurationObject', '@parentId')">
                       <span class="glyphicon glyphicon-trash"></span></button>
                   } else {
                     <button disabled class="btn btn-link" style="text-align:right" title="Delete">

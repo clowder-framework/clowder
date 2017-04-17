@@ -1,0 +1,42 @@
+@(curationObject: models.CurationObject, space: Option[String], classes:String)(implicit user: Option[models.User])
+
+<div class="post-box @classes" id="@curationObject.id-tile">
+    <div class="panel panel-default dataset-panel">
+        <div class="pull-left">
+            <span class="glyphicon glyphicon-briefcase"></span>
+        </div>
+        <div class="panel-body">
+            <div class="caption break-word">
+                <h4><a href="@(routes.CurationObjects.getCurationObject(curationObject.id))">@Html(curationObject.name)</a></h4>
+                <p class='abstractsummary'>@Html(curationObject.description)<br/><br/>
+                    Creator: @curationObject.author.fullName <br/>
+                    Created on: @curationObject.created.date.format("MMM dd, yyyy") <br/>
+                    Repository: @curationObject.repository.getOrElse("") <br/>
+                    Published on: @{curationObject.publishedDate match {
+                            case Some(d) => d.format("MMM dd, yyyy")
+                            case None =>
+                        }
+                    }<br/>
+                    External identifier: @curationObject.externalIdentifier match {
+                        case Some(e) => {
+                            @if(e.toString.startsWith("http://") || e.toString.startsWith("https://")) {
+                                <a href=@e>@e</a>
+                            } else {
+                                @e
+                            }
+                        }
+                        case None => {}
+                    }<br/>
+                    <h5>@Messages("dataset.title") <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h5>
+                </p>
+            </div>
+        </div>
+        <ul class="list-group">
+            <li class="list-group-item dataset-panel-footer">
+                <span class="glyphicon glyphicon-folder-close" title="@curationObject.folders.size folders"></span> @curationObject.folders.size
+                <span class="glyphicon glyphicon-file" title="@curationObject.files.size files"></span> @curationObject.files.size
+                <span class="glyphicon glyphicon-list" title="@(curationObject.metadataCount) metadata fields"></span> @(curationObject.metadataCount)
+            </li>
+        </ul>
+    </div>
+</div>

@@ -1,6 +1,7 @@
 package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
+import org.elasticsearch.action.search.SearchResponse
 import play.api.Logger
 import play.api.Play._
 import models._
@@ -8,18 +9,19 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.{JsObject, JsString, Json, JsValue}
+import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.MetadataService
-import services.{ContextLDService, DatasetService, FileService, FolderService}
+
+import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, MetadataService, ElasticsearchPlugin, CurationService}
+import api.{UserRequest, Permission}
 
 /**
  * MongoDB Metadata Service Implementation
  */
 @Singleton
-class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService, folders: FolderService) extends MetadataService {
+class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService, folders: FolderService, curations: CurationService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -58,6 +60,19 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify))).sort(order).toList
   }
 
+  /** Get Extractor metadata by attachTo, from a specific extractor if given */
+  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: String): List[Metadata] = {
+    val regex = ".*extractors/"+extractor
+
+    val order = MongoDBObject("createdAt" -> -1)
+    MetadataDAO.find(MongoDBObject(
+      "attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
+      // Get only extractors metadata even if specific extractor not given
+      "creator.extractorId" -> (regex).r
+    )).sort(order).toList
+  }
+
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent: String): List[Metadata] = {
     val order = MongoDBObject("createdAt"-> -1)
@@ -76,14 +91,22 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
    */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
-  /** Remove metadata, if this metadata does exit, nothing is executed */
+  /** Remove metadata, if this metadata does not exist, nothing is executed. Return removed metadata */
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
-      case Some(md) =>
-        if( getMetadataBycontextId(md.contextId.getOrElse(new UUID(""))).length  == 1) {
-          contextService.removeContext(md.contextId.getOrElse(new UUID("")))
+      case Some(md) => {
+        md.contextId.foreach { cid =>
+          if (getMetadataBycontextId(cid).length == 1) {
+            contextService.removeContext(cid)
+          }
         }
         MetadataDAO.remove(md, WriteConcern.Safe)
+
+        // send extractor message after removed from resource
+        val mdMap = Map("metadata" -> md.content,
+          "resourceType" -> md.attachedTo.resourceType.name,
+          "resourceId" -> md.attachedTo.id.toString)
+
         //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
           case None => throw new RuntimeException("No MongoSalatPlugin")
@@ -96,6 +119,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
             }
           }
         }
+      }
+      case None => Logger.debug("No metadata found to remove with UUID "+id.toString)
     }
   }
 
@@ -103,12 +128,57 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
   }
 
-  def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
-    MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+  def removeMetadataByAttachTo(resourceRef: ResourceRef): Long = {
+    val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
-    //not providing metaData count modification here since we assume this is to delete the metadata's host
+    val num_removed = result.getField("n").toString.toLong
+
+    //update metadata count for resource
+    resourceRef.resourceType.name match {
+      case "dataset" => datasets.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case "file" => files.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case "curationObject" => curations.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case _ => Logger.error(s"Could not decrease metadata counter for ${resourceRef}")
+    }
+
+    // send extractor message after attached to resource
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      val dtkey = s"${p.exchange}.metadata.removed"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+        "resourceType"->resourceRef.resourceType.name,
+        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
+    }
+
+    return num_removed
   }
 
+  /** Remove metadata by attached ID and extractor name **/
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String): Long = {
+    val regex = ".*extractors/"+(extractorName.trim)
+
+    val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
+      "creator.extractorId" -> (regex.r)), WriteConcern.Safe)
+    val num_removed = result.getField("n").toString.toLong
+    
+    //update metadata count for resource
+    resourceRef.resourceType.name match {
+      case "dataset" => datasets.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case "file" => files.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case "curationObject" => curations.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case _ => Logger.error(s"Could not decrease metadata counter for ${resourceRef}")
+    }
+
+    // send extractor message after attached to resource
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      val dtkey = s"${p.exchange}.metadata.removed"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+        "resourceType"->resourceRef.resourceType.name,
+        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
+    }
+
+    return num_removed
+  }
 
   /** Get metadata context if available  **/
   def getMetadataContext(metadataId: UUID): Option[JsValue] = {
@@ -127,7 +197,32 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition] = {
-    MetadataDefinitionDAO.findAll().toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+    spaceId match {
+      case None => MetadataDefinitionDAO.find(MongoDBObject("spaceId" -> null)).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+      case Some(s) => MetadataDefinitionDAO.find(MongoDBObject("spaceId" -> new ObjectId(s.stringify))).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+    }
+
+  }
+
+  def getDefinitionsDistinctName(user: Option[User]): List[MetadataDefinition] = {
+    val filterAccess = if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
+      MongoDBObject()
+    } else {
+      val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+      orlist += MongoDBObject("spaceId" -> null)
+      //TODO: Add public space check.
+      user match {
+        case Some(u) => {
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewMetadata.toString())).nonEmpty)
+          if(okspaces.nonEmpty) {
+            orlist += ("spaceId" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
+          }
+          $or(orlist.map(_.asDBObject))
+        }
+        case None => MongoDBObject()
+      }
+    }
+    MetadataDefinitionDAO.find(filterAccess).toList.groupBy(_.json).map(_._2.head).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
   }
 
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
@@ -138,16 +233,33 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri))
   }
 
+  def getDefinitionByUriAndSpace(uri: String, spaceId: Option[String]): Option[MetadataDefinition] = {
+    spaceId match {
+      case Some(s) => MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri, "spaceId" -> new ObjectId(s)))
+      case None => MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri, "spaceId" -> null) )
+    }
+  }
+
+  def removeDefinitionsBySpace(spaceId: UUID) = {
+    MetadataDefinitionDAO.remove(MongoDBObject("spaceId" -> new ObjectId(spaceId.stringify)))
+  }
+
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true): Unit = {
     val uri = (definition.json \ "uri").as[String]
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
       case Some(md) => {
         if (update) {
-          Logger.debug("Updating existing vocabulary definition: " + definition)
-          // make sure to use the same id as the old value
-          val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
-            false, false, WriteConcern.Normal)
+          if(md.spaceId == definition.spaceId) {
+            Logger.debug("Updating existing vocabulary definition: " + definition)
+            // make sure to use the same id as the old value
+            val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
+              false, false, WriteConcern.Normal)
+          } else {
+            Logger.debug("Adding existing vocabulary definition to a different space" + definition)
+            MetadataDefinitionDAO.save(definition)
+          }
+
         } else {
           Logger.debug("Leaving existing vocabulary definition unchanged: " + definition)
         }
@@ -159,7 +271,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
   }
 
-
   def editDefinition(id: UUID, json: JsValue) = {
     MetadataDefinitionDAO.update(MongoDBObject("_id" ->new ObjectId(id.stringify)),
       $set("json" -> JSON.parse(json.toString()).asInstanceOf[DBObject]) , false, false, WriteConcern.Safe)
@@ -169,39 +280,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
-  /**
-    * Search by metadata. Uses mongodb query structure.
-    */
-  def search(query: JsValue): List[ResourceRef] = {
-    val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
-    val resources: List[ResourceRef] = MetadataDAO.find(doc).map(_.attachedTo).toList
-    resources
-  }
-
-  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef] = {
+  def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata] = {
     val field = "content." + key.trim
-    val trimOr = value.trim().replaceAll(" ", "|")
-    // for some reason "/"+value+"/i" doesn't work because it gets translate to
-    // { "content.Abstract" : { "$regex" : "/test/i"}}
-    val regexp = (s"""(?i)$trimOr""").r
-    val doc = MongoDBObject(field -> regexp)
-    var filter = doc
-    if (!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
-      user match {
-        case Some(u) => {
-          val datasetsList = datasets.listUser(u)
-          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
-          val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
-          val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-          datasetsList.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify)) }
-          fileIds.flatten.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify)) }
-          filter = $or(orlist.map(_.asDBObject)) ++ doc
-        }
-        case None => List.empty
-      }
-    }
-    val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
-    resources
+    MetadataDAO.find((field $exists true) ++ MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(datasetId.stringify))).toList
   }
 
   def updateAuthorFullName(userId: UUID, fullName: String) {

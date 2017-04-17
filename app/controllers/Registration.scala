@@ -77,6 +77,7 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
                       }
                     }
                   }
+                  case None =>
                 }
               }
 

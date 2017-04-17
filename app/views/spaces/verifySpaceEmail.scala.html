@@ -1,0 +1,17 @@
+@(spaceid: String, spaceName: String, member: String)(implicit request: RequestHeader)
+@import securesocial.core.IdentityProvider
+@import play.api.i18n.Messages
+<html>
+  <body>
+
+    <p>Hello @member,</p>
+
+    <p>Congratulations, your @services.AppConfiguration.getDisplayName @Messages("space.title") <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a> has been verified!
+      @play.api.i18n.Messages("verify.email.content")
+    </p>
+
+
+    <p>Please contact <a style="text-decoration:none;" href="@play.api.i18n.Messages("verify.email.contact.link")"> @services.AppConfiguration.getDisplayName </a> if you have questions or feedback.</p>
+    @emails.footer()
+  </body>
+</html>

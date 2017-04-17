@@ -1,6 +1,6 @@
 (function ($, Configuration) {
-	console.log(Configuration);
-	console.log(Configuration.previewer);
+	//console.log(Configuration);
+	//console.log(Configuration.previewer);
 
 	var prNum = Configuration.tab.replace("#previewer","");
 	window["configs" + prNum] = Configuration;

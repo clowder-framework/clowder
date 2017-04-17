@@ -70,7 +70,7 @@ class Sections @Inject()(
    * REST endpoint: GET: get info of this section.
    */
   def get(id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, id))) { implicit request =>
-      Logger.info("Getting info for section with id " + id)
+      Logger.debug("Getting info for section with id " + id)
       sections.get(id) match {
         case Some(section) =>
           Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
@@ -86,7 +86,7 @@ class Sections @Inject()(
    * One returned field is "tags", containing a list of string values.
    */
   def getTags(id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, id))) { implicit request =>
-      Logger.info("Getting tags for section with id " + id)
+      Logger.debug("Getting tags for section with id " + id)
       sections.get(id) match {
         case Some(section) =>
           Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
@@ -141,7 +141,7 @@ class Sections @Inject()(
    * REST endpoint: POST: remove all tags.
    */
   def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.section, id))) { implicit request =>
-      Logger.info("Removing all tags for section with id: " + id)
+      Logger.debug("Removing all tags for section with id: " + id)
       sections.get(id) match {
         case Some(section) => {
           sections.removeAllTags(id)

@@ -2,6 +2,8 @@ package models
 
 import java.util.Date
 
+import play.api.libs.json.Json
+
 /**
  * Temporary files used when uploading query images for image based searches.
  *
@@ -16,4 +18,3 @@ case class TempFile(
   length: Long = 0,
   thumbnail_id: Option[UUID] = None
   )
-
