@@ -49,7 +49,15 @@
         <div class="btn-group btn-group-sm pull-right">
                 <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
-            </div>
+        </div>
+	<div class="pull-right" id="number-displayed-dropdown">
+	    <select id="numPageItems" onchange="getValue">
+		<option value="12">12</option>
+		<option value="24">24</option>
+		<option value="48">48</option>
+		<option value="96">96</option>
+	    </select>
+	</div>    
 
 @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
   @space match {
@@ -83,6 +91,15 @@
     $(".js-sort-single").on('select2:select', function (evt) {
          $(window).trigger("sortchange");
     });
+
+    $('#numPageItems').on('change', function() {
+      console.log( this.value );
+    });
+
+    function getValue(sel) {
+      console.log(sel.value );
+    };
+
     $(window).on('sortchange', function() {
       var sort = $(".js-sort-single").val();
       //Update cookie
