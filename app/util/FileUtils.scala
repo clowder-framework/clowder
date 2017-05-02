@@ -37,6 +37,8 @@ object FileUtils {
   lazy val events: EventService = DI.injector.getInstance(classOf[EventService])
   lazy val userService: UserService = DI.injector.getInstance(classOf[UserService])
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
+  lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
+  lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -212,6 +214,74 @@ object FileUtils {
   //   }
   // }
   //
+  def processFileDuringCopy(copiedFile : models.File, metadata: Option[Seq[String]],
+                            user: User, creator: Agent, clowderurl: String,
+                            dataset: Option[Dataset] = None, folder: Option[Folder] = None,
+                            key: String = "", index: Boolean = true,
+                            showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                            flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile: Boolean,
+                            runExtractors: Boolean = true) : Option[File] = {
+
+    files.setStatus(copiedFile.id, FileStatus.UPLOADED)
+    processFile(copiedFile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors)
+    processDataset(copiedFile, dataset, folder, clowderurl, user, index, runExtractors)
+    files.setStatus(copiedFile.id, FileStatus.PROCESSED)
+    Some(copiedFile)
+  }
+
+  def copyFileMetadata(originalFile : models.File, copiedFile : models.File) {
+    val mds = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, originalFile.id))
+    for (md <- mds){
+      if (md.creator.typeOfAgent == "extractor"){
+        val content = md.content
+        val creator = ExtractorAgent(id = UUID.generate(),
+          extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+
+        // check if the context is a URL to external endpoint
+        val contextURL: Option[URL] = None
+
+        // check if context is a JSON-LD document
+        val contextID: Option[UUID] = None
+
+        // when the new metadata is added
+        val createdAt = new Date()
+
+        //parse the rest of the request to create a new models.Metadata object
+        val attachedTo = ResourceRef(ResourceRef.file, copiedFile.id)
+        val version = None
+        val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+          content, version)
+
+        //add metadata to mongo
+        metadataService.addMetadata(metadata)
+      }
+    }
+  }
+
+  def copyFileThumbnail(originalFile : models.File, copiedFile : models.File): Unit = {
+    val originalFileThumbnail = originalFile.thumbnail_id
+    originalFileThumbnail match {
+      case Some(thumbnail) => {
+        files.updateThumbnail(copiedFile.id, UUID(thumbnail))
+      }
+      case None => Logger.info("File does not have thumbnail")
+    }
+  }
+
+  def copyFilePreviews(originalFile : models.File, copiedFile : models.File) {
+    val previewsFromDB = previews.findByFileId(originalFile.id)
+    for (pv <- previewsFromDB) {
+      previews.get(pv.id) match {
+        case Some(currentPreview) => {
+          val extractorId = currentPreview.extractor_id
+          val currentPreviewTitle = currentPreview.title
+          val currentMetadata = currentPreview.jsonldMetadata
+          previews.attachToFile(pv.id,originalFile.id,extractorId,Json.toJson(currentMetadata))
+        }
+        case None => Logger.error("No preview found during copy for original preview with id " + pv.id)
+      }
+    }
+  }
 
   def uploadFilesJSON(request: UserRequest[JsValue],
                         dataset: Option[Dataset] = None, folder:Option[Folder] = None,
@@ -738,7 +808,7 @@ object FileUtils {
   // ----------------------------------------------------------------------
   // END File upload
   // ----------------------------------------------------------------------
-  
+
   //Download CONTENT-DISPOSITION encoding
   //
   def encodeAttachment(filename: String, userAgent: String) : String = {
@@ -770,9 +840,9 @@ object FileUtils {
                                   ,"utf-8","Q")
                             }
     Logger.debug(userAgent + ": " + filenameStar)
-    
+
     //Return the complete attachment header info
     "attachment; filename*=UTF-8''" + filenameStar
   }
-  
+
 }

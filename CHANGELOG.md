@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added ability to download Collection. Download Collection and Dataset both use BagIt by default. [CATS-571] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-571)
 ### Changed
 ### Fixed
+- Copy of dataset. When dataset is copied, the newly created dataset will have the system generated metadata, previews, and thumbnails for the dataset and the files.[CATS-729](https://opensource.ncsa.illinois.edu/jira/browse/CATS-729) 
+
 
 ## 1.2.0
 
