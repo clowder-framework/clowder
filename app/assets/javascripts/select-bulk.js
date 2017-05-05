@@ -31,9 +31,10 @@ $(function() {
             });
 
             request.done(function (response, textStatus, jqXHR){
-                console.log("dataset " + dataset_id + " unselected");
-                $("a[data-id='"+dataset_id+"'] span.glyphicon").removeClass('glyphicon-ok');
-                $("a[data-id='"+dataset_id+"'] span.glyphicon").addClass('glyphicon-plus');
+                console.log("dataset " + dataset_id + " removed");
+                var elm = document.getElementById(dataset_id+"-tile");
+                elm.parentElement.removeChild(elm);
+                updateMessage();
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){

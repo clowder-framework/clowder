@@ -663,6 +663,8 @@ POST           /api/comment/:id/editComment                                     
 GET            /selected                                                                @controllers.Selected.get
 POST           /api/selected                                                            @api.Selected.add
 POST           /api/selected/remove                                                     @api.Selected.remove
+DELETE         /api/selected/files                                                      @api.Selected.deleteAll
+GET            /api/selected/files                                                      @api.Selected.downloadAll
 
 # ----------------------------------------------------------------------
 # RELATIONS API

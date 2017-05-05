@@ -1,18 +1,53 @@
-@(datasets: List[Dataset])(implicit user: Option[securesocial.core.Identity])
+@(selectedDatasets: scala.collection.mutable.ListBuffer[Dataset])(implicit ident: Option[securesocial.core.Identity], user: Option[models.User])
+
+@import api.Permission
 
 @main("Selected Datasets") {
 <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.3.custom.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/select-bulk.js")" type="text/javascript"></script>
 
 <div class="page-header">
-	<h1>Selected Datasets</h1>
+	<h1>Bulk Operations</h1>
+	<div id="select-count">
+		You currently have <b>@selectedDatasets.length</b> dataset(s) selected.
+	</div>
 </div>
 
-<div class="row">
-	<div class="col-md-6">
-		@for(d <- datasets) { @datasetInfo(d) }
+Bulk operations are still subject to individual dataset permissions; if you do not have permission to perform the action on one of your selections, it will not be included in the operation.
+
+@if(user.isDefined) {
+	<div class="row">
+		<div class="col-xs-12">
+			<hr/>
+				<a id='download-url' href="#"
+				onclick="downloadAllSelections();"
+				class="btn btn-link" title="Download all selected files as zip" role="button">
+					<span class="glyphicon glyphicon-download-alt"></span>
+					Download All Files
+				</a>
+
+
+
+				<a id='delete-url' href="#"
+				onclick="deleteAllSelections();"
+				class="btn btn-link" title="Delete all selected datasets" role="button">
+					<span class="glyphicon glyphicon-trash"></span>
+					Delete Selected Datasets
+				</a>
+			<hr/>
+		</div>
 	</div>
-	<div class="col-md-6">
-		<div class="row">
+}
+
+<div class="row">
+	<div class="col-md-12">
+		<h2>Selected Datasets</h2>
+		@for(d <- selectedDatasets) {
+			@datasets.tile(d, None, Map.empty, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Application.index(), true)
+		}
+	</div>
+	<!-- TODO: Old code for drag+drop relationship modification; revisit eventuallydiv class="row">
+		<div class="col-md-6">
 			<div class="col-md-12">
 				<h3>Add Relationship</h3>
 			</div>
@@ -45,6 +80,7 @@
 	</div>
 </div>
 <script>
+	/*
 $(function() {
     $( ".draggable" ).draggable({
 
@@ -84,5 +120,49 @@ $(function() {
       }
     });
   });
+  */
   </script>
+	</div-->
+	<!--div class="col-md-6">
+		<h3>Selected Collections</h3>
+	</div-->
+</div>
+
+<script>
+	function updateMessage() {
+		// Rather than reload whole page, just count the number of tiles that haven't been removed for now
+		var found = 0;
+		@for(d <- selectedDatasets) {
+				if (document.getElementById("@d.id-tile")) found += 1;
+			}
+		document.getElementById("select-count").innerHTML = "You currently have <b>"+found+"</b> dataset(s) selected."
+	}
+
+	function deleteAllSelections() {
+		var request = jsRoutes.api.Selected.deleteAll().ajax({
+			type: 'DELETE'
+		});
+		request.done(function (response, textStatus, jqXHR) {
+			location.reload()
+		});
+		request.fail(function (jqXHR, textStatus, errorThrown){
+			console.error("The following error occured: " + textStatus, errorThrown);
+			notify("Could not delete selections: " + errorThrown, "error");
+		});
+	}
+
+	function downloadAllSelections() {
+		var request = jsRoutes.api.Selected.downloadAll().ajax({
+			type: 'GET'
+		});
+		request.done(function (response, textStatus, jqXHR) {
+			console.log("Download OK")
+		});
+		request.fail(function (jqXHR, textStatus, errorThrown){
+			console.error("The following error occured: " + textStatus, errorThrown);
+			notify("Could not download selections: " + errorThrown, "error");
+		});
+	}
+</script>
+
 }

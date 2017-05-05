@@ -48,6 +48,10 @@ class MongoDBSelectionService @Inject() (datasets: DatasetService)  extends Sele
       case None => List.empty
     }
   }
+
+  def deleteAll(user: String) = {}
+
+  def downloadAll(user: String) = {}
 }
 
 object SelectedDAO extends ModelCompanion[Selected, ObjectId] {

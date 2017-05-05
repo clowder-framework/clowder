@@ -29,7 +29,7 @@
         <div class="col-md-6" id="resources-panel-container">
             <div class="row">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <h2> My Datasets </h2>D
+                    <h2> My Datasets </h2>
                 </div>
                 <div class="margin-top-h  col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <span class="pull-right"> <a href="@routes.Datasets.list("","",12, None, None, profile.id.stringify)">See More</a></span>
@@ -114,7 +114,12 @@
                 </div>
                 <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
-                    @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), false)
+                    @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                        @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), true)
+                    } else {
+                        @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), false)
+                    }
+
                 }
                 </div>
                 @if(datasetsList.size < 1) {

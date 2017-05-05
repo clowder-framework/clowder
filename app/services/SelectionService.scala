@@ -13,4 +13,8 @@ trait SelectionService {
 
   def get(user: String): List[Dataset]
 
+  def deleteAll(user: String)
+
+  def downloadAll(user: String)
+
 }
