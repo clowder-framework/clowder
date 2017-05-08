@@ -69,12 +69,15 @@ class Selected @Inject()(selections: SelectionService,
     }
   }
 
+
+
   def deleteAll() = AuthenticatedAction { implicit request =>
     Logger.debug("Requesting Selected.deleteAll")
     request.user match {
       case Some(user) => {
-        selections.get(user.toString).map(d => {
+        selections.get(user.email.get).map(d => {
           datasets.removeDataset(d.id)
+          selections.remove(d.id, user.email.get)
         })
         Ok(toJson(Map("sucess"->"true")))
       }
