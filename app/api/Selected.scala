@@ -1,16 +1,22 @@
 package api
 
+import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
+import java.util.zip.ZipOutputStream
+
+import Iterators.SelectedIterator
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.Controller
-import play.api.mvc.Action
 import play.api.libs.json.Json._
-import services.mongodb.SelectedDAO
 import play.api.Logger
+import play.api.Play.current
 import javax.inject.Inject
-import services.{SelectionService, DatasetService}
-import models.UUID
+import services._
+import models.{User, Dataset, UUID}
+import util.FileUtils
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Selected items.
@@ -19,7 +25,11 @@ import scala.concurrent.Future
  *
  */
 class Selected @Inject()(selections: SelectionService,
-                         datasets: DatasetService) extends Controller with ApiController {
+                         datasets: DatasetService,
+                         files: FileService,
+                         spaces:SpaceService,
+                         folders : FolderService,
+                         metadataService : MetadataService) extends Controller with ApiController {
 
   def add() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.add" + request.body)
@@ -63,8 +73,7 @@ class Selected @Inject()(selections: SelectionService,
     Logger.debug("Requesting Selected.deleteAll")
     request.user match {
       case Some(user) => {
-        var selected = selections.get(user.toString)
-        selected.map(d => {
+        selections.get(user.toString).map(d => {
           datasets.removeDataset(d.id)
         })
         Ok(toJson(Map("sucess"->"true")))
@@ -76,17 +85,32 @@ class Selected @Inject()(selections: SelectionService,
     Logger.debug("Requesting Selected.downloadAll")
     request.user match {
       case Some(user) => {
-        var selected = selections.get(user.toString)
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
-        selected.map(d => {
-          datasets.removeDataset(d.id)
-        })
-        Ok(toJson(Map("sucess"->"true")))
+        val selected = selections.get(user.email.get)
+        Ok.chunked(enumeratorFromSelected(selected,1024*1024,bagit,Some(user))).withHeaders(
+          "Content-Type" -> "application/zip",
+          "Content-Disposition" -> (FileUtils.encodeAttachment("Selected Datasets.zip", request.headers.get("user-agent").getOrElse("")))
+        )
       }
+      case None => NotFound
     }
   }
 
-  def enumeratorFromSelected(): Enumerator[Array[Byte]] = {
+  def enumeratorFromSelected(selected: List[Dataset], chunkSize: Int = 1024 * 8, bagit: Boolean, user : Option[User])
+                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+    implicit val pec = ec.prepare()
+    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest]
+    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest]
+
+    var totalBytes = 0L
+    var bytesSet = false
+
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val zip = new ZipOutputStream(byteArrayOutputStream)
+
+    val current_iterator = new SelectedIterator("Selected Datasets", selected, zip, md5Files, md5Bag, user,
+      totalBytes, bagit, datasets, files, folders, metadataService, spaces)
+
     var is = current_iterator.next()
 
     Enumerator.generateM({
@@ -103,6 +127,7 @@ class Selected @Inject()(selections: SelectionService,
           }
           val chunk = bytesRead match {
             case -1 => {
+              Logger.debug("-1")
               zip.closeEntry()
               inputStream.close()
               Some(byteArrayOutputStream.toByteArray)
@@ -115,6 +140,7 @@ class Selected @Inject()(selections: SelectionService,
               Some(byteArrayOutputStream.toByteArray)
             }
             case read => {
+              Logger.debug("READ")
               if (!current_iterator.isBagIt()){
                 totalBytes += bytesRead
               }
@@ -122,10 +148,12 @@ class Selected @Inject()(selections: SelectionService,
               Some(byteArrayOutputStream.toByteArray)
             }
           }
+          Logger.debug("CHUNKZ")
           byteArrayOutputStream.reset()
           Future.successful(chunk)
         }
         case None => {
+          Logger.debug("NUNCHUNKZ")
           Future.successful(None)
         }
       }

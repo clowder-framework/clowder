@@ -152,16 +152,7 @@ $(function() {
 	}
 
 	function downloadAllSelections() {
-		var request = jsRoutes.api.Selected.downloadAll().ajax({
-			type: 'GET'
-		});
-		request.done(function (response, textStatus, jqXHR) {
-			console.log("Download OK")
-		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			console.error("The following error occured: " + textStatus, errorThrown);
-			notify("Could not download selections: " + errorThrown, "error");
-		});
+		window.open(jsRoutes.api.Selected.downloadAll().url, '_blank');
 	}
 </script>
 
