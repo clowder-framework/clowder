@@ -18,7 +18,8 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
                        spaces : SpaceService) extends Iterator[Option[InputStream]] {
 
   var datasetCount = 0
-  var datasetIterator = new DatasetIterator(pathToFolder, selected(datasetCount), zip, md5Files, folders, files,
+  var currDs = selected(datasetCount)
+  var datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name, currDs, zip, md5Files, folders, files,
     metadataService,datasets,spaces)
   var file_type = 0
 
@@ -45,13 +46,13 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
   }
 
   def hasNext() = {
-    Logger.debug("HN: "+file_type.toString)
     if (file_type ==0){
       if (datasetIterator.hasNext()){
         true
       } else if (selected.length > datasetCount+1){
         datasetCount += 1
-        datasetIterator = new DatasetIterator(pathToFolder,selected(datasetCount),zip,md5Files,folders,files,
+        currDs = selected(datasetCount)
+        datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name,currDs,zip,md5Files,folders,files,
           metadataService,datasets,spaces)
         true
       } else if (bagit) {
