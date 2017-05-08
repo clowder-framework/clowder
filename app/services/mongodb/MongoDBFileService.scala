@@ -703,15 +703,13 @@ class MongoDBFileService @Inject() (
             }
                      
           }
+
           val fileFolders = folders.findByFileId(file.id)
           for(fileFolder <- fileFolders) {
             folders.removeFile(fileFolder.id, file.id)
           }
           for(section <- sections.findByFileId(file.id)){
             sections.removeSection(section)
-          }
-          for(preview <- previews.findByFileId(file.id)){
-            previews.removePreview(preview)
           }
           for(comment <- comments.findCommentsByFileId(id)){
             comments.removeComment(comment)
@@ -722,13 +720,16 @@ class MongoDBFileService @Inject() (
           for (follower <- file.followers) {
             userService.unfollowFile(follower, id)
           }
-          if(!file.thumbnail_id.isEmpty)
-            thumbnails.remove(UUID(file.thumbnail_id.get))
           metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
         // finally delete the actual file
         if(isLastPointingToLoader(file.loader, file.loader_id)) {
+          for(preview <- previews.findByFileId(file.id)){
+            previews.removePreview(preview)
+          }
+          if(!file.thumbnail_id.isEmpty)
+            thumbnails.remove(UUID(file.thumbnail_id.get))
           ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
         }
 

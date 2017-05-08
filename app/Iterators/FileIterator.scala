@@ -31,7 +31,6 @@ class FileIterator (pathToFile : String, file : models.File,zip : ZipOutputStrea
     Json.obj("id" -> file.id, "filename" -> file.filename, "author" -> file.author.email, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
   def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+file.filename+"_info.json"
     zip.putNextEntry(new ZipEntry(folderName + "/"+file.filename+"_info.json"))
     val fileInfo = getFileInfoAsJson(file)
     val s : String = Json.prettyPrint(fileInfo)
@@ -49,7 +48,6 @@ class FileIterator (pathToFile : String, file : models.File,zip : ZipOutputStrea
   }
 
   def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+file.filename+"_metadata.json"
     zip.putNextEntry(new ZipEntry(folderName + "/"+file.filename+"_metadata.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
     val s : String = Json.prettyPrint(Json.toJson(fileMetadata))

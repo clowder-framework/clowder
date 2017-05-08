@@ -51,7 +51,7 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
   }
 
   def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+dataset.name+"_metadata.json"
+    val path = folderName + "/"+dataset.name+"_dataset_metadata.json"
     zip.putNextEntry(new ZipEntry(folderName + "/"+dataset.name+"_metadata.json"))
     val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
       .map(JSONLD.jsonMetadataWithContext(_))
@@ -64,7 +64,21 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
   dataset.files.foreach(f=>files.get(f) match {
     case Some(file) => {
       inputFilesBuffer += file
-      folderNameMap(file.id) = pathToFolder + "/"+file.filename + "_" + file.id.stringify
+
+      // Don't create folder for files unless there's a filename collision
+      var foundDuplicate = false
+      dataset.files.foreach(compare_f=>files.get(compare_f) match {
+        case Some(compare_file) => {
+          if (compare_file.filename == file.filename && compare_file.id != file.id) {
+            foundDuplicate = true
+          }
+        }
+        case None => Logger.error(s"No file with id $f")
+      })
+      if (foundDuplicate)
+        folderNameMap(file.id) = pathToFolder + "/" + file.filename + "_" + file.id.stringify + "/"
+      else
+        folderNameMap(file.id) = pathToFolder
     }
     case None => Logger.error(s"No file with id $f")
   })
@@ -84,7 +98,21 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
             case None =>
           }
         }
-        folderNameMap(file.id) = pathToFolder + name + "/" + file.filename + "_" + file.id.stringify
+
+        // Don't create folder for files unless there's a filename collision
+        var foundDuplicate = false
+        folder.files.foreach(compare_f=> files.get(compare_f) match {
+          case Some(compare_file) => {
+            if (compare_file.filename == file.filename && compare_file.id != file.id) {
+              foundDuplicate = true
+            }
+          }
+          case None => Logger.error(s"No file with id $f")
+        })
+        if (foundDuplicate)
+          folderNameMap(file.id) = pathToFolder + "/" + name + "/" + file.filename + "_" + file.id.stringify + "/"
+        else
+          folderNameMap(file.id) = pathToFolder + "/" + name + "/"
       }
       case None => Logger.error(s"No file with id $f")
     })

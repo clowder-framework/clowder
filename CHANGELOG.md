@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Returning the last average when semi is not selected and there is no binning by season.
 - Removing space id from collections and datasets when the space is deleted. [CATS-752](https://opensource.ncsa.illinois.edu/jira/browse/CATS-752)
 - Miscelaneous bug fixes.
+- Copy of dataset. When a dataset is copied, the newly created dataset will have the system generated metadata, previews, and thumbnails for the dataset and the files.[CATS-729](https://opensource.ncsa.illinois.edu/jira/browse/CATS-729) 
+
 
 ## 1.2.0  - 2017-03-24 
 

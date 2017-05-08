@@ -555,6 +555,13 @@ table#sensorsListTable>thead>tr>th.headerSortDown {
 	height: 25px;
 }
 
+#number-displayed-dropdown{
+	display:inline;
+	float:left;
+	margin-top:3px;
+	margin-right:5px;
+}
+
 .bottom-padding {
 	padding-bottom: 15px;
 }
