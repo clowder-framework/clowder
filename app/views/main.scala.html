@@ -87,9 +87,8 @@
                                 <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-hdd"></span> @Messages("spaces.title")</a></li>
                                 <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
-
                             }
-
+                            <li><a href="@routes.Selected.get"><span class="glyphicon glyphicon-ok"></span> Selections</a></li>
                         </ul>
                     </li>
                 }
@@ -117,6 +116,10 @@
                             @if(user.isDefined){
                                 <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
                             }
+                            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+                                <li><a href="@routes.Geostreams.list"><span class="glyphicon glyphicon-globe"> </span> @(AppConfiguration.getSensorsTitle) List</a></li>
+                                <li><a href="@routes.Geostreams.map"><span class="glyphicon glyphicon-globe"> </span> @(AppConfiguration.getSensorsTitle) Map</a></li>
+                            }
                             <li><a href="@routes.Tags.tagListOrdered"> <span class="glyphicon glyphicon-tags"> </span>  Ordered Tags</a></li>
                             <li><a href="@routes.Tags.tagListWeighted"><span class="glyphicon glyphicon-tags"> </span>  Weighted Tags</a></li>
                             <li><a href="@routes.Metadata.search"> <span class="glyphicon glyphicon-search"> </span> Advanced Search</a></li>
@@ -135,6 +138,8 @@
                                 @Messages("datasets.title")</a></li>
                             <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-large"> </span>
                                 @Messages("collections.title")</a></li>
+                            <li><a href="@routes.Geostreams.newSensor"><span class="glyphicon glyphicon-globe"> </span>
+                                @(AppConfiguration.getSensorsTitle)</a></li>
 
                         </ul>
                     </li>
@@ -155,27 +160,6 @@
                             }
                         </ul>
                     </li>
-                    @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">@(AppConfiguration.getSensorsTitle) <b class="caret"></b></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="@routes.Geostreams.newSensor">Create</a></li>
-                                <li><a href="@routes.Geostreams.list">List</a></li>
-                                <li><a href="@routes.Geostreams.map">Map</a></li>
-                            </ul>
-                        </li>
-                    }
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Search<b class="caret"></b>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="@routes.Metadata.search">Metadata</a></li>
-                            <li><a href="@routes.Tags.tagListOrdered">Tags (Ordered)</a></li>
-                            <li><a href="@routes.Tags.tagListWeighted">Tags (Weighted)</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="@routes.Selected.get">Selected</a></li>
                 </ul>
 
                 <ul class="nav navbar-nav navbar-right">
