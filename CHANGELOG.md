@@ -9,10 +9,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Only show spaces, collections and datasets that are shared with other users under 'explore' tab. 
   In application.conf, this is set by the showOnlySharedInExplore whose default value is false. 
 - Added ability to download Collection. Download Collection and Dataset both use BagIt by default. [CATS-571] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-571)
-### Changed
-### Fixed
+- Ability to mention other users using '@' in a comment on a file or dataset. Mentioned users will receive a notification email 
+  and a notice in their event feed. [SEAD-781](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-781)
 
-## 1.2.0
+### Changed
+- Ability to search datapoints, averages and trends using a start and end time.
+- Ability to change how many items are displayed on the listing pages. [SEAD-1149](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1149)
+- When downloading datasets there is no folder with the id for each file. [SEAD-1038](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1038)
+- Datasets can be copied with Download Files and View Dataset permissions instead of just the owner. [SEAD-1162](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1162)
+
+### Fixed
+- Binning on geostreaming api for hour and minutes. [GEOD-886](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-886)
+- Returning the last average when semi is not selected and there is no binning by season.
+- Removing space id from collections and datasets when the space is deleted. [CATS-752](https://opensource.ncsa.illinois.edu/jira/browse/CATS-752)
+- Miscelaneous bug fixes.
+
+## 1.2.0  - 2017-03-24 
 
 ### Added
 - Docker container to add normal/admin users for Clowder. [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167) 
@@ -22,8 +34,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   type-in support for adding a creator by name, email, or ID, and adjusts the layout/labeling of the owner(was creator) 
   field, and creator and descirption fields. [SEAD-1071](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1071), 
   [SEAD-610](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-610) 
-- Ability to mention other users using '@' in a comment on a file or dataset. Mentioned users will receive a notification email 
-  and a notice in their event feed. [SEAD-781](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-781)
 
 ### Changed
 - Clowder now requires Java 8.
