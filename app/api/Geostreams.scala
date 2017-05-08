@@ -791,6 +791,9 @@ object Geostreams extends ApiController {
   def filterDataBySemi(obj: JsObject, semi: Option[String]): Boolean = {
     if (semi.isEmpty) return true
 
+    // semi only needed if spring or summer
+    if (semi.get.toLowerCase != "spring" && semi.get.toLowerCase != "summer") return true
+
     // get start/end
     val startTime = Parsers.parseDate(obj.\("start_time")) match {
       case Some(x) => x
