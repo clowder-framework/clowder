@@ -3,24 +3,28 @@
  */
 package api
 
-import java.io.{PrintStream, File}
+import java.io.{File, PrintStream}
 import java.security.MessageDigest
 
-import _root_.util.{PeekIterator, Parsers}
-import org.joda.time.DateTime
+import _root_.util.{Parsers, PeekIterator}
+import org.joda.time.{DateTime, IllegalInstantException}
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
-import play.api.mvc.{SimpleResult, Request}
+import play.api.mvc.{Request, SimpleResult}
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 import play.api.Play.current
 import java.text.SimpleDateFormat
+
 import play.api.Logger
 import java.sql.Timestamp
+
 import play.filters.gzip.Gzip
 import services.PostgresPlugin
+
 import scala.collection.mutable.ListBuffer
 import play.api.libs.iteratee.{Enumeratee, Enumerator}
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
@@ -649,8 +653,12 @@ object Geostreams extends ApiController {
           val month = counter.getMonthOfYear
           val day = counter.getDayOfMonth
           val hour = counter.getHourOfDay
-          val date = new DateTime(year,month,day,hour,30,0,0)
-          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "date" -> iso.print(date)))
+          try {
+            val date = new DateTime(year,month,day,hour,30,0,0)
+            result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "date" -> iso.print(date)))
+          } catch {
+            case e: IllegalInstantException => Logger.debug("Invalid Instant Exception", e)
+          }
           counter = counter.plusHours(1)
         }
       }
@@ -663,9 +671,14 @@ object Geostreams extends ApiController {
           val day = counter.getDayOfMonth
           val hour = counter.getHourOfDay
           val minute = counter.getMinuteOfHour
-          val date = new DateTime(year,month,day,hour,minute,30,0)
-          result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "minute" -> minute, "date" -> iso.print(date)))
+          try {
+            val date = new DateTime(year,month,day,hour,minute,30,0)
+            result.put(label, Json.obj("year" -> year, "month" -> month, "day" -> day, "hour" -> hour, "minute" -> minute, "date" -> iso.print(date)))
+          } catch {
+            case e: IllegalInstantException => Logger.debug("Invalid Instant Exception", e)
+          }
           counter = counter.plusMinutes(1)
+
         }
       }
       case _ => // do nothing
