@@ -24,7 +24,7 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 				onclick="downloadAllSelections();"
 				class="btn btn-link" title="Download all selected files as zip" role="button">
 					<span class="glyphicon glyphicon-download-alt"></span>
-					Download All Files
+					Download All
 				</a>
 
 
@@ -33,7 +33,16 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 				onclick="confirmDeleteSelected();"
 				class="btn btn-link" title="Delete all selected datasets" role="button">
 					<span class="glyphicon glyphicon-trash"></span>
-					Delete Selected Datasets
+					Delete All
+				</a>
+
+
+
+				<a id='delete-url' href="#"
+				onclick="clearSelections();"
+				class="btn btn-link" title="Clear all selected datasets" role="button">
+					<span class="glyphicon glyphicon-erase"></span>
+					Clear Selections
 				</a>
 			<hr/>
 		</div>
@@ -154,6 +163,19 @@ $(function() {
 
 	function downloadAllSelections() {
 		window.open(jsRoutes.api.Selected.downloadAll().url, '_blank');
+	}
+
+	function clearSelections() {
+		var request = jsRoutes.api.Selected.clearAll().ajax({
+			type: 'POST'
+		});
+		request.done(function (response, textStatus, jqXHR) {
+			location.reload()
+		});
+		request.fail(function (jqXHR, textStatus, errorThrown){
+			console.error("The following error occured: " + textStatus, errorThrown);
+			notify("Could not clear selections: " + errorThrown, "error");
+		});
 	}
 </script>
 

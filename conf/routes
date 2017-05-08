@@ -665,6 +665,7 @@ POST           /api/selected                                                    
 POST           /api/selected/remove                                                     @api.Selected.remove
 DELETE         /api/selected/files                                                      @api.Selected.deleteAll
 GET            /api/selected/files                                                      @api.Selected.downloadAll
+POST           /api/selected/clear                                                      @api.Selected.clearAll
 
 # ----------------------------------------------------------------------
 # RELATIONS API

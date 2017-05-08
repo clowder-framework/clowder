@@ -5,7 +5,8 @@
   previewers: List[Previewer],
   commentMap : Map[UUID, Int],
   collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
-  prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int, canAddToParent: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int, canAddToParent: Boolean,
+  userSelections: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
 @import models.UUID
@@ -249,7 +250,7 @@
 						</div>
 					</div>
 					<div id="datasets">
-					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd)
+					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd, userSelections)
 					</div>
 				</div>
 			</div>

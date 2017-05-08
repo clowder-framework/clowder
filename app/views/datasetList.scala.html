@@ -234,7 +234,11 @@
 <div class="row hidden" id="list-view">
 	<div class="col-md-12">
         @datasetsList.map { dataset =>
-            @datasets.listitem(dataset,None,comments, routes.Datasets.list(when, date, limit, space, None, "", owner))
+            @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                @datasets.listitem(dataset,None,comments, routes.Datasets.list(when, date, limit, space, None, "", owner), true)
+            } else {
+                @datasets.listitem(dataset,None,comments, routes.Datasets.list(when, date, limit, space, None, "", owner), false)
+            }
         }
 	</div>
 </div>

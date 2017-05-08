@@ -109,7 +109,7 @@
         @items.map { item =>
             @item match {
                 case dataset: models.Dataset => {
-                    @datasets.listitem(dataset,None,Map.empty[UUID, Int],routes.Datasets.dataset(dataset.id,None))
+                    @datasets.listitem(dataset,None,Map.empty[UUID, Int],routes.Datasets.dataset(dataset.id,None), false)
 
                 }
                 case file: models.File => {

@@ -105,7 +105,11 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
         @datasetsList.map { dataset =>
-            @datasets.listitem(dataset, None, comments, routes.Datasets.followingDatasets(prev+1, limit, ""))
+            @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                @datasets.listitem(dataset, None, comments, routes.Datasets.followingDatasets(prev+1, limit, ""), true)
+            } else {
+                @datasets.listitem(dataset, None, comments, routes.Datasets.followingDatasets(prev+1, limit, ""), false)
+            }
         }
         </div>
     </div>
