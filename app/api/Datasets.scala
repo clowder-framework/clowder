@@ -12,7 +12,7 @@ import javax.inject.{Inject, Singleton}
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
-import models.{File, _}
+import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
@@ -50,6 +50,7 @@ class  Datasets @Inject()(
   folders: FolderService,
   relations: RelationService,
   userService: UserService,
+  thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
@@ -439,7 +440,7 @@ class  Datasets @Inject()(
     * @param dataset Reference to the model of the dataset that is specified
     * @param file Reference to the model of the file that is specified
     */
-  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: models.File, user: Option[User]) = {
     if (!files.isInDataset(file, dataset)) {
       datasets.addFile(dsId, file)
       events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
@@ -679,37 +680,37 @@ class  Datasets @Inject()(
                 Logger.error("Errors: " + JsError.toFlatForm(e))
                 BadRequest(JsError.toFlatJson(e))
               }
-              case s: JsSuccess[RDFModel] => { 
-                model = s.get 
-                
+              case s: JsSuccess[RDFModel] => {
+                model = s.get
+
                 //parse request for agent/creator info
                 //creator can be UserAgent or ExtractorAgent
                 var creator: models.Agent = null
                 json.validate[Agent] match {
                   case s: JsSuccess[Agent] => {
                     creator = s.get
-    
+
                     // check if the context is a URL to external endpoint
                     val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
-    
+
                     // check if context is a JSON-LD document
                     val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
                       .map(contextService.addContext(new JsString("context name"), _))
-    
+
                     // when the new metadata is added
                     val createdAt = new Date()
-    
+
                     //parse the rest of the request to create a new models.Metadata object
                     val attachedTo = ResourceRef(ResourceRef.dataset, id)
                     val content = (json \ "content")
                     val version = None
                     val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
                       content, version)
-    
+
                     //add metadata to mongo
                     metadataService.addMetadata(metadata)
                     val mdMap = metadata.getExtractionSummary
-    
+
                     //send RabbitMQ message
                     current.plugin[RabbitmqPlugin].foreach { p =>
                       val dtkey = s"${p.exchange}.metadata.added"
@@ -718,7 +719,7 @@ class  Datasets @Inject()(
 
                     datasets.index(id)
                     Ok(toJson("Metadata successfully added to db"))
-    
+
                   }
                   case e: JsError => {
                     Logger.error("Error getting creator");
@@ -1726,7 +1727,7 @@ class  Datasets @Inject()(
   def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
-        val filesInDataset:List[File] = dataset.files.map{f => files.get(f).foreach(file => file)}.asInstanceOf[List[File]]
+        val filesInDataset:List[models.File] = dataset.files.map{f => files.get(f).foreach(file => file)}.asInstanceOf[List[models.File]]
 
         var isActivity = "false"
         try {
@@ -1784,7 +1785,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val datasetWithFiles = dataset.copy(files = dataset.files)
-        val datasetFiles: List[File] = datasetWithFiles.files.flatMap(f => files.get(f))
+        val datasetFiles: List[models.File] = datasetWithFiles.files.flatMap(f => files.get(f))
         val previewers = Previewers.findPreviewers
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewslist = for (f <- datasetFiles; if (f.showPreviews.equals("DatasetLevel"))) yield {
@@ -2104,11 +2105,25 @@ class  Datasets @Inject()(
     implicit val pec = ec.prepare()
     val dataFolder = if (bagit) "data/" else ""
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
-    var inputFilesBuffer = new ListBuffer[File]()
+    var inputFilesBuffer = new ListBuffer[models.File]()
     dataset.files.foreach(f=>files.get(f) match {
       case Some(file) => {
         inputFilesBuffer += file
-        folderNameMap(file.id) = dataFolder + file.filename + "_" + file.id.stringify
+
+        // Don't create folder for files unless there's a filename collision
+        var foundDuplicate = false
+        dataset.files.foreach(compare_f=>files.get(compare_f) match {
+          case Some(compare_file) => {
+            if (compare_file.filename == file.filename && compare_file.id != file.id) {
+              foundDuplicate = true
+            }
+          }
+          case None => Logger.error(s"No file with id $f")
+        })
+        if (foundDuplicate)
+          folderNameMap(file.id) = dataFolder + file.filename + "_" + file.id.stringify + "/"
+        else
+          folderNameMap(file.id) = dataFolder
       }
       case None => Logger.error(s"No file with id $f")
     })
@@ -2131,7 +2146,21 @@ class  Datasets @Inject()(
               case None =>
             }
           }
-          folderNameMap(file.id) = dataFolder + name + "/" + file.filename + "_" + file.id.stringify
+
+          // Don't create folder for files unless there's a filename collision
+          var foundDuplicate = false
+          folder.files.foreach(compare_f=> files.get(compare_f) match {
+            case Some(compare_file) => {
+              if (compare_file.filename == file.filename && compare_file.id != file.id) {
+                foundDuplicate = true
+              }
+            }
+            case None => Logger.error(s"No file with id $f")
+          })
+          if (foundDuplicate)
+            folderNameMap(file.id) = dataFolder + name + "/" + file.filename + "_" + file.id.stringify + "/"
+          else
+            folderNameMap(file.id) = dataFolder + name + "/"
         }
         case None => Logger.error(s"No file with id $f")
       })
@@ -2213,7 +2242,7 @@ class  Datasets @Inject()(
                 case (1,0) =>{
                   is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
+                  md5Files.put(folderNameMap(inputFiles(count).id)+inputFiles(count).filename+"_info.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   if (count+1 < inputFiles.size ){
                     count +=1
@@ -2226,7 +2255,7 @@ class  Datasets @Inject()(
                 case (1,1) =>{
                   is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
+                  md5Files.put(folderNameMap(inputFiles(count).id)+inputFiles(count).filename+"_metadata.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   if (count+1 < inputFiles.size ){
                     count +=1
@@ -2239,7 +2268,7 @@ class  Datasets @Inject()(
                 case (1,2) => {
                   is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
+                  md5Files.put(folderNameMap(inputFiles(count).id)+inputFiles(count).filename,md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   if (count+1 < inputFiles.size ){
                     count +=1
@@ -2321,7 +2350,7 @@ class  Datasets @Inject()(
   private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
-        zip.putNextEntry(new ZipEntry(folderName + "/" + filename))
+        zip.putNextEntry(new ZipEntry(folderName + filename))
         Some(inputStream)
       }
       case None => None
@@ -2329,7 +2358,7 @@ class  Datasets @Inject()(
   }
 
   private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    zip.putNextEntry(new ZipEntry(folderName + file.filename + "_metadata.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
     val s : String = Json.prettyPrint(Json.toJson(fileMetadata))
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -2387,7 +2416,7 @@ class  Datasets @Inject()(
   }
 
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
+    zip.putNextEntry(new ZipEntry(folderName + file.filename + "_info.json"))
     val fileInfo = getFileInfoAsJson(file)
     val s : String = Json.prettyPrint(fileInfo)
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -2515,6 +2544,7 @@ class  Datasets @Inject()(
     }
     Ok(toJson("added new event"))
   }
+
   def copyDatasetToSpace(datasetId: UUID, spaceId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     implicit val user = request.user
     user match {
@@ -2525,9 +2555,9 @@ class  Datasets @Inject()(
               spaces.get(spaceId) match {
                 case Some(space) => {
                   val d = Dataset(name = dataset.name, description = dataset.description, created = new Date(), author = dataset.author, licenseData = dataset.licenseData, spaces = List(spaceId))
-
                   datasets.insert(d) match {
                     case Some(id) => {
+                      copyDatasetMetadata(dataset.id,UUID(id))
                       spaces.addDataset(d.id, spaceId)
                       relations.add(Relation(source = Node(datasetId.stringify, ResourceType.dataset), target = Node(d.id.stringify, ResourceType.dataset)))
                       events.addSourceEvent(request.user, d.id, d.name, space.id, space.name, "add_dataset_space")
@@ -2539,17 +2569,22 @@ class  Datasets @Inject()(
                       dataset.files.map { fileId =>
                         files.get(fileId) match {
                           case Some(file) => {
-                            val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+                            val original_thumbnail = file.thumbnail_id
+                            val newFile = models.File(loader_id = file.loader_id, filename = file.filename, author = file.author,
                               uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
-                              loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+                              loader = file.loader, showPreviews = file.showPreviews,
                               description = file.description, licenseData = file.licenseData, status = file.status)
                             files.save(newFile)
+                            FileUtils.copyFileThumbnail(file,newFile)
+                            FileUtils.copyFileMetadata(file,newFile)
+                            FileUtils.copyFilePreviews(file,newFile)
                             datasets.addFile(UUID(id), newFile)
                             relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
                           }
                           case None => Logger.error("Unable to copy file with id: " + fileId.stringify + " to dataset with id: " + id)
                         }
                       }
+                      datasets.createThumbnail(d.id)
                       Ok(toJson(Map("newDatasetId" -> d.id.stringify)))
                     }
                     case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
@@ -2566,7 +2601,34 @@ class  Datasets @Inject()(
       }
       case None => BadRequest("You need to be logged in to copy a dataset to a space.")
     }
+  }
 
+  private def copyDatasetMetadata(originalDatasetID : UUID, newDatasetID : UUID) {
+    val originalMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, originalDatasetID))
+    for ( md <- originalMetadata){
+      if (md.creator.typeOfAgent == "extractor"){
+        val content = md.content
+        val creator = ExtractorAgent(id = UUID.generate(),
+          extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+
+        // check if the context is a URL to external endpoint
+        val contextURL: Option[URL] = None
+
+        // check if context is a JSON-LD document
+        val contextID: Option[UUID] = None
+
+        // when the new metadata is added
+        val createdAt = new Date()
+
+        //parse the rest of the request to create a new models.Metadata object
+        val attachedTo = ResourceRef(ResourceRef.dataset, newDatasetID)
+        val version = None
+        val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+          content, version)
+        //add metadata to mongo
+        metadataService.addMetadata(metadata)
+      }
+    }
   }
 
   private def copyFolders(id: UUID, parentId: UUID, parentType: String, datasetId: UUID) {
@@ -2576,11 +2638,22 @@ class  Datasets @Inject()(
         for (fileId <- folder.files)   {
           files.get(fileId) match {
             case Some(file) => {
-              val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+              val original_thumbnail = file.thumbnail_id
+              val newFile = models.File(loader_id = file.loader_id, filename = file.filename, author = file.author,
                 uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                 loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                 description = file.description, licenseData = file.licenseData, status = file.status)
               files.save(newFile)
+              FileUtils.copyFileMetadata(file,newFile)
+              FileUtils.copyFilePreviews(file,newFile)
+              relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+              original_thumbnail match {
+                case Some(tnail) => {
+                  files.updateThumbnail(file.id,UUID(tnail))
+                  files.updateThumbnail(newFile.id,UUID(tnail))
+                }
+                case None =>
+              }
               relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
               newFiles += newFile.id
             }
