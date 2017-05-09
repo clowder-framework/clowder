@@ -8,9 +8,6 @@ import services.{FileService, SelectionService}
 
 /**
  * Show selected datasets.
- * 
- * @author Luigi Marini
- *
  */
 class Selected @Inject()(selections: SelectionService, files: FileService) extends Controller with SecuredController {
 

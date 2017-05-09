@@ -13,9 +13,6 @@ import services.mongodb.MongoSalatPlugin
 
 /**
  * Selected items.
- * 
- * @author Luigi Marini
- *
  */
 case class Selected (
     id: ObjectId = new ObjectId,

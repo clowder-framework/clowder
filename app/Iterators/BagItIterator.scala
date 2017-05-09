@@ -46,17 +46,16 @@ class BagItIterator(pathToFolder : String, collection : Option[models.Collection
     val baggingSize = "Bag-Size: " + totalbytes + "\n"
     val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
 
-    var s:String = ""
-    if (user.isDefined) {
+    val s:String = if (user.isDefined) {
       val senderIdentifier="Internal-Sender-Identifier: user "+user.get.id+"\n"
       val senderDescription = "Internal-Sender-Description: User Dataset Selections\n"
       val contactName = "Contact-Name: " + user.get.fullName + "\n"
       val contactEmail = "Contact-Email: " + user.get.email.getOrElse("") + "\n"
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
+      softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
     } else {
       val senderIdentifier="Internal-Sender-Identifier: unknown user\n"
       val senderDescription = "Internal-Sender-Description: User Dataset Selections\n"
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+senderIdentifier+senderDescription
+      softwareLine+baggingDate+baggingSize+payLoadOxum+senderIdentifier+senderDescription
     }
 
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))

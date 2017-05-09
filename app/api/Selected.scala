@@ -20,9 +20,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Selected items.
- * 
- * @author Luigi Marini
- *
  */
 class Selected @Inject()(selections: SelectionService,
                          datasets: DatasetService,

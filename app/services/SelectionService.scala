@@ -3,7 +3,7 @@ package services
 import models.{UUID, Dataset}
 
 /**
- * Created by lmarini on 4/24/14.
+ * Service for adding & removing user selections, as well as downloading/deleting selected datasets.
  */
 trait SelectionService {
 

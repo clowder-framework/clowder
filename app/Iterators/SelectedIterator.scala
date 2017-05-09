@@ -8,8 +8,10 @@ import play.api.Logger
 import models.{Dataset, User}
 import services._
 
-//this class is used to download user selections. It is the root level iterator called on the
-//collection to download. unlike the other collection iterator, it has a bagit iterator
+
+/**
+  * this class is used to download user selections. it has a bagit iterator as well.
+  */
 class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : ZipOutputStream,
                        md5Files : scala.collection.mutable.HashMap[String, MessageDigest],
                        md5Bag : scala.collection.mutable.HashMap[String, MessageDigest],
