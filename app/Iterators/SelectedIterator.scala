@@ -40,7 +40,7 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
   }
 
   def isBagIt() = {
-    if (file_type == 4){
+    if (file_type == 1){
       true
     } else {
       false
