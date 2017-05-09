@@ -68,21 +68,17 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
       bagItIterator match {
         case Some(bagIterator) => {
           if (bagIterator.hasNext()){
-            Logger.debug("a")
             true
           } else {
-            Logger.debug("b")
             file_type +=1
             false
           }
         }
         case None => {
-          Logger.debug("c")
           false
         }
       }
     } else {
-      Logger.debug("nope")
       false
     }
   }

@@ -138,7 +138,6 @@ class Selected @Inject()(selections: SelectionService,
           }
           val chunk = bytesRead match {
             case -1 => {
-              Logger.debug("-1")
               zip.closeEntry()
               inputStream.close()
               Some(byteArrayOutputStream.toByteArray)
@@ -151,7 +150,6 @@ class Selected @Inject()(selections: SelectionService,
               Some(byteArrayOutputStream.toByteArray)
             }
             case read => {
-              Logger.debug("READ")
               if (!current_iterator.isBagIt()){
                 totalBytes += bytesRead
               }
@@ -159,12 +157,10 @@ class Selected @Inject()(selections: SelectionService,
               Some(byteArrayOutputStream.toByteArray)
             }
           }
-          Logger.debug("CHUNKZ")
           byteArrayOutputStream.reset()
           Future.successful(chunk)
         }
         case None => {
-          Logger.debug("NUNCHUNKZ")
           Future.successful(None)
         }
       }
