@@ -26,7 +26,8 @@ class Selected @Inject()(selections: SelectionService,
                          files: FileService,
                          spaces:SpaceService,
                          folders : FolderService,
-                         metadataService : MetadataService) extends Controller with ApiController {
+                         metadataService : MetadataService,
+                         events: EventService) extends Controller with ApiController {
 
   def add() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.add" + request.body)
@@ -173,6 +174,8 @@ class Selected @Inject()(selections: SelectionService,
       case Some(user) => {
         selections.get(user.email.get).map(d => {
           datasets.addTags(d.id, Some(user.id.toString), None, tags)
+          events.addObjectEvent(request.user, d.id, d.name, "add_tags_dataset")
+          datasets.index(d.id)
         })
         Ok(toJson(Map("sucess"->"true")))
       }
