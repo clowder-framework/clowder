@@ -114,7 +114,7 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
         file_type +=1
         true
       } else if (bagit){
-        bagItIterator = Some(new BagItIterator(pathToFolder,root_collection ,zip,md5Bag,md5Files,bytesSoFar ,user))
+        bagItIterator = Some(new BagItIterator(pathToFolder,Some(root_collection) ,zip,md5Bag,md5Files,bytesSoFar ,user))
         file_type = 4
         true
       } else {
@@ -133,7 +133,7 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
             true
           } else {
             if (bagit){
-              bagItIterator = Some(new BagItIterator(pathToFolder,root_collection ,zip,md5Bag,md5Files,bytesSoFar ,user))
+              bagItIterator = Some(new BagItIterator(pathToFolder,Some(root_collection) ,zip,md5Bag,md5Files,bytesSoFar ,user))
               file_type+=1
               true
             } else {

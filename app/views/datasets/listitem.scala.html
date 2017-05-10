@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, collectionId: Option[String], comments: Map[UUID, Int], redirect: Call)(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
+@(dataset: models.Dataset, collectionId: Option[String], comments: Map[UUID, Int], redirect: Call, selected: Boolean)(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
 @import api.Permission
 
 <div class = "panel panel-default dataset-panel" id="@dataset.id-listitem">
@@ -10,6 +10,17 @@
     </div>
 }
     <div class="panel-body">
+        @if(user.isDefined) {
+            @if(selected) {
+                <a href="javascript: void(0)" title="Click to deselect dataset" class="pull-right select" data-id="@dataset.id">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </a>
+            } else {
+                <a href="javascript: void(0)" title="Click to select dataset" class="pull-right select" data-id="@dataset.id">
+                    <span class="glyphicon glyphicon-plus"></span>
+                </a>
+            }
+        }
         <div class="row">
             <div class="col-xs-2">
                 @if(!dataset.thumbnail_id.isEmpty){

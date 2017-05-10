@@ -32,7 +32,8 @@ class Datasets @Inject() (
     relations: RelationService,
     folders: FolderService,
     metadata: MetadataService,
-    events: EventService) extends SecuredController {
+    events: EventService,
+    selections: SelectionService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -198,8 +199,14 @@ class Datasets @Inject() (
             Some(mode)
           }
 
+        Logger.debug("User selections" + user)
+        val userSelections: List[String] =
+          if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+          else List.empty[String]
+        Logger.debug("User selection " + userSelections)
+
         //Pass the viewMode into the view
-        Ok(views.html.users.followingDatasets(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None, title, None))
+        Ok(views.html.users.followingDatasets(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None, title, None, userSelections))
       }
       case None => InternalServerError("No User found")
     }
@@ -223,6 +230,12 @@ class Datasets @Inject() (
       case None => None
     }
     var title: Option[String] = Some(Messages("list.title", Messages("datasets.title")))
+
+    Logger.debug("User selections" + user)
+    val userSelections: List[String] =
+      if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+      else List.empty[String]
+    Logger.debug("User selection " + userSelections)
 
     val datasetList = person match {
       case Some(p) => {
@@ -361,7 +374,7 @@ class Datasets @Inject() (
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", s, "space"))
       }
-      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, spaceName, status, title, owner, ownerName, when, date))
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, spaceName, status, title, owner, ownerName, when, date, userSelections))
     }
   }
 
@@ -430,6 +443,12 @@ class Datasets @Inject() (
 
         val len = dList.length
 
+        Logger.debug("User selections" + user)
+        val userSelections: List[String] =
+          if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+          else List.empty[String]
+        Logger.debug("User selection " + userSelections)
+
         val datasetList = SortingUtils.sortDatasets(dList, sortOrder).drop(offset).take(limit)
 
         val commentMap = datasetList.map { dataset =>
@@ -470,7 +489,7 @@ class Datasets @Inject() (
           ""
         }
         val date = ""
-        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, Some(space), spaceName, None, title, None, None, "a", date))
+        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, Some(space), spaceName, None, title, None, None, "a", date, userSelections))
       }
     }
   }

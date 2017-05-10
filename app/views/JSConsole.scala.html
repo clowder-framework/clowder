@@ -1,0 +1,10 @@
+@play.api.Play.maybeApplication.map(_.mode) match {
+  case Some(play.api.Mode.Prod) => {
+    <script>
+      console.log("Turning of console.log since we are in production mode");
+      var console = {};
+      console.log = function(){};
+    </script>
+  }
+  case _ => {}
+}

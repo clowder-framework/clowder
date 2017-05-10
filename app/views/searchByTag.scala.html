@@ -91,7 +91,7 @@
             @items.map { item =>
                 @item match {
                     case dataset: models.Dataset => {
-                        @datasets.tile(dataset,None,Map.empty[UUID,Int],"col-lg-3 col-md-3 col-sm-3",false,false,routes.Datasets.dataset(dataset.id,None))
+                        @datasets.tile(dataset,None,Map.empty[UUID,Int],"col-lg-3 col-md-3 col-sm-3",false,false,routes.Datasets.dataset(dataset.id,None),false)
 
                     }
                     case file: models.File => {
@@ -109,7 +109,7 @@
         @items.map { item =>
             @item match {
                 case dataset: models.Dataset => {
-                    @datasets.listitem(dataset,None,Map.empty[UUID, Int],routes.Datasets.dataset(dataset.id,None))
+                    @datasets.listitem(dataset,None,Map.empty[UUID, Int],routes.Datasets.dataset(dataset.id,None), false)
 
                 }
                 case file: models.File => {

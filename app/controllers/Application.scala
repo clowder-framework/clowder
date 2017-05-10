@@ -7,11 +7,12 @@ import api.Permission._
 import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
-import models.{UUID, User, Event}
+import models.{Event, UUID, User}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import models.DBCounts
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -20,7 +21,7 @@ import scala.collection.mutable.ListBuffer
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
                              spaces: SpaceService, events: EventService, comments: CommentService,
-                             sections: SectionService, users: UserService) extends SecuredController {
+                             sections: SectionService, users: UserService, selections: SelectionService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    *
@@ -145,8 +146,13 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             }
           }
         }
+        Logger.debug("User selections" + user)
+        val userSelections: List[String] =
+          if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+          else List.empty[String]
+        Logger.debug("User selection " + userSelections)
         Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
-       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
+       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
       }
       case _ => {
         val counts = appConfig.getIndexCounts()
@@ -198,7 +204,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def bookmarklet() = AuthenticatedAction { implicit request =>
     Ok(views.html.bookmarklet(Utils.baseUrl(request))).as("application/javascript")
   }
-  
+
   /**
    *  Javascript routing.
    */
@@ -320,6 +326,11 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.listCanEdit,
         api.routes.javascript.Collections.addDatasetToCollectionOptions,
         api.routes.javascript.Collections.listPossibleParents,
+        api.routes.javascript.Selected.add,
+        api.routes.javascript.Selected.remove,
+        api.routes.javascript.Selected.deleteAll,
+        api.routes.javascript.Selected.downloadAll,
+        api.routes.javascript.Selected.clearAll,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
         api.routes.javascript.Collections.removeDataset,

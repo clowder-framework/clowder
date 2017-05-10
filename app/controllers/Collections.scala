@@ -22,7 +22,7 @@ import play.api.i18n.Messages
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService,
-                            appConfig: AppConfigurationService) extends SecuredController {
+                            appConfig: AppConfigurationService, selections: SelectionService) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc. parsed from conf/messages
@@ -597,9 +597,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               }
             })
           }
+          val userSelections = user match {
+            case Some(u) => selections.get(u.email.get).map(ds => ds.id.toString)
+            case None => List.empty
+          }
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
             Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
-            prevd,nextd, prevcc, nextcc, limit, canAddToParent))
+            prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections))
 
         }
         case None => {
@@ -638,7 +642,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         } else {
           -1
         }
-        Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next))
+        user match {
+          case Some(u) => {
+            val selectIds = selections.get(u.email.get).map(d => {
+              d.id.toString
+            })
+            Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next, selectIds))
+          }
+          case None => Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next, List.empty))
+        }
+
+
       }
       case None => Logger.error("Error getting "+ Messages("collection.title") + " " + id); BadRequest(Messages("collection.title") + " not found")
     }

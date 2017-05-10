@@ -1,4 +1,4 @@
-@(datasetsList: List[Dataset], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
+@(datasetsList: List[Dataset], space: ProjectSpace, isPublic: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.i18n.Messages
@@ -39,7 +39,11 @@
     <div class="col-md-12">
         <div id="masonry-datasets">
         @datasetsList.map { dataset =>
-                @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)))
+            @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)), true)
+            } else {
+                @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)), false)
+            }
         }
         </div>
     </div>

@@ -1,7 +1,8 @@
 
 @(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collectionsList:List[Collection], spacesList: List[ProjectSpace],
-         deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
-        followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])
+        deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
+        followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)],
+        followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters
 
@@ -24,8 +25,6 @@
             <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection">
                 <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collection.title"))</a>
         </div>
-    </div>
-
     <div class="row">
         <!-- Nav tabs -->
         <ul class="nav nav-tabs" role="tablist">
@@ -90,7 +89,12 @@
                 </div>
                 <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
-                    @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index())
+                    @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                        @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), true)
+                    } else {
+                        @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), false)
+                    }
+
                 }
                 </div>
                 @if(datasetsList.size < 1) {
@@ -535,4 +539,10 @@
         }
     </script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
+    @*******
+    *if(user.isDefined) {
+    *    @carousel(files)
+    *}
+    ********@
 }

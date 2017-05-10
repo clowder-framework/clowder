@@ -19,7 +19,6 @@ object DI {
 class ConfigurationModule extends AbstractModule {
   protected def configure() {
     bind(classOf[AppConfigurationService]).to(get("service.appConfiguration", "services.mongodb.MongoDBAppConfigurationService"))
-
     bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
 
     // ByteStorageService is used to store the actual bytes
@@ -53,6 +52,7 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[LogoService]).to(get("service.logos", "services.mongodb.MongoDBLogoService"))
     bind(classOf[VocabularyService]).to(get("service.vocabularies", "services.mongodb.MongoDBVocabularyService"))
     bind(classOf[VocabularyTermService]).to(get("service.vocabularyterms", "services.mongodb.MongoDBVocabularyTermService"))
+    bind(classOf[SelectionService]).to(get("service.select", "services.mongodb.MongoDBSelectionService"))
   }
 
   protected def get[T](key: String, missing: String) : Class[T] = {

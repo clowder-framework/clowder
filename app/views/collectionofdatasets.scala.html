@@ -5,7 +5,8 @@
   previewers: List[Previewer],
   commentMap : Map[UUID, Int],
   collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
-  prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int, canAddToParent: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int, canAddToParent: Boolean,
+  userSelections: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
 @import models.UUID
@@ -30,6 +31,7 @@
 <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+<script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
 
 	<div class="row">
 		<!-- left column -->
@@ -249,7 +251,7 @@
 						</div>
 					</div>
 					<div id="datasets">
-					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd)
+					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd, userSelections)
 					</div>
 				</div>
 			</div>

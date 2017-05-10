@@ -1,0 +1,30 @@
+@(dataset: String)
+
+	<button class="btn" id="selectButton">Select</button>
+
+<script language="javascript">
+$(function() {
+
+   console.log("*** registering selection ***");
+
+   $('#selectButton').click(function() {
+
+     console.log("selecting dataset ");
+
+     var request = jsRoutes.api.Selected.add().ajax({
+       data: JSON.stringify({"dataset":"@dataset"}),
+       type: 'POST',
+       contentType: "application/json"
+     });
+
+     request.done(function (response, textStatus, jqXHR){
+        console.log("Response " + response);
+     });
+
+     request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: "+ textStatus, errorThrown);
+        window.location = "../login"; // FIXME hardcoded
+     });
+  });
+ });
+</script>

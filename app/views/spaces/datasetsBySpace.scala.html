@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
+@(datasets: List[models.Dataset], space: ProjectSpace, isPublic: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
 @import api.Permission
 @isPublic match {
@@ -13,5 +13,5 @@
         <p> There are no @Messages("datasets.title").toLowerCase associated with this @Messages("space.title")</p>
     }
 } else {
-    @spaces.datasetsGrid(datasets, space, isPublic)
+    @spaces.datasetsGrid(datasets, space, isPublic, userSelections)
 }
