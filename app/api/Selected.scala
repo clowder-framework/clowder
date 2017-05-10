@@ -166,4 +166,16 @@ class Selected @Inject()(selections: SelectionService,
       }
     })(pec)
   }
+
+  def tagAll(tags: List[String]) = AuthenticatedAction { implicit request =>
+    Logger.debug("Requesting Selected.tagAll")
+    request.user match {
+      case Some(user) => {
+        selections.get(user.email.get).map(d => {
+          datasets.addTags(d.id, Some(user.id.toString), None, tags)
+        })
+        Ok(toJson(Map("sucess"->"true")))
+      }
+    }
+  }
 }

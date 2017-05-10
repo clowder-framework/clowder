@@ -666,6 +666,7 @@ POST           /api/selected/remove                                             
 DELETE         /api/selected/files                                                      @api.Selected.deleteAll
 GET            /api/selected/files                                                      @api.Selected.downloadAll
 POST           /api/selected/clear                                                      @api.Selected.clearAll
+POST           /api/selected/tag                                                        @api.Selected.tagAll(tags: List[String])
 
 # ----------------------------------------------------------------------
 # RELATIONS API
