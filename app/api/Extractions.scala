@@ -538,43 +538,49 @@ class Extractions @Inject()(
             val idAndFlags = ""
             val host = Utils.baseUrl(request)
 
-            // if extractor_id is not specified default to execution of all extractors matching mime type
-            val key = (request.body \ "extractor").asOpt[String] match {
-              case Some(extractorId) => "extractors." + extractorId
-              case None => "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-            }
-            // parameters for execution
-            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+            // check that the file is ready for processing
+            if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
+              // if extractor_id is not specified default to execution of all extractors matching mime type
+              val key = (request.body \ "extractor").asOpt[String] match {
+                case Some(extractorId) => "extractors." + extractorId
+                case None => "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+              }
+              // parameters for execution
+              val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
 
-            // Log request
-            val clientIP = request.remoteAddress
-            val serverIP = request.host
-            dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+              // Log request
+              val clientIP = request.remoteAddress
+              val serverIP = request.host
+              dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
 
-            val extra = Map("filename" -> file.filename,
-              "parameters" -> parameters.toString,
-              "action" -> "manual-submission")
-            val showPreviews = file.showPreviews
+              val extra = Map("filename" -> file.filename,
+                "parameters" -> parameters.toString,
+                "action" -> "manual-submission")
+              val showPreviews = file.showPreviews
 
-            val newFlags = if (showPreviews.equals("FileLevel"))
-              idAndFlags + "+filelevelshowpreviews"
-            else if (showPreviews.equals("None"))
-              idAndFlags + "+nopreviews"
-            else
-              idAndFlags
+              val newFlags = if (showPreviews.equals("FileLevel"))
+                idAndFlags + "+filelevelshowpreviews"
+              else if (showPreviews.equals("None"))
+                idAndFlags + "+nopreviews"
+              else
+                idAndFlags
 
-            val originalId = if (!file.isIntermediate) {
-              file.id.toString()
+              val originalId = if (!file.isIntermediate) {
+                file.id.toString()
+              } else {
+                idAndFlags
+              }
+
+              var datasetId: UUID = null
+              datasets.findByFileId(file_id).map(ds => {
+                datasetId = ds.id
+              })
+              p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString,
+                datasetId, newFlags))
+              Ok(Json.obj("status" -> "OK"))
             } else {
-              idAndFlags
+              Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
             }
-
-            var datasetId: UUID = null
-            datasets.findByFileId(file_id).map(ds => {
-              datasetId = ds.id
-            })
-            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, datasetId, newFlags))
-            Ok(Json.obj("status" -> "OK"))
           }
           case None =>
             BadRequest(toJson(Map("request" -> "File not found")))
