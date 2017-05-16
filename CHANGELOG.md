@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability to change how many items are displayed on the listing pages. [SEAD-1149](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1149)
 - When downloading datasets there is no folder with the id for each file. [SEAD-1038](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1038)
 - Datasets can be copied with Download Files and View Dataset permissions instead of just the owner. [SEAD-1162](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1162)
+- Selections can now be downloaded, tagged or deleted directly from the top menu bar through the new action dropdown.
 
 ### Fixed
 - Binning on geostreaming api for hour and minutes. [GEOD-886](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-886)

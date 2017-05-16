@@ -15,6 +15,7 @@ $(function() {
                 console.log("dataset " + dataset_id + " selected");
                 $("a[data-id='"+dataset_id+"'] span.glyphicon").removeClass('glyphicon-plus');
                 $("a[data-id='"+dataset_id+"'] span.glyphicon").addClass('glyphicon-ok');
+                updateSelectedCount(response.selected_count)
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -31,9 +32,11 @@ $(function() {
             });
 
             request.done(function (response, textStatus, jqXHR){
+                console.log(response)
                 console.log("dataset " + dataset_id + " unselected");
                 $("a[data-id='"+dataset_id+"'] span.glyphicon").removeClass('glyphicon-ok');
                 $("a[data-id='"+dataset_id+"'] span.glyphicon").addClass('glyphicon-plus');
+                updateSelectedCount(response.selected_count)
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){

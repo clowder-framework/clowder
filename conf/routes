@@ -661,6 +661,7 @@ POST           /api/comment/:id/editComment                                     
 # SELECTIONS API
 # ----------------------------------------------------------------------
 GET            /selected                                                                @controllers.Selected.get
+GET            /api/selected                                                            @api.Selected.get
 POST           /api/selected                                                            @api.Selected.add
 POST           /api/selected/remove                                                     @api.Selected.remove
 DELETE         /api/selected/files                                                      @api.Selected.deleteAll

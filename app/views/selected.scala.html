@@ -1,6 +1,5 @@
 @(selectedDatasets: scala.collection.mutable.ListBuffer[Dataset])(implicit ident: Option[securesocial.core.Identity], user: Option[models.User])
 
-@import play.api.Play.current
 @import api.Permission
 
 @main("Selected Datasets") {
@@ -42,8 +41,7 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 					class="btn btn-link" title="Apply a tag to all selected datasets" role="button">
 						<span class="glyphicon glyphicon-tag"></span> Tag All</a>
 				}
-				<a id='clear-url' href="#"
-				onclick="clearSelections();"
+				<a id='clear-url' href="#" onclick="clearSelections();"
 				class="btn btn-link" title="Clear all selected datasets" role="button">
 					<span class="glyphicon glyphicon-erase"></span> Clear Selections</a>
 			<hr/>
@@ -154,88 +152,6 @@ $(function() {
 			$("a#download-url").removeClass("disabled");
 			$("a#delete-url").removeClass("disabled");
 		}
-	}
-
-	function deleteAllSelections() {
-		var request = jsRoutes.api.Selected.deleteAll().ajax({
-			type: 'DELETE'
-		});
-		request.done(function (response, textStatus, jqXHR) {
-			location.reload()
-		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			console.error("The following error occured: " + textStatus, errorThrown);
-			notify("Could not delete selections: " + errorThrown, "error");
-		});
-	}
-
-	function downloadAllSelections() {
-		window.open(jsRoutes.api.Selected.downloadAll().url, '_blank');
-	}
-
-	function clearSelections() {
-		var request = jsRoutes.api.Selected.clearAll().ajax({
-			type: 'POST'
-		});
-		request.done(function (response, textStatus, jqXHR) {
-			location.reload()
-		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			console.error("The following error occured: " + textStatus, errorThrown);
-			notify("Could not clear selections: " + errorThrown, "error");
-		});
-	}
-
-	function showTagPopup() {
-		var modalHTML = `
-		<div id="enter-tag" class="modal fade" role="dialog">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-						<h4 class="modal-title">Tag All Selections</h4>
-					</div>
-					<div class="modal-body">
-						<p>
-							Multiple tags may be entered, separated by commas.
-						</p>
-						<input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)"
-							type="text" id="tagField" class="form-control add-resource" placeholder="Enter a tag...">
-
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
-						<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:tagAllSelections()"><span class="glyphicon glyphicon-ok"></span> OK</a>
-					</div>
-				</div>
-			</div>
-		</div>
-		`;
-
-		var confirmModal = $(modalHTML);
-		confirmModal.modal();
-		confirmModal.modal("show");
-	}
-
-	function tagAllSelections() {
-		var tag = $('input#tagField')[0].value;
-
-		if (tag.length > 0) {
-			var request = jsRoutes.api.Selected.tagAll(tag.split(",")).ajax({
-				type: 'POST'
-			});
-			request.done(function (response, textStatus, jqXHR) {
-				console.log("Tag successfully added.")
-			});
-			request.fail(function (jqXHR, textStatus, errorThrown){
-				console.error("The following error occured: " + textStatus, errorThrown);
-				notify("Could not tag selections: " + errorThrown, "error");
-			});
-
-		} else {
-			console.log("No tag was provided.")
-		}
-		$("#enter-tag").modal("hide")
 	}
 </script>
 

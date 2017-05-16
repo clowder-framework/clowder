@@ -29,6 +29,17 @@ class Selected @Inject()(selections: SelectionService,
                          metadataService : MetadataService,
                          events: EventService) extends Controller with ApiController {
 
+  def get() = AuthenticatedAction { implicit request =>
+    Logger.debug("Requesting Selected.get" + request.body)
+    request.user match {
+      case Some(user) => {
+        val sels = selections.get(user.email.get).map(d => {d.id.stringify})
+        Ok(toJson(sels))
+      }
+      case None => Ok(toJson(Map("success"->"false", "msg"->"User not logged in")))
+    }
+  }
+
   def add() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.add" + request.body)
     request.body.\("dataset").asOpt[String] match {
@@ -36,7 +47,7 @@ class Selected @Inject()(selections: SelectionService,
         request.user match {
           case Some(user) => {
             selections.add(UUID(dataset), user.email.get)
-            Ok(toJson(Map("success"->"true")))
+            Ok(toJson(Map("selected_count"->selections.get(user.email.get).length)))
           }
           case None => Ok(toJson(Map("success"->"false", "msg"->"User not logged in")))
         }
@@ -55,7 +66,7 @@ class Selected @Inject()(selections: SelectionService,
         request.user match {
           case Some(user) => {
             selections.remove(UUID(dataset), user.email.get)
-            Ok(toJson(Map("success"->"true")))
+            Ok(toJson(Map("selected_count"->selections.get(user.email.get).length)))
           }
           case None => Ok(toJson(Map("success"->"false", "msg"->"User not logged in")))
         }

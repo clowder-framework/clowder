@@ -2,6 +2,7 @@
 
 @import services.AppConfiguration
 @import play.api.i18n.Messages
+@import play.api.Play.current
 <!DOCTYPE html>
 
 <html lang="en">
@@ -88,7 +89,6 @@
                                 <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
                             }
-                            <li><a href="@routes.Selected.get"><span class="glyphicon glyphicon-ok"></span> Selections</a></li>
                         </ul>
                     </li>
                 }
@@ -143,6 +143,25 @@
 
                         </ul>
                     </li>
+
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Selections <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="@routes.Selected.get" id="selected-count"><span class="glyphicon glyphicon-ok"> </span>
+                                Manage Selections</a></li>
+                            <li><a href="#" onclick="downloadAllSelections();"><span class="glyphicon glyphicon-download-alt"> </span>
+                                Download All
+                            </a></li>
+                            <li><a href="#" onclick="showTagPopup();"><span class="glyphicon glyphicon-tag"> </span>
+                                Tag All</a></li>
+                            <li><a href="#" onclick="confirmDeleteSelected();"><span class="glyphicon glyphicon-trash"> </span>
+                                Delete All</a></li>
+                            <li><a href="#" onclick="clearSelections();"><span class="glyphicon glyphicon-erase"> </span>
+                                Clear All</a></li>
+                        </ul>
+                    </li>
                 }
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Help">Help<b class="caret"></b></a>
@@ -152,7 +171,7 @@
                             @if(user.isDefined) {
                                 <li><a href="@routes.Application.email("")">Contact server admins</a></li>
                             }
-                            <li><a targe"tos" href="@routes.Application.tos(None)">Terms of Service</a></li>
+                            <li><a href="@routes.Application.tos(None)">Terms of Service</a></li>
                             <li><a href="@routes.Assets.at("docs/api/index.html")" target="_blank">API</a></li>
                             @play.Play.application.configuration.getConfigList("helpMenu").map { helpItem =>
                               <li><a href="@helpItem.getString("url")" target="_blank">@helpItem.getString("label")</a></li>
@@ -286,6 +305,18 @@
 
     if (@user.isDefined) {
         var intervalCount = setInterval(function(){checkSession()}, repeatInt*60000);
+
+        // Populate initial selection count on page load
+        var request = jsRoutes.api.Selected.get().ajax({
+            type: 'GET'
+        });
+        request.done(function (response, textStatus, jqXHR) {
+            updateSelectedCount(response.length);
+        });
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            notify("Could not get selections: " + errorThrown, "error");
+        });
     }
 
     function checkSession() {
@@ -294,7 +325,6 @@
             type: 'GET'
         });
         request.done(function(response, textStatus, jqXHR) {
-            //console.log(response);
             if (response === "no") {
                 clearInterval(intervalCount);    //stop the timer
                 var modalHTML = '<div class="modal" role="dialog">';
@@ -317,6 +347,101 @@
         request.fail(function(jqXHR, textStatus, errorThrown) {
             console.error("The following error occurred: " + textStatus, errorThrown);
         });
+    }
+
+    function deleteAllSelections() {
+        var request = jsRoutes.api.Selected.deleteAll().ajax({
+            type: 'DELETE'
+        });
+        request.done(function (response, textStatus, jqXHR) {
+            location.reload()
+        });
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            notify("Could not delete selections: " + errorThrown, "error");
+        });
+    }
+
+    function downloadAllSelections() {
+        // Simple check for whether there are 1+ things selected
+        if ($('#selected-count')[0].innerHTML.indexOf("Manage Selections (<b>0</b>)") == -1) {
+            window.open(jsRoutes.api.Selected.downloadAll().url, '_blank');
+        } else {
+            notify("No datasets currently selected", "warning")
+        }
+    }
+
+    function clearSelections() {
+        var request = jsRoutes.api.Selected.clearAll().ajax({
+            type: 'POST'
+        });
+        request.done(function (response, textStatus, jqXHR) {
+            location.reload()
+        });
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            notify("Could not clear selections: " + errorThrown, "error");
+        });
+    }
+
+    function showTagPopup() {
+        if ($('#selected-count')[0].innerHTML.indexOf("Manage Selections (<b>0</b>)") == -1) {
+            var modalHTML = `
+            <div id="enter-tag" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Tag All Selections</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                Multiple tags may be entered, separated by commas.
+                            </p>
+                            <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)"
+                                type="text" id="bulk-tag-selector" class="form-control add-resource" placeholder="Enter a tag...">
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
+                            <a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:tagAllSelections()"><span class="glyphicon glyphicon-ok"></span> OK</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+
+            var confirmModal = $(modalHTML);
+            confirmModal.modal();
+            confirmModal.modal("show");
+        } else {
+            notify("No datasets currently selected", "warning")
+        }
+    }
+
+    function tagAllSelections() {
+        var tag = $('#bulk-tag-selector')[0].value;
+
+        if (tag.length > 0) {
+            var request = jsRoutes.api.Selected.tagAll(tag.split(",")).ajax({
+                type: 'POST'
+            });
+            request.done(function (response, textStatus, jqXHR) {
+                notify("Tag(s) successfully added.", "success", false, 2000);
+            });
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                notify("Could not tag selections: " + errorThrown, "error");
+            });
+
+        } else {
+            console.log("No tag was provided.")
+        }
+        $("#enter-tag").modal("hide")
+    }
+
+    function updateSelectedCount(count) {
+        $('#selected-count')[0].innerHTML = '<span class="glyphicon glyphicon-ok"></span> Manage Selections (<b>'+String(count)+'</b>)';
     }
 </script>
 </body>
