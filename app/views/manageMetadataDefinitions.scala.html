@@ -168,7 +168,8 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A short label or name."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Description <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Description" data-content="A long description."><span class="glyphicon glyphicon-info-sign"></span></a></th>
                     <th>URI <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference."><span class="glyphicon glyphicon-info-sign"></span></a></th>
                     <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-html=true data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>"><span class="glyphicon glyphicon-info-sign"></span></a></th>
                     <th>Definitions URL <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions URL" data-content="This URL should return a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
@@ -181,6 +182,9 @@
                     <tr>
                         <td>
                             @((m.json \ "label").asOpt[String].getOrElse(""))
+                        </td>
+                        <td>
+                            @((m.json \ "description").asOpt[String].getOrElse(""))
                         </td>
                         <td>
                             @((m.json \ "uri").asOpt[String].getOrElse(""))
@@ -228,9 +232,24 @@
                 <div class="panel-body">
                     <form id="addDefinition" class="form-horizontal">
                         <div class="form-group has-feedback">
-                            <div class="col-md-3"><label for="label">Label </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label (required)" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-md-3">
+                                <label for="label">Label </label>
+                                <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label (required)"
+                                    data-content="A short label or name.">
+                                <span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="label" placeholder="Label" required />
+                                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                            </div>
+                        </div>
+                        <div class="form-group has-feedback">
+                            <div class="col-md-3">
+                                <label for="description">Description </label>
+                                <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Description (Required)"
+                                    data-content="A longer description.">
+                                    <span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-9">
+                                <textarea rows="3" class="form-control" id="description" placeholder="Description" required></textarea>
                                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                             </div>
                         </div>

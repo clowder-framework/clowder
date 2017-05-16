@@ -264,8 +264,8 @@
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
                 var context = "Context is not defined.";
-                if (fields['@@context']) {
-                    context = JSON.stringify(fields['@@context'][key]);
+                if (fields['@@context'][1]) {
+                    context = JSON.stringify(fields['@@context'][1][key]);
                 }
                 
                 $("#"+mid).popover({

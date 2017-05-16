@@ -217,6 +217,7 @@ line-height: 1.5;
         var fields = response;
         for (var i = 0; i < fields.length; i++) {
             var elem = $("<option></option>");
+            elem.attr("data-description", fields[i].json.description);
             elem.attr("data-type", fields[i].json.type);
             elem.attr("data-id", fields[i].id);
             elem.attr("value", fields[i].json.uri);
@@ -234,6 +235,7 @@ line-height: 1.5;
             $("#@id  #add-metadata-select option:selected").each(function() {
                 // create html form
                 var field_label = $(this).text();
+                var field_description = $(this).data("description");
                 var field_id = $(this).val();
                 var field_type = $(this).data("type");
                 var space_id = $(this).attr("space_id");
@@ -248,7 +250,8 @@ line-height: 1.5;
                      "wkt": "add_metadata_wktlocation"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
-                var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
+                var html = modalTemplate({'field_label': field_label, 'field_description': field_description,
+                    'field_id': field_id, 'field_type': field_type});
                 var footerHtml = "";
                 if(typeof space_id !== 'undefined' && showSpaceInfo) {
                     var request2 = jsRoutes.api.Spaces.get(space_id).ajax({
@@ -396,8 +399,8 @@ line-height: 1.5;
                     request.done(function (response, textStatus, jqXHR) {
                         var vocabulary = JSON.parse(response);
                         // modalTemplate was assigned above using the map.
-                        var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type,
-                            'options': vocabulary});
+                        var html = modalTemplate({'field_label': field_label, 'field_description': field_description,
+                            'field_id': field_id, 'field_type': field_type, 'options': vocabulary});
                         $("#@id  #selected_field").html(html + footerHtml);
                         // chosen pulldown configuration
                         $("#@id  #field-value").chosen({

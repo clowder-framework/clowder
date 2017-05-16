@@ -54,6 +54,9 @@ function editDefinition(id, json, element) {
   if (json.label) {
     $("#label").val(json.label);
   }
+  if (json.description) {
+    $("#description").val(json.description);
+  }
   if (json.uri) {
     $("#uri").val(json.uri);
   }
