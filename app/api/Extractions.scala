@@ -5,7 +5,6 @@ import java.net.URL
 import java.util.Calendar
 import javax.inject.Inject
 
-import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.Utils
 import fileutils.FilesUtils
 import models._
@@ -26,7 +25,6 @@ import scala.concurrent.Future
 /**
  * Json API for information about extractors and extractions.
  */
-@Api(value = "/extractions", listingPath = "/api-docs.json/extractions", description = "Extractions for Files.")
 class Extractions @Inject()(
   files: FileService,
   datasets: DatasetService,
@@ -44,9 +42,6 @@ class Extractions @Inject()(
    * Needs to be decided on the semantics of upload for DTS extraction service and its difference to upload file to Clowder for curation and storage.
    * This may change accordingly.
    */
-  @ApiOperation(value = "Uploads a file for extraction of metadata and returns file id",
-    notes = "Saves the uploaded file and sends it for extraction to Rabbitmq. If the optional URL parameter extract is set to false, it does not send the file for extraction. Does not index the file. Same as upload() except for upload()",
-    responseClass = "None", httpMethod = "POST")
   def uploadExtract(showPreviews: String = "DatasetLevel", extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
     val uploadedFiles = _root_.util.FileUtils.uploadFilesMultipart(request, key="File", index=false, showPreviews=showPreviews, runExtractors=extract, insertDTSRequests = true)
     uploadedFiles.length match {
@@ -60,9 +55,6 @@ class Extractions @Inject()(
    * Upload a file based on a url
    *
    */
-  @ApiOperation(value = "Uploads a file for extraction using the file's URL",
-    notes = "Saves the uploaded file and sends it for extraction. If the optional URL parameter extract is set to false, it does not send the file for extraction. Does not index the file. ",
-    responseClass = "None", httpMethod = "POST")
   def uploadByURL(extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.json) { implicit request =>
     val uploadedFiles = _root_.util.FileUtils.uploadFilesJSON(request, key="fileurl", index=false, runExtractors=extract, insertDTSRequests = true)
     uploadedFiles.length match {
@@ -76,9 +68,6 @@ class Extractions @Inject()(
    * Multiple File Upload for a given list of files' URLs using WS API
    *
    */
-  @ApiOperation(value = "Uploads files for a given list of files' URLs ",
-    notes = "Saves the uploaded files and sends it for extraction. Does not index the files. Returns id for the web resource ",
-    responseClass = "None", httpMethod = "POST")
   def multipleUploadByURL() = PermissionAction(Permission.AddFile).async(parse.json) { implicit request =>
       request.user match {
         case Some(user) => {
@@ -149,9 +138,6 @@ class Extractions @Inject()(
    * This may change depending on our our design on DTS extraction service.
    *
    */
-  @ApiOperation(value = "Submits a previously uploaded file's id for extraction",
-    notes = "Notifies the user that the file is sent for extraction. check the status  ",
-    responseClass = "None", httpMethod = "POST")
   def submitExtraction(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
     current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
@@ -188,9 +174,6 @@ class Extractions @Inject()(
    * input: file id
    * returns: a list of status of all extractors responsible for extractions on the file and the final status of extraction job
    */
-  @ApiOperation(value = "Checks for the status of all extractors processing the file with id",
-    notes = " A list of status of all extractors responsible for extractions on the file and the final status of extraction job",
-    responseClass = "None", httpMethod = "GET")
   def checkExtractorsStatus(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
       current.plugin[RabbitmqPlugin] match {
 
@@ -233,9 +216,6 @@ class Extractions @Inject()(
    * Returns status of the extraction request and  metadata extracted so far
    *
    */
-  @ApiOperation(value = "Provides the metadata extracted from the file",
-    notes = " Retruns Status of extractions and metadata extracted so far ",
-    responseClass = "None", httpMethod = "GET")
   def fetch(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
       current.plugin[RabbitmqPlugin] match {
 
@@ -290,9 +270,6 @@ class Extractions @Inject()(
       }
   }
 
-  @ApiOperation(value = "Checks for the extraction statuses of all files",
-    notes = " Returns a list (file id, status of extractions) ",
-    responseClass = "None", httpMethod = "GET")
   def checkExtractionsStatuses(id: models.UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
       request.user match {
         case Some(user) => {
@@ -406,18 +383,12 @@ class Extractions @Inject()(
     status
   }
 
-  @ApiOperation(value = "Lists servers IPs running the extractors",
-    notes = "  ",
-    responseClass = "None", httpMethod = "GET")
   def getExtractorServersIP() = AuthenticatedAction { implicit request =>
     val listServersIPs = extractors.getExtractorServerIPList()
     val listServersIPsJson = toJson(listServersIPs)
     Ok(Json.obj("Servers" -> listServersIPs))
   }
 
-  @ApiOperation(value = "Lists the currenlty running extractors",
-    notes = "  ",
-    responseClass = "None", httpMethod = "GET")
   def getExtractorNames() = AuthenticatedAction { implicit request =>
     val listNames = extractors.getExtractorNames()
     val listNamesJson = toJson(listNames)
@@ -427,8 +398,6 @@ class Extractions @Inject()(
   /**
    * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
    */
-  @ApiOperation(value = "Lists the currenlty details running extractors",
-    responseClass = "None", httpMethod = "GET")
   def getExtractorDetails() = AuthenticatedAction { request =>
     val listNames = extractors.getExtractorDetail()
     val listNamesJson = toJson(listNames)
@@ -436,18 +405,12 @@ class Extractions @Inject()(
   }
 
 
-  @ApiOperation(value = "Lists the input file format supported by currenlty running extractors",
-    notes = "  ",
-    responseClass = "None", httpMethod = "GET")
   def getExtractorInputTypes() = AuthenticatedAction { implicit request =>
     val listInputTypes = extractors.getExtractorInputTypes()
     val listInputTypesJson = toJson(listInputTypes)
     Ok(Json.obj("InputTypes" -> listInputTypesJson))
   }
 
-  @ApiOperation(value = "Lists dts extraction requests information",
-    notes = "  ",
-    responseClass = "None", httpMethod = "GET")
   def getDTSRequests() = AuthenticatedAction { implicit request =>
     Logger.debug("---GET DTS Requests---")
     val list_requests = dtsrequests.getDTSRequests()
@@ -480,16 +443,10 @@ class Extractions @Inject()(
     Ok(jarr)
   }
 
-  @ApiOperation(value = "Lists information about all known extractors",
-    notes = "  ",
-    responseClass = "None", httpMethod = "GET")
   def listExtractors() = AuthenticatedAction  { implicit request =>
     Ok(Json.toJson(extractors.listExtractorsInfo()))
   }
 
-  @ApiOperation(value = "Lists information about a specific extractor",
-    notes = "  ",
-    responseClass = "None", httpMethod = "GET")
   def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
     extractors.getExtractorInfo(extractorName) match {
       case Some(info) => Ok(Json.toJson(info))
@@ -497,9 +454,6 @@ class Extractions @Inject()(
     }
   }
 
-  @ApiOperation(value = "Register information about an extractor. Used when an extractor starts up.",
-    notes = "  ",
-    responseClass = "None", httpMethod = "POST")
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
 
     // If repository is of type object, change it into an array.
@@ -523,8 +477,6 @@ class Extractions @Inject()(
     )
   }
 
-  @ApiOperation(value = "Submit file for extraction by a specific extractor", notes = "  ", responseClass = "None",
-    httpMethod = "POST")
   def submitFileToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
     file_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting file for extraction with body $request.body")
@@ -590,8 +542,6 @@ class Extractions @Inject()(
     }
   }
 
-  @ApiOperation(value = "Submit dataset for extraction by a specific extractor", notes = "  ", responseClass = "None",
-    httpMethod = "POST")
   def submitDatasetToExtractor(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
     ds_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting dataset for extraction with body $request.body")

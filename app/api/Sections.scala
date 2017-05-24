@@ -2,7 +2,6 @@ package api
 
 import javax.inject.{Inject, Singleton}
 
-import com.wordnik.swagger.annotations.ApiOperation
 import models.{Comment, UUID}
 import play.api.Logger
 import play.api.libs.json.Json
@@ -52,9 +51,6 @@ class Sections @Inject()(
       }
   }
 
-  @ApiOperation(value = "Delete section",
-    notes = "Remove section file from system).",
-    responseClass = "None", httpMethod = "DELETE")
   def delete(id: UUID) = PermissionAction(Permission.DeleteSection, Some(ResourceRef(ResourceRef.section, id))) {
     request =>
       sections.get(id) match {

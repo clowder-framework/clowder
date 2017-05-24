@@ -5,19 +5,16 @@ import java.util.Date
 import models.{ResourceRef, Folder}
 import models.UUID
 import javax.inject.{Inject, Singleton}
-import com.wordnik.swagger.annotations.Api
 import play.api.libs.json.JsValue
 import services._
 import play.api.Logger
 import play.api.libs.json.Json._
-import com.wordnik.swagger.annotations.ApiOperation
 
 import scala.collection.mutable.ListBuffer
 
 /**
   * Folders are ways of organizing files within datasets. They can contain files and folders
  */
-@Api(value= "/folders", listingPath ="/api-docs.json/folders", description ="A folder is a container of files and other folders")
 @Singleton
 class Folders @Inject() (
   folders: FolderService,
@@ -25,9 +22,6 @@ class Folders @Inject() (
   files: FileService,
   events: EventService) extends ApiController {
 
-  @ApiOperation(value = "Create a Folder",
-    notes = "New empty folder. Requires the ID of the dataset within the folder will be created, and the parent information",
-  responseClass= "None", httpMethod = "POST")
   def createFolder(parentDatasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
     Logger.debug("--- API Creating new folder ---- ")
     (request.body \ "name").asOpt[String].map {
@@ -135,9 +129,6 @@ class Folders @Inject() (
 
   }
 
-  @ApiOperation(value = "Delete a folder",
-    notes = "Deletes all the files and folder within a folder and then deletes itself",
-    responseClass= "None", httpMethod ="DELETE")
   def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.RemoveResourceFromDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
     Logger.debug("--- Api Deleting Folder ---")
     datasets.get(parentDatasetId) match {
@@ -165,9 +156,6 @@ class Folders @Inject() (
 
   }
 
-  @ApiOperation(value = "Update folder name",
-    notes = "Updates a folder's name",
-    responseClass= "None", httpMethod = "PUT")
   def updateFolderName(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json) { implicit request =>
     implicit val user = request.user
      datasets.get(parentDatasetId) match {

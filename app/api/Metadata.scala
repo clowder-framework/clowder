@@ -4,7 +4,6 @@ import java.net.{ URL, URLEncoder }
 import java.util.Date
 import javax.inject.{ Inject, Singleton }
 
-import com.wordnik.swagger.annotations.ApiOperation
 import models.{ ResourceRef, UUID, UserAgent, _ }
 import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
@@ -365,8 +364,6 @@ class Metadata @Inject() (
       }
   }
 
-  @ApiOperation(value = "Delete the metadata represented in Json-ld format",
-    responseClass = "None", httpMethod = "DELETE")
   def removeMetadata(id: UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
     request.user match {
       case Some(user) => {
@@ -412,7 +409,6 @@ class Metadata @Inject() (
     }
   }
 
-  @ApiOperation(value = "Get information about a person from SEAD PDT given an person ID", httpMethod = "GET")
   def getPerson(pid: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
@@ -443,7 +439,6 @@ class Metadata @Inject() (
     }
   }
 
-  @ApiOperation(value = "Get list of known people from SEAD PDT, eventually using term and limit to constrain the response ", httpMethod = "GET")
   def listPeople(term: String, limit: Int) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global

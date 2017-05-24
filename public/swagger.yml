@@ -1,0 +1,2803 @@
+---
+swagger: '2.0'
+
+################################################################################
+#                              API Information                                 #
+################################################################################
+info:
+  version: "1"
+  title: Clowder API
+  description: |
+    Documentation for the [Clowder](http://clowder.ncsa.illinois.edu/) API
+
+################################################################################
+#                  Host, Base Path, Schemes and Content Types                  #
+################################################################################
+host: clowder.ncsa.illinois.edu
+basePath: /clowder/api
+schemes:
+  - https
+produces:
+  - application/json
+consumes:
+  - application/json
+
+################################################################################
+#                                   Tags                                       #
+################################################################################
+tags:
+  - name: files
+    description: A file is the raw bytes plus metadata.
+  - name: folders
+    description: A folder is a container of files and other folders
+  - name: datasets
+    description: A dataset is a container for files and metadata
+  - name: collections
+    description: Collections are groupings of datasets
+  - name: spaces
+    description: Spaces are groupings of collections and datasets.
+  - name: extractions
+    description: Extractions for Files.
+  - name: thumbnails
+    description: A thumbnail is the raw bytes plus metadata.
+  - name: curations
+    description: |
+      A curation object is a request for publication that captures the state of
+      a dataset ready for publication
+  - name: logos
+    description: Logos and other data used in Clowder that is customizable
+
+################################################################################
+#                                  Security                                    #
+################################################################################
+securityDefinitions:
+  login:
+    type: basic
+  key:
+    type: apiKey
+    name: key
+    in: query
+security:
+  - key: []
+  - login: []
+
+################################################################################
+# Parameters                                                                   #
+################################################################################
+
+################################################################################
+# Paths                                                                        #
+################################################################################
+paths:
+
+  ##############################################################################
+  # Files                                                                      #
+  ##############################################################################
+  /files/{id}/getPreviews:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Get file previews
+      description: |
+        Return the currently existing previews of the selected file (full
+        description, including paths to preview files, previewer names etc).
+
+  /files/{id}/metadata:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Add technical metadata to file
+      description: |
+        Metadata in attached JSON object will describe the file's described
+        resource, not the file object itself.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Retrieve physical file object metadata
+      description: |
+        Get metadata of the file object (not the resource it describes) as JSON.
+        For example, size of file, date created, content type, filename.
+
+  /files/{file_id}/extractions:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: file_id
+          in: path
+      tags:
+        - files
+        - extractions
+      summary: Submit file for extraction by a specific extractor
+      description: Extractions for Files.
+
+  /uploadToDataset/{id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+        - datasets
+      summary: Upload a file to a specific dataset
+      description: |
+        Uploads the file, then links it with the dataset. Returns file id as
+        JSON object, or ids with filenames if multiple files are sent. ID can be
+        used to work on the file using the API. Uploaded file can be an XML
+        metadata file to be added to the dataset.
+
+  /files/{id}/unfollow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Unfollow file
+      description: |
+        Remove user from file followers and remove file from user followed
+        files.
+
+  /files/{id}/listpreviews:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: List file previews
+      description: |
+        Return the currently existing previews' basic characteristics (id,
+        filename, content type) of the selected file.
+
+  /files/withFlags/{flags}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: flags
+          in: path
+      tags:
+        - files
+      summary: Upload file
+      description: |
+        Upload the attached file using multipart form enconding. Returns file id
+        as JSON object, or ids with filenames if multiple files are sent. ID can
+        be used to work on the file using the API. Uploaded file can be an XML
+        metadata file.
+
+  /files/{id}/usermetadata:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Add user-generated metadata to file
+      description: |
+        Metadata in attached JSON object will describe the file's described
+        resource, not the file object itself.
+
+  /files/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Download file
+      description: Can use Chunked transfer encoding if the HTTP header RANGE is set.
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Delete file
+      description: |
+        Cascading action (removes file from any datasets containing it and
+        deletes its previews, metadata and thumbnail).
+
+  /files/getRDFURLsForFile/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Get URLs of file's RDF metadata exports.
+      description: |
+        URLs of metadata files exported from XML (if the file was an XML
+        metadata file) as well as the URL used to export the file's
+        user-generated metadata as RDF.
+
+  /files/{id}/previews/{p_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: p_id
+          in: path
+      tags:
+        - files
+      summary: Attach existing preview to file
+      description: A file is the raw bytes plus metadata.
+
+  /files/{id}/isBeingProcessed:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Is being processed
+      description: Return whether a file is currently being processed by a preprocessor.
+
+  /files/{id}/reindex:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Reindex a file
+      description: Reindex the existing file.
+
+  /files:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - files
+      summary: List all files
+      description: Returns list of files and descriptions.
+
+  /files/{id}/filename:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Update a file name
+      description: |
+        Takes one argument, a UUID of the file. Request body takes a key-value
+        pair for the name
+
+  /files/{id}/updateMetadata:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Update technical metadata of a file generated by a specific extractor
+      description: |
+        Metadata in attached JSON object will describe the file's described
+        resource, not the file object itself. The method will search the entire
+        techincal metadata array for the metadata generated by a specific
+        extractor (using extractor_id provided as an argument) and if a match is
+        found, it will update the corresponding metadata element.
+
+  /files/{id}/follow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Follow file
+      description: Add user to file followers and add file to user followed files.
+
+  /files/{id}/metadata.{format}ld:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - files
+      summary: Add JSON-LD metadata to the database.
+      description: |
+        Metadata in attached JSON-LD object will be added to metadata Mongo db
+        collection.
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - files
+      summary: 'Remove JSON-LD metadata, filtered by extractor if necessary'
+      description: Remove JSON-LD metadata from file object
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - files
+      summary: Retrieve metadata as JSON-LD
+      description: Get metadata of the file object as JSON-LD.
+
+  /files/{id}/tags:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Adds tags to a file
+      description: |
+        Tag's (name, userId, extractor_id) tuple is used as a unique key. In
+        other words, the same tag names but diff userId or extractor_id are
+        considered as diff tags, so will be added.  The tags are expected as a
+        list of strings: List[String].  An example is:<br>    curl -H
+        'Content-Type: application/json' -d '{"tags":["namo", "amitabha"],
+        "extractor_id": "curl"}'
+        "http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey"
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Removes tags of a file
+      description: |
+        Tag's (name, userId, extractor_id) tuple is unique key. Same tag names
+        but diff userId or extractor_id are considered diff tags. Tags can only
+        be removed by the same user or extractor.  The tags are expected as a
+        list of strings: List[String].
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Gets tags of a file
+      description: 'Returns a list of strings, List[String].'
+
+  /files/{id}/license:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Update License information to a dataset
+      description: |
+        Takes four arguments, all Strings. licenseType, rightsHolder,
+        licenseText, licenseUrl
+
+  /files/{id}/versus_metadata:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Get Versus metadata of the resource described by the file
+      description: A file is the raw bytes plus metadata.
+
+  /files/{id}/updateDescription:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Update file description
+      description: |
+        Takes one argument, a UUID of the file. Request body takes key-value
+        pair for the description
+
+  /files/{id}/technicalmetadat.{format}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - files
+      summary: Get technical metadata of the resource described by the file
+      description: A file is the raw bytes plus metadata.
+
+  /files/sendJob/{fileId}/{fileType}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: fileId
+          in: path
+        - required: true
+          type: string
+          name: fileType
+          in: path
+      tags:
+        - files
+      summary: (Re)send preprocessing job for file
+      description: |
+        Force Clowder to (re)send preprocessing job for selected file,
+        processing the file as a file of the selected MIME type. Returns file id
+        on success. In the requested file type, replace / with __ (two
+        underscores).
+
+  /files/{id}.{format}metadat.{format}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - files
+      summary: |
+        Get metadata of the resource described by the file that were input as
+        XML
+      description: A file is the raw bytes plus metadata.
+
+  /files/{id}/extracted_metadata:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Provides metadata extracted for a file
+      description: A file is the raw bytes plus metadata.
+
+  /files/{id}/comment:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Add comment to file
+      description: A file is the raw bytes plus metadata.
+
+  /files/{id}/tags/remove_all:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Removes all tags of a file
+      description: |
+        This is a big hammer -- it does not check the userId or extractor_id and
+        forcefully remove all tags for this file.  It is mainly intended for
+        testing.
+
+  /files/{file_id}/thumbnails/{thumbnail_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: file_id
+          in: path
+        - required: true
+          type: string
+          name: thumbnail_id
+          in: path
+      tags:
+        - files
+      summary: Add thumbnail to file
+      description: Attaches an already-existing thumbnail to a file.
+
+  /files/{id}/metadataDefinitions:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Get metadata definitions available for a file
+      description: |
+        The metadata definitions come from the spaces that the dataset the file
+        is part of. Directly or within a folder
+
+  /files/rdfUserMetadata/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - files
+      summary: Get the user-generated metadata of the selected file in an RDF file
+      description: A file is the raw bytes plus metadata.
+
+  /files/{id}/usermetadat.{format}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - files
+      summary: Get community-generated metadata of the resource described by the file
+      description: A file is the raw bytes plus metadata.
+
+  /queries/{file_id}/thumbnails/{thumbnail_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: file_id
+          in: path
+        - required: true
+          type: string
+          name: thumbnail_id
+          in: path
+      tags:
+        - files
+      summary: Add thumbnail to a query image
+      description: Attaches an already-existing thumbnail to a query image.
+
+  ##############################################################################
+  # Folders                                                                    #
+  ##############################################################################
+  /datasets/{parentDatasetId}/newFolder:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: parentDatasetId
+          in: path
+      tags:
+        - folders
+      summary: Create a Folder
+      description: |
+        New empty folder. Requires the ID of the dataset within the folder will
+        be created, and the parent information
+
+  /datasets/{parentDatasetId}/updateName/{folderId}:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: parentDatasetId
+          in: path
+        - required: true
+          type: string
+          name: folderId
+          in: path
+      tags:
+        - folders
+      summary: Update folder name
+      description: Updates a folder's name
+
+  /datasets/{parentDatasetId}/deleteFolder/{folderId}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: parentDatasetId
+          in: path
+        - required: true
+          type: string
+          name: folderId
+          in: path
+      tags:
+        - folders
+      summary: Delete a folder
+      description: Deletes all the files and folder within a folder and then deletes itself
+
+  ##############################################################################
+  # Datasets                                                                   #
+  ##############################################################################
+  /datasets/{ds_id}/files/{file_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: ds_id
+          in: path
+        - required: true
+          type: string
+          name: file_id
+          in: path
+      tags:
+        - datasets
+      summary: Attach existing file to dataset
+      description: |
+        If the file is an XML metadata file, the metadata are added to the
+        dataset.
+
+  /datasets/{id}/tags/remove_all:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Remove all tags of dataset
+      description: |
+        Forcefully remove all tags for this dataset.  It is mainly intended for
+        testing.
+
+  /datasets/{ds_id}/extractions:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: ds_id
+          in: path
+      tags:
+        - extractions
+      summary: Submit dataset for extraction by a specific extractor
+      description: Extractions for Files.
+
+  /datasets/{id}/tags:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Add tags to dataset
+      description: |
+        Requires that the request body contains a 'tags' field of List[String]
+        type.
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Remove tags of dataset
+      description: |
+        Requires that the request body contains a 'tags' field of List[String]
+        type.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Get the tags associated with this dataset
+      description: Returns a JSON object of multiple fields
+
+  /datasets/{id}/addFileEvent:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Insert add_file Event
+      description: Insert an Event into the Events Collection
+
+  /datasets/{id}/isBeingProcessed:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Is being processed
+      description: Return whether a dataset is currently being processed by a preprocessor.
+
+  /datasets/createempty:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - datasets
+      summary: Create new dataset with no file
+      description: |
+        New dataset requiring zero files based on values of fields in attached
+        JSON. Returns dataset id as JSON object. Requires name, description, and
+        space. Optional list of existing file ids to add.
+
+  /datasets/{id}/description:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Update dataset description.
+      description: |
+        Takes one argument, a UUID of the dataset. Request body takes key-value
+        pair for description.
+
+  /datasets/{id}/usermetadata:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Add user-generated metadata to dataset
+      description: A dataset is a container for files and metadata
+
+  /datasets/{ds_id}/{file_id}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: ds_id
+          in: path
+        - required: true
+          type: string
+          name: file_id
+          in: path
+      tags:
+        - datasets
+      summary: Detach file from dataset
+      description: |
+        File is not deleted, only separated from the selected dataset. If the
+        file is an XML metadata file, the metadata are removed from the dataset.
+
+  /datasets/{id}/comment:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Add comment to dataset
+      description: A dataset is a container for files and metadata
+
+  /datasets/{id}/metadata:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Add metadata to dataset
+      description: Returns success of failure
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: |
+        Retrieve available metadata definitions for a dataset. It is an
+        aggregation of the metadata that a space belongs to.
+      description: A dataset is a container for files and metadata
+
+  /datasets/getRDFURLsForDataset/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Get URLs of dataset's RDF metadata exports
+      description: |
+        URLs of metadata exported as RDF from XML files contained in the
+        dataset, as well as the URL used to export the dataset's user-generated
+        metadata as RDF.
+
+  /datasets/rdfUserMetadata/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Get the user-generated metadata of the selected dataset in an RDF file
+      description: A dataset is a container for files and metadata
+
+  /datasets/{id}/unfollow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Unfollow dataset.
+      description: |
+        Remove user from dataset followers and remove dataset from user followed
+        datasets.
+
+  /datasets/{id}/creator/remove:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Remove a creator from the Dataset's list of Creators.
+      description: Takes the UUID of the dataset and the entry to delete (a String).
+
+  /datasets/{id}/detachdelete:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Detach and delete dataset
+      description: |
+        Detaches all files before proceeding to perform the stanadard delete on
+        the dataset.
+
+  /datasets/{id}/creator/reorder:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Move a creator in a Dataset's list of creators.
+      description: |
+        Takes the UUID of the dataset, the creator to move (a String) and the
+        new position of the creator in the overall list of creators.
+
+  /datasets/{id}/access:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: change the access of dataset
+      description: Downloads all files contained in a dataset.
+
+  /datasets:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - datasets
+      summary: Create new dataset
+      description: |
+        New dataset containing one existing file, based on values of fields in
+        attached JSON. Returns dataset id as JSON object.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - datasets
+      summary: List all datasets the user can view
+      description: This will check for Permission.ViewDataset
+
+  /datasets/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Get a specific dataset
+      description: This will return a sepcific dataset requested
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Delete dataset
+      description: |
+        Cascading action (deletes all previews and metadata of the dataset and
+        all files existing only in the deleted dataset).
+
+  /datasets/{id}/creator:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Add a creator to the Dataset's list of Creators.
+      description: |
+        Takes one argument, a UUID of the dataset. Request body takes key-value
+        pair for creator.
+
+  /datasets/canEdit:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - datasets
+      summary: List all datasets the user can edit
+      description: |
+        This will check for Permission.AddResourceToDataset and
+        Permission.EditDataset
+
+  /datasets/{id}/title:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Update dataset name
+      description: |
+        Takes one argument, a UUID of the dataset. Request body takes key-value
+        pair for name.
+
+  /collections/{coll_id}/getDatasets:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - datasets
+      summary: List all datasets in a collection
+      description: Returns list of datasets and descriptions.
+
+  /datasets/{id}/editing:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Update dataset administrative information
+      description: |
+        Takes one argument, a UUID of the dataset. Request body takes key-value
+        pairs for name and description.
+
+  /datasets/{id}/getPreviews:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Get dataset previews
+      description: |
+        Return the currently existing previews of the selected dataset (full
+        description, including paths to preview files, previewer names etc).
+
+  /datasets/{id}/metadata.{format}ld:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - datasets
+      summary: Add JSON-LD metadata to the database.
+      description: |
+        Metadata in attached JSON-LD object will be added to metadata Mongo db
+        collection.
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - datasets
+      summary: 'Remove JSON-LD metadata, filtered by extractor if necessary'
+      description: Remove JSON-LD metadata from dataset object
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - datasets
+      summary: Retrieve metadata as JSON-LD
+      description: Get metadata of the dataset object as JSON-LD.
+
+  /datasets/{id}/license:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Update license information to a dataset
+      description: |
+        Takes four arguments, all Strings. licenseType, rightsHolder,
+        licenseText, licenseUrl
+
+  /datasets/{id}/follow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Follow dataset.
+      description: Add user to dataset followers and add dataset to user followed datasets.
+
+  /datasets/{id}/technicalmetadat.{format}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: format
+          in: path
+      tags:
+        - datasets
+      summary: Get technical metadata of the dataset
+      description: A dataset is a container for files and metadata
+
+  /datasets/attachmultiple:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - datasets
+      summary: Attach multiple files to an existing dataset
+      description: |
+        Add multiple files, by ID, to a dataset that is already in the system.
+        Requires file ids and dataset id.
+
+  /datasets/{id}/reindex:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Reindex a dataset
+      description: |
+        Reindex the existing dataset, if recursive is set to true if will also
+        reindex all files in that dataset.
+
+  /datasets/{id}/files:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Upload files and attach to given dataset
+      description: |
+        This will take a list of url or path objects that point to files that
+        will be ingested and added to this dataset.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: List files in dataset and within folders
+      description: Datasets and descriptions.
+
+  /datasets/{id}/urls:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Upload files and attach to given dataset
+      description: |
+        This will take a form of file objects that are added to this dataset.
+        This can also add metadata at the same time.
+
+  /datasets/moveFileToDataset:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - datasets
+      summary: |
+        List all datasets in the space the user can edit and thus move the file
+        to
+      description: |
+        This will check for Permission.AddResourceToDataset and
+        Permission.EditDataset
+
+  /datasets/{id}/listFiles:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: List files in dataset
+      description: Datasets and descriptions.
+
+  /datasets/{id}/removeTag:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Remove tag of dataset
+      description: A dataset is a container for files and metadata
+
+  /datasets/{datasetId}/moveBetweenDatasets/{toDataset}/{fileId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: datasetId
+          in: path
+        - required: true
+          type: string
+          name: toDataset
+          in: path
+        - required: true
+          type: string
+          name: fileId
+          in: path
+      tags:
+        - datasets
+      summary: Attach existing file to a new dataset and delete it from the old one
+      description: |
+        If the file is an XML metadata file, the metadata are added to the
+        dataset.
+
+  /datasets/{id}/download:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - datasets
+      summary: Download dataset
+      description: Downloads all files contained in a dataset.
+
+  ##############################################################################
+  # Collections                                                                #
+  ##############################################################################
+  /collections/{coll_id}/getParentCollections:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Get parent collections for collection
+      description: Collections are groupings of datasets
+
+  /collections/allCollections:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: Get all collections
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/title:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Update a collection name
+      description: |
+        Takes one argument, a UUID of the collection. Request body takes a
+        key-value pair for the name
+
+  /collections/possibleParents:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: |
+        List all collections the user can edit except itself and its parent
+        collections
+      description: |
+        This will check for Permission.AddResourceToCollection and
+        Permission.EditCollection
+
+  /collections/{coll_id}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Remove collection
+      description: Does not delete the individual datasets in the collection.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Get a specific collection
+      description: Collections are groupings of datasets
+
+  /collections/{id}/unfollow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - collections
+      summary: Unfollow collection.
+      description: |
+        Remove user from collection followers and remove collection from user
+        followed collections.
+
+  /collections/topLevelCollections:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: Get all root collections or collections that do not have a parent
+      description: Collections are groupings of datasets
+
+  /collections/rootCollections:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: Get all root collections
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/removeSubCollection/{sub_coll_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: sub_coll_id
+          in: path
+      tags:
+        - collections
+      summary: Remove subcollection from collection
+      description: Collections are groupings of datasets
+
+  /collections/canEdit:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: List all collections the user can edit
+      description: |
+        This will check for Permission.AddResourceToCollection and
+        Permission.EditCollection
+
+  /collections/{coll_id}/addSubCollection/{sub_coll_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: sub_coll_id
+          in: path
+      tags:
+        - collections
+      summary: Add subcollection to collection
+      description: Collections are groupings of datasets
+
+  /collections/list:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: List all collections the user can view
+      description: This will check for Permission.ViewCollection
+
+  /collections/{coll_id}/getChildCollections:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Get child collections in collection
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/datasets/{ds_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: ds_id
+          in: path
+      tags:
+        - collections
+      summary: Add dataset to collection
+      description: Collections are groupings of datasets
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: ds_id
+          in: path
+      tags:
+        - collections
+      summary: Remove dataset from collection
+      description: Collections are groupings of datasets
+
+  /collections/{c_id}/previews/{p_id}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: c_id
+          in: path
+        - required: true
+          type: string
+          name: p_id
+          in: path
+      tags:
+        - collections
+      summary: Attach existing preview to collection
+      description: Collections are groupings of datasets
+
+  /collections/{id}/follow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - collections
+      summary: Follow collection.
+      description: |
+        Add user to collection followers and add collection to user followed
+        collections.
+
+  /collections/{coll_id}/getParentCollectionIds:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Get parent collection ids in collection
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/reindex:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Reindex a collection
+      description: |
+        Reindex the existing collection, if recursive is set to true it will
+        also reindex all datasets and files.
+
+  /collections/{coll_id}/unsetRootFlag/{spaceId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: spaceId
+          in: path
+      tags:
+        - collections
+      summary: Removes root flag from a collection in  a space
+      description: Collections are groupings of datasets
+
+  /collections:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: Create a collection
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/removeFromSpaceAllowed/{space_id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: space_id
+          in: path
+      tags:
+        - collections
+      summary: Checks if we can remove a collection from a space
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/getChildCollectionIds:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Get child collection ids in collection
+      description: Collections are groupings of datasets
+
+  /collections/newCollectionWithParent:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - collections
+      summary: Create a collection with parent
+      description: Collections are groupings of datasets
+
+  /collections/{coll_id}/description:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+      tags:
+        - collections
+      summary: Update collection description
+      description: |
+        Takes one argument, a UUID of the collection. Request body takes
+        key-value pair for the description
+
+  /collections/{coll_id}/rootFlag/{spaceId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: coll_id
+          in: path
+        - required: true
+          type: string
+          name: spaceId
+          in: path
+      tags:
+        - collections
+      summary: Add root flags for a collection in space
+      description: Collections are groupings of datasets
+
+  /api/collections/{id}/download:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - collections
+      summary: Download collection
+      description: Downloads all child collections, datasets and files in a collection.
+
+  ##############################################################################
+  # Spaces                                                                     #
+  ##############################################################################
+  /spaces:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - spaces
+      summary: Create a space
+      description: Spaces are groupings of collections and datasets.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - spaces
+      summary: List spaces the user can view
+      description: Retrieves information about spaces
+
+  /spaces/{spaceId}/removeDataset/{datasetId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: spaceId
+          in: path
+        - required: true
+          type: string
+          name: datasetId
+          in: path
+      tags:
+        - spaces
+      summary: Remove a dataset from a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/collections:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: List UUIDs of all collections in a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/datasets:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: List UUIDs of all datasets in a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/verify:
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: change the access of dataset
+      description: Downloads all files contained in a dataset.
+
+  /spaces/{spaceId}/addCollectionToSpace/{collectionId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: spaceId
+          in: path
+        - required: true
+          type: string
+          name: collectionId
+          in: path
+      tags:
+        - spaces
+      summary: Associate a collection to a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/rejectRequest:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Reject Request
+      description: |
+        Reject user's request to the space, remove the request and send email to
+        the request user
+
+  /spaces/{id}/acceptRequest:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Accept Request
+      description: |
+        Accept user's request to the space and assign a specific Role, remove
+        the request and send email to the request user
+
+  /spaces/{spaceId}/removeCollection/{collectionId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: spaceId
+          in: path
+        - required: true
+          type: string
+          name: collectionId
+          in: path
+      tags:
+        - spaces
+      summary: Remove a collection from a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/updateUsers:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Update the information associated with a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/canEdit:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - spaces
+      summary: List spaces the user can add to
+      description: Retrieves a list of spaces that the user has permission to add to
+
+  /spaces/{id}/removeUser:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Remove a user from a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/update:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Update the information associated with a space
+      description: Spaces are groupings of collections and datasets.
+
+  /spaces/{id}/unfollow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Unfollow space
+      description: |
+        Remove user from space followers and remove space from user followed
+        spaces.
+
+  /spaces/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Get a space
+      description: Retrieves information about a space
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Remove a space
+      description: Does not delete the individual datasets and collections in the space.
+
+  /spaces/{id}/follow:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - spaces
+      summary: Follow space
+      description: Add user to space followers and add space to user followed spaces.
+
+  /spaces/{spaceId}/addDatasetToSpace/{datasetId}:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: spaceId
+          in: path
+        - required: true
+          type: string
+          name: datasetId
+          in: path
+      tags:
+        - spaces
+      summary: Associate a dataset to a space
+      description: Spaces are groupings of collections and datasets.
+
+  ##############################################################################
+  # Extractions                                                                #
+  ##############################################################################
+  /extractions/servers_ips:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Lists servers IPs running the extractors
+      description: Extractions for Files.
+
+  /extractions/extractors_names:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      description: Extractions for Files.
+      summary: Lists the currenlty running extractors
+
+  /extractions/upload_url:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Uploads a file for extraction using the file's URL
+      description: |
+        Saves the uploaded file and sends it for extraction. If the optional URL
+        parameter extract is set to false, it does not send the file for
+        extraction. Does not index the file.
+
+  /extractions/upload_file:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Uploads a file for extraction of metadata and returns file id
+      description: |
+        Saves the uploaded file and sends it for extraction to Rabbitmq. If the
+        optional URL parameter extract is set to false, it does not send the
+        file for extraction. Does not index the file. Same as upload() except
+        for upload()
+
+  /extractions/supported_input_types:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Lists the input file format supported by currenlty running extractors
+      description: Extractions for Files.
+
+  /extractions/multiple_uploadby_url:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Uploads files for a given list of files' URLs
+      description: |
+        Saves the uploaded files and sends it for extraction. Does not index the
+        files. Returns id for the web resource
+
+  /extractions/{id}/statuses:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - extractions
+      summary: Checks for the extraction statuses of all files
+      description: 'Returns a list (file id, status of extractions)'
+
+  /extractions/requests:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Lists dts extraction requests information
+      description: Extractions for Files.
+
+  /extractors:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: |
+        Register information about an extractor. Used when an extractor starts
+        up.
+      description: Extractions for Files.
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Lists information about all known extractors
+      description: Extractions for Files.
+
+  /extractions:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Submits a previously uploaded file's id for extraction
+      description: Notifies the user that the file is sent for extraction. check the status
+
+  /extractions/{id}/metadata:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - extractions
+      summary: Provides the metadata extracted from the file
+      description: Retruns Status of extractions and metadata extracted so far
+
+  /extractions/extractors_details:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - extractions
+      summary: Lists the currenlty details running extractors
+      description: Extractions for Files.
+
+  /extractors/{name}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: name
+          in: path
+      tags:
+        - extractions
+      summary: Lists information about a specific extractor
+      description: Extractions for Files.
+
+  /extractions/{id}/status:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - extractions
+      summary: Checks for the status of all extractors processing the file with id
+      description: |
+        A list of status of all extractors responsible for extractions on the
+        file and the final status of extraction job
+
+  ##############################################################################
+  # Previews                                                                   #
+  ##############################################################################
+
+  ##############################################################################
+  # Thumbnails                                                                 #
+  ##############################################################################
+  /thumbnails:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - thumbnails
+      summary: List all thumbnail files
+      description: Returns list of thumbnail files and descriptions.
+
+  /thumbnails/{id}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - thumbnails
+      summary: Delete thumbnail
+      description: Remove thumbnail file from system).
+
+  ##############################################################################
+  # Curations                                                                  #
+  ##############################################################################
+  /clowder/spaces/curations/{id}/matchmaker:
+    post:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - curations
+      summary: Update the user repository preferences and call the matchmaker
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+
+  /clowder/spaces/curations/retract/{id}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - curations
+      summary: Retract the publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+
+  /clowder/spaces/curations/{id}/folders/{curationFolderId}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: curationFolderId
+          in: path
+      tags:
+        - curations
+      summary: Delete a folder from a publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+
+  /clowder/spaces/curations/{id}/curationFile:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - curations
+      summary: Get files in publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+
+  /clowder/spaces/curations/{id}/files/{curationFileId}:
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          type: string
+          name: curationFileId
+          in: path
+      tags:
+        - curations
+      summary: Delete a file from a publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+
+  /curations/{curationId}/ore:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: curationId
+          in: path
+      tags:
+        - curations
+      summary: Get the ORE map for the proposed publication
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+
+  ##############################################################################
+  # Logos                                                                      #
+  ##############################################################################
+  /logos:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - logos
+      summary: List logos
+      description: List logos known to system
+    post:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      tags:
+        - logos
+      summary: Upload file
+      description: |
+        Files uploaded to this endpoint will be marked as special files, such as
+        favicon.png, logo.png. The file needs to be specified with image.
+
+  /logos/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - logos
+      summary: Get logo
+      description: Return logo information
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - logos
+      summary: Set logo
+      description: Updates logo information
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - logos
+      summary: Delete file
+      description: Delete a static file
+
+  /logos/{id}/blob:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - logos
+      summary: Download file
+      description: 'Download a static file, or the alternate file'
+
+  /logos/{path}/{name}:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: path
+          in: path
+        - required: true
+          type: string
+          name: name
+          in: path
+      tags:
+        - logos
+      summary: Get logo
+      description: Return logo information
+    put:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: path
+          in: path
+        - required: true
+          type: string
+          name: name
+          in: path
+      tags:
+        - logos
+      summary: Set logo
+      description: Updates logo information
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: path
+          in: path
+        - required: true
+          type: string
+          name: name
+          in: path
+      tags:
+        - logos
+      summary: Delete file
+      description: Delete a static file
+
+  /logos/{path}/{name}/blob:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: path
+          in: path
+        - required: true
+          type: string
+          name: name
+          in: path
+      tags:
+        - logos
+      summary: Download file
+      description: 'Download a static file, or the alternate file'
+
+################################################################################
+#                                 Definitions                                  #
+################################################################################

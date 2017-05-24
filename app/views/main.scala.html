@@ -172,7 +172,7 @@
                                 <li><a href="@routes.Application.email("")">Contact server admins</a></li>
                             }
                             <li><a href="@routes.Application.tos(None)">Terms of Service</a></li>
-                            <li><a href="@routes.Assets.at("docs/api/index.html")" target="_blank">API</a></li>
+                            <li><a href="@routes.Application.swaggerUI()" target="_blank">API</a></li>
                             @play.Play.application.configuration.getConfigList("helpMenu").map { helpItem =>
                               <li><a href="@helpItem.getString("url")" target="_blank">@helpItem.getString("label")</a></li>
 

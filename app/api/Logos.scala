@@ -3,7 +3,6 @@ package api
 import java.io.FileInputStream
 import javax.inject.Inject
 
-import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import models.{Logo, ResourceRef, UUID, User}
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.JsValue
@@ -14,19 +13,12 @@ import services.LogoService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-@Api(value = "/logos", listingPath = "/api-docs.json/logos", description = "Logos and other data used in Clowder that is customizable")
 class Logos @Inject()(logos: LogoService) extends ApiController {
 
-  @ApiOperation(value = "List logos",
-    notes = "List logos known to system",
-    responseClass = "None", httpMethod = "GET")
   def list(path: Option[String], name: Option[String]) = AuthenticatedAction { implicit request =>
     Ok(toJson(logos.list(path, name)))
   }
 
-  @ApiOperation(value = "Get logo",
-    notes = "Return logo information",
-    responseClass = "None", httpMethod = "GET")
   def getId(id: UUID) = Action { implicit request =>
     logos.get(id) match {
       case Some(logo) => Ok(toJson(logo))
@@ -34,9 +26,6 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Get logo",
-    notes = "Return logo information",
-    responseClass = "None", httpMethod = "GET")
   def getPath(path: String, name: String) = Action { implicit request =>
     logos.get(path, name) match {
       case Some(logo) => Ok(toJson(logo))
@@ -44,16 +33,10 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Set logo",
-    notes = "Updates logo information",
-    responseClass = "None", httpMethod = "PUT")
   def putId(id: UUID) = AuthenticatedAction(parse.json) { implicit request =>
     put(logos.get(id), request)
   }
 
-  @ApiOperation(value = "Set logo",
-    notes = "Updates logo information",
-    responseClass = "None", httpMethod = "PUT")
   def putPath(path: String, name: String) = AuthenticatedAction(parse.json) { implicit request =>
     put(logos.get(path, name), request)
   }
@@ -77,10 +60,6 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Upload file",
-    notes = "Files uploaded to this endpoint will be marked as special files, such as favicon.png, logo.png. The file" +
-      " needs to be specified with image.",
-    responseClass = "None", httpMethod = "POST")
   def upload = AuthenticatedAction(parse.multipartFormData) { implicit request =>
     val user = request.user.get // user is always there
 
@@ -119,9 +98,6 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Download file",
-    notes = "Download a static file, or the alternate file",
-    responseClass = "None", httpMethod = "GET")
   def downloadId(id: UUID, file: Option[String]) = Action.async { implicit request =>
     logos.getBytes(id) match {
       case Some((inputStream, filename, contentType, contentLength)) =>
@@ -136,9 +112,6 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Download file",
-    notes = "Download a static file, or the alternate file",
-    responseClass = "None", httpMethod = "GET")
   def downloadPath(path: String, name: String, file: Option[String]) = Action.async { implicit request =>
     logos.get(path, name) match {
       case Some(logo) => downloadId(logo.id, file)(request)
@@ -151,9 +124,6 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Delete file",
-    notes = "Delete a static file",
-    responseClass = "None", httpMethod = "DELETE")
   def deletePath(path: String, name: String) = AuthenticatedAction { implicit request =>
     checkLogoPermission(path, name, request.user) match {
       case Left(_) => {
@@ -165,9 +135,6 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   }
 
 
-  @ApiOperation(value = "Delete file",
-    notes = "Delete a static file",
-    responseClass = "None", httpMethod = "DELETE")
   def deleteId(id: UUID) = AuthenticatedAction { implicit request =>
     checkLogoPermission(logos.get(id), request.user) match {
       case Left(_) => {

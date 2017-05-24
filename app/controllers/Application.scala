@@ -1,16 +1,17 @@
 package controllers
 
+import java.net.URL
 import javax.inject.{Inject, Singleton}
 
 import api.Permission
 import api.Permission._
-import play.api.{Logger, Routes}
+import play.api.{Logger, Play, Routes}
 import play.api.mvc.Action
 import services._
 import models.{Event, UUID, User}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import models.DBCounts
+import play.api.Play.current
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
@@ -30,6 +31,65 @@ class Application @Inject() (files: FileService, collections: CollectionService,
    */
   def untrail(path: String) = Action {
     MovedPermanently("/" + path)
+  }
+
+  def swaggerUI = Action { implicit request =>
+    val swagger = routes.Application.swagger().absoluteURL(Utils.https(request))
+    Redirect("http://clowder.ncsa.illinois.edu/swagger/?url=" + swagger)
+  }
+
+    /**
+    * Returns the swagger documentation customized for this site.
+    */
+  def swagger = Action  { implicit request =>
+    Play.resource("/public/swagger.yml") match {
+      case Some(resource) => {
+        val https = Utils.https(request)
+        val clowderurl = new URL(Utils.baseUrl(request))
+        val host = if (clowderurl.getPort == -1) {
+          clowderurl.getHost
+        } else {
+          clowderurl.getHost + ":" + clowderurl.getPort
+        }
+        var skipit = false
+        val result = scala.io.Source.fromInputStream(resource.openStream()).getLines().flatMap(line =>
+          if (line.matches("\\s*#")) {
+            // comment
+            line + "\n"
+          } else {
+            if (skipit && !line.startsWith(" ")) {
+              skipit = false
+            }
+            if (skipit) {
+              None
+            } else if (line.startsWith("info:")) {
+              skipit = true
+              "info:\n" +
+                "  version: \"1\"\n" +
+                "  title: " + AppConfiguration.getDisplayName + "\n" +
+                "  description: " + AppConfiguration.getWelcomeMessage + "\n" +
+                "  contact: " + "\n" +
+                "    name: " + AppConfiguration.getDisplayName + "\n" +
+                "    url: " + routes.Application.email().absoluteURL(https) + "\n" +
+                "  termsOfService: " + routes.Application.tos().absoluteURL(https) + "\n"
+            } else if (line.startsWith("host:")) {
+              skipit = true
+              "host: " + host + "\n"
+            } else if (line.startsWith("basePath")) {
+              skipit = true
+              "basePath: " + clowderurl.getPath + "/api" + "\n"
+            } else if (line.startsWith("schemes:")) {
+              skipit = true
+              "schemes:\n  - " + clowderurl.getProtocol + "\n"
+            } else {
+              line + "\n"
+            }
+          }
+        )
+        Ok(result.mkString)
+      }
+      case None => NotFound("Could not find swagger.json")
+    }
   }
 
   /**
@@ -196,8 +256,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Ok("")
    }
 
-  def apidoc(path: String) = ApiHelpController.getResource("/api-docs.json/" + path)
-
   /**
    * Bookmarklet
    */
@@ -238,6 +296,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Collections.getUpdatedChildCollections,
         routes.javascript.Profile.viewProfileUUID,
         routes.javascript.Assets.at,
+        routes.javascript.Application.swaggerUI,
         api.routes.javascript.Admin.reindex,
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,

@@ -10,7 +10,6 @@ import util.Mail
 import play.api.templates.Html
 
 import scala.util.{Failure, Success, Try}
-import com.wordnik.swagger.annotations.ApiOperation
 import controllers.Utils
 
 
@@ -19,17 +18,11 @@ class Events @Inject() (events: EventService) extends ApiController {
   /*
    * Add a new event to the database
    */
-     @ApiOperation(value = "Insert Event",
-      notes = "Insert an Event into the Events Collection",
-      responseClass = "None", httpMethod = "POST")
   def addEvent(event: Event) = AuthenticatedAction {implicit request =>
       events.addEvent(event)
       Ok(toJson("added new event"))
   }
 
-  @ApiOperation(value = "Send Exception Email",
-    notes = "Insert an Event into the Events Collection",
-    responseClass = "None", httpMethod = "POST")
   def sendExceptionEmail() = UserAction(needActive = false)(parse.json) { implicit request =>
     val re = (request.body \ "badRequest").asOpt[String].getOrElse("Non-tracked request")
     val ex = (request.body \ "exceptions").asOpt[String].getOrElse("Non-tracked exceptions")

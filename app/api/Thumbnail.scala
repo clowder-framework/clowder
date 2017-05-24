@@ -4,7 +4,6 @@ package api
 import java.io.FileInputStream
 import javax.inject.{Inject, Singleton}
 
-import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import models.{ResourceRef, Thumbnail, UUID}
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -14,21 +13,16 @@ import services.ThumbnailService
 
 
 @Singleton
-@Api(value = "/thumbnails", listingPath = "/api-docs.json/thumbnails", description = "A thumbnail is the raw bytes plus metadata.")
 class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller with ApiController {
 
   /**
    * List all files.
    */
-  @ApiOperation(value = "List all thumbnail files", notes = "Returns list of thumbnail files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = PrivateServerAction { implicit request =>
     val list = for (t <- thumbnails.listThumbnails()) yield jsonThumbnail(t)
     Ok(toJson(list))
   }
 
-  @ApiOperation(value = "Delete thumbnail",
-    notes = "Remove thumbnail file from system).",
-    responseClass = "None", httpMethod = "POST")
   def removeThumbnail(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
     thumbnails.get(id) match {
       case Some(thumbnail) => {

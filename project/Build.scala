@@ -80,9 +80,6 @@ object ApplicationBuild extends Build {
     // geostreams
     "org.postgresql" % "postgresql" % "9.4-1203-jdbc41",
 
-    // Documentation
-    "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
-
     // Find listing of previewers/stylesheets at runtime
     //  servlet is needed here since it is not specified in org.reflections.
     "javax.servlet" % "servlet-api" % "2.5",
@@ -105,6 +102,7 @@ object ApplicationBuild extends Build {
     "org.apache.jena" % "apache-jena-libs" % "3.1.1",
 
     // ??
+    "commons-lang" % "commons-lang" % "2.6",
     "commons-io" % "commons-io" % "2.4",
     "commons-logging" % "commons-logging" % "1.1.3",
 

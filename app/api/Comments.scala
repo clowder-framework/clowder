@@ -8,7 +8,6 @@ import play.api.Play.current
 import javax.inject.Inject
 import models._
 import services._
-import com.wordnik.swagger.annotations.ApiOperation
 import play.api.i18n.Messages
 
 
@@ -73,9 +72,6 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService, eve
    *  Only the owner of a comment will be allowed to delete it. Any other request will fail.
    *  
    */
-  @ApiOperation(value = "Remove a specific comment associated with this file",
-		  notes = "Method takes the comment id as a UUID. No arguments necessary in the request body.",
-		  responseClass = "None", httpMethod = "DELETE")
   def removeComment(id: UUID) = PermissionAction(Permission.DeleteComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
 	  request.user match {
 		  case Some(identity) => {
@@ -132,9 +128,6 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService, eve
    *  Only the owner of the comment will be allowed to edit it. Other requests will fail.
    *  
    */
-  @ApiOperation(value = "Edit a specific comment associated with this file",
-      notes = "Method takes the comment id as a UUID. commentText key-value pair necessary in the request body.",
-      responseClass = "None", httpMethod = "POST")
   def editComment(id: UUID) = PermissionAction(Permission.EditComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
 	  request.user match {
 	       case Some(identity) => {

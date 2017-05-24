@@ -3,7 +3,6 @@ package api
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import models.{VocabularyTerm, ResourceRef, UUID, Vocabulary}
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -21,9 +20,6 @@ import scala.util.Success
 @Singleton
 class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTermService : VocabularyTermService, userService : UserService, spaces: SpaceService) extends ApiController {
 
-  @ApiOperation(value = "Get vocabulary",
-    notes = "This will check for Permission.ViewVocabulary",
-    responseClass = "None", httpMethod = "GET")
   def get(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
     vocabularyService.get(id) match {
       case Some(vocab) => Ok(jsonVocabulary(vocab))
@@ -52,9 +48,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     vocab_terms.toList
   }
 
-  @ApiOperation(value = "Get vocabularies by author",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getByAuthor() = PrivateServerAction { implicit request =>
     val user = request.user
 
@@ -67,9 +60,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "Get vocabularies that are public",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getPublicVocabularies() = PrivateServerAction { implicit request =>
     val user = request.user
 
@@ -82,9 +72,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "Get tags for all vocabularies",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getAllTagsOfAllVocabularies() = PrivateServerAction {implicit request =>
     val user = request.user
 
@@ -109,9 +96,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "Get vocabulary by name",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getByName(name: String) = PrivateServerAction { implicit request =>
     val user = request.user
 
@@ -124,9 +108,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "Get vocabulary by name and author",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getByNameAndAuthor(name: String) = PrivateServerAction { implicit request =>
     val user = request.user
 
@@ -139,9 +120,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "List all vocabularies the user can view",
-    notes = "This will check for Permission.ViewVocabulary",
-    responseClass = "None", httpMethod = "GET")
   def list() = PrivateServerAction { implicit request =>
     val user = request.user
     val all_vocabs = vocabularyService.listAll()
@@ -150,9 +128,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     Ok(toJson(vocabs))
   }
 
-  @ApiOperation(value = "List all vocabularies the user can view",
-    notes = "This will check for Permission.ViewVocabulary",
-    responseClass = "None", httpMethod = "GET")
   def listAll() = PrivateServerAction { implicit request =>
     val user = request.user
     val all_vocabs = vocabularyService.listAll().map((v: Vocabulary) => jsonVocabulary(v))
@@ -160,9 +135,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     Ok(toJson(all_vocabs))
   }
 
-  @ApiOperation(value = "Edit a vocabulary object",
-    notes = "",
-    responseClass = "None", httpMethod = "PUT")
   def editVocabulary(id : UUID) = AuthenticatedAction(parse.json) {implicit request =>
     val user = request.user
     user match {
@@ -207,9 +179,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "Create a vocabulary object",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def createVocabularyFromJson(isPublic: Boolean) = AuthenticatedAction(parse.json) { implicit request =>
     val user = request.user
     var t : Vocabulary = null
@@ -314,9 +283,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   }
 
 
-  @ApiOperation(value = "Delete vocabulary",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def removeVocabulary(id: UUID) = PermissionAction(Permission.DeleteVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
     vocabularyService.get(id) match {
       case Some(vocab) => {
@@ -328,9 +294,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     Ok(toJson((Map("status" -> "success"))))
   }
 
-  @ApiOperation(value = "Add vocabulary to space",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def addToSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))) { implicit request =>
     vocabularyService.get(vocabId) match {
       case Some(vocab) => {
@@ -349,9 +312,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "Add vocabulary to space",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def removeFromSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))) { implicit request =>
     vocabularyService.get(vocabId) match {
       case Some(vocab) => {
@@ -371,9 +331,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   }
 
 
-  @ApiOperation(value = "List all vocabularies the user can view with description",
-    notes = "This will check for Permission.ViewVocabulary",
-    responseClass = "None", httpMethod = "POST")
   def getBySingleTag(tag : String) = PrivateServerAction(parse.json) { implicit request =>
     val user = request.user
     var tags  : ListBuffer[String] = ListBuffer.empty[String]
@@ -392,9 +349,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  @ApiOperation(value = "List all vocabularies the user can view with description",
-    notes = "This will check for Permission.ViewVocabulary",
-    responseClass = "None", httpMethod = "POST")
   def getByTag(containsAll: Boolean) = PrivateServerAction(parse.json) { implicit request =>
     val user = request.user
     val tag = (request.body \ "tag").asOpt[String].getOrElse("").split(',').toList

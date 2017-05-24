@@ -11,14 +11,12 @@ import play.api.libs.json._
 import play.api.libs.json.Json
 import play.api.libs.json.JsResult
 import play.api.libs.json.Json.toJson
-import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import play.api.Logger
 import play.api.Play.current
 
 /**
  * Manipulates publication requests curation objects.
  */
-@Api(value="/curations", listingPath= "/api-docs.json/curations", description = "A curation object is a request for publication that captures the state of a dataset ready for publication")
 @Singleton
 class CurationObjects @Inject()(datasets: DatasetService,
       curations: CurationService,
@@ -30,8 +28,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
       curationObjectController: controllers.CurationObjects,
       metadatas: MetadataService
       ) extends ApiController {
-  @ApiOperation(value = " Get the ORE map for the proposed publication",
-    httpMethod = "GET")
   def getCurationObjectOre(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
@@ -248,8 +244,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   }
 
-  @ApiOperation(value = "Update the user repository preferences and call the matchmaker", notes = "",
-    responseClass = "None", httpMethod = "POST")
   def findMatchmakingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))(parse.json) { implicit request =>
     implicit val user = request.user
     user match {
@@ -282,8 +276,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   }
 
-  @ApiOperation(value = "Retract the publication request", notes = "",
-    responseClass = "None", httpMethod = "DELETE")
   def retractCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
@@ -308,8 +300,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
       }
   }
 
-  @ApiOperation(value = "Get files in publication request", notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getCurationFiles(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
@@ -321,8 +311,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
       }
   }
 
-  @ApiOperation(value = "Delete a file from a publication request", notes = "",
-    responseClass = "None", httpMethod = "DELETE")
   def deleteCurationFile(curationId:UUID, parentId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       curations.get(curationId) match {
@@ -343,8 +331,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   }
 
-  @ApiOperation(value = "Delete a folder from a publication request", notes = "",
-    responseClass = "None", httpMethod = "DELETE")
   def deleteCurationFolder(curationId:UUID, parentId: UUID, curationFolderId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       curations.get(curationId) match {

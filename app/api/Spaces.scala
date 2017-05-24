@@ -3,7 +3,6 @@ package api
 import java.util.Date
 import javax.inject.Inject
 import api.Permission.Permission
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import models._
 import play.api.Logger
 import controllers.Utils
@@ -23,7 +22,6 @@ import scala.util.Try
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
-@Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
 class Spaces @Inject()(spaces: SpaceService,
                        userService: UserService,
                        datasetService: DatasetService,
@@ -32,9 +30,6 @@ class Spaces @Inject()(spaces: SpaceService,
                        datasets: DatasetService,
                        appConfig: AppConfigurationService) extends ApiController {
 
-  @ApiOperation(value = "Create a space",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
   def createSpace() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Creating new space")
@@ -61,9 +56,6 @@ class Spaces @Inject()(spaces: SpaceService,
     }
   }
 
-  @ApiOperation(value = "Remove a space",
-    notes = "Does not delete the individual datasets and collections in the space.",
-    responseClass = "None", httpMethod = "DELETE")
   def removeSpace(spaceId: UUID) = PermissionAction(Permission.DeleteSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     spaces.get(spaceId) match {
       case Some(space) => {
@@ -80,9 +72,6 @@ class Spaces @Inject()(spaces: SpaceService,
     Ok(toJson(Map("status" -> "success")))
   }
 
-  @ApiOperation(value = "Get a space",
-    notes = "Retrieves information about a space",
-    responseClass = "None", httpMethod = "GET")
   def get(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     spaces.get(id) match {
       case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
@@ -90,16 +79,10 @@ class Spaces @Inject()(spaces: SpaceService,
     }
   }
 
-  @ApiOperation(value = "List spaces the user can view",
-    notes = "Retrieves information about spaces",
-    responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
-  @ApiOperation(value = "List spaces the user can add to",
-    notes = "Retrieves a list of spaces that the user has permission to add to",
-    responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
@@ -150,10 +133,6 @@ class Spaces @Inject()(spaces: SpaceService,
       "created" -> space.created.toString))
   }
 
-  @ApiOperation(value = " Associate a collection to a space",
-    notes = "",
-    responseClass = "None", httpMethod="POST"
-  )
   def addCollectionToSpace(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
@@ -180,10 +159,6 @@ class Spaces @Inject()(spaces: SpaceService,
       }
   }
 
-  @ApiOperation(value = " Associate a dataset to a space",
-    notes = "",
-    responseClass = "None", httpMethod="POST"
-  )
   def addDatasetToSpace(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       (spaces.get(spaceId), datasetService.get(datasetId)) match {
@@ -201,9 +176,6 @@ class Spaces @Inject()(spaces: SpaceService,
       }
   }
 
-  @ApiOperation(value = "Remove a collection from a space",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean) = PermissionAction(Permission.RemoveResourceFromSpace, Some(ResourceRef(ResourceRef.space, spaceId)), Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     val user = request.user
     user match {
@@ -326,27 +298,18 @@ class Spaces @Inject()(spaces: SpaceService,
   }
 
 
-  @ApiOperation(value = "List UUIDs of all datasets in a space",
-    notes = "",
-    responseClass = "List", httpMethod = "GET")
   def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val datasetList = datasets.listSpace(limit, spaceId.stringify)
     Ok(toJson(datasetList))
   }
 
 
-  @ApiOperation(value = "List UUIDs of all collections in a space",
-    notes = "",
-    responseClass = "List", httpMethod = "GET")
   def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val collectionList = collectionService.listSpace(limit, spaceId.stringify)
     Ok(toJson(collectionList))
   }
 
 
-  @ApiOperation(value = "Remove a dataset from a space",
-  notes = "",
-  responseClass = "None", httpMethod = "POST")
   def removeDataset(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.RemoveResourceFromSpace, Some(ResourceRef(ResourceRef.space, spaceId)), Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     (spaces.get(spaceId), datasetService.get(datasetId)) match {
       case (Some(s), Some(d)) => {
@@ -374,8 +337,6 @@ class Spaces @Inject()(spaces: SpaceService,
    * enabled -> Text that represents a boolean flag for whether or not the space should purge resources that have expired
    *
    */
-  @ApiOperation(value = "Update the information associated with a space", notes = "",
-    responseClass = "None", httpMethod = "POST")
   def updateSpace(spaceid: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceid)))(parse.json) { implicit request =>
     if (UUID.isValid(spaceid.stringify)) {
 
@@ -479,8 +440,6 @@ class Spaces @Inject()(spaces: SpaceService,
    * rolesandusers -> A map that contains a role level as a key and a comma separated String of user IDs as the value
    *
    */
-  @ApiOperation(value = "Update the information associated with a space", notes = "",
-    responseClass = "None", httpMethod = "POST")
   def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
     val user = request.user
     if (UUID.isValid(spaceId.stringify)) {
@@ -588,8 +547,6 @@ class Spaces @Inject()(spaces: SpaceService,
   }
 
 
-  @ApiOperation(value = "Remove a user from a space", notes = "",
-    responseClass = "None", httpMethod = "POST")
   def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val user = request.user
     if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
@@ -604,9 +561,6 @@ class Spaces @Inject()(spaces: SpaceService,
   }
 
 
-  @ApiOperation(value = "Follow space",
-    notes = "Add user to space followers and add space to user followed spaces.",
-    responseClass = "None", httpMethod = "POST")
   def follow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
@@ -637,9 +591,6 @@ class Spaces @Inject()(spaces: SpaceService,
 
 
 
-  @ApiOperation(value = "Unfollow space",
-    notes = "Remove user from space followers and remove space from user followed spaces.",
-    responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
@@ -680,9 +631,6 @@ class Spaces @Inject()(spaces: SpaceService,
   }
 
 
-  @ApiOperation(value = "Accept Request",
-    notes = "Accept user's request to the space and assign a specific Role, remove the request and send email to the request user",
-    responseClass = "None", httpMethod = "POST")
   def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
@@ -711,9 +659,6 @@ class Spaces @Inject()(spaces: SpaceService,
     }
   }
 
-  @ApiOperation(value = "Reject Request",
-    notes = "Reject user's request to the space, remove the request and send email to the request user",
-    responseClass = "None", httpMethod = "POST")
   def rejectRequest(id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
@@ -738,9 +683,6 @@ class Spaces @Inject()(spaces: SpaceService,
     }
   }
 
-  @ApiOperation(value = "change the access of dataset",
-    notes = "Downloads all files contained in a dataset.",
-    responseClass = "None", httpMethod = "PUT")
   def verifySpace(id:UUID) = ServerAdminAction { implicit request =>
     implicit val user = request.user
     user match {

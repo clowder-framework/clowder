@@ -3,7 +3,6 @@ package api
 import java.util.Date
 import javax.inject.Inject
 
-import com.wordnik.swagger.annotations.ApiOperation
 import models.{ClowderUser, Event, UUID}
 import org.apache.commons.lang3.StringEscapeUtils
 import play.api.libs.concurrent.Akka
@@ -176,9 +175,6 @@ class Admin @Inject()(userService: UserService,
   }
 
 
-  @ApiOperation(value = "reindex all resources in elasticsearch",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def reindex = ServerAdminAction { implicit request =>
     Akka.system.scheduler.scheduleOnce(1 seconds) {
       current.plugin[ElasticsearchPlugin] match {

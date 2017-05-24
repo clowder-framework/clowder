@@ -2,7 +2,6 @@ package api
 
 import javax.inject.Inject
 
-import com.wordnik.swagger.annotations.ApiOperation
 import play.api.Logger
 import models.User
 import play.api.Play._
@@ -25,16 +24,10 @@ class Status @Inject()(spaces: SpaceService,
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
 
-  @ApiOperation(value = "version",
-    notes = "returns the version information",
-    responseClass = "None", httpMethod = "GET")
   def version = UserAction(needActive=false) { implicit request =>
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
-  @ApiOperation(value = "status",
-    notes = "returns the status information",
-    responseClass = "None", httpMethod = "GET")
   def status = UserAction(needActive=false) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,

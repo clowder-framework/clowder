@@ -28,7 +28,6 @@ import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
-import com.wordnik.swagger.annotations.ApiOperation
 import services.AppConfiguration
 
 /**
@@ -367,7 +366,6 @@ object Geostreams extends ApiController {
     }
   }
 
-  @ApiOperation(value = "Delete Geostream Datapoint", notes = "Delete datapoint from geostream database.", responseClass = "None", httpMethod = "DELETE")
   def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete datapoint " + id)
     current.plugin[PostgresPlugin] match {

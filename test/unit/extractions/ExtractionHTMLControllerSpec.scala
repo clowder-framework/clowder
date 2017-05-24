@@ -20,8 +20,6 @@ import play.api.GlobalSettings
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.Logger
-import com.wordnik.swagger.annotations.Api
-import com.wordnik.swagger.annotations.ApiOperation
 import unit.UnitSpec
 import org.scalatestplus.play.OneAppPerSuite
 import org.scalatest.DoNotDiscover

@@ -3,7 +3,6 @@ package api
 import services.ContextLDService
 import javax.inject.Inject
 import play.api.libs.json.Json._
-import com.wordnik.swagger.annotations.ApiOperation
 import play.api.Logger
 import play.api.libs.json.JsString
 import play.api.libs.json.Json
@@ -15,7 +14,6 @@ import play.api.libs.json.Json
 class ContextLD @Inject() (
   contextlds: ContextLDService ) extends ApiController{
 
-  @ApiOperation(value = "Get the context for the metadata represented in Json-ld format using context id", httpMethod = "GET")
   def getContextById(id: models.UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     Logger.debug("context id : " + id)
     val contextld = contextlds.getContextById(id)
@@ -25,7 +23,6 @@ class ContextLD @Inject() (
     }
   }
 
-  @ApiOperation(value = "Get the context for the metadata represented in Json-ld format using context name", httpMethod = "GET")
   def getContextByName(contextName: String) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     val contextld = contextlds.getContextByName(contextName)
     contextld match {
@@ -34,7 +31,6 @@ class ContextLD @Inject() (
     }
   }
 
-  @ApiOperation(value = "Add context for the metadata represented in Json-ld format", httpMethod = "POST")
   def addContext() = PermissionAction(Permission.EditMetadata)(parse.json) { implicit request =>
     request.user match {
       case Some(user) => {
@@ -47,7 +43,6 @@ class ContextLD @Inject() (
     }
   }
 
-  @ApiOperation(value = "Delete context for the metadata represented in Json-ld format", httpMethod = "DELETE")
   def removeById(id: models.UUID) = PermissionAction(Permission.EditMetadata) { implicit request =>
     request.user match {
       case Some(user) => {

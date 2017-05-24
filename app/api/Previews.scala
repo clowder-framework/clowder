@@ -20,7 +20,6 @@ import java.io.BufferedReader
 import java.io.FileReader
 import javax.inject.{Inject, Singleton}
 import services.{TileService, PreviewService}
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import util.FileUtils
 
 /**
@@ -29,7 +28,6 @@ import util.FileUtils
 @Singleton
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
-  @ApiOperation(value = "List all preview files", notes = "Returns list of preview files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = PermissionAction(Permission.ViewFile) {
     request =>
       val list = for (p <- previews.listPreviews()) yield jsonPreview(p)
@@ -37,9 +35,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   }
 
 
-    @ApiOperation(value = "Delete previews",
-      notes = "Remove preview file from system).",
-      responseClass = "None", httpMethod = "POST")
     def removePreview(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.preview, id))) {
       request =>
         previews.get(id) match {
@@ -322,9 +317,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     * Update the title field of a preview to change what is displayed on preview tab
     * @param preview_id UUID of preview to change
     */
-  @ApiOperation(value = "Update displayed title of preview",
-    notes = "Change the title of the preview that is displayed when viewing the associated file. String must be passed as 'title' parameter in request.",
-    responseClass = "None", httpMethod = "POST")
   def setTitle(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
     request.body match {
       case JsObject(fields) => {

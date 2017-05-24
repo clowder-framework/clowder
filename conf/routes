@@ -267,8 +267,8 @@ GET            /javascriptRoutes                                                
 # ----------------------------------------------------------------------
 # API DOCUMENTATION USING SWAGGER
 # ----------------------------------------------------------------------
-GET            /api-docs.json                                                           controllers.ApiHelpController.getResources
-GET            /api-docs.json/:path                                                     @controllers.Application.apidoc(path: String)
+GET            /swagger                                                                 @controllers.Application.swagger
+GET            /swaggerUI                                                               @controllers.Application.swaggerUI
 
 # ----------------------------------------------------------------------
 # RESTful API

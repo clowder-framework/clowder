@@ -13,7 +13,6 @@ import javax.inject.{Inject, Singleton}
 import play.api.Play.current
 import play.api.Play.configuration
 import models._
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 @Singleton
 class Search @Inject() (
@@ -107,9 +106,6 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-   @ApiOperation(value = "Search multimedia index for similar sections",
-       notes = "",
-       responseClass = "None", httpMethod = "GET")
   def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewSection,
     Some(ResourceRef(ResourceRef.section, section_id))) {
     implicit request =>

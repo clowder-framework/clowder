@@ -1,7 +1,6 @@
 package api
 
 import javax.inject.Inject
-import com.wordnik.swagger.annotations.ApiOperation
 import play.api.libs.json._
 import play.api.Play.current
 import services.UserService
@@ -16,8 +15,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /**
    * Returns a list of all users in the system.
    */
-  @ApiOperation(value = "List all users in the system",
-    responseClass = "User", httpMethod = "GET")
   def list() = ServerAdminAction { implicit request =>
      Ok(Json.toJson(users.list.map(userToJSON)))
   }
@@ -25,8 +22,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /**
    * Returns the user that is making the request. Used to verify authentication, as well as for user data access.
    */
-  @ApiOperation(value = "Return the user associated with the request.",
-    responseClass = "User", httpMethod = "GET")
   def getUser() = AuthenticatedAction { implicit request =>
       request.user match {
           case Some(identity) => {
@@ -54,8 +49,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /**
    * Returns a single user based on the id specified.
    */
-  @ApiOperation(value = "Return a single user.",
-    responseClass = "User", httpMethod = "GET")
   def findById(id: UUID) = PermissionAction(Permission.ViewUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     users.findById(id) match {
       case Some(x) => Ok(userToJSON(x))
@@ -67,8 +60,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    * Returns a single user based on the email specified.
    * @deprecated use findById
    */
-  @ApiOperation(value = "Return a single user.",
-    responseClass = "User", httpMethod = "GET")
   def findByEmail(email: String) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.findByEmail(email) match {
       case Some(x) => Ok(userToJSON(x))
@@ -77,8 +68,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   }
 
   /** @deprecated use id instead of email */
-  @ApiOperation(value = "Edit User Field.",
-    responseClass = "None", httpMethod = "POST")
   def updateName(id: UUID, firstName: String, lastName: String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     implicit val user = request.user
     users.updateUserField(id, "firstName", firstName)
@@ -90,23 +79,17 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   }
 
   /** @deprecated use id instead of email */
-  @ApiOperation(value = "Add a dataset View.",
-    responseClass = "None", httpMethod = "POST")
   def addUserDatasetView(email: String, dataset: UUID) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.addUserDatasetView(email, dataset)
     Ok(Json.obj("status" -> "success"))
   }
 
   /** @deprecated use id instead of email */
-  @ApiOperation(value = "Create a List.",
-    responseClass = "None", httpMethod = "POST")
   def createNewListInUser(email: String, field: String, fieldList: List[Any])= PermissionAction(Permission.ViewUser) { implicit request =>
     users.createNewListInUser(email, field, fieldList)
     Ok(Json.obj("status" -> "success"))
   }
 
-  @ApiOperation(value = "Follow a user",
-    responseClass = "None", httpMethod = "POST")
   def follow(followeeUUID: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
@@ -128,8 +111,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     }
   }
 
-  @ApiOperation(value = "Unfollow a user",
-    responseClass = "None", httpMethod = "POST")
   def unfollow(followeeUUID: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {

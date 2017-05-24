@@ -6,10 +6,8 @@ import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 import api.Permission.Permission
-import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
 import javax.inject.{Inject, Singleton}
-import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
@@ -32,7 +30,6 @@ import scala.collection.mutable.ListBuffer
  * Dataset API.
  *
  */
-@Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
 class  Datasets @Inject()(
   datasets: DatasetService,
@@ -53,9 +50,6 @@ class  Datasets @Inject()(
   thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService) extends ApiController {
 
-  @ApiOperation(value = "Get a specific dataset",
-    notes = "This will return a sepcific dataset requested",
-    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(d) => Ok(toJson(d))
@@ -63,23 +57,14 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "List all datasets the user can view",
-    notes = "This will check for Permission.ViewDataset",
-    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
-  @ApiOperation(value = "List all datasets the user can edit",
-    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
-    responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
       Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
-  @ApiOperation(value = "List all datasets in the space the user can edit and thus move the file to",
-    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
-    responseClass = "None", httpMethod = "GET")
   def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
       Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
@@ -196,9 +181,6 @@ class  Datasets @Inject()(
   /**
     * Create new dataset. name, file_id are required, description and space,  are optional. If the space & file_id is wrong, refuse the request
     */
-  @ApiOperation(value = "Create new dataset",
-    notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
-    responseClass = "None", httpMethod = "POST")
   def createDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     Logger.debug("--- API Creating new dataset ----")
     (request.body \ "name").asOpt[String].map { name =>
@@ -275,9 +257,6 @@ class  Datasets @Inject()(
     * A JSON document is the payload for this endpoint. Required elements are name, description, and space. Optional element is
     * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset.
     */
-  @ApiOperation(value = "Create new dataset with no file",
-    notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
-    responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
 
@@ -377,9 +356,6 @@ class  Datasets @Inject()(
     * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
     * which will be a comma separated String of existing file IDs to be added to the new dataset.
     */
-  @ApiOperation(value = "Attach multiple files to an existing dataset",
-    notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
-    responseClass = "None", httpMethod = "POST")
   def attachMultipleFiles() = PermissionAction(Permission.AddResourceToDataset)(parse.json) { implicit request =>
     (request.body \ "datasetid").asOpt[String].map { dsId =>
       (request.body \ "existingfiles").asOpt[String].map { fileString =>
@@ -413,9 +389,6 @@ class  Datasets @Inject()(
     * Reindex the given dataset, if recursive is set to true it will
     * also reindex all files in that dataset.
     */
-  @ApiOperation(value = "Reindex a dataset",
-    notes = "Reindex the existing dataset, if recursive is set to true if will also reindex all files in that dataset.",
-    httpMethod = "GET")
   def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(ds) => {
@@ -476,9 +449,6 @@ class  Datasets @Inject()(
       }
   }
 
-  @ApiOperation(value = "Attach existing file to dataset",
-    notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
-    responseClass = "None", httpMethod = "POST")
   def attachExistingFile(dsId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dsId))) { implicit request =>
     datasets.get(dsId) match {
       case Some(dataset) => {
@@ -500,9 +470,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Detach file from dataset",
-    notes = "File is not deleted, only separated from the selected dataset. If the file is an XML metadata file, the metadata are removed from the dataset.",
-    responseClass = "None", httpMethod = "POST")
   def detachFile(datasetId: UUID, fileId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     datasets.get(datasetId) match{
       case Some(dataset) => {
@@ -576,9 +543,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Attach existing file to a new dataset and delete it from the old one",
-    notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
-    responseClass = "None", httpMethod = "POST")
   def moveFileBetweenDatasets(datasetId: UUID, toDatasetId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     datasets.get(datasetId) match {
       case Some (dataset) => {
@@ -611,12 +575,10 @@ class  Datasets @Inject()(
   }
   //////////////////
 
-  @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     Ok(toJson(datasets.listCollection(collectionId.stringify, request.user)))
   }
 
-  @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
   def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     Logger.debug(s"Adding metadata to dataset $id")
     //datasets.addMetadata(id, Json.stringify(request.body))
@@ -665,9 +627,6 @@ class  Datasets @Inject()(
   /**
     * Add metadata in JSON-LD format.
     */
-  @ApiOperation(value = "Add JSON-LD metadata to the database.",
-    notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
-    responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
      PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
         datasets.get(id) match {
@@ -734,8 +693,6 @@ class  Datasets @Inject()(
       }
 
 
-  @ApiOperation(value="Retrieve available metadata definitions for a dataset. It is an aggregation of the metadata that a space belongs to.",
-    responseClass="None", httpMethod="GET")
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
@@ -768,9 +725,6 @@ class  Datasets @Inject()(
     }
   }
 
- @ApiOperation(value = "Retrieve metadata as JSON-LD",
-    notes = "Get metadata of the dataset object as JSON-LD.",
-    responseClass = "None", httpMethod = "GET")
   def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -790,9 +744,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
-    notes = "Remove JSON-LD metadata from dataset object",
-    responseClass = "None", httpMethod = "GET")
   def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -818,9 +769,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Add user-generated metadata to dataset",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to dataset $id")
@@ -861,9 +809,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "List files in dataset",
-    notes = "Datasets and descriptions.",
-    responseClass = "None", httpMethod = "GET")
   def datasetFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -883,9 +828,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "List files in dataset and within folders",
-    notes = "Datasets and descriptions.",
-    responseClass = "None", httpMethod = "GET")
   def datasetAllFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -910,9 +852,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Upload files and attach to given dataset",
-    notes = "This will take a list of url or path objects that point to files that will be ingested and added to this dataset.",
-    responseClass = "None", httpMethod = "POST")
   def uploadToDatasetFile(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
@@ -929,9 +868,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Upload files and attach to given dataset",
-    notes = "This will take a form of file objects that are added to this dataset. This can also add metadata at the same time.",
-    responseClass = "None", httpMethod = "POST")
   def uploadToDatasetJSON(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.json) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
@@ -1014,9 +950,6 @@ class  Datasets @Inject()(
     *  fields, or new fields, in the future.
     *
     */
-  @ApiOperation(value = "Update dataset administrative information",
-    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
-    responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1067,9 +1000,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Update dataset name",
-    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pair for name.",
-    responseClass = "None", httpMethod = "POST")
   def updateName(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1109,9 +1039,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Update dataset description.",
-    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pair for description.",
-    responseClass = "None", httpMethod = "POST")
   def updateDescription(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1149,9 +1076,6 @@ class  Datasets @Inject()(
   }
   //End, Update Dataset Information code
 
-    @ApiOperation(value = "Add a creator to the Dataset's list of Creators.",
-    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pair for creator.",
-    responseClass = "None", httpMethod = "POST")
   def addCreator(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1189,10 +1113,6 @@ class  Datasets @Inject()(
   }
   //End, Update Dataset Information code  
     
-    @ApiOperation(value = "Remove a creator from the Dataset's list of Creators.",
-    
-    notes = "Takes the UUID of the dataset and the entry to delete (a String).",
-    responseClass = "None", httpMethod = "DELETE")
   def removeCreator(id: UUID, creator: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1215,10 +1135,6 @@ class  Datasets @Inject()(
   }
   //End, removeCreator  
     
-    @ApiOperation(value = "Move a creator in a Dataset's list of creators.",
-  
-    notes = "Takes the UUID of the dataset, the creator to move (a String) and the new position of the creator in the overall list of creators.",
-    responseClass = "None", httpMethod = "PUT")
   def moveCreator(id: UUID, creator: String, newPos: Int) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1274,9 +1190,6 @@ class  Datasets @Inject()(
     *
     *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.
     */
-  @ApiOperation(value = "Update license information to a dataset",
-    notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
-    responseClass = "None", httpMethod = "POST")
   def updateLicense(id: UUID) = PermissionAction(Permission.EditLicense, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     if (UUID.isValid(id.stringify)) {
 
@@ -1389,7 +1302,6 @@ class  Datasets @Inject()(
     * Returns a JSON object of multiple fields.
     * One returned field is "tags", containing a list of string values.
     */
-  @ApiOperation(value = "Get the tags associated with this dataset", notes = "Returns a JSON object of multiple fields", responseClass = "None", httpMethod = "GET")
   def getTags(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     Logger.debug(s"Getting tags for dataset with id  $id.")
     /* Found in testing: given an invalid ObjectId, a runtime exception
@@ -1410,9 +1322,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Remove tag of dataset",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
   def removeTag(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     Logger.debug("Removing tag " + request.body)
     request.body.\("tagId").asOpt[String].map {
@@ -1428,9 +1337,6 @@ class  Datasets @Inject()(
     * REST endpoint: POST: Add tags to a dataset.
     * Requires that the request body contains a "tags" field of List[String] type.
     */
-  @ApiOperation(value = "Add tags to dataset",
-    notes = "Requires that the request body contains a 'tags' field of List[String] type.",
-    responseClass = "None", httpMethod = "POST")
   def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     addTagsHelper(TagCheck_Dataset, id, request)
   }
@@ -1439,9 +1345,6 @@ class  Datasets @Inject()(
     * REST endpoint: POST: remove tags.
     * Requires that the request body contains a "tags" field of List[String] type.
     */
-  @ApiOperation(value = "Remove tags of dataset",
-    notes = "Requires that the request body contains a 'tags' field of List[String] type.",
-    responseClass = "None", httpMethod = "POST")
   def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     removeTagsHelper(TagCheck_Dataset, id, request)
   }
@@ -1622,9 +1525,6 @@ class  Datasets @Inject()(
   /**
     * REST endpoint: POST: remove all tags.
     */
-  @ApiOperation(value = "Remove all tags of dataset",
-    notes = "Forcefully remove all tags for this dataset.  It is mainly intended for testing.",
-    responseClass = "None", httpMethod = "POST")
   def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     Logger.debug(s"Removing all tags for dataset with id: $id.")
     if (UUID.isValid(id.stringify)) {
@@ -1650,7 +1550,6 @@ class  Datasets @Inject()(
 
   // ---------- Tags related code ends ------------------
 
-  @ApiOperation(value = "Add comment to dataset", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     request.user match {
       case Some(identity) => {
@@ -1721,9 +1620,6 @@ class  Datasets @Inject()(
   /**
     * Return whether a dataset is currently being processed.
     */
-  @ApiOperation(value = "Is being processed",
-    notes = "Return whether a dataset is currently being processed by a preprocessor.",
-    responseClass = "None", httpMethod = "GET")
   def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -1778,9 +1674,6 @@ class  Datasets @Inject()(
       toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
 
-  @ApiOperation(value = "Get dataset previews",
-    notes = "Return the currently existing previews of the selected dataset (full description, including paths to preview files, previewer names etc).",
-    responseClass = "None", httpMethod = "GET")
   def getPreviews(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -1825,9 +1718,6 @@ class  Datasets @Inject()(
     *  @param id, the UUID associated with the dataset to detach all files from and then delete.
     *
     */
-  @ApiOperation(value = "Detach and delete dataset",
-    notes = "Detaches all files before proceeding to perform the stanadard delete on the dataset.",
-    responseClass = "None", httpMethod="DELETE")
   def detachAndDeleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match{
       case Some(dataset) => {
@@ -1877,16 +1767,10 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Delete dataset",
-    notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
-    responseClass = "None", httpMethod = "POST")
   def deleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     deleteDatasetHelper(id, request)
   }
 
-  @ApiOperation(value = "Get the user-generated metadata of the selected dataset in an RDF file",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     current.plugin[RDFExportService].isDefined match{
       case true => {
@@ -1930,9 +1814,6 @@ class  Datasets @Inject()(
     return xmlFile
   }
 
-  @ApiOperation(value = "Get URLs of dataset's RDF metadata exports",
-    notes = "URLs of metadata exported as RDF from XML files contained in the dataset, as well as the URL used to export the dataset's user-generated metadata as RDF.",
-    responseClass = "None", httpMethod = "GET")
   def getRDFURLsForDataset(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     current.plugin[RDFExportService].isDefined match{
       case true =>{
@@ -1949,9 +1830,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Get technical metadata of the dataset",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
   def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -2017,9 +1895,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Follow dataset.",
-    notes = "Add user to dataset followers and add dataset to user followed datasets.",
-    responseClass = "None", httpMethod = "POST")
   def follow(id: UUID) = AuthenticatedAction {
     request =>
       val user = request.user
@@ -2048,9 +1923,6 @@ class  Datasets @Inject()(
       }
   }
 
-  @ApiOperation(value = "Unfollow dataset.",
-    notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
-    responseClass = "None", httpMethod = "POST")
   def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
@@ -2480,10 +2352,7 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  @ApiOperation(value = "Download dataset",
-    notes = "Downloads all files contained in a dataset.",
-    responseClass = "None", httpMethod = "GET")
-  def download(id: UUID,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
         datasets.get(id) match {
           case Some(dataset) => {
@@ -2502,9 +2371,6 @@ class  Datasets @Inject()(
         }
   }
 
-  @ApiOperation(value = "change the access of dataset",
-    notes = "Downloads all files contained in a dataset.",
-    responseClass = "None", httpMethod = "PUT")
   def updateAccess(id:UUID, access:String) = PermissionAction(Permission.PublicDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     user match {
@@ -2527,9 +2393,6 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "Insert add_file Event",
-    notes = "Insert an Event into the Events Collection",
-    responseClass = "None", httpMethod = "POST")
   def addFileEvent(id:UUID,  inFolder:Boolean, fileCount: Int ) = AuthenticatedAction {implicit request =>
     datasets.get(id) match{
       case Some(d) =>  {
