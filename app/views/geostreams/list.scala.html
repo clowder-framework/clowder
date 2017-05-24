@@ -20,8 +20,7 @@
                 <th>ID <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
                 <th>@(AppConfiguration.getSensorTitle) <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
                 <th>Source <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
-                <th>Latitude <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
-                <th>Longitude <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
+                <th>GeoJSON <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
                 <th>Info<span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
 
             </tr>
@@ -32,8 +31,7 @@
                     <td>@(item \ "id")</td>
                     <td>@((item \ "name").as[String])</td>
                     <td>@((item \ "properties" \ "type" \ "id").asOpt[String].getOrElse("").toUpperCase())</td>
-                    <td>@((item \ "geometry" \ "coordinates")(1))</td>
-                    <td>@((item \ "geometry" \ "coordinates")(0))</td>
+                    <td>@(item \ "geometry")</td>
                     <td>
                         <a class="btn btn-link disabled edit-sensor" href="@(routes.Geostreams.edit(((item \ "id").toString())))"><span class="glyphicon glyphicon-edit"></span> Edit</a>
                         <button type="button" class="btn btn-link delete-sensor" id="@((item \ "id").toString())" disabled><span class="glyphicon glyphicon-trash"></span> Delete</button>

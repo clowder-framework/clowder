@@ -63,23 +63,62 @@ object Geostreams extends ApiController {
     (__ \ 'stream_id).read[String]
   ) tupled
 
+  implicit val sensorsGeoJSON = (
+    (__ \ 'name).read[String] and
+      (__ \ 'type).read[String] and
+      (__ \ 'geometry).read[JsValue] and
+      (__ \ 'properties).read[JsValue]
+    ) tupled
+
+  implicit val streamsGeoJSON = (
+    (__ \ 'name).read[String] and
+      (__ \ 'type).read[String] and
+      (__ \ 'geometry).read[JsValue] and
+      (__ \ 'properties).read[JsValue] and
+      (__ \ 'sensor_id).read[String]
+    ) tupled
+
+  implicit val datapointsGeoJSON = (
+    (__ \ 'start_time).read[String] and
+      (__ \ 'end_time).readNullable[String] and
+      (__ \ 'type).read[String] and
+      (__ \ 'geometry).read[JsValue] and
+      (__ \ 'properties).json.pick and
+      (__ \ 'stream_id).read[String]
+    ) tupled
+
   def createSensor() = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
-      Logger.debug("Creating sensor")
-      request.body.validate[(String, String, List[Double], JsValue)].map {
-        case (name, geoType, longlat, metadata) => {
-          current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
-              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata)) match {
-                case Some(d) => jsonp(d, request)
-                case None => BadRequest(s"Failed to create sensor $name")
+    Logger.debug("Creating sensor")
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        request.body.validate[(String, String, List[Double], JsValue)].map {
+          case (name, geoType, longlat, metadata) => {
+            val geojson = createGeoJson(longlat)
+            plugin.createSensor(name, geoType, geojson, Json.stringify(metadata)) match {
+              case Some(d) => jsonp(d, request)
+              case None => BadRequest(s"Failed to create sensor $name")
+            }
+          }
+        }.recoverTotal {
+          e => {
+            // NEW VERSION; geometry is GeoJSON
+            request.body.validate[(String, String, JsValue, JsValue)].map {
+              case (name, geoType, geom, metadata) =>
+                plugin.createSensor(name, geoType, geom, Json.stringify(metadata)) match {
+                  case Some(d) => jsonp(d, request)
+                  case None => BadRequest(s"Failed to create sensor $name from GeoJSON")
+                }
+            }.recoverTotal {
+              e => {
+                Logger.error("Error parsing json: " + e);
+                BadRequest("Failed to create sensor:" + JsError.toFlatJson(e))
               }
             }
-            case None => pluginNotEnabled
           }
         }
-      }.recoverTotal {
-        e => BadRequest("Detected error:" + JsError.toFlatJson(e))
       }
+      case None => pluginNotEnabled
+    }
   }
 
   def updateSensorMetadata(id: String) = PermissionAction(Permission.CreateSensor)(parse.json) { implicit request =>
@@ -88,8 +127,15 @@ object Geostreams extends ApiController {
       case (data) => {
         current.plugin[PostgresPlugin] match {
           case Some(plugin) => {
-            plugin.updateSensorMetadata(id, Json.stringify(data)) match {
-              case Some(d) => jsonp(d, request)
+            plugin.updateSensorMetadata(id, Json.stringify(data \ "properties")) match {
+              case Some(d) => {
+                plugin.updateSensorGeometry(id, Json.stringify(data \ "geometry")) match {
+                  case Some(d2) => {
+                    jsonp(d2, request)
+                  }
+                  case None => jsonp(Json.parse("""{"status":"Failed to update sensor"}"""), request)
+                }
+              }
               case None => jsonp(Json.parse("""{"status":"Failed to update sensor"}"""), request)
             }
 
@@ -122,18 +168,29 @@ object Geostreams extends ApiController {
     }
   }
 
-  def searchSensors(geocode: Option[String], sensor_name: Option[String]) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
-      Logger.debug("Searching sensors " + geocode + sensor_name)
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          plugin.searchSensors(geocode, sensor_name) match {
-            case Some(d) => jsonp(d, request)
-            case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
+  def searchSensors(geocode: Option[String], sensor_name: Option[String], geojson: Option[String]) = PermissionAction(Permission.ViewGeoStream)
+  { implicit request =>
+    Logger.debug("Searching sensors " + geocode + " " + sensor_name)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        geojson match {
+          case Some(gj) => {
+            plugin.searchSensorsGeoJson(geojson, sensor_name) match {
+              case Some(d) => jsonp(d, request)
+              case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
+            }
+          }
+          case None => {
+            plugin.searchSensors(geocode, sensor_name) match {
+              case Some(d) => jsonp(d, request)
+              case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
+            }
           }
         }
-        case None => pluginNotEnabled
       }
+      case None => pluginNotEnabled
     }
+  }
 
   def getSensor(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get sensor " + id)
@@ -216,32 +273,60 @@ object Geostreams extends ApiController {
   }
 
   def createStream() = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
-      Logger.debug("Creating stream: " + request.body)
-      request.body.validate[(String, String, List[Double], JsValue, String)].map {
-        case (name, geoType, longlat, metadata, sensor_id) => {
-          current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
-              plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id) match {
-                case Some(d) => jsonp(d, request)
-                case None => BadRequest(s"Failed to create a stream $name")
+    Logger.debug("Creating stream: " + request.body)
+
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        request.body.validate[(String, String, List[Double], JsValue, String)].map {
+          case (name, geoType, longlat, metadata, sensor_id) => {
+            val geojson = createGeoJson(longlat)
+            plugin.createStream(name, geoType, geojson, Json.stringify(metadata), sensor_id) match {
+              case Some(d) => jsonp(d, request)
+              case None => BadRequest(s"Failed to create a stream $name")
+            }
+          }
+
+        }.recoverTotal {
+          e => {
+            // NEW VERSION; geometry is GeoJSON
+            request.body.validate[(String, String, JsValue, JsValue, String)].map {
+              case (name, geoType, geom, metadata, sensor_id) =>
+                plugin.createStream(name, geoType, geom, Json.stringify(metadata), sensor_id) match {
+                  case Some(d) => jsonp(d, request)
+                  case None => BadRequest(s"Failed to create stream $name from GeoJSON")
+                }
+            }.recoverTotal {
+              e => {
+                Logger.error("Error parsing json: " + e);
+                BadRequest("Failed to create stream:" + JsError.toFlatJson(e))
               }
             }
-            case None => pluginNotEnabled
           }
         }
-      }.recoverTotal {
-        e => Logger.error(e.toString); BadRequest("Detected error:" + JsError.toFlatJson(e))
       }
+      case None => pluginNotEnabled
+    }
   }
 
-  def searchStreams(geocode: Option[String], stream_name: Option[String]) =  PermissionAction(Permission.ViewGeoStream) { implicit request =>
+  def searchStreams(geocode: Option[String], stream_name: Option[String], geojson: Option[String]) =  PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Searching stream " + geocode)
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
-          plugin.searchStreams(geocode, stream_name) match {
-            case Some(d) => jsonp(d, request)
-            case None => jsonp("""{"status":"No data found"}""", request)
+          geojson match {
+            case Some(gj) => {
+              plugin.searchStreamsGeoJson(geojson, stream_name) match {
+                case Some(d) => jsonp(d, request)
+                case None => jsonp("""{"status":"No data found"}""", request)
+              }
+            }
+            case None => {
+              plugin.searchStreams(geocode, stream_name) match {
+                case Some(d) => jsonp(d, request)
+                case None => jsonp("""{"status":"No data found"}""", request)
+              }
+            }
           }
+
         }
         case None => pluginNotEnabled
       }
@@ -318,42 +403,52 @@ object Geostreams extends ApiController {
       }
     }
 
-  def addDatapoint(invalidateCache: Boolean)  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
+  def addDatapoint(invalidateCache: Boolean)  = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
     Logger.debug("Adding datapoint: " + request.body)
-    request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
-      case (start_time, end_time, geoType, longlat, data, streamId) =>
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+    var failedToParse: Option[JsError] = None;
 
-        current.plugin[PostgresPlugin] match {
-          case Some(plugin) => {
-            val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
-            val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
-            val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
-            if (longlat.length == 3) {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId) match {
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        // OLD VERSION; geometry is a list of 2 or 3 doubles for POINT (X,Y) or POINT Z (X,Y,Z)
+        request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
+          case (start_time, end_time, geoType, longlat, data, streamId) =>
+                val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
+                val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
+                val geojson = createGeoJson(longlat)
+                plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), geojson, streamId) match {
+                  case Some(d) => {
+                    if (invalidateCache) {
+                      cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                    }
+                    jsonp(d, request)
+                  }
+                  case None => BadRequest("Failed to create datapoint from coordinate list")
+                }
+        }.recoverTotal { e => {
+          // NEW VERSION; geometry is GeoJSON
+          request.body.validate[(String, Option[String], String, JsValue, JsValue, String)].map {
+            case (start_time, end_time, geoType, geom, data, streamId) =>
+              val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
+              val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), geom, streamId) match {
                 case Some(d) => {
                   if (invalidateCache) {
                     cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
                   }
                   jsonp(d, request)
                 }
-                case None => BadRequest("Failed to create datapoint")
+                case None => BadRequest("Failed to create datapoint from GeoJSON")
               }
-            } else {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId) match {
-                case Some(d) => {
-                  if (invalidateCache) {
-                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
-                  }
-                  jsonp(d, request)
-                }
-                case None => BadRequest("Failed to create datapoint")
-              }
+          }.recoverTotal {
+            e => {
+              Logger.debug("Error parsing json: " + e);
+              BadRequest("Failed to create datapoint:" + JsError.toFlatJson(e))
             }
-          }
-          case None => pluginNotEnabled
+          }}
         }
-    }.recoverTotal {
-      e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:" + JsError.toFlatJson(e))
+      }
+      case None => pluginNotEnabled
     }
   }
 
@@ -687,7 +782,7 @@ object Geostreams extends ApiController {
     result.toMap
   }
 
-  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean, window_start: Option[String] = None, window_end: Option[String] = None, binning: String) =
+  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean, window_start: Option[String] = None, window_end: Option[String] = None, binning: String, geojson: Option[String]) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) => {
@@ -713,7 +808,15 @@ object Geostreams extends ApiController {
               }
             }
             case None => {
-              val raw = plugin.searchDatapoints(since, until, geocode, stream_id, sensor_id, sources, attributes, operator != "")
+              // if computing trends need all data
+              val raw = geojson match {
+                case Some(gj) => {
+                  plugin.searchDatapointsGeoJson (since, until, geojson, stream_id, sensor_id, sources, attributes, operator != "")
+                }
+                case None => {
+                  plugin.searchDatapoints (since, until, geocode, stream_id, sensor_id, sources, attributes, operator != "")
+                }
+              }
               val filtered = raw.filter(p => filterDataBySemi(p, semi))
               // TODO fix this for better grouping see MMDB-1678
               val data = calculate(operator, filtered, window_start, window_end, semi.isDefined, binning)
@@ -1163,7 +1266,7 @@ object Geostreams extends ApiController {
             jsProperties(f._1 + "_interval_average") =  Json.toJson(avgTrend)
             // TODO fix this for better grouping see MMDB-1678
             if (semiGroup) {
-              if (propertiesLast(f._1).isRight) {
+              if (propertiesLast.contains(f._1) && propertiesLast(f._1).isRight) {
                 val avgLast = propertiesLast(f._1).right.get / counterLast(f._1)
                 jsProperties(f._1 + "_last_average") = Json.toJson(avgLast)
               } else {
@@ -1367,7 +1470,8 @@ object Geostreams extends ApiController {
 
   /**
    * Returns the request potentially as jsonp
-   * @param data Result to transform
+    *
+    * @param data Result to transform
    * @param request request made to server
    */
   def jsonp(data:String, request: Request[Any]): SimpleResult = {
@@ -1376,7 +1480,8 @@ object Geostreams extends ApiController {
 
   /**
    * Returns the request potentially as jsonp
-   * @param data Result to transform
+    *
+    * @param data Result to transform
    * @param request request made to server
    */
   def jsonp(data:JsValue, request: Request[Any]): SimpleResult = {
@@ -1385,7 +1490,8 @@ object Geostreams extends ApiController {
 
   /**
    * Tries to transform a response into a JavaScript expression.
-   * @param data Result to transform
+    *
+    * @param data Result to transform
    * @param request request made to server
    */
   def jsonp(data:Enumerator[String], request: Request[Any]) = {
@@ -1634,7 +1740,8 @@ object Geostreams extends ApiController {
    * This will take the first json element and create a header from this. All
    * additional rows will be parsed based on this first header. Any fields not
    * in the first row, will not be outputed.
-   * @param data the json to be converted to CSV.
+    *
+    * @param data the json to be converted to CSV.
    * @return Enumarator[String]
    */
   def jsonToCSV(data: Iterator[JsObject]): Enumerator[String] = {
@@ -1849,5 +1956,15 @@ object Geostreams extends ApiController {
       }
       case None => pluginNotEnabled
     }
+  }
+
+  private def createGeoJson(longlat: List[Double]): JsObject = {
+    val lon = longlat(1)
+    val lat = longlat(0)
+    val alt = if (longlat.length == 3) {longlat(2)} else {0.0}
+    Json.obj(
+      "type" -> "Point",
+      "coordinates" -> Json.arr(lon, lat, alt)
+    )
   }
 }

@@ -1,3 +1,5 @@
+
+
 <form class="form-horizontal" role="form" id="sensor-edit">
 
   <div class="row">
@@ -55,12 +57,9 @@
                   </select>
                 </div>
 
-                <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
-                <div class="col-sm-4">
-                  <input type="number" class="form-control input-sm" id="sensorLocationLat" name="sensorLocationLat" value="{{geometry.coordinates.[1]}}" required>
-                </div>
-                <div class="col-sm-4">
-                  <input type="number" class="form-control input-sm" id="sensorLocationLong" name="sensorLocationLong" value="{{geometry.coordinates.[0]}}" required>
+                <label for="sensorLocation" class="col-sm-4 paddingTop7 control-label">GeoJSON</label>
+                <div class="col-sm-8">
+                  <textarea class="form-control input-sm" id="sensorLocation" name="sensorLocation" value="{{geometry}}" required>{{geometry}}</textarea>
                 </div>
               </div>
             </div>

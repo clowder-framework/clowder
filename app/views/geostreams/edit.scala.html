@@ -53,13 +53,21 @@
 
     var insertSensorForm = function(data) {
         var sensorTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/sensor-form")");
+        // Convert GeoJSON object to json string, so Handlebars template doesn't render as [Object object]
+        data["geometry"] = JSON.stringify(data["geometry"])
         $("#sensor-form").append(sensorTemplate(data));
+
+        $("#sensorLocation").on('keyup', function() {
+            updateMap()
+        });
     };
 
     var insertInstrumentForm = function(data) {
         var parametersTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/parameters-form")");
         Handlebars.registerPartial('parameters', parametersTemplate);
         var instrumentTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/stream-form")");
+        // Convert GeoJSON object to json string, so Handlebars template doesn't render as [Object object]
+        data["geometry"] = JSON.stringify(data["geometry"])
         $("#instruments").append(instrumentTemplate(data));
     };
 

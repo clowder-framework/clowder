@@ -149,13 +149,12 @@ $(document).ready(function() {
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
     data.properties.popupContent = $("#sensorFullName").val();
-    data.geometry.coordinates[0] = +$("#sensorLocationLong").val();
-    data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
+    data.geometry = JSON.parse($("#sensorLocation").val());
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.region = $("#sensorRegion").val();
 
-    var sensorPUTpromise = deferredPut(clowderSensorPutURL, JSON.stringify(data.properties));
+    var sensorPUTpromise = deferredPut(clowderSensorPutURL, JSON.stringify(data));
 
 
     $.when(sensorPUTpromise).done(function() {

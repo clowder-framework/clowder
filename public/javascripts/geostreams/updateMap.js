@@ -1,41 +1,29 @@
-$(document).ready(function() {
+function updateMap(init) {
   if (window.L) {
-    var map = L.map('map', {scrollWheelZoom: false}).setView([39, -90 ], 5);
+    if (init == undefined) { init = false; }
 
-    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    if (init) {
+      map = L.map('map', {scrollWheelZoom: false}).setView([39, -90], 5);
 
-    var longElement = $('#sensorLocationLong');
-    var latElement = $('#sensorLocationLat');
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+    } else if (typeof marker !== "undefined") {
+      map.removeLayer(marker);
+    }
 
-    var getCurrentLatLong = function() {
-      var longElement = $('#sensorLocationLong');
-      var latElement = $('#sensorLocationLat');
-      var long = longElement.val();
-      long = (long) ? +long : -90;
-      var lat = latElement.val();
-      lat = (lat) ? +lat : 39;
-      return [lat, long];
-    };
+    var geojson = $('#sensorLocation').val();
 
-
-    var marker = L.marker(getCurrentLatLong(), {draggable: true});
+    marker = L.geoJson(JSON.parse(geojson), {draggable: false});
     marker.addTo(map);
-    marker.on('dragend', function(event){
-      $('#sensorLocationLat').val(event.target._latlng.lat);
-      $('#sensorLocationLong').val(event.target._latlng.lng);
-      map.panTo(getCurrentLatLong());
-    });
-    longElement.on('change', function() {
-      marker.setLatLng(getCurrentLatLong()).update();
-      map.panTo(getCurrentLatLong());
-    });
-    latElement.on('change', function() {
-      marker.setLatLng(getCurrentLatLong()).update();
-      map.panTo(getCurrentLatLong());
-    });
+    map.fitBounds(marker.getBounds())
   } else {
     console.log('no L found');
   }
+}
+
+$(document).ready(function() {
+  var map = null;
+  var marker = null;
+  updateMap(true)
 });

@@ -112,10 +112,11 @@
 			  	 var listStreamsElement = $('#list_streams');
 			  	listStreamsElement.empty();
 			  	for (var i = 0; i < response.length; i++) {
-			  		var stream_id = response[i]['stream_id'];
+					var stream_id = response[i]['stream_id']
+			  		var stream_label = stream_id+" "+response[i]['name'];
 			  		var link = document.createElement('a');
 			    	link.href = "#";
-			    	link.innerHTML = stream_id;
+			    	link.innerHTML = stream_label;
 			    	link.onclick = function() {
 					   listDatapoints(stream_id);
 					};

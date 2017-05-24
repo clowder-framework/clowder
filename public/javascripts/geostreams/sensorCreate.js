@@ -124,8 +124,7 @@ $(document).ready(function() {
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
     data.properties.popupContent = $("#sensorFullName").val();
-    data.geometry.coordinates[0] = +$("#sensorLocationLong").val();
-    data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
+    data.geometry = JSON.parse($("#sensorLocation").val());
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.type.sensorType = +$("#sensorType").val();
@@ -136,7 +135,8 @@ $(document).ready(function() {
     var deferredStreams = [];
 
     $.when(sensorPOSTpromise).done(function() {
-      var sensorGETpromise = deferredGet(clowderSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
+      var sensorGETpromise = deferredGet(clowderSensorsURL + '?geojson=' + JSON.stringify(data.geometry));
+
       $.when(sensorGETpromise).done(function(sensorData) {
         var sensorJSON = sensorData[0];
         $(".stream-tmpl").each(function() {

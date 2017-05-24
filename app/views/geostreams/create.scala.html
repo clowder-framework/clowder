@@ -44,6 +44,10 @@
     var insertSensorForm = function(data) {
         var sensorTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/sensor-form")");
         $("#sensor-form").append(sensorTemplate(data));
+
+        $("#sensorLocation").on('keyup', function() {
+            updateMap()
+        });
     };
 
     var insertInstrumentForm = function(data) {

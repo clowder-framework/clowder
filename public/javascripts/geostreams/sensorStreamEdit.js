@@ -89,13 +89,16 @@ $(document).ready(function() {
   });
 
   var insertInstrumentForm = function(data) {
+    var parametersTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at("templates/sensors/parameters-form").url);
+    Handlebars.registerPartial('parameters', parametersTemplate);
     var instrumentTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at('templates/sensors/stream-form').url);
     $("#instruments").append(instrumentTemplate(data));
   };
 
+
   var instrumentCounter = 0;
   var addInstrumentButton = $("#addInstrument");
-    addInstrumentButton.on('click', instrumentCounter, function() {
+  addInstrumentButton.on('click', instrumentCounter, function() {
     instrumentCounter--;
     insertInstrumentForm({id: instrumentCounter});
   });
@@ -124,14 +127,13 @@ $(document).ready(function() {
     data.name = $("#sensor_name").val();
     data.properties.name = data.name;
     data.properties.popupContent = $("#sensorFullName").val();
-    data.geometry.coordinates[0] = +$("#sensorLocationLong").val();
-    data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
+    data.geometry = $("#sensorLocation").val();
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
     data.properties.type.sensorType = +$("#sensorType").val();
     data.properties.region = $("#sensorRegion").val();
 
-    var sensorPUTpromise = deferredPut(clowderUpdateSensorMetadataURL, JSON.stringify(data.properties));
+    var sensorPUTpromise = deferredPut(clowderUpdateSensorMetadataURL, JSON.stringify(data));
 
     $.when(sensorPUTpromise).done(function(data) {
         var sensorJSON = data;
