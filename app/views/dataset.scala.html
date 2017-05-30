@@ -22,6 +22,7 @@
 @import _root_.util.Formatters._
 
 @main(dataset.name) {
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
     <script type="text/javascript">
         var spaceId = "@currentSpace";
         var descLabel = "@Messages("dataset.description")";

@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Copy of dataset. When a dataset is copied, the newly created dataset will have the system generated metadata, previews, and thumbnails for the dataset and the files.[CATS-729](https://opensource.ncsa.illinois.edu/jira/browse/CATS-729) 
 - Return 409 Conflict when submitting file for manual extraction and file is not "PROCESSED". 
   [CATS-754](https://opensource.ncsa.illinois.edu/jira/browse/CATS-754)
+- Listing of files in dataset breaks when user permissions in a space are set to View. 
+  [CATS-767](https://opensource.ncsa.illinois.edu/jira/browse/CATS-767)
 
 ## 1.2.0  - 2017-03-24 
 
