@@ -177,13 +177,22 @@ object Permission extends Enumeration {
         else
           checkPermission(u, permission, r)
       }
-      case (Some(u), "private", Some(r)) => checkPermission(u, permission, r)
+      case (Some(u), "private", Some(r)) => {
+        if (configuration(play.api.Play.current).getBoolean("makeGeostreamsPublicReadable").getOrElse(true) && permission == Permission.ViewGeoStream)
+          true
+        else
+          checkPermission(u, permission, r)
+      }
       case (Some(_), _, None) => true
       case (None, "private", Some(res)) => checkAnonymousPrivatePermissions(permission, res)
       case (None, "public", _) => READONLY.contains(permission)
       case (None, "private", None) => {
-        Logger.debug(s"Private, no user, no resourceRef, permission=${permission}", new Exception())
-        false
+        if (configuration(play.api.Play.current).getBoolean("makeGeostreamsPublicReadable").getOrElse(true) && permission == Permission.ViewGeoStream)
+          true
+        else {
+          Logger.debug(s"Private, no user, no resourceRef, permission=${permission}", new Exception())
+          false
+        }
       }
       case (_, p, _) => {
         Logger.error(s"Invalid permission scheme ${p} [user=${user}, permission=${permission}, resourceRef=${resourceRef}]")
