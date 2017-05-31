@@ -52,7 +52,7 @@ class Status @Inject()(spaces: SpaceService,
 
       // elasticsearch
       case p: ElasticsearchPlugin => {
-        val status = if (p.connect) {
+        val status = if (p.isEnabled()) {
           "connected"
         } else {
           "disconnected"

@@ -50,11 +50,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   override def onStart() {
     Logger.debug("ElasticsearchPlugin started but not yet connected")
-    connect
+    connect()
   }
 
-  def connect(): Boolean = {
-    if (client.isDefined) {
+  def connect(force:Boolean = false): Boolean = {
+    if (!force && isEnabled()) {
       //Logger.debug("Already connected to Elasticsearch")
       return true
     }
@@ -92,6 +92,22 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         client.map(_.close())
         client = None
         false
+      }
+    }
+  }
+
+  def isEnabled(): Boolean = {
+    client match {
+      case Some(c) => {
+        if (c.connectedNodes().size() > 0) true
+        else {
+          Logger.debug("Elasticsearch node count is zero; attempting to reconnect")
+          connect(true)
+        }
+      }
+      case _ => {
+        Logger.debug("No Elasticsearch client found; attempting to connect")
+        connect(true)
       }
     }
   }
@@ -154,7 +170,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /*** Execute query */
   def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Int = 0, to: Int = 60): SearchResponse = {
-    connect
+    connect()
     client match {
       case Some(x) => {
         Logger.info("Searching Elasticsearch: "+queryObj.string())
@@ -208,7 +224,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Delete all indices */
   def deleteAll {
-    connect
+    connect()
     client match {
       case Some(x) => {
         try {
@@ -229,7 +245,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Delete an index */
   def delete(index: String, docType: String, id: String) {
-    connect
+    connect()
     client match {
       case Some(x) => {
         try {
@@ -250,7 +266,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Traverse metadata field mappings to get unique list for autocomplete */
   def getAutocompleteMetadataFields(query: String, index: String = nameOfIndex): List[String] = {
-    connect
+    connect()
 
     var listOfTerms = ListBuffer.empty[String]
     client match {
@@ -278,7 +294,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    * also reindex all datasets and files.
    */
   def index(collection: Collection, recursive: Boolean) {
-    connect
+    connect()
     // Perform recursion first if necessary
     if (recursive) {
       for (dataset <- datasets.listCollection(collection.id.toString)) {
@@ -293,7 +309,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    * also reindex all files.
    */
   def index(dataset: Dataset, recursive: Boolean) {
-    connect
+    connect()
     // Perform recursion first if necessary
     if (recursive) {
       for (fileId <- dataset.files) {
@@ -310,7 +326,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Reindex the given file. */
   def index(file: File) {
-    connect
+    connect()
     // Index sections first so they register for tag counts
     for (section <- file.sections) {
       index(section)
@@ -319,7 +335,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   def index(section: Section) {
-    connect
+    connect()
     index(SearchUtils.getElasticsearchObject(section))
   }
 
@@ -327,7 +343,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def index(esObj: Option[models.ElasticsearchObject], index: String = nameOfIndex) {
     esObj match {
       case Some(eso) => {
-        connect
+        connect()
         client match {
           case Some(x) => {
             // Construct the JSON document for indexing
@@ -408,7 +424,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def listTags(resourceType: String = "", index: String = nameOfIndex): Map[String, Long] = {
     val results = scala.collection.mutable.Map[String, Long]()
 
-    connect
+    connect()
     client match {
       case Some(x) => {
         val searcher = x.prepareSearch(index)
