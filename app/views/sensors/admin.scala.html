@@ -15,7 +15,7 @@
             <form class="form-horizontal" role="form" id="sensors-admin">
                 <div class="form-group">
                     @play.api.Play.current.plugin[services.PostgresPlugin] match {
-                        case Some(db) => {
+                        case Some(db) if db.isEnabled => {
                             <label for="sensorsTitle">Sensors title (plural form)</label>
                             <input class="form-control" id="sensorsTitle" name="sensorsTitle" type="text" value="@(sensors)" required />
                             <span id="sensorsTitle_error" style="display:none;">Sensors must have a value.</span>
@@ -38,7 +38,7 @@
 
                             <br /><br />
                         }
-                        case None => {}
+                        case _ => {}
                     }
 
                     <button class="btn btn-primary" id="sensors-admin-submit"><span class="glyphicon glyphicon-saved"></span> Submit</button>

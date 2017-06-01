@@ -25,6 +25,22 @@ class PostgresPlugin(application: Application) extends Plugin {
   override def onStart() {
     Logger.debug("Starting Postgres Plugin")
 
+    connect()
+    if (verifyConnection(false))
+      updateDatabase()
+  }
+
+  override def onStop() {
+    Logger.debug("Shutting down Postgres Plugin")
+  }
+
+  override lazy val enabled = {
+    !application.configuration.getString("postgresplugin").filter(_ == "disabled").isDefined
+  }
+
+  def connect() = {
+    conn = null
+
     val configuration = play.api.Play.configuration
     val host = configuration.getString("postgres.host").getOrElse("localhost")
     val port = configuration.getString("postgres.port").getOrElse("5432")
@@ -35,12 +51,15 @@ class PostgresPlugin(application: Application) extends Plugin {
     try {
       Class.forName("org.postgresql.Driver")
       val url = "jdbc:postgresql://" + host + ":" + port + "/" + db
+
       val props = new Properties()
-      if (!user.equals("")) props.setProperty("user", user)
-      if (!password.equals("")) props.setProperty("password", password)
+      if (!user.equals(""))
+        props.setProperty("user", user)
+      if (!password.equals(""))
+        props.setProperty("password", password)
+
+      Logger.debug("Connecting to " + url)
       conn = DriverManager.getConnection(url, props)
-      //      conn.setAutoCommit(false)
-      Logger.debug("Connected to " + url)
     } catch {
       case unknown: Throwable => {
         Logger.error("Error connecting to postgres: " + unknown)
@@ -48,16 +67,42 @@ class PostgresPlugin(application: Application) extends Plugin {
           "  https://opensource.ncsa.illinois.edu/confluence/display/CATS/Geostreams+API")
       }
     }
-
-    updateDatabase()
   }
 
-  override def onStop() {
-    Logger.debug("Shutting down Postgres Plugin")
+  /** Return true if psql connection is valid, or if reconnection succeeds. Otherwise return false. */
+  def verifyConnection(retry:Boolean=true): Boolean = {
+    Option(conn) match {
+      case Some(c) => {
+        if (c.isValid(3)) {
+          // Connection is currently valid!
+          true
+        } else {
+          if (retry) {
+            // Reconnect and retry verification
+            connect()
+            verifyConnection(false)
+          } else {
+            // Already retried once, so give up
+            false
+          }
+        }
+      }
+      case None => {
+        if (retry) {
+          // Connect and retry verification
+          connect()
+          verifyConnection(false)
+        } else {
+          // Already retried once, so give up
+          false
+        }
+      }
+    }
+
   }
 
-  override lazy val enabled = {
-    !application.configuration.getString("postgresplugin").filter(_ == "disabled").isDefined
+  def isEnabled(): Boolean = {
+    verifyConnection()
   }
 
   def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, geojson: JsValue, stream_id: String): Option[String] = {

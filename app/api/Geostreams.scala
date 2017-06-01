@@ -89,7 +89,7 @@ object Geostreams extends ApiController {
   def createSensor() = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
     Logger.debug("Creating sensor")
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         request.body.validate[(String, String, List[Double], JsValue)].map {
           case (name, geoType, longlat, metadata) => {
             val geojson = createGeoJson(longlat)
@@ -116,7 +116,7 @@ object Geostreams extends ApiController {
           }
         }
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
@@ -125,7 +125,7 @@ object Geostreams extends ApiController {
     request.body.validate[(JsValue)].map {
       case (data) => {
         current.plugin[PostgresPlugin] match {
-          case Some(plugin) => {
+          case Some(plugin) if plugin.isEnabled => {
             plugin.updateSensorMetadata(id, Json.stringify(data \ "properties")) match {
               case Some(d) => {
                 plugin.updateSensorGeometry(id, Json.stringify(data \ "geometry")) match {
@@ -139,7 +139,7 @@ object Geostreams extends ApiController {
             }
 
           }
-          case None => pluginNotEnabled
+          case _ => pluginNotEnabled
         }
       }
     }.recoverTotal {
@@ -152,14 +152,14 @@ object Geostreams extends ApiController {
     request.body.validate[(JsValue)].map {
       case (data) => {
         current.plugin[PostgresPlugin] match {
-          case Some(plugin) => {
+          case Some(plugin) if plugin.isEnabled => {
             plugin.patchStreamMetadata(id, Json.stringify(data)) match {
               case Some(d) => jsonp(d, request)
               case None => jsonp(Json.parse("""{"status":"Failed to update stream"}"""), request)
             }
 
           }
-          case None => pluginNotEnabled
+          case _ => pluginNotEnabled
         }
       }
     }.recoverTotal {
@@ -171,7 +171,7 @@ object Geostreams extends ApiController {
   { implicit request =>
     Logger.debug("Searching sensors " + geocode + " " + sensor_name)
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         geojson match {
           case Some(gj) => {
             plugin.searchSensorsGeoJson(geojson, sensor_name) match {
@@ -187,73 +187,73 @@ object Geostreams extends ApiController {
           }
         }
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def getSensor(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get sensor " + id)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           plugin.getSensor(id) match {
             case Some(d) => jsonp(d, request)
             case None => jsonp(Json.parse("""{"status":"No data found"}"""), request)
           }
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
     }
 
   def getSensorStreams(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get sensor streams" + id)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           plugin.getSensorStreams(id) match {
             case Some(d) => jsonp(d, request)
             case None => jsonp("""{"status":"No data found"}""", request)
           }
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
     }
 
   def updateStatisticsSensor(id: String) = PermissionAction(Permission.AddGeoStream) { implicit request =>
     Logger.debug("update sensor statistics for " + id)
     current.plugin[PostgresPlugin] match {
-	    case Some(plugin) => {
+	    case Some(plugin) if plugin.isEnabled => {
 	      plugin.updateSensorStats(Some(id))
 	      jsonp("""{"status":"updated"}""", request)
 	    }
-	    case None => pluginNotEnabled
+      case _ => pluginNotEnabled
 	  }
   }
 
   def updateStatisticsStream(id: String) = PermissionAction(Permission.AddGeoStream) { implicit request =>
     Logger.debug("update stream statistics for " + id)
 	  current.plugin[PostgresPlugin] match {
-	    case Some(plugin) => {
+	    case Some(plugin) if plugin.isEnabled => {
 	      plugin.updateStreamStats(Some(id))
 	      jsonp("""{"status":"updated"}""", request)
 	    }
-	    case None => pluginNotEnabled
+      case _ => pluginNotEnabled
 	  }
   }
 
   def updateStatisticsStreamSensor() = PermissionAction(Permission.AddGeoStream) { implicit request =>
     Logger.debug("update all sensor/stream statistics")
 	  current.plugin[PostgresPlugin] match {
-	    case Some(plugin) => {
+	    case Some(plugin) if plugin.isEnabled => {
 	      plugin.updateSensorStats(None)
 	      jsonp("""{"status":"updated"}""", request)
 	    }
-	    case None => pluginNotEnabled
+      case _ => pluginNotEnabled
 	  }
   }
 
   def getSensorStatistics(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get sensor statistics " + id)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           val json = plugin.getSensorStats(id) match {
             case Some(d) => {
               val data = Json.parse(d)
@@ -267,7 +267,7 @@ object Geostreams extends ApiController {
           }
           jsonp(json, request)
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
   }
 
@@ -275,7 +275,7 @@ object Geostreams extends ApiController {
     Logger.debug("Creating stream: " + request.body)
 
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         request.body.validate[(String, String, List[Double], JsValue, String)].map {
           case (name, geoType, longlat, metadata, sensor_id) => {
             val geojson = createGeoJson(longlat)
@@ -303,14 +303,14 @@ object Geostreams extends ApiController {
           }
         }
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def searchStreams(geocode: Option[String], stream_name: Option[String], geojson: Option[String]) =  PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Searching stream " + geocode)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           geojson match {
             case Some(gj) => {
               plugin.searchStreamsGeoJson(geojson, stream_name) match {
@@ -327,77 +327,77 @@ object Geostreams extends ApiController {
           }
 
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
     }
 
   def getStream(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get stream " + id)
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           plugin.getStream(id) match {
             case Some(d) => jsonp(d, request)
             case None => jsonp("""{"status":"No stream found"}""", request)
           }
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
     }
 
   def deleteStream(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete stream " + id)
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         if (plugin.deleteStream(id.toInt)) jsonp("""{"status":"ok"}""", request)
         else jsonp("""{"status":"error"}""", request)
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def deleteSensor(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete sensor " + id)
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         if (plugin.deleteSensor(id.toInt)) jsonp("""{"status":"ok"}""", request)
         else jsonp("""{"status":"error"}""", request)
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete datapoint " + id)
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         if (plugin.deleteDatapoint(id.toInt)) jsonp("""{"status":"ok"}""", request)
         else jsonp("""{"status":"error"}""", request)
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def deleteAll() = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Drop all")
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         if (plugin.dropAll()) jsonp("""{"status":"ok"}""", request)
         else jsonp("""{"status":"error"}""", request)
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def counts() = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Counting entries")
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           plugin.counts() match {
           	case (sensors, streams, datapoints) => jsonp(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints), request)
           	case _ => jsonp("""{"status":"error"}""", request)
           }
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
     }
 
@@ -407,7 +407,7 @@ object Geostreams extends ApiController {
     var failedToParse: Option[JsError] = None;
 
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         // OLD VERSION; geometry is a list of 2 or 3 doubles for POINT (X,Y) or POINT Z (X,Y,Z)
         request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
           case (start_time, end_time, geoType, longlat, data, streamId) =>
@@ -446,7 +446,7 @@ object Geostreams extends ApiController {
           }}
         }
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
@@ -468,7 +468,7 @@ object Geostreams extends ApiController {
   // }
   def binDatapoints(time: String, depth: Double, keepRaw: Boolean, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String]) =  PermissionAction(Permission.ViewGeoStream) { implicit request =>
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         val description = Json.obj("time" -> time,
           "depth" -> depth,
           "since" -> since.getOrElse("").toString,
@@ -510,7 +510,7 @@ object Geostreams extends ApiController {
           }
         }
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
@@ -783,7 +783,7 @@ object Geostreams extends ApiController {
   def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean, window_start: Option[String] = None, window_end: Option[String] = None, binning: String, geojson: Option[String]) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
       current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
+        case Some(plugin) if plugin.isEnabled => {
           val description = Json.obj("format" -> format,
             "operator" -> operator,
             "since" -> since.getOrElse("").toString,
@@ -835,20 +835,20 @@ object Geostreams extends ApiController {
             }
           }
         }
-        case None => pluginNotEnabled
+        case _ => pluginNotEnabled
       }
     }
 
   def getDatapoint(id: String) =  PermissionAction(Permission.ViewGeoStream) { implicit request =>
     Logger.debug("Get datapoint " + id)
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         plugin.getDatapoint(id) match {
           case Some(d) => jsonp(d, request)
           case None => jsonp("""{"status":"No stream found"}""", request)
         }
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
@@ -1643,7 +1643,7 @@ object Geostreams extends ApiController {
         if (sensor_id.isDefined) {
           sensors += sensor_id.get.toString
           current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
+            case Some(plugin) if plugin.isEnabled => {
               plugin.getSensorStreams(sensor_id.get.toString) match {
                 case Some(d) => {
                   val responseJson : JsValue = Json.parse(d)
@@ -1652,14 +1652,14 @@ object Geostreams extends ApiController {
                 case None => errors += "Sensor " + sensor_id.get.toString + " does not exist"
               }
             }
-            case None => pluginNotEnabled
+            case _ => pluginNotEnabled
           }
         }
 
         if (stream_id.isDefined) {
           streams += stream_id.get.toString
           current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
+            case Some(plugin) if plugin.isEnabled => {
               plugin.getStream(stream_id.get.toString) match {
                 case Some(d) => {
                   val responseJson : JsValue = Json.parse(d)
@@ -1668,7 +1668,7 @@ object Geostreams extends ApiController {
                 case None => errors += "Stream " + stream_id.get.toString + " does not exist"
               }
             }
-            case None => pluginNotEnabled
+            case _ => pluginNotEnabled
           }
         }
 
@@ -1943,7 +1943,7 @@ object Geostreams extends ApiController {
   def getConfig = PermissionAction(Permission.ViewGeoStream) { implicit request =>
     Logger.debug("Getting config")
     current.plugin[PostgresPlugin] match {
-      case Some(plugin) => {
+      case Some(plugin) if plugin.isEnabled => {
         Ok(Json.obj(
           "userAgreement" -> Json.toJson(AppConfiguration.getTermsOfServicesText),
           "sensorsTitle" -> Json.toJson(AppConfiguration.getSensorsTitle),
@@ -1952,7 +1952,7 @@ object Geostreams extends ApiController {
           "parameterTitle" -> Json.toJson(AppConfiguration.getParameterTitle)
         ))
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 

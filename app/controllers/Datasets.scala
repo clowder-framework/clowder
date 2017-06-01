@@ -557,7 +557,7 @@ class Datasets @Inject() (
 
         // associated sensors
         val sensors: List[(String, String, String)] = current.plugin[PostgresPlugin] match {
-          case Some(db) => {
+          case Some(db) if db.isEnabled => {
             // findRelationships will return a "Relation" model with all information about the relationship
             val relationships = relations.findRelationships(id.stringify, ResourceType.dataset, ResourceType.sensor)
 
@@ -570,7 +570,7 @@ class Datasets @Inject() (
               (r.id.stringify, nameToURLTuple._1, nameToURLTuple._2)
             }
           }
-          case None => List.empty[(String, String, String)]
+          case _ => List.empty[(String, String, String)]
         }
 
         var datasetSpaces: List[ProjectSpace] = List.empty[ProjectSpace]

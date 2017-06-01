@@ -25,7 +25,7 @@ class Geostreams @Inject() (
   def list() = PermissionAction(Permission.ViewSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
-      case Some(db) => {
+      case Some(db) if db.isEnabled => {
         val json: JsValue = Json.parse(db.searchSensors(None, None).getOrElse("{}"))
         val sensorResult = json.validate[List[JsValue]]
         val list = sensorResult match {
@@ -37,14 +37,14 @@ class Geostreams @Inject() (
         }
         Ok(views.html.geostreams.list(list))
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def map() = PermissionAction(Permission.ViewSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
-      case Some(db) => {
+      case Some(db) if db.isEnabled => {
         val json: JsValue = Json.parse(db.searchSensors(None, None).getOrElse("{}"))
         val sensorResult = json.validate[List[JsValue]]
         val list = sensorResult match {
@@ -56,22 +56,22 @@ class Geostreams @Inject() (
         }
         Ok(views.html.geostreams.map(list))
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
   def newSensor() = PermissionAction(Permission.CreateSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
-      case Some(db) => Ok(views.html.geostreams.create())
-      case None => pluginNotEnabled
+      case Some(db) if db.isEnabled => Ok(views.html.geostreams.create())
+      case _ => pluginNotEnabled
     }
   }
 
   def edit(id: String)= PermissionAction(Permission.CreateSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
-      case Some(db) => {
+      case Some(db) if db.isEnabled => {
         val sensor = Json.parse(db.getSensor(id).getOrElse("{}"))
         val stream_ids: JsValue = Json.parse(db.getSensorStreams(id).getOrElse("[]"))
 
@@ -92,7 +92,7 @@ class Geostreams @Inject() (
 
         Ok(views.html.geostreams.edit(sensor, streams, definitions))
       }
-      case None => pluginNotEnabled
+      case _ => pluginNotEnabled
     }
   }
 
