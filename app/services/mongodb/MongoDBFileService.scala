@@ -720,10 +720,9 @@ class MongoDBFileService @Inject() (
           for (follower <- file.followers) {
             userService.unfollowFile(follower, id)
           }
-          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
-        // finally delete the actual file
+        // delete the actual file
         if(isLastPointingToLoader(file.loader, file.loader_id)) {
           for(preview <- previews.findByFileId(file.id)){
             previews.removePreview(preview)
@@ -734,6 +733,9 @@ class MongoDBFileService @Inject() (
         }
 
         FileDAO.remove(file)
+
+        // finally remove metadata - if done before file is deleted, document metadataCounts won't match
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
       }
       case None => Logger.debug("File not found")
     }
