@@ -780,7 +780,9 @@ object Geostreams extends ApiController {
     result.toMap
   }
 
-  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean, window_start: Option[String] = None, window_end: Option[String] = None, binning: String, geojson: Option[String]) =
+  def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String],
+                       sources: List[String], attributes: List[String], format: String, semi: Option[String], onlyCount: Boolean,
+                       window_start: Option[String] = None, window_end: Option[String] = None, binning: String, geojson: Option[String]) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
       current.plugin[PostgresPlugin] match {
         case Some(plugin) if plugin.isEnabled => {

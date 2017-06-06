@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Datasets can be copied with Download Files and View Dataset permissions instead of just the owner. [SEAD-1162](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1162)
 - Selections can now be downloaded, tagged or deleted directly from the top menu bar through the new action dropdown.
 - Can assign any GeoJSON geometry to Geostreams entities in the PostGIS database, not just lat/long coordinates. [CATS-643](https://opensource.ncsa.illinois.edu/jira/browse/CATS-643)
+- Attributes filter on datapoint GET endpoint can now include ':' to restrict to datapoints that match a specific value in their attributes. [CATS-762](https://opensource.ncsa.illinois.edu/jira/browse/CATS-762)
 
 ### Fixed
 - Binning on geostreaming api for hour and minutes. [GEOD-886](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-886)

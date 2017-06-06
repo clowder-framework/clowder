@@ -686,8 +686,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     st.close()
     counts
   }
-
-  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], source: List[String], attributes: List[String], sortByStation: Boolean): Iterator[JsObject] = {
+  def searchDatapoints(since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String],
+                       source: List[String], attributes: List[String], sortByStation: Boolean): Iterator[JsObject] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -695,7 +695,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     var query = "SELECT to_json(t) As datapoint FROM " +
       "(SELECT datapoints.gid As id, to_char(datapoints.created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, to_char(datapoints.start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS start_time, to_char(datapoints.end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, datapoints.geog, 15, 0)::json As geometry, stream_id::text, sensor_id::text, sensors.name as sensor_name FROM sensors, streams, datapoints" +
       " WHERE sensors.gid = streams.sensor_id AND datapoints.stream_id = streams.gid"
-//    if (since.isDefined || until.isDefined || geocode.isDefined || stream_id.isDefined) query += " WHERE "
+
     if (since.isDefined) query += " AND datapoints.start_time >= ?"
     if (until.isDefined) query += " AND datapoints.end_time <= ?"
     if (parts.length == 3) {
@@ -711,9 +711,18 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     // attributes
     if (attributes.nonEmpty) {
-      query += " AND (datapoints.data ?? ?"
+      //if a ":" is found, assume this is a filter, otherwise it's just a presence check
+      if (attributes(0).indexOf(":") > -1) {
+        query += " AND (datapoints.data @> ?::jsonb"
+      } else {
+        query += " AND (datapoints.data ?? ?"
+      }
       for (x <- 1 until attributes.size)
-        query += " OR (datapoints.data ?? ?)"
+        if (attributes(x).indexOf(":") > -1) {
+          query += " OR (datapoints.data @> ?::jsonb)"
+        } else {
+          query += " OR (datapoints.data ?? ?)"
+        }
       query += ")"
     }
     // data source
@@ -727,11 +736,14 @@ class PostgresPlugin(application: Application) extends Plugin {
     if (stream_id.isDefined) query += " AND stream_id = ?"
     //sensor
     if (sensor_id.isDefined) query += " AND sensor_id = ?"
+
     query += " order by "
     if (sortByStation) {
       query += "sensor_name, "
     }
     query += "start_time asc) As t;"
+
+    // Populate values ------
     val st = conn.prepareStatement(query)
     var i = 0
     if (since.isDefined) {
@@ -773,10 +785,12 @@ class PostgresPlugin(application: Application) extends Plugin {
         st.setString(i, source(x))
       }
     }
+    // stream
     if (stream_id.isDefined) {
       i = i + 1
       st.setInt(i, stream_id.get.toInt)
     }
+    // sensor
     if (sensor_id.isDefined) {
       i = i + 1
       st.setInt(i, sensor_id.get.toInt)
@@ -798,10 +812,11 @@ class PostgresPlugin(application: Application) extends Plugin {
           st.close()
           false
         } else {
-          if (attributes.isEmpty) {
+          val filterAttrs = attributes.filter(attr => {attr.indexOf(":") == -1})
+          if (filterAttrs.isEmpty) {
             nextObject = Some(Json.parse(rs.getString(1)).as[JsObject])
           } else {
-            nextObject = Some(filterProperties(Json.parse(rs.getString(1)).as[JsObject], attributes))
+            nextObject = Some(filterProperties(Json.parse(rs.getString(1)).as[JsObject], filterAttrs))
           }
           true
         }
