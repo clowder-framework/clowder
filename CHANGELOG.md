@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.3.0 - 2017-06-07
+## 1.3.0 - 2017-06-20
 
 ### Added
 - Only show spaces, collections and datasets that are shared with other users under 'explore' tab. 
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   correctly generate digest emails. [SEAD-1108](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1108)
 
 
-## 1.1.0
+## 1.1.0 - 2017-01-18
 
 ### Added
 - Breadcrumbs at the top of the page. [SEAD-1025](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1025)
@@ -105,6 +105,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Metadata context popups now always properly disappear on mouse out.
 - User metadata @context properly filled to required mappings. [CATS-717](https://opensource.ncsa.illinois.edu/jira/browse/CATS-717)
 
-## [1.0.0] - 2016-12-07
+## 1.0.0 - 2016-12-07
 
 First official release of Clowder.
