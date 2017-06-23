@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.3.1 - 2017-06-22
+
+### Fixed
+- Upgraded Postgres driver to 42.1.1. Geostreams API was throwing an a "canceling statement due to user request" error 
+  for large datapoint queries with Postgresql versions 9.5+. 
+  [CATS-771](https://opensource.ncsa.illinois.edu/jira/browse/CATS-771)
+
 ## 1.3.0 - 2017-06-20
 
 ### Added
