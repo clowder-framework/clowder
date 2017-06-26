@@ -31,11 +31,9 @@
                       <li class="list-group-item">
                           Files <span class="badge pull-right">@humanReadableNumber(filesCount)</span>
                       </li>
-                      <!--
                       <li class="list-group-item" title="Total number of raw bytes stored.">
                           Bytes <span class="badge pull-right">@humanReadableByteCount(filesBytes)</span>
                       </li>
-                      -->
                       <li class="list-group-item" title="Total number users signed up for this server.">
                           @if(user.isDefined) {
                               <a href="@routes.Users.getUsers()"> Users <span class="badge pull-right">@humanReadableNumber(usersCount)</span></a>
