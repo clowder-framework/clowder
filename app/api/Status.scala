@@ -142,12 +142,12 @@ class Status @Inject()(spaces: SpaceService,
   }
 
   def getCounts(user: Option[User]): JsValue = {
+    val counts = appConfig.getIndexCounts()
     val fileinfo = if (Permission.checkServerAdmin(user)) {
       Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
     } else {
-      Json.toJson(files.count())
+      Json.toJson(counts.numFiles)
     }
-    val counts = appConfig.getIndexCounts()
     Json.obj("spaces" -> counts.numSpaces,
       "collections" -> counts.numCollections,
       "datasets" -> counts.numDatasets,
