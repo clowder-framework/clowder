@@ -147,11 +147,13 @@ class Status @Inject()(spaces: SpaceService,
     } else {
       Json.toJson(files.count())
     }
-    Json.obj("spaces" -> spaces.count(),
-      "collections" -> collections.count(),
-      "datasets" -> datasets.count(),
+    val counts = appConfig.getIndexCounts()
+    Json.obj("spaces" -> counts.numSpaces,
+      "collections" -> counts.numCollections,
+      "datasets" -> counts.numDatasets,
       "files" -> fileinfo,
-      "users" -> users.count())
+      "bytes" -> counts.numBytes,
+      "users" -> counts.numUsers)
   }
 
   def getVersionInfo: JsValue = {
