@@ -47,7 +47,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-754](https://opensource.ncsa.illinois.edu/jira/browse/CATS-754)
 - Listing of files in dataset breaks when user permissions in a space are set to View. 
   [CATS-767](https://opensource.ncsa.illinois.edu/jira/browse/CATS-767)
-- Miscelaneous bug fixes.
+- Reenabled byte counts on index and status pages.
+- Miscellaneous bug fixes.
 
 ## 1.2.0 - 2017-03-24 
 
