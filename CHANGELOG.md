@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Upgraded Postgres driver to 42.1.1. Geostreams API was throwing an a "canceling statement due to user request" error 
   for large datapoint queries with Postgresql versions 9.5+. 
   [CATS-771](https://opensource.ncsa.illinois.edu/jira/browse/CATS-771)
+- When doing a reindex all indices in elasticsearch were removed
+  [CATS-772](https://opensource.ncsa.illinois.edu/jira/browse/CATS-772)
 
 ## 1.3.0 - 2017-06-20
 

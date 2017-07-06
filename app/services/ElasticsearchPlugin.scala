@@ -147,7 +147,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     } else {
       // Plain text search with no field qualifiers
       jsonBuilder().startObject()
-        .startObject("match").field("_all", query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
+        .startObject("match").field(nameOfIndex, query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
       .endObject()
     }
 
@@ -228,7 +228,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     client match {
       case Some(x) => {
         try {
-          val response = x.admin().indices().prepareDelete("_all").get()
+          val response = x.admin().indices().prepareDelete(nameOfIndex).get()
           if (!response.isAcknowledged())
             Logger.error("Did not delete all data from elasticsearch.")
         } catch {
