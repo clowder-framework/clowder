@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - CILogin properly works by specifying berer token in header.
 - Collections id properly removed from child collections when deleting parent collection.
   [CATS-774](https://opensource.ncsa.illinois.edu/jira/browse/CATS-774)
+- The modal for adding a relationship between sensors and datasets is now on top of the background and can be clicked.
+  [CATS-777](https://opensource.ncsa.illinois.edu/jira/browse/CATS-777)
 
 ## 1.3.0 - 2017-06-20
 

@@ -20,7 +20,7 @@ function associateWithSensor(resource_type, item_id, dashboard_url) {
 function showModal(sensors, resource_type, item_id, dashboard_url) {
     var modalTemplate = Handlebars.getTemplate('../assets/templates/sensors/assign'); // TODO make it portable to other contexts
     var html = modalTemplate({resource_type : resource_type, sensors: sensors});
-    $('.container').append(html);
+    $('body').append(html);
     $('#sensors-assign').modal();
 
     $('.list-group li').click(function(e) {
