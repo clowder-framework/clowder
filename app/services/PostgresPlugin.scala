@@ -456,7 +456,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
 
-  def createStream(name: String, geotype: String, geojson: JsValue, metadata: String, stream_id: String): Option[String] = {
+  def createStream(name: String, geotype: String, geojson: JsValue, metadata: String, sensor_id: String): Option[String] = {
     val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) " +
       "VALUES(?, CAST(ST_GeomFromGeoJSON(?) AS geography), NOW(), CAST(? AS json), ?);", Statement.RETURN_GENERATED_KEYS)
 
@@ -464,7 +464,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setString(1, name)
     ps.setString(2, Json.stringify(geojson))
     ps.setString(3, metadata)
-    ps.setInt(4, stream_id.toInt)
+    ps.setInt(4, sensor_id.toInt)
 
     // Execute query and get results
     ps.executeUpdate()
