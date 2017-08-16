@@ -147,7 +147,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     } else {
       // Plain text search with no field qualifiers
       jsonBuilder().startObject()
-        .startObject("match").field(nameOfIndex, query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
+        .startObject("match").field("_all", query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
       .endObject()
     }
 

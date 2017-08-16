@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.3.2 - 2017-08-15
+
+### Fixed
+- Elasticsearch searches are broken. [CATS-783](https://opensource.ncsa.illinois.edu/jira/browse/CATS-783)
+
 ## 1.3.1 - 2017-07-24
 
 ### Fixed
