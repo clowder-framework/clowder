@@ -142,16 +142,20 @@ class Status @Inject()(spaces: SpaceService,
   }
 
   def getCounts(user: Option[User]): JsValue = {
-    val fileinfo = if (Permission.checkServerAdmin(user)) {
-      Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
-    } else {
-      Json.toJson(files.count())
-    }
-    Json.obj("spaces" -> spaces.count(),
-      "collections" -> collections.count(),
-      "datasets" -> datasets.count(),
+    val counts = appConfig.getIndexCounts()
+    // TODO: Revisit this check as it is currently too slow
+    //val fileinfo = if (Permission.checkServerAdmin(user)) {
+    //  Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
+    //} else {
+    //  Json.toJson(counts.numFiles)
+    //}
+    val fileinfo = counts.numFiles
+    Json.obj("spaces" -> counts.numSpaces,
+      "collections" -> counts.numCollections,
+      "datasets" -> counts.numDatasets,
       "files" -> fileinfo,
-      "users" -> users.count())
+      "bytes" -> counts.numBytes,
+      "users" -> counts.numUsers)
   }
 
   def getVersionInfo: JsValue = {

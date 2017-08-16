@@ -792,7 +792,7 @@ class MongoDBCollectionService @Inject() (
         }
 
         for(parentCollection <- collection.parent_collection_ids) {
-          removeParentCollectionId(parentCollection, collection, true)
+          removeSubCollection(parentCollection, collection.id)
         }
 
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))

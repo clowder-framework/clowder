@@ -26,7 +26,7 @@ class CILogonProvider(application: Application) extends OAuth2Provider(applicati
   def fillProfile(user: SocialUser): SocialUser = {
     val UserInfoApi = loadProperty("userinfoUrl").getOrElse(throwMissingPropertiesException())
     val accessToken = user.oAuth2Info.get.accessToken
-    val promise = WS.url(UserInfoApi + accessToken).get()
+    val promise = WS.url(UserInfoApi.toString).withHeaders(("Authorization", "Bearer " + accessToken)).get()
 
     try {
       val response = awaitResult(promise)
@@ -50,7 +50,17 @@ class CILogonProvider(application: Application) extends OAuth2Provider(applicati
             identityId = IdentityId(userId, id),
             firstName = firstName.getOrElse(""),
             lastName = lastName.getOrElse(""),
-            fullName = fullName.getOrElse(""),
+            fullName = fullName.getOrElse({
+              if (firstName.isDefined && lastName.isDefined) {
+                firstName.get + " " + lastName.get
+              } else if (firstName.isDefined) {
+                firstName.get
+              } else if (lastName.isDefined) {
+                lastName.get
+              } else {
+                ""
+              }
+            }),
             avatarUrl = avatarUrl,
             email = email
           )
