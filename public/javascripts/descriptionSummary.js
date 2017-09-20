@@ -179,6 +179,7 @@ function fitWidth(text, width, context) {
 	// width = Math.floor(width);
 	var curWidth = context.measureText(text.substring(0, length)).width;
 	var wordOffset = 0;
+	lastWidth = -1;
 	while ((step >= 0.5) || curWidth > width) {
 
 		// alert(curWidth +" : "+width+" : "+length+" : "+step);
@@ -212,6 +213,11 @@ function fitWidth(text, width, context) {
 		}
 		step = step / 2;
 		curWidth = context.measureText(text.substring(0, length)).width;
+		if (lastWidth == curWidth) {
+			// If curWidth stops incrementing, step is just approaching limit=0 so break out to finish loading
+			break;
+		}
+		lastWidth = curWidth;
 
 	}
 	return length;
