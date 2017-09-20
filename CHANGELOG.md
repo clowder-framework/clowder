@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+###Fixed
+- Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
+
 ## 1.3.2 - 2017-08-15
 
 ### Fixed
