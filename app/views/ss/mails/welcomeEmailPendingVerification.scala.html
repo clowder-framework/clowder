@@ -1,0 +1,16 @@
+@(user: securesocial.core.Identity)(implicit request: RequestHeader)
+
+<html>
+    <body>
+
+        <p>Welcome @user.firstName,</p>
+
+        <p>
+            Thank you for providing your information.
+            You will receive an email to log in once your account is enabled.
+        </p>
+
+        @emails.footer()
+
+    </body>
+</html>

@@ -4,9 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## [In Development]
 
-###Fixed
+### Added
+
+### Changed
+- Created email to be sent when registerThroughAdmins=true
+  [CATS-791](https://opensource.ncsa.illinois.edu/jira/browse/CATS-791)
+
+### Fixed
 - Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
 
 ## 1.3.2 - 2017-08-15
