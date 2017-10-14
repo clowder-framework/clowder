@@ -137,11 +137,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     }
   }
 
-  //  GET            /api/users/keys     @api.Users.listKeys()
-//  POST           /api/users/keys     @api.Users.addKey(name: String)
-//  DELETE         /api/users/keys/:id @api.Users.deleteKey(id: UUID)
-
-
   /** @deprecated use id instead of email */
   def addUserDatasetView(email: String, dataset: UUID) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.addUserDatasetView(email, dataset)
