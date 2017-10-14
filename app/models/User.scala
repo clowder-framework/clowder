@@ -5,7 +5,7 @@ import java.security.MessageDigest
 import java.util.Date
 
 import play.api.Play.configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core._
 import services.AppConfiguration
 
@@ -179,3 +179,14 @@ case class UserTermsOfServices(
   acceptedDate: Date = null,
   acceptedVersion: String = ""
 )
+
+case class UserApiKey(
+  name: String,
+  key: String,
+  identityId: IdentityId
+)
+
+object UserApiKey {
+  implicit val identityIdFormat = Json.format[IdentityId]
+  implicit val userApiKeyFormat = Json.format[UserApiKey]
+}

@@ -78,6 +78,70 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     Ok(Json.obj("status" -> "success"))
   }
 
+  def keysList =  AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        Ok(Json.toJson(users.getUserKeys(user.identityId)))
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  def keysGet(name: String) =  AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        users.getUserKeys(user.identityId).find(k => k.name == name) match {
+          case Some(key) => Ok(Json.toJson(key))
+          case None => NotFound(s"Key with name ${name} not found")
+        }
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  def keysAdd(name: String) = AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        if (users.getUserKeys(user.identityId).exists(k => k.name == name)) {
+          BadRequest(s"Key with name ${name} already exists")
+        } else {
+          val key = java.util.UUID.randomUUID().toString
+          users.addUserKey(user.identityId, name, key)
+          Ok(Json.obj("name" -> name, "key" -> key))
+        }
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  def keysDelete(name: String) =  AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        users.getUserKeys(user.identityId).find(k => k.name == name) match {
+          case Some(key) => {
+            users.deleteUserKey(user.identityId, name)
+            NoContent
+          }
+          case None => NotFound(s"Key with name ${name} not found")
+        }
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  //  GET            /api/users/keys     @api.Users.listKeys()
+//  POST           /api/users/keys     @api.Users.addKey(name: String)
+//  DELETE         /api/users/keys/:id @api.Users.deleteKey(id: UUID)
+
+
   /** @deprecated use id instead of email */
   def addUserDatasetView(email: String, dataset: UUID) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.addUserDatasetView(email, dataset)

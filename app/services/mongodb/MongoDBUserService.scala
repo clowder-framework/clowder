@@ -212,6 +212,22 @@ class MongoDBUserService @Inject() (
     UserDAO.dao.findOne(MongoDBObject("email" -> email))
   }
 
+  override def findByKey(key: String): Option[User] = {
+    UserApiKeyDAO.dao.findOne(MongoDBObject("key" -> key)).flatMap(u => findByIdentity(u.identityId.userId, u.identityId.providerId))
+  }
+
+  def getUserKeys(identityId: IdentityId): List[UserApiKey] = {
+    UserApiKeyDAO.dao.find(MongoDBObject("identityId.userId" -> identityId.userId, "identityId.providerId" -> identityId.providerId)).toList
+  }
+
+  def addUserKey(identityId: IdentityId, name: String, key: String): Unit = {
+    UserApiKeyDAO.insert(UserApiKey(name, key, identityId))
+  }
+
+  def deleteUserKey(identityId: IdentityId, name: String): Unit = {
+    UserApiKeyDAO.remove(MongoDBObject("name" -> name, "identityId.userId" -> identityId.userId, "identityId.providerId" -> identityId.providerId))
+  }
+
   override def updateProfile(id: UUID, profile: Profile) {
     val pson = grater[Profile].asDBObject(profile)
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("profile" -> pson))
@@ -597,6 +613,13 @@ class MongoDBUserService @Inject() (
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
+    }
+  }
+
+  object UserApiKeyDAO extends ModelCompanion[UserApiKey, ObjectId] {
+    val dao = current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => new SalatDAO[UserApiKey, ObjectId](collection = x.collection("users.apikey")) {}
     }
   }
 }

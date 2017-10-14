@@ -5,9 +5,11 @@ import play.api.data.Form
 import play.api.data.Forms._
 import models._
 import javax.inject.Inject
+
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
+import securesocial.core.IdentityId
 import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
 // TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
@@ -49,24 +51,18 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
   def viewProfileUUID(uuid: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val viewerUser = request.user
-    var ownProfile: Option[Boolean] = None
     val muser = users.findById(uuid)
 
     muser match {
       case Some(existingUser) => {
-        viewerUser match {
-          case Some(loggedInUser) => {
-            if (loggedInUser.id == existingUser.id)
-              ownProfile = Option(true)
-            else
-              ownProfile = None
+        val (ownProfile, keys) = viewerUser match {
+          case Some(loggedInUser) if loggedInUser.id == existingUser.id => {
+            (true, users.getUserKeys(loggedInUser.identityId))
           }
-          case None => {
-            ownProfile = None
-          }
+          case _ => (false, List.empty[UserApiKey])
         }
 
-        Ok(views.html.profile(existingUser, ownProfile))
+        Ok(views.html.profile(existingUser, keys, ownProfile))
 
       }
       case None => {
