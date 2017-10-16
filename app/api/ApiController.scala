@@ -4,6 +4,7 @@ import api.Permission.Permission
 import models.{ClowderUser, ResourceRef, User}
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
 import play.api.mvc._
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.{Authenticator, SecureSocial, UserService}
@@ -159,6 +160,10 @@ trait ApiController extends Controller {
       val userservice = DI.injector.getInstance(classOf[services.UserService])
       val commkey = play.Play.application().configuration().getString("commKey")
       key.foreach { realkey =>
+        // check to see if this is the global key
+        if (realkey == commkey) {
+          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request)
+        }
         // check to see if this is a key for a specific user
         userservice.findByKey(realkey) match {
           case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
@@ -167,10 +172,7 @@ trait ApiController extends Controller {
           case Some(u) => {
             return UserRequest(Some(u), request)
           }
-        }
-        // check to see if this is the global key
-        if (realkey == commkey) {
-          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request)
+          case None => Logger.debug(s"key ${realkey} not associated with a user.")
         }
       }
     }

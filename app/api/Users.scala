@@ -24,25 +24,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    */
   def getUser() = AuthenticatedAction { implicit request =>
       request.user match {
-          case Some(identity) => {
-              Logger.debug("Have an identity. It is " + identity)
-              identity.email match {
-                  case Some(emailAddress) => {
-		              users.findByEmail(emailAddress) match {
-		                  case Some(user) => Ok(userToJSON(user))
-		                  //The None case should never happen, as this is a secured action, and requires a user?
-		                  case None => {
-		                      Logger.debug("--------- In the NONE case for findById in getUser")
-		                      Ok(Json.toJson("No user found"))
-		                  }
-		              }
-                  }
-                  case None => Unauthorized("Not authenticated")
-              }
-          }
-          case None => {
-              Unauthorized("Not authenticated")
-          }
+          case Some(identity) => Ok(userToJSON(identity))
+          case None => Unauthorized("Not authenticated")
       }
   }
 
