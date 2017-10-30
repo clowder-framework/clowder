@@ -137,6 +137,10 @@ class PostgresPlugin(application: Application) extends Plugin {
   def addDatapoints(datapoints: List[(String, Option[String], String, JsValue, JsValue)], stream_id: String): Option[String] = {
     // TODO: This list of datapoint tuples is ugly, but maybe this is all going away with Geodashboard v3 anyway?
     //       The parameters of each item in this list are the same as addDatapoint parameters above.
+    if (datapoints.length == 0) {
+      return Some("0")
+    }
+
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
     var statement = "INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES "
     datapoints.foreach(f => {
