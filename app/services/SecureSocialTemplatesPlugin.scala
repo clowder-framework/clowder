@@ -97,7 +97,11 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
    * @return a String with the html code for the email
    */
   def getWelcomeEmail(user: Identity)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
-    (None, Some(views.html.ss.mails.welcomeEmail(user)))
+    if(play.Play.application().configuration().getBoolean("registerThroughAdmins")) {
+      (None, Some(views.html.ss.mails.welcomeEmailPendingVerification(user)))
+    } else {
+      (None, Some(views.html.ss.mails.welcomeEmail(user)))
+    }
   }
 
   /**

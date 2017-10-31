@@ -3,6 +3,8 @@
  */
 package services
 
+import java.text.SimpleDateFormat
+
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import java.sql.DriverManager
@@ -130,6 +132,50 @@ class PostgresPlugin(application: Application) extends Plugin {
     rs.close()
     ps.close()
     createdDatapoint
+  }
+
+  def addDatapoints(datapoints: List[(String, Option[String], String, JsValue, JsValue)], stream_id: String): Option[String] = {
+    // TODO: This list of datapoint tuples is ugly, but maybe this is all going away with Geodashboard v3 anyway?
+    //       The parameters of each item in this list are the same as addDatapoint parameters above.
+    if (datapoints.length == 0) {
+      return Some("0")
+    }
+
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+    var statement = "INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES "
+    datapoints.foreach(f => {
+      statement += "(?, ?, ?, CAST(? AS jsonb), CAST(ST_GeomFromGeoJSON(?) AS geography), NOW()), "
+    })
+    // Remove trailing comma
+    statement = statement.substring(0, statement.length()-2)
+    statement += ";"
+
+    val ps = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)
+
+    var index = 0
+    datapoints.foreach(f => {
+      val start = new Timestamp(formatter.parse(f._1).getTime())
+      val end = if (f._2.isDefined) Some(new Timestamp(formatter.parse(f._2.get).getTime())) else None
+      val geoType = f._3
+      val data = Json.stringify(f._4)
+      val geojson = f._5
+
+      ps.setTimestamp(index+1, new Timestamp(start.getTime))
+      if (end.isDefined)
+        ps.setTimestamp(index+2, new Timestamp(end.get.getTime))
+      else
+        ps.setDate(index+2, null)
+      ps.setInt(index+3, stream_id.toInt)
+      ps.setString(index+4, data)
+      ps.setString(index+5, Json.stringify(geojson))
+      index += 5
+    })
+
+    // Execute query and get results
+    ps.executeUpdate()
+    val rs = ps.getUpdateCount()
+    ps.close()
+    Some(rs.toString)
   }
 
   def createSensor(name: String, geoType: String, geojson: JsValue, metadata: String): Option[String] = {

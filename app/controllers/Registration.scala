@@ -85,7 +85,12 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
               if ( UsernamePasswordProvider.signupSkipLogin ) {
                 ProviderController.completeAuthentication(user, eventSession).flashing(Success -> Messages(SignUpDone))
               } else {
-                Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(SignUpDone)).withSession(eventSession)
+                // if registerThroughAdmins == true, then show the appropriate text
+                if (play.Play.application().configuration().getBoolean("registerThroughAdmins")) {
+                  Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(ThankYouCheckEmail)).withSession(eventSession)
+                } else {
+                  Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(SignUpDone)).withSession(eventSession)
+                }
               }
             }
           )
