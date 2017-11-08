@@ -101,7 +101,7 @@ object Geostreams extends ApiController {
       case Some(plugin) if plugin.isEnabled => {
         request.body.validate[(String, String, List[Double], JsValue)].map {
           case (name, geoType, longlat, metadata) => {
-            val geojson = createGeoJson(longlat)
+            val geojson = createGeoJson(List(longlat(1),longlat(0),longlat(2)))
             plugin.createSensor(name, geoType, geojson, Json.stringify(metadata)) match {
               case Some(d) => jsonp(d, request)
               case None => BadRequest(s"Failed to create sensor $name")
