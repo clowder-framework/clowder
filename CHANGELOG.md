@@ -4,13 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [In Development]
+## [Unreleased]
 
 ### Added
 
 ### Changed
 - Created email to be sent when registerThroughAdmins=true
   [CATS-791](https://opensource.ncsa.illinois.edu/jira/browse/CATS-791)
+- Default value for showAll in list spaces
+  [CATS-815](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
 
 ### Fixed
 - Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
