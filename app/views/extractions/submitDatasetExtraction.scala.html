@@ -19,7 +19,7 @@
                 <thead>
                     <tr>
                         <th>Extractor's Name</th>
-                        @*<th>Parameters</th>*@
+                        <th>Parameters</th>
                         <th>Submit</th>
                     </tr>
                 </thead>
@@ -27,7 +27,7 @@
                     @for(e <- extractors) {
                         <tr>
                             <td>@e.name</td>
-                            @*<td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>*@
+                            <td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>
                             <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@ds.id')">Submit</button></td>
                         </tr>
                     }
