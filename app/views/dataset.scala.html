@@ -246,6 +246,15 @@
                             </div>
                         </div>
                     }
+                    @*show ``submit for extraction'' link*@
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
+                            && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                        <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
+                            <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit for extraction
+                        </a>
+                    }
+
+
                     <hr/>
                 </div>
             </div>
@@ -279,6 +288,8 @@
                                 @metadatald.view(m, true)
                             </div>
                         </div>
+                        @*move ``submit for extractor'' link to the top right after ``Create Folder''*@
+                        @*
                         @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
                                 && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
                             <div class="row bottom-padding">
@@ -289,7 +300,7 @@
                                     </a>
                                 </div>
                             </div>
-                        }
+                        }*@
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                         @datasets.previews(dataset, previewers)
