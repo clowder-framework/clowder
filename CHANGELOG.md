@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added clowder.upload.previews flag to application.conf to turn on/off previews in upload page.
+  [CATS-813](https://opensource.ncsa.illinois.edu/jira/browse/CATS-813)
 
 ### Changed
 - Created email to be sent when registerThroughAdmins=true
