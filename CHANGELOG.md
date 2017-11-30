@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
+- Tags lists now showing up to 10000 entries when using elasticsearch. Was defaulting to 10.
+  [SEAD-1169](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1169)
 
 ## 1.3.2 - 2017-08-15
 
