@@ -50,14 +50,14 @@ trait Agent {
 case class RDFModel(model: org.apache.jena.rdf.model.Model)
 
 // User through the GUI
-case class UserAgent(id: UUID, var typeOfAgent: String = "user", user: MiniUser, userId: Option[URL]) extends Agent {
+case class UserAgent(id: UUID, var typeOfAgent: String = "cat:user", user: MiniUser, userId: Option[URL]) extends Agent {
   def operation: String = "Added"
   def displayName: String = user.fullName
   def url: Option[URL] = userId
 }
 
 // Automatic extraction
-case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor", name: Option[String] = None,  extractorId: Option[URL]) extends Agent {
+case class ExtractorAgent(id: UUID, var typeOfAgent: String = "cat:extractor", name: Option[String] = None,  extractorId: Option[URL]) extends Agent {
   def operation: String = "Extracted"
   def displayName: String = {
     name match {
