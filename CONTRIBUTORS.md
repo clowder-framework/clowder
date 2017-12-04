@@ -26,6 +26,7 @@ Following is a list of contributors in alphabetical order:
 - Theerasit Issaranon
 - Todd Nicholson
 - Varun Kethineedi
+- Ward Poelmans
 - Will Hennessy
 - Winston Jansz
 - Xiaocheng Yuan
