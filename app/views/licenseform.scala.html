@@ -125,7 +125,7 @@ Used By: dataset.scala.html, file.scala.html
                 if (licenseType == "license1" || licenseType == 'license2') {
                     if (rightsHolder == null || rightsHolder.trim().length == 0){                    	
                     	//No rights holder set, so default to "Author"
-                    	$('input[name=ownername]').val("@authorName");
+                    	$('input[name=ownername]').val(htmlDecode("@authorName"));
                     	//If Author is same as current user, trigger the box.
                     	if ("@authorName" == currentUserName) {
                     		if (!$('#ownrights').prop('checked')) {
