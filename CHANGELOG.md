@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 1.3.3 - ????-??-??
 
 ### Added
 - Added clowder.upload.previews flag to application.conf to turn on/off previews in upload page.
@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
 - Tags lists now showing up to 10000 entries when using elasticsearch. Was defaulting to 10.
   [SEAD-1169](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1169)
+- Add js route to get the JSONLD metadata of a file.
+  [GitHub-PR#2](https://github.com/ncsa/clowder/pull/2)
 
 ## 1.3.2 - 2017-08-15
 
