@@ -58,7 +58,7 @@ Used By: dataset.scala.html, file.scala.html
 			</tr>
 		</table>		
 		<br>
-		<button class="btn btn-primary" title="Update License Information" onclick="return updateData('@id', '@routes.Assets.at("images")', '@sourceObject', '@authorName')">
+		<button class="btn btn-primary" title="Update License Information" onclick='return updateData("@id", "@routes.Assets.at("images")", "@sourceObject", "@authorName")'>
 		  <span class="glyphicon glyphicon-saved"></span> Submit
 		</button>
 		<!-- <button class="btn btn-default" onclick="return updateInterface();">Update</button> -->
@@ -73,7 +73,7 @@ Used By: dataset.scala.html, file.scala.html
 	
 	<script type="text/javascript" language="javascript">
 	
-	var currentUserName = "@user.get.fullName"; 
+	var currentUserName = htmlDecode("@user.get.fullName"); 
     
 	
     $(document).ready(function() {        
@@ -125,7 +125,7 @@ Used By: dataset.scala.html, file.scala.html
                 if (licenseType == "license1" || licenseType == 'license2') {
                     if (rightsHolder == null || rightsHolder.trim().length == 0){                    	
                     	//No rights holder set, so default to "Author"
-                    	$('input[name=ownername]').val("@authorName");
+                    	$('input[name=ownername]').val(htmlDecode("@authorName"));
                     	//If Author is same as current user, trigger the box.
                     	if ("@authorName" == currentUserName) {
                     		if (!$('#ownrights').prop('checked')) {
@@ -216,7 +216,7 @@ Used By: dataset.scala.html, file.scala.html
 	
 	<script type="text/javascript" language="javascript">			 
 	  	  
-	  var currentUserName = "@user.get.fullName"; 
+	  var currentUserName = htmlDecode("@user.get.fullName"); 
 	
 	  //Handle the selection of the checkbox that makes the owner the current user
 	  var cbox = $('#ownrights'); 
