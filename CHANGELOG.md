@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-771](https://opensource.ncsa.illinois.edu/jira/browse/CATS-771)
 - When doing a reindex all indices in elasticsearch were removed.
   [CATS-772](https://opensource.ncsa.illinois.edu/jira/browse/CATS-772)
-- CILogin properly works by specifying berer token in header.
+- CILogin properly works by specifying bearer token in header.
 - Collections id properly removed from child collections when deleting parent collection.
   [CATS-774](https://opensource.ncsa.illinois.edu/jira/browse/CATS-774)
 - The modal for adding a relationship between sensors and datasets is now on top of the background and can be clicked.
@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability to mention other users using '@' in a comment on a file or dataset. Mentioned users will receive a 
   notification email and a notice in their event feed. [SEAD-781](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-781)
 - Description field to metadata definition. [SEAD-1101](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1101)
+- Improved documentation for the user interface.
 
 ### Changed
 - Ability to search datapoints, averages and trends using a start and end time.
@@ -111,7 +112,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Updated docker compose repositories from ncsa/* to clowder/*. [CATS-734](https://opensource.ncsa.illinois.edu/jira/browse/CATS-734])
 - Improved handling of special characters and long descriptions for datasets and Staging Area publication requests 
   [SEAD-1143](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1143), 
-  [CAT-692](https://opensource.ncsa.illinois.edu/jira/browse/CATS-692)
+  [CATS-692](https://opensource.ncsa.illinois.edu/jira/browse/CATS-692)
 - Default for clowder.diskStorage.path changed from /tmp/clowder to /home/clowder/data. 
   [CATS-748](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1143)
 
@@ -139,7 +140,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Only show Quicktime preview for Quicktime-VR videos.
 - Organize public/published datasets into multiple tabs on project space page. 
   [SEAD-1036](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1036)
-- Changed Rabbitmq delivery mode to persistent. [CATS-714](https://opensource.ncsa.illinois.edu/jira/browse/CATS-714)
+- Changed RabbitMQ delivery mode to persistent. [CATS-714](https://opensource.ncsa.illinois.edu/jira/browse/CATS-714)
 - Dataset and collection listing layout is not consistent with space listing layout.
 
 ### Removed
