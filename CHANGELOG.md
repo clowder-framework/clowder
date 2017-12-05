@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-791](https://opensource.ncsa.illinois.edu/jira/browse/CATS-791)
 - Default value for showAll in list spaces
   [CATS-815](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
-
+- Move submit for extraction to the top on file page and dataset page. Remove parameter text field on Submit for Extraction page.
+  [CATS-794](https://opensource.ncsa.illinois.edu/jira/browse/CATS-794)
 ### Fixed
 - Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
 
