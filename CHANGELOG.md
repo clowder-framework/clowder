@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.3.3 - ????-??-??
+## [Unreleased]
 
 ### Added
 - Added clowder.upload.previews flag to application.conf to turn on/off previews in upload page.
@@ -20,12 +20,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - add cat: as prefix for typeOfAgent in UserAgent and ExtractorAgent constructors.
   add filter or condition to check typeOfAgent is cat:extractor in getTechnicalMetadataJSON endpoint
   [CATS-798](https://opensource.ncsa.illinois.edu/jira/browse/CATS-798)
+
 ### Fixed
 - Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
 - Tags lists now showing up to 10000 entries when using elasticsearch. Was defaulting to 10.
   [SEAD-1169](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1169)
 - Add js route to get the JSONLD metadata of a file.
   [GitHub-PR#2](https://github.com/ncsa/clowder/pull/2)
+- Geostreams POST /sensors lat and long are reversed.
+  [GLGVO-382](https://opensource.ncsa.illinois.edu/jira/browse/GLGVO-382)
+- Edit license breaks on names with apostrophes in them.
+  [CATS-820](https://opensource.ncsa.illinois.edu/jira/browse/CATS-820)
+
 
 ## 1.3.2 - 2017-08-15
 
