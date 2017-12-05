@@ -19,7 +19,7 @@ The ugly?
 ---------
 
 * Documentation is work in progress.
-* Some of the code is a little hard to read.w
+* Some of the code is a little hard to read.
 
 `Contributions <https://github.com/ncsa/clowder/blob/master/CONTRIBUTING.md>`_ in this area are greatly appreciated!
 * Documentation is work in progress.
