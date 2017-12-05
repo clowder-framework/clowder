@@ -180,12 +180,14 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload.js")"></script>
 <!-- The File Upload processing plugin -->
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-process.js")"></script>
-<!-- The File Upload image preview & resize plugin -->
-<script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-image.js")"></script>
-<!-- The File Upload audio preview plugin -->
-<script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-audio.js")"></script>
-<!-- The File Upload video preview plugin -->
-<script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-video.js")"></script>
+@if(play.Play.application.configuration.getBoolean("clowder.upload.previews", true)) {
+    <!-- The File Upload image preview & resize plugin -->
+    <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-image.js")"></script>
+    <!-- The File Upload audio preview plugin -->
+    <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-audio.js")"></script>
+    <!-- The File Upload video preview plugin -->
+    <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-video.js")"></script>
+}
 <!-- The File Upload validation plugin -->
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-validate.js")"></script>
 <!-- The File Upload user interface plugin -->
