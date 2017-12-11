@@ -828,7 +828,14 @@ class  Datasets @Inject()(
     }
   }
 
-  def datasetAllFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  /**
+    * List all files withing a dataset and its nested folders.
+    *
+    * @param id dataset id
+    * @param max max number of files to return, default is
+    * @return
+    */
+  def datasetAllFilesList(id: UUID, max: Option[Int] = None) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
         val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
@@ -846,7 +853,12 @@ class  Datasets @Inject()(
           case None => false
         }
         val list = listFiles ++ getFilesWithinFolders(id, serveradmin)
-        Ok(toJson(list))
+        // Keep only the first `max` elements in the list
+        val filteredFiles = max match {
+          case Some(i) => list.take(i)
+          case None => list
+        }
+        Ok(toJson(filteredFiles))
       }
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
