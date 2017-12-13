@@ -1,5 +1,6 @@
 package api
 
+import scala.annotation.tailrec
 import java.io.FileInputStream
 import java.net.{URL, URLEncoder}
 import javax.inject.Inject
@@ -1247,6 +1248,64 @@ class Files @Inject()(
   * Returns metadata extracted so far for a file with id
   * 
   */
+
+
+  /**
+    * get the hierarchical path from dataset to the given folder.
+    * @param folder a Folder object
+    * @param path a list name of folder/dataset
+    * @return the list of names on the hierarchical path from dataset to the given folder
+    */
+  @tailrec final def folderPath(folder: Folder, path: List[String]) : List[String]= {
+    folder.parentType match {
+      case "folder" => {
+        folders.get(folder.parentId) match {
+          case Some(fparent) => folderPath(fparent, folder.name :: path)
+          case _ => folder.name :: path
+        }
+      }
+      case "dataset" => {
+        datasets.get(folder.parentId) match {
+          case Some(dataset) => dataset.name.trim :: folder.name :: path
+          case _ => folder.name :: path
+        }
+      }
+      case _ => folder.name :: path
+    }
+  }
+
+  /**
+    * Rest endpoint,
+    * given a file id, get a list of traversing path from datasets to the parent folder containing this file.
+    * @param id a file id in dataset.
+    * @return a list of paths
+    */
+  def paths(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    Logger.debug("get a list of path from dataset to the parent folder containing the file with id " + id)
+
+    if (UUID.isValid(id.stringify)) {
+      files.get(id) match {
+        case Some(file) =>
+          // 1. get name of dataset directorly containing this file.
+          val datasetList = datasets.findByFileId(file.id)
+          val datasetNames = for(dataset <- datasetList) yield(dataset.name)
+          //2. get paths from datasets to the parent folders containing this file.
+          val foldersContainingFile = folders.findByFileId(file.id)
+          val allPaths : List[List[String]] = datasetNames +: (for(folder <- foldersContainingFile) yield (folderPath(folder, List())))
+          Ok(Json.obj("paths" -> allPaths.filterNot(_.forall(_.isEmpty))))
+        case None => {
+          val error_str = "The file with id " + id + " is not found."
+          Logger.error(error_str)
+          NotFound(toJson(error_str))
+        }
+      }
+    } else {
+      val error_str ="The given id " + id + " is not a valid ObjectId."
+      Logger.error(error_str)
+      BadRequest(toJson(error_str))
+    }
+  }
+
   def extract(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
