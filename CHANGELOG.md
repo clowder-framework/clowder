@@ -4,28 +4,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 1.3.3 - 2017-12-21
 
 ### Added
-- endpoint to get a list of traversing paths from datasets to the parent folders of the given file
+- Endpoint to get a list of traversing paths from datasets to the parent
+  folders of the given file.
   [CATS-811](https://opensource.ncsa.illinois.edu/jira/browse/CATS-811)
-- Added clowder.upload.previews flag to application.conf to turn on/off previews in upload page.
+- clowder.upload.previews flag to application.conf to turn on/off
+  previews in upload page.
   [CATS-813](https://opensource.ncsa.illinois.edu/jira/browse/CATS-813)
 
 ### Changed
-- Created email to be sent when registerThroughAdmins=true
+- Send email with instructions when registerThroughAdmins=true.
   [CATS-791](https://opensource.ncsa.illinois.edu/jira/browse/CATS-791)
-- Default value for showAll in list spaces
+- Default showAll to true when listing spaces.
   [CATS-815](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
-- Move submit for extraction to the top on file page and dataset page. Remove parameter text field on Submit for Extraction page.
+- Move submit for extraction to the top on file page and dataset page.
+  Remove parameter text field on Submit for Extraction page.
   [CATS-794](https://opensource.ncsa.illinois.edu/jira/browse/CATS-794)
-- add cat: as prefix for typeOfAgent in UserAgent and ExtractorAgent constructors.
-  add filter or condition to check typeOfAgent is cat:extractor in getTechnicalMetadataJSON endpoint
+- Add 'cat:' as prefix for typeOfAgent in UserAgent and ExtractorAgent
+  constructors. Add filter or condition to check typeOfAgent is
+  cat:extractor in getTechnicalMetadataJSON endpoint.
   [CATS-798](https://opensource.ncsa.illinois.edu/jira/browse/CATS-798)
 
 ### Fixed
-- Dataset descriptions of sufficient length no longer cause the page to freeze in tiles view.
-- Tags lists now showing up to 10000 entries when using elasticsearch. Was defaulting to 10.
+- Dataset geospatial previewer now has a max of 20 layers shown by default.
+  The dataset page was taking too long to load for datasets with lots of
+  files because of this.
+  [CATS-826](https://opensource.ncsa.illinois.edu/jira/browse/CATS-826)
+- Dataset descriptions of sufficient length no longer cause the page to
+  freeze in tiles view.
+- Tags lists now showing up to 10000 entries when using elasticsearch.
+  Was defaulting to 10.
   [SEAD-1169](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1169)
 - Add js route to get the JSONLD metadata of a file.
   [GitHub-PR#2](https://github.com/ncsa/clowder/pull/2)
@@ -34,11 +44,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Edit license breaks on names with apostrophes in them.
   [CATS-820](https://opensource.ncsa.illinois.edu/jira/browse/CATS-820)
 
-
 ## 1.3.2 - 2017-08-15
 
 ### Fixed
-- Elasticsearch searches are broken. [CATS-783](https://opensource.ncsa.illinois.edu/jira/browse/CATS-783)
+- Elasticsearch searches are broken.
+  [CATS-783](https://opensource.ncsa.illinois.edu/jira/browse/CATS-783)
 
 ## 1.3.1 - 2017-07-24
 
