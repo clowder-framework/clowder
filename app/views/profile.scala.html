@@ -144,17 +144,23 @@
                 <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
             }
             @if(ownProfile) {
-                <h4 id="userkeys">User API keys</h4>
+                <h4 id="userkeys">User API Keys</h4>
+                <span>Create your personal API keys by providing a name for the key and clicking the Add button. Key names have to be unique per user.</span>
+                <div class="row wrapped" id="key-">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-2">Name</div>
+                    <div class="col-md-9">Key</div>
+                </div>
                 @keys.map{key =>
-                    <div class="row" id="key-@key.name">
+                    <div class="row wrapped" id="key-@key.name">
                         <div class="col-md-1"><a href='javascript:deleteUserKey("@key.name");'><span class="glyphicon glyphicon-trash"></span></a></div>
                         <div class="col-md-2">@key.name</div>
                         <div class="col-md-9">@key.key</div>
                     </div>
                 }
-                <div class="row">
-                    <div class="col-md-1"><a href='javascript:addUserKey();'><span class="glyphicon glyphicon-plus"></span></a></div>
-                    <div class="col-md-2"><input type="text" id="userkeyname"></div>
+                <div class="row wrapped">
+                    <div class="col-md-1"><a href='javascript:addUserKey();'><span class="glyphicon glyphicon-plus"></span> Add</a></div>
+                    <div class="col-md-2"><input type="text" id="userkeyname" class="form-control"></div>
                 </div>
             }
         </div>
@@ -310,12 +316,13 @@
                     type: 'POST'
                 });
                 request.done(function(response, textStatus, jqXHR) {
-                    var newkey = '<div class="row" id="key-' + userkeyname + '">';
+                    var newkey = '<div class="row wrapped" id="key-' + userkeyname + '">';
                     newkey += '<div class="col-md-1"><a href="javascript:deleteUserKey(\'' + userkeyname + '\');"><span class="glyphicon glyphicon-trash"></span></a></div>';
                     newkey += '<div class="col-md-2">' + userkeyname + '</div>';
                     newkey += '<div class="col-md-9">' + response.key + '</div>';
                     newkey += '</div>';
-                    $("#userkeys").after(newkey);
+                    // $("#userkeys").after(newkey);
+                    $(newkey).insertAfter($('[id^="key-"]').last());
                 });
                 request.fail(function(jqXHR, textStatus, errorThrown) {
                     console.error("The following error occurred: " + textStatus, errorThrown);
@@ -341,7 +348,6 @@
                         notify("The name was not updated due to: "+ errorThrown, "error");
                     }
                 });
-
             }
     </script>
 }
