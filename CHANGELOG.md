@@ -4,9 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.3.3 - 2017-12-21
+## [In Development]
 
 ### Added
+- Ability for users to create their own API keys.
+  [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
+
+## 1.3.3 - 2017-12-21
+
 - Endpoint to get a list of traversing paths from datasets to the parent
   folders of the given file.
   [CATS-811](https://opensource.ncsa.illinois.edu/jira/browse/CATS-811)

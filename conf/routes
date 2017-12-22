@@ -694,14 +694,18 @@ POST           /api/institutions/addinstitution                                 
 # ----------------------------------------------------------------------
 GET            /api/users                                                               @api.Users.list
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
-GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
 GET            /api/me                                                                  @api.Users.getUser()
 POST           /api/users/:id/updateName                                                @api.Users.updateName(id: UUID, firstName: String, lastName: String)
+GET            /api/users/keys                                                          @api.Users.keysList()
+GET            /api/users/keys/:name                                                    @api.Users.keysGet(name: String)
+POST           /api/users/keys                                                          @api.Users.keysAdd(name: String)
+DELETE         /api/users/keys/:key                                                     @api.Users.keysDelete(key: String)
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID)
 GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
+GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
 
 # ----------------------------------------------------------------------
 # USERS Controller
