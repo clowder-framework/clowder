@@ -321,6 +321,13 @@
 							objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 							</button>
 						}
+                        @if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))
+                                && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                            <a href="@routes.Extractors.submitFileExtraction(UUID(id))" class="btn btn-link" >
+                                <span class="glyphicon glyphicon-send"></span>
+                                Submit for extraction
+                            </a>
+                        }
 						}
 						<hr/>
 					</div>
@@ -586,13 +593,6 @@
 						aria-controls="listExtractions">
 						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
 					</a>
-					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))
-							&& play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
-						<a href="@routes.Extractors.submitFileExtraction(UUID(id))" class="btn btn-link" >
-							<span class="glyphicon glyphicon-send"></span>
-							Submit file for extraction
-						</a>
-					}
 					<div class="collapse" id="extractions">
 					@extractions.extractionsByFile(extractionsStatus)
 					</div>

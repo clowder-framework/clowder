@@ -1,26 +1,21 @@
+// Dataset previewer for geospatial layers
 (function($, Configuration) {
 	//console.log("Geospatial dataset previewer for " + Configuration.dataset_id);
 	$.getScript(Configuration.path + "/../../../openlayers/ol.js", function () {
 
 		var dataset_id = Configuration.dataset_id;
-
 		var current_coord = [];
 
-		// setting up ajax call to get file from the dataset
+		// list first 20 files in dataset
 		var file_req = $.ajax({
 			type: "GET",
-			url: jsRoutes.api.Datasets.datasetAllFilesList(dataset_id).url,
+			url: jsRoutes.api.Datasets.datasetAllFilesList(dataset_id, 20).url,
 			dataType: "json"
 		});
 
 		file_req.done(function (files) {
-
-			//console.log(files);
-
 			for (var i in files) {
-
 				var fileId = files[i]['id'];
-
 				var fileName = files[i]['filename'];
 				if (fileName.length > 15) {
 					fileName = fileName.substring(0, 15) + "...";
@@ -92,6 +87,7 @@
 
 		if ($('#geospatialDatasetPreviewerMap').length == 0) {
 			$(Configuration.div).append("<h4>Geospatial Layers</h4>");
+            $(Configuration.div).append("<div>Showing up to 20 files in the dataset ordered by upload date.");
 
 			// adding css for ol3
 			var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.path + "/../../../openlayers/ol.css'>");

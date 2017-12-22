@@ -1,3 +1,4 @@
+.. index:: Development Environment
 Development Environment
 =============================
 
@@ -11,7 +12,7 @@ Both are great tools for scala developement.
 Minimum Requirements
 --------------------
 
-First install required software described here :ref:`required-software`.
+First install required software described here :ref:`requirements`.
 
 
 Check out the source code
@@ -28,14 +29,14 @@ The repository `clowder` containes the web frontend and is required. It should b
 
 ::
 
-  > git clone https://opensource.ncsa.illinois.edu/stash/scm/cats/clowder.git
+  > git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/clowder.git
 
 
 Most of the other repositories include specific extractors. Basic extractors are available in `extractors-core`:
 
 ::
 
-  > git clone https://opensource.ncsa.illinois.edu/stash/scm/cats/clowder.git
+  > git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/extractors-core.git
 
 
 Execute
@@ -69,7 +70,7 @@ the all the configuration files under the ``/conf`` directory. The following fil
 
 - ``/conf/application.conf`` includes all the basic configuration entries. For example the MongoDB credentials for
   deployments where MongoDB has non default configuration.
-- ``/conf/play.plugins`` is usesd to turn on and off specific functionality in the system. Plugins specific to Clowder are
+- ``/conf/play.plugins`` is used to turn on and off specific functionality in the system. Plugins specific to Clowder are
   available under ``/app/services``.
 - ``/conf/securesocial.conf`` includes configuration settings for email functionality when signup as well as ways to
   configure the different identity providers (for example Twitter or Facebook). More information can be found on the

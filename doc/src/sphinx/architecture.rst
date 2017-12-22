@@ -1,14 +1,21 @@
+.. index:: Architecture
 Architecture
 ============
 
 Information in Clowder is organized using the following data model:
 
-.. image:: _static/data-model.jpg
+.. container:: imagepadding
+
+    .. image:: _static/data-model.png
+        :width: 750px
 
 Clowder uses a variety of technologies to accomplish its goals. The overall architecture of a typical deployment looks
 as follows:
 
-.. image:: _static/architecture.jpg
+.. container:: imagepadding
+
+    .. image:: _static/architecture.png
+        :width: 750px
 
 The web application and individual extractors comprise most of the custom Clowder code and the core of the system.
 Most of the other blocks in the diagram are external services Clowder depends on. The next section covers how to
@@ -19,7 +26,9 @@ off-loaded to extraction services in charge of extracting appropriate data and m
 to extract information and run preprocessing steps based on the type of the data just uploaded. Extracted information
 is then written back to the repository using appropriate API endpoints.
 
-.. image:: _static/extraction.jpg
+.. container:: imagepadding
+
+    .. image:: _static/extraction.jpg
 
 For example, in the case of images, a preprocessing step takes care of creating the previews of the image, but also of
 extracting EXIF and GPS metadata from the image. If GPS information is available, the web client shows the location of

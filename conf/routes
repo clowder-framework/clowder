@@ -145,7 +145,7 @@ GET            /collection/:id/childCollections                                 
 # ----------------------------------------------------------------------
 # Spaces
 # ----------------------------------------------------------------------
-GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", owner: Option[String] ?= None, showAll: Boolean ?= false, showPublic: Boolean ?= true, onlyTrial: Boolean ?=false, showOnlyShared : Boolean ?= false)
+GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", owner: Option[String] ?= None, showAll: Boolean ?= true, showPublic: Boolean ?= true, onlyTrial: Boolean ?=false, showOnlyShared : Boolean ?= false)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(index: Int ?=0, size: Int ?= 12, mode: String ?= "")
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
@@ -374,7 +374,7 @@ GET            /api/files/:id/extracted_metadata                                
 PUT            /api/files/:id/filename                                                  @api.Files.updateFileName(id: UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 GET            /api/files/:id/users                                                     @api.Files.users(id: UUID)
-
+GET            /api/files/:id/paths                                                     @api.Files.paths(id: UUID)
 
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
@@ -524,8 +524,8 @@ GET            /api/datasets/:id/technicalmetadatajson                          
 GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
-GET            /api/datasets/:id/listAllFiles                                           @api.Datasets.datasetAllFilesList(id:UUID)
-GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID)
+GET            /api/datasets/:id/listAllFiles                                           @api.Datasets.datasetAllFilesList(id:UUID, max: Option[Int] ?= None)
+GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID, max: Option[Int] ?= None)
 POST           /api/datasets/:id/files                                                  @api.Datasets.uploadToDatasetFile(id: UUID)
 POST           /api/datasets/:id/urls                                                   @api.Datasets.uploadToDatasetJSON(id: UUID)
 GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
@@ -604,6 +604,7 @@ GET            /api/search                                                      
 # GEOSTREAMS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint(invalidateCache: Boolean ?= true)
+POST           /api/geostreams/datapoints/bulk                                          api.Geostreams.addDatapoints(invalidateCache: Boolean ?= true)
 DELETE         /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String], onlyCount: Boolean ?=false, window_start: Option[String] = None, window_end: Option[String] = None, binning: String ?= "semi", geojson: Option[String] ?= None)
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String], onlyCount: Boolean ?=false, window_start: Option[String] = None, window_end: Option[String] = None, binning: String ?= "semi", geojson: Option[String] ?= None)

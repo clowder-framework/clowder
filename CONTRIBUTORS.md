@@ -2,6 +2,7 @@ Following is a list of contributors in alphabetical order:
 
 - Ashwini Vaidya
 - Avinash Kumar
+- Bing Zhang
 - Brock Angelo
 - Chris Navarro
 - Constantinos Sophocleous
@@ -26,6 +27,7 @@ Following is a list of contributors in alphabetical order:
 - Theerasit Issaranon
 - Todd Nicholson
 - Varun Kethineedi
+- Ward Poelmans
 - Will Hennessy
 - Winston Jansz
 - Xiaocheng Yuan

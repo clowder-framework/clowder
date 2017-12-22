@@ -103,7 +103,7 @@ class DiskByteStorageService extends ByteStorageService {
           }
           result
         } else {
-          Logger.warn(s"Not removing file ${path}, not inside ${root}")
+          Logger.debug(s"Not removing file ${path}, not inside ${root}")
           true
         }
       }

@@ -86,13 +86,22 @@ object Geostreams extends ApiController {
       (__ \ 'stream_id).read[String]
     ) tupled
 
+  implicit val datapointsBulk = (
+    (__ \ 'start_time).read[String] and
+      (__ \ 'end_time).readNullable[String] and
+      (__ \ 'type).read[String] and
+      (__ \ 'properties).read[JsValue] and
+      (__ \ 'geometry).read[JsValue]
+    ) tupled
+
+
   def createSensor() = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
     Logger.debug("Creating sensor")
     current.plugin[PostgresPlugin] match {
       case Some(plugin) if plugin.isEnabled => {
         request.body.validate[(String, String, List[Double], JsValue)].map {
           case (name, geoType, longlat, metadata) => {
-            val geojson = createGeoJson(longlat)
+            val geojson = createGeoJson(List(longlat(1),longlat(0),longlat(2)))
             plugin.createSensor(name, geoType, geojson, Json.stringify(metadata)) match {
               case Some(d) => jsonp(d, request)
               case None => BadRequest(s"Failed to create sensor $name")
@@ -447,6 +456,19 @@ object Geostreams extends ApiController {
         }
       }
       case _ => pluginNotEnabled
+    }
+  }
+
+  def addDatapoints(invalidateCache: Boolean)  = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) if plugin.isEnabled => {
+        val datapoints = (request.body \ "datapoints").as[List[(String, Option[String], String, JsValue, JsValue)]]
+        val stream_id = (request.body \ "stream_id").as[String]
+        plugin.addDatapoints(datapoints, stream_id) match {
+          case Some(d) => jsonp(d, request)
+          case None => BadRequest("Failed to create bulk datapoints")
+        }
+      }
     }
   }
 

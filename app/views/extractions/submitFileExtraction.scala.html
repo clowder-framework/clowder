@@ -56,7 +56,7 @@
                 <thead>
                     <tr>
                         <th>Extractor's Name</th>
-                        <th>Parameters</th>
+                        @*<th>Parameters</th>*@
                         <th>Submit</th>
                     </tr>
                 </thead>
@@ -64,7 +64,7 @@
                     @for(e <- extractors) {
                         <tr>
                             <td>@e.name</td>
-                            <td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>
+                            @*<td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>*@
                             <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@file.id')">Submit</button></td>
                         </tr>
                     }
@@ -74,9 +74,10 @@
     </div>
     <script type="text/javascript">
         function submit(extractor_name, textbox_id, file_id) {
-            var params = $('#'+textbox_id).val();
-            if (params === "") params = "{}";
-            var dataBody = {'extractor': extractor_name, 'parameters': JSON.parse(params)};
+            //TODO: comment out since no extractors use parameters, may enable it in future.
+            //var params = $('#'+textbox_id).val();
+            //if (params === "") params = "{}";
+            var dataBody = {'extractor': extractor_name/*, 'parameters': JSON.parse(params)*/};
             var request = jsRoutes.api.Extractions.submitFileToExtractor(file_id).ajax({
                 data: JSON.stringify(dataBody),
                 type: 'POST',

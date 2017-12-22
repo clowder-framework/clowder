@@ -37,9 +37,10 @@
     </div>
     <script type="text/javascript">
         function submit(extractor_name, textbox_id, ds_id) {
-            var params = $('#'+textbox_id).val();
-            if (params === "") params = "{}";
-            var dataBody = {'extractor': extractor_name, 'parameters': JSON.parse(params)};
+            //TODO: comment out since no extractors use parameters, may enable it in future.
+            //var params = $('#'+textbox_id).val();
+            //if (params === "") params = "{}";
+            var dataBody = {'extractor': extractor_name/*, 'parameters': JSON.parse(params)*/};
             var request = jsRoutes.api.Extractions.submitDatasetToExtractor(ds_id).ajax({
                 data: JSON.stringify(dataBody),
                 type: 'POST',

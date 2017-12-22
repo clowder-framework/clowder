@@ -1468,6 +1468,9 @@ paths:
           type: string
           name: id
           in: path
+        - type: number
+          name: max
+          in: query
       tags:
         - datasets
       summary: List files in dataset and within folders
