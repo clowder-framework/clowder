@@ -1,0 +1,106 @@
+@(redirecturl:String, token:String, provider: String)(implicit request: RequestHeader)
+@main("LDAP login"){
+    <div class="col-md-4 col-md-offset-4 col-sm-4 col-sm-offset-4 panel panel-default">
+        <div class="page-header">
+            <h1>LDAP Login </h1>
+            <p>Provided by @provider</p>
+        </div>
+
+        <form  autocomplete="off" onsubmit="return false;">
+            <input type="hidden" name="redirecturl" value="@redirecturl" />
+            <input type="hidden" name="token" value="@token" />
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" id="username" name="username" />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" name="password" />
+            </div>
+                <button class="btn btn-primary btn-margins btn-margin-bottom" onclick="login()">Submit</button>
+        </form>
+    </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+        <script type="text/javascript">
+                function login(){
+                    var username = $('#username').val();
+                    var password = $('#password').val();
+                    ldap_session_login(username, password);
+                    var myNode = document.getElementById("errormessage");
+                    myNode.innerHTML = '';
+                }
+
+                function ldap_session_login(username, password) {
+                    return authenticate(function(result){
+
+                        if( ldap_cookie_check(result) !== false){
+                            document.cookie = 'ldap.token_key=@token; expires=' + new Date().getTime() +3600;
+                            var user = result.user;
+                            var userString = encodeURIComponent(JSON.stringify(result.user));
+                            window.location.replace("@redirecturl?token=@token&user="+ userString);
+                        } else {
+                            window.location.replace("@redirecturl?token=@token");
+                        }
+                    }, function(){
+                        window.location.replace("@redirecturl?token=@token");
+                    }
+                    );
+                }
+
+                //delete the ldap token
+                function ldap_session_logout() {
+                    setcookie('ldap.token_key', '', new Date().getTime()-3600, '/');
+                }
+
+                // check if cookie is valid, will return FALSE or user object
+                function ldap_cookie_check(result) {
+
+                    if (result === false) {
+                        ldap_session_logout();
+                        return false;
+                    }
+                    if (!result.user.hasOwnProperty("active") || !result.user.active) {
+                        ldap_session_logout();
+                        return false;
+                    }
+                    if (result.user.hasOwnProperty("fullname")) {
+                        ldap_session_logout();
+                        return false;
+                    }
+                    return result.user;
+                }
+
+                function authenticate(done, err){
+                    var username = $('#username').val();
+                    var password = $('#password').val();
+                    var req = $.ajax({
+                        method: "POST",
+                        url: jsRoutes.controllers.Login.ldapAuthenticate(username, password).url,
+                        async: false,
+                        success: function(data) {
+                            console.log("Authenticate User: " + data.user['fullName']);
+                            done(data);
+                            return data;
+                        },
+                        error: function(xhr) {
+                            console.log(xhr.responseText);
+//                            var myNode = document.getElementById("errormessage");
+//                            myNode.innerHTML = xhr.responseText;
+                            err();
+                            return false;
+                        }
+
+                    });
+                }
+
+                function setcookie(cname, cvalue, exdays, path, severname) {
+                    var d = new Date();
+                    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+                    var expires = "expires="+d.toUTCString();
+                    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=" + path+ ";";
+                }
+
+        </script>
+
+}
