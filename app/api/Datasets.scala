@@ -22,7 +22,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
-import _root_.util.{FileUtils, JSONLD, License, SearchUtils}
+import _root_.util._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
 
@@ -726,14 +726,15 @@ class  Datasets @Inject()(
   }
 
   def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
     datasets.get(id) match {
       case Some(dataset) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
           case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), f)
-                                    .map(JSONLD.jsonMetadataWithContext(_))
+                                    .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-                                    .map(JSONLD.jsonMetadataWithContext(_))
+                                    .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
         }
         Ok(toJson(listOfMetadata))
       }

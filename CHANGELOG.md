@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
 
+### Changed
+- File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
+
 ## 1.3.3 - 2017-12-21
 
 - Endpoint to get a list of traversing paths from datasets to the parent
