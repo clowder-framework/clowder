@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
+- Abilty for CiLogon provider to filter by LDAP groups.
 
 ## 1.3.3 - 2017-12-21
 
