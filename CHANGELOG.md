@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [In Development]
 
 ### Added
+- Add LDAP authorization
+  [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
 

@@ -66,6 +66,7 @@ object ApplicationBuild extends Build {
     filters,
     // login
     "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "com.unboundid" % "unboundid-ldapsdk" % "4.0.1",
 
     // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",

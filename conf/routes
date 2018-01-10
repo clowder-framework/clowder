@@ -33,7 +33,8 @@ GET            /users                                                           
 GET            /users/acceptTermsOfServices                                             @controllers.Users.acceptTermsOfServices(redirect: Option[String] ?= None)
 GET            /login/isLoggedIn                                                        @controllers.Login.isLoggedIn
 POST           /users/sendEmail                                                         @controllers.Users.sendEmail(subject: String, from: String, recipient: String, body: String)
-
+GET            /ldap                                                                    @controllers.Login.ldap(redirecturl:String, token:String)
+POST           /ldap/authenticate                                                       @controllers.Login.ldapAuthenticate(uid: String, password: String)
 # ----------------------------------------------------------------------
 # PROFILE
 # ----------------------------------------------------------------------
