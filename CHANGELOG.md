@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added clowder.upload.previews flag to application.conf to turn on/off previews in upload page.
   [CATS-813](https://opensource.ncsa.illinois.edu/jira/browse/CATS-813)
+- Added ability to disable username/password login. [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
 
 ### Changed
 - Created email to be sent when registerThroughAdmins=true
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [GLGVO-382](https://opensource.ncsa.illinois.edu/jira/browse/GLGVO-382)
 - Edit license breaks on names with apostrophes in them.
   [CATS-820](https://opensource.ncsa.illinois.edu/jira/browse/CATS-820)
+- Rolling log file wrote to wrong folder, now writes to logs folder.
 
 
 ## 1.3.2 - 2017-08-15
