@@ -5,7 +5,7 @@
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${application.home}/logs/application.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <fileNamePattern>${application.home}/logs/application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
         </rollingPolicy>
         <encoder>
             <pattern>%date - [%-7level] - from %logger in %thread %n%message%n%xException%n</pattern>
