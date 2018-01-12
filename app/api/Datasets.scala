@@ -57,26 +57,26 @@ class  Datasets @Inject()(
     }
   }
 
-  def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  def list(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
     if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
-      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     } else {
-      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     }
   }
 
   /**
     * Returns list of datasets based on space restrictions and permissions. The spaceId is obtained from the file itself
     */
-  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
     var datasetAll = List[Dataset]()
     val datasetList = datasets.findByFileId(file_id)
     datasetList match {
@@ -89,7 +89,7 @@ class  Datasets @Inject()(
                 if (d.spaces.isEmpty) {
                   title match {
                     case Some(t) => {
-                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
+                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
                     }
                     case None => {
                       datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true,false)
@@ -118,7 +118,7 @@ class  Datasets @Inject()(
         if (x.spaces.isEmpty) {
           title match {
             case Some(t) => {
-              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
+              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
             }
             case None => {
               datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true,false)
@@ -144,13 +144,13 @@ class  Datasets @Inject()(
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false)
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
       }
       case (Some(t), None) => {
-        datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
+        datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
       }
       case (None, Some(d)) => {
         datasets.listAccess(d, true, limit, permission, user, superAdmin, true,false)

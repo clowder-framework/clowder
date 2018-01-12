@@ -61,7 +61,7 @@ class MongoDBDatasetService @Inject() (
    * Count all datasets in a space
    */
   def countSpace(space: String): Long = {
-    count(None, false, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, showAll=true, None)
+    count(None, false, None, None, Some(space), Set[Permission](Permission.ViewDataset), None, showAll=true, None, false)
   }
 
   /**
@@ -116,7 +116,7 @@ class MongoDBDatasetService @Inject() (
    * Count all datasets in a collection
    */
   def countCollection(collection: String): Long = {
-    count(None, false, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, showAll=true, None)
+    count(None, false, None, Some(collection), None, Set[Permission](Permission.ViewDataset), None, showAll=true, None, false)
   }
 
   /**
@@ -165,7 +165,7 @@ class MongoDBDatasetService @Inject() (
    * Count all datasets the user has access to.
    */
   def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long = {
-    count(None, false, None, None, None, permissions, user, showAll, None)
+    count(None, false, None, None, None, permissions, user, showAll, None, false)
   }
 
   /**
@@ -178,8 +178,9 @@ class MongoDBDatasetService @Inject() (
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset] = {
-    list(None, false, limit, Some(title), None, None, permissions, user, None, showAll, None, showPublic)
+  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User],
+                 showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean, exact: Boolean): List[Dataset] = {
+    list(None, false, limit, Some(title), None, None, permissions, user, None, showAll, None, showPublic, exactMatch=exact)
   }
 
   /**
@@ -192,8 +193,9 @@ class MongoDBDatasetService @Inject() (
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, Some(title), None, None, permissions, user, None, showAll, None, showPublic)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User],
+                 showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean, exact: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, Some(title), None, None, permissions, user, None, showAll, None, showPublic, exactMatch=exact)
   }
 
   /**
@@ -266,8 +268,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * return count based on input
    */
-  private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, None, showAll, owner, true, false)
+  private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], exactMatch : Boolean = false): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, None, showAll, owner, true, false, exactMatch)
     Dataset.count(filter)
   }
 
@@ -275,8 +277,9 @@ class MongoDBDatasetService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], status: Option[String], showAll: Boolean, owner: Option[User], showPublic: Boolean = true, showOnlyShared : Boolean = false): List[Dataset] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, permissions, user, status, showAll, owner, showPublic, showOnlyShared)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], status: Option[String],
+                   showAll: Boolean, owner: Option[User], showPublic: Boolean = true, showOnlyShared : Boolean = false, exactMatch : Boolean = false): List[Dataset] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, permissions, user, status, showAll, owner, showPublic, showOnlyShared, exactMatch)
     if (date.isEmpty || nextPage) {
       Dataset.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -287,7 +290,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], status:Option[String], showAll: Boolean, owner: Option[User], showPublic: Boolean, showOnlyShared : Boolean): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], status:Option[String],
+                            showAll: Boolean, owner: Option[User], showPublic: Boolean, showOnlyShared : Boolean, exactMatch : Boolean): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -393,7 +397,12 @@ class MongoDBDatasetService @Inject() (
       case None => MongoDBObject()
     }
     val filterTitle = titleSearch match {
-      case Some(title) =>  MongoDBObject("name" -> ("(?i)" + title).r)
+      case Some(title) =>  {
+        if (exactMatch)
+          MongoDBObject("name" -> title)
+        else
+          MongoDBObject("name" -> ("(?i)" + title).r)
+      }
       case None => MongoDBObject()
     }
 
