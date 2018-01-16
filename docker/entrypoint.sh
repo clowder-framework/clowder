@@ -7,7 +7,6 @@ if [ "$RABBITMQ_URI" == "" ]; then
 fi
 if [ "$RABBITMQ_MGMT_PORT" == "" ]; then
     RABBITMQ_MGMT_PORT="15672"
-    fi
 fi
 
 # mongo
