@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [In Development]
+## [Unreleased]
 
 ### Added
 - Add LDAP authorization
@@ -14,15 +14,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Abilty for CiLogon provider to filter by LDAP groups.
 - Added an *exact* flag on collection and dataset API endpoints that accept a *title* flag. This will use
   exact matching on the title field instead of regular expression fuzzy matching.
+  
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
 
-### Changed
-- Fixed GreenIndex previewer on clowder dataset page. [BD-1912] (https://opensource.ncsa.illinois.edu/jira/browse/BD-1912)
+### Fixed
+- Fixed GreenIndex previewer on clowder dataset page. 
+  [BD-1912](https://opensource.ncsa.illinois.edu/jira/browse/BD-1912)
+- Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
+  [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
 - Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
-  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
-
+  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719) 
 
 ## 1.3.3 - 2017-12-21
 
@@ -32,7 +35,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - clowder.upload.previews flag to application.conf to turn on/off
   previews in upload page.
   [CATS-813](https://opensource.ncsa.illinois.edu/jira/browse/CATS-813)
-- Added ability to disable username/password login. [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
+- Added ability to disable username/password login. 
+  [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
 
 ### Changed
 - Send email with instructions when registerThroughAdmins=true.

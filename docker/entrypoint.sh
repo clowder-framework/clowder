@@ -3,7 +3,7 @@ set -e
 
 # rabbitmq
 if [ "$RABBITMQ_URI" == "" ]; then
-    RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/clowder"
+    RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/%2f"
 fi
 if [ "$RABBITMQ_MGMT_PORT" == "" ]; then
     RABBITMQ_MGMT_PORT="15672"

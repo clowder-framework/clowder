@@ -223,16 +223,18 @@
         		   });
 				  });
 				</script>
-				<label class='sortchoice' for="js-sort-single">Sort By:
-					<select class="js-sort-single">
-					  <option value="dateN">Newest</option>
-					  <option value="dateO">Oldest</option>
-					  <option value="titleA">Title (A-Z)</option>
-					  <option value="titleZ">Title (Z-A)</option>
-					  <option value="sizeL">Size (L)</option>
-					  <option value="sizeS">Size (S)</option>
-					</select>
-				</label>
+				  @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+					  <label class='sortchoice' for="js-sort-single">Sort By:
+						  <select class="js-sort-single">
+							  <option value="dateN">Newest</option>
+							  <option value="dateO">Oldest</option>
+							  <option value="titleA">Title (A-Z)</option>
+							  <option value="titleZ">Title (Z-A)</option>
+							  <option value="sizeL">Size (L)</option>
+							  <option value="sizeS">Size (S)</option>
+						  </select>
+					  </label>
+				  }
 					
 			  </div>
 			</div>
