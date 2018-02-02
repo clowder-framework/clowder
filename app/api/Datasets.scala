@@ -1975,6 +1975,42 @@ class  Datasets @Inject()(
 
 
   /**
+    * Create a mapping for each file to their unique location
+    * @param folder
+    * @param parent
+    * @param folderNameMap
+    */
+  def listFilesInFolder(folder: Folder, parent: String, folderNameMap: scala.collection.mutable.Map[UUID, String]): Unit = {
+    // all files in this folder, make sure they are unique
+    folder.files.foreach(x => files.get(x) match {
+      case Some(f) => {
+        val name = s"${parent}${f.filename}"
+        if (folderNameMap.exists(_._2 == name)) {
+          folderNameMap(f.id) = s"${name}_${f.id.stringify}/"
+        } else {
+          folderNameMap(f.id) = s"${name}/"
+        }
+      }
+      case None => Logger.error(s"Could not find file with id=${x.uuid}")
+    })
+
+    // all subfolders
+    val foldermap = scala.collection.mutable.Map.empty[Folder, String]
+    folder.folders.foreach(x => folders.get(x) match {
+      case Some(f) => {
+        val name = s"${parent}${f.displayName}"
+        if (foldermap.exists(_._2 == name)) {
+          foldermap(f) = s"${name}_${f.id.stringify}/"
+        } else {
+          foldermap(f) = s"${name}/"
+        }
+      }
+      case None => Logger.error(s"Could not find folder with id=${x.uuid}")
+    })
+    foldermap.foreach(f => listFilesInFolder(f._1, f._2, folderNameMap))
+  }
+
+  /**
     * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
     * streamed to the client. The zip files are streamed and not stored on disk.
     *
@@ -1990,65 +2026,40 @@ class  Datasets @Inject()(
     val dataFolder = if (bagit) "data/" else ""
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
     var inputFilesBuffer = new ListBuffer[models.File]()
-    dataset.files.foreach(f=>files.get(f) match {
-      case Some(file) => {
-        inputFilesBuffer += file
 
-        // Don't create folder for files unless there's a filename collision
-        var foundDuplicate = false
-        dataset.files.foreach(compare_f=>files.get(compare_f) match {
-          case Some(compare_file) => {
-            if (compare_file.filename == file.filename && compare_file.id != file.id) {
-              foundDuplicate = true
-            }
-          }
-          case None => Logger.error(s"No file with id $f")
-        })
-        if (foundDuplicate)
-          folderNameMap(file.id) = dataFolder + file.filename + "_" + file.id.stringify + "/"
-        else
-          folderNameMap(file.id) = dataFolder
+    // convert all files in dataset to unique names
+    dataset.files.foreach(x => files.get(x) match {
+      case Some(f) => {
+        val name = s"${dataFolder}${f.filename}"
+        if (folderNameMap.exists(_._2 == name)) {
+          folderNameMap(f.id) = s"${name}_${f.id.stringify}/"
+        } else {
+          folderNameMap(f.id) = s"${name}/"
+        }
       }
-      case None => Logger.error(s"No file with id $f")
+      case None => Logger.error(s"Could not find file with id=${x.uuid}")
     })
+
+    // add all subfolders and files
+    // all subfolders
+    val foldermap = scala.collection.mutable.Map.empty[Folder, String]
+    dataset.folders.foreach(x => folders.get(x) match {
+      case Some(f) => {
+        val name = s"${dataFolder}${f.displayName}"
+        if (foldermap.exists(_._2 == name)) {
+          foldermap(f) = s"${name}_${f.id.stringify}/"
+        } else {
+          foldermap(f) = s"${name}/"
+        }
+      }
+      case None => Logger.error(s"Could not find folder with id=${x.uuid}")
+    })
+    foldermap.foreach(f => listFilesInFolder(f._1, f._2, folderNameMap))
 
     val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
     val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
 
-    folders.findByParentDatasetId(dataset.id).foreach{
-      folder => folder.files.foreach(f=> files.get(f) match {
-        case Some(file) => {
-          inputFilesBuffer += file
-          var name = folder.displayName
-          var f1: Folder = folder
-          while(f1.parentType == "folder") {
-            folders.get(f1.parentId) match {
-              case Some(fparent) => {
-                name = fparent.displayName + "/"+ name
-                f1 = fparent
-              }
-              case None =>
-            }
-          }
 
-          // Don't create folder for files unless there's a filename collision
-          var foundDuplicate = false
-          folder.files.foreach(compare_f=> files.get(compare_f) match {
-            case Some(compare_file) => {
-              if (compare_file.filename == file.filename && compare_file.id != file.id) {
-                foundDuplicate = true
-              }
-            }
-            case None => Logger.error(s"No file with id $f")
-          })
-          if (foundDuplicate)
-            folderNameMap(file.id) = dataFolder + name + "/" + file.filename + "_" + file.id.stringify + "/"
-          else
-            folderNameMap(file.id) = dataFolder + name + "/"
-        }
-        case None => Logger.error(s"No file with id $f")
-      })
-    }
     val inputFiles = inputFilesBuffer.toList
     // which file we are currently processing
 
