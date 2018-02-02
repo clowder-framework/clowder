@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed GreenIndex previewer on clowder dataset page. 
   [BD-1912](https://opensource.ncsa.illinois.edu/jira/browse/BD-1912)
 - Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
-  [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840) 
+  [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
+- Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
+  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719) 
 
 ## 1.3.3 - 2017-12-21
 
