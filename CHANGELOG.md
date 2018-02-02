@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- When downloading dataset with many files time for download to start
+  could result in timeouts
+  [CATS-795](https://opensource.ncsa.illinois.edu/jira/browse/CATS-795)
+
+## 1.3.3 - 2017-12-21
+
 ### Added
 - Add LDAP authorization
   [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
