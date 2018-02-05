@@ -1975,6 +1975,55 @@ class  Datasets @Inject()(
 
 
   /**
+    * Create a mapping for each file to their unique location
+    */
+  def listFilesInFolder(fileids: List[UUID], folderids: List[UUID], parent: String, filenameMap: scala.collection.mutable.Map[UUID, String], inputFiles: scala.collection.mutable.ListBuffer[models.File]): Unit = {
+    // get all file objects
+    val fileobjs = fileids.flatMap(x => files.get(x) match {
+      case Some(f) => Some(f)
+      case None => {
+        Logger.error(s"Could not find file with id=${x.uuid}")
+        None
+      }
+    })
+
+    // map fileobj to filename, make sure filename is unique
+    // potential improvemnt would be to keep a map -> array of ids
+    // if array.length == 1, then no duplicate, else fix all duplicate ids
+    fileobjs.foreach(f => {
+      inputFiles.append(f)
+      if (fileobjs.exists(x => x.id != f.id && x.filename == f.filename)) {
+        // create new filename filename_id.ext
+        val (filename, ext) = f.filename.lastIndexOf('.') match {
+          case(-1) => (f.filename, "")
+          case(x) => (f.filename.substring(0, x), f.filename.substring(x))
+        }
+        filenameMap(f.id) = s"${parent}${filename}_${f.id}${ext}"
+      } else {
+        filenameMap(f.id) = s"${parent}${f.filename}"
+      }
+    })
+
+    // get all folder objects
+    val folderobjs = folderids.flatMap(x => folders.get(x) match {
+      case Some(f) => Some(f)
+      case None => {
+        Logger.error(s"Could not find folder with id=${x.uuid}")
+        None
+      }
+    })
+    folderobjs.foreach(f => {
+      val folder = if (folderobjs.exists(x => x.id != f.id && x.displayName == f.displayName)) {
+        // this case should not happen since folders are made unique at creation
+        s"${parent}${f.displayName}_${f.id.stringify}/"
+      } else {
+        s"${parent}${f.displayName}/"
+      }
+      listFilesInFolder(f.files, f.folders, folder, filenameMap, inputFiles)
+    })
+  }
+
+  /**
     * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
     * streamed to the client. The zip files are streamed and not stored on disk.
     *
@@ -1988,68 +2037,16 @@ class  Datasets @Inject()(
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val dataFolder = if (bagit) "data/" else ""
-    val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
-    var inputFilesBuffer = new ListBuffer[models.File]()
-    dataset.files.foreach(f=>files.get(f) match {
-      case Some(file) => {
-        inputFilesBuffer += file
+    val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
+    val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
 
-        // Don't create folder for files unless there's a filename collision
-        var foundDuplicate = false
-        dataset.files.foreach(compare_f=>files.get(compare_f) match {
-          case Some(compare_file) => {
-            if (compare_file.filename == file.filename && compare_file.id != file.id) {
-              foundDuplicate = true
-            }
-          }
-          case None => Logger.error(s"No file with id $f")
-        })
-        if (foundDuplicate)
-          folderNameMap(file.id) = dataFolder + file.filename + "_" + file.id.stringify + "/"
-        else
-          folderNameMap(file.id) = dataFolder
-      }
-      case None => Logger.error(s"No file with id $f")
-    })
+    // compute list of all files and folder in dataset. This will also make sure
+    // that all files and folder names are unique.
+    listFilesInFolder(dataset.files, dataset.folders, dataFolder, filenameMap, inputFiles)
 
     val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
     val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
 
-    folders.findByParentDatasetId(dataset.id).foreach{
-      folder => folder.files.foreach(f=> files.get(f) match {
-        case Some(file) => {
-          inputFilesBuffer += file
-          var name = folder.displayName
-          var f1: Folder = folder
-          while(f1.parentType == "folder") {
-            folders.get(f1.parentId) match {
-              case Some(fparent) => {
-                name = fparent.displayName + "/"+ name
-                f1 = fparent
-              }
-              case None =>
-            }
-          }
-
-          // Don't create folder for files unless there's a filename collision
-          var foundDuplicate = false
-          folder.files.foreach(compare_f=> files.get(compare_f) match {
-            case Some(compare_file) => {
-              if (compare_file.filename == file.filename && compare_file.id != file.id) {
-                foundDuplicate = true
-              }
-            }
-            case None => Logger.error(s"No file with id $f")
-          })
-          if (foundDuplicate)
-            folderNameMap(file.id) = dataFolder + name + "/" + file.filename + "_" + file.id.stringify + "/"
-          else
-            folderNameMap(file.id) = dataFolder + name + "/"
-        }
-        case None => Logger.error(s"No file with id $f")
-      })
-    }
-    val inputFiles = inputFilesBuffer.toList
     // which file we are currently processing
 
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
@@ -2124,9 +2121,9 @@ class  Datasets @Inject()(
                 }
                 //file info
                 case (1,0) =>{
-                  is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileInfoToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(folderNameMap(inputFiles(count).id)+inputFiles(count).filename+"_info.json",md5)
+                  md5Files.put(filenameMap(inputFiles(count).id)+"_info.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   if (count+1 < inputFiles.size ){
                     count +=1
@@ -2137,9 +2134,9 @@ class  Datasets @Inject()(
                 }
                 //file metadata
                 case (1,1) =>{
-                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileMetadataToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(folderNameMap(inputFiles(count).id)+inputFiles(count).filename+"_metadata.json",md5)
+                  md5Files.put(filenameMap(inputFiles(count).id)+"_metadata.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   if (count+1 < inputFiles.size ){
                     count +=1
@@ -2150,9 +2147,9 @@ class  Datasets @Inject()(
                 }
                 //files
                 case (1,2) => {
-                  is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(folderNameMap(inputFiles(count).id)+inputFiles(count).filename,md5)
+                  md5Files.put(filenameMap(inputFiles(count).id),md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   if (count+1 < inputFiles.size ){
                     count +=1
@@ -2171,7 +2168,7 @@ class  Datasets @Inject()(
                 }
                 //bagit.txt
                 case (2,0) => {
-                  is = addBagItTextToZip(totalBytes,folderNameMap.size,zip,dataset,user)
+                  is = addBagItTextToZip(totalBytes,filenameMap.size,zip,dataset,user)
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Bag.put("bagit.txt",md5)
                   is = Some(new DigestInputStream(is.get, md5))
@@ -2231,18 +2228,18 @@ class  Datasets @Inject()(
   }
 
 
-  private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+  private def addFileToZip(filename: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
-      case Some((inputStream, filename, contentType, contentLength)) => {
-        zip.putNextEntry(new ZipEntry(folderName + filename))
+      case Some((inputStream, _, _, _)) => {
+        zip.putNextEntry(new ZipEntry(filename))
         Some(inputStream)
       }
       case None => None
     }
   }
 
-  private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + file.filename + "_metadata.json"))
+  private def addFileMetadataToZip(filename: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(filename + "_metadata.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
     val s : String = Json.prettyPrint(Json.toJson(fileMetadata))
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -2299,8 +2296,8 @@ class  Datasets @Inject()(
     Json.obj("id" -> file.id, "filename" -> file.filename, "author" -> file.author.email, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
 
-  private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + file.filename + "_info.json"))
+  private def addFileInfoToZip(filename: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(filename + "_info.json"))
     val fileInfo = getFileInfoAsJson(file)
     val s : String = Json.prettyPrint(fileInfo)
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
