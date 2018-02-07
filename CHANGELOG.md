@@ -4,14 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.3.4 - 2018-02-05
-
-### Fixed
-- Downloading datasets could take a long time before actual download
-  started and could result in proxy timeouts.
-  [CATS-795](https://opensource.ncsa.illinois.edu/jira/browse/CATS-795)
-
-## 1.3.3 - 2017-12-21
+## [Unreleased]
 
 ### Added
 - Add LDAP authorization
@@ -33,6 +26,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
 - Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
   [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719) 
+
+## 1.3.4 - 2018-02-05
+
+### Fixed
+- Downloading datasets could take a long time before actual download
+  started and could result in proxy timeouts.
+  [CATS-795](https://opensource.ncsa.illinois.edu/jira/browse/CATS-795)
 
 ## 1.3.3 - 2017-12-21
 
