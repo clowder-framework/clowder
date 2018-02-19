@@ -215,7 +215,7 @@ class Datasets @Inject() (
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], status: Option[String], mode: String, owner: Option[String], showPublic: Boolean, showOnlyShared : Boolean) = UserAction(needActive=false) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], status: Option[String], mode: String, owner: Option[String], showPublic: Boolean, showOnlyShared : Boolean, showTrash : Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -244,13 +244,24 @@ class Datasets @Inject() (
             title = Some(Messages("owner.in.resource.title", p.fullName, Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
           }
           case _ => {
-            title = Some(Messages("owner.title", p.fullName, play.api.i18n.Messages("datasets.title")))
-          }
+            if (showTrash) {
+              title = Some(Messages("owner.title", p.fullName, play.api.i18n.Messages("datasets.trashtitle")))
+            } else {
+              title = Some(Messages("owner.title", p.fullName, play.api.i18n.Messages("datasets.title")))
+            }          }
         }
         if (date != "") {
-          datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          if (showTrash){
+            datasets.listUserTrash(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          } else {
+            datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          }
         } else {
-          datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          if (showTrash){
+            datasets.listUserTrash(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          } else {
+            datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          }
         }
       }
       case None => {
@@ -285,7 +296,13 @@ class Datasets @Inject() (
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+        case Some(p) => {
+          if (showTrash){
+            datasets.listUserTrash(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+          } else {
+            datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+          }
+        }
         case None => {
           space match {
             case Some(s) => {
@@ -311,7 +328,13 @@ class Datasets @Inject() (
     val next = if (datasetList.nonEmpty) {
       val last = Formatters.iso8601(datasetList.last.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+        case Some(p) => {
+          if (showTrash){
+            datasets.listUserTrash(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+          } else {
+            datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+          }
+        }
         case None => {
           space match {
             case Some(s) => {
@@ -374,7 +397,7 @@ class Datasets @Inject() (
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", s, "space"))
       }
-      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, spaceName, status, title, owner, ownerName, when, date, userSelections))
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, spaceName, status, title, owner, ownerName, when, date, userSelections, showTrash))
     }
   }
 

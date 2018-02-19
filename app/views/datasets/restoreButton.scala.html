@@ -1,0 +1,13 @@
+@(dataset: Dataset)(implicit user: Option[models.User])
+
+@import api.Permission
+
+@if(user.isDefined) {
+    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+    @if(Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+        <a id="restoreButton" onclick="restoreDataset('@(dataset.id)', true, '@(routes.Datasets.list("",owner=Some(user.get.id.stringify),showTrash=true))')"
+            class="btn btn-link" href="#"><span class="glyphicon glyphicon-exclamation-sign"></span> Restore</a>
+    } else {
+        <a id="restoreButton" class="btn btn-link disabled" href="#"><span class="glyphicon glyphicon-exclamation-sign"></span> Restore</a>
+    }
+}

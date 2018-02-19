@@ -11,16 +11,21 @@ import com.mongodb.casbah.WriteConcern
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
+import java.util.Date
+
 import org.bson.types.ObjectId
 import play.api.Logger
 import util.{Formatters, SearchUtils}
+
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import services._
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
+
 import scala.util.Failure
 import scala.util.Success
 import MongoContext.context
+import com.mongodb.DBObject
 import play.api.Play._
 
 
@@ -61,7 +66,7 @@ class MongoDBCollectionService @Inject() (
     * Return a list of collections in a space and checks for permissions
     */
   def listInSpaceList(title: Option[String], date: Option[String], limit: Integer, spaces: List[UUID], permissions: Set[Permission], user: Option[User], exactMatch : Boolean = false): List[Collection] = {
-    val (filter, sort) = filteredQuery(date, false, title, None, permissions, user, true, None, true, false, exactMatch)
+    val (filter, sort) = filteredQuery(date, false, title, None, permissions, user, true, None, true, false, false, exactMatch)
     Collection.find(filter ++  ("spaces" $in spaces.map(x => new ObjectId(x.stringify)))).limit(limit).toList
   }
 
@@ -103,7 +108,7 @@ class MongoDBCollectionService @Inject() (
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean, exact: Boolean): List[Collection] = {
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean, exact : Boolean): List[Collection] = {
     list(Some(date), nextPage, limit, Some(title), None, permissions, user, showAll, None, showPublic, showOnlyShared, exactMatch=exact)
   }
 
@@ -122,6 +127,13 @@ class MongoDBCollectionService @Inject() (
   }
 
   /**
+    * Return a list of collections the user has created in the trash.
+    */
+  def listUserTrash(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(None, false, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), false, false, true)
+  }
+
+  /**
    * Return a list of collections the user has created with matching title.
    */
   def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, exact: Boolean): List[Collection] = {
@@ -133,6 +145,41 @@ class MongoDBCollectionService @Inject() (
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
     list(Some(date), nextPage, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
+  }
+
+  /**
+    * Return a list of collections the user has created starting at a specific date.
+    */
+  def listUserTrash(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(Some(date), nextPage, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), false, false, true)
+  }
+
+  /**
+    * Return a list of collections the user has created starting at a specific date in the trash.
+    */
+  def listUserTrash(user : Option[User], limit : Integer) : List[Collection] = {
+    val (filter,sort) = trashFilterQuery(user)
+    Collection.find(filter).sort(sort).limit(limit).toList.reverse
+  }
+
+  private def trashFilterQuery( user: Option[User]) : (DBObject, DBObject) = {
+    user match {
+      case Some(u) => {
+        val trashFilter = MongoDBObject("trash" -> true)
+        val author = MongoDBObject("author._id" -> new ObjectId(user.get.id.stringify))
+        val sort = {
+          MongoDBObject("created" -> 1) ++ MongoDBObject("name" -> 1)
+        }
+        (trashFilter ++ author,sort)
+      }
+      case None => {
+        val trashFilter = MongoDBObject("trash" -> false)
+        val sort = {
+          MongoDBObject("created" -> 1) ++ MongoDBObject("name" -> 1)
+        }
+        (trashFilter,sort)
+      }
+    }
   }
 
   /**
@@ -149,18 +196,16 @@ class MongoDBCollectionService @Inject() (
   /**
    * Return count of the requested collections
    */
-  private def count(date: Option[String], nextPage: Boolean, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User],
-                    showAll: Boolean, owner: Option[User], exactMatch : Boolean = false): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, space, Set[Permission](Permission.ViewCollection), user, showAll, owner, true, false, exactMatch)
+  private def count(date: Option[String], nextPage: Boolean, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], exactMatch : Boolean = false): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, title, space, Set[Permission](Permission.ViewCollection), user, showAll, owner, true, false, false, exactMatch)
     Collection.count(filter)
   }
 
   /**
    * Return a list of the requested collections
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User],
-                   showAll: Boolean, owner: Option[User], showPublic: Boolean = true, showOnlyShared : Boolean = false, exactMatch : Boolean = false): List[Collection] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner, showPublic, showOnlyShared, exactMatch)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], showPublic: Boolean = true, showOnlyShared : Boolean = false, showTrash : Boolean = false, exactMatch : Boolean = false): List[Collection] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner, showPublic, showOnlyShared, showTrash, exactMatch)
     if (date.isEmpty || nextPage) {
       Collection.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -171,8 +216,7 @@ class MongoDBCollectionService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User],
-                            showAll: Boolean, owner: Option[User], showPublic: Boolean, showOnlyShared : Boolean, exactMatch : Boolean):(DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], showPublic: Boolean, showOnlyShared : Boolean, showTrash : Boolean, exactMatch : Boolean):(DBObject, DBObject) = {
 
     // In /Collections page you should see:
     //  a) Parent Collections in a space you belong to ( root_collections.length > 0 and you belong to the space).
@@ -191,6 +235,15 @@ class MongoDBCollectionService @Inject() (
     val publicSpaces= spaces.listByStatus(SpaceStatus.PUBLIC.toString).map(s => new ObjectId(s.id.stringify))
     val enablePublic = play.Play.application().configuration().getBoolean("enablePublic")
 //    val rootQuery = $or(("root_spaces" $exists true), ("parent_collection_ids" $exists false))
+
+    val filterTrash = if (showTrash == false) {
+      MongoDBObject("trash"->false)
+    } else {
+      val trashNotNone = MongoDBObject("trash" -> true)
+      val author = MongoDBObject("author._id" -> new ObjectId(user.get.id.stringify))
+      (author ++ trashNotNone)
+    }
+
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
     } else {
@@ -331,7 +384,7 @@ class MongoDBCollectionService @Inject() (
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    (filterAccess ++ filterDate ++ filterTitle ++ filterSpace ++ filterOwner ++ filterNotShared
+    (filterAccess ++ filterDate ++ filterTitle ++ filterSpace ++ filterOwner ++ filterNotShared ++ filterTrash
       , sort)
   }
 
@@ -826,6 +879,16 @@ class MongoDBCollectionService @Inject() (
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
     Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
+  }
+
+  def restoreFromTrash(collectionId : UUID, dateMovedToTrash : Option[Date]) {
+    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $set("trash" -> false,"dateMovedToTrash" -> dateMovedToTrash), false, false, WriteConcern.Safe)
+  }
+
+  def addToTrash(collectionId : UUID, dateMovedToTrash : Option[Date]) {
+    Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $set("trash" -> true,"dateMovedToTrash" -> dateMovedToTrash), false, false, WriteConcern.Safe)
   }
 
   def createThumbnail(collectionId:UUID){

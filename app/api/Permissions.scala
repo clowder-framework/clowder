@@ -1,5 +1,6 @@
 package api
 
+import api.Permission.getUserByIdentity
 import models.{ResourceRef, User}
 import play.api.Logger
 import play.api.mvc._
@@ -328,13 +329,26 @@ object Permission extends Enumeration {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
-            if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
-              && READONLY.contains(permission)) return true
-            for (clowderUser <- getUserByIdentity(user)) {
-              dataset.spaces.map {
-                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if (role.permissions.contains(permission.toString))
-                    return true
+            if (dataset.trash){
+              if (permission.equals(Permission.DeleteDataset)){
+                for (clowderUser <- getUserByIdentity(user)) {
+                  dataset.spaces.map {
+                    spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                      if (role.permissions.contains(permission.toString))
+                        return true
+                    }
+                  }
+                }
+              }
+            } else {
+              if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
+                && READONLY.contains(permission)) return true
+              for (clowderUser <- getUserByIdentity(user)) {
+                dataset.spaces.map {
+                  spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                    if (role.permissions.contains(permission.toString))
+                      return true
+                  }
                 }
               }
             }
@@ -346,14 +360,27 @@ object Permission extends Enumeration {
         collections.get(id) match {
           case None => false
           case Some(collection) => {
-            if ((collection.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty)
-              && READONLY.contains(permission)) return true
-
+            if (collection.trash){
+              if (permission.equals(Permission.DeleteCollection)){
+                for (clowderUser <- getUserByIdentity(user)) {
+                  collection.spaces.map {
+                    spaceId =>
+                      for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                        if (role.permissions.contains(permission.toString))
+                          return true
+                      }
+                  }
+                }
+              }
+            } else {
+              if ((collection.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty)
+                && READONLY.contains(permission)) return true
               for (clowderUser <- getUserByIdentity(user)) {
-              collection.spaces.map {
-                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if (role.permissions.contains(permission.toString))
-                    return true
+                collection.spaces.map {
+                  spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                    if (role.permissions.contains(permission.toString))
+                      return true
+                  }
                 }
               }
             }

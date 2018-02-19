@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Abilty for CiLogon provider to filter by LDAP groups.
 - Added an *exact* flag on collection and dataset API endpoints that accept a *title* flag. This will use
   exact matching on the title field instead of regular expression fuzzy matching.
+- Having a temporary trash option. Can be set with useTrash boolean in the configuration file
+  [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
   
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 

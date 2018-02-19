@@ -76,7 +76,7 @@
 				</ol>
 				<div class="col-xs-12 collection-title" id="coll-title">
 					<h1 id ="collectiontitle" class="inline"><span class="glyphicon glyphicon-th-large"></span> @Html(collection.name)</h1>
-					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+					@if(!collection.trash && Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
 						<h3 id="h-edit-title" class="hiddencomplete">
 							<a id="edit-title" href="javascript:updateTitle()" edit="Click to edit title">
 								<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
@@ -96,7 +96,7 @@
                     		abstract-panel
                     	}
 						">@if(collection.description.length > 0) { @Html(collection.description)} else {Add a description}</p>
-						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id)) && !collection.trash) {
 							<a class="hiddencomplete" id="edit-description" href="javascript:updateDescription()" title ="Click to edit description">
 								<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 							</a>
@@ -108,7 +108,12 @@
 				<div class="row">
 					<div class="col-xs-12">
 						<hr/>
-                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+						@if(collection.trash){
+							<button id="restoreButton" onclick="restoreCollection('@(collection.id)', true, '@(routes.Collections.list("",owner=Some(user.get.id.stringify),showTrash=true))')"
+							class="btn btn-link" title="Restore Collection but not Enclosed Datasets">
+								<span class="glyphicon glyphicon-exclamation-sign"></span> Restore</button>
+						}
+							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
                             <button id="deleteButton" onclick="confirmDeleteResource('collection','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))', true, '@(routes.Collections.list(""))')"
                                 class="btn btn-link" title="Delete Collection but not Enclosed Datasets">

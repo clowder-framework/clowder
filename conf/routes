@@ -104,7 +104,7 @@ GET            /files/:file_id/extractions                                      
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, status: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true, showOnlyShared : Boolean ?= false)
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, status: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true, showOnlyShared : Boolean ?= false, showTrash : Boolean ?= false)
 GET            /datasets/sorted                                                         @controllers.Datasets.sortedListInSpace(space: String,offset: Integer, limit:Integer, showPublic: Boolean ?= true)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
@@ -131,7 +131,7 @@ GET            /datasets/:id/extractions                                        
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true, showOnlyShared : Boolean ?= false)
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true, showOnlyShared : Boolean ?= false, showTrash : Boolean ?= false)
 GET            /collections/sorted                                                      @controllers.Collections.sortedListInSpace(space: String,offset: Integer, limit:Integer,  showPublic: Boolean ?= true)
 GET            /collections/listChildCollections                                        @controllers.Collections.listChildCollections(parentCollectionId : String, when: String ?= "", date: String ?= "", size: Int ?= 12,  space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
@@ -464,6 +464,10 @@ GET            /api/collections/rootCollections                                 
 GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
 GET            /api/collections/allCollections                                          @api.Collections.getAllCollections(limit : Int ?= 0, showAll: Boolean ?=false)
 GET            /api/collections/:id/download                                            @api.Collections.download(id: UUID, compression: Int ?= -1)
+GET            /api/collections/listTrash                                               @api.Collections.listCollectionsInTrash(limit : Int ?= 12)
+DELETE         /api/collections/emptyTrash                                              @api.Collections.emptyTrash()
+DELETE         /api/collections/clearOldCollectionsTrash                                @api.Collections.clearOldCollectionsTrash(days : Int ?= 30)
+PUT            /api/collections/restore/:collectionId                                   @api.Collections.restoreCollection(collectionId : UUID)
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID)
@@ -507,6 +511,10 @@ POST           /api/datasets/attachmultiple                                     
 POST           /api/datasets/searchusermetadata                                         @api.Datasets.searchDatasetsUserMetadata
 POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
+GET            /api/datasets/listTrash                                                  @api.Datasets.listDatasetsInTrash(limit : Int ?= 12)
+DELETE         /api/datasets/emptyTrash                                                 @api.Datasets.emptyTrash()
+DELETE         /api/datasets/clearOldDatasetsTrash                                      @api.Datasets.clearOldDatasetsTrash(days : Int ?= 30)
+PUT            /api/datasets/restore/:id                                                @api.Datasets.restoreDataset(id : UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
 POST           /api/datasets/:datasetId/moveFile/:toFolder/:fileId                      @api.Folders.moveFileBetweenFolders( datasetId: UUID, toFolder: UUID, fileId: UUID)
 POST           /api/datasets/:datasetId/moveBetweenDatasets/:toDataset/:fileId          @api.Datasets.moveFileBetweenDatasets(datasetId: UUID, toDataset: UUID, fileId: UUID)
