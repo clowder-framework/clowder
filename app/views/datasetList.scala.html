@@ -1,7 +1,7 @@
 @(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int,
         mode: Option[String], space: Option[String], spaceName: Option[String], status: Option[String],
         title: Option[String], owner:Option[String], ownerName: Option[String], when: String, date: String,
-        userSelections: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        userSelections: List[String], showTrash: Boolean = false)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import api.Permission
 @main(Messages("datasets.title")) {
@@ -40,7 +40,12 @@
                     <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase publicly available.</p>
                 }
                 case _ => {
-                    <p>@Messages("dataset.list.message", Messages("datasets.title").toLowerCase, Messages("dataset.title").toLowerCase)</p>
+                    @if(showTrash){
+                        <p>@Messages("dataset.trash.message", Messages("datasets.title").toLowerCase, Messages("dataset.title").toLowerCase)</p>
+
+                    } else {
+                        <p>@Messages("dataset.list.message", Messages("datasets.title").toLowerCase, Messages("dataset.title").toLowerCase)</p>
+                    }
                 }
             }
         </div>
@@ -139,7 +144,12 @@
                     }
                     case (_, Some(o)) => {
                         @if(o.equalsIgnoreCase(u.id.stringify)) {
-                            <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                            @if(showTrash){
+                                <a id="clear-trash" onclick="confirmClearTrash('dataset', '@(routes.Datasets.list("",owner=Some(user.get.id.stringify),showTrash=true))')"
+                                class="btn btn-primary btn-sm pull-right" href="#"> <span class="glyphicon glyphicon-trash"></span>  @Messages("cleartrash.title", Messages("datasets.title"))</a>
+                            } else {
+                                <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                            }
                         }
                     }
 

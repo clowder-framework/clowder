@@ -1734,11 +1734,18 @@ class  Datasets @Inject()(
   def detachAndDeleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match{
       case Some(dataset) => {
-        for (f <- dataset.files) {
-          detachFileHelper(dataset.id, f, dataset, request.user)
+        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        if (!useTrash || (useTrash && dataset.trash)) {
+          for (f <- dataset.files) {
+            detachFileHelper(dataset.id, f, dataset, request.user)
+          }
+          deleteDatasetHelper(dataset.id, request)
+          Ok(toJson(Map("status" -> "success")))
+        } else {
+          datasets.update(dataset.copy(trash = true, dateMovedToTrash = Some(new Date())))
+          events.addObjectEvent(request.user, id, dataset.name, "move_dataset_trash")
+          Ok(toJson(Map("status" -> "success")))
         }
-        deleteDatasetHelper(dataset.id, request)
-        Ok(toJson(Map("status" -> "success")))
       }
       case None=> {
         Ok(toJson(Map("status" -> "success")))
@@ -1781,7 +1788,83 @@ class  Datasets @Inject()(
   }
 
   def deleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    deleteDatasetHelper(id, request)
+    datasets.get(id) match {
+      case Some(ds) => {
+        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        if (!useTrash || (useTrash && ds.trash)){
+          deleteDatasetHelper(id, request)
+        } else {
+          datasets.update(ds.copy(trash = true, dateMovedToTrash = Some(new Date())))
+          events.addObjectEvent(request.user, id, ds.name, "move_dataset_trash")
+          Ok(toJson(Map("status"->"success")))
+        }
+      }
+      case None => BadRequest("No dataset found with id " + id)
+    }
+  }
+
+  def restoreDataset(id : UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) {implicit request=>
+    implicit val user = request.user
+    user match {
+      case Some(u) => {
+        datasets.get(id) match {
+          case Some(ds) => {
+            datasets.update(ds.copy(trash = false, dateMovedToTrash=None))
+            events.addObjectEvent(user, ds.id, ds.name, "restore_dataset_trash")
+
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => InternalServerError("Update Access failed")
+        }
+      }
+      case None => BadRequest("No user supplied")
+    }
+  }
+
+  def emptyTrash() = PrivateServerAction {implicit request =>
+    val user = request.user
+    user match {
+      case Some(u) => {
+        val trashDatasets = datasets.listUserTrash(request.user,0)
+        for (ds <- trashDatasets){
+          events.addObjectEvent(request.user, ds.id, ds.name, "delete_dataset")
+          datasets.removeDataset(ds.id)
+          appConfig.incrementCount('datasets, -1)
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete("data", "dataset", ds.id.stringify)
+          }
+        }
+      }
+      case None =>
+    }
+    Ok(toJson("Done emptying trash"))
+  }
+
+  def listDatasetsInTrash(limit : Int) = PrivateServerAction {implicit request =>
+    val user = request.user
+    user match {
+      case Some(u) => {
+        val trashDatasets = datasets.listUserTrash(user,limit)
+        Ok(toJson(trashDatasets))
+      }
+      case None => BadRequest("No user supplied")
+    }
+  }
+
+  def clearOldDatasetsTrash(days : Int) = ServerAdminAction {implicit request =>
+
+    val deleteBeforeCalendar : Calendar = Calendar.getInstance()
+    deleteBeforeCalendar.add(Calendar.DATE,-days)
+    val deleteBeforeDateTime = deleteBeforeCalendar.getTimeInMillis()
+    val allDatasetsInTrash = datasets.listUserTrash(None,0)
+    allDatasetsInTrash.foreach(d => {
+      val dateInTrash = d.dateMovedToTrash.getOrElse(new Date())
+      if (dateInTrash.getTime() < deleteBeforeDateTime){
+        deleteDatasetHelper(d.id, request)
+      }
+    })
+    Ok(toJson("Deleted all datasets in trash older than " + days + " days"))
+
   }
 
   def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>

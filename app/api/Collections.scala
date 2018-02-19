@@ -26,6 +26,8 @@ import scala.util.{Try, Success, Failure}
 import java.util.{Calendar, Date}
 import controllers.Utils
 
+import scala.collection.immutable.List
+
 
 /**
  * Manipulate collections.
@@ -153,16 +155,97 @@ class Collections @Inject() (datasets: DatasetService,
   def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
-        collections.delete(collectionId)
-        appConfig.incrementCount('collections, -1)
-        current.plugin[AdminsNotifierPlugin].foreach {
-          _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
+        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        if (!useTrash || (useTrash && collection.trash)){
+          events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
+          collections.delete(collectionId)
+          appConfig.incrementCount('collections, -1)
+          current.plugin[AdminsNotifierPlugin].foreach {
+            _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
+          }
+        } else {
+          collections.addToTrash(collectionId, Some(new Date()))
+          events.addObjectEvent(request.user, collectionId, collection.name, "move_collection_trash")
+          Ok(toJson(Map("status" -> "success")))
         }
       }
     }
     //Success anyway, as if collection is not found it is most probably deleted already
     Ok(toJson(Map("status" -> "success")))
+  }
+
+  def restoreCollection(collectionId : UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) {implicit request=>
+    implicit val user = request.user
+    user match {
+      case Some(u) => {
+        collections.get(collectionId) match {
+          case Some(col) => {
+            collections.restoreFromTrash(collectionId, None)
+            events.addObjectEvent(user, collectionId, col.name, "restore_collection_trash")
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => InternalServerError("Update Access failed")
+        }
+      }
+      case None => BadRequest("No user supplied")
+    }
+  }
+
+  def listCollectionsInTrash(limit : Int) = PrivateServerAction {implicit request =>
+    val trash_collections_list = request.user match {
+      case Some(usr) => {
+        for (collection <- collections.listUserTrash(request.user,limit))
+          yield jsonCollection(collection)
+      }
+      case None => List.empty
+    }
+    Ok(toJson(trash_collections_list))
+  }
+
+  def emptyTrash() = PrivateServerAction {implicit request =>
+    val user = request.user
+    user match {
+      case Some(u) => {
+        val trashcollections = collections.listUserTrash(request.user,0)
+        for (collection <- trashcollections){
+          events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
+          collections.delete(collection.id)
+          appConfig.incrementCount('collections, -1)
+          current.plugin[AdminsNotifierPlugin].foreach {
+            _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
+          }
+        }
+      }
+      case None =>
+    }
+    Ok(toJson("Done emptying trash"))
+  }
+
+  def clearOldCollectionsTrash(days : Int) = ServerAdminAction {implicit request =>
+
+    val deleteBeforeCalendar : Calendar = Calendar.getInstance()
+    deleteBeforeCalendar.add(Calendar.DATE,-days)
+
+    val deleteBeforeDateTime = deleteBeforeCalendar.getTimeInMillis()
+    val user = request.user
+    user match {
+      case Some(u) => {
+        val allCollectionsTrash = collections.listUserTrash(None,0)
+        allCollectionsTrash.foreach( c => {
+          val dateInTrash = c.dateMovedToTrash.getOrElse(new Date())
+          if (dateInTrash.getTime() < deleteBeforeDateTime) {
+            events.addObjectEvent(request.user , c.id, c.name, "delete_collection")
+            collections.delete(c.id)
+            appConfig.incrementCount('collections, -1)
+            current.plugin[AdminsNotifierPlugin].foreach {
+              _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",c.id.stringify, c.name)
+            }
+          }
+        })
+        Ok(toJson("Deleted all collections in trash older than " + days + " days"))
+      }
+      case None => BadRequest("No user supplied")
+    }
   }
 
   def list(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>

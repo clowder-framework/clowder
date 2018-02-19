@@ -309,6 +309,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   // CODE TO UPDATE THE DATABASE
   // ----------------------------------------------------------------------
   def updateDatabase() {
+
+    //add trash field dataset
+    updateMongo("add-trash-dataset", addDateMovedToTrashDatasets)
+
+    //add trash field collection
+    updateMongo("add-trash-collection", addDateMovedToTrashCollections)
+
     // migrate users to new model
     updateMongo("fixing-typehint-users", updateMongoChangeUserType)
 
@@ -433,6 +440,18 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         Logger.warn(s"Missing mongo update ${updateKey}. Application might be broken.")
       }
     }
+  }
+
+  private def addDateMovedToTrashCollections() {
+    val q = MongoDBObject()
+    val s = MongoDBObject("$set" -> MongoDBObject("dateMovedToTrash" -> None, "trash"->false))
+    collection("collections").update(q,s, multi=true)
+  }
+
+  private def addDateMovedToTrashDatasets() {
+    val q = MongoDBObject()
+    val s = MongoDBObject("$set" -> MongoDBObject("dateMovedToTrash" -> None, "trash"->false))
+    collection("datasets").update(q,s, multi=true)
   }
 
   private def updateMongoChangeUserType() {

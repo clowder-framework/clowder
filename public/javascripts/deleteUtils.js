@@ -180,3 +180,82 @@ function RemoveTemplateEvent(resourceFromType,resourceFromId,resourceType,resour
         }
     }
 }
+
+function confirmClearTrash(resourceType, url) {
+    var msg = "Are you sure you want to clear ";
+    if (resourceType == "collection"){
+        msg = msg+ " all collections from the trash?"
+    } else if (resourceType == "dataset"){
+        msg = msg + " all datasets from the trash?"
+
+    }
+    var modalHTML = confirmTrashTemplate(msg,resourceType,url)
+    var confirmModal = $(modalHTML);
+    confirmModal.modal();
+    confirmModal.modal("show");
+}
+
+function confirmTrashTemplate(message, resourceType,url) {
+
+    var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
+    modalHTML += '<div class="modal-dialog">';
+    modalHTML += '<div class="modal-content">';
+    modalHTML += '<div class="modal-header">';
+    modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+    modalHTML += '<h4 class="modal-title">Confirm</h4>';
+    modalHTML += '</div>';
+    modalHTML += '<div class="modal-body">';
+    modalHTML += '<p>' + message + '</p>';
+    modalHTML += '</div>';
+    modalHTML += '<div class="modal-footer">';
+    modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
+    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:ClearTrashTemplate(\''+resourceType+'\',\''+ url+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+    modalHTML += '</div>';
+    modalHTML += '</div>';
+    modalHTML += '</div>';
+    modalHTML += '</div>';
+
+    return modalHTML;
+}
+
+function ClearTrashTemplate(resourceType,url){
+    console.log('got to clear trash template!!!');
+    $('.modal').modal('hide');
+    if (resourceType == "collection"){
+        clearTrashCollections(url);
+    } else if (resourceType == "dataset"){
+        clearTrashDatasets(url);
+    }
+}
+
+function clearTrashCollections(url){
+    var request = jsRoutes.api.Collections.emptyTrash().ajax({
+        type: 'DELETE'
+    });
+    request.done(function (response, textStatus, jqXHR){
+        window.location.href=url;
+    });
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: "+textStatus, errorThrown);
+        var errMsg = "You must be logged in to remove a collection from the system.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("The trash was not removed due to : " + errorThrown, "error");
+        }
+    });
+}
+
+function clearTrashDatasets(url){
+    var request = jsRoutes.api.Datasets.emptyTrash().ajax({
+        type: 'DELETE'
+    });
+    request.done(function (response, textStatus, jqXHR){
+        window.location.href=url;
+    });
+    request.fail(function (jqXHR, textStatus, errorThrown) {
+        console.error("The following error occured: "+textStatus, errorThrown);
+        var errMsg = "You must be logged in to remove a dataset from the system.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("The dataset trash was not cleared due to : " + errorThrown, "error");
+        }
+    });
+}

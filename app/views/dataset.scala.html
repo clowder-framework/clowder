@@ -67,7 +67,7 @@
 
                 <div class="col-md-12 caption break-word dataset-title" id="ds-title">
                     <h1 id="datasettitle" class="inline"> <span class="glyphicon glyphicon-briefcase" ></span> @Html(dataset.name)</h1>
-                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <h3 id="h-edit-title" class="hiddencomplete">
                             <a id ="edit-title" href = "javascript:updateTitle()" title="Click to edit title">
                             <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
@@ -82,7 +82,7 @@
                         <li>@Messages("owner.label"): <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
                             @if(accessData.showAccess) {
-                                @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                                @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                                     <li id="access">Access:
                                         <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@accessData.accessOptions(0)</label>
                                         <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@accessData.accessOptions(1)</label>
@@ -100,7 +100,7 @@
                     <ul class="list-unstyled">
                         <div id="edit-license">
                         <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
-                            @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                            @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
 
                                 <a class="edit-tab hiddencomplete" data-toggle="collapse"
                                 data-parent="#accordion6" href="#collapseSix" id="editlicense"
@@ -116,7 +116,7 @@
                                 
             <div class="col-md-12 box-white-space" id='aboutcreators' data-dataset='@dataset.id'>
                 
-                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                     	<p id="creatorlabel"   class="creator-label" title="Ordered list of those responsible for this dataset">
                     	@if(dataset.creators.length >0) { 
                     	  Creator(s):  
@@ -144,14 +144,14 @@
  
                 }
             </div>
-            @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+            @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
               <a id="add-creator" class="hiddencomplete @if(!stagingAreaDefined) { simple } " href="javascript:addCreator()" title="Click to add a Creator">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
             }
 		</div>    
         <div class="col-md-12 box-white-space" id="aboutdesc"><span>
-                    @if((dataset.description.length == 0) && (Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)))) {
+                    @if((dataset.description.length == 0) && (Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) && !dataset.trash) {
                     	 	Add a @Messages("dataset.description").toLowerCase
                     	
         			} else {
@@ -166,7 +166,7 @@
                         @Html(dataset.description)
                     }
                     </p>
-                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit @Messages("dataset.description").toLowerCase">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
@@ -175,13 +175,13 @@
                 <div class="col-xs-12">
                     <hr/>
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a id="addFilesLink" href="@(routes.Datasets.addFiles(dataset.id))"
                         class="btn btn-link" id="fileUploadBtn" title="Add File to Dataset" role="button">
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
-                    @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a id='download-url' href="#"
                             onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
                             class="btn btn-link" title="Download All Files as Zip" role="button">
@@ -195,12 +195,17 @@
                             Download All Files
                         </a>
                     }
+                    @if(dataset.trash){
+                        @datasets.restoreButton(dataset)
+                    }
                     @datasets.deleteButton(dataset)
-                    @datasets.follow(dataset)
+                    @if(!dataset.trash){
+                        @datasets.follow(dataset)
+                    }
                     @if(user.isDefined) {
                         @datasets.userLink(dataset)
                     }
-                    @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                    @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && !dataset.trash) {
                         @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
                             <a id='publish' href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
@@ -217,7 +222,7 @@
                             }
                         }
                     }
-                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link">
                             <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "Folder")
                         </a>
@@ -248,7 +253,7 @@
                     }
                     @*show ``submit for extraction'' link*@
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
-                            && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                            && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined && !dataset.trash) {
                         <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
                             <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit for extraction
                         </a>
@@ -270,7 +275,7 @@
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-files"></div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                             <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
-                        @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                             @commentform(dataset.id.stringify, "dataset", dataset.name)
                         }
                         <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
