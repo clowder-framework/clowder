@@ -1396,10 +1396,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("social.users").foreach { su =>
       val active = su.getAs[Boolean]("active")
       val admin = su.getAs[Boolean]("serverAdmin")
-      if (!active.get) {
+      if (!active.getOrElse(false)) {
         su.put("status", UserStatus.Inactive.toString)
       } else {
-        if (admin.get) {
+        if (admin.getOrElse(false)) {
           su.put("status", UserStatus.Admin.toString)
         } else {
           su.put("status", UserStatus.Active.toString)
