@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
+  [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
 
 ### Added
 - Add LDAP authorization
