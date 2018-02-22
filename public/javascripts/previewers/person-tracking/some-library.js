@@ -2,7 +2,7 @@
 	console.log("Person tracking previewer for " + Configuration.id);    
 
 	// Retrieve the metadata
-    var jsRoutesObject = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.id);
+    var jsRoutesObject = jsRoutes.api.Files.getMetadataJsonLD(Configuration.id);
     var metadataApiUrl = jsRoutesObject.url;
 	var request = $.ajax({
 		type : "GET",
@@ -24,12 +24,13 @@
 
         // Search metadata for person tracking
         for (var i=0; i<technicalMetadata.length; i++) {
-            if (technicalMetadata[i]["person-tracking-result"] == undefined)
-                continue;
-            if (technicalMetadata[i]["person-tracking-result"] == "")
-                continue;
-            trackingMetadataIndex = i;
-            break;
+            if (technicalMetadata[i]["agent"]["extractor_id"] != undefined &&
+                technicalMetadata[i]["agent"]["extractor_id"].includes("person_tracking") &&
+                technicalMetadata[i]["content"] != undefined) {
+
+                trackingMetadataIndex = i;
+                break;
+            }
         }
 
         // If it couldn't find the index, display a message and return
@@ -168,30 +169,30 @@
             syncAxisLabelsJS
 
         ).done(function(){
-            console.log("downloaded JS sciprts");
+            console.log("Downloaded JS scripts.");
 
-            if(technicalMetadata[trackingMetadataIndex]["person-tracking-result"].frame != undefined){
+            if(technicalMetadata[trackingMetadataIndex]["content"].frame != undefined){
 
                 // Processing JSON data            
-                var jsonFrameArray = technicalMetadata[trackingMetadataIndex]["person-tracking-result"].frame;
+                var jsonFrameArray = technicalMetadata[trackingMetadataIndex]["content"].frame;
                 var jsonFrameArrayLength = jsonFrameArray.length;
-                var videoHeight = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@video-height"]);
-                var videoWidth = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@video-width"]);
-                var videoFrameRate = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@frame-rate"]);
-                var endFrameNumber = parseInt(technicalMetadata[trackingMetadataIndex]["person-tracking-result"]["@end-frame"]);
+                var videoHeight = parseInt(technicalMetadata[trackingMetadataIndex]["content"]["video-height"]);
+                var videoWidth = parseInt(technicalMetadata[trackingMetadataIndex]["content"]["video-width"]);
+                var videoFrameRate = parseInt(technicalMetadata[trackingMetadataIndex]["content"]["frame-rate"]);
+                var endFrameNumber = parseInt(technicalMetadata[trackingMetadataIndex]["content"]["end-frame"]);
                 var extractorId = technicalMetadata[trackingMetadataIndex]["extractor_id"];
 
                 // Pass 1: Rearrange data
                 for(var i = 0; i < jsonFrameArrayLength; i++) {
-                    var frameIndex = parseInt(jsonFrameArray[i]["@number"]);
+                    var frameIndex = parseInt(jsonFrameArray[i]["number"]);
                     var objList = jsonFrameArray[i].objectlist;                
                     if(typeof(objList) == 'object' && (objList != undefined || objList != null)){
 
                         frameDataArray[frameIndex-1] = jsonFrameArray[i];
 
                         // When there is only one person in frame    
-                        if(objList.object.length == undefined && objList.object["@id"]) {
-                            var id = parseInt(objList.object["@id"]);  
+                        if(objList.object.length == undefined && objList.object["id"]) {
+                            var id = parseInt(objList.object["id"]);
                             var arrayIndex = -1;
                             sortedFrameDataArray.filter(
                                 function (item, index){
@@ -225,7 +226,7 @@
                         else if(objList.object.length > 0) {
 
                             for(var j=0; j< objList.object.length; j++){                            
-                                var id = parseInt(objList.object[j]["@id"]);
+                                var id = parseInt(objList.object[j]["id"]);
 
                                 var arrayIndex = -1;
                                 sortedFrameDataArray.filter(
@@ -425,19 +426,19 @@
                             if(objList.object != null && objList.object != undefined) {
 
                                 // When there is only one person in frame    
-                                if(objList.object.length == undefined && objList.object["@id"]) {
+                                if(objList.object.length == undefined && objList.object["id"]) {
                                     var personObj = objList.object;
-                                    var id = parseInt(personObj["@id"]);
+                                    var id = parseInt(personObj["id"]);
 
-                                    var xCenter = parseInt(personObj.box["@xc"]) * scaleWidth;
-                                    var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
-                                    var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
-                                    var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;
+                                    var xCenter = parseInt(personObj.box["xc"]) * scaleWidth;
+                                    var yCenter = parseInt(personObj.box["yc"]) * scaleHeight;
+                                    var boxWidth = parseInt(personObj.box["w"]) * scaleWidth;
+                                    var boxHeight = parseInt(personObj.box["h"]) * scaleHeight;
                                     var personSeriesIndex = 0;
 
                                     for(var k=0; k< series.length; k++){
                                         // Finding the series whose ID is same as that of the current person
-                                        if(personObj["@id"] == series[k].label){
+                                        if(personObj["id"] == series[k].label){
                                             personSeriesIndex = k;
                                             break;
                                         }
@@ -455,16 +456,16 @@
 
                                     for(var j=0; j< objList.object.length; j++){                            
                                         var personObj = objList.object[j];
-                                        var id = parseInt(personObj["@id"]);                                
+                                        var id = parseInt(personObj["id"]);
 
-                                        var xCenter = parseInt(personObj.box["@xc"]) * scaleWidth;
-                                        var yCenter = parseInt(personObj.box["@yc"]) * scaleHeight;
-                                        var boxWidth = parseInt(personObj.box["@w"]) * scaleWidth;
-                                        var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;                            
+                                        var xCenter = parseInt(personObj.box["xc"]) * scaleWidth;
+                                        var yCenter = parseInt(personObj.box["yc"]) * scaleHeight;
+                                        var boxWidth = parseInt(personObj.box["w"]) * scaleWidth;
+                                        var boxHeight = parseInt(personObj.box["h"]) * scaleHeight;
 
                                         for(var k=0; k< series.length; k++){
                                             // Finding the series whose ID is same as that of the current person
-                                            if(personObj["@id"] == series[k].label){
+                                            if(personObj["id"] == series[k].label){
                                                 personSeriesIndex = k;
                                                 break;
                                             }
@@ -581,7 +582,7 @@
 
                         // Update Person tracking metadata in the database
                         var technicalMetadataCopy = JSON.parse(JSON.stringify(technicalMetadata));
-                        technicalMetadataCopy[trackingMetadataIndex]["person-tracking-result"].frame = frameDataArrayCopyForUpdate;
+                        technicalMetadataCopy[trackingMetadataIndex]["content"].frame = frameDataArrayCopyForUpdate;
                         var requestData = JSON.stringify(technicalMetadataCopy[trackingMetadataIndex]);
                         var jsRoutesObject = jsRoutes.api.Files.updateMetadata(Configuration.id, extractorId);
                         var setMetadataApiUrl = jsRoutesObject.url;
@@ -743,10 +744,10 @@
                                                     var objList = frameDataArrayCopy[frameIndex].objectlist;
 
                                                     // When there is only one person in frame    
-                                                    if(objList.object.length == undefined && objList.object["@id"]) {
+                                                    if(objList.object.length == undefined && objList.object["id"]) {
 
-                                                        if (objList.object["@id"] == oldId) {
-                                                            objList.object["@id"] = newId;
+                                                        if (objList.object["id"] == oldId) {
+                                                            objList.object["id"] = newId;
                                                         }
                                                     }
                                                     // When there are multiple persons in frame
@@ -754,8 +755,8 @@
 
                                                         for(var j = 0; j < objList.object.length; j++){
 
-                                                            if (objList.object[j]["@id"] == oldId) {
-                                                                objList.object[j]["@id"] = newId;
+                                                            if (objList.object[j]["id"] == oldId) {
+                                                                objList.object[j]["id"] = newId;
                                                             }
                                                         }
                                                     }
@@ -819,7 +820,7 @@
                         }
                         
                         $("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><input style="width: 115px;" id="' + label + "Input" + 
-                            '"></input><button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span>');                        
+                            '"></input><button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span>');
                         $("#" + label + "Input").autocomplete({
                             source: labelArray,
                             minLength: 1
@@ -875,9 +876,9 @@
                                                 var objList = frameDataArrayCopy[frameIndex].objectlist;
 
                                                 // When there is only one person in frame    
-                                                if(objList.object.length == undefined && objList.object["@id"]) {
+                                                if(objList.object.length == undefined && objList.object["id"]) {
 
-                                                    if (objList.object["@id"] == oldId) {
+                                                    if (objList.object["id"] == oldId) {
                                                         //objList.object = null;
                                                         frameDataArrayCopy[frameIndex] = null;
                                                     }
@@ -887,7 +888,7 @@
 
                                                     for(var j = 0; j < objList.object.length; j++){
 
-                                                        if (objList.object[j]["@id"] == oldId) {
+                                                        if (objList.object[j]["id"] == oldId) {
                                                             objList.object.splice(j,1);
                                                         }
                                                     }
@@ -962,11 +963,12 @@
                     }
 
                     var formatLabel = function (label, series){
+                        // TODO: Both edit and delete feature will be disabled till this task (https://opensource.ncsa.illinois.edu/jira/browse/CATS-855) gets completed.
                         return  '<span style="margin-left: 5px;" id="'+ label +'" data-value="'+ label +'" >'+
                                     '<a href="javascript:void(0);" onClick="labelClicked(\'' + label + '\'); return false;" style="margin-right: 5px;">' + label + '</a> ' + 
-                                    '<a href="javascript:void(0);" style="margin-right: 5px;">' +
+                                    '<a href="javascript:void(0);" style="margin-right: 5px; visibility: hidden;">' +
                                         '<i class="glyphicon glyphicon-edit" onClick="editLabel(\'' + label + '\'); return false;"></i></a>' + 
-                                    '<a href="javascript:void(0);" style="margin-right: 5px;">' +
+                                    '<a href="javascript:void(0);" style="margin-right: 5px; visibility: hidden;">' +
                                         '<i class="glyphicon glyphicon-remove" onClick="removeLabel(\'' + label + '\'); return false;"></i></a></span>';
                     }
 

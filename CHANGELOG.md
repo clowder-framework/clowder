@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
+- Person tracking previewer updated after changes to the associated metadata structure.
+  [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
 
 ### Fixed
 - Fixed GreenIndex previewer on clowder dataset page. 
