@@ -1,5 +1,6 @@
 package controllers
 
+import models.UserStatus
 import play.api.Logger
 import play.api.mvc.Results
 import securesocial.core.IdentityProvider
@@ -78,7 +79,7 @@ class Error extends SecuredController {
 
     def notActivated = UserAction(needActive=false) { implicit request =>
         implicit val user = request.user
-        if (user.exists(_.active)) {
+        if (user.exists(u => !(u.status==UserStatus.Inactive))) {
             Redirect(routes.Application.index())
         } else {
             Ok(views.html.error.accountNotActive())

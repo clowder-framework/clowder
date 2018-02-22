@@ -3,6 +3,8 @@
 @import play.api.i18n.Messages
 @import play.Logger
 @linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
+	@obj_id match {
+		case Some(id) => {
   @obj_type match {
     case "file" => {
       file: <a href="@routes.Files.file(obj_id.get)">@obj_name.get</a>
@@ -37,7 +39,19 @@
       }
     }
   }
-}
+  }
+  case None => {
+  	<a>@obj_name match {
+        case None => {
+          @obj_type
+        }
+        case Some(name) => {
+          @obj_type: @name
+        }
+      }</a>
+      }
+      }
+  }
 
 @actionTextForEvent(event_type_prefix: String) = @{
   event_type_prefix match {
