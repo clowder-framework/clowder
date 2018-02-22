@@ -2,7 +2,7 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.{ClowderUser, RequestResource, ResourceRef, User}
+import models.{ClowderUser, RequestResource, ResourceRef, User, UserStatus}
 import org.apache.commons.lang.StringEscapeUtils._
 import play.api.i18n.Messages
 import play.api.mvc._
@@ -30,7 +30,7 @@ trait SecuredController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if needActive && !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if needActive && (u.status==UserStatus.Inactive) => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {
           if (request.uri.startsWith(routes.Application.tos().url)) {
             block(userRequest)
@@ -50,7 +50,7 @@ trait SecuredController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if (u.status==UserStatus.Inactive) => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
@@ -66,7 +66,7 @@ trait SecuredController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
+        case Some(u) if (u.status==UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {
           if (request.uri.startsWith(routes.Users.acceptTermsOfServices().url)) {
             block(userRequest)
@@ -87,7 +87,7 @@ trait SecuredController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if (u.status==UserStatus.Inactive) => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
@@ -102,7 +102,7 @@ trait SecuredController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if (u.status==UserStatus.Inactive) => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => notAuthorizedMessage(userRequest.user, resourceRef)

@@ -1,18 +1,31 @@
 @(configAdmins: List[String], users: List[User])(implicit user: Option[models.User])
 
+@dateFormatter(date: java.util.Date) = @{
+    val formatter = new java.text.SimpleDateFormat("MMM d, yyyy")
+    formatter.format(date)
+}
+    
 @printRow(u: User) = {
     <tr id="@u.id">
         <td><a href="@routes.Profile.viewProfileUUID(u.id)">@u.fullName</a></td>
         <td>@u.email.getOrElse("")</td>
         <td>@u.identityId.providerId</td>
+        @u.lastLogin match {
+        	case Some(logindate) => { 
+        		<td>@dateFormatter(logindate)</td>
+	        }
+    	    case None => {
+    	    	<td>never</td>
+    	    }	
+        }
         @if(user.fold("")(_.id.stringify) == u.id.stringify) {
-            @if(u.active) {
+            @if(!(u.status==UserStatus.Inactive)) {
                 <td><input class="active" type="checkbox" id="active-@u.id" data-original=true disabled checked title="Can not change yourself"></td>
             } else {
                 <td><input class="active" type="checkbox" id="active-@u.id" data-original=false disabled ></td>
             }
         } else {
-            @if(u.active) {
+            @if(!(u.status==UserStatus.Inactive)) {
                 <td><input class="active" type="checkbox" id="active-@u.id" data-original=true checked></td>
             } else {
                 <td><input class="active" type="checkbox" id="active-@u.id" data-original=false></td>
@@ -24,18 +37,10 @@
             @if(configAdmins.contains(u.email.getOrElse(""))) {
                 <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Specified in custom.conf"></td>
             } else {
-                @if(u.active) {
-                    @if(u.serverAdmin) {
+                @if(u.status==UserStatus.Admin) {
                         <td><input type="checkbox" id="admin-@u.id" data-original=true checked></td>
-                    } else {
-                        <td><input type="checkbox" id="admin-@u.id" data-original=false></td>
-                    }
                 } else {
-                    @if(u.serverAdmin) {
-                        <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled></td>
-                    } else {
-                        <td><input type="checkbox" id="admin-@u.id" data-original=false disabled></td>
-                    }
+                        <td><input type="checkbox" id="admin-@u.id" data-original=false></td>
                 }
             }
         }
@@ -61,15 +66,16 @@
                     <table class="table table-condensed">
                         <thead>
                             <tr>
-                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Fullname</th>
                                 <th class="col-md-3">Email</th>
                                 <th class="col-md-2">Provider</th>
+                                <th class="col-md-2">Last Login</th>
                                 <th class="col-md-1">Active</th>
                                 <th class="col-md-1">Admin</th>
                             </tr>
                         </thead>
                         <tbody id="inactive-users">
-                        @users.filter(!_.active).map(printRow)
+                        @users.filter(_.status==UserStatus.Inactive).map(printRow)
                         </tbody>
                     </table>
                 </div>
@@ -89,15 +95,16 @@
                     <table class="table table-condensed">
                         <thead>
                             <tr>
-                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Fullname</th>
                                 <th class="col-md-3">Email</th>
                                 <th class="col-md-2">Provider</th>
+                                <th class="col-md-2">Last Login</th>
                                 <th class="col-md-1">Active</th>
                                 <th class="col-md-1">Admin</th>
                             </tr>
                         </thead>
                         <tbody id="admin-users">
-                        @users.filter(u => u.active && u.serverAdmin).map(printRow)
+                        @users.filter(u => u.status== UserStatus.Admin).map(printRow)
                         </tbody>
                     </table>
                 </div>
@@ -117,15 +124,16 @@
                     <table class="table table-condensed">
                         <thead>
                             <tr>
-                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Fullname</th>
                                 <th class="col-md-3">Email</th>
                                 <th class="col-md-2">Provider</th>
+                                <th class="col-md-2">Last Login</th>
                                 <th class="col-md-1">Active</th>
                                 <th class="col-md-1">Admin</th>
                             </tr>
                         </thead>
                         <tbody id="active-users">
-                        @users.filter(u => u.active && !u.serverAdmin).map(printRow)
+                        @users.filter(u => u.status==UserStatus.Active).map(printRow)
                         </tbody>
                     </table>
                 </div>

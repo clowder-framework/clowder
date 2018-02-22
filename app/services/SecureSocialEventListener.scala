@@ -2,7 +2,9 @@ package services
 
 import play.api.Logger
 import play.api.mvc.{Session, RequestHeader}
+import java.util.Date
 import securesocial.core._
+
 
 class SecureSocialEventListener(app: play.api.Application) extends EventListener {
   override def id: String = "SecureSocialEventListener"
@@ -17,6 +19,16 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
             val subject = s"[${AppConfiguration.getDisplayName}] new user signup"
             val body = views.html.emails.userSignup(user)(request)
             util.Mail.sendEmailAdmins(subject, Some(user), body)
+          }
+          case None => {
+            Logger.error(s"Could not find user ${event.user.fullName} in database")
+          }
+        }
+      }
+      case e: LoginEvent => {
+        userService.findByIdentity(event.user) match {
+          case Some(user) => {
+            userService.updateUserField(user.id, "lastLogin", new Date())
           }
           case None => {
             Logger.error(s"Could not find user ${event.user.fullName} in database")

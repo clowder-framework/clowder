@@ -60,7 +60,7 @@ class Files @Inject()(
     files.get(id) match {
       case Some(file) => {
         val serveradmin = request.user match {
-          case Some(u) => u.serverAdmin
+          case Some(u) => (u.status==UserStatus.Admin)
           case None => false
         }
         Ok(jsonFile(file, serveradmin))
@@ -77,7 +77,7 @@ class Files @Inject()(
    */
   def list = DisabledAction { implicit request =>
     val serveradmin = request.user match {
-      case Some(u) => u.serverAdmin
+      case Some(u) => (u.status==UserStatus.Admin)
       case None => false
     }
     val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f, serveradmin)

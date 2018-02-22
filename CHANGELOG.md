@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   exact matching on the title field instead of regular expression fuzzy matching.
 - Having a temporary trash option. Can be set with useTrash boolean in the configuration file
   [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
+- Track last time a user logged in.
   
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
@@ -27,7 +28,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
   [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
 - Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
-  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719) 
+  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
+- Avoid exception avoid exception in user events when unknown events don't match expected pattern (e.g. metadata events 
+  from another branch).
 
 ## 1.3.4 - 2018-02-05
 

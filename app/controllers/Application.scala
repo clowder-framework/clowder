@@ -8,7 +8,7 @@ import api.Permission._
 import play.api.{Logger, Play, Routes}
 import play.api.mvc.Action
 import services._
-import models.{Event, UUID, User}
+import models.{Event, UUID, User, UserStatus}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
@@ -111,10 +111,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     }
 
     user match {
-      case Some(clowderUser) if !clowderUser.active => {
+      case Some(clowderUser) if (clowderUser.status==UserStatus.Inactive) => {
         Redirect(routes.Error.notActivated())
       }
-      case Some(clowderUser) if clowderUser.active => {
+      case Some(clowderUser) if !(clowderUser.status==UserStatus.Inactive) => {
         newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
         if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
         newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
