@@ -304,7 +304,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val usr = users.findByEmail(email)
                       spaces.addUser(usr.get.id, role, id)
                       val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
-                      Mail.sendEmail("Added to $spaceTitle", request.user, email, theHtml)
+                      Mail.sendEmail(s"[${AppConfiguration.getDisplayName}] - Added to $spaceTitle", request.user, email, theHtml)
                     }
                     case None => {
                       val uuid = UUID.generate()

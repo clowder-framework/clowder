@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.3.5 - 2018-02-23
+- Modifying subject for emails being sent when a user is added to a space.
+  [CATS-858](https://opensource.ncsa.illinois.edu/jira/browse/CATS-858)
+
 ## 1.3.4 - 2018-02-05
 
 ### Fixed

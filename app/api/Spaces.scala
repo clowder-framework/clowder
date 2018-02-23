@@ -30,6 +30,11 @@ class Spaces @Inject()(spaces: SpaceService,
                        datasets: DatasetService,
                        appConfig: AppConfigurationService) extends ApiController {
 
+  /**
+    * String name of the Space such as 'Project space' etc., parsed from conf/messages
+    */
+  val spaceTitle: String = Messages("space.title")
+
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
   def createSpace() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Creating new space")
@@ -514,7 +519,7 @@ class Spaces @Inject()(spaces: SpaceService,
                           events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          Mail.sendEmail("Added to Space", request.user, newmember ,theHtml)
+                          Mail.sendEmail(s"[${AppConfiguration.getDisplayName}] - Added to $spaceTitle", request.user, newmember ,theHtml)
                         }
                       }
                       else {
