@@ -44,15 +44,21 @@
                 </div>
             }
 
-            @Registry.providers.get(UsernamePassword).map { up =>
-                <div class="clearfix">
-                    @if( externalProviders.size > 0 ) {
-                        <p>@Messages("securesocial.login.useEmailAndPassword")</p>
-                    } else {
-                        <p>@Messages("securesocial.login.useEmailAndPasswordOnly")</p>
-                    }
+            @if(play.Play.application().configuration().getBoolean("enableUsernamePassword")) {
+                @Registry.providers.get(UsernamePassword).map { up =>
+                    <div class="clearfix">
+                        @if( externalProviders.size > 0 ) {
+                            <p>@Messages("securesocial.login.useEmailAndPassword")</p>
+                        } else {
+                            <p>@Messages("securesocial.login.useEmailAndPasswordOnly")</p>
+                        }
 
-                   @provider("userpass", Some(loginForm))
+                       @provider("userpass", Some(loginForm))
+                    </div>
+                }
+            } else {
+                <div class="clearfix">
+                    <p>Please select one of the login methods above.</p>
                 </div>
             }
         }

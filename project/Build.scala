@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.3.5"
+  val version = "1.x"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -66,6 +66,7 @@ object ApplicationBuild extends Build {
     filters,
     // login
     "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    "com.unboundid" % "unboundid-ldapsdk" % "4.0.1",
 
     // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",

@@ -6,7 +6,7 @@ import java.net.{URL, URLEncoder}
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
-import _root_.util.{FileUtils, Parsers, JSONLD, SearchUtils}
+import _root_.util.{FileUtils, Parsers, JSONLD, SearchUtils, RequestUtils}
 
 import com.mongodb.casbah.Imports._
 import controllers.Previewers
@@ -60,7 +60,7 @@ class Files @Inject()(
     files.get(id) match {
       case Some(file) => {
         val serveradmin = request.user match {
-          case Some(u) => u.serverAdmin
+          case Some(u) => (u.status==UserStatus.Admin)
           case None => false
         }
         Ok(jsonFile(file, serveradmin))
@@ -77,7 +77,7 @@ class Files @Inject()(
    */
   def list = DisabledAction { implicit request =>
     val serveradmin = request.user match {
-      case Some(u) => u.serverAdmin
+      case Some(u) => (u.status==UserStatus.Admin)
       case None => false
     }
     val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f, serveradmin)
@@ -373,14 +373,15 @@ class Files @Inject()(
     }
 
   def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
     files.get(id) match {
       case Some(file) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
           case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.file, id), f)
-            .map(JSONLD.jsonMetadataWithContext(_))
+            .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-            .map(JSONLD.jsonMetadataWithContext(_))
+            .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
         }
         Ok(toJson(listOfMetadata))
       }

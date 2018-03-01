@@ -24,25 +24,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    */
   def getUser() = AuthenticatedAction { implicit request =>
       request.user match {
-          case Some(identity) => {
-              Logger.debug("Have an identity. It is " + identity)
-              identity.email match {
-                  case Some(emailAddress) => {
-		              users.findByEmail(emailAddress) match {
-		                  case Some(user) => Ok(userToJSON(user))
-		                  //The None case should never happen, as this is a secured action, and requires a user?
-		                  case None => {
-		                      Logger.debug("--------- In the NONE case for findById in getUser")
-		                      Ok(Json.toJson("No user found"))
-		                  }
-		              }
-                  }
-                  case None => Unauthorized("Not authenticated")
-              }
-          }
-          case None => {
-              Unauthorized("Not authenticated")
-          }
+          case Some(identity) => Ok(userToJSON(identity))
+          case None => Unauthorized("Not authenticated")
       }
   }
 
@@ -76,6 +59,65 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     users.updateUserFullName(id, firstName + " " + lastName)
 
     Ok(Json.obj("status" -> "success"))
+  }
+
+  def keysList =  AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        Ok(Json.toJson(users.getUserKeys(user.identityId)))
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  def keysGet(name: String) =  AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        users.getUserKeys(user.identityId).find(k => k.name == name) match {
+          case Some(key) => Ok(Json.toJson(key))
+          case None => NotFound(s"Key with name ${name} not found")
+        }
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  def keysAdd(name: String) = AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        if (users.getUserKeys(user.identityId).exists(k => k.name == name)) {
+          BadRequest(s"Key with name ${name} already exists")
+        } else {
+          val key = java.util.UUID.randomUUID().toString
+          users.addUserKey(user.identityId, name, key)
+          Ok(Json.obj("name" -> name, "key" -> key))
+        }
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
+  }
+
+  def keysDelete(name: String) =  AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        users.getUserKeys(user.identityId).find(k => k.name == name) match {
+          case Some(key) => {
+            users.deleteUserKey(user.identityId, name)
+            NoContent
+          }
+          case None => NotFound(s"Key with name ${name} not found")
+        }
+      }
+      case None => {
+        Unauthorized("Not authenticated")
+      }
+    }
   }
 
   /** @deprecated use id instead of email */

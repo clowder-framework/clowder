@@ -1,7 +1,7 @@
 package services
 
 import models._
-import securesocial.core.Identity
+import securesocial.core.{Identity, IdentityId}
 import util.Direction
 import util.Direction.Direction
 
@@ -79,6 +79,26 @@ trait UserService  {
    * @deprecated please find
    */
   def findByEmail(email: String): Option[User]
+
+  /**
+   * Find a user by api key
+   */
+  def findByKey(key: String): Option[User]
+
+  /**
+   * Gets all api keys for a user
+   */
+  def getUserKeys(identityId: IdentityId): List[UserApiKey]
+
+  /**
+   * Adds an api key for the user
+   */
+  def addUserKey(identityId: IdentityId, name: String, key: String)
+
+  /**
+   * Deletes an api key from the user
+   */
+  def deleteUserKey(identityId: IdentityId, name: String)
 
   /**
    * Update the give user profile

@@ -25,6 +25,8 @@ case class Dataset(
   licenseData: LicenseData = new LicenseData(),
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
+  trash : Boolean = false,
+  dateMovedToTrash : Option[Date] = None,
   followers: List[UUID] = List.empty,
   status: String = DatasetStatus.PRIVATE.toString, // dataset has four status: trial, default, private and public. yet editors of the dataset
   // can only see the default, private and public, where trial equals to private. viewers can only see private and

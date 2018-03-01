@@ -1,4 +1,4 @@
-@(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], spaceName: Option[String], title: Option[String], owner:Option[String], ownerName: Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
+@(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], spaceName: Option[String], title: Option[String], owner:Option[String], ownerName: Option[String], when: String, date: String, showTrash : Boolean = false)(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
 @import api.Permission
 @main( Messages("collections.title")) {
 
@@ -32,7 +32,12 @@
 <div class="row">
     <div class="col-md-12">
         <h1>@Html(title.getOrElse("Collections"))</h1>
-        <p>@Messages("collection.list.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase)</p>
+        @if(showTrash){
+            <p>@Messages("collection.trash.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase)</p>
+
+        } else {
+            <p>@Messages("collection.list.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase)</p>
+        }
     </div>
 </div>
 
@@ -122,9 +127,15 @@
                     }
                     case (_, Some(o)) => {
                         @if(o.equalsIgnoreCase(u.id.stringify)) {
+                            @if(showTrash){
+                                <a id="clear-trash" onclick="confirmClearTrash('collection', '@(routes.Collections.list("",owner=Some(user.get.id.stringify),showTrash=true))')"
+                                class="btn btn-primary btn-sm pull-right" href="#"> <span class="glyphicon glyphicon-trash"></span>  @Messages("cleartrash.title", Messages("collections.title"))</a>
+                                
+                            } else {
+                                <a id="create-collection" href="@routes.Collections.newCollection(space)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("collection.title"))">
+                                    <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
+                            }
 
-                            <a id="create-collection" href="@routes.Collections.newCollection(space)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("collection.title"))">
-                                <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
                         }
                     }
 

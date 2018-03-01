@@ -4,7 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+- Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
+  [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
+
+### Added
+- Add LDAP authorization
+  [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
+- Ability for users to create their own API keys.
+  [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
+- Abilty for CiLogon provider to filter by LDAP groups.
+- Added an *exact* flag on collection and dataset API endpoints that accept a *title* flag. This will use
+  exact matching on the title field instead of regular expression fuzzy matching.
+- Having a temporary trash option. Can be set with useTrash boolean in the configuration file
+  [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
+- Track last time a user logged in.
+  
+### Changed
+- File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
+  [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
+- Person tracking previewer updated after changes to the associated metadata structure.
+  [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
+
+### Fixed
+- Fixed GreenIndex previewer on clowder dataset page. 
+  [BD-1912](https://opensource.ncsa.illinois.edu/jira/browse/BD-1912)
+- Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
+  [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
+- Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
+  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
+- Avoid exception avoid exception in user events when unknown events don't match expected pattern (e.g. metadata events 
+  from another branch).
+
 ## 1.3.5 - 2018-02-23
+
+### Fixed
 - Modifying subject for emails being sent when a user is added to a space.
   [CATS-858](https://opensource.ncsa.illinois.edu/jira/browse/CATS-858)
 
@@ -17,13 +51,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.3.3 - 2017-12-21
 
-### Added
 - Endpoint to get a list of traversing paths from datasets to the parent
   folders of the given file.
   [CATS-811](https://opensource.ncsa.illinois.edu/jira/browse/CATS-811)
 - clowder.upload.previews flag to application.conf to turn on/off
   previews in upload page.
   [CATS-813](https://opensource.ncsa.illinois.edu/jira/browse/CATS-813)
+- Added ability to disable username/password login. 
+  [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
 
 ### Changed
 - Send email with instructions when registerThroughAdmins=true.
@@ -54,6 +89,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [GLGVO-382](https://opensource.ncsa.illinois.edu/jira/browse/GLGVO-382)
 - Edit license breaks on names with apostrophes in them.
   [CATS-820](https://opensource.ncsa.illinois.edu/jira/browse/CATS-820)
+- Rolling log file wrote to wrong folder, now writes to logs folder.
 
 ## 1.3.2 - 2017-08-15
 

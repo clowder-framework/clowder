@@ -1,11 +1,13 @@
 (function($, Configuration) {
 
 	function countRoutes(data) {
-		if ("Route and Green Index Extractor" in data) {
-			return Object.keys(data["Route and Green Index Extractor"]["Data"]["Routes"]).length;
-		} else {
-			return 0;
-		}
+        var routes = 0
+	    for(var i=0; i<data.length; i++) {
+            if ("Route and Green Index Extractor" in data[i]) {
+                routes += Object.keys(data[i]["Route and Green Index Extractor"]["Data"]["Routes"]).length;
+            }
+        }
+        return routes
 	}
     
     var dataset_id = Configuration.dataset_id;
@@ -50,58 +52,61 @@
 					mapOptions);
 				var bounds = new google.maps.LatLngBounds();
 
-				for (var routeNum = 1; routeNum <= numRoutes; routeNum++) {
+				for (var i=0; i<data.length; i++) {
+                    greendata = data[i]
+                    for (var routeNum = 1; routeNum <= numRoutes; routeNum++) {
+                        var route = JSON.parse(greendata["Route and Green Index Extractor"]["Data"]["Routes"]["Route" + routeNum].path);
 
-					var route = JSON.parse(data["Route and Green Index Extractor"]["Data"]["Routes"]["Route" + routeNum]["Path"]);
+                        var images = greendata["Route and Green Index Extractor"]["Data"]["Routes"]["Route" + routeNum].Images;
 
-					var images = data["Route and Green Index Extractor"]["Data"]["Routes"]["Route" + routeNum]["Images"];
+                        if (route != null) {
+                            var routeCoordinates = [];
+                            var infowindow = infowindow = new google.maps.InfoWindow({
+                                content: "initializing..."
+                            });
+                            for (var x in route) {
+                                routeCoordinates.push(new google.maps.LatLng(+route[x][0], +route[x][1]));
 
-					if (route != null) {
-						var routeCoordinates = [];
-						var infowindow = infowindow = new google.maps.InfoWindow({
-							content: "initializing..."
-						});
-						for (var x in route) {
-							routeCoordinates.push(new google.maps.LatLng(+route[x][0], +route[x][1]));
+                                var content = '';
 
-							var content = '';
-							for (var y in images[x]) {
-								if (y % 2 == 0) content = content.concat('<div class="row">');
-								content = content.concat('<div class="col-md-6"><a href="' + images[x][y] + '"><img class="img-thumbnail ds-path-img-tmb" src="' + images[x][y] + '/blob"></img></a></div>');
-								if (y % 2 == 1) content = content.concat('</div>');
-							}
+                                content = content.concat('<div class="row">');
+                                content = content.concat('<div class="col-md-3"><a href="' + images['Streetview'][4 * x] + '"><img class="img-thumbnail ds-path-img-tmb" src="' + images['Streetview'][4 * x] + '/blob"></img></a></div>');
+                                content = content.concat('<div class="col-md-3"><a href="' + images['Streetview'][4 * x + 1] + '"><img class="img-thumbnail ds-path-img-tmb" src="' + images['Streetview'][4 * x + 1] + '/blob"></img></a></div>');
+                                content = content.concat('<div class="col-md-3"><a href="' + images['Streetview'][4 * x + 2] + '"><img class="img-thumbnail ds-path-img-tmb" src="' + images['Streetview'][4 * x + 2] + '/blob"></img></a></div>');
+                                content = content.concat('<div class="col-md-3"><a href="' + images['Streetview'][4 * x + 3] + '"><img class="img-thumbnail ds-path-img-tmb" src="' + images['Streetview'][4 * x + 3] + '/blob"></img></a></div>');
+                                content = content.concat('</div>');
 
-							var marker = new google.maps.Marker({
-								position: new google.maps.LatLng(+route[x][0], +route[x][1]),
-								map: map,
-								title: 'Location',
-								popup_content: content
-							});
+                                var marker = new google.maps.Marker({
+                                    position: new google.maps.LatLng(+route[x][0], +route[x][1]),
+                                    map: map,
+                                    title: 'Location',
+                                    popup_content: content
+                                });
 
-							google.maps.event.addListener(marker, 'click', function () {
-								infowindow.setContent(this.popup_content);
-								infowindow.open(map, this);
-							});
-						}
+                                google.maps.event.addListener(marker, 'click', function () {
+                                    infowindow.setContent(this.popup_content);
+                                    infowindow.open(map, this);
+                                });
+                            }
 
-						var color = colors[colors.length % routeNum];
+                            var color = colors[colors.length % routeNum];
 
-						var routePath = new google.maps.Polyline({
-							path: routeCoordinates,
-							geodesic: true,
-							strokeColor: color,
-							strokeOpacity: 1.0,
-							strokeWeight: 4
-						});
+                            var routePath = new google.maps.Polyline({
+                                path: routeCoordinates,
+                                geodesic: true,
+                                strokeColor: color,
+                                strokeOpacity: 1.0,
+                                strokeWeight: 4
+                            });
 
-						routePath.setMap(map);
+                            routePath.setMap(map);
 
-						for (var i = 0; i < routeCoordinates.length; i++) {
-							bounds.extend(routeCoordinates[i]);
-						}
-					}
-				}
-
+                            for (var i = 0; i < routeCoordinates.length; i++) {
+                                bounds.extend(routeCoordinates[i]);
+                            }
+                        }
+                    }
+                }
 				map.fitBounds(bounds);
 
 				$('a[href$="#tab-home"]').on('shown.bs.tab', function (e) {

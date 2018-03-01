@@ -5,9 +5,14 @@ import java.security.MessageDigest
 import java.util.Date
 
 import play.api.Play.configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core._
 import services.AppConfiguration
+
+object UserStatus extends Enumeration {
+	  type UserStatus = Value
+	  val Inactive, Active, Admin = Value
+	}
 
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
@@ -15,8 +20,7 @@ import services.AppConfiguration
  */
 trait User extends Identity {
   def id: UUID
-  def active: Boolean
-  def serverAdmin: Boolean
+  def status: UserStatus.Value
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
@@ -25,7 +29,7 @@ trait User extends Identity {
   def spaceandrole: List[UserSpaceAndRole]
   def repositoryPreferences: Map[String,Any]
   def termsOfServices: Option[UserTermsOfServices]
-
+  def lastLogin: Option[Date]
   // One can only be superAdmin iff you are a serveradmin
   def superAdminMode: Boolean
 
@@ -95,8 +99,7 @@ object User {
     fullName="Anonymous User",
     email=None,
     authMethod=AuthenticationMethod("SystemUser"),
-    active=true,
-    serverAdmin=true,
+    status=UserStatus.Admin,
     termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
@@ -123,11 +126,8 @@ case class ClowderUser(
   passwordInfo: Option[PasswordInfo] = None,
 
   // should user be active
-  active: Boolean = false,
-
-  // is the user an admin
-  serverAdmin: Boolean = false,
-
+  status: UserStatus.Value = UserStatus.Inactive,
+  
   // has the user escalated privileges, this is never saved to the database
   @transient superAdminMode: Boolean = false,
 
@@ -149,8 +149,10 @@ case class ClowderUser(
   repositoryPreferences: Map[String,Any] = Map.empty,
 
   // terms of service
-  termsOfServices: Option[UserTermsOfServices] = None
+  termsOfServices: Option[UserTermsOfServices] = None,
 
+  lastLogin: Option[Date] = None
+  
 ) extends User
 
 case class Profile(
@@ -179,3 +181,14 @@ case class UserTermsOfServices(
   acceptedDate: Date = null,
   acceptedVersion: String = ""
 )
+
+case class UserApiKey(
+  name: String,
+  key: String,
+  identityId: IdentityId
+)
+
+object UserApiKey {
+  implicit val identityIdFormat = Json.format[IdentityId]
+  implicit val userApiKeyFormat = Json.format[UserApiKey]
+}

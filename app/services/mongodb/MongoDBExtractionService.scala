@@ -24,7 +24,7 @@ class MongoDBExtractionService extends ExtractionService {
     for (currentExtraction <- allOfFile) {
       extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
     }
-    return extractorsArray.values.exists(_ != "DONE")
+    return extractorsArray.values.exists(statusString => !(statusString == "DONE" || statusString.contains("StatusMessage.error")))
   }
 
   def findAll(): List[Extraction] = {

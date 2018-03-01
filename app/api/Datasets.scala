@@ -22,7 +22,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
-import _root_.util.{FileUtils, JSONLD, License, SearchUtils}
+import _root_.util._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
 
@@ -57,26 +57,26 @@ class  Datasets @Inject()(
     }
   }
 
-  def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  def list(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
     if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
-      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     } else {
-      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     }
   }
 
   /**
     * Returns list of datasets based on space restrictions and permissions. The spaceId is obtained from the file itself
     */
-  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
     var datasetAll = List[Dataset]()
     val datasetList = datasets.findByFileId(file_id)
     datasetList match {
@@ -89,7 +89,7 @@ class  Datasets @Inject()(
                 if (d.spaces.isEmpty) {
                   title match {
                     case Some(t) => {
-                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
+                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
                     }
                     case None => {
                       datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true,false)
@@ -118,7 +118,7 @@ class  Datasets @Inject()(
         if (x.spaces.isEmpty) {
           title match {
             case Some(t) => {
-              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
+              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
             }
             case None => {
               datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true,false)
@@ -144,13 +144,13 @@ class  Datasets @Inject()(
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false)
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
       }
       case (Some(t), None) => {
-        datasets.listAccess(limit, t, permission, user, superAdmin, true,false)
+        datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
       }
       case (None, Some(d)) => {
         datasets.listAccess(d, true, limit, permission, user, superAdmin, true,false)
@@ -726,14 +726,15 @@ class  Datasets @Inject()(
   }
 
   def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
     datasets.get(id) match {
       case Some(dataset) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
           case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), f)
-                                    .map(JSONLD.jsonMetadataWithContext(_))
+                                    .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-                                    .map(JSONLD.jsonMetadataWithContext(_))
+                                    .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
         }
         Ok(toJson(listOfMetadata))
       }
@@ -815,7 +816,7 @@ class  Datasets @Inject()(
         val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
           case Some(file) => {
             val serveradmin = request.user match {
-              case Some(u) => u.serverAdmin
+              case Some(u) => (u.status==UserStatus.Admin)
               case None => false
             }
             jsonFile(file, serveradmin)
@@ -841,7 +842,7 @@ class  Datasets @Inject()(
         val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
           case Some(file) => {
             val serveradmin = request.user match {
-              case Some(u) => u.serverAdmin
+              case Some(u) => (u.status==UserStatus.Admin)
               case None => false
             }
             jsonFile(file, serveradmin)
@@ -849,7 +850,7 @@ class  Datasets @Inject()(
           case None => Logger.error(s"Error getting File $fileId")
         }).asInstanceOf[List[JsValue]]
         val serveradmin = request.user match {
-          case Some(u) => u.serverAdmin
+          case Some(u) => (u.status==UserStatus.Admin)
           case None => false
         }
         val list = listFiles ++ getFilesWithinFolders(id, serveradmin)
@@ -1733,11 +1734,18 @@ class  Datasets @Inject()(
   def detachAndDeleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match{
       case Some(dataset) => {
-        for (f <- dataset.files) {
-          detachFileHelper(dataset.id, f, dataset, request.user)
+        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        if (!useTrash || (useTrash && dataset.trash)) {
+          for (f <- dataset.files) {
+            detachFileHelper(dataset.id, f, dataset, request.user)
+          }
+          deleteDatasetHelper(dataset.id, request)
+          Ok(toJson(Map("status" -> "success")))
+        } else {
+          datasets.update(dataset.copy(trash = true, dateMovedToTrash = Some(new Date())))
+          events.addObjectEvent(request.user, id, dataset.name, "move_dataset_trash")
+          Ok(toJson(Map("status" -> "success")))
         }
-        deleteDatasetHelper(dataset.id, request)
-        Ok(toJson(Map("status" -> "success")))
       }
       case None=> {
         Ok(toJson(Map("status" -> "success")))
@@ -1780,7 +1788,83 @@ class  Datasets @Inject()(
   }
 
   def deleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    deleteDatasetHelper(id, request)
+    datasets.get(id) match {
+      case Some(ds) => {
+        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        if (!useTrash || (useTrash && ds.trash)){
+          deleteDatasetHelper(id, request)
+        } else {
+          datasets.update(ds.copy(trash = true, dateMovedToTrash = Some(new Date())))
+          events.addObjectEvent(request.user, id, ds.name, "move_dataset_trash")
+          Ok(toJson(Map("status"->"success")))
+        }
+      }
+      case None => BadRequest("No dataset found with id " + id)
+    }
+  }
+
+  def restoreDataset(id : UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) {implicit request=>
+    implicit val user = request.user
+    user match {
+      case Some(u) => {
+        datasets.get(id) match {
+          case Some(ds) => {
+            datasets.update(ds.copy(trash = false, dateMovedToTrash=None))
+            events.addObjectEvent(user, ds.id, ds.name, "restore_dataset_trash")
+
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => InternalServerError("Update Access failed")
+        }
+      }
+      case None => BadRequest("No user supplied")
+    }
+  }
+
+  def emptyTrash() = PrivateServerAction {implicit request =>
+    val user = request.user
+    user match {
+      case Some(u) => {
+        val trashDatasets = datasets.listUserTrash(request.user,0)
+        for (ds <- trashDatasets){
+          events.addObjectEvent(request.user, ds.id, ds.name, "delete_dataset")
+          datasets.removeDataset(ds.id)
+          appConfig.incrementCount('datasets, -1)
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete("data", "dataset", ds.id.stringify)
+          }
+        }
+      }
+      case None =>
+    }
+    Ok(toJson("Done emptying trash"))
+  }
+
+  def listDatasetsInTrash(limit : Int) = PrivateServerAction {implicit request =>
+    val user = request.user
+    user match {
+      case Some(u) => {
+        val trashDatasets = datasets.listUserTrash(user,limit)
+        Ok(toJson(trashDatasets))
+      }
+      case None => BadRequest("No user supplied")
+    }
+  }
+
+  def clearOldDatasetsTrash(days : Int) = ServerAdminAction {implicit request =>
+
+    val deleteBeforeCalendar : Calendar = Calendar.getInstance()
+    deleteBeforeCalendar.add(Calendar.DATE,-days)
+    val deleteBeforeDateTime = deleteBeforeCalendar.getTimeInMillis()
+    val allDatasetsInTrash = datasets.listUserTrash(None,0)
+    allDatasetsInTrash.foreach(d => {
+      val dateInTrash = d.dateMovedToTrash.getOrElse(new Date())
+      if (dateInTrash.getTime() < deleteBeforeDateTime){
+        deleteDatasetHelper(d.id, request)
+      }
+    })
+    Ok(toJson("Deleted all datasets in trash older than " + days + " days"))
+
   }
 
   def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -1846,7 +1930,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-          .filter(_.creator.typeOfAgent == "extractor")
+          .filter(metadata => metadata.creator.typeOfAgent == "extractor" || metadata.creator.typeOfAgent == "cat:extractor")
           .map(JSONLD.jsonMetadataWithContext(_) \ "content")
         Ok(toJson(listOfMetadata))
       }

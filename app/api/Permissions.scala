@@ -1,6 +1,7 @@
 package api
 
-import models.{ResourceRef, User}
+import api.Permission.getUserByIdentity
+import models.{ResourceRef, User, UserStatus}
 import play.api.Logger
 import play.api.mvc._
 import play.api.Play.configuration
@@ -124,7 +125,7 @@ object Permission extends Enumeration {
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
-		user.exists(u => u.active && u.serverAdmin)
+		user.exists(u => u.status==UserStatus.Admin)
 	}
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
@@ -328,13 +329,26 @@ object Permission extends Enumeration {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
-            if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
-              && READONLY.contains(permission)) return true
-            for (clowderUser <- getUserByIdentity(user)) {
-              dataset.spaces.map {
-                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if (role.permissions.contains(permission.toString))
-                    return true
+            if (dataset.trash){
+              if (permission.equals(Permission.DeleteDataset)){
+                for (clowderUser <- getUserByIdentity(user)) {
+                  dataset.spaces.map {
+                    spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                      if (role.permissions.contains(permission.toString))
+                        return true
+                    }
+                  }
+                }
+              }
+            } else {
+              if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
+                && READONLY.contains(permission)) return true
+              for (clowderUser <- getUserByIdentity(user)) {
+                dataset.spaces.map {
+                  spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                    if (role.permissions.contains(permission.toString))
+                      return true
+                  }
                 }
               }
             }
@@ -346,14 +360,27 @@ object Permission extends Enumeration {
         collections.get(id) match {
           case None => false
           case Some(collection) => {
-            if ((collection.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty)
-              && READONLY.contains(permission)) return true
-
+            if (collection.trash){
+              if (permission.equals(Permission.DeleteCollection)){
+                for (clowderUser <- getUserByIdentity(user)) {
+                  collection.spaces.map {
+                    spaceId =>
+                      for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                        if (role.permissions.contains(permission.toString))
+                          return true
+                      }
+                  }
+                }
+              }
+            } else {
+              if ((collection.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty)
+                && READONLY.contains(permission)) return true
               for (clowderUser <- getUserByIdentity(user)) {
-              collection.spaces.map {
-                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if (role.permissions.contains(permission.toString))
-                    return true
+                collection.spaces.map {
+                  spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                    if (role.permissions.contains(permission.toString))
+                      return true
+                  }
                 }
               }
             }

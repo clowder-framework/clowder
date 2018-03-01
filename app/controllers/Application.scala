@@ -8,7 +8,7 @@ import api.Permission._
 import play.api.{Logger, Play, Routes}
 import play.api.mvc.Action
 import services._
-import models.{Event, UUID, User}
+import models.{Event, UUID, User, UserStatus}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
@@ -111,10 +111,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     }
 
     user match {
-      case Some(clowderUser) if !clowderUser.active => {
+      case Some(clowderUser) if (clowderUser.status==UserStatus.Inactive) => {
         Redirect(routes.Error.notActivated())
       }
-      case Some(clowderUser) if clowderUser.active => {
+      case Some(clowderUser) if !(clowderUser.status==UserStatus.Inactive) => {
         newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
         if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
         newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
@@ -339,6 +339,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.getMetadataDefinitions,
         api.routes.javascript.Datasets.moveFileBetweenDatasets,
         api.routes.javascript.Datasets.users,
+        api.routes.javascript.Datasets.restoreDataset,
+        api.routes.javascript.Datasets.emptyTrash,
         api.routes.javascript.Files.download,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
@@ -386,6 +388,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.listCanEdit,
         api.routes.javascript.Collections.addDatasetToCollectionOptions,
         api.routes.javascript.Collections.listPossibleParents,
+        api.routes.javascript.Collections.restoreCollection,
+        api.routes.javascript.Collections.emptyTrash,
         api.routes.javascript.Selected.get,
         api.routes.javascript.Selected.add,
         api.routes.javascript.Selected.remove,
@@ -428,6 +432,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Users.unfollow,
         api.routes.javascript.Users.updateName,
         api.routes.javascript.Users.list,
+        api.routes.javascript.Users.keysAdd,
+        api.routes.javascript.Users.keysDelete,
         api.routes.javascript.Relations.findTargets,
         api.routes.javascript.Relations.add,
         api.routes.javascript.Relations.delete,
@@ -469,6 +475,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Folders.moveFileBetweenFolders,
         api.routes.javascript.Folders.moveFileToDataset,
         controllers.routes.javascript.Login.isLoggedIn,
+        controllers.routes.javascript.Login.ldapAuthenticate,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,

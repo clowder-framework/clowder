@@ -3,42 +3,23 @@ set -e
 
 # rabbitmq
 if [ "$RABBITMQ_URI" == "" ]; then
-    if [ -n "$RABBITMQ_PORT_5672_TCP_PORT" ]; then
-        RABBITMQ_URI="amqp://guest:guest@${RABBITMQ_PORT_5672_TCP_ADDR}:${RABBITMQ_PORT_5672_TCP_PORT}/${RABBITMQ_VHOST}"
-    fi
+    RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/%2f"
 fi
 if [ "$RABBITMQ_MGMT_PORT" == "" ]; then
-    if [ -n "$RABBITMQ_PORT_15672_TCP_PORT" ]; then
-        RABBITMQ_MGMT_PORT="$RABBITMQ_PORT_15672_TCP_PORT"
-    fi
+    RABBITMQ_MGMT_PORT="15672"
 fi
 
 # mongo
 if [ "$MONGO_URI" == "" ]; then
-    if [ -n "$MONGO_PORT_27017_TCP_PORT" ]; then
-        MONGO_URI="mongodb://${MONGO_PORT_27017_TCP_ADDR}:${MONGO_PORT_27017_TCP_PORT}/clowder"
-    else
-        MONGO_URI="mongodb://127.0.0.1:27017/clowder"
-    fi
+    MONGO_URI="mongodb://mongo:27017/clowder"
 fi
 
 # elasticsearch
 if [ "$ELASTICSEARCH_SERVICE_SERVER" == "" ]; then
-    if [ -n "$ELASTICSEARCH_PORT_9300_TCP_ADDR" ]; then
-        ELASTICSEARCH_SERVICE_SERVER="$ELASTICSEARCH_PORT_9300_TCP_ADDR"
-    fi
+    ELASTICSEARCH_SERVICE_SERVER="elasticsearch"
 fi
 if [ "$ELASTICSEARCH_SERVICE_PORT" == "" ]; then
-    if [ -n "$ELASTICSEARCH_PORT_9300_TCP_PORT" ]; then
-        ELASTICSEARCH_SERVICE_PORT="$ELASTICSEARCH_PORT_9300_TCP_PORT"
-    fi
-fi
-
-# toolserver
-if [ "$TOOLMANAGER_URI" == "" ]; then
-    if [ -n "$TOOLSERVER_PORT_8080_TCP_ADDR" ]; then
-        TOOLMANAGER_URI="http://${TOOLSERVER_PORT_8080_TCP_ADDR}:${TOOLSERVER_PORT_8080_TCP_PORT}"
-    fi
+    ELASTICSEARCH_SERVICE_PORT="9300"
 fi
 
 # some helper functions

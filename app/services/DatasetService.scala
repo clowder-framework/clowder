@@ -101,7 +101,7 @@ trait DatasetService {
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean, exact: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
@@ -111,7 +111,7 @@ trait DatasetService {
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, showOnlyShared : Boolean, exact: Boolean): List[Dataset]
 
   /**
     * Return a list of datasets in a space the user has access to.
@@ -144,14 +144,28 @@ trait DatasetService {
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
   /**
+    * Return a list of datasets the user has created in trash.
+    */
+  def listUserTrash(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
+
+  /**
    * Return a list of datasets the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
   /**
+    * Return a list of datasets the user has created starting at a specific date.
+    */
+  def listUserTrash(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
+
+
+  /**
     * Return a list of all the datasets the user can view or has created.
     */
   def listUser( user: User): List[Dataset]
+
+  def listUserTrash(user : Option[User],limit : Integer ) : List[Dataset]
+
   /**
    * Get dataset.
    */
