@@ -5,8 +5,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-- Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
-  [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
 
 ### Added
 - Add LDAP authorization
@@ -25,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
 - Person tracking previewer updated after changes to the associated metadata structure.
   [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
+- When the metadata.jsonld has a contextURL instead of a JsObject or JsArray show a popup with the link of the context instead of creating a link
+  [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
 
 ### Fixed
 - Fixed GreenIndex previewer on clowder dataset page. 
@@ -32,9 +32,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
   [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
 - Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
-  [CATS-719] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
+  [CATS-719](https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
 - Avoid exception avoid exception in user events when unknown events don't match expected pattern (e.g. metadata events 
   from another branch).
+- Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
+  [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
+
 
 ## 1.3.5 - 2018-02-23
 
