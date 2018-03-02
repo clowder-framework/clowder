@@ -75,7 +75,7 @@ else
 	                hasher: \"bcrypt\", 
         	        password: '"$hasher"'
 		},
-                active: true, 
+                status : \"Active\",
                 serverAdmin: $admin, 
                 termsOfServices: {
 			accepted: true, 
