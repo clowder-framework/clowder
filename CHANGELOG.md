@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Having a temporary trash option. Can be set with useTrash boolean in the configuration file
   [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
 - Track last time a user logged in.
-  
+- Add logic check rabbitmq, mongo, clowder ready before creating default users.[BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)   
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
