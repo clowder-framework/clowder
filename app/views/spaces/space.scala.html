@@ -1,4 +1,6 @@
-@(space: ProjectSpace, collections: List[Collection], publicDatasets: List[Dataset], datasets: List[Dataset], curationObjects: List[CurationObject], userRoleMap: Map[User, String], userSelections: List[String])(implicit user: Option[models.User])
+@(space: ProjectSpace, collections: List[Collection], publicDatasets: List[Dataset], datasets: List[Dataset], publishedData: List[play.api.libs.json.JsValue], servicesUrl: String, userRoleMap: Map[User, String], userSelections: List[String])(implicit user: Option[models.User])
+@import play.api.libs.json._
+
 @import play.api.Play.current
 @import api.Permission
 @import play.api.i18n.Messages
@@ -51,18 +53,13 @@
                     @if(user.isDefined) {
                         <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
                         <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                            <!-- Published Data tab and code is disabled, currently it shows Curation objects with Published status.
-                            The use of DOI and remote repositories is being discussed.
-                        if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) -->
-                        @if(false){
+                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined){
                             <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
                         }
                     } else {
+                    	<li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
                         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                            <li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                            <!-- Published Data tab and code is disabled, currently it shows Curation objects with Published status.
-                            The use of DOI and remote repositories is being discussed.
-                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li> -->
+                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
                         }
                     }
                 }
@@ -73,10 +70,11 @@
                         @spaces.datasetsBySpace(datasets, space, None, userSelections)
                         @spaces.collectionsBySpace(collections, space, None)
                     </div>
+                     
                     <div role="tabpanel" class="tab-pane fade" id="tab-public">
                         <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
                         @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
-                            <!-- collections follow the space status, there is no public, provate flag on a collection -->
+                            <!-- collections follow the space status, there is no public, private flag on a collection -->
                         @if(space.isPublic) {
                             @spaces.collectionsBySpace(collections, space, Some(true))
                         } else {
@@ -99,7 +97,8 @@
                     </div>
                 }
                 <div role="tabpanel" class="tab-pane fade" id="tab-publish">
-                    @spaces.curationObjectsBySpace(curationObjects, space, Some(true))
+                <p>The following @Messages("datasets.title").toLowerCase have been published through this @Messages("space.title") and any affiliated @Messages("space.title")s.</p>
+                    @curations.publishedGrid(publishedData, servicesUrl, None)
                 </div>
             </div>
         </div>
@@ -123,20 +122,24 @@
     <script>
         function activateOne(id) {
             // initialize Masonry
-            var $container = $('#'+id).masonry();
-            // layout Masonry again after all images have loaded
-            imagesLoaded( '#masonry', function() {
-                $container.masonry({
-                itemSelector: '.post-box',
-                columnWidth: '.post-box',
-                transitionDuration: 4
-                });
-            });
+            var items = $("#" + id); 
+            if(items.length) { 
+            	var $container = $("#" + id).masonry();
+	            // layout Masonry again after all images have loaded
+    	        imagesLoaded( '#masonry', function() {
+        	        $container.masonry({
+            	    itemSelector: '.post-box',
+                	columnWidth: '.post-box',
+                	transitionDuration: 4
+                	});
+            	});
+            }
         }
 
         function activate(){
             activateOne("masonry-datasets");
             activateOne("masonry-collections");
+            $('#tab-publish .grid').masonry();
             doSummarizeAbstracts();
         }
 

@@ -153,7 +153,7 @@ trait SecuredController extends Controller {
         val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
         spaces.get(id) match {
           case None => Future.successful(BadRequest(views.html.notFound(spaceTitle + " does not exist.")(user)))
-          case Some(space) => Future.successful(Forbidden(views.html.spaces.space(space,List(),List(),List(),List(),Map(),List())(user)))
+          case Some(space) => Future.successful(Forbidden(views.html.spaces.space(space,List(),List(),List(),List(),"", Map(),List())(user)))
         }
       }
 

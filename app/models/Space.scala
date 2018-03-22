@@ -30,8 +30,9 @@ case class ProjectSpace (
   curationObjects: List[UUID] = List.empty,
   invitations: List[(UUID, String)] = List.empty,
   requests: List[RequestResource] = List.empty,
-  status: String = SpaceStatus.TRIAL.toString // space has three status: trial, private and public. yet users can only see the
+  status: String = SpaceStatus.TRIAL.toString,  // space has three status: trial, private and public. yet users can only see the
   // access of the space, where trial equals to private
+  affiliatedSpaces: List[String] = List.empty
 ){
   def isPublic:Boolean = status == SpaceStatus.PUBLIC.toString
   def isTrial:Boolean = status == SpaceStatus.TRIAL.toString
