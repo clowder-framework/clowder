@@ -1,4 +1,5 @@
 .. index:: Administration
+
 ==============
 Administration
 ==============
@@ -7,17 +8,17 @@ There are two options for installation. You can either use `Docker <http://docke
 
 .. _docker_install:
 
-******
+
 Docker
-******
+------
 
 To start using Clowder using docker you can use the `docker compose file <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/clowder/browse/docker-compose.yml>`_. This will start docker
 
 .. _requirements:
 
-************
+
 Requirements
-************
+------------
 
 Following is a list of requirements for the Clowder software. Besides Java you can have all other services/software installed on other machines and can configure Clowder to communicate with these services. Items marked as always are hard requirements (Java and mongo), the others are only required if you want to enable certain features in Clowder.
 
@@ -30,9 +31,9 @@ RabbitMQ       3.5+                      extractions          RabbitMQ is used t
 ElasticSearch  2.x+ (5.x not yet tested) search               ElasticSearch is used to search Clowder. We have not tested Clowder with version 2.0 or larger of ElasticSearch.
 ============== ========================= ==================== =====
 
-************
+
 Installation
-************
+------------
 
 Before installing Clowder make sure you have looked at the :ref:`requirements` and have setup all the software that is needed.
 
@@ -94,10 +95,8 @@ The file custom.conf file is used to overwrite any of the defaults values for Cl
   application.secret="some magic string"
   commKey=magickey
 
-
-*********
 Upgrading
-*********
+---------
 
 This page describes how to upgrade the Clowder software. The steps described will do an in-place upgrade of Clowder. The biggest advantage of this upgrade is that it is fast and requires the least amount of changes to the current system.
 

@@ -1,7 +1,8 @@
 .. index:: Publishing Data
 
+***************
 Publishing Data
-===============
+***************
 
 Clowder directly supports submission of datasets to known repositories for publication. Your Clowder administrator must
 enable services.StagingAreaPlugin in order to access these services.
@@ -11,42 +12,51 @@ dataset and clicking the Publish button.
 
 You can also launch the Staging Area from a space page, which allows you to view, manage and retract submissions.
 
-**Create New Publication Request**
+Create New Publication Request
+==============================
 
 On the first page you must provide a name, description and one or more creators for your publication request. Click
 Create once the required fields are filled in.
 
 .. image:: /_static/ug_staging-1.png
-    :width: 750px
+    :width: 80%
+    :align: center
 
-**Edit Metadata**
+Edit Metadata
+=============
 
 Any existing metadata for the dataset will be copied to the Curation Object shown on this page, but you have the opportunity
 to add or delete metadata if desired. Click Select Repository once all metadata is entered.
 
 .. image:: /_static/ug_staging-2.png
-    :width: 750px
+    :width: 80%
+    :align: center
 
-**Select Repository**
+Select Repository
+=================
 
 Depending on the dataset contents and metadata, a list of candidate repositories will be displayed that you can choose
 from.
 
 .. image:: /_static/ug_staging-3.png
-    :width: 750px
+    :width: 80%
+    :align: center
 
 Expand "Matchmaker Details" to see an itemized list of requirements for the repository and indicators whether
 your dataset meets those requirements. These requirements are checked using `Indiana's Matchmaker service <https://seadva.d2i.indiana.edu/sead-c3pr/api/researchobjects/matchingrepositories>`_.
 
 .. image:: /_static/ug_staging-4.png
-    :width: 750px
+    :width: 80%
+    :align: center
 .. image:: /_static/ug_staging-5.png
-    :width: 750px
+    :width: 80%
+    :align: center
 
 Once you select **Submit to Repository** will have one last chance to review your information before submitting.
 
 .. image:: /_static/ug_staging-6.png
-    :width: 750px
+    :width: 80%
+    :align: center
 
 After completing this process successfully, you will get a DOI from the publishing repository.
 

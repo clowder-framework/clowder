@@ -1,6 +1,8 @@
-.. index: Home Page
+.. index:: Home Page
+
+*********
 Home Page
-=========
+*********
 
 The home page is where the site redirects you after logging in. You can navigate back to your home page by clicking on the Clowder link in the top navigation (Left to the you box highlighted in blue). 
 
@@ -15,4 +17,5 @@ The activity tab displays events on datasets, collections, spaces, files and use
 In the top navigation, you can also access the listing of all spaces, dataset, collections and users through the 'Explore' dropdown, indicated by a purple square.
 
 .. image:: _static/ug-homepage-1.png
-    :width: 750px
+    :width: 80%
+    :align: center

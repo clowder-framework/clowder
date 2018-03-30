@@ -1,13 +1,15 @@
 .. index:: Architecture
+
 Architecture
-============
+************
 
 Information in Clowder is organized using the following data model:
 
 .. container:: imagepadding
 
     .. image:: _static/data-model.png
-        :width: 750px
+        :width: 80%
+        :align: center
 
 Clowder uses a variety of technologies to accomplish its goals. The overall architecture of a typical deployment looks
 as follows:
@@ -15,7 +17,8 @@ as follows:
 .. container:: imagepadding
 
     .. image:: _static/architecture.png
-        :width: 750px
+        :width: 80%
+        :align: center
 
 The web application and individual extractors comprise most of the custom Clowder code and the core of the system.
 Most of the other blocks in the diagram are external services Clowder depends on. The next section covers how to
