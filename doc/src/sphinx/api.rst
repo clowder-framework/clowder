@@ -1,4 +1,5 @@
 .. index:: Application Programming Interface
+
 Using the API
 =============
 

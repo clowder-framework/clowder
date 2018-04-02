@@ -11,8 +11,6 @@ What is it good for?
 * You have code you want to run on all your data as it is ingested into the system.
 * You have a lot of data but cannot afford cloud storage solutions.
 
-`Contributions <https://github.com/ncsa/clowder/blob/master/CONTRIBUTING.md>`_ in this area are greatly appreciated!
-
 Data Model
 ----------
 
