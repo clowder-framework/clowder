@@ -5,10 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-- Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
-  [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
-- Fixed bug of ``Account not active'' when using mongo-init to create user account.
-  [BD-2042](https://opensource.ncsa.illinois.edu/jira/browse/BD-2042)
+
 ### Added
 - Add LDAP authorization
   [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
@@ -21,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
 - Track last time a user logged in.
 - Add logic check rabbitmq, mongo, clowder ready before creating default users.[BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)   
+
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
@@ -28,6 +26,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
 
 ### Fixed
+- Now sends email when a user signs up using an external login provider
+  [CATS-483](https://opensource.ncsa.illinois.edu/jira/browse/CATS-483)
+- Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
+  [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
+- Fixed bug of ``Account not active'' when using mongo-init to create user account.
+  [BD-2042](https://opensource.ncsa.illinois.edu/jira/browse/BD-2042)
 - Fixed dataset geospatial layer checkbox turn on/off and opacity
   [CATS-837](https://opensource.ncsa.illinois.edu/jira/browse/CATS-837)
 - Fixed GreenIndex previewer on clowder dataset page. 
