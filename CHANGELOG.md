@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
 
 ### Added
-- Add LDAP authorization
+- Track original file name used when file was originally uploaded. 
+  [SEAD-1173](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1173)
+- LDAP authentication.
   [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)

@@ -359,6 +359,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               // BASIC INFO
               .field("creator", eso.creator)
               .field("created", eso.created)
+              .field("created_as", eso.created_as)
               .field("resource_type", eso.resource.resourceType.name)
               .field("name", eso.name)
               .field("description", eso.description)
