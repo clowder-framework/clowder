@@ -25,7 +25,9 @@ You can then connect to Clowder using the following URL: http://localhost:9000/.
   
 ### JAVA (required)
 
-To compile Clowder you will need to have at least version 1.7 of JAVA. Version 1.8 will work as well.
+To compile Clowder you will need to have at least version 1.7 of JAVA. Version 1.8 will work as well. On Windows the
+JNotify library is required and not included with Java 1.8 64bit. The library can be downloaded 
+[here](https://sourceforge.net/projects/jnotify/). Simply paste jnotify_64bit.dll to the `path\to\jdk1.8\bin` folder.
 
 ### Scala / SBT (required for development)
 
