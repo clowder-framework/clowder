@@ -706,6 +706,9 @@
 						</tr>
 					}
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+					@if(file.originalname.length > 0) {
+					<tr><td><b>Uploaded&nbsp;as:</b></td><td> @file.originalname</td></tr>
+					}
 					<tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
 					@if( play.Play.application().configuration().getBoolean("enablePublic")) {
 						<tr><td><b>Access:</b></td><td> @access</td></tr>
