@@ -607,7 +607,7 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 # SEARCH ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND")
+GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND", from: Option[Int], size: Option[Int])
 GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
 GET            /api/search                                                              @api.Search.search(query: String ?= "")
 

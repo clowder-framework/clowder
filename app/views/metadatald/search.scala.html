@@ -55,7 +55,10 @@
             width: "100%"
         })
 
-        getBasicDefinitions(1)
+        getBasicDefinitions(1);
+        // Count is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
+        count_stepsize = 60;
+        count = 0;
 
         // Add a new row to the set of criteria
         function getBasicDefinitions(rowId) {
@@ -90,6 +93,7 @@
             document.getElementById("v-"+rowStr).onkeydown = function(evt) {
                 // Allow Enter key to perform search on any value box
                 if (evt.keyCode == 13) {
+                    count = 0;
                     search()
                     return false
                 } else return true
@@ -144,7 +148,7 @@
                         },
                         // Populate autocomplete as user types
                         processResults: function(data, page) {
-                            var outMap = {}
+                            var outMap = {};
 
                             for (var rez=0; rez<data.length; rez++) {
                                 var entry = data[rez];
@@ -180,7 +184,7 @@
                                 outMap[entryGroup].push(entryData)
                             }
 
-                            var outList = []
+                            var outList = [];
                             for (var group in outMap) {
                                 if (group == "") {
                                     for (var ungrouped=0; ungrouped<outMap[group].length; ungrouped++)
@@ -189,7 +193,6 @@
                                     outList.push({"text":group, "children": outMap[group]})
                             }
 
-                            console.log(outList)
                             return {
                                 results: outList
                             };
@@ -240,18 +243,24 @@
         }
 
         // Submit contents of basic search rows
-        function search(count) {
-            count = count || 10;
+        function search(from_count) {
+            from_count = from_count || 0;
+            console.log("Querying result set from "+String(from_count)+" with size "+String(count_stepsize));
             var query = generateSearchObject();
-            console.log(query)
             var grouping = $("#add-metadata-grouping").val()
             if (query != []) {
-                var request = jsRoutes.api.Search.searchJson(JSON.stringify(query), grouping, count).ajax({
+                var request = jsRoutes.api.Search.searchJson(JSON.stringify(query), grouping, from_count, count_stepsize).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });
 
-                request.done(parseSearchResults);
+                request.done(function(resp, status, err){
+                    if (from_count > 0) {
+                        parseSearchResults(resp, status, err, false)
+                    } else {
+                        parseSearchResults(resp, status, err)
+                    }
+                });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
                     console.error("The following error occured: " + textStatus, errorThrown);
@@ -269,12 +278,14 @@
             row_list.splice(row_list.indexOf(rowStr), 1);
         }
 
-        function parseSearchResults(response, textStatus, jqXHR) {
-            $( "#datasets-results" ).empty();
-            $( "#files-results" ).empty();
+        function parseSearchResults(response, textStatus, jqXHR, empty=true) {
+            if (empty) {
+                $( "#datasets-results" ).empty();
+                $( "#files-results" ).empty();
+            }
 
             var datasets = response.datasets;
-            if (datasets.length == 0) $('#datasets-results').append("No datasets found");
+            if (datasets.length == 0) $('#datasets-results').append("No datasets found</br>");
             for (var i=0; i<datasets.length; i++) {
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
                 var html = modalTemplate({'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url, 'name': datasets[i].name});
@@ -282,7 +293,7 @@
             }
 
             var files = response.files;
-            if (files.length == 0) $('#files-results').append("No files found");
+            if (files.length == 0) $('#files-results').append("No files found</br>");
             for (var i=0; i<files.length; i++) {
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
                 var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
@@ -291,13 +302,25 @@
                 // TODO: Support API direct calls
             }
 
-            $('#getmore').html('<a id="showmore" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>');
-            $('#showmore').click( function() { search(key, value, count+10); } );
+            if (response.count >= count_stepsize) {
+                $('#getmore').html('<a id="showmore" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>');
+                $('#showmore').click( function() {
+                    if (response.count < count_stepsize)
+                        count += response.count;
+                    else
+                        count += count_stepsize;
+                    search(count);
+                } );
+            } else {
+                $('#getmore').html('')
+            }
+
         }
 
         // form submission
         $( "form[id='metadata-search']").submit(function( event ) {
             event.preventDefault();
+            count = 0;
             search();
 
         });

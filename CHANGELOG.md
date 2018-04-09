@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-719](https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
 - Avoid exception avoid exception in user events when unknown events don't match expected pattern (e.g. metadata events 
   from another branch).
+- Fixed bug where "show more results" would fail on Search.
+  [CATS-860](https://opensource.ncsa.illinois.edu/jira/browse/CATS-860)
 - Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
   [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
 - Fixed bug of Account not active when using mongo-init to create user account.
