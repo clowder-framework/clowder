@@ -306,22 +306,26 @@ code {
 	margin-right: 10%;
 }
 
-#nameDescrFieldSet .homePages .external-link-delete {
+#nameDescrFieldSet .homePages .external-link-delete,
+#nameDescrFieldSet .affSpaces .affiliated-space-delete {
 	display: inline-block;
 	margin-left: 10px;
 }
 
-#nameDescrFieldSet .homePages .external-link-add {
+#nameDescrFieldSet .homePages .external-link-add,
+#nameDescrFieldSet .affSpaces .affiliated-space-add  {
 	display: inline-block;
 	margin-left: 10px;
 }
 
-#nameDescrFieldSet .homePages .control-group {
+#nameDescrFieldSet .homePages .control-group,
+#nameDescrFieldSet .affSpaces .control-group {
 	display: inline-block;
 	width: 85%;
 }
 
-#nameDescrFieldSet .homePages .control-label {
+#nameDescrFieldSet .homePages .control-label,
+#nameDescrFieldSet .affSpaces .control-label {
 	display: none;
 }
 

@@ -64,6 +64,15 @@
           @inputText(myForm("bannerUrl"),'class -> "form-control", '_label-> "Banner URL")
           Recommended image size is 1170 x 200
 
+		  <div class ="control-group"><label class="control-label" for="affSpaces">Affiliated Spaces</label></div>
+            <div class = "affSpaces">
+            @repeat(myForm("affSpaces"), min = 1) {externalLink =>
+              @inputText(externalLink, 'class -> "form-control", '_label -> "")
+            }
+            <div class="affiliated-space-add"><a href="#">add</a></div>
+            <div>The names or IDs of other spaces whose published data should be shown on this space's Published Data page</div>
+          </div>
+          
           @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
           @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
             <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
@@ -122,16 +131,17 @@
   // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
   // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
   // middle of the list is deleted.
-  var renumberHomePageMap = function() {
-      Array.prototype.reduce.call($('.homePages .control-group'), function (i, next) {
+  function renumberItemMap(cssclass) {
+      Array.prototype.reduce.call($('.'+cssclass + ' .control-group'), function (i, next) {
       var label = $(next).children('label');
       label.attr('for', label.attr('for').replace(/_\d+_/, '_' + i + '_'));
 
       var input = $(next).find('input');
       input.attr('id', input.attr('id').replace(/_\d+_/, '_' + i + '_'));
       input.attr('name', input.attr('name').replace(/\[\d+\]/, '[' + i + ']'));
-
-      if (input.attr('id').match(/homePages_\d+_/)) {
+		
+	  var re = new RegExp(cssclass + '_\\d+_');	
+      if (input.attr('id').match(re)) {
         return i + 1;
       }
 
@@ -139,15 +149,16 @@
     }, 0);
   }
 
-  var addDeleteInCaseOfError = function() {
-    vals = $('.homePages .control-group')
+  function addDeleteInCaseOfError(parentclass, deleteclass) {
+    vals = $('.' + parentclass + ' .control-group')
     for(var i = 0; i < vals.length - 1 ; i++)
     {
-      $(vals[i]).after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
+      $(vals[i]).after($('<div class="' + deleteclass + '"><a href="#">delete</a></div>'));
     }
   };
 
-   addDeleteInCaseOfError();
+   addDeleteInCaseOfError('homePages','external-link-delete');
+   addDeleteInCaseOfError('affSpaces','affiliated-space-delete');
 
 
   var title = $('.page-header h1').text();
@@ -182,8 +193,14 @@
   $('.homePages').on('click', '.external-link-delete a', function () {
     $(this).parent().prev().remove();
     $(this).parent().remove();
-    renumberHomePageMap();
+    renumberItemMap('homePages');
   });
+   $('.affSpaces').on('click', '.affiliated-space-delete a', function () {
+    $(this).parent().prev().remove();
+    $(this).parent().remove();
+    renumberItemMap('affSpaces');
+  });
+ 
   $('.control-label').addClass('h3');
   $('.external-link-add').click(function () {
     var value = $(this).prev().clone();
@@ -191,9 +208,19 @@
       $(this).prev().after($('<div class="external-link-delete"><a href="#">delete</a></div>'));
       value.find('input').val('');
       $(this).before(value);
-      renumberHomePageMap();
+      renumberItemMap('homePages');
     }
   });
+$('.affiliated-space-add').click(function () {
+    var value = $(this).prev().clone();
+    if (value.find('input').val().trim()) {
+      $(this).prev().after($('<div class="affiliated-space-delete"><a href="#">delete</a></div>'));
+      value.find('input').val('');
+      $(this).before(value);
+      renumberItemMap('affSpaces');
+    }
+  });
+
 
   //remove blank lines before submitting
   $('form').submit(function () {
@@ -205,11 +232,23 @@
       if (valueInput.val() === '') {
         $(this).next().remove();
         $(this).remove();
-        renumberHomePageMap();
+        renumberItemMap('homePages');
       }
 
     });
+    $('.affSpaces .control-group').each(function () {
+      var valueInput = $(this).find('input');
+
+      if (valueInput.val() === '') {
+        $(this).next().remove();
+        $(this).remove();
+        renumberItemMap('affSpaces');
+      }
+
+    });
+    
   });
+      
 
   $('#cancel_space').click(function() {
     if(!@spaceId.isEmpty) {

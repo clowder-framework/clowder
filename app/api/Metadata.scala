@@ -486,7 +486,7 @@ class Metadata @Inject() (
       }
       result
     } else { //TBD - just get list of Clowder users
-    /*  val lcTerm = term.toLowerCase()
+      /*  val lcTerm = term.toLowerCase()
       Future(Ok(Json.toJson(userService.list.map(jsonPerson).filter((x) => {
         if (term.length == 0) {
           true
@@ -509,4 +509,33 @@ class Metadata @Inject() (
       "@id" -> user.id.stringify,
       "email" -> user.email)
   }
+
+  def getRepository(id: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
+
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    val repoEndpoint = (play.Play.application().configuration().getString("SEADservices.uri")) + "repositories"
+    if (repoEndpoint != null) {
+      val endpoint = (repoEndpoint + "/" + URLEncoder.encode(id, "UTF-8"))
+      val futureResponse = WS.url(endpoint).get()
+      var success = false
+      val result = futureResponse.map {
+        case response =>
+          if (response.status >= 200 && response.status < 300 || response.status == 304) {
+            Ok(response.json).as("application/json")
+          } else {
+            if (response.status == 404) {
+
+              NotFound(toJson(Map("failure" -> { "Repository with identifier " + id + " not found" }))).as("application/json")
+
+            } else {
+              InternalServerError(toJson(Map("failure" -> { "Status: " + response.status.toString() + " returned from SEAD /api/repository/<id> service" }))).as("application/json")
+            }
+          }
+      }
+      result
+    } else {
+      Future(NotFound(toJson(Map("failure" -> { "Repository with identifier " + id + " not found" }))).as("application/json"))
+    }
+  }
+
 }

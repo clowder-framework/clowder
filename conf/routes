@@ -316,6 +316,8 @@ DELETE         /admin/metadata/definitions/:id                                  
 
 GET            /api/metadata/people		                                        		@api.Metadata.listPeople(term: String, limit:Int)
 GET            /api/metadata/people/:pid 		                                        @api.Metadata.getPerson(pid: String)
+
+GET            /api/metadata/repository/:id 		                                    @api.Metadata.getRepository(id: String)
 # ----------------------------------------------------------------------
 # LOGOS ENDPOINT
 # ----------------------------------------------------------------------
@@ -760,7 +762,9 @@ DELETE         /spaces/curations/:id/folders/:curationFolderId                  
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 GET            /spaces/curations/:id/getMetadataDefinitionsByFile                       @api.CurationObjects.getMetadataDefinitionsByFile(id: UUID)
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
-GET            /publishedData                                                           @controllers.CurationObjects.getPublishedData(index: Int ?= 0, limit: Int ?=20)
+GET            /publishedData		                                                    @controllers.CurationObjects.getPublishedData(space: String = "")
+GET            /publishedData/:space	                                                @controllers.CurationObjects.getPublishedData(space: String)
+
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
 
