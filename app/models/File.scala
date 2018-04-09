@@ -14,6 +14,7 @@ case class File(
   id: UUID = UUID.generate,
   loader_id: String = "",
   filename: String,
+  originalname: String = "",
   author: MiniUser,
   uploadDate: Date,
   contentType: String,

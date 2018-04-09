@@ -59,12 +59,14 @@ class MongoDBUserService @Inject() (
       // enable account. Admins are always enabled.
       model.email match {
         case Some(e) if admins.contains(e) => {
-          user.put("active", true)
-          user.put("serverAdmin", true)
+          user.put("status", UserStatus.Admin.toString)
         }
         case _ => {
-          user.put("active", !register)
-          user.put("serverAdmin", false)
+          if(register) {
+            user.put("status", UserStatus.Inactive.toString)
+          } else {
+            user.put("status", UserStatus.Active.toString)
+          }
         }
       }
       if (model.authMethod == AuthenticationMethod.UserPassword) {
@@ -96,12 +98,12 @@ class MongoDBUserService @Inject() (
 
   override def updateAdmins() {
     play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").foreach{e =>
-      UserDAO.dao.update(MongoDBObject("email" -> e), $set("serverAdmin" -> true, "active" -> true), upsert=false, multi=true)
+      UserDAO.dao.update(MongoDBObject("email" -> e), $set("status" -> UserStatus.Admin.toString), upsert=false, multi=true)
     }
   }
 
   override def getAdmins: List[User] = {
-    UserDAO.find(MongoDBObject("serverAdmin" -> true, "active" -> true)).toList
+    UserDAO.find(MongoDBObject("status" -> UserStatus.Admin.toString)).toList
   }
 
   /**
@@ -665,12 +667,14 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
       // enable account. Admins are always enabled.
       user.email match {
         case Some(e) if admins.contains(e) => {
-          userobj.put("active", true)
-          userobj.put("serverAdmin", true)
+          userobj.put("status", UserStatus.Admin.toString)
         }
         case _ => {
-          userobj.put("active", !register)
-          userobj.put("serverAdmin", false)
+          if(register) {
+            userobj.put("status", UserStatus.Inactive.toString)
+          } else {
+            userobj.put("status", UserStatus.Active.toString)
+          }
         }
       }
       if (user.authMethod == AuthenticationMethod.UserPassword) {
