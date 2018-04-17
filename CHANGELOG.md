@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
 - Person tracking previewer updated after changes to the associated metadata structure.
   [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
+- Cleanup of docker build process as well as launch clowder in docker
+  [CATS-871](https://opensource.ncsa.illinois.edu/jira/browse/CATS-871)
 
 ### Fixed
 - Now sends email when a user signs up using an external login provider.

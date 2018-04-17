@@ -1,26 +1,21 @@
-version: "3"
+version: "3.5"
 
 services:
   # clowder application
   clowder:
-    image: clowder/clowder:develop
+    image: clowder/clowder:latest
     ports:
-      - "9000:9000"
+      - 9000:9000
     networks:
       - clowder
-    environment:
-      #- RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
-      #- MONGO_URI=mongodb://mongo:27017/clowder
-      #- ELASTICSEARCH_SERVICE_SERVER=elasticsearch
-      #- ELASTICSEARCH_SERVICE_PORT=9300
-      #- CLOWDER_ADMINS=admin@example.com
-      #- SMTP_HOST=smtp.ncsa.illinois.edu
+    volumes:
+      - clowder-custom:/home/clowder/custom
+      - clowder-data:/home/clowder/data
+    restart: unless-stopped
     deploy:
       mode: replicated
       restart_policy:
         condition: any
-      placement:
-        constraints: [node.role == manager]
     depends_on:
       - mongo
       - rabbitmq
@@ -28,36 +23,34 @@ services:
 
   # mongo database used to store metadata/data
   mongo:
-    image: mongo:latest
-    networks:
-      - clowder
-    #ports:
-    #  - "27017:27017"
-    volumes:
-      - mongo:/data/db
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
-      placement:
-        constraints: [node.role == worker]
-
-  # rabbitmq to connect to extractors
-  rabbitmq:
-    image: rabbitmq:management
+    image: mongo:3.4
     networks:
       - clowder
     ports:
-    #  - "5672:5672"
-      - "15672:15672"
+      - 27017
     volumes:
-      - rabbitmq:/var/lib/rabbitmq
+      - mongo:/data/db
+    restart: unless-stopped
     deploy:
       mode: replicated
       restart_policy:
         condition: any
-      placement:
-        constraints: [node.role == worker]
+
+  # rabbitmq to connect to extractors
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    networks:
+      - clowder
+    ports:
+      - 5672
+      - 15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
 
   # elasticsearch to allow indexing
   elasticsearch:
@@ -65,104 +58,93 @@ services:
     command: elasticsearch -Des.cluster.name="clowder"
     networks:
       - clowder
-    #ports:
-    #    - "9200:9200"
-    #    - "9300:9300"
+    ports:
+      - 9200
+      - 9300
     volumes:
       - elasticsearch:/usr/share/elasticsearch/data
+    restart: unless-stopped
     deploy:
       mode: replicated
       restart_policy:
         condition: any
-      placement:
-        constraints: [node.role == worker]
 
   # extractors
   filedigest:
     image: clowder/extractors-digest
     networks:
       - clowder
-    environment:
-      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
     depends_on:
       - rabbitmq
+      - clowder
+    restart: unless-stopped
     deploy:
       mode: replicated
       restart_policy:
         condition: any
-      placement:
-        constraints: [node.role == worker]
 
   audiopreview:
     image: clowder/extractors-audio-preview
     networks:
       - clowder
-    environment:
-      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
     depends_on:
       - rabbitmq
+      - clowder
+    restart: unless-stopped
     deploy:
       mode: replicated
       restart_policy:
         condition: any
-      placement:
-        constraints: [node.role == worker]
 
   imagepreview:
     image: clowder/extractors-image-preview
     networks:
       - clowder
-    environment:
-      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
     depends_on:
       - rabbitmq
+      - clowder
+    restart: unless-stopped
     deploy:
       mode: replicated
       restart_policy:
         condition: any
-      placement:
-        constraints: [node.role == worker]
 
   imagemetadata:
     image: clowder/extractors-image-metadata
     networks:
       - clowder
-    environment:
-      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
     depends_on:
       - rabbitmq
+      - clowder
+    restart: unless-stopped
     deploy:
-      placement:
-        constraints: [node.role == worker]
 
   pdfpreview:
     image: clowder/extractors-pdf-preview
     networks:
       - clowder
-    environment:
-      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
     depends_on:
       - rabbitmq
+      - clowder
+    restart: unless-stopped
     deploy:
-      placement:
-        constraints: [node.role == worker]
 
   videopreview:
     image: clowder/extractors-video-preview
     networks:
       - clowder
-    environment:
-      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/clowder
     depends_on:
       - rabbitmq
+      - clowder
+    restart: unless-stopped
     deploy:
-      placement:
-        constraints: [node.role == worker]
 
 networks:
     clowder:
 
 volumes:
+  clowder-data:
+  clowder-custom:
   mongo:
   rabbitmq:
   elasticsearch:
