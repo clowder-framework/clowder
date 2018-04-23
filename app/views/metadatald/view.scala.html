@@ -8,9 +8,9 @@
 
     @dateFormatter(date: java.util.Date) = @{
         val formatter = new java.text.SimpleDateFormat("MMM d, yyyy")
-        formatter.format(date)
+        formatter.format(date);
     }
-    + "-" + counter.toString()
+
     @printContent(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID, counter: Int) = {
         @content match {
             case o: JsObject => {
@@ -25,7 +25,7 @@
                                     <!-- only with context and user (not extractor) generated -->
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid: String =>
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
                                             @if(user.isDefined) {
                                                 <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
@@ -55,7 +55,7 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid: String =>
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString() ) { mid: String =>
                                             @if(user.isDefined) {
                                                 <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
@@ -81,7 +81,7 @@
                             case _ => {
                                 <li class="md-block">
                                 @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                    @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid: String =>
+                                    @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
                                             @if(user.isDefined) {
                                                 <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
