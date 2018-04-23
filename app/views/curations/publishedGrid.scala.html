@@ -1,0 +1,127 @@
+@(publishedData: List[play.api.libs.json.JsValue], servicesUrl: String, query: Option[String])(implicit user: Option[models.User])
+@import play.api.libs.json._
+  
+<div  class="pubquery col-md-12"><div class="col-md-1">Filter by:</div><div class="col-md-5" id ="filters"></div><div class="col-md-6" id="legend"></div></div>
+
+  <div id="pubs" class="grid col-md-12">
+    @for(pd <- publishedData) {
+          @pd match {
+	    	case jo:JsObject => {
+	    		<div class="grid-item col-lg-5 col-md-12 col-sm-12" data-Creator="@(jo \ "Creator") match {
+          case creator:JsString => {@((jo \ "CreatorName").as[String].trim)}
+          case creators:JsArray => {@(((jo \ "CreatorName"))(0).as[String].trim)@for(i <- 1 to (creators.value.size-1)){, @(((jo \ "CreatorName"))(i).as[String].trim)}}}"
+          data-space="@((jo \ "Publishing Project Name").asOpt[String] match {
+           case Some(name) => name
+           case None => (jo \ "Publishing Project").as[String]
+           })" 
+           data-year="@defining(".*[\\s]20([0-9][0-9])[\\s].*".r) {findyear => @((jo \ "Publication Date").as[String] match {
+           	case findyear(year) => { "20" + year}
+           	case _ => "unknown"
+           	})}"
+           	
+           	data-type="@if((jo \ "DOI").as[String].contains("10.5072")) {Testing Only} else {Production}"
+           		>
+    	  	<div class="panel panel-default pub-panel">
+        	<div class="panel-body">
+          	
+            <p><b>Title:</b> @((jo \ "Title").as[String])</p>
+            <p><b>Persistent ID:</b> <a style="word-break:break-all" href="@((jo \ "DOI").as[String])" target="_blank">@((jo \ "DOI").as[String])</a></p>
+            
+          <p><b>Creator(s)</b> @(jo \ "Creator") match {
+          case creator:JsString => { 
+            <a href="@creator.as[String]" target="_blank">@((jo \ "CreatorName").as[String])</a>
+          }
+          case creators:JsArray => {
+          	
+          	<a href="@creators(0).as[String]" target="_blank">@(((jo \ "CreatorName"))(0).as[String])</a>
+          	  @for(i <- 1 to (creators.value.size-1)) {
+          	  	,<a href="@creators(i).as[String]" target="_blank">@(((jo \ "CreatorName"))(i).as[String])</a>
+          	  	}
+          	}
+          }</p>
+           
+                 
+           <p><b>Abstract:</b> @((jo \ "Abstract").as[String])</p>   
+           <div><b>Published:</b> from <a href="@((jo \ "Publishing Project").as[String])" target="_blank">
+           @((jo \ "Publishing Project Name").asOpt[String] match {
+           case Some(name) => name
+           case None => (jo \ "Publishing Project").as[String]
+           })
+           	</a> to <div class="repository">@((jo \ "Repository").as[String])</div> on @((jo \ "Publication Date").as[String])
+           	</div>
+           	
+        </div>
+      </div>
+      </div>
+    }
+    }
+    }
+
+      
+      </div>
+      <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
+      <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+      <script src="@routes.Assets.at("javascripts/repositories.js")" type="text/javascript"></script>
+      <script src="@routes.Assets.at("javascripts/people.js")" type="text/javascript"></script>
+      
+      <script src="@routes.Assets.at("javascripts/filtrify.js")"  type="text/javascript"></script>
+	  <link rel="stylesheet" href="@routes.Assets.at("stylesheets/filtrify.css")">
+      <script src="/assets/javascripts/lib/masonry.pkgd.min.js" type="text/javascript"></script>
+      <script>
+
+		$(document).ready(function(){
+		
+			//people.js and repositories.js can change the size of the grid elements - run the masonry layout once they are done
+        	$(document).one('ajaxStop', function() { 
+            	$.filtrify("pubs", "filters", {
+            	  	@query match {
+            	  		case Some(q) => {
+	            			query : {"Space" : @Html(q)},
+    	        			}
+        	    	  	case None => {}
+            		}	
+                	callback: function(query, match, mismatch) {
+                		
+                    	writeLegend(query, match, mismatch);
+                    	$('.grid').masonry();
+                	}
+                });
+
+                $('.grid').masonry({
+              		// options
+  	              itemSelector: '.grid-item',
+      	          columnWidth: '.grid-item',
+          	      gutter: 10
+              	});
+        	}); 
+        	 	  
+            	  
+        });
+
+	    function writeLegend ( query, match, mismatch ) {
+	        if ( !mismatch.length ) {
+	            $("#legend").html("<i>Viewing all publications.</i>");
+	        } else {
+	            var category, tags, i, tag, legend = "<p>Viewing:</p>";
+	            for ( category in query ) {
+	                tags = query[category];
+	                if ( tags.length ) {
+	                    legend += "<p><span>" + category + "(s):</span>";
+	                    for ( i = 0; i < tags.length; i++ ) {
+	                        tag = tags[i];
+							if(i>0) legend += ", ";
+	                        legend += "<em>" + tag + "</em>";
+	                        
+	                    };
+	                    legend += "</p>";
+	                };
+	            };
+	            legend += "<p><i>" + match.length + " publication" + (match.length !== 1 ? "s" : "") + " found.</i></p>";
+	            $("#legend").html( legend );
+	        };
+	    };
+
+	
+                   
+ 
+      </script>

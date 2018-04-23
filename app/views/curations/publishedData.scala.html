@@ -1,4 +1,5 @@
-@(publishedData: List[Map[String, String]], prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
+@(publishedData: List[play.api.libs.json.JsValue], servicesUrl: String)(implicit user: Option[models.User])
+@import play.api.libs.json._
 
 @main("Published Data") {
   <div class="row">
@@ -6,58 +7,8 @@
       <h1>@Html("Published Data")</h1>
     </div>
   </div>
-
-  <div class="row">
-    @for(pd <- publishedData) {
-      <div class="panel panel-default">
-        <div class="panel-body">
-            <p><b>Title:</b> @pd("title")</p>
-
-            @for((key, value) <- pd - "title" -"id") {
-                @if(key == "Published Dataset"){
-                    <p><b>@key.capitalize:</b> <a href="@value" target="_blank">@value</a></p>
-                } else { 
-                  @if(key == "author") {
-                    <p><b>Creator(s)</b> @value</p>
-                  } else {
-                    @if(key == "Abstract") {
-                      <div><b>@key.capitalize:</b> <span style="width 100%"><div class="published
-                      @if(value.contains("\n")) {
-                      	 panel
-                      }
-                      ">@Html(value.replace("\n","<br>"))</div></span></div>
-                    } else {
-                      <p><b>@key.capitalize:</b> @value</p>
-                    }  
-                  }
-                }  
-            }
-        </div>
-      </div>
-    }
+  <div>
+  @curations.publishedGrid(publishedData, servicesUrl, None)
   </div>
-      <div class="row">
-        <div class="col-md-12">
-          <ul class="pager">
-              <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
-            @if(prev >= 0) {
-              <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
-            }
-            @if(next > 0) {
-              <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
-            }
-          </ul>
-        </div>
-      </div>
-      <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
-      <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
-      <script>
-              $(document).ready(function(){
-                updatePage();
-              });
-              function updatePage() {
-                $('#nextlink').attr('href', "@(routes.CurationObjects.getPublishedData(next, limit))");
-                $('#prevlink').attr('href', "@(routes.CurationObjects.getPublishedData(prev, limit))");
-              }
-      </script>
+
 }

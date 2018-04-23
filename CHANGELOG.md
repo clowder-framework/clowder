@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-- Add LDAP authorization
+- Track original file name used when file was originally uploaded. 
+  [SEAD-1173](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1173)
+- LDAP authentication.
   [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
@@ -17,7 +19,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Having a temporary trash option. Can be set with useTrash boolean in the configuration file
   [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
 - Track last time a user logged in.
-  
+- Add logic check rabbitmq, mongo, clowder ready before creating default users.[BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)
+- Add jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and spaces manipulation.    
+
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
@@ -27,6 +31,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
 
 ### Fixed
+- Now sends email when a user signs up using an external login provider.
+  [CATS-483](https://opensource.ncsa.illinois.edu/jira/browse/CATS-483)
+- Fixed dataset geospatial layer checkbox turn on/off and opacity.
+  [CATS-837](https://opensource.ncsa.illinois.edu/jira/browse/CATS-837)
 - Fixed GreenIndex previewer on clowder dataset page. 
   [BD-1912](https://opensource.ncsa.illinois.edu/jira/browse/BD-1912)
 - Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
@@ -35,11 +43,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-719](https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
 - Avoid exception avoid exception in user events when unknown events don't match expected pattern (e.g. metadata events 
   from another branch).
+- Fixed bug where "show more results" would fail on Search.
+  [CATS-860](https://opensource.ncsa.illinois.edu/jira/browse/CATS-860)
 - Fixed bug where reindex of Elasticsearch would fail if extractors tried to index simultaneously.
   [CATS-856](https://opensource.ncsa.illinois.edu/jira/browse/CATS-856)
-- Fixed bug of ``Account not active'' when using mongo-init to create user account.
+- Fixed bug of Account not active when using mongo-init to create user account.
   [BD-2042](https://opensource.ncsa.illinois.edu/jira/browse/BD-2042)
-
+- Setting status for users on signup. 
+  [CATS-864](https://opensource.ncsa.illinois.edu/jira/browse/CATS-864)
 
 ## 1.3.5 - 2018-02-23
 

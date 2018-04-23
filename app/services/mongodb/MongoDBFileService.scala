@@ -187,7 +187,7 @@ class MongoDBFileService @Inject() (
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
     ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
       case Some(x) => {
-        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        val file = File(UUID.generate(), x._1, filename, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
         FileDAO.save(file)
         Some(file)
       }
@@ -659,8 +659,19 @@ class MongoDBFileService @Inject() (
 
   def renameFile(id: UUID, newName: String){
     events.updateObjectName(id, newName)
+        get(id) match{
+      case Some(file) => {
+        if(file.originalname.length >0) {
+      
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
       WriteConcern.Safe)
+        } else {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName, "originalname" -> file.filename ), false, false,
+      WriteConcern.Safe)
+          
+        }
+      }
+    }
   }
 
   def setContentType(id: UUID, newType: String){

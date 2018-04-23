@@ -1,8 +1,5 @@
 to create a user account into clowder.
 
-example to run:
-1) create admin account 
-docker run --rm -it -e "PASSWORD=youpassword" -e "EMAIL_ADDRESS=youremailaddress" -e "ADMIN=true" --name create-useraccount browndog/create-useraccount
+An example creates useraccount admin@test.com with passwd testing0909, connecting to your service stack network, e.g. clowder_clowder
 
-2) create normal user account
-docker run --rm -it -e "PASSWORD=yourpassword" -e "EMAIL_ADDRESS=youremailaddress" --name create-useraccount browndog/create-useraccount
+`docker run --rm -it -e "ADMIN=true" -e "CLOWDER_SERVER=clowder" -e "RABBITMQ_PORT_15672_TCP_ADDR=rabbitmq" -e "ADMIN=true" -e "PASSWORD=testing0909" -e "EMAIL_ADDRESS=admin@test.com" -e "MONGO_URI=mongodb://mongo:27017/clowder" --name create-useraccount --network clowder_clowder browndog/create-useraccount:develop`

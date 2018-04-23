@@ -356,7 +356,7 @@ object FileUtils {
                           showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                           flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile:Boolean,
                           runExtractors: Boolean = true): Option[File] = {
-    val file = File(UUID.generate(), "", f.filename, user, new Date(),
+    val file = File(UUID.generate(), "", f.filename, f.filename, user, new Date(),
       FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "",
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
       licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
@@ -400,7 +400,7 @@ object FileUtils {
     // craete the file object
     val path = url.getPath
     val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
-    val file = File(UUID.generate(), path, filename, user, new Date(),
+    val file = File(UUID.generate(), path, filename, filename, user, new Date(),
       FileUtils.getContentType(filename, None), -1, "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
       licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
@@ -460,7 +460,7 @@ object FileUtils {
       val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
       val length = new java.io.File(path).length()
       val loader = classOf[services.filesystem.DiskByteStorageService].getName
-      val file = File(UUID.generate(), path, filename, user, new Date(),
+      val file = File(UUID.generate(), path, filename, filename, user, new Date(),
         FileUtils.getContentType(filename, None), length, loader,
         isIntermediate=intermediateUpload, showPreviews=showPreviews,
         licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
