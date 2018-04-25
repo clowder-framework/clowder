@@ -1,10 +1,12 @@
 package api
 
-import java.net.{ URL, URLEncoder }
+import api.Permission.Permission
+
+import java.net.{URL,URLEncoder}
 import java.util.Date
 import javax.inject.{ Inject, Singleton }
 
-import models.{ ResourceRef, UUID, UserAgent, _ }
+import models.{ResourceRef,UUID,UserAgent,_}
 import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
 import play.api.Play.current
@@ -44,14 +46,14 @@ class Metadata @Inject() (
       Ok(toJson(vocabularies))
   }
 
-  def getDefinitionsDistinctName() = PermissionAction(Permission.ViewDataset) {
+	def getDefinitionsDistinctName() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       implicit val user = request.user
       val vocabularies = metadataService.getDefinitionsDistinctName(user)
       Ok(toJson(vocabularies))
   }
 
-  /** Get set of metadata fields containing filter substring for autocomplete */
+	/** Get set of metadata fields containing filter substring for autocomplete */
   def getAutocompleteName(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
 
@@ -84,7 +86,7 @@ class Metadata @Inject() (
     }
   }
 
-  def getDefinitionsByDataset(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+	def getDefinitionsByDataset(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
@@ -104,7 +106,7 @@ class Metadata @Inject() (
     }
   }
 
-  def getDefinition(id: UUID) = PermissionAction(Permission.AddMetadata).async { implicit request =>
+	def getDefinition(id: UUID) = PermissionAction(Permission.AddMetadata).async { implicit request =>
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val foo = for {
       md <- metadataService.getDefinition(id)
@@ -117,7 +119,7 @@ class Metadata @Inject() (
     }
   }
 
-  def getUrl(inUrl: String) = PermissionAction(Permission.AddMetadata).async { implicit request =>
+	def getUrl(inUrl: String) = PermissionAction(Permission.AddMetadata).async { implicit request =>
     // Use java.net.URI instead of URLDecoder.decode to decode the path.
     import java.net.URI
     Logger.debug("Metadata getUrl: inUrl = '" + inUrl + "'.")
@@ -128,9 +130,9 @@ class Metadata @Inject() (
     WS.url(url).get().map {
       response => Ok(response.body.trim)
     }
-  }
+	}
 
-  def addDefinitionToSpace(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
+	def addDefinitionToSpace(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(u) => {
@@ -157,7 +159,7 @@ class Metadata @Inject() (
     }
   }
 
-  def addDefinition() = ServerAdminAction(parse.json) {
+	def addDefinition() = ServerAdminAction(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -179,8 +181,9 @@ class Metadata @Inject() (
       }
   }
 
-  //On GUI, URI is not required, however URI is required in DB. a default one will be generated when needed.
-  private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
+	// On GUI, URI is not required, however URI is required in DB. a default one
+	// will be generated when needed.
+	private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
     metadataService.getDefinitionByUriAndSpace(uri, space map { _.id.toString() }) match {
       case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
       case None => {
@@ -199,7 +202,7 @@ class Metadata @Inject() (
     }
   }
 
-  def editDefinition(id: UUID, spaceId: Option[String]) = ServerAdminAction(parse.json) {
+	def editDefinition(id: UUID, spaceId: Option[String]) = AuthenticatedAction(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -210,19 +213,26 @@ class Metadata @Inject() (
               case Some(metadata) => if (metadata.id != id) {
                 BadRequest(toJson("Metadata definition with same uri exists."))
               } else {
-                metadataService.editDefinition(id, body)
+
                 metadata.spaceId match {
-                  case Some(spaceId) => {
+                  case Some(spaceId) if Permission.checkPermission(Some(user), Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))=> {
+                    metadataService.editDefinition(id, body)
                     spaceService.get(spaceId) match {
                       case Some(s) => events.addObjectEvent(Some(user), s.id, s.name, "edit_metadata_space")
                       case None =>
                     }
+                    Ok(JsObject(Seq("status" -> JsString("ok"))))
                   }
-                  case None => {
+                  case None if Permission.checkServerAdmin(Some(user)) => {
+                    metadataService.editDefinition(id, body)
                     events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "edit_metadata_instance", new Date()))
+                    Ok(JsObject(Seq("status" -> JsString("ok"))))
+                  }
+                  case _ => {
+                	  Unauthorized(" Not Authorized")
                   }
                 }
-                Ok(JsObject(Seq("status" -> JsString("ok"))))
+                
               }
               case None => {
                 metadataService.editDefinition(id, body)
@@ -238,26 +248,33 @@ class Metadata @Inject() (
       }
   }
 
-  def deleteDefinition(id: UUID) = ServerAdminAction { implicit request =>
+	def deleteDefinition(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(user) => {
         metadataService.getDefinition(id) match {
           case Some(md) => {
-            metadataService.deleteDefinition(id)
+           
 
             md.spaceId match {
-              case Some(spaceId) => {
+              case Some(spaceId) if Permission.checkPermission(Some(user), Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) => {
                 spaceService.get(spaceId) match {
+                	 metadataService.deleteDefinition(id)
                   case Some(s) => events.addObjectEvent(Some(user), s.id, s.name, "delete_metadata_space")
                   case None =>
                 }
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
               }
-              case None => {
+              case None if Permission.checkServerAdmin(Some(user)) => {
+            	  metadataService.deleteDefinition(id)
                 events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "delete_metadata_instance", new Date()))
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
               }
+              case _ => {
+                  Unauthorized(" Not Authorized")
+                }
             }
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
+            
           }
           case None => BadRequest(toJson("Invalid metadata definition"))
         }
@@ -267,7 +284,7 @@ class Metadata @Inject() (
     }
   }
 
-  def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
+	def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -364,7 +381,7 @@ class Metadata @Inject() (
       }
   }
 
-  def removeMetadata(id: UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
+	def removeMetadata(id: UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
     request.user match {
       case Some(user) => {
         metadataService.getMetadataById(id) match {
@@ -409,7 +426,7 @@ class Metadata @Inject() (
     }
   }
 
-  def getPerson(pid: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
+	def getPerson(pid: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val peopleEndpoint = (play.Play.application().configuration().getString("people.uri"))
@@ -439,7 +456,7 @@ class Metadata @Inject() (
     }
   }
 
-  def listPeople(term: String, limit: Int) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
+	def listPeople(term: String, limit: Int) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val endpoint = (play.Play.application().configuration().getString("people.uri"))
@@ -503,14 +520,14 @@ class Metadata @Inject() (
     }
   }
 
-  def jsonPerson(user: User): JsObject = {
+	def jsonPerson(user: User): JsObject = {
     Json.obj(
       "name" -> user.fullName,
       "@id" -> user.id.stringify,
       "email" -> user.email)
   }
 
-  def getRepository(id: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
+	def getRepository(id: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val repoEndpoint = (play.Play.application().configuration().getString("SEADservices.uri")) + "repositories"
