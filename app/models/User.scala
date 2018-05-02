@@ -49,7 +49,7 @@ trait User extends Identity {
     } else if (avatarUrl.isDefined) {
       avatarUrl.get
     } else {
-      s"http://www.gravatar.com/avatar/${getEmailHash}?s=${size}&d=${default_gravatar}"
+      s"https://www.gravatar.com/avatar/${getEmailHash}?s=${size}&d=${default_gravatar}"
     }
   }
 
