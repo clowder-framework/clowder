@@ -1,7 +1,9 @@
 # How to contribute
 
 We would love to get contributions from you! To keep the process manageable we please ask you to follow the workflow 
-below. By participating in this project, you agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/).
+below. By participating in this project, you agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/docs/Clowder-CoC.pdf).
+Before your code can be accepted, you will have to sign a [CLA](https://clowder.ncsa.illinois.edu/docs/Clowder-CLA.pdf)
+and mail it to lmarini@illinois.edu.
 
 Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `master` and `develop` branches are pushed to 
 [GitHub][github] nightly.
@@ -13,7 +15,7 @@ contributions directly on GitHub.
 
 * Make sure you have an [NCSA opensource account][confluence_signup]
 * If you want to make your pull request on GitHub make sure you have a [GitHub account](https://github.com/signup/free)
-* If it's a new feature or improvement please discuss your ideas with the community on the [HipChat][hipchat] channel 
+* If it's a new feature or improvement please discuss your ideas with the community on the [Slack][slack] channel 
   or by sending an email to the  [mailing list](mailto:clowder@lists.illinois.edu). You can subscribe 
   to the mailing list [here](https://lists.illinois.edu/lists/subscribe/clowder).
 * Submit a ticket in [Jira][jira] for your issue, if one doesn't exist already
@@ -50,8 +52,8 @@ branch in NCSA Bitbucket. It will become available on `develop` on GitHub overni
 We use some of the common issue types available in Jira. For the most part they are self explanatory: `New Feature`, 
 `Improvement`, `Bug`.
 
-Make sure to get feedback from the community on your proposed solution before starting implementation (either on 
-[HipChat][hipchat] or by sending an email to the [mailing list](mailto:clowder@lists.illinois.edu)). Given the 
+Make sure to get feedback from the community on your proposed solution before starting implementation, either on 
+[Slack][slack]) or by sending an email to the [mailing list](mailto:clowder@lists.illinois.edu)). Given the 
 distributed nature of the team and the different requirements from the different projects using and contributing to 
 Clowder, it's important that contributions to the core are compatible with all projects and the overall design.
 
@@ -73,7 +75,7 @@ Developer documentation is available in [Confluence][confluence]. User documenta
 [github]: https://github.com/ncsa/clowder
 [branches]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
 [scalatest]: http://www.scalatest.org/
-[hipchat]: https://hipchat.ncsa.illinois.edu/ggYc5FGDP
+[slack]: https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM
 [jira]: https://opensource.ncsa.illinois.edu/jira/projects/CATS
 [wiki]: https://opensource.ncsa.illinois.edu/confluence/display/CATS
 [bitbucket]: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS
