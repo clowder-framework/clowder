@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Track last time a user logged in.
 - Add logic check rabbitmq, mongo, clowder ready before creating default users.[BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)
 - Add jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and spaces manipulation.    
+- HTML previewer for text/html files. [CATS-861](https://opensource.ncsa.illinois.edu/jira/browse/CATS-861)
+
 
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
