@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [CATS-880](https://opensource.ncsa.illinois.edu/jira/browse/CATS-880)
 - Track original file name used when file was originally uploaded. 
   [SEAD-1173](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1173)
 - LDAP authentication.
