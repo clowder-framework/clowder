@@ -4,9 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 1.4.0 - 2018-04-16
 
 ### Added
+- Added ability to disable username/password login. 
+  [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
 - Track original file name used when file was originally uploaded. 
   [SEAD-1173](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1173)
 - LDAP authentication.
@@ -27,10 +29,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
 - Person tracking previewer updated after changes to the associated metadata structure.
   [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
+- Cleanup of docker build process as well as launch clowder in docker
+  [CATS-871](https://opensource.ncsa.illinois.edu/jira/browse/CATS-871)
 - Serving gravatar picture over https instead of http
   [CATS-882](https://opensource.ncsa.illinois.edu/jira/browse/CATS-882)
 
 ### Fixed
+- Rolling log file wrote to wrong folder, now writes to logs folder.
 - Now sends email when a user signs up using an external login provider.
   [CATS-483](https://opensource.ncsa.illinois.edu/jira/browse/CATS-483)
 - Fixed dataset geospatial layer checkbox turn on/off and opacity.
@@ -67,14 +72,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.3.3 - 2017-12-21
 
+### Added 
 - Endpoint to get a list of traversing paths from datasets to the parent
   folders of the given file.
   [CATS-811](https://opensource.ncsa.illinois.edu/jira/browse/CATS-811)
 - clowder.upload.previews flag to application.conf to turn on/off
   previews in upload page.
   [CATS-813](https://opensource.ncsa.illinois.edu/jira/browse/CATS-813)
-- Added ability to disable username/password login. 
-  [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
 
 ### Changed
 - Send email with instructions when registerThroughAdmins=true.
@@ -105,7 +109,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [GLGVO-382](https://opensource.ncsa.illinois.edu/jira/browse/GLGVO-382)
 - Edit license breaks on names with apostrophes in them.
   [CATS-820](https://opensource.ncsa.illinois.edu/jira/browse/CATS-820)
-- Rolling log file wrote to wrong folder, now writes to logs folder.
 
 ## 1.3.2 - 2017-08-15
 

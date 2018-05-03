@@ -274,6 +274,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
   val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
   val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
+  val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
 
   def receive = {
     case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
@@ -281,10 +282,15 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
       if (datasetId != null)
         theDatasetId = datasetId.stringify
 
-      var actualHost = host
-      //Tell the extractors to use https if webserver is so configured
-      if (!appHttpsPort.equals("")) {
-        actualHost = host.replaceAll("^http:", "https:").replaceFirst(":" + appHttpPort, ":" + appHttpsPort)
+      val actualHost = clowderurl match {
+        case Some(url) => url
+        case None => {
+          if (!appHttpsPort.equals("")) {
+            host.replaceAll("^http:", "https:").replaceFirst(":" + appHttpPort, ":" + appHttpsPort)
+          } else {
+            host
+          }
+        }
       }
 
       val msgMap = scala.collection.mutable.Map(
