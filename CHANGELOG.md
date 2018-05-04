@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.4.0 - 2018-05-04
 
 ### Added
-- Added ability to disable username/password login. 
+- Ability to disable username/password login provider. 
   [CATS-803](https://opensource.ncsa.illinois.edu/jira/browse/CATS-803)
 - Track original file name used when file was originally uploaded. 
   [SEAD-1173](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1173)
@@ -16,27 +16,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
 - Abilty for CiLogon provider to filter by LDAP groups.
-- Added an *exact* flag on collection and dataset API endpoints that accept a *title* flag. This will use
+- *exact* flag on collection and dataset API endpoints that accept a *title* flag. This will use
   exact matching on the title field instead of regular expression fuzzy matching.
-- Having a temporary trash option. Can be set with useTrash boolean in the configuration file
+- Having a temporary trash option. Can be set with useTrash boolean in the configuration file.
   [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
 - Track last time a user logged in.
-- Add logic check rabbitmq, mongo, clowder ready before creating default users.
+- Add logic to check rabbitmq, mongo, clowder ready before creating default users with Docker compose.
   [BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)
-- Add jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and 
+- Add Jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and 
   spaces manipulation.    
 - HTML previewer for text/html files. 
   [CATS-861](https://opensource.ncsa.illinois.edu/jira/browse/CATS-861)
 
-
 ### Changed
-- File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
+- File and dataset GET metadata endpoints now include their corresponding IDs and resource type information. 
   [CATS-718](https://opensource.ncsa.illinois.edu/jira/browse/CATS-718)
-- Person tracking previewer updated after changes to the associated metadata structure.
-  [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
-- Cleanup of docker build process as well as launch clowder in docker
+- Cleanup of docker build process and how Clowder in launched in Docker.
   [CATS-871](https://opensource.ncsa.illinois.edu/jira/browse/CATS-871)
-- Serving gravatar picture over https instead of http
+- Serving gravatar picture over https instead of http.
   [CATS-882](https://opensource.ncsa.illinois.edu/jira/browse/CATS-882)
 - When the metadata.jsonld has a contextURL instead of a JsObject or JsArray show a popup with the link of the 
   context instead of creating a link. [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
@@ -65,6 +62,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [BD-2042](https://opensource.ncsa.illinois.edu/jira/browse/BD-2042)
 - Setting status for users on signup. 
   [CATS-864](https://opensource.ncsa.illinois.edu/jira/browse/CATS-864)
+- Person tracking previewer updated after changes to the associated metadata structure.
+  [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
 
 ## 1.3.5 - 2018-02-23
 
@@ -147,7 +146,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability to download a collection. Download collection and dataset both use BagIt by default. 
   [CATS-571](https://opensource.ncsa.illinois.edu/jira/browse/CATS-571)
 - Ability to mention other users using '@' in a comment on a file or dataset. Mentioned users will receive a 
-  notification email and a notice in their event feed. [SEAD-781](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-781)
+  notification email and a notice in their event feed.
+  [SEAD-781](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-781)
 - Description field to metadata definition. [SEAD-1101](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1101)
 - Improved documentation for the user interface.
 
@@ -166,7 +166,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   in their attributes. [CATS-762](https://opensource.ncsa.illinois.edu/jira/browse/CATS-762)
 
 ### Fixed
-- Binning on geostreaming api for hour and minutes. [GEOD-886](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-886)
+- Binning on geostreaming api for hour and minutes. 
+  [GEOD-886](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-886)
 - Returning the last average when semi is not selected and there is no binning by season.
 - Removing space id from collections and datasets when the space is deleted. 
   [CATS-752](https://opensource.ncsa.illinois.edu/jira/browse/CATS-752)
@@ -182,9 +183,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.2.0 - 2017-03-24 
 
 ### Added
-- Docker container to add normal/admin users for Clowder. [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167) 
+- Docker container to add normal/admin users for Clowder. 
+  [BD-1167](https://opensource.ncsa.illinois.edu/jira/browse/BD-1167) 
 - ORCID/other ID expansion - uses SEAD's PDT service to expand user ids entered as creator/contact metadata so they show 
-  as a name, link to profile, and email(if available)[SEAD-1126](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1126) 
+  as a name, link to profile, and email(if available).
+  [SEAD-1126](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1126) 
 - Can add a list of creators to a Dataset and publication request(Staging Area plugin). This addition also supports 
   type-in support for adding a creator by name, email, or ID, and adjusts the layout/labeling of the owner(was creator) 
   field, and creator and descirption fields. [SEAD-1071](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1071), 
@@ -194,9 +197,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Clowder now requires Java 8.
 - Updated the POST endpoint `/api/extractors` to accept a list of extractor repositories (git, docker, svn, etc) instead 
   of only one. [BD-1253](https://opensource.ncsa.illinois.edu/jira/browse/BD-1253)
-- Changed default labels in Staging Area plugin, e.g. "Curation Objects" to "Publication Requests" and make them configurable. 
-  [SEAD-1131](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1131)
-- Updated docker compose repositories from ncsa/* to clowder/*. [CATS-734](https://opensource.ncsa.illinois.edu/jira/browse/CATS-734])
+- Changed default labels in Staging Area plugin, e.g. "Curation Objects" to "Publication Requests" and make them 
+  configurable. [SEAD-1131](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1131)
+- Updated docker compose repositories from ncsa/* to clowder/*. 
+  [CATS-734](https://opensource.ncsa.illinois.edu/jira/browse/CATS-734])
 - Improved handling of special characters and long descriptions for datasets and Staging Area publication requests 
   [SEAD-1143](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1143), 
   [CATS-692](https://opensource.ncsa.illinois.edu/jira/browse/CATS-692)
@@ -212,8 +216,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Breadcrumbs at the top of the page. [SEAD-1025](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1025)
-- Ability to submit datasets to specific extractors. [CATS-697](https://opensource.ncsa.illinois.edu/jira/browse/CATS-697)
-- Ability to ask for just number of datapoints in query. [GEOD-783](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-783)
+- Ability to submit datasets to specific extractors. 
+  [CATS-697](https://opensource.ncsa.illinois.edu/jira/browse/CATS-697)
+- Ability to ask for just number of datapoints in query. 
+  [GEOD-783](https://opensource.ncsa.illinois.edu/jira/browse/GEOD-783)
 - Filter metadata on extractor ID. [CATS-566](https://opensource.ncsa.illinois.edu/jira/browse/CATS-566)
 - Moved additional entries to conf/messages.xxx for internationalization and customization of labels by instance.
 - *(Experimental)* Support for geostreams datapoints with parameters values organized by type.
@@ -240,7 +246,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability to add specific metadata to a space. [SEAD-1133](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1133), 
   [SEAD-1134](https://opensource.ncsa.illinois.edu/jira/browse/SEAD-1134)
 - Metadata context popups now always properly disappear on mouse out.
-- User metadata @context properly filled to required mappings. [CATS-717](https://opensource.ncsa.illinois.edu/jira/browse/CATS-717)
+- User metadata @context properly filled to required mappings. 
+  [CATS-717](https://opensource.ncsa.illinois.edu/jira/browse/CATS-717)
 
 ## 1.0.0 - 2016-12-07
 
