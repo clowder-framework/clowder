@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.4.0 - 2018-04-16
+## 1.4.0 - 2018-05-04
 
 ### Added
 - Added ability to disable username/password login. 
@@ -21,9 +21,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Having a temporary trash option. Can be set with useTrash boolean in the configuration file
   [CATS-780](https://opensource.ncsa.illinois.edu/jira/browse/CATS-780)
 - Track last time a user logged in.
-- Add logic check rabbitmq, mongo, clowder ready before creating default users.[BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)
-- Add jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and spaces manipulation.    
-- HTML previewer for text/html files. [CATS-861](https://opensource.ncsa.illinois.edu/jira/browse/CATS-861)
+- Add logic check rabbitmq, mongo, clowder ready before creating default users.
+  [BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)
+- Add jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and 
+  spaces manipulation.    
+- HTML previewer for text/html files. 
+  [CATS-861](https://opensource.ncsa.illinois.edu/jira/browse/CATS-861)
 
 
 ### Changed
@@ -35,8 +38,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-871](https://opensource.ncsa.illinois.edu/jira/browse/CATS-871)
 - Serving gravatar picture over https instead of http
   [CATS-882](https://opensource.ncsa.illinois.edu/jira/browse/CATS-882)
-- When the metadata.jsonld has a contextURL instead of a JsObject or JsArray show a popup with the link of the context instead of creating a link
-  [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
+- When the metadata.jsonld has a contextURL instead of a JsObject or JsArray show a popup with the link of the 
+  context instead of creating a link. [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
 
 ### Fixed
 - Space admins can now delete metadata definitions.
