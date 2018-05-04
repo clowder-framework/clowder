@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Track last time a user logged in.
 - Add logic check rabbitmq, mongo, clowder ready before creating default users.[BD-2059](https://opensource.ncsa.illinois.edu/jira/browse/BD-2059)
 - Add jupyter notebook examples of how to interacting with Clowder endpoints for file, dataset, collection and spaces manipulation.    
+- HTML previewer for text/html files. [CATS-861](https://opensource.ncsa.illinois.edu/jira/browse/CATS-861)
+
 
 ### Changed
 - File and dataset GET metadata endpoints to include their corresponding IDs and resource type information. 
@@ -33,8 +35,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-871](https://opensource.ncsa.illinois.edu/jira/browse/CATS-871)
 - Serving gravatar picture over https instead of http
   [CATS-882](https://opensource.ncsa.illinois.edu/jira/browse/CATS-882)
+- When the metadata.jsonld has a contextURL instead of a JsObject or JsArray show a popup with the link of the context instead of creating a link
+  [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
 
 ### Fixed
+- Space admins can now delete metadata definitions.
+  [CATS-880](https://opensource.ncsa.illinois.edu/jira/browse/CATS-880)
 - Rolling log file wrote to wrong folder, now writes to logs folder.
 - Now sends email when a user signs up using an external login provider.
   [CATS-483](https://opensource.ncsa.illinois.edu/jira/browse/CATS-483)
@@ -44,7 +50,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [BD-1912](https://opensource.ncsa.illinois.edu/jira/browse/BD-1912)
 - Only show the sort by dropdown in the collection page when the sort in memory flag is false. 
   [CATS-840](https://opensource.ncsa.illinois.edu/jira/browse/CATS-840)
-- Extraction status returns "Done" instead of "Processing" when one of the extractor fails.
+- Extraction status returns "Done" instead of "Processing" when one of the extractor fails 
   [CATS-719](https://opensource.ncsa.illinois.edu/jira/browse/CATS-719)
 - Avoid exception avoid exception in user events when unknown events don't match expected pattern (e.g. metadata events 
   from another branch).
