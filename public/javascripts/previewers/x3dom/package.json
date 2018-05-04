@@ -1,4 +1,4 @@
 { "name" : "X3d",
   "main" : "some-library.js",
-  "contentType" : ["text/html"]
+  "contentType" : ["deprecated"]
   }
