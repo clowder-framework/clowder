@@ -8,10 +8,10 @@
 
     @dateFormatter(date: java.util.Date) = @{
         val formatter = new java.text.SimpleDateFormat("MMM d, yyyy")
-        formatter.format(date)
+        formatter.format(date);
     }
 
-    @printContent(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID) = {
+    @printContent(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID, counter: Int) = {
         @content match {
             case o: JsObject => {
                 <ul>
@@ -25,22 +25,25 @@
                                     <!-- only with context and user (not extractor) generated -->
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
                                             @if(user.isDefined) {
                                                 <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
                                                 @key:
                                             }
-                                            @printContent(agent,value,contextId,contextURL,resourceId)
+                                            @printContent(agent,value,contextId,contextURL,resourceId, counter + 1)
                                         }
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
-                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a>
-                                                @printContent(agent, value,contextId,contextURL,resourceId)
+                                                @defining(key.replaceAll("[() ]","") + "-" + resourceId.toString()  + "-" + counter.toString() ) { mid: String =>
+                                                    <a class="context-url-key" id="@mid" data-url="@u.toString()" href="javascript:void(0)">@key:</a>
+                                                }
+                                                @printContent(agent, value, contextId, contextURL, resourceId, counter + 1)
                                             }
                                             case None => {
-                                                <strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId)
+                                                <strong>@key:</strong>
+                                                @printContent(agent, value, contextId, contextURL, resourceId, counter + 1)
                                             }
                                         }
                                     }
@@ -52,22 +55,24 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString() ) { mid: String =>
                                             @if(user.isDefined) {
                                                 <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
                                                 @key:
                                             }
-                                            @printContent(agent,value,contextId,contextURL,resourceId)
+                                            @printContent(agent,value,contextId,contextURL,resourceId , counter + 1)
                                         }
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
-                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a>
-                                                @printContent(agent,value,contextId,contextURL,resourceId)
+                                                @defining(key.replaceAll("[() ]","") + "-" + resourceId.toString()  + "-" + counter.toString()) { mid: String =>
+                                                    <a class="context-url-key" id="@mid" data-url="@u.toString()" href="javascript:void(0)">@key:</a>
+                                                }
+                                                @printContent(agent,value,contextId,contextURL,resourceId, counter + 1)
                                             }
                                             case None => {
-                                                <strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId)
+                                                <strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId, counter + 1)
                                             }
                                         }
                                     }
@@ -76,7 +81,7 @@
                             case _ => {
                                 <li class="md-block">
                                 @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                    @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                    @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
                                             @if(user.isDefined) {
                                                 <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
@@ -85,16 +90,18 @@
                                             @if(key.equals("Creator")||key.equals("Contact")) {
                         						@printPerson(agent,value,contextId,contextURL,resourceId)
 						                    } else {
-                                                @printContent(agent,value,contextId,contextURL,resourceId)
+                                                @printContent(agent,value,contextId,contextURL,resourceId, counter + 1)
                                             }
                                     }
                                 } else {
                                     @contextURL match {
                                         case Some(u) => {
-                                            <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a>
-                                            @printContent(agent,value,contextId,contextURL,resourceId)
+                                            @defining(key.replaceAll("[() ]","") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                                 <a class="context-url-key" id="@mid" data-url="@u.toString()" href="javascript:void(0)">@key:</a>
+                                            }
+                                            @printContent(agent,value,contextId,contextURL,resourceId, counter + 1)
                                         }
-                                        case None => {<strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId)}
+                                        case None => {<strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId, counter + 1)}
                                     }
                                 }
                                 </li>
@@ -107,7 +114,7 @@
             case a: JsArray => {
                 <ul>
                 @for((value, i) <- a.value.zipWithIndex) {
-                    <li class="md-block">@printContent(agent,value,contextId,contextURL,resourceId)</li>
+                    <li class="md-block">@printContent(agent,value,contextId,contextURL,resourceId, counter + 1)</li>
                 }
                 </ul>
             }
@@ -168,30 +175,34 @@
     @if(metadata.size == 0) {
         <p class="text-center">No metadata available for this resource</p>
     }
-    @for((m, i) <- metadata.zipWithIndex) {
-        <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="heading_@m.id">
-                <a data-toggle="collapse" href="#collapse_@m.id" class="collapse-icon">
-                    <span class="panel-icon glyphicon glyphicon-minus"></span>
-                </a>
-                <span>
+    @defining(1) { counter: Int =>
+        @for((m, i) <- metadata.zipWithIndex) {
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading_@m.id">
+                    <a data-toggle="collapse" href="#collapse_@m.id" class="collapse-icon">
+                        <span class="panel-icon glyphicon glyphicon-minus"></span>
+                    </a>
+                    <span>
                     @printHeader(m.creator, m.createdAt)
-                </span>
-                @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
+                    </span>
+                    @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
                             <span class="panel-icon glyphicon glyphicon-trash"></span>
                         </a>
-                }
-            </div>
-            <div id="collapse_@m.id" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@m.id">
-                <div class="panel-body">
-                    <div class="tree">
-                        @printContent(m.creator, m.content, m.contextId, m.contextURL, m.attachedTo.id)
+                    }
+                </div>
+                <div id="collapse_@m.id" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@m.id">
+                    <div class="panel-body">
+                        <div class="tree">
+                        @printContent(m.creator, m.content, m.contextId, m.contextURL, m.attachedTo.id, counter*i + 1)
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
     }
+
+
 
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
     @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
@@ -250,6 +261,17 @@
             getMetadataContext(this.id, contextId, this.textContent)
         });
 
+        $(document).on('mouseenter', '.context-url-key', function() {
+           var contextUrl = $(this).data("url");
+           $('#'+this.id).addClass("popping");
+           showPopover(this.id, contextUrl);
+        });
+
+        $(document).on('mouseleave', '.context-url-key', function() {
+            leaveMetadataContext(this.id)
+        });
+
+
         $(document).on('mouseleave', '.context-key', function(){
             leaveMetadataContext(this.id)
         });
@@ -264,19 +286,10 @@
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
                 var context = "Context is not defined.";
-                if (fields['@@context'][1]) {
+                if (fields['@@context'][1] && typeof fields['@@context'][1][key] !== 'undefined') {
                     context = JSON.stringify(fields['@@context'][1][key]);
                 }
-                
-                $("#"+mid).popover({
-                    content:context,
-                    placement:'top',
-                    template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
-                });
-                $("#"+mid).popover('show');
-                if (!$("#"+mid).hasClass("popping")) {
-                    setTimeout(leaveMetadataContext, 500, mid);
-                }
+                showPopover(mid, context)
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -287,6 +300,19 @@
                     notify("Metadata context was not shown due to : " + errorThrown, "error");
                 }
             });
+        }
+
+        function showPopover(id, context) {
+            $("#"+id).popover({
+                content:context,
+                placement:'top',
+                template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
+            });
+            $("#"+id).popover('show');
+            if (!$("#"+id).hasClass("popping")) {
+                setTimeout(leaveMetadataContext, 500, id);
+            }
+
         }
         
         function leaveMetadataContext(mid) {
