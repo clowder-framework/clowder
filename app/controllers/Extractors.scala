@@ -29,7 +29,8 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def submitFileExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     implicit val user = request.user
-    val extractors = extractorService.listExtractorsInfo()
+    val all_extractors = extractorService.listExtractorsInfo()
+    val extractors = all_extractors.filter(!_.process.file.isEmpty)
     fileService.get(file_id) match {
 
       case Some(file) => {
@@ -72,7 +73,8 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def submitDatasetExtraction(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, ds_id))) { implicit request =>
     implicit val user = request.user
-    val extractors = extractorService.listExtractorsInfo()
+    val all_extractors = extractorService.listExtractorsInfo()
+    val extractors = all_extractors.filter(!_.process.dataset.isEmpty)
     datasetService.get(ds_id) match {
       case Some(ds) => Ok(views.html.extractions.submitDatasetExtraction(extractors, ds))
       case None => InternalServerError("Dataset not found")

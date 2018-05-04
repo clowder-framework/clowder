@@ -68,6 +68,7 @@ case class ExtractorDetail(
  * @param external_services external services used by the extractor
  * @param libraries libraries on which the code depends
  * @param bibtex bibtext formatted citation of relevant papers
+ * @param process events that should trigger this extractor to process
  */
 case class ExtractorInfo(
   id: UUID,
@@ -81,18 +82,25 @@ case class ExtractorInfo(
   repository: List[Repository],
   external_services: List[String],
   libraries: List[String],
-  bibtex: List[String]
+  bibtex: List[String],
+  process: ExtractorProcessTriggers = new ExtractorProcessTriggers()
 )
 
 object ExtractorInfo {
   implicit val repositoryFormat = Json.format[Repository]
+  implicit val extractorProcessTriggersWrites = Json.writes[ExtractorProcessTriggers]
+  implicit val extractorProcessTriggersReads: Reads[ExtractorProcessTriggers] = (
+    (JsPath \ "dataset").read[List[String]].orElse(Reads.pure(List.empty)) and
+      (JsPath \ "file").read[List[String]].orElse(Reads.pure(List.empty)) and
+      (JsPath \ "metadata").read[List[String]].orElse(Reads.pure(List.empty))
+    )(ExtractorProcessTriggers.apply _)
   implicit val urlFormat = new Format[URL] {
     def reads(json: JsValue): JsResult[URL] = JsSuccess(new URL(json.toString()))
     def writes(url: URL): JsValue = Json.toJson(url.toExternalForm)
   }
   implicit val dateFormat = new Format[Date] {
     def reads(json: JsValue): JsResult[Date] = JsSuccess(json.as[Date])
-    def writes(url: Date): JsValue = Json.toJson(url.toString)
+    def writes(date: Date): JsValue = Json.toJson(date.toString)
   }
   implicit val extractorInfoWrites = Json.writes[ExtractorInfo]
   implicit val extractorInfoReads: Reads[ExtractorInfo] = (
@@ -107,9 +115,12 @@ object ExtractorInfo {
       (JsPath \ "repository").read[List[Repository]] and
       (JsPath \ "external_services").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
-      (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty))
+      (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
+      (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers()))
     )(ExtractorInfo.apply _)
 }
+
+
 
 /**
  * Source code repository
@@ -118,5 +129,20 @@ object ExtractorInfo {
  * @param repUrl the url of the repository, for example https://opensource.ncsa.illinois.edu/stash/scm/cats/clowder.git
  */
 case class Repository(repType: String, repUrl: String)
+
+
+/**
+  * Events that should trigger this extractor to begin to process.
+  *
+  * @see https://opensource.ncsa.illinois.edu/confluence/display/CATS/Extractors#Extractors-Extractorbasics for
+  * a list of possible event Strings.
+  *
+  * @param dataset List of event Strings associated with dataset addition / removal
+  * @param file List of event Strings associated with file uploads
+  * @param metadata List of event Strings associated with metadata addition / removal
+  */
+case class ExtractorProcessTriggers(dataset: List[String] = List.empty,
+                                    file: List[String] = List.empty,
+                                    metadata: List[String] = List.empty)
 
 

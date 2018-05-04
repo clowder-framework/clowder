@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-864](https://opensource.ncsa.illinois.edu/jira/browse/CATS-864)
 - Person tracking previewer updated after changes to the associated metadata structure.
   [CATS-730](https://opensource.ncsa.illinois.edu/jira/browse/CATS-730)
+- Hide incompatible extractors on `/datasets/:id/extractions` and `/files/:id/extractions` views.
+  [CATS-875](https://opensource.ncsa.illinois.edu/jira/browse/CATS-875)
 
 ## 1.3.5 - 2018-02-23
 
