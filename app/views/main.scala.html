@@ -334,9 +334,11 @@
         request.done(function (response, textStatus, jqXHR) {
             updateSelectedCount(response.length);
         });
-        request.fail(function (jqXHR, textStatus, errorThrown){
+        request.fail(function (jqXHR, textStatus, errorThrown) {
             console.error("The following error occured: " + textStatus, errorThrown);
-            notify("Could not get selections: " + errorThrown, "error");
+            if (errorThrown != "Unauthorized") {
+                notify("Could not get selections: " + errorThrown, "error");
+            }
         });
     }
 
