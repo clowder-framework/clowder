@@ -2,6 +2,7 @@ Following is a list of contributors in alphabetical order:
 
 - Ashwini Vaidya
 - Avinash Kumar
+- Ben Galewsky
 - Bing Zhang
 - Brock Angelo
 - Chen Wang
@@ -35,5 +36,3 @@ Following is a list of contributors in alphabetical order:
 - Xiaocheng Yuan
 - Yan Zhao
 - Yibo Guo
-
-
