@@ -191,7 +191,7 @@ class MongoDBSpaceService @Inject() (
         }
       }
       case None => {
-        if (showAll && showPublic && !verifySpaces) {
+        if (showAll && showPublic && !verifySpaces && configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
           MongoDBObject()
         } else {
           user match {
