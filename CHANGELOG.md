@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Modified zenodo.json file to include more Orcid Ids
+  [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
 
-### Changed
+### Changed 
 
 ### Fixed
 - In a private Clowder instance, a superadmin can now see datasets in a space that he/she is not part of.

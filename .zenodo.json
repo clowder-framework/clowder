@@ -14,7 +14,8 @@
     },
     {
       "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
-      "name": "Indira Gutierrez"
+      "name": "Indira Gutierrez",
+      "orcid": "0000-0001-5684-3419"
     },
     {
       "name": "Constantinos Sophocleous"
@@ -41,7 +42,8 @@
     },
     {
       "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
-      "name": "Sandeep Puthanveetil Satheesan"
+      "name": "Sandeep Puthanveetil Satheesan",
+      "orcid": "0000-0001-9075-3740"
     },
     {
       "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
@@ -60,7 +62,8 @@
       "name": "Ashwini Vaidya"
     },
     {
-      "name": "Jim Myers"
+      "name": "Jim Myers",
+      "orcid": "0000-0001-8462-650X"
     },
     {
       "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
@@ -137,7 +140,12 @@
     },
     {
       "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
-      "name": "Kenton McHenry"
+      "name": "Mike Lambert"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Kenton McHenry",
+      "orcid": "0000-0003-0367-2550"
     }
   ],
   "upload_type": "software",
