@@ -357,14 +357,15 @@ class MongoDBDatasetService @Inject() (
         case Some(u) => {
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+          if(u.superAdminMode) {
+            // superAdmin can access all datasets, in a space page or /datasets
+            orlist += MongoDBObject()
+          }
           if (permissions.contains(Permission.ViewDataset) && enablePublic && showPublic) {
             // if enablePublic == true, only list the dataset user can access, in a space page or /datasets
             if(!u.superAdminMode) {
               orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
               orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
-            } else {
-              // superAdmin can access all datasets, in a space page or /datasets
-              orlist += MongoDBObject()
             }
           }
           //if you are viewing other user's datasets, return the ones you have permission. otherwise filterAccess should
