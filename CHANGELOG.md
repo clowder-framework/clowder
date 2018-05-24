@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
 ### Added
 - Modified zenodo.json file to include more Orcid Ids
   [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
@@ -12,8 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed 
 
 ### Fixed
-- In a private Clowder instance, a superadmin can now see datasets in a space that he/she is not part of.
+- In a private mode, a superadmin can now see datasets in a space that he/she is not part of.
   [CATS-881](https://opensource.ncsa.illinois.edu/jira/browse/CATS-881)
+- In private mode, users used to be able to see the list of spaces. Now they cannot.
+  [CATS-887](https://opensource.ncsa.illinois.edu/jira/browse/CATS-887)
 
 ## 1.4.0 - 2018-05-04
 
