@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
 
 ### Changed 
+- Displayed more ExtractorInfo in each Space's "Update Extractors" view.
+  [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.
