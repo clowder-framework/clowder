@@ -793,3 +793,21 @@ POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id              
 
 GET         /api/vocabterms/list                                                        @api.VocabularyTerms.list()
 GET         /api/vocabterms/:id                                                         @api.VocabularyTerms.get(id : UUID)
+
+
+# ----------------------------------------------------------------------
+# PROXY API
+# ----------------------------------------------------------------------
+
+GET         /api/proxy/:endpoint_key                                                        @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
+GET         /api/proxy/:endpoint_key/                                                       @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
+GET         /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.get(endpoint_key: String, pathSuffix: String)
+POST        /api/proxy/:endpoint_key                                                        @api.Proxy.post(endpoint_key: String, pathSuffix: String = null)
+POST        /api/proxy/:endpoint_key/                                                       @api.Proxy.post(endpoint_key: String, pathSuffix: String = null)
+POST        /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.post(endpoint_key: String, pathSuffix: String)
+PUT         /api/proxy/:endpoint_key                                                        @api.Proxy.put(endpoint_key: String, pathSuffix: String = null)
+PUT         /api/proxy/:endpoint_key/                                                       @api.Proxy.put(endpoint_key: String, pathSuffix: String = null)
+PUT         /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.put(endpoint_key: String, pathSuffix: String)
+DELETE      /api/proxy/:endpoint_key                                                        @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
+DELETE      /api/proxy/:endpoint_key/                                                       @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
+DELETE      /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.delete(endpoint_key: String, pathSuffix: String)

@@ -2801,6 +2801,157 @@ paths:
       summary: Download file
       description: 'Download a static file, or the alternate file'
 
+  ##############################################################################
+  # Proxy                                                                      #
+  # NOTE: because they are so generic, these endpoints are not well defined    #
+  ##############################################################################
+  /proxy/{endpoint}:
+    get:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+      summary: Proxy a GET request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+    post:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+        - required: false
+          in: body
+          name: body
+          description: The body of the POST request to proxy.
+          schema:
+            type: object
+      summary: Proxy a POST request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+    put:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+        - required: false
+          in: body
+          name: body
+          description: The body of the PUT request to proxy.
+          schema:
+            type: object
+      summary: Proxy a PUT request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+    delete:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+      summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+  /proxy/{endpoint}/{pathSuffix}:
+    get:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+        - required: false
+          type: string
+          name: pathSuffix
+          in: path
+      summary: Proxy a GET request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+    post:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+        - required: false
+          type: string
+          name: pathSuffix
+          in: path
+        - required: false
+          in: body
+          name: body
+          description: The body of the POST request to proxy.
+          schema:
+            type: object
+      summary: Proxy a POST request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+    put:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+        - required: false
+          type: string
+          name: pathSuffix
+          in: path
+        - required: false
+          in: body
+          name: body
+          description: The body of the PUT request to proxy.
+          schema:
+            type: object
+      summary: Proxy a PUT request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+    delete:
+      responses:
+        401:
+          description: Not authorized
+        404:
+          description: Endpoint not configured
+      parameters:
+        - required: true
+          type: string
+          name: endpoint
+          in: path
+        - required: false
+          type: string
+          name: pathSuffix
+          in: path
+      summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
+      description: Access to the endpoint will be restricted by Clowder authentication.
+
 ################################################################################
 #                                 Definitions                                  #
 ################################################################################

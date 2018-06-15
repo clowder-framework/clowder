@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Modified zenodo.json file to include more Orcid Ids
   [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
+- New API endpoints for proxying GET, POST, PUT, and DELETE requests through Clowder.
+  [CATS-793](https://opensource.ncsa.illinois.edu/jira/browse/CATS-793)
+  [CATS-889](https://opensource.ncsa.illinois.edu/jira/browse/CATS-889)
 
 ### Changed 
 
