@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Script to create the mongo command to add a service account.
 - Modified zenodo.json file to include more Orcid Ids
   [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
 - New API endpoints for proxying GET, POST, PUT, and DELETE requests through Clowder.
