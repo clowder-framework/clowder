@@ -1,6 +1,13 @@
 Setup, Interface, and Helper Scripts for Clowder
 ===============================================
 
+create-account.sh
+-----------------
+
+A script that takes the name of the server to be added as a  single argument. The script will generate a unique password, encrypt the password and print the mongo command to insert this entry into the list of users. This script will not actually execute the command! To insert the account simple copy and paste the code and use the mongo shell.
+
+For this to work you will need to have passlib and bcrypt installed as python modules. This can be done using `pip install passlib brcypt`. It is highly recommended to use a virtual environment for this.
+
 exinfo.py
 ----------
 
