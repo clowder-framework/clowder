@@ -27,6 +27,15 @@ class Extractors  @Inject() (extractions: ExtractionService,
     Ok(views.html.listAllExtractions(allExtractions))
   }
 
+  def showExtractorInfo(extractorName: String) = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val targetExtractor = extractorService.listExtractorsInfo().find(p => p.name == extractorName)
+    targetExtractor match {
+      case Some(extractor) => Ok(views.html.extractorDetails(extractor))
+      case None => InternalServerError("Extractor not found: " + extractorName)
+    }
+  }
+
   def submitFileExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     implicit val user = request.user
     val all_extractors = extractorService.listExtractorsInfo()

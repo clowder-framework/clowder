@@ -1,0 +1,182 @@
+@(extractor: ExtractorInfo)(implicit user: Option[models.User])
+
+@main("Extractor Details") {
+    <style>
+        strong        { text-align: right; }
+        fieldset      { margin-top: 5px; }
+        .form-actions { margin-top: 15px; }
+    </style>
+
+    <ol class="breadcrumb">
+        <li><span class="glyphicon glyphicon-fullscreen"></span> Extractors</li>
+        <li><span class="glyphicon glyphicon-retweet"></span> @extractor.name</li>
+    </ol>
+
+    <div class="page-header"><h1>Extractor Details</h1></div>
+
+    <div class="row">
+        <div class="col-sm-8">
+            <form>
+                <fieldset>
+
+                    <!-- Extractor Name -->
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorNameField">Name</strong>
+                        <span class="col-sm-9" for="extractorNameField">@extractor.name</span>
+                    </div>
+
+                    <!-- Extractor Description -->
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorDescriptionField">Description</strong>
+                        <span class="col-sm-9" for="extractorDescriptionField">@extractor.description</span>
+                    </div>
+
+                    <!-- Extractor Author -->
+                    <!-- TODO: It would be nice to make this a mailto: link, but it doesn't seem trivial to scrape this out -->
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorAuthorField">Author</strong>
+                        <span class="col-sm-9" for="extractorAuthorField">@extractor.author</span>
+                    </div>
+
+                    <!-- Extractor Version -->
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorVersionField">Version</strong>
+                        <span class="col-sm-9" for="extractorVersionField">@extractor.version</span>
+                    </div>
+                </fieldset>
+
+                    <!-- Extractor Repositories -->
+                @if(extractor.repository.size > 0) {
+                    <fieldset>
+                        <legend>Repositories</legend>
+                        @extractor.repository.map { repo =>
+                            <div class="row form-group">
+                                <strong class="col-sm-3">@repo.repType.capitalize</strong>
+                                <span class="col-sm-9">
+                                    <!-- Docker "URLs" require special handling, since they are actually just image names -->
+                                @if(repo.repType == "docker") {
+                                    <!-- FIXME: Do we care that this will not work for official images? -->
+                                    <a href="https://hub.docker.com/r/@repo.repUrl" target="_blank">@repo.repUrl</a>
+                                } else {
+                                    <a href="@repo.repUrl" target="_blank">@repo.repUrl</a>
+                                }
+                                </span>
+                            </div>
+                        }
+                    </fieldset>
+                }
+
+                <!-- Extractor Contributors, External Services, Bibtex-->
+                <div class="row">
+
+                    <!-- Extractor Contributors -->
+                @if(!extractor.contributors.isEmpty) {
+                    <div class="col-sm-6">
+                        <fieldset>
+                            <legend>Contributors</legend>
+                            <ul>
+                            @extractor.contributors.map { contributor =>
+                                <li>@contributor</li>
+                            }
+                            </ul>
+                        </fieldset>
+                    </div>
+                }
+
+                    <!-- Extractor External Services -->
+                @if(!extractor.external_services.isEmpty) {
+                    <div class="col-sm-6">
+                        <fieldset>
+                            <legend>External Services</legend>
+                            <ul>
+                            @extractor.external_services.map { service =>
+                                <li>@service</li>
+                            }
+                            </ul>
+                        </fieldset>
+                    </div>
+                }
+
+                    <!-- Extractor Bibtex -->
+                    <!-- FIXME: Bibtex can contain null or empty strings? -->
+                @if(!extractor.bibtex.isEmpty && !extractor.bibtex.head.isEmpty) {
+                    <div class="col-sm-6">
+                        <fieldset>
+                            <legend>Bibtex</legend>
+                            <ul>
+                            @extractor.bibtex.map { bib =>
+                                <li>@bib</li>
+                            }
+                            </ul>
+                        </fieldset>
+                    </div>
+                }
+
+                    <!-- TODO: Extractor Contexts -->
+                    <!-- TODO: Dependencies -->
+
+                </div>
+
+                    <!-- Show process triggers, if any are defined-->
+                @if(extractor.process != null) {
+                    <div class="row">
+                        <!-- Show dataset triggers, if any are defined -->
+                    @if(extractor.process.dataset != null && !extractor.process.dataset.isEmpty) {
+                        <div class="col-sm-4">
+                            <fieldset>
+                                <legend>Dataset Triggers</legend>
+                                <ul>
+                                    @extractor.process.dataset.map { datasetTrigger =>
+                                        <li>@datasetTrigger</li>
+                                    }
+                                </ul>
+                            </fieldset>
+                        </div>
+                    }
+                        <!-- Show file triggers, if any are defined -->
+                    @if(extractor.process.file != null && !extractor.process.file.isEmpty) {
+                        <div class="col-sm-4">
+                            <fieldset>
+                                <legend>File Triggers</legend>
+                                <ul>
+                                    @extractor.process.file.map { fileTrigger =>
+                                        <li>@fileTrigger</li>
+                                    }
+                                </ul>
+                            </fieldset>
+                        </div>
+                    }
+
+                        <!-- Show metadata triggers, if any are defined -->
+                    @if(extractor.process.metadata != null && !extractor.process.metadata.isEmpty) {
+                        <div class="col-sm-4">
+                            <fieldset>
+                                <legend>Metadata Triggers</legend>
+                                <ul>
+                                @extractor.process.metadata.map { metadataTrigger =>
+                                    <li>@metadataTrigger</li>
+                                }
+                                </ul>
+                            </fieldset>
+                        </div>
+                    }
+                    </div>
+                }
+            </form>
+        </div>
+
+        <div class="col-sm-4">
+            <!-- Insert sidebar here, if desired-->
+        </div>
+    </div>
+
+    <!-- Button bar for this form -->
+    <div class="form-actions">
+        <div class="row">
+            <div class="col-sm-12">
+                <!-- "Back" button -->
+                <a class="btn btn-default" onclick="window.history.back()"><span class="glyphicon glyphicon-chevron-left" ></span> Back</a>
+            </div>
+        </div>
+    </div>
+}
