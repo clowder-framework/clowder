@@ -76,3 +76,5 @@ the all the configuration files under the ``/conf`` directory. The following fil
 - ``/conf/securesocial.conf`` includes configuration settings for email functionality when signup as well as ways to
   configure the different identity providers (for example Twitter or Facebook). More information can be found on the
   `securesocial <http://securesocial.ws/>`_ website.
+
+The files above can be overriden following the instructions in :ref:`customization`.

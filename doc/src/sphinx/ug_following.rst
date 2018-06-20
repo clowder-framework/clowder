@@ -34,6 +34,8 @@ To follow a user, you can go into the listing page of users in by clicking on Ex
     :width: 80%
     :align: center
 
-Then on hover in a user, you can click the follow button as indicated by the blue box
+Then on hover in a user, you can click the follow button as indicated by the blue box.
 
-
+.. image:: _static/ug_following-6.png
+    :width: 80%
+    :align: center
