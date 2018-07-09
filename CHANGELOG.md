@@ -15,11 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - New API endpoints for proxying GET, POST, PUT, and DELETE requests through Clowder.
   [CATS-793](https://opensource.ncsa.illinois.edu/jira/browse/CATS-793)
   [CATS-889](https://opensource.ncsa.illinois.edu/jira/browse/CATS-889)
+  [CATS-895](https://opensource.ncsa.illinois.edu/jira/browse/CATS-895)
 - Displayed more ExtractorInfo in each Space's "Update Extractors" view.
   [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 - Ability to enable disable extractors at the instance level (versus space level).
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
-
+  
 ### Changed 
 
 ### Fixed

@@ -1,10 +1,14 @@
 package api
 
+import java.net.URL
+
+import com.ning.http.client.Realm.AuthScheme
+import javax.inject.Inject
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee._
-import play.api.libs.ws._
-import javax.inject.Inject
 import play.api.libs.ws.WS.WSRequestHolder
+import play.api.libs.ws._
 import play.api.mvc.SimpleResult
 
 import scala.concurrent.Future
@@ -63,27 +67,44 @@ class Proxy @Inject()() extends ApiController {
     * Build up our intermediary (proxied) request from the original
     */
   def buildProxiedRequest(proxyTarget: String, originalRequest: UserRequest[String]): WSRequestHolder = {
-    return WS.url(proxyTarget)
-     .withQueryString(originalRequest.queryString.mapValues(_.head).toSeq: _*)
+    // Parse basic auth credentials from target URL
+    val targetUrl: URL = new URL(proxyTarget);
+    val userInfo = targetUrl.getUserInfo()
+    val sanitizedUrl = proxyTarget.replaceAll(userInfo + "@", "")
 
-     // If client return 301 or 302, follow the redirect
-     .withFollowRedirects(true)
+    // If we find a username/password, scrape them out of the target URL
+    val username = if (null != userInfo) { userInfo.split(":").apply(0) } else { "" }
+    val password = if (null != userInfo) { userInfo.split(":").apply(1) } else { "" }
 
-     // TODO: other request headers my be needed for specific cases
-     .withHeaders(
-       // FIXME: How do we prevent setting null values for missing headers?
-       // FIXME: Sending null/invalid values for headers causes indeterminate results
-       //ACCEPT_ENCODING-> originalRequest.headers.get("Accept-Encoding").orNull,
-       //ACCEPT -> originalRequest.headers.get("Accept").orNull,
-       //ACCEPT_LANGUAGE -> originalRequest.headers.get("Accept-Language").orNull,
-       //CONNECTION -> originalRequest.headers.get("Connection").orNull,
-       //"Upgrade-Insecure-Requests" -> originalRequest.headers.get("Upgrade-Insecure-Requests").orNull,
-       //HOST -> originalRequest.headers.get("Host").orNull,
-       //"DNT" -> originalRequest.headers.get("DNT").orNull,
-       //CACHE_CONTROL -> originalRequest.headers.get("Cache-Control").orNull,
-       //PRAGMA -> originalRequest.headers.get("Pragma").orNull,
-       //COOKIE -> originalRequest.headers.get("Cookie").orNull
-     )
+    val initialReq = WS.url(sanitizedUrl)
+        .withQueryString(originalRequest.queryString.mapValues(_.head).toSeq: _*)
+        .withFollowRedirects(true)
+
+    // If original request had Content-Type/Length headers, copy them to the proxied request
+    val contentType = originalRequest.headers.get("Content-Type").orNull
+    val contentLength = originalRequest.headers.get("Content-Length").orNull
+    val reqWithContentHeaders = if (contentType != null && contentLength != null) {
+      initialReq.withHeaders(CONTENT_TYPE -> contentType, CONTENT_LENGTH -> contentLength)
+    } else {
+      initialReq
+    }
+
+    // If original request had a Cookie header, copy it to the proxied request
+    val cookies = originalRequest.headers.get("Cookie").orNull
+    val reqWithHeaders = if (cookies != null) {
+      reqWithContentHeaders.withHeaders(COOKIE -> cookies)
+    } else {
+      reqWithContentHeaders
+    }
+
+    // If the configured URL contained service account credentials(UserInfo), copy it to the proxied request
+    if (!username.isEmpty && !password.isEmpty) {
+      Logger.debug(s"PROXY :: Using service account credentials - $username")
+      return reqWithHeaders.withAuth(username, password, AuthScheme.BASIC)
+    } else {
+      Logger.debug("PROXY :: No credentials specified")
+      return reqWithHeaders
+    }
   }
 
   /**
@@ -92,33 +113,40 @@ class Proxy @Inject()() extends ApiController {
     */
   def buildProxiedResponse(lastResponse: Response, proxiedResponse: SimpleResult): SimpleResult = {
     // TODO: other response headers my be needed for specific cases
-    return proxiedResponse.withHeaders (
-        //CONNECTION -> lastResponse.header("Connection").orNull,
-        //SERVER -> lastResponse.header("Server").orNull,
-        // Default Content-Disposition to a sensible value if it is not present
-        // TODO: test cases seemed to pass consistently, but is "inline" the best default here?
-        // TODO: Do ANY of these headers have sensible/noop defaults? Would this even be this a good idea?
-        CONTENT_DISPOSITION -> lastResponse.header ("Content-Disposition").getOrElse("inline"),
+    val chunkedResponse = proxiedResponse.withHeaders (
+      //CONNECTION -> lastResponse.header("Connection").orNull,
+      //SERVER -> lastResponse.header("Server").orNull,
 
-        // Always chunk the response (for simplicity, so that we don't need to calculate/specify the Content-Length)
-        TRANSFER_ENCODING -> "chunked"
-      )
+      // Always chunk the response (for simplicity, so that we don't need to calculate/specify the Content-Length)
+      TRANSFER_ENCODING -> "chunked"
+    )
+
+    // Default Content-Disposition to a sensible value if it is not present
+    // TODO: test cases seemed to pass consistently, but is "inline" the best default here?
+    // TODO: Do ANY of these headers have sensible/noop defaults? Would this even be this a good idea?
+    val contentDisposition = lastResponse.header ("Content-Disposition").orNull
+    contentDisposition match {
+      case null | "" => return chunkedResponse
+      case _ => return chunkedResponse.withHeaders(CONTENT_DISPOSITION -> contentDisposition)
+    }
   }
 
   /**
     * Given a response, chunk its body and return/forward it as a SimpleResult
     */
   def chunkAndForwardResponse(originalResponse: Response): SimpleResult = {
-    // Copy all of the headers from our proxied response
-    val contentType = originalResponse.header("Content-Type").orNull
     val statusCode = originalResponse.getAHCResponse.getStatusCode
-    val bodyStream = originalResponse.ahcResponse.getResponseBodyAsStream
+    if (statusCode >= 400) {
+      Logger.error("PROXY :: " + statusCode + " - " + originalResponse.getAHCResponse.getStatusText)
+    }
 
     // Chunk the response
+    val bodyStream = originalResponse.ahcResponse.getResponseBodyAsStream
     val bodyEnumerator = Enumerator.fromStream(bodyStream)
     val payload = Status(statusCode).chunked(bodyEnumerator)
 
     // Return a SimpleResult, coerced into our desired Content-Type
+    val contentType = originalResponse.header("Content-Type").getOrElse("text/plain")
     return buildProxiedResponse(originalResponse, payload).as(contentType)
   }
 
@@ -137,7 +165,7 @@ class Proxy @Inject()() extends ApiController {
       val proxiedRequest = buildProxiedRequest(proxyTarget, request)
 
       // Proxy a GET request, then chunk and return the response
-      proxiedRequest.get().map { originalResponse => chunkAndForwardResponse(originalResponse) }
+      proxiedRequest.get.map { originalResponse => chunkAndForwardResponse(originalResponse) }
     }
   }
 
@@ -194,7 +222,7 @@ class Proxy @Inject()() extends ApiController {
       val proxiedRequest = buildProxiedRequest(proxyTarget, request)
 
       // Proxy a DELETE request, then chunk and return the response
-      proxiedRequest.delete().map { originalResponse => chunkAndForwardResponse(originalResponse) }
+      proxiedRequest.delete.map { originalResponse => chunkAndForwardResponse(originalResponse) }
     }
   }
 }
