@@ -8,17 +8,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Script to create the mongo command to add a service account.
-- Modified zenodo.json file to include more Orcid Ids
+- Modified zenodo.json file to include more Orcid Ids.
   [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
-- Added a new view to display Extractor Details (ExtractorInfo)
+- Added a new view to display Extractor Details (ExtractorInfo).
   [CATS-892](https://opensource.ncsa.illinois.edu/jira/browse/CATS-892)
 - New API endpoints for proxying GET, POST, PUT, and DELETE requests through Clowder.
   [CATS-793](https://opensource.ncsa.illinois.edu/jira/browse/CATS-793)
   [CATS-889](https://opensource.ncsa.illinois.edu/jira/browse/CATS-889)
-
-### Changed 
 - Displayed more ExtractorInfo in each Space's "Update Extractors" view.
   [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
+- Ability to enable disable extractors at the instance level (versus space level).
+  [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
+
+### Changed 
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.

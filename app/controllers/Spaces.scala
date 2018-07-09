@@ -87,7 +87,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
   val spaceTitle: String = Messages("space.title")
 
   /**
-   * Gets list of extractors from mongo. Displays the page to add/remove extractors.
+   * Gets list of extractors from mongo. Displays the page to enable/disable extractors.
    */
   def selectExtractors(id: UUID) = AuthenticatedAction {
     implicit request =>

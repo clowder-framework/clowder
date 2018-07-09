@@ -1,8 +1,9 @@
 package services.mongodb
 
 import javax.inject.Singleton
-
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
@@ -32,12 +33,45 @@ class MongoDBExtractorService extends ExtractorService {
     listServersIPs
   }
 
-
   def insertServerIPs(iplist: List[String]) = {
     for (sip <- iplist) {
       ExtractorServer.insert(new ExtractorServer(sip), WriteConcern.Safe)
       Logger.debug("[mongodbextractorservice]--extractor.servers: document inserted : " + sip)
     }
+  }
+
+  /**
+    * Disables all extractors on this instance.
+    */
+  def disableAllExtractors(): Boolean = {
+    val query = MongoDBObject()
+    val result = ExtractorsForInstanceDAO.remove(query)
+    //if one or more deleted - return true
+    val wasDeleted = result.getN >0
+    wasDeleted
+  }
+
+  /**
+    * Retrieves a list of the names of all enabled extractors on this instance.
+    */
+  def getEnabledExtractors(): List[String] = {
+    //Note: in models.ExtractorsForSpace, spaceId must be a String
+    // if space Id is UUID, will compile but throws Box run-time error
+    val query = MongoDBObject()
+
+    val list = (for (extr <- ExtractorsForInstanceDAO.find(query)) yield extr).toList
+    //get extractors' names for given space id
+    val extractorList: List[String] = list.flatMap(_.extractors)
+    extractorList
+  }
+
+  /**
+    * Adds this extractor to the globally-enabled extractor list for this instance.
+    */
+  def enableExtractor(extractor: String) {
+    //will add extractor to the list of extractors for this space, only if it's not there.
+    val query = MongoDBObject()
+    ExtractorsForInstanceDAO.update(query, $addToSet("extractors" -> extractor), true, false, WriteConcern.Safe)
   }
 
   def getExtractorNames() = {
@@ -194,6 +228,13 @@ object ExtractorInfoDAO extends ModelCompanion[ExtractorInfo, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[ExtractorInfo, ObjectId](collection = x.collection("extractors.info")) {}
+  }
+}
+
+object ExtractorsForInstanceDAO extends ModelCompanion[ExtractorsForInstance, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[ExtractorsForInstance, ObjectId](collection = x.collection("extractors.global")) {}
   }
 }
 

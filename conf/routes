@@ -818,3 +818,15 @@ PUT         /api/proxy/:endpoint_key/*pathSuffix                                
 DELETE      /api/proxy/:endpoint_key                                                        @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
 DELETE      /api/proxy/:endpoint_key/                                                       @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
 DELETE      /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.delete(endpoint_key: String, pathSuffix: String)
+
+# ----------------------------------------------------------------------
+# EXTRACTOR VIEWS
+# ----------------------------------------------------------------------
+
+
+GET         /extractors                                                                     @controllers.Extractors.selectExtractors()
+POST        /extractors                                                                     @controllers.Extractors.updateExtractors()
+
+
+
+
