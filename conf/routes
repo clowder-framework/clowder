@@ -159,6 +159,13 @@ POST           /spaces/:id/invite                                               
 GET            /spaces/:id/metadata                                                     @controllers.Metadata.getMetadataBySpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
+
+# ----------------------------------------------------------------------
+# EXTRACTORS
+# ----------------------------------------------------------------------
+GET            /extractors/:extractorName                                               @controllers.Extractors.showExtractorInfo(extractorName)
+
+
 # ----------------------------------------------------------------------
 # SENSORS
 # ----------------------------------------------------------------------
