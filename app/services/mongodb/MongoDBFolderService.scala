@@ -39,14 +39,14 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
   /**
    * Delete folder and any reference of it.
    */
-  def delete(folderId: UUID) {
+  def delete(folderId: UUID, host: String) {
 
     get(folderId) match {
       case Some(folder) => {
         folder.files.map {
           fileId => {
             files.get(fileId) match {
-              case Some(file) => files.removeFile(file.id)
+              case Some(file) => files.removeFile(file.id, host)
               case None =>
             }
           }
@@ -54,7 +54,7 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
         folder.folders.map {
           subfolderId => {
             get(subfolderId)  match {
-              case Some(subfolder) => delete(subfolder.id)
+              case Some(subfolder) => delete(subfolder.id, host)
               case None =>
             }
           }

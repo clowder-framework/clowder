@@ -298,11 +298,11 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.save(space)
   }
 
-  def delete(id: UUID): Unit = {
+  def delete(id: UUID, host: String): Unit = {
     // only curation objects in this space are removed, since dataset & collection don't need to belong to a space.
     get(id) match {
       case Some(s) => {
-        s.curationObjects.map(c => curations.remove(c))
+        s.curationObjects.map(c => curations.remove(c, host))
         for(follower <- s.followers) {
           users.unfollowResource(follower, ResourceRef(ResourceRef.space, id))
         }
@@ -444,7 +444,7 @@ class MongoDBSpaceService @Inject() (
    *  @param space The id of the space to check
    *
    */
-  def purgeExpiredResources(space: UUID): Unit = {
+  def purgeExpiredResources(space: UUID, host: String): Unit = {
       val datasetsList = getDatasetsInSpace(Some(space.stringify))
       val collectionsList = getCollectionsInSpace(Some(space.stringify))
       val timeToLive = getTimeToLive(space)
@@ -455,7 +455,7 @@ class MongoDBSpaceService @Inject() (
     	  val difference = currentTime - datasetTime
     	  if (difference > timeToLive) {
     	       //It was last modified longer than the time to live, so remove it.
-    	       datasets.removeDataset(aDataset.id)
+    	       datasets.removeDataset(aDataset.id, host)
     	  }
       }
 
@@ -484,7 +484,7 @@ class MongoDBSpaceService @Inject() (
                 datasetOnlyInSpace match {
                   case Some(true) => {
                     //If the dataset only exists in the current space, it can be removed.
-                    datasets.removeDataset(colDataset.id)
+                    datasets.removeDataset(colDataset.id, host)
                   }
                   case None => {
                     //In this case, the dataset is in the default space, so do not remove it, it will detach on collection deletion.

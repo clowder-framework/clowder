@@ -1,12 +1,12 @@
 package api
 
 import api.Permission.Permission
-
-import java.net.{ URL, URLEncoder }
+import java.net.{URL, URLEncoder}
 import java.util.Date
-import javax.inject.{ Inject, Singleton }
 
-import models.{ ResourceRef, UUID, UserAgent, _ }
+import controllers.Utils
+import javax.inject.{Inject, Singleton}
+import models.{ResourceRef, UUID, UserAgent, _}
 import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
 import play.api.Play.current
@@ -18,7 +18,6 @@ import play.api.libs.ws.WS
 import play.api.mvc.Result
 import services._
 import play.api.i18n.Messages
-
 import play.api.libs.json.JsValue
 
 import scala.collection.JavaConversions._
@@ -349,26 +348,23 @@ class Metadata @Inject() (
                         datasets.index(resource.id)
                         //send RabbitMQ message
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          val dtkey = s"${p.exchange}.metadata.added"
-                          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
-                            dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                          p.metadataAddedToResource(resource, mdMap, Utils.baseUrl(request))
                         }
                       }
                       case ResourceRef.file => {
                         files.index(resource.id)
                         //send RabbitMQ message
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          val dtkey = s"${p.exchange}.metadata.added"
-                          p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request),
-                            dtkey, mdMap, "", UUID(""), ""))
+                          p.metadataAddedToResource(resource, mdMap, Utils.baseUrl(request))
                         }
                       }
-                      case _ => {}
+                      case _ =>
+                        Logger.error("File resource type not recognized")
                     }
                   }
-                  case None => {}
+                  case None =>
+                    Logger.error("Metadata missing attachedTo subdocument")
                 }
-
                 Ok(views.html.metadatald.view(List(metadata), true)(request.user))
               } else {
                 BadRequest(toJson("Invalid resource type"))
@@ -392,26 +388,29 @@ class Metadata @Inject() (
               metadataService.removeMetadata(id)
               val mdMap = m.getExtractionSummary
 
-              current.plugin[RabbitmqPlugin].foreach { p =>
-                val dtkey = s"${p.exchange}.metadata.removed"
-                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdMap, "", id, ""))
-              }
-
-              Logger.debug("re-indexing after metadata removal")
-              current.plugin[ElasticsearchPlugin].foreach { p =>
-                // Delete existing index entry and re-index
-                m.attachedTo.resourceType match {
-                  case ResourceRef.file => {
+              m.attachedTo.resourceType match {
+                case ResourceRef.file => {
+                  current.plugin[ElasticsearchPlugin].foreach { p =>
+                    // Delete existing index entry and re-index
                     p.delete("data", "file", m.attachedTo.id.stringify)
                     files.index(m.attachedTo.id)
                   }
-                  case ResourceRef.dataset => {
+                  current.plugin[RabbitmqPlugin].foreach { p =>
+                    p.metadataRemovedFromResource(m.attachedTo, Utils.baseUrl(request))
+                  }
+                }
+                case ResourceRef.dataset => {
+                  current.plugin[ElasticsearchPlugin].foreach { p =>
+                    // Delete existing index entry and re-index
                     p.delete("data", "dataset", m.attachedTo.id.stringify)
                     datasets.index(m.attachedTo.id)
                   }
-                  case _ => {
-                    Logger.error("unknown attached resource type for metadata - not reindexing")
+                  current.plugin[RabbitmqPlugin].foreach { p =>
+                    p.metadataRemovedFromResource(m.attachedTo, Utils.baseUrl(request))
                   }
+                }
+                case _ => {
+                  Logger.error("Unknown attached resource type for metadata")
                 }
               }
 

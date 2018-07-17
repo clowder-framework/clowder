@@ -48,7 +48,7 @@ class SpaceMongoDBSpec extends PlaySpec with OneServerPerSuite {
     "delete existing space" in {
       val injector = Guice.createInjector(new services.ConfigurationModule)
       val spaces: SpaceService =  injector.getInstance(classOf[SpaceService])
-      val deletedSpace = spaces.delete(UUID(id))
+      val deletedSpace = spaces.delete(UUID(id), "http://localhost:9000")
       info("delete space " + id)
     }
   }

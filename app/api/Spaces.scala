@@ -65,7 +65,7 @@ class Spaces @Inject()(spaces: SpaceService,
     spaces.get(spaceId) match {
       case Some(space) => {
         removeContentsFromSpace(spaceId,request.user)
-        spaces.delete(spaceId)
+        spaces.delete(spaceId, Utils.baseUrl(request))
         appConfig.incrementCount('spaces, -1)
         events.addObjectEvent(request.user , space.id, space.name, "delete_space")
         current.plugin[AdminsNotifierPlugin].foreach {

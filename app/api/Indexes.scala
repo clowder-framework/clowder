@@ -24,19 +24,17 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
-	      	    // TODO RK need to replace unknown with the server name
-	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
-	            val host = Utils.baseUrl(request)
-	            val id = p.id
-	            current.plugin[RabbitmqPlugin].foreach{
-                // TODO replace null with None
-	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
-	            val fileType = p.contentType
-	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
-	            Ok(toJson("success"))
-      	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
+                current.plugin[RabbitmqPlugin].foreach{
+                  _.submitSectionPreviewManually(p, new UUID(section_id), Utils.baseUrl(request))
+                }
+                val fileType = p.contentType
+                current.plugin[VersusPlugin].foreach{
+                  _.indexPreview(p.id,fileType)
+                }
+                Ok(toJson("success"))
+      	      case None =>
+                BadRequest(toJson("Missing parameter [preview_id]"))
             }
-      	   
       	  }.getOrElse {
       		BadRequest(toJson("Missing parameter [preview_id]"))
       	  }

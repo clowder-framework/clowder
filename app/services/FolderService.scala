@@ -19,7 +19,7 @@ trait FolderService {
   /**
    * Delete folder and any reference of it.
    */
-  def delete(folderId: UUID)
+  def delete(folderId: UUID, host: String)
 
   /**
    * Update a Folder

@@ -13,9 +13,9 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-
-import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, MetadataService, ElasticsearchPlugin, CurationService}
-import api.{UserRequest, Permission}
+import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, FileService, FolderService, MetadataService, RabbitmqPlugin}
+import api.{Permission, UserRequest}
+import controllers.Utils
 
 /**
  * MongoDB Metadata Service Implementation
@@ -128,7 +128,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
   }
 
-  def removeMetadataByAttachTo(resourceRef: ResourceRef): Long = {
+  def removeMetadataByAttachTo(resourceRef: ResourceRef, host: String): Long = {
     val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
     val num_removed = result.getField("n").toString.toLong
@@ -143,17 +143,14 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     // send extractor message after attached to resource
     current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.metadata.removed"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
-        "resourceType"->resourceRef.resourceType.name,
-        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
+      p.metadataRemovedFromResource(resourceRef, host)
     }
 
     return num_removed
   }
 
   /** Remove metadata by attached ID and extractor name **/
-  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String): Long = {
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String, host: String): Long = {
     val regex = ".*extractors/"+(extractorName.trim)
 
     val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
@@ -171,10 +168,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     // send extractor message after attached to resource
     current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.metadata.removed"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
-        "resourceType"->resourceRef.resourceType.name,
-        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
+      p.metadataRemovedFromResource(resourceRef, host)
     }
 
     return num_removed

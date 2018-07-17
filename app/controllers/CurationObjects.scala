@@ -171,8 +171,7 @@ class CurationObjects @Inject() (
 
                       //send RabbitMQ message
                       current.plugin[RabbitmqPlugin].foreach { p =>
-                        val dtkey = s"${p.exchange}.metadata.added"
-                        p.extract(ExtractorMessage(cf.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+                        p.metadataAddedToResource(ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request))
                       }
                     })
                   }
@@ -208,8 +207,7 @@ class CurationObjects @Inject() (
 
                     //send RabbitMQ message
                     current.plugin[RabbitmqPlugin].foreach { p =>
-                      val dtkey = s"${p.exchange}.metadata.added"
-                      p.extract(ExtractorMessage(newCuration.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+                      p.metadataAddedToResource(ResourceRef(ResourceRef.dataset, dataset.id), mdMap, Utils.baseUrl(request))
                     }
                   }
                 })
@@ -247,13 +245,12 @@ class CurationObjects @Inject() (
               newFiles = cf.id :: newFiles
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
                 .map(m => {
-                  metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
+                  val curationRef = ResourceRef(ResourceRef.curationFile, cf.id)
+                  metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
                   val mdMap = m.getExtractionSummary
-
                   //send RabbitMQ message
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    val dtkey = s"${p.exchange}.metadata.added"
-                    p.extract(ExtractorMessage(cf.id, UUID(""), requestHost, dtkey, mdMap, "", UUID(""), ""))
+                    p.metadataAddedToResource(curationRef, mdMap, requestHost)
                   }
                 })
             }
@@ -328,7 +325,7 @@ class CurationObjects @Inject() (
           Logger.debug("delete Publication Request / Curation object: " + c.id)
           val spaceId = c.space
 
-          curations.remove(id)
+          curations.remove(id, Utils.baseUrl(request))
           //spaces.get(spaceId) is checked in Space.stagingArea
           Redirect(routes.Spaces.stagingArea(spaceId))
         }

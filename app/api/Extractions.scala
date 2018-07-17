@@ -88,21 +88,15 @@ class Extractions @Inject()(
                     // Add new file & byte count to appConfig
                     appConfig.incrementCount('files, 1)
                     appConfig.incrementCount('bytes, f.length)
-
-                    var fileType = f.contentType
-                    val id = f.id
-                    fileType = f.contentType
-                    val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                    val host = Utils.baseUrl(request)
-                    val extra = Map("filename" -> f.filename)
-                    Logger.debug("---hostURL------" + host);
+                    // notify extractors
                     current.plugin[RabbitmqPlugin].foreach {
-                      _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, ""))
+                      // FIXME dataset not available?
+                      _.fileCreated(f, None, Utils.baseUrl(request))
                     }
                     /*--- Insert DTS Requests  ---*/
                     val clientIP = request.remoteAddress
                     val serverIP = request.host
-                    dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+                    dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, f.contentType, f.length, f.uploadDate)
                   }
                   case None => {
                     Logger.error("Could not retrieve file that was just saved.")
@@ -144,12 +138,9 @@ class Extractions @Inject()(
         if (UUID.isValid(id.stringify)) {
           files.get(id) match {
             case Some(file) => {
-              val fileType = file.contentType
-              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              val host = Utils.baseUrl(request)
-              val extra = Map("filename" -> file.filename)
               current.plugin[RabbitmqPlugin].foreach {
-                _.extract(ExtractorMessage(id, id, host, key, extra, file.length.toString, null, ""))
+                // FIXME dataset not available?
+                _.fileCreated(file, None, Utils.baseUrl(request))
               }
               Ok("Sent for Extraction. check the status")
             }
@@ -488,15 +479,9 @@ class Extractions @Inject()(
             val id = file.id
             val fileType = file.contentType
             val idAndFlags = ""
-            val host = Utils.baseUrl(request)
 
             // check that the file is ready for processing
             if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
-              // if extractor_id is not specified default to execution of all extractors matching mime type
-              val key = (request.body \ "extractor").asOpt[String] match {
-                case Some(extractorId) => "extractors." + extractorId
-                case None => "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-              }
               // parameters for execution
               val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
 
@@ -527,8 +512,14 @@ class Extractions @Inject()(
               datasets.findByFileId(file_id).map(ds => {
                 datasetId = ds.id
               })
-              p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString,
-                datasetId, newFlags))
+
+              // if extractor_id is not specified default to execution of all extractors matching mime type
+              val key = (request.body \ "extractor").asOpt[String] match {
+                case Some(extractorId) =>
+                  p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra, datasetId, newFlags)
+                case None =>
+                  p.fileCreated(file, None, Utils.baseUrl(request))
+              }
               Ok(Json.obj("status" -> "OK"))
             } else {
               Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
@@ -555,7 +546,7 @@ class Extractions @Inject()(
 
             // if extractor_id is not specified default to execution of all extractors matching mime type
             val key = (request.body \ "extractor").asOpt[String] match {
-              case Some(extractorId) => "extractors." + extractorId
+              case Some(extractorId) => extractorId
               case None => "unknown." + "dataset"
             }
             // parameters for execution
@@ -565,7 +556,7 @@ class Extractions @Inject()(
               "parameters" -> parameters.toString,
               "action" -> "manual-submission")
 
-            p.extract(ExtractorMessage(id, id, host, key, extra, ds.files.length.toString, ds_id, ""))
+            p.submitDatasetManually(host, key, extra, ds_id, "")
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>

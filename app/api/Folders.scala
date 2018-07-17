@@ -2,7 +2,8 @@ package api
 
 import java.util.Date
 
-import models.{ResourceRef, Folder}
+import controllers.Utils
+import models.{Folder, ResourceRef}
 import models.UUID
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.JsValue
@@ -137,7 +138,7 @@ class Folders @Inject() (
           case Some(folder) => {
 
             events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "deleted_folder")
-            folders.delete(folderId)
+            folders.delete(folderId, Utils.baseUrl(request))
             if(folder.parentType == "dataset") {
               datasets.removeFolder(parentDatasetId, folderId)
             } else if(folder.parentType == "folder") {

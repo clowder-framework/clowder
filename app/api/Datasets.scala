@@ -612,8 +612,7 @@ class  Datasets @Inject()(
 
         //send RabbitMQ message
         current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.metadata.added"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+          p.metadataAddedToResource(metadata.attachedTo, mdMap, Utils.baseUrl(request))
         }
 
 
@@ -672,8 +671,7 @@ class  Datasets @Inject()(
 
                     //send RabbitMQ message
                     current.plugin[RabbitmqPlugin].foreach { p =>
-                      val dtkey = s"${p.exchange}.metadata.added"
-                      p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                      p.metadataAddedToResource(metadata.attachedTo, mdMap, Utils.baseUrl(request))
                     }
 
                     datasets.index(id)
@@ -745,20 +743,17 @@ class  Datasets @Inject()(
     }
   }
 
-  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def removeMetadataJsonLD(id: UUID, extractorId: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
-        val num_removed = extFilter match {
-          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), f)
-          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+        val num_removed = extractorId match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), f, Utils.baseUrl(request))
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request))
         }
 
         // send extractor message after attached to resource
         current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.metadata.removed"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
-            "resourceType"->ResourceRef.dataset,
-            "resourceId"->id.toString), "", id, ""))
+          p.metadataRemovedFromResource(ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request))
         }
 
         Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
@@ -1770,7 +1765,7 @@ class  Datasets @Inject()(
           case _ => Logger.debug("userdfSPARQLStore not enabled")
         }
         events.addObjectEvent(request.user, dataset.id, dataset.name, "delete_dataset")
-        datasets.removeDataset(id)
+        datasets.removeDataset(id, Utils.baseUrl(request))
         appConfig.incrementCount('datasets, -1)
 
         current.plugin[ElasticsearchPlugin].foreach {
@@ -1828,7 +1823,7 @@ class  Datasets @Inject()(
         val trashDatasets = datasets.listUserTrash(request.user,0)
         for (ds <- trashDatasets){
           events.addObjectEvent(request.user, ds.id, ds.name, "delete_dataset")
-          datasets.removeDataset(ds.id)
+          datasets.removeDataset(ds.id, Utils.baseUrl(request))
           appConfig.incrementCount('datasets, -1)
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "dataset", ds.id.stringify)

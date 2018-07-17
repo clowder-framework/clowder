@@ -264,7 +264,7 @@ trait DatasetService {
 
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[Dataset]
 
-  def removeDataset(id: UUID)
+  def removeDataset(id: UUID, host: String)
 
   def findOneByFileId(file_id: UUID): Option[Dataset]
 

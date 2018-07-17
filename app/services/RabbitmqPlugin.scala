@@ -6,40 +6,76 @@ import java.text.SimpleDateFormat
 import java.net.URLEncoder
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
+
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
-import com.rabbitmq.client.{Channel, Connection, ConnectionFactory, DefaultConsumer, Envelope}
-import models.{Extraction, UUID}
+import com.rabbitmq.client._
+import models._
 import play.api.Play.current
-import play.api.libs.json.Json
+import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
-import play.api.libs.json.JsValue
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.util.Try
 
-
-// TODO make optional fields Option[UUID]
-
+/**
+  * Despite the `fileId` be named as such, it is currently serialized as `id` and used as the id of any resource in
+  * question. So this will be the preview id in the case of messages operating on a preview, it will be the dataset
+  * id in the case of dataset messages (yes there is also `datasetId`, pyclowder2 checks that the two are the same.
+  * FIXME make optional fields Option[UUID]
+  * FIXME rename fileId to id and add a resourceType field (dataset, file, preview, etc.)
+  * TODO drop `intermediateId` or figure out how it works and use accordingly
+  * @param fileId this should only be used as
+  * @param intermediateId
+  * @param host
+  * @param queue
+  * @param metadata
+  * @param fileSize
+  * @param datasetId
+  * @param flags
+  * @param secretKey
+  */
 case class ExtractorMessage(
   fileId: UUID,
   intermediateId: UUID,
   host: String,
-  key: String,
+  queue: String,
   metadata: Map[String, Any],
   fileSize: String,
-  datasetId: UUID,
-  flags: String,
-  secretKey: String = play.api.Play.configuration.getString("commKey").getOrElse(""))
+  datasetId: UUID = null,
+  flags: String = "",
+  secretKey: String,
+  // new fields
+  routing_key: String,
+  source: Entity,
+  activity: String,
+  target: Option[Entity]
+  )
+
+// TODO add other optional fields
+case class Entity(
+  id: ResourceRef,
+  mimeType: Option[String],
+  extra: JsObject
+)
+
+object Entity {
+  implicit val implicitEntityWrites = Json.format[Entity]
+}
+
+
 
 /**
  * Rabbitmq service.
- *
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
   val files: FileService = DI.injector.getInstance(classOf[FileService])
+  val spacesService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+  val extractorsService: ExtractorService = DI.injector.getInstance(classOf[ExtractorService])
 
   var extractQueue: Option[ActorRef] = None
   var channel: Option[Channel] = None
@@ -53,9 +89,12 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var rabbitmquri: String = ""
   var exchange: String = ""
   var mgmtPort: String = ""
+  var bindings = List.empty[Binding]
+
+  var apiKey = play.api.Play.configuration.getString("commKey").getOrElse("")
 
   override def onStart() {
-    Logger.debug("Starting Rabbitmq Plugin")
+    Logger.info("Starting RabbitMQ Plugin")
     val configuration = play.api.Play.configuration
     rabbitmquri = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
     exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
@@ -147,6 +186,15 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val replyQueueName = channel.get.queueDeclare().getQueue
       Logger.debug("Reply queue name: " + replyQueueName)
 
+      val queueBindingsFuture = getBindings
+      import scala.concurrent.ExecutionContext.Implicits.global
+      queueBindingsFuture map { x =>
+        implicit val peopleReader = Json.reads[Binding]
+        bindings = x.json.as[List[Binding]]
+        Logger.debug("Bindings successufully retrieved")
+      }
+      Await.result(queueBindingsFuture, 5000 millis)
+
       // status consumer
       Logger.info("Starting extraction status receiver")
 
@@ -163,9 +211,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         new MsgConsumer(channel.get, event_filter.get)
       )
 
-      // setup akka for sending messages
-      extractQueue = Some(Akka.system.actorOf(Props(new SendingActor(channel = channel.get,
-        exchange = exchange,
+      // Actor to submit to the rabbitmq broker
+      extractQueue = Some(Akka.system.actorOf(Props(new PublishDirectActor(channel = channel.get,
         replyQueueName = replyQueueName))))
 
       true
@@ -178,17 +225,349 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     }
   }
 
-  // ----------------------------------------------------------------------
-  // EXTRACTOR MESSAGE
-  // ----------------------------------------------------------------------
-  def extract(message: ExtractorMessage) = {
-    Logger.debug("Sending message " + message)
+  /**
+    * Submit and Extractor message to the extraction queue. This is the low level call used by public methods in this
+    * class.
+    * @param message a model representing the JSON message to send to the queue
+    */
+  private def extractWorkQueue(message: ExtractorMessage) = {
+    Logger.debug(s"Publishing $message directly to queue ${message.queue}")
     connect
     extractQueue match {
       case Some(x) => x ! message
       case None => Logger.warn("Could not send message over RabbitMQ")
     }
   }
+
+  /**
+    * Escape various characters in content type when creating a routing key
+    * @param contentType original content type in standar form, for example text/csv
+    * @return escaped routing key
+    */
+  private def contentTypeToRoutingKey(contentType: String) =
+    contentType.replace(".", "_").replace("/", ".")
+
+  /**
+    * Given a dataset, return the union of all extractors registered for each space the dataset is in.
+    * @param dataset
+    * @return list of active extractors
+    */
+  private def getRegisteredExtractors(dataset: Dataset): List[String] = {
+    dataset.spaces.flatMap(s => spacesService.getAllExtractors(s))
+  }
+
+  /**
+    * Find all extractors enabled for the spaces the dataset belongs to that match a specific mime type.
+    * @param dataset The dataset used to find which space to query for registered extractors.
+    * @param mimeType The mime type of the file we are interested in submitting.
+    * @return A list of extractors IDs.
+    */
+  private def getSpaceExtractorsByMimeType(dataset: Dataset, mimeType: String): List[String] = {
+    // FIXME support wildcard mimetypes, for example text/*
+    dataset.spaces.flatMap(s =>
+      spacesService.getAllExtractors(s).flatMap(exId =>
+        extractorsService.getExtractorInfo(exId)).filter(exInfo =>
+        containsOperation(exInfo.process.file, mimeType))).map(_.name)
+  }
+
+  /**
+    * Find all extractors enabled for the space the dataset belongs and the matched operation.
+    * @param dataset  The dataset used to find which space to query for registered extractors.
+    * @param operation The dataset operation requested.
+    * @return A list of extractors IDs.
+    */
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
+    // FIXME support wildcard mimetypes, for example text/*
+    dataset.spaces.flatMap(s =>
+      spacesService.getAllExtractors(s).flatMap(exId =>
+        extractorsService.getExtractorInfo(exId)).filter(exInfo =>
+        containsOperation(exInfo.process.dataset, operation))).map(_.name)
+  }
+
+  /**
+    * check if given operation matches any existing recorders cached in ExtractorInfo.
+    * Note, dataset operation is in the format of "x.y",
+    *       mimetype of files is in the format of "x/y"
+    *       this functino expects to parse on delimeters: . or /
+    *       this function will return false in case of wrong format
+    * @param operations mimetypes cached in ExtractorInfo, either operations of dataset or mimetypes of files
+    * @param operation dataset operation like "file.added" or mimetype of files, like "image/bmp"
+    * @return true if matches any existing recorder. otherwise, false.
+    */
+  private def containsOperation(operations:List[String], operation: String): Boolean = {
+    val optypes: Array[String] = operation.split("[/.]")
+    (optypes.length == 2) && {
+      val opmaintype: String = optypes(0)
+      val opsubtype: String = optypes(1)
+      operations.exists {
+        elem => {
+          val types: Array[String] = elem.split("[/.]")
+          (types.length == 2 && (types(0) == "*" || types(0) == opmaintype) && (types(1) == "*" || types(1) == opsubtype))
+        }
+      }
+    }
+}
+
+  /**
+    * Query list of global extractors for those enabled and filter by operation.
+    */
+  private def getGlobalExtractorsByOperation(operation: String): List[String] = {
+    extractorsService.getEnabledExtractors().flatMap(exId =>
+      extractorsService.getExtractorInfo(exId)).filter(exInfo =>
+      containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+  }
+
+  /**
+    * Query the list of bindings loaded at startup for which binding matches the routing key and extract the destination
+    * queues.
+    * @param routingKey The binding routing key.
+    * @return The list of queue matching the routing key.
+    */
+  private def getQueuesFromBindings(routingKey: String): List[String] = {
+    bindings.filter(x => x.routing_key == routingKey).map(_.destination)
+  }
+
+  /**
+    * Establish which queues a message should be sent to based on which extractors are enabled for a space/instance
+    * and the old topic exchanges. Eventually this the topic bindings will go away and the queues will only be selected
+    * based on extractors enabled for a space/instance.
+    * @param dataset the datasets used to figure out what space this resource belongs to
+    * @param routingKey old routing key, still used to identify activity
+    * @param contentType the content type of the file in the case of a file
+    * @return a set of unique rabbitmq queues
+    */
+  private def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
+    val fragments = routingKey.split('.')
+    val operation =
+      if (fragments(1) == "dataset")
+        fragments(2) + "." + fragments(3)
+      else if (fragments(1) == "file")
+        fragments(2) + "/" + fragments(3)
+      else ""
+    // get extractors enabled at the global level
+    val globalExtractors = getGlobalExtractorsByOperation(operation)
+    // get extractors in the spaces enabled for a specific mime type
+    val spaceExtractorsFile = getSpaceExtractorsByMimeType(dataset, contentType)
+    // get extractors in the spaces enabled for a action on a dataset
+    val spaceExtractorsDataset = getSpaceExtractorsByOperation(dataset, operation)
+    // get gueues based on RabbitMQ bindings (old method)
+    val queuesFromBindings = getQueuesFromBindings(operation)
+    // take the union of queues so that we publish to a specific queue only once
+    globalExtractors.toSet union spaceExtractorsFile.toSet union spaceExtractorsDataset.toSet union queuesFromBindings.toSet
+  }
+
+  /**
+    * Publish to the proper queues when a new file is uploaded to the system.
+    * @param file the file that was just uploaded
+    * @param dataset the dataset the file belongs to
+    * @param host the Clowder host URL for sharing extractors across instances
+    */
+  def fileCreated(file: File, dataset: Option[Dataset], host: String): Unit = {
+    val routingKey = exchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
+    val extraInfo = Map("filename" -> file.filename)
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    dataset match {
+      case Some(d) =>
+        getQueues(d, routingKey, file.contentType).foreach{ queue =>
+          val source = Entity(ResourceRef(ResourceRef.file, file.id), None, JsObject(Seq.empty))
+          val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString, null,
+            "", apiKey, routingKey, source, "created", None)
+          extractWorkQueue(msg)
+        }
+      case None =>
+        Logger.debug("RabbitMQPlugin: No dataset associated with this file")
+    }
+  }
+
+  /**
+    * Send message when a new file is uploaded to the system. This is the same as the method above but
+    * it supports TempFile instead of File. This is currently only used for multimedia queries.
+    * @param file the file that was just uploaded
+    * @param host the Clowder host URL for sharing extractors across instances
+    */
+  def fileCreated(file: TempFile, host: String): Unit = {
+    val routingKey = exchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
+    val extraInfo = Map("filename" -> file.filename)
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), JsObject(Seq.empty))
+    val msg = ExtractorMessage(file.id, file.id, host, routingKey, extraInfo, file.length.toString, null,
+      "", apiKey, routingKey, source, "created", None)
+    extractWorkQueue(msg)
+  }
+
+  /**
+    * Send message when a file is added to a dataset. Use both old method using topic queues and new method using work
+    * queues and extractors registration in Clowder.
+    * @param file the file that was added to the dataset
+    * @param dataset the dataset it was added to
+    * @param host the Clowder host URL for sharing extractors across instances
+    */
+  def fileAddedToDataset(file: File, dataset: Dataset, host: String): Unit = {
+    val routingKey = s"$exchange.dataset.file.added"
+    Logger.debug(s"Sending message $routingKey from $host")
+    val queues = getQueues(dataset, routingKey, file.contentType)
+    queues.foreach{ extractorId =>
+      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), JsObject(Seq.empty))
+      val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
+      val msg = ExtractorMessage(file.id, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+        "", apiKey, routingKey, source, "added", Some(target))
+      extractWorkQueue(msg)
+    }
+  }
+
+  /**
+    * Send message when file is removed from a dataset and deleted.
+    * @param file
+    * @param dataset
+    * @param host
+    */
+  def fileRemovedFromDataset(file: File, dataset: Dataset, host: String): Unit = {
+    val routingKey = s"$exchange.dataset.file.removed"
+    Logger.debug(s"Sending message $routingKey from $host")
+    val queues = getQueues(dataset, routingKey, file.contentType)
+    queues.foreach{ extractorId =>
+      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), JsObject(Seq.empty))
+      val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
+      val msg = ExtractorMessage(file.id, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+        "", apiKey, routingKey, source, "removed", Some(target))
+      extractWorkQueue(msg)
+    }
+  }
+
+  /**
+    * An existing file was manually submitted to the extraction bus by a user.
+    * @param originalId
+    * @param file
+    * @param host
+    * @param queue
+    * @param extraInfo
+    * @param datasetId
+    * @param newFlags
+    */
+  def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
+    datasetId: UUID, newFlags: String): Unit = {
+    Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
+    val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), JsObject(Seq.empty))
+    val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString, datasetId,
+      "", apiKey, "extractors." + queue, source, "submitted", None)
+    extractWorkQueue(msg)
+  }
+
+  /**
+    * An existing dataset was manually submitted to the extraction bus by a user.
+    * @param host
+    * @param queue
+    * @param extraInfo
+    * @param datasetId
+    * @param newFlags
+    */
+  def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String): Unit = {
+    Logger.debug(s"Sending message $queue from $host with extraInfo $extraInfo")
+    val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
+    val msg = ExtractorMessage(datasetId, datasetId, host, queue, extraInfo, 0.toString, datasetId,
+      "", apiKey, "extractors." + queue, source, "submitted", None)
+    extractWorkQueue(msg)
+  }
+
+
+  /**
+    * Metadata added to a resource (file or dataset).
+    * @param resourceRef
+    * @param extraInfo
+    * @param host
+    */
+  // FIXME check if extractor is enabled in space or global
+  def metadataAddedToResource(resourceRef: ResourceRef, extraInfo: Map[String, Any], host: String): Unit = {
+    val routingKey = s"$exchange.metadata.added"
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+
+    // FIXME pass in actual metadata id
+    val emptyUUID = UUID("00000000-0000-0000-0000-000000000000")
+
+    resourceRef.resourceType match {
+      case ResourceRef.dataset =>
+        // FIXME pass in metadata id
+        val source = Entity(ResourceRef(ResourceRef.metadata, emptyUUID), None, JsObject(Seq.empty))
+        val target = Entity(resourceRef, None, JsObject(Seq.empty))
+        val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, routingKey, extraInfo, 0.toString, resourceRef.id,
+          "", apiKey, routingKey, source, "added", Some(target))
+        extractWorkQueue(msg)
+      case _ =>
+        val source = Entity(ResourceRef(ResourceRef.metadata, emptyUUID), None, JsObject(Seq.empty))
+        val target = Entity(resourceRef, None, JsObject(Seq.empty))
+        val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, routingKey, extraInfo, 0.toString, null,
+          "", apiKey, routingKey, source, "added", Some(target))
+        extractWorkQueue(msg)
+    }
+  }
+
+  /**
+    * Metadata removed from a resource (file or dataset).
+    * @param resourceRef
+    * @param host
+    */
+  // FIXME check if extractor is enabled in space or global
+  def metadataRemovedFromResource(resourceRef: ResourceRef, host: String): Unit = {
+    val routingKey = s"$exchange.metadata.removed"
+    val extraInfo = Map[String, Any](
+      "resourceType"->resourceRef.resourceType.name,
+      "resourceId"->resourceRef.id.toString)
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+
+    // FIXME pass in actual metadata id
+    val emptyUUID = UUID("00000000-0000-0000-0000-000000000000")
+
+    resourceRef.resourceType match {
+      case ResourceRef.dataset =>
+        // FIXME pass in metadata id
+        val source = Entity(ResourceRef(ResourceRef.metadata, emptyUUID), None, JsObject(Seq.empty))
+        val target = Entity(resourceRef, None, JsObject(Seq.empty))
+        val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, routingKey, extraInfo, 0.toString, resourceRef.id,
+          "", apiKey, routingKey, source, "removed", Some(target))
+        extractWorkQueue(msg)
+      case _ =>
+        val source = Entity(ResourceRef(ResourceRef.metadata, emptyUUID), None, JsObject(Seq.empty))
+        val target = Entity(resourceRef, None, JsObject(Seq.empty))
+        val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, routingKey, extraInfo, 0.toString, null,
+          "", apiKey, routingKey, source, "removed", Some(target))
+        extractWorkQueue(msg)
+    }
+  }
+
+  /**
+    * File upladed for multimedia query. Not a common used feature.
+    * @param tempFileId
+    * @param contentType
+    * @param length
+    * @param host
+    */
+  def multimediaQuery(tempFileId: UUID, contentType: String, length: String, host: String): Unit = {
+    //key needs to contain 'query' when uploading a query
+    //since the thumbnail extractor during processing will need to upload to correct mongo collection.
+    val routingKey = exchange +".query." + contentType.replace("/", ".")
+    Logger.debug(s"Sending message $routingKey from $host")
+    val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
+    val msg = ExtractorMessage(tempFileId, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
+      "", apiKey, routingKey, source, "created", None)
+    extractWorkQueue(msg)
+  }
+
+  /**
+    * Preview creted for section.
+    * @param preview
+    * @param sectionId
+    * @param host
+    */
+  def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String): Unit = {
+    val routingKey = exchange + ".index."+ contentTypeToRoutingKey(preview.contentType)
+    val extraInfo = Map("section_id"->sectionId)
+    val source = Entity(ResourceRef(ResourceRef.preview, preview.id), None, JsObject(Seq.empty))
+    val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
+    val msg = ExtractorMessage(sectionId, sectionId, host, routingKey, extraInfo, 0.toString, null,
+      "", apiKey, routingKey, source, "added", Some(target))
+    extractWorkQueue(msg)
+  }
+
 
   // ----------------------------------------------------------------------
   // RABBITMQ MANAGEMENT ENDPOINTS
@@ -235,7 +614,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   /**
    * Get Channel list from rabbitmq broker
    */
-
   def getChannelsList: Future[Response] = {
     getRestEndPoint("/api/channels")
   }
@@ -243,7 +621,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   /**
    * Get queue details for a given queue
    */
-
   def getQueueDetails(qname: String): Future[Response] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname)
@@ -253,7 +630,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   /**
    * Get queue bindings for a given host and queue from rabbitmq broker
    */
-
   def getQueueBindings(qname: String): Future[Response] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname + "/bindings")
@@ -267,17 +643,18 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 }
 
-  /**
-   * Send message on specified channel and exchange, and tells receiver to reply
-   * on specified queue.
-   */
-class SendingActor(channel: Channel, exchange: String, replyQueueName: String) extends Actor {
+/**
+  * Send message on specified channel directly to a queue and tells receiver to reply
+  * on specified queue.
+  */
+class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor {
   val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
   val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
   val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
 
   def receive = {
-    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey) => {
+    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
+    source, activity, target) => {
       var theDatasetId = ""
       if (datasetId != null)
         theDatasetId = datasetId.stringify
@@ -300,9 +677,15 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
         "host" -> Json.toJson(actualHost),
         "datasetId" -> Json.toJson(theDatasetId),
         "flags" -> Json.toJson(flags),
-        "secretKey" -> Json.toJson(secretKey)
+        "secretKey" -> Json.toJson(secretKey),
+        "routing_key" -> Json.toJson(routingKey),
+        "source" -> Json.toJson(source),
+        "activity" -> Json.toJson(activity),
+        "target" -> target.map{Json.toJson(_)}.getOrElse(Json.toJson("""{}"""))
+
       )
       // add extra fields
+      // FIXME use Play JSON libraries / JSON Formatter / Readers / Writers
       metadata.foreach(kv =>
         kv._2 match {
           case x: JsValue => msgMap.put(kv._1, x)
@@ -316,13 +699,14 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
       val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?
       // setup properties
       val basicProperties = new BasicProperties().builder()
-          .contentType("application\\json")
-          .correlationId(corrId)
-          .replyTo(replyQueueName)
-          .deliveryMode(2)
-          .build()
+        .contentType("application\\json")
+        .correlationId(corrId)
+        .replyTo(replyQueueName)
+        .deliveryMode(2)
+        .build()
       try {
-        channel.basicPublish(exchange, key, true, basicProperties, msg.toString().getBytes())
+        Logger.debug(s"Sending $msg to $key")
+        channel.basicPublish("", key, true, basicProperties, msg.toString().getBytes())
       } catch {
         case e: Exception => {
           Logger.error("Error connecting to rabbitmq broker", e)
@@ -337,6 +721,8 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
     }
   }
 }
+
+
 
 /**
  * Listen for responses coming back on replyQueue
@@ -384,3 +770,6 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       models.ExtractionInfoSetUp.updateDTSRequests(file_id, extractor_id)
   }
 }
+
+case class Binding(source: String, vhost: String, destination: String, destination_type: String, routing_key: String,
+  arguments: JsObject, properties_key: String)

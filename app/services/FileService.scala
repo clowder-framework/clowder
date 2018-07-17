@@ -47,7 +47,7 @@ trait FileService {
   /**
    * Remove the file from mongo
    */
-  def removeFile(id: UUID)
+  def removeFile(id: UUID, host: String)
 
   /**
    * List all files in the system.

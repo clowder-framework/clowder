@@ -37,7 +37,7 @@ trait CurationService {
   /**
    * remove curation object, also delete it from staging area.
    */
-  def remove(id: UUID): Unit
+  def remove(id: UUID, host: String): Unit
 
   /**
    * insert a new curation object file.
@@ -135,12 +135,12 @@ trait CurationService {
   /**
    * Delete a curation file, and remove its metadata.
    */
-  def deleteCurationFile(curationFileId: UUID)
+  def deleteCurationFile(curationFileId: UUID, host: String)
 
   /**
    * Delete a curation folder and all its subfolders and files.
    */
-  def deleteCurationFolder(id: UUID): Unit
+  def deleteCurationFolder(id: UUID, host: String): Unit
 
   /**
    * Update curation object's name, description, space.

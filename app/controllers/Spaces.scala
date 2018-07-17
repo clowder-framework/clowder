@@ -94,7 +94,9 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
+          // get list of registered extractors
           val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo()
+          // get list of extractors registered with a specific space
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
           Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id, s.name))
         }

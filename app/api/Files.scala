@@ -258,7 +258,7 @@ class Files @Inject()(
         Logger.debug(s"Adding metadata to file $id")
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
         files.get(id) match {
-          case Some(x) => {
+          case Some(file) => {
             val json = request.body
             //parse request for agent/creator info
             //creator can be UserAgent or ExtractorAgent
@@ -286,8 +286,7 @@ class Files @Inject()(
 
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
-              val dtkey = s"${p.exchange}.metadata.added"
-              p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+              p.metadataAddedToResource(ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request))
             }
 
             files.index(id)
@@ -353,8 +352,7 @@ class Files @Inject()(
     
                   //send RabbitMQ message
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    val dtkey = s"${p.exchange}.metadata.added"
-                    p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+                    p.metadataAddedToResource(metadata.attachedTo, mdMap, Utils.baseUrl(request))
                   }
                   
                   files.index(id)
@@ -392,19 +390,16 @@ class Files @Inject()(
     }
   }
 
-  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def removeMetadataJsonLD(id: UUID, extractorId: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        val num_removed = extFilter match {
-          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
-          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        val num_removed = extractorId match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f, Utils.baseUrl(request))
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Utils.baseUrl(request))
         }
         // send extractor message after attached to resource
         current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.metadata.removed"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
-            "resourceType"->ResourceRef.file,
-            "resourceId"->id.toString), "", id, ""))
+          p.metadataRemovedFromResource(ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request))
         }
         Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
       }
@@ -530,9 +525,9 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        // TODO replace null with None
         current.plugin[RabbitmqPlugin].foreach {
-          _.extract(ExtractorMessage(id, id, host, key, extra, theFile.length.toString, null, flags))
+          // FIXME dataset not available?
+          _.fileCreated(theFile, None, Utils.baseUrl(request))
         }
 
         Ok(toJson(Map("id" -> id.stringify)))
@@ -1528,10 +1523,8 @@ class Files @Inject()(
           events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
           // notify rabbitmq
           current.plugin[RabbitmqPlugin].foreach { p =>
-            val clowderurl = Utils.baseUrl(request)
             datasets.findByFileId(file.id).foreach{ds =>
-              val dtkey = s"${p.exchange}.dataset.file.removed"
-              p.extract(ExtractorMessage(file.id, file.id, clowderurl, dtkey, Map.empty, file.length.toString, ds.id, ""))
+              p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request))
             }
           }
 
@@ -1541,7 +1534,7 @@ class Files @Inject()(
             _.removeFromIndexes(id)        
           }
           Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
+          files.removeFile(id, Utils.baseUrl(request))
           appConfig.incrementCount('files, -1)
           appConfig.incrementCount('bytes, -file.length)
 
