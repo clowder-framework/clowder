@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
   
 ### Changed 
+- If no local password and only 1 provider, redirect to the provider login page immediately.
+  [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)
+  
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.
