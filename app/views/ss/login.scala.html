@@ -32,18 +32,25 @@
         }
 
         @defining( Registry.providers.all.values.filter( _.id != UsernamePassword) ) { externalProviders =>
+            @if(externalProviders.size == 1 && !(play.Play.application().configuration().getBoolean("enableUsernamePassword") && Registry.providers.get(UsernamePassword).isDefined)){
+                <script type="text/javascript">
+                        $( document ).ready(function() {
+                            window.location = "@externalProviders.head.authenticationUrl";
+                        });
+                </script>
+            }
 
             @if( externalProviders.size > 0 ) {
-                <div class="clearfix">
-                    <p>@Messages("securesocial.login.instructions")</p>
-                    <p>
+                    <div class="clearfix">
+                        <p>@Messages("securesocial.login.instructions")</p>
+                        <p>
                         @for(p <- externalProviders) {
                             @provider(p.id)
                         }
-                    </p>
-                </div>
-            }
+                        </p>
+                    </div>
 
+            }
             @if(play.Play.application().configuration().getBoolean("enableUsernamePassword")) {
                 @Registry.providers.get(UsernamePassword).map { up =>
                     <div class="clearfix">
