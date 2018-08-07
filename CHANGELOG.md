@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 - Ability to enable disable extractors at the instance level (versus space level).
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
-  
+- Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on uploaded files to dataset.
+  [BD-2191] https://opensource.ncsa.illinois.edu/jira/browse/BD-2191
 ### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.
   [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)

@@ -351,8 +351,8 @@ POST           /api/files                                                       
 POST           /api/files/withFlags/:flags                                              @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/files/searchusermetadata                                            @api.Files.searchFilesUserMetadata
 POST           /api/files/searchmetadata                                                @api.Files.searchFilesGeneralMetadata
-POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
-POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
+POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String, extract: Boolean ?= true)
+POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "", extract: Boolean ?= true)
 PUT            /api/files/:id/updateDescription                                         @api.Files.updateDescription(id: UUID)
 POST           /api/files/uploadIntermediate/:idAndFlags                                @api.Files.uploadIntermediate(idAndFlags)
 POST           /api/files/sendJob/:fileId/:fileType                                     @api.Files.sendJob(fileId: UUID,fileType)

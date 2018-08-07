@@ -148,6 +148,18 @@ paths:
           type: string
           name: id
           in: path
+        - in: query
+          name: showPreviews
+          schema:
+            type: string
+        - in: query
+          name: originalZipFile
+          schema:
+            type: string
+        - in: query
+          name: extract
+          schema:
+            type: boolean
       tags:
         - files
         - datasets
@@ -156,7 +168,9 @@ paths:
         Uploads the file, then links it with the dataset. Returns file id as
         JSON object, or ids with filenames if multiple files are sent. ID can be
         used to work on the file using the API. Uploaded file can be an XML
-        metadata file to be added to the dataset.
+        metadata file to be added to the dataset. If the optional Boolean
+        parameter extract is set to false, it does not send the file for
+        extraction. By default, Boolean parameter extract is set to true.
 
   /files/{id}/unfollow:
     post:

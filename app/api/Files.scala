@@ -447,10 +447,10 @@ class Files @Inject()(
   /**
    * Upload a file to a specific dataset
    */
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious)
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors=extract)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
