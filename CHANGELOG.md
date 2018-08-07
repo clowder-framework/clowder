@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-881](https://opensource.ncsa.illinois.edu/jira/browse/CATS-881)
 - In private mode, users used to be able to see the list of spaces. Now they cannot.
   [CATS-887](https://opensource.ncsa.illinois.edu/jira/browse/CATS-887)
+- Parameters subdocument is escaped in rabbitmq message.
+  [CATS-906](https://opensource.ncsa.illinois.edu/jira/browse/CATS-906)
+
+
 
 ## 1.4.0 - 2018-05-04
 
