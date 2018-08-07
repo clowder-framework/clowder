@@ -491,7 +491,7 @@ class Extractions @Inject()(
               dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
 
               val extra = Map("filename" -> file.filename,
-                "parameters" -> parameters.toString,
+                "parameters" -> parameters,
                 "action" -> "manual-submission")
               val showPreviews = file.showPreviews
 
