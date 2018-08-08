@@ -98,7 +98,8 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo()
           // get list of extractors registered with a specific space
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id, s.name))
+          val globalSelections: List[String] = extractors.getEnabledExtractors()
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, globalSelections, id, s.name))
         }
         case None => InternalServerError(spaceTitle + " not found")
       }
