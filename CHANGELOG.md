@@ -37,6 +37,8 @@ RabbitMQ URIs
   [CATS-887](https://opensource.ncsa.illinois.edu/jira/browse/CATS-887)
 - Parameters subdocument is escaped in rabbitmq message.
   [CATS-906](https://opensource.ncsa.illinois.edu/jira/browse/CATS-906)
+- Removed erroneous occurrences of .{format} from swagger.yml.
+  [CATS-910](https://opensource.ncsa.illinois.edu/jira/browse/CATS-910)
 
 
 

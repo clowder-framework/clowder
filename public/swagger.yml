@@ -402,7 +402,7 @@ paths:
       summary: Follow file
       description: Add user to file followers and add file to user followed files.
 
-  /files/{id}/metadata.{format}ld:
+  /files/{id}/metadata.jsonld:
     post:
       responses:
         200:
@@ -411,10 +411,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - files
@@ -431,10 +427,6 @@ paths:
           type: string
           name: id
           in: path
-        - required: true
-          type: string
-          name: format
-          in: path
       tags:
         - files
       summary: 'Remove JSON-LD metadata, filtered by extractor if necessary'
@@ -447,10 +439,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - files
@@ -558,7 +546,7 @@ paths:
         Takes one argument, a UUID of the file. Request body takes key-value
         pair for the description
 
-  /files/{id}/technicalmetadat.{format}:
+  /files/{id}/technicalmetadatajson:
     get:
       responses:
         200:
@@ -567,10 +555,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - files
@@ -600,7 +584,7 @@ paths:
         on success. In the requested file type, replace / with __ (two
         underscores).
 
-  /files/{id}.{format}metadat.{format}:
+  /files/{id}/xmlmetadatajson:
     get:
       responses:
         200:
@@ -609,10 +593,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - files
@@ -720,7 +700,7 @@ paths:
       summary: Get the user-generated metadata of the selected file in an RDF file
       description: A file is the raw bytes plus metadata.
 
-  /files/{id}/usermetadat.{format}:
+  /files/{id}/usermetadatajson:
     get:
       responses:
         200:
@@ -729,10 +709,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - files
@@ -1321,7 +1297,7 @@ paths:
         Return the currently existing previews of the selected dataset (full
         description, including paths to preview files, previewer names etc).
 
-  /datasets/{id}/metadata.{format}ld:
+  /datasets/{id}/metadata.jsonld:
     post:
       responses:
         200:
@@ -1330,10 +1306,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - datasets
@@ -1350,10 +1322,6 @@ paths:
           type: string
           name: id
           in: path
-        - required: true
-          type: string
-          name: format
-          in: path
       tags:
         - datasets
       summary: 'Remove JSON-LD metadata, filtered by extractor if necessary'
@@ -1366,10 +1334,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - datasets
@@ -1408,7 +1372,7 @@ paths:
       summary: Follow dataset.
       description: Add user to dataset followers and add dataset to user followed datasets.
 
-  /datasets/{id}/technicalmetadat.{format}:
+  /datasets/{id}/technicalmetadatajson:
     get:
       responses:
         200:
@@ -1417,10 +1381,6 @@ paths:
         - required: true
           type: string
           name: id
-          in: path
-        - required: true
-          type: string
-          name: format
           in: path
       tags:
         - datasets
