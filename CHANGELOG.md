@@ -26,7 +26,7 @@ RabbitMQ URIs
 - Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on uploaded files to dataset.
   [BD-2191] https://opensource.ncsa.illinois.edu/jira/browse/BD-2191
 
-### Changed
+### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.
   [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)
 
@@ -35,6 +35,9 @@ RabbitMQ URIs
   [CATS-881](https://opensource.ncsa.illinois.edu/jira/browse/CATS-881)
 - In private mode, users used to be able to see the list of spaces. Now they cannot.
   [CATS-887](https://opensource.ncsa.illinois.edu/jira/browse/CATS-887)
+- In DatasetService, rename function of findByFileID to findByFileIdDirectlyContain. Add a new function 
+  findByFileIdAllContain to return back datasets directly and indirectly contain the given file. 
+  [CATS-897](https://opensource.ncsa.illinois.edu/jira/projects/CATS/issues/CATS-897)
 - Parameters subdocument is escaped in rabbitmq message.
   [CATS-906](https://opensource.ncsa.illinois.edu/jira/browse/CATS-906)
 - Removed erroneous occurrences of .{format} from swagger.yml.

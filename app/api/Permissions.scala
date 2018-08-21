@@ -208,7 +208,7 @@ object Permission extends Enumeration {
     // check specific resource
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => {
-        (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id)) match {
+        (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileIdDirectlyContain(id)) match {
           case dataset :: _ => dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)
           case Nil => false
         }
@@ -300,7 +300,7 @@ object Permission extends Enumeration {
       }
       case ResourceRef(ResourceRef.file, id) => {
         for (clowderUser <- getUserByIdentity(user)) {
-          datasets.findByFileId(id).foreach { dataset =>
+          datasets.findByFileIdDirectlyContain(id).foreach { dataset =>
             if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
               && READONLY.contains(permission)) return true
             dataset.spaces.map{

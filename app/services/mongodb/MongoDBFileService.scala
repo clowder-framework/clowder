@@ -688,7 +688,7 @@ class MongoDBFileService @Inject() (
     get(id) match{
       case Some(file) => {
         if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileId(file.id)
+          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
           for(fileDataset <- fileDatasets){
             datasets.removeFile(fileDataset.id, id)
             if(!file.xmlMetadata.isEmpty){

@@ -22,7 +22,7 @@ object SearchUtils {
     val id = f.id
 
     // Get child_of relationships for File
-    val child_of = datasets.findByFileId(id).map( ds => ds.id.toString ) ++
+    val child_of = datasets.findByFileIdDirectlyContain(id).map(ds => ds.id.toString ) ++
       folders.findByFileId(id).map( fld => fld.parentDatasetId.toString )
 
     // Get comments for file

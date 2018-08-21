@@ -102,7 +102,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
             }
           }
         }
-        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val datasetsContainingFile = datasets.findByFileIdDirectlyContain(file.id).sortBy(_.name)
         val allDatasets =  (folders.findByFileId(file.id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
         val allDecodedDatasets = ListBuffer.empty[models.Dataset]
         val decodedSpacesContaining= ListBuffer.empty[models.ProjectSpace]

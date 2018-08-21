@@ -509,7 +509,7 @@ class Extractions @Inject()(
               }
 
               var datasetId: UUID = null
-              datasets.findByFileId(file_id).map(ds => {
+              datasets.findByFileIdDirectlyContain(file_id).map(ds => {
                 datasetId = ds.id
               })
 

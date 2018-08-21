@@ -159,7 +159,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
         Logger.debug("File ID: " + fileId)
 
         // Get the list of datasets that the file is part of
-        val datasetList = datasets.findByFileId(fileId).toList
+        val datasetList = datasets.findByFileIdDirectlyContain(fileId).toList
         val spaceList = new ArrayBuffer[UUID]
 
         // Iterate through each dataset and get the IDs of spaces that it belongs to

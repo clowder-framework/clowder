@@ -28,6 +28,7 @@ import play.api.libs.json.{JsArray, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
 
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -751,12 +752,65 @@ class MongoDBDatasetService @Inject() (
     Dataset.dao.findOne(MongoDBObject("files" -> new ObjectId(file_id.stringify)))
   }
 
-  def findByFileId(file_id: UUID): List[Dataset] = {
+  /**
+    * get dataset which contains the folder
+    * @param folder a Folder object
+    * @return dataset containing this folder.
+    */
+  @tailrec final def folderPath(folder: Folder) : Option[Dataset]= {
+    folder.parentType match {
+      case "folder" => {
+        folders.get(folder.parentId) match {
+          case Some(fparent) => folderPath(fparent)
+          case _ => None
+        }
+      }
+      case "dataset" => {
+        get(folder.parentDatasetId) match {
+          case Some(dataset) => Some(dataset)
+          case _ => None
+        }
+      }
+      case _ => None
+    }
+  }
+
+  /**
+    * to get a list of datasets which directly contain the given file.
+    *
+    * Note: directly contain a file means that the given file is not under any folder of a dataset.
+    * Warning: this function will not return the dataset if the given file is under a folder of this dataset.
+    *
+    * @param file_id file id of a given file
+    * @return a list of dataset objects with option type
+    */
+  def findByFileIdDirectlyContain(file_id: UUID): List[Dataset] = {
     Dataset.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
   }
 
+  /**
+    * to get a list of datasets which contain the given file.
+    *
+    * Note: this function will return back a list of dataset, where a given file is either under a dataset directly or
+    * under a folder of a dataset.
+    *
+    * This function will first get a list of dataset which directly contain a given file.
+    * Then to get a dataset which indirectly contain a given file,
+    * it will traverse back on the hierarchical paths from the folder of that give file to a dataset.
+    *
+    * @param file_id  file id of a given file
+    * @return a list of dataset objects
+    */
+  def findByFileIdAllContain(file_id: UUID): List[Dataset] = {
+    //1. get list of datasets which directly contains this file.
+    val datasetList = findByFileIdDirectlyContain(file_id)
+    //2. get list of datasets which indirectly contains this file.
+    val foldersContainingFile = folders.findByFileId(file_id)
+    (datasetList ::: (for(folder <- foldersContainingFile) yield (folderPath(folder))).flatten).distinct
+  }
+
   def findNotContainingFile(file_id: UUID): List[Dataset] = {
-    val listContaining = findByFileId(file_id)
+    val listContaining = findByFileIdDirectlyContain(file_id)
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
 
@@ -1325,7 +1379,7 @@ class MongoDBDatasetService @Inject() (
           comments.removeComment(comment)
         }
         for (f <- dataset.files) {
-          val notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          val notTheDataset = for (currDataset <- findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
             files.removeFile(f, host)
         }

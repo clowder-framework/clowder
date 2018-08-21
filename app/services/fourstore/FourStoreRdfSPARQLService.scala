@@ -178,7 +178,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
           case Some(dataset)=> {
                 var filesString = "" 
 	            for(f <- dataset.files){
-				      var notTheDataset = for(currDataset<- datasets.findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+				      var notTheDataset = for(currDataset<- datasets.findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
 				      if(notTheDataset.size == 0){
                     files.get(f) match  {
                       case Some(file) => {

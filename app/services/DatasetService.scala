@@ -268,7 +268,9 @@ trait DatasetService {
 
   def findOneByFileId(file_id: UUID): Option[Dataset]
 
-  def findByFileId(file_id: UUID): List[Dataset]
+  def findByFileIdDirectlyContain(file_id: UUID): List[Dataset]
+
+  def findByFileIdAllContain(file_id: UUID): List[Dataset]
 
   def findNotContainingFile(file_id: UUID): List[Dataset]
 

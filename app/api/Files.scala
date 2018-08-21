@@ -216,7 +216,7 @@ class Files @Inject()(
             }
           }
           case None => {
-            val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+            val datasetsContainingFile = datasets.findByFileIdDirectlyContain(file.id).sortBy(_.name)
             val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
 
             datasetsContainingFile.foreach{ dataset =>
@@ -767,7 +767,7 @@ class Files @Inject()(
           thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
               files.updateThumbnail(file_id, thumbnail_id)
-              val datasetList = datasets.findByFileId(file.id)
+              val datasetList = datasets.findByFileIdDirectlyContain(file.id)
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
                   datasets.updateThumbnail(dataset.id, thumbnail_id)
@@ -1282,8 +1282,8 @@ class Files @Inject()(
     if (UUID.isValid(id.stringify)) {
       files.get(id) match {
         case Some(file) =>
-          // 1. get name of dataset directorly containing this file.
-          val datasetList = datasets.findByFileId(file.id)
+          // 1. get name of dataset directly containing this file.
+          val datasetList = datasets.findByFileIdDirectlyContain(file.id)
           val datasetNames = for(dataset <- datasetList) yield(dataset.name)
           //2. get paths from datasets to the parent folders containing this file.
           val foldersContainingFile = folders.findByFileId(file.id)
@@ -1523,7 +1523,7 @@ class Files @Inject()(
           events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
           // notify rabbitmq
           current.plugin[RabbitmqPlugin].foreach { p =>
-            datasets.findByFileId(file.id).foreach{ds =>
+            datasets.findByFileIdAllContain(file.id).foreach{ds =>
               p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request))
             }
           }
@@ -1726,7 +1726,7 @@ class Files @Inject()(
     var userList: List[User] = List.empty
     files.get(id) match {
       case Some(file) => {
-        datasets.findByFileId(id).foreach(dataset => {
+        datasets.findByFileIdDirectlyContain(id).foreach(dataset => {
           dataset.spaces.foreach { spaceId =>
             spaces.get(spaceId) match {
               case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList

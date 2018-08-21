@@ -639,7 +639,7 @@ class VersusPlugin(application: Application) extends Plugin {
     {
       //=== find list of datasets ids
       //this file can belong to 0 or 1 or more  datasets
-      var dataset_id_list = datasets.findByFileId(file.id).map {
+      var dataset_id_list = datasets.findByFileIdDirectlyContain(file.id).map {
         dataset => dataset.id.stringify
       }
 
@@ -682,7 +682,7 @@ class VersusPlugin(application: Application) extends Plugin {
                   files.get(file_id) match {
                     case Some(file) => {
                       fileName = file.filename
-                      for (dataset <- datasets.findByFileId(file_id)) {
+                      for (dataset <- datasets.findByFileIdDirectlyContain(file_id)) {
                         datasetIDs += dataset.id.stringify
                       }
                     }

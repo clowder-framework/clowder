@@ -136,7 +136,7 @@ class Files @Inject() (
         }
 
         //Decode the datasets so that their free text will display correctly in the view
-        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val datasetsContainingFile = datasets.findByFileIdDirectlyContain(file.id).sortBy(_.name)
         val allDatasets = (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
 
         val access = if (allDatasets == Nil) {

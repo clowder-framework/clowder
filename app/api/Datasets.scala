@@ -78,7 +78,7 @@ class  Datasets @Inject()(
     */
   private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
     var datasetAll = List[Dataset]()
-    val datasetList = datasets.findByFileId(file_id)
+    val datasetList = datasets.findByFileIdDirectlyContain(file_id)
     datasetList match {
       case Nil => {
         val folderList = folders.findByFileId(file_id)
