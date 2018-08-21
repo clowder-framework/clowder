@@ -25,10 +25,10 @@ RabbitMQ URIs
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
 - Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on uploaded files to dataset.
   [BD-2191] https://opensource.ncsa.illinois.edu/jira/browse/BD-2191
+
 ### Changed
 - If no local password and only 1 provider, redirect to the provider login page immediately.
   [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)
-
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.
@@ -40,7 +40,17 @@ RabbitMQ URIs
 - Removed erroneous occurrences of .{format} from swagger.yml.
   [CATS-910](https://opensource.ncsa.illinois.edu/jira/browse/CATS-910)
 
+## 1.4.2 - 2018-08-21
 
+### Fixed 
+- Extractors printing the private key in error extraction status messages.
+  [CATS-903](https://opensource.ncsa.illinois.edu/jira/browse/CATS-887)
+
+## 1.4.1 - 2018-08-21
+
+### Fixed
+- LDAP provider now properly sets identityId.userId.
+  [CATS-911](https://opensource.ncsa.illinois.edu/jira/browse/CATS-911)
 
 ## 1.4.0 - 2018-05-04
 

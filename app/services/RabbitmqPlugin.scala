@@ -764,7 +764,9 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       if (updatedStatus.contains("DONE")) {
         extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "DONE", startDate, None))
       } else {
-        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, status, startDate, None))
+        val commKey = "key=" + play.Play.application().configuration().getString("commKey")
+        val parsed_status = status.replace(commKey, "key=secretKey")
+        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, parsed_status, startDate, None))
       }
       Logger.debug("updatedStatus=" + updatedStatus + " status=" + status + " startDate=" + startDate)
       models.ExtractionInfoSetUp.updateDTSRequests(file_id, extractor_id)

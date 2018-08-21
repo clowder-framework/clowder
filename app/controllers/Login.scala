@@ -66,7 +66,7 @@ class Login extends SecuredController {
           val entry = searchResult.getSearchEntries().get(0)
 
           Ok(Json.obj("user" -> Json.obj(
-            "userId" -> LdapProvider.ldap,
+            "userId" -> uid,
             "firstName" -> entry.getAttributeValue("givenName"),
             "lastName" -> entry.getAttributeValue("sn"),
             "fullName" -> entry.getAttributeValue("cn"),
