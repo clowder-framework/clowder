@@ -425,6 +425,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     
     // Capture original filename from FRBR metadata supplied by SEAD Migrator 
     updateMongo("populate-original-filename", updateOriginalFilename)
+
+    // Removes the private key from extraction logs
+    updateMongo("remove-key-extraction-log", removeKeyFromExtractorLogs)
     
   }
 
@@ -1448,6 +1451,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           }
         }
       }
+    }
+  }
+
+  private def removeKeyFromExtractorLogs(): Unit = {
+    collection("extractions").foreach { extraction =>
+      val status = extraction.getAs[String]("status").getOrElse("")
+      val commKey = "key=" + play.Play.application().configuration().getString("commKey")
+      val parsed_status = status.replace(commKey, "key=secretKey")
+      extraction.put("status", parsed_status)
+      collection("extractions").save(extraction, WriteConcern.Safe)
     }
   }
 }
