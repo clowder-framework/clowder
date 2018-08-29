@@ -19,7 +19,7 @@ import util.GravatarUtils
 /**
  * Registration class for overwritting securesocial.controllers.Registration when necessary
  */
-class Registration @Inject()(spaces: SpaceService, users: UserService, gravatarUtils: GravatarUtils) extends SecuredController{
+class Registration @Inject()(spaces: SpaceService, users: UserService) extends SecuredController{
 
 
   def executeForToken(token: String, f: Token => Result): Result = {
@@ -54,7 +54,7 @@ class Registration @Inject()(spaces: SpaceService, users: UserService, gravatarU
                 info.lastName,
                 "%s %s".format(info.firstName, info.lastName),
                 Some(t.email),
-                gravatarUtils.avatarFor(t.email),
+                GravatarUtils.avatarFor(t.email),
                 AuthenticationMethod.UserPassword,
                 passwordInfo = Some(Registry.hashers.currentHasher.hash(info.password))
               )

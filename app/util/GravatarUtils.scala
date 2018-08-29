@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.libs.ws.WS
 import securesocial.core.providers.UsernamePasswordProvider
 
-class GravatarUtils {
+object GravatarUtils {
 
   // Start code from: securesocial.core.providers.utils.GravatarHelper. - Changing gravatar url to be https.
   def avatarFor(email: String): Option[String] = {

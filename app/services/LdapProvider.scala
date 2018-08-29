@@ -15,7 +15,7 @@ import com.unboundid.ldap.sdk._
 import com.unboundid.util.ssl.{JVMDefaultTrustManager, SSLUtil, TrustAllTrustManager}
 import util.GravatarUtils
 
-class LdapProvider(application: Application, gravatarUtils: GravatarUtils) extends IdentityProvider(application) {
+class LdapProvider(application: Application) extends IdentityProvider(application) {
   override def id: String = LdapProvider.ldap
 
   override def authMethod: AuthenticationMethod = LdapProvider.authMethod
@@ -49,7 +49,7 @@ class LdapProvider(application: Application, gravatarUtils: GravatarUtils) exten
                 case Some(x) => {
                   val json = Json.parse(x)
                   val email = (json \ "email").as[String]
-                  val avatar = gravatarUtils.avatarFor(email)
+                  val avatar = GravatarUtils.avatarFor(email)
                   val user = new SocialUser(IdentityId((json \ "userId").as[String], LdapProvider.ldap),
                     (json \ "firstName").as[String], (json \ "lastName").as[String], (json \ "fullName").as[String],
                     Some(email), avatar, authMethod, None, None, None)
