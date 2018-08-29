@@ -8,7 +8,6 @@ import securesocial.core.{SecureSocial, UserService}
 import services.LdapProvider
 import com.unboundid.ldap.sdk._
 import com.unboundid.util.ssl.{JVMDefaultTrustManager, SSLUtil, TrustAllTrustManager}
-import securesocial.core.providers.utils.{GravatarHelper, RoutesHelper}
 import models.UUID
 import securesocial.core._
 import play.api.libs.json._
