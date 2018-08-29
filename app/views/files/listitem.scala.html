@@ -32,9 +32,9 @@
                             <li>@file.uploadDate.format("MMM dd, yyyy")</li>
                             <li>@humanReadableByteCount(file.length)</li>
                             <li>
-                                <span class="glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                                 <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
-                                <span class="glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
+                                <span class="glyphicon glyphicon-eye-open" title="@file.stats.views views"></span> @file.stats.views
+                                <span class="glyphicon glyphicon-circle-arrow-down" title="@file.stats.downloads downloads"></span> @file.stats.downloads
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){

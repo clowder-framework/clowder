@@ -22,6 +22,7 @@ case class Collection(
   trash: Boolean = false,
   dateMovedToTrash : Option[Date] = None,
   childCollectionsCount: Integer = 0,
+  stats: Statistics = new Statistics(),
   @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty
 )
 

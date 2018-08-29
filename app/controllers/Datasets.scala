@@ -668,9 +668,15 @@ class Datasets @Inject() (
           )
         }
         val stagingAreaDefined = play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined
+
+        // Increment view count for dataset
+        val view_data = datasets.incrementViews(id, user)
+
+        // view_data is passed as tuple in dataset case only, because template is at limit of 22 parameters
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove), fileList,
-          filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, accessData, canAddDatasetToCollection, stagingAreaDefined))
+          filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, accessData, canAddDatasetToCollection, stagingAreaDefined,
+          view_data))
       }
       case None => {
         Logger.error("Error getting dataset" + id)

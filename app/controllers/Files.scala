@@ -216,6 +216,9 @@ class Files @Inject() (
           case Some(plugin) => {
             Logger.debug("Polyglot plugin found")
 
+            // Increment view count for file
+            val (view_count, view_date) = files.incrementViews(id, user)
+
             val fname = file.filename
             //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
             val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
@@ -226,14 +229,18 @@ class Files @Inject() (
             plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList)))
+                mds, isRDFExportEnabled, extractionsByFile, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
           }
           case None =>
             Logger.debug("Polyglot plugin not found")
+
+            // Increment view count for file
+            val (view_count, view_date) = files.incrementViews(id, user)
+
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, isRDFExportEnabled, extractionsByFile, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList)))
+              mds, isRDFExportEnabled, extractionsByFile, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
         }
       }
 
@@ -672,6 +679,8 @@ class Files @Inject() (
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
   def download(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
+
     if (UUID.isValid(id.stringify)) {
       //Check the license type before doing anything. 
       files.get(id) match {
@@ -679,6 +688,8 @@ class Files @Inject() (
           if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
             files.getBytes(id) match {
               case Some((inputStream, filename, contentType, contentLength)) => {
+                files.incrementDownloads(id, user)
+
                 request.headers.get(RANGE) match {
                   case Some(value) => {
                     val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
@@ -759,6 +770,8 @@ class Files @Inject() (
    *
    */
   def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
+    implicit val user = request.user
+
     current.plugin[PolyglotPlugin] match {
       case Some(plugin) => {
         if (UUID.isValid(id.stringify)) {
@@ -784,6 +797,7 @@ class Files @Inject() (
                   val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
 
                   if (polyglotConvertURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
+                    files.incrementDownloads(id, user)
 
                     //first call to Polyglot to get url of converted file
                     plugin.getConvertedFileURL(filename, inputStream, outputFormat)

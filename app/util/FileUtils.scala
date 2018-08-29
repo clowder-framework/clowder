@@ -359,7 +359,7 @@ object FileUtils {
     val file = File(UUID.generate(), "", f.filename, f.filename, user, new Date(),
       FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "",
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
-      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
+      licenseData = License.fromAppConfig(), stats = new Statistics(), status = FileStatus.CREATED.toString)
     files.save(file)
     Logger.debug(s"created file ${file.id}")
 
@@ -403,7 +403,7 @@ object FileUtils {
     val file = File(UUID.generate(), path, filename, filename, user, new Date(),
       FileUtils.getContentType(filename, None), -1, "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
-      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+      licenseData=License.fromAppConfig(), stats = new Statistics(), status = FileStatus.CREATED.toString)
     files.save(file)
 
     // extract metadata
@@ -463,7 +463,7 @@ object FileUtils {
       val file = File(UUID.generate(), path, filename, filename, user, new Date(),
         FileUtils.getContentType(filename, None), length, loader,
         isIntermediate=intermediateUpload, showPreviews=showPreviews,
-        licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+        licenseData=License.fromAppConfig(), stats = new Statistics(), status = FileStatus.CREATED.toString)
       files.save(file)
 
       // extract metadata

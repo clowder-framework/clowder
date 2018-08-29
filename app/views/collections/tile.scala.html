@@ -24,6 +24,8 @@
             <li class="list-group-item collection-panel-footer">
                 <span class="glyphicon glyphicon-briefcase" title="@collection.datasetCount datasets"></span> @collection.datasetCount
                 <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
+                <span class="glyphicon glyphicon-eye-open" title="@collection.stats.views views"></span> @collection.stats.views
+                <span class="glyphicon glyphicon-circle-arrow-down" title="@collection.stats.downloads downloads"></span> @collection.stats.downloads
                 @if(user.isDefined) {
                     @if(space.isDefined) {
 

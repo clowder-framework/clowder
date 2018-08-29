@@ -54,10 +54,10 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
+            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, stats = new Statistics())
             case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
 
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), stats = new Statistics())
             } else {
               BadRequest(toJson("Bad space = " + space))
             }
@@ -574,9 +574,9 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity, root_spaces = List.empty)
+            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity, root_spaces = List.empty, stats = new Statistics())
             case Some(space) => if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)), stats = new Statistics())
             } else {
               BadRequest(toJson("Bad space = " + space))
             }

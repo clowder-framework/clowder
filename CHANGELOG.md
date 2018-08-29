@@ -7,8 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-- Update Docker image's `custom.conf` to allow for override of Mongo and
-RabbitMQ URIs
+- Update Docker image's `custom.conf` to allow for override of Mongo and RabbitMQ URIs.
   [BD-2181](https://opensource.ncsa.illinois.edu/jira/browse/BD-2128)
 - Script to create the mongo command to add a service account.
 - Modified zenodo.json file to include more Orcid Ids.
@@ -23,8 +22,12 @@ RabbitMQ URIs
   [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 - Ability to enable disable extractors at the instance level (versus space level).
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
-- Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on uploaded files to dataset.
+- Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on 
+  uploaded files to dataset.
   [BD-2191] https://opensource.ncsa.illinois.edu/jira/browse/BD-2191
+- Tracking of view and download counts for Files, Datasets and Collections.
+  [CATS-374](https://opensource.ncsa.illinois.edu/jira/browse/CATS-374)
+  [CATS-375](https://opensource.ncsa.illinois.edu/jira/browse/CATS-375)
 
 ### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.

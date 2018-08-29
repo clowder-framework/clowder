@@ -5,7 +5,8 @@
 		mds: List[models.Metadata],
 		rdfExported: Boolean,
 		extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
-		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset])(implicit user: Option[models.User], request: RequestHeader)
+		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
+		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)
 
 @import helper._
 @import play.api.Play.current
@@ -716,6 +717,16 @@
 					<tr><td><b>Status:</b></td><td> @file.status</td></tr>
                 </table>
             </div>
+
+			<div class="row ds-section-sm file-info">
+				<h4>Statistics</h4>
+				<table class="table table-condensed">
+					<tr><td><b>Views:</b></td><td> @view_count</td></tr>
+					<tr><td><b>Last viewed:</b></td><td> @view_date.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+					<tr><td><b>Downloads:</b></td><td> @file.stats.downloads</td></tr>
+					<tr><td><b>Last downloaded:</b></td><td> @if(file.stats.last_downloaded.isDefined){@file.stats.last_downloaded.get.format("MMM dd, yyyy HH:mm:ss")}else{Never}</td></tr>
+				</table>
+			</div>
 
 			<!-- License elements-->
             <div class="row ds-section-sm">

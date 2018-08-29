@@ -30,11 +30,9 @@
             <li class="list-group-item dataset-panel-footer">
                 <span class="glyphicon glyphicon-folder-close" title="@dataset.folders.size folders"></span> @dataset.folders.size
                 <span class="glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
-                <span class="glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
                 <span class="glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
-                @if(!comments.isEmpty) {
-                    <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
-                }
+                <span class="glyphicon glyphicon-eye-open" title="@dataset.stats.views views"></span> @dataset.stats.views
+                <span class="glyphicon glyphicon-circle-arrow-down" title="@dataset.stats.downloads downloads"></span> @dataset.stats.downloads
                 @if(user.isDefined) {
                     @if(space.isDefined) {
 

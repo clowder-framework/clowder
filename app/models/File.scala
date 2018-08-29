@@ -31,6 +31,7 @@ case class File(
   @deprecated("use Metadata","since the use of jsonld") xmlMetadata: Map[String, Any] = Map.empty,
   licenseData: LicenseData = new LicenseData(),
   followers: List[UUID] = List.empty,
+  stats: Statistics = new Statistics(),
   status: String = FileStatus.UNKNOWN.toString) // can't use enums in salat
 
 // what is the status of the file

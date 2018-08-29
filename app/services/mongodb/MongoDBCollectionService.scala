@@ -1121,6 +1121,31 @@ class MongoDBCollectionService @Inject() (
     return false
   }
 
+  def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
+    Logger.debug("updating views for collection "+id.toString)
+    val viewdate = new Date
+
+    val updated = Collection.dao.collection.findAndModify(
+      query=MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      update=$inc("stats.views" -> 1) ++ $set("stats.last_viewed" -> viewdate),
+      upsert=true, fields=null, sort=null, remove=false, returnNew=true)
+
+    user match {
+      case Some(u) => {
+        Logger.debug("updating views for user "+u.toString)
+        CollectionStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "collection"),
+          $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
+      }
+      case None => {}
+    }
+
+    // Return updated count
+    return updated match {
+      case Some(u) => (u.get("stats").asInstanceOf[BasicDBObject].get("views").asInstanceOf[Int], viewdate)
+      case None => (0, viewdate)
+    }
+  }
+
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
     if (collection.child_collection_ids.contains(subCollectionId)){
       return true
@@ -1135,5 +1160,12 @@ object Collection extends ModelCompanion[Collection, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Collection, ObjectId](collection = x.collection("collections")) {}
+  }
+}
+
+object CollectionStats extends ModelCompanion[StatisticUser, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[StatisticUser, ObjectId](collection = x.collection("statistics.users")) {}
   }
 }

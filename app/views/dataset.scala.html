@@ -15,7 +15,8 @@
   showDownload: Boolean,
   accessData: models.DatasetAccess,
   canAddDatasetToCollection: Boolean,
-  stagingAreaDefined: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
+  stagingAreaDefined: Boolean,
+  view: (Int, java.util.Date))(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
 
 @import api.Permission
 @import play.api.Play.current
@@ -183,7 +184,7 @@
                     }
                     @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a id='download-url' href="#"
-                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
+                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id', -1, true).url, '_blank');"
                             class="btn btn-link" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
@@ -303,6 +304,15 @@
 
 		<!-- right column -->
 		<div class="col-md-4">
+            <div class="row ds-section-sm file-info">
+                <h4>Statistics</h4>
+                <table class="table table-condensed">
+                    <tr><td><b>Views:</b></td><td> @view._1</td></tr>
+                    <tr><td><b>Last viewed:</b></td><td> @view._2.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+                    <tr><td><b>Downloads:</b></td><td> @dataset.stats.downloads</td></tr>
+                    <tr><td><b>Last downloaded:</b></td><td> @if(dataset.stats.last_downloaded.isDefined){@dataset.stats.last_downloaded.get.format("MMM dd, yyyy HH:mm:ss")}else{Never}</td></tr>
+                </table>
+            </div>
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
             @datasets.collections(dataset, collectionsInside, canAddDatasetToCollection)
             @datasets.tags(dataset, fileList, filesTags)

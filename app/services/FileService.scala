@@ -1,6 +1,7 @@
 package services
 
 import java.io.InputStream
+import java.util.Date
 
 import models._
 import com.mongodb.casbah.Imports._
@@ -223,4 +224,7 @@ trait FileService {
 
   def updateAuthorFullName(userId: UUID, fullName: String)
 
+  def incrementViews(id: UUID, user: Option[User]): (Int, Date)
+
+  def incrementDownloads(id: UUID, user: Option[User])
 }

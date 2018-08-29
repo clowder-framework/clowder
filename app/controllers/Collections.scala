@@ -431,7 +431,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           var collection : Collection = null
           if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
-              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty)
+              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty, stats = new Statistics())
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
@@ -440,7 +440,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             if(parentCollectionIds.length == 0) {
               root_spaces = colSpaces
             }
-            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_spaces = root_spaces)
+            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_spaces = root_spaces, stats = new Statistics())
           }
 
           Logger.debug("Saving collection " + collection.name)
@@ -625,9 +625,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(u) => selections.get(u.email.get).map(ds => ds.id.toString)
             case None => List.empty
           }
+
+          // Increment view count for collection
+          val (view_count, view_date) = collections.incrementViews(id, user)
+
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
             Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
-            prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections))
+            prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections, view_count, view_date))
 
         }
         case None => {

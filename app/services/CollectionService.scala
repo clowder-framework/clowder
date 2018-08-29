@@ -246,4 +246,6 @@ trait CollectionService {
     */
   def index(id: Option[UUID])
 
+  def incrementViews(id: UUID, user: Option[User]): (Int, Date)
+
 }
