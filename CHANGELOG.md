@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+**Warning: This update will reset all permissions assigned to roles. 
+Please review the current roles match your use case.**
 
 ### Added
 - Update Docker image's `custom.conf` to allow for override of Mongo and RabbitMQ URIs.
@@ -94,6 +96,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When the metadata.jsonld has a contextURL instead of a JsObject or JsArray show a popup with the link of the
   context instead of creating a link.
   [CATS-842](https://opensource.ncsa.illinois.edu/jira/browse/CATS-842)
+- Changed permissions for the editor role
+  [CATS-921](https://opensource.ncsa.illinois.edu/jira/browse/CATS-921)
 
 ### Fixed
 - Space admins can now delete metadata definitions.

@@ -1,18 +1,19 @@
 package services.mongodb
 
 import java.net.URL
-import java.util.{ Calendar, Date }
+import java.util.{Calendar, Date}
 
-import com.mongodb.{ BasicDBObject, CommandFailureException }
+import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import MongoContext.context
+import api.Permission
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
 import org.bson.BSONException
 import play.api.libs.json._
-import play.api.{ Play, Plugin, Logger, Application }
+import play.api.{Application, Logger, Play, Plugin}
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
 import com.mongodb.casbah.MongoConnection
@@ -22,7 +23,8 @@ import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
-import services.{ ByteStorageService, MetadataService, DI, AppConfigurationService }
+import services.{AppConfigurationService, ByteStorageService, DI, MetadataService}
+
 import scala.collection.JavaConverters._
 
 /**
@@ -432,6 +434,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // Updates gravatar url's from http to https
     updateMongo("update-avatar-url-to-https", updateAvatarUrl)
 
+    // Updates permissions for the editor Role
+    updateMongo("update-editor-role", updateEditorRole)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1615,6 +1619,26 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       val parsed_status = status.replace(commKey, "key=secretKey")
       extraction.put("status", parsed_status)
       collection("extractions").save(extraction, WriteConcern.Safe)
+    }
+  }
+
+  private def updateEditorRole(): Unit = {
+    val query = MongoDBObject("name" -> "Editor")
+    collection("roles").find(query).foreach {role =>
+      role.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
+      collection("roles").save(role, WriteConcern.Safe)
+    }
+    collection("social.users").foreach{user =>
+      val userSpaceRoles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      userSpaceRoles.foreach{ userSpaceRole =>
+        val tempUserSpace = userSpaceRole.asInstanceOf[BasicDBObject]
+        val tempRole = tempUserSpace.get("role").asInstanceOf[BasicDBObject]
+        if(tempRole.get("name") == "Editor") {
+          tempRole.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
+        }
+      }
+      user.put("spaceandrole", userSpaceRoles)
+      collection("social.users").save(user, WriteConcern.Safe)
     }
   }
 
