@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 Please review the current roles match your use case.**
 
 ### Added
+- Ability to send events to extractors only if they are enabled in a space. Refactored some of the extraction code.
+  Added more explicit fields to the extraction message regarding event type, source and target. Tried to keep backward
+  compatibility.
+  [CATS-799](https://opensource.ncsa.illinois.edu/jira/browse/CATS-799)
 - Update Docker image's `custom.conf` to allow for override of Mongo and RabbitMQ URIs.
   [BD-2181](https://opensource.ncsa.illinois.edu/jira/browse/BD-2128)
 - Script to create the mongo command to add a service account.

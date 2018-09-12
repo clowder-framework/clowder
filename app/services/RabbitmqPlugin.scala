@@ -285,7 +285,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * check if given operation matches any existing recorders cached in ExtractorInfo.
+    * Check if given operation matches any existing records cached in ExtractorInfo.
     * Note, dataset operation is in the format of "x.y",
     *       mimetype of files is in the format of "x/y"
     *       this functino expects to parse on delimeters: . or /
@@ -294,7 +294,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param operation dataset operation like "file.added" or mimetype of files, like "image/bmp"
     * @return true if matches any existing recorder. otherwise, false.
     */
-  private def containsOperation(operations:List[String], operation: String): Boolean = {
+  private def containsOperation(operations: List[String], operation: String): Boolean = {
     val optypes: Array[String] = operation.split("[/.]")
     (optypes.length == 2) && {
       val opmaintype: String = optypes(0)
@@ -324,7 +324,11 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @return The list of queue matching the routing key.
     */
   private def getQueuesFromBindings(routingKey: String): List[String] = {
-    bindings.filter(x => x.routing_key == routingKey).map(_.destination)
+    // While the routing key includes the instance name the rabbitmq bindings has a *.
+    // TODO this code could be improved by having less options in how routes and keys are represented
+    val fragments = routingKey.split('.')
+    val bindingKey = "*."+fragments.slice(1,fragments.size).mkString(".")
+    bindings.filter(x => x.routing_key == bindingKey).map(_.destination)
   }
 
   /**
@@ -332,7 +336,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * and the old topic exchanges. Eventually this the topic bindings will go away and the queues will only be selected
     * based on extractors enabled for a space/instance.
     * @param dataset the datasets used to figure out what space this resource belongs to
-    * @param routingKey old routing key, still used to identify activity
+    * @param routingKey old routing key, still used to identify event type
     * @param contentType the content type of the file in the case of a file
     * @return a set of unique rabbitmq queues
     */
@@ -350,8 +354,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val spaceExtractorsFile = getSpaceExtractorsByMimeType(dataset, contentType)
     // get extractors in the spaces enabled for a action on a dataset
     val spaceExtractorsDataset = getSpaceExtractorsByOperation(dataset, operation)
-    // get gueues based on RabbitMQ bindings (old method)
-    val queuesFromBindings = getQueuesFromBindings(operation)
+    // get gueues based on RabbitMQ bindings (old method).
+    val queuesFromBindings = getQueuesFromBindings(routingKey)
     // take the union of queues so that we publish to a specific queue only once
     globalExtractors.toSet union spaceExtractorsFile.toSet union spaceExtractorsDataset.toSet union queuesFromBindings.toSet
   }
