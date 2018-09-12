@@ -102,11 +102,25 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
-  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser , ViewVocabulary, ViewVocabularyTerm)
+  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewSensor, ViewGeoStream,
+    ViewMetadata, ViewSection, ViewSpace, ViewTags, ViewUser , ViewVocabulary, ViewVocabularyTerm)
+
   if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
      READONLY += DownloadFiles
   }
+
+  val EDITOR_PERMISSIONS = READONLY ++ Set[Permission](CreateSpace, AddResourceToSpace, RemoveResourceFromSpace,
+    CreateDataset, EditDataset, AddResourceToDataset, RemoveResourceFromDataset, ExecuteOnDataset, PublicDataset,
+    CreateCollection, EditCollection, AddResourceToCollection, RemoveResourceFromCollection,
+    AddFile, EditFile, DownloadFiles, EditLicense, CreatePreview, MultimediaIndexDocument,
+    CreateSection, EditSection, DeleteSection,
+    AddMetadata, EditMetadata, DeleteMetadata,
+    AddTag, DeleteTag, AddComment, DeleteComment, EditComment,
+    CreateSensor, DeleteSensor, AddGeoStream, DeleteGeoStream, AddDatapoints,
+    CreateRelation, ViewRelation, DeleteRelation,
+    CreateVocabulary, DeleteVocabulary, EditVocabulary,
+    CreateVocabularyTerm, DeleteVocabularyTerm, EditVocabularyTerm
+  )
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
