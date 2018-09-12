@@ -141,6 +141,7 @@ trait ApiController extends Controller {
     request.headers.get("Authorization").foreach { authHeader =>
       val header = new String(Base64.decodeBase64(authHeader.slice(6, authHeader.length).getBytes))
       val credentials = header.split(":")
+
       UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
         val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
         if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
@@ -154,8 +155,21 @@ trait ApiController extends Controller {
       }
     }
 
-    // 3) key, this will need to become better, right now it will only accept the one key, when using the
-    //    key it will assume you are anonymous!
+    // 3) X-API-Key, header Authorization is user API key
+    request.headers.get("X-API-Key").foreach { authHeader =>
+      val userservice = DI.injector.getInstance(classOf[services.UserService])
+      userservice.findByKey(authHeader) match {
+        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
+          return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request)
+        }
+        case Some(u) => {
+          return UserRequest(Some(u), request)
+        }
+        case None => Logger.debug(s"key ${authHeader} not associated with a user.")
+      }
+    }
+
+    // 4) key, if key is commkey, it will assume you are anonymous, otherwise will match the user
     request.queryString.get("key").foreach { key =>
       val userservice = DI.injector.getInstance(classOf[services.UserService])
       val commkey = play.Play.application().configuration().getString("commKey")

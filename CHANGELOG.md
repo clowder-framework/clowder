@@ -28,7 +28,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Tracking of view and download counts for Files, Datasets and Collections.
   [CATS-374](https://opensource.ncsa.illinois.edu/jira/browse/CATS-374)
   [CATS-375](https://opensource.ncsa.illinois.edu/jira/browse/CATS-375)
-
+- Ability to provide API key in HTTP X-API-Key request header.
+  [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
+  
 ### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.
   [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)
