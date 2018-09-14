@@ -281,12 +281,12 @@ class Files @Inject()(
               json, version)
 
             //add metadata to mongo
-            metadataService.addMetadata(metadata)
+            val metadataId = metadataService.addMetadata(metadata)
             val mdMap = metadata.getExtractionSummary
 
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
-              p.metadataAddedToResource(ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request))
+              p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request))
             }
 
             files.index(id)
@@ -347,12 +347,12 @@ class Files @Inject()(
                     content, version)
     
                   //add metadata to mongo
-                  metadataService.addMetadata(metadata)
+                  val metadataId = metadataService.addMetadata(metadata)
                   val mdMap = metadata.getExtractionSummary
     
                   //send RabbitMQ message
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataAddedToResource(metadata.attachedTo, mdMap, Utils.baseUrl(request))
+                    p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
                   }
                   
                   files.index(id)
@@ -393,15 +393,17 @@ class Files @Inject()(
   def removeMetadataJsonLD(id: UUID, extractorId: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        val num_removed = extractorId match {
+        val metadataIds = extractorId match {
           case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f, Utils.baseUrl(request))
           case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Utils.baseUrl(request))
         }
         // send extractor message after attached to resource
         current.plugin[RabbitmqPlugin].foreach { p =>
-          p.metadataRemovedFromResource(ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request))
+          metadataIds.foreach{ mId =>
+            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request))
+          }
         }
-        Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
+        Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
       }
       case None => {
         Logger.error("Error getting file  " + id);

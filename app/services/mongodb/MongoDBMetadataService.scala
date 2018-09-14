@@ -128,50 +128,39 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
   }
 
-  def removeMetadataByAttachTo(resourceRef: ResourceRef, host: String): Long = {
-    val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
-      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
-    val num_removed = result.getField("n").toString.toLong
+  def removeMetadataByAttachTo(resourceRef: ResourceRef, host: String): List[UUID] = {
+    val metadataDocs = getMetadataByAttachTo(resourceRef)
+    metadataDocs.foreach(m => MetadataDAO.remove(m))
+    val numRemoved = metadataDocs.size
 
     //update metadata count for resource
     resourceRef.resourceType.name match {
-      case "dataset" => datasets.incrementMetadataCount(resourceRef.id, (-1*num_removed))
-      case "file" => files.incrementMetadataCount(resourceRef.id, (-1*num_removed))
-      case "curationObject" => curations.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case "dataset" => datasets.incrementMetadataCount(resourceRef.id, (-1 * numRemoved))
+      case "file" => files.incrementMetadataCount(resourceRef.id, (-1 * numRemoved))
+      case "curationObject" => curations.incrementMetadataCount(resourceRef.id, (-1 * numRemoved))
       case _ => Logger.error(s"Could not decrease metadata counter for ${resourceRef}")
     }
 
-    // send extractor message after attached to resource
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      p.metadataRemovedFromResource(resourceRef, host)
-    }
-
-    return num_removed
+    metadataDocs.map(m => m.id)
   }
 
   /** Remove metadata by attached ID and extractor name **/
-  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String, host: String): Long = {
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String, host: String): List[UUID] = {
     val regex = ".*extractors/"+(extractorName.trim)
+    val metadataDocs = MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify), "creator.extractorId" -> (regex.r))).toList
+    metadataDocs.foreach(m => MetadataDAO.remove(m))
+    val numRemoved = metadataDocs.size
 
-    val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
-      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
-      "creator.extractorId" -> (regex.r)), WriteConcern.Safe)
-    val num_removed = result.getField("n").toString.toLong
-    
     //update metadata count for resource
     resourceRef.resourceType.name match {
-      case "dataset" => datasets.incrementMetadataCount(resourceRef.id, (-1*num_removed))
-      case "file" => files.incrementMetadataCount(resourceRef.id, (-1*num_removed))
-      case "curationObject" => curations.incrementMetadataCount(resourceRef.id, (-1*num_removed))
+      case "dataset" => datasets.incrementMetadataCount(resourceRef.id, (-1 * numRemoved))
+      case "file" => files.incrementMetadataCount(resourceRef.id, (-1 * numRemoved))
+      case "curationObject" => curations.incrementMetadataCount(resourceRef.id, (-1 * numRemoved))
       case _ => Logger.error(s"Could not decrease metadata counter for ${resourceRef}")
     }
 
-    // send extractor message after attached to resource
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      p.metadataRemovedFromResource(resourceRef, host)
-    }
-
-    return num_removed
+    metadataDocs.map(m => m.id)
   }
 
   /** Get metadata context if available  **/

@@ -527,13 +527,13 @@ object FileUtils {
       val version = None
       val metadata = models.Metadata(UUID.generate(), attachedTo, contextID, contextURL, createdAt, agent, content, version)
 
-      //add metadata to mongo
-      metadataService.addMetadata(metadata)
+      // add metadata to mongo
+      val metadataId = metadataService.addMetadata(metadata)
       val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
       current.plugin[RabbitmqPlugin].foreach { p =>
-        p.metadataAddedToResource(metadata.attachedTo, mdMap, requestHost)
+        p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost)
       }
     }
   }
