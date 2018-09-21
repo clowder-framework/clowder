@@ -506,7 +506,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         }
       // metadata added to file
       case ResourceRef.file =>
-        val datasets = datasetService.findByFileId(resourceRef.id)
+        val datasets = datasetService.findByFileIdAllContain(resourceRef.id)
         val fileType = files.get(resourceRef.id) match { case Some(f)=> f.contentType case None => ""}
         datasets.foreach { dataset =>
           getQueues(dataset, routingKey, fileType).foreach { extractorId =>
@@ -552,7 +552,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         }
       // metadata added to file
       case ResourceRef.file =>
-        val datasets = datasetService.findByFileId(resourceRef.id)
+        val datasets = datasetService.findByFileIdAllContain(resourceRef.id)
         val fileType = files.get(resourceRef.id) match { case Some(f)=> f.contentType case None => ""}
         datasets.foreach { dataset =>
           getQueues(dataset, routingKey, fileType).foreach { extractorId =>
