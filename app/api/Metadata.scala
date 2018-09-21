@@ -337,8 +337,8 @@ class Metadata @Inject() (
                 val metadata = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creator,
                   content, version)
 
-                //add metadata to mongo
-                metadataService.addMetadata(metadata)
+                // add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
                 val mdMap = metadata.getExtractionSummary
 
                 attachedTo match {
@@ -348,14 +348,14 @@ class Metadata @Inject() (
                         datasets.index(resource.id)
                         //send RabbitMQ message
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          p.metadataAddedToResource(resource, mdMap, Utils.baseUrl(request))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
                         }
                       }
                       case ResourceRef.file => {
                         files.index(resource.id)
                         //send RabbitMQ message
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          p.metadataAddedToResource(resource, mdMap, Utils.baseUrl(request))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
                         }
                       }
                       case _ =>
@@ -396,7 +396,7 @@ class Metadata @Inject() (
                     files.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(m.attachedTo, Utils.baseUrl(request))
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request))
                   }
                 }
                 case ResourceRef.dataset => {
@@ -406,7 +406,7 @@ class Metadata @Inject() (
                     datasets.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(m.attachedTo, Utils.baseUrl(request))
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request))
                   }
                 }
                 case _ => {

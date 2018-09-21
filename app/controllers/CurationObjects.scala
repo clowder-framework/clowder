@@ -166,12 +166,12 @@ class CurationObjects @Inject() (
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => {
-                      metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
+                      val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
                       val mdMap = m.getExtractionSummary
 
                       //send RabbitMQ message
                       current.plugin[RabbitmqPlugin].foreach { p =>
-                        p.metadataAddedToResource(ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request))
+                        p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request))
                       }
                     })
                   }
@@ -202,12 +202,12 @@ class CurationObjects @Inject() (
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
                 .map(m => {
                   if ((m.content \ "Creator").isInstanceOf[JsUndefined]) {
-                    metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id)))
+                    val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id)))
                     val mdMap = m.getExtractionSummary
 
                     //send RabbitMQ message
                     current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(ResourceRef(ResourceRef.dataset, dataset.id), mdMap, Utils.baseUrl(request))
+                      p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.dataset, dataset.id), mdMap, Utils.baseUrl(request))
                     }
                   }
                 })
@@ -246,11 +246,11 @@ class CurationObjects @Inject() (
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
                 .map(m => {
                   val curationRef = ResourceRef(ResourceRef.curationFile, cf.id)
-                  metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
+                  val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
                   val mdMap = m.getExtractionSummary
                   //send RabbitMQ message
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataAddedToResource(curationRef, mdMap, requestHost)
+                    p.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost)
                   }
                 })
             }
