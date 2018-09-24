@@ -123,25 +123,30 @@
             });
 
             if (tag !== "" && isTagPresent != true) {
+                var tagList = tag.split(','); 
                 console.log("submitting tag " + tag);
                 var request = jsRoutes.api.Datasets.addTags('@dataset.id').ajax({
-                    data: JSON.stringify({"tags":[tag]}),
+                    data: JSON.stringify({"tags":tagList}),
                     type: 'POST',
                     contentType: "application/json"
                 });
 
                 request.done(function (response, textStatus, jqXHR){
                     console.log("Response " + response);
-                    var url = jsRoutes.controllers.Tags.search(tag).url;
-                    //The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
-                    //and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
-                    //
-                    //The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
-                    //so the ID could be returned there and added into the elements as needed.
-                    $newTag = $("<div id='"+htmlEncode(tag)+"' class='tag' data-id='newId"+tmpId+"'><a href='" + url + "'>" + tag + "</a><a href='#'> <span id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove tag-delete'></span></a></div>").appendTo('#tagList');
-                    tmpId++;
-                    $newTag.find(".glyphicon-remove").click(removeTag);
+                    for (var i = 0; i < tagList.length; i++) {
+                        var aTag=tagList[i].trim();
+                        var url = jsRoutes.controllers.Tags.search(aTag).url;
+                        //The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+                        //and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+                        //
+                        //The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
+                        //so the ID could be returned there and added into the elements as needed.
+                        $newTag = $("<div id='"+htmlEncode(aTag)+"' class='tag' data-id='newId"+tmpId+"'><a href='" + url + "'>" + aTag + "</a><a href='#'> <span id='" + htmlEncode(aTag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove tag-delete'></span></a></div>").appendTo('#tagList');
+                        tmpId++;
+                        $newTag.find(".glyphicon-remove").click(removeTag);
+                        }
                     $('#tagField').val("");
+                    
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){

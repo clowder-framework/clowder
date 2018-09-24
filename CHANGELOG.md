@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 Please review the current roles match your use case.**
 
 ### Added
+- Support for adding multiple comma-separated tags on dataset and file pages
 - Ability to send events to extractors only if they are enabled in a space. Refactored some of the extraction code.
   Added more explicit fields to the extraction message regarding event type, source and target. Tried to keep backward
   compatibility.

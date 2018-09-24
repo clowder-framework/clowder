@@ -1020,21 +1020,25 @@
 								});
 
 								if (tag !== "" && isTagPresent != true) {
+									var tagList = tag.split(',');
 									console.log("submitting tag " + tag);
 									var request = jsRoutes.api.Files.addTags('@file.id').ajax({
-										data: JSON.stringify({"tags":[tag]}),
+										data: JSON.stringify({"tags":tagList}),
 										type: 'POST',
 										contentType: "application/json",
 									});
 
 									request.done(function (response, textStatus, jqXHR){
 										console.log("Response " + response);
-										var url = jsRoutes.controllers.Tags.search(tag).url;
-										$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
-										$newTag.hover(removeIconMouseIn,removeIconMouseOut);
-										$newTag.find(".glyphicon-remove").click(removeTag);
+										for (var i = 0; i < tagList.length; i++) {
+											var aTag=tagList[i].trim();
+											var url = jsRoutes.controllers.Tags.search(aTag).url;
+											$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) +"' data-id='newId" + tmpId + "'>" + aTag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+											$newTag.hover(removeIconMouseIn,removeIconMouseOut);
+											$newTag.find(".glyphicon-remove").click(removeTag);
+											tmpId = tmpId+1;
+										}
 										$('#tagField').val("");
-										tmpId = tmpId+1;
 									});
 
 									request.fail(function (jqXHR, textStatus, errorThrown){
