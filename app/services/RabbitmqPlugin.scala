@@ -258,32 +258,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Find all extractors enabled for the spaces the dataset belongs to that match a specific mime type.
-    * @param dataset The dataset used to find which space to query for registered extractors.
-    * @param mimeType The mime type of the file we are interested in submitting.
-    * @return A list of extractors IDs.
-    */
-  private def getSpaceExtractorsByMimeType(dataset: Dataset, mimeType: String): List[String] = {
-    dataset.spaces.flatMap(s =>
-      spacesService.getAllExtractors(s).flatMap(exId =>
-        extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-        containsOperation(exInfo.process.file, mimeType))).map(_.name)
-  }
-
-  /**
-    * Find all extractors enabled for the space the dataset belongs and the matched operation.
-    * @param dataset  The dataset used to find which space to query for registered extractors.
-    * @param operation The dataset operation requested.
-    * @return A list of extractors IDs.
-    */
-  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
-    dataset.spaces.flatMap(s =>
-      spacesService.getAllExtractors(s).flatMap(exId =>
-        extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-        containsOperation(exInfo.process.dataset, operation))).map(_.name)
-  }
-
-  /**
     * Check if given operation matches any existing records cached in ExtractorInfo.
     * Note, dataset operation is in the format of "x.y",
     *       mimetype of files is in the format of "x/y"
@@ -320,8 +294,24 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
+    * Find all extractors enabled for the space the dataset belongs and the matched operation.
+    * @param dataset  The dataset used to find which space to query for registered extractors.
+    * @param operation The dataset operation requested.
+    * @return A list of extractors IDs.
+    */
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
+    dataset.spaces.flatMap(s =>
+      spacesService.getAllExtractors(s).flatMap(exId =>
+        extractorsService.getExtractorInfo(exId)).filter(exInfo =>
+      containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name))
+  }
+
+  /**
     * Query the list of bindings loaded at startup for which binding matches the routing key and extract the destination
-    * queues.
+    * queues. This is used for files bindings. For a mime type such as image/jpeg it will match the following routing keys:
+    * *.file.image.jpeg
+    * *.file.image.#
+    * *.file.#
     * @param routingKey The binding routing key.
     * @return The list of queue matching the routing key.
     */
@@ -329,8 +319,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     // While the routing key includes the instance name the rabbitmq bindings has a *.
     // TODO this code could be improved by having less options in how routes and keys are represented
     val fragments = routingKey.split('.')
-    val bindingKey = "*."+fragments.slice(1,fragments.size).mkString(".")
-    bindings.filter(x => x.routing_key == bindingKey).map(_.destination)
+    val key1 = "*."+fragments.slice(1,fragments.size).mkString(".")
+    val key2 = "*."+fragments.slice(1,fragments.size - 1).mkString(".") + ".#"
+    val key3 = "*."+fragments(1)+".#"
+    bindings.filter(x => Set(key1, key2, key3).contains(x.routing_key)).map(_.destination)
   }
 
   /**
@@ -355,14 +347,12 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       else ""
     // get extractors enabled at the global level
     val globalExtractors = getGlobalExtractorsByOperation(operation)
-    // get extractors in the spaces enabled for a specific mime type
-    val spaceExtractorsFile = getSpaceExtractorsByMimeType(dataset, contentType)
-    // get extractors in the spaces enabled for a action on a dataset
-    val spaceExtractorsDataset = getSpaceExtractorsByOperation(dataset, operation)
+    // get extractors enabled at the space level
+    val spaceExtractors = getSpaceExtractorsByOperation(dataset, operation)
     // get gueues based on RabbitMQ bindings (old method).
     val queuesFromBindings = getQueuesFromBindings(routingKey)
     // take the union of queues so that we publish to a specific queue only once
-    globalExtractors.toSet union spaceExtractorsFile.toSet union spaceExtractorsDataset.toSet union queuesFromBindings.toSet
+    globalExtractors.toSet union spaceExtractors.toSet union queuesFromBindings.toSet
   }
 
   /**
