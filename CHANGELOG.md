@@ -55,6 +55,9 @@ Please review the current roles match your use case.**
   [CATS-906](https://opensource.ncsa.illinois.edu/jira/browse/CATS-906)
 - Removed erroneous occurrences of .{format} from swagger.yml.
   [CATS-910](https://opensource.ncsa.illinois.edu/jira/browse/CATS-910)
+- Previews on the file page are now shown whether they are because of a `Preview` entry on the file 
+  added by an extractor or by `contentType` in `package.json` for each previewer.
+  [CATS-904](https://opensource.ncsa.illinois.edu/jira/browse/CATS-904)
 
 ## 1.4.2 - 2018-08-21
 

@@ -82,23 +82,21 @@ class Files @Inject() (
             val tabtitle: String = pv.title.getOrElse("")
             (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
           }
-          if (pvf.length > 0) {
-            Map(file -> pvf)
-          } else {
-            val ff = for (
-              p <- previewers
-              if (!p.collection)
-              if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
-            ) yield {
-              if (file.licenseData.isDownloadAllowed(user) || Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length, "")
-              }
-              else {
-                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length, "")
-              }
+          val ff = for (
+            p <- previewers
+            if (!p.collection)
+            if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
+          ) yield {
+            if (file.licenseData.isDownloadAllowed(user) || Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length, "")
             }
-            Map(file -> ff)
+            else {
+              (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length, "")
+            }
           }
+          val prevs = pvf ++ ff
+          Map(file -> prevs)
+
         }
 
         // add sections to file
