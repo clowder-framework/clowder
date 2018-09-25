@@ -312,6 +312,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * *.file.image.jpeg
     * *.file.image.#
     * *.file.#
+    *
+    * key4 is to match mime type for zip file's routing keys: e.g,
+    * *.file.multi.files-zipped.#
+    *
     * @param routingKey The binding routing key.
     * @return The list of queue matching the routing key.
     */
@@ -322,7 +326,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val key1 = "*."+fragments.slice(1,fragments.size).mkString(".")
     val key2 = "*."+fragments.slice(1,fragments.size - 1).mkString(".") + ".#"
     val key3 = "*."+fragments(1)+".#"
-    bindings.filter(x => Set(key1, key2, key3).contains(x.routing_key)).map(_.destination)
+    val key4 = "*."+fragments.slice(1,fragments.size).mkString(".") + ".#"
+    bindings.filter(x => Set(key1, key2, key3, key4).contains(x.routing_key)).map(_.destination)
   }
 
   /**
