@@ -115,6 +115,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
     collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("stats" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -129,6 +130,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("status" -> 1, "spaces" -> 1, "author._id" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1, "name" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("files" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("stats" -> 1))
 
     collection("dtsrequests").ensureIndex(MongoDBObject("fileid" -> 1))
 
@@ -145,6 +147,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("author._id" -> 1, "_id" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("status" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("stats" -> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
 

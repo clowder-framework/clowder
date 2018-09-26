@@ -1146,6 +1146,10 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
+  def getMetrics(user: Option[User]): Iterable[Collection] = {
+    Collection.find(MongoDBObject("stats" -> MongoDBObject("$exists" -> true), "trash" -> false)).toIterable
+  }
+
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
     if (collection.child_collection_ids.contains(subCollectionId)){
       return true

@@ -227,4 +227,7 @@ trait FileService {
   def incrementViews(id: UUID, user: Option[User]): (Int, Date)
 
   def incrementDownloads(id: UUID, user: Option[User])
+
+  def getMetrics(user: Option[User]): Iterable[File]
+
 }
