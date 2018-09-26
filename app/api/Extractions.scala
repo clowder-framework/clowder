@@ -509,10 +509,12 @@ class Extractions @Inject()(
               }
 
               var datasetId: UUID = null
-              datasets.findByFileIdDirectlyContain(file_id).map(ds => {
-                datasetId = ds.id
-              })
-
+              // search datasets containning this file, either directly under dataset or indirectly.
+              val datasetslists:List[Dataset] = datasets.findByFileIdAllContain(file_id)
+              // Note, we assume only at most one dataset will contain a given file.
+              if (0 != datasetslists.length) {
+                datasetId = datasetslists.head.id
+              }
               // if extractor_id is not specified default to execution of all extractors matching mime type
               val key = (request.body \ "extractor").asOpt[String] match {
                 case Some(extractorId) =>

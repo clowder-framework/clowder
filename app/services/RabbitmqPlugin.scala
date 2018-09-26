@@ -369,13 +369,14 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   def fileCreated(file: File, dataset: Option[Dataset], host: String): Unit = {
     val routingKey = exchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
     val extraInfo = Map("filename" -> file.filename)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
     dataset match {
       case Some(d) =>
         getQueues(d, routingKey, file.contentType).foreach{ queue =>
-          val source = Entity(ResourceRef(ResourceRef.file, file.id), None, JsObject(Seq.empty))
-          val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString, null,
-            "", apiKey, routingKey, source, "created", None)
+          val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+          val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString,
+            d.id, "", apiKey, routingKey, source, "created", None)
           extractWorkQueue(msg)
         }
       case None =>
@@ -393,7 +394,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val routingKey = exchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
     val extraInfo = Map("filename" -> file.filename)
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
-    val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), JsObject(Seq.empty))
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
     val msg = ExtractorMessage(file.id, file.id, host, routingKey, extraInfo, file.length.toString, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
@@ -410,8 +412,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val routingKey = s"$exchange.dataset.file.added"
     Logger.debug(s"Sending message $routingKey from $host")
     val queues = getQueues(dataset, routingKey, file.contentType)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     queues.foreach{ extractorId =>
-      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), JsObject(Seq.empty))
+      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
       val msg = ExtractorMessage(file.id, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
@@ -429,8 +432,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val routingKey = s"$exchange.dataset.file.removed"
     Logger.debug(s"Sending message $routingKey from $host")
     val queues = getQueues(dataset, routingKey, file.contentType)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     queues.foreach{ extractorId =>
-      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), JsObject(Seq.empty))
+      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
       val msg = ExtractorMessage(file.id, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "removed", Some(target))
@@ -451,7 +455,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
     datasetId: UUID, newFlags: String): Unit = {
     Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
-    val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), JsObject(Seq.empty))
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
     val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
