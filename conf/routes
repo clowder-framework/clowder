@@ -698,6 +698,14 @@ POST           /api/relations                                                   
 DELETE         /api/relations/:id                                                       @api.Relations.delete(id: UUID)
 
 # ----------------------------------------------------------------------
+# REPORTING API
+# ----------------------------------------------------------------------
+GET            /api/reports/metrics                                                     @api.Reporting.allMetrics()
+GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics()
+GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics()
+GET            /api/reports/metrics/collections                                         @api.Reporting.collectionMetrics()
+
+# ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS
 # ----------------------------------------------------------------------
 POST           /api/tiles                                                               @api.ZoomIt.uploadTile

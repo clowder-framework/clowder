@@ -1088,6 +1088,10 @@ class MongoDBFileService @Inject() (
       case None => {}
     }
   }
+
+  def getMetrics(user: Option[User]): Iterable[File] = {
+    FileDAO.find(MongoDBObject("stats" -> MongoDBObject("$exists" -> true))).toIterable
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

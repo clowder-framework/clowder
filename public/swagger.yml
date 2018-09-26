@@ -2926,6 +2926,87 @@ paths:
       summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
 
+  ##############################################################################
+  # Reporting                                                                  #
+  ##############################################################################
+  /reports/metrics:
+    get:
+      responses:
+        200:
+          description: A CSV with usage metrics
+          schema:
+            type: file
+          headers:
+            Content-type:
+              type: file
+              description: text/csv
+        401:
+          description: Not authorized
+      tags:
+        - reporting
+      summary: Download usage metrics report for files, datasets and collections as CSV.
+      description: |
+        Download usage metrics report for files, datasets and collections as a CSV file.
+        Must be a server admin to access the report.
+  /reports/metrics/files:
+    get:
+      responses:
+        200:
+          description: A CSV with usage metrics
+          schema:
+            type: file
+          headers:
+            Content-type:
+              type: file
+              description: text/csv
+        401:
+          description: Not authorized
+      tags:
+        - reporting
+      summary: Download usage metrics report for files as CSV.
+      description: |
+        Download usage metrics report for files as a CSV file.
+        Must be a server admin to access the report.
+  /reports/metrics/datasets:
+    get:
+      responses:
+        200:
+          description: A CSV with usage metrics
+          schema:
+            type: file
+          headers:
+            Content-type:
+              type: file
+              description: text/csv
+        401:
+          description: Not authorized
+      tags:
+        - reporting
+      summary: Download usage metrics report for datasets as CSV.
+      description: |
+        Download usage metrics report for datasets as a CSV file.
+        Must be a server admin to access the report.
+  /reports/metrics/collections:
+    get:
+      responses:
+        200:
+          description: A CSV with usage metrics
+          schema:
+            type: file
+          headers:
+            Content-type:
+              type: file
+              description: text/csv
+        401:
+          description: Not authorized
+      tags:
+        - reporting
+      summary: Download usage metrics report for collections as CSV.
+      description: |
+        Download usage metrics report for collections as a CSV file.
+        Must be a server admin to access the report.
+
+
 ################################################################################
 #                                 Definitions                                  #
 ################################################################################

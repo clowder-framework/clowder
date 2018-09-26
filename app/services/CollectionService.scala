@@ -248,4 +248,6 @@ trait CollectionService {
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date)
 
+  def getMetrics(user: Option[User]): Iterable[Collection]
+
 }

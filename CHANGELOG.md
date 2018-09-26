@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
 ## [Unreleased]
 **Warning: This update will reset all permissions assigned to roles. 
 Please review the current roles match your use case.**
@@ -35,6 +36,8 @@ Please review the current roles match your use case.**
 - Tracking of view and download counts for Files, Datasets and Collections.
   [CATS-374](https://opensource.ncsa.illinois.edu/jira/browse/CATS-374)
   [CATS-375](https://opensource.ncsa.illinois.edu/jira/browse/CATS-375)
+- Ability to downloads CSV reports of usage metrics for Files, Datasets and Collections via new API.
+  [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
   
