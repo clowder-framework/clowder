@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.4.3 - 2018-09-26
+
+### Fixed 
+- File model not being deleted when it contains previews or sections.
+  [CATS-928](https://opensource.ncsa.illinois.edu/jira/browse/CATS-928)
+  
 ## 1.4.2 - 2018-08-21
 
 ### Fixed 
