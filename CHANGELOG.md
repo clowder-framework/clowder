@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
-## [Unreleased]
+## 1.5.0 - 2018-10-01
 **Warning: This update will reset all permissions assigned to roles. 
 Please review the current roles match your use case.**
 
