@@ -744,7 +744,8 @@ class MongoDBFileService @Inject() (
           ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
         }
 
-        FileDAO.remove(file)
+        import UUIDConversions._
+        FileDAO.removeById(file.id)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host)

@@ -3,8 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
-
-
+ 
 ## [Unreleased]
 **Warning: This update will reset all permissions assigned to roles. 
 Please review the current roles match your use case.**
@@ -63,6 +62,13 @@ Please review the current roles match your use case.**
   added by an extractor or by `contentType` in `package.json` for each previewer.
   [CATS-904](https://opensource.ncsa.illinois.edu/jira/browse/CATS-904)
 
+
+## 1.4.3 - 2018-09-26
+
+### Fixed 
+- File model not being deleted when it contains previews or sections.
+  [CATS-928](https://opensource.ncsa.illinois.edu/jira/browse/CATS-928)
+  
 ## 1.4.2 - 2018-08-21
 
 ### Fixed 
