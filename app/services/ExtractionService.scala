@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, Extraction,WebPageResource}
+import models.{ResourceRef, UUID, Extraction, WebPageResource}
 import java.util.Date
 
 
@@ -14,7 +14,7 @@ trait ExtractionService {
 
   def findAll(): List[Extraction]
 
-  def findByFileId(fileId: UUID): List[Extraction]
+  def findById(resource: ResourceRef): List[Extraction]
 
   def insert(extraction: Extraction)
   

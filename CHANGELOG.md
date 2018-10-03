@@ -40,6 +40,8 @@ Please review the current roles match your use case.**
   [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
+- Extraction history for dataset extractors is now displayed on dataset page.
+  [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
   
 ### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.

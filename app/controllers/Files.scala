@@ -192,7 +192,7 @@ class Files @Inject() (
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-        val extractionsByFile = extractions.findByFileId(id)
+        val extractionsByFile = extractions.findById(new ResourceRef('file, id))
 
         var folderHierarchy = new ListBuffer[Folder]()
         if (foldersContainingFile.length > 0) {
