@@ -31,7 +31,7 @@ Please review the current roles match your use case.**
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
 - Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on 
   uploaded files to dataset.
-  [BD-2191] https://opensource.ncsa.illinois.edu/jira/browse/BD-2191
+  [BD-2191](https://opensource.ncsa.illinois.edu/jira/browse/BD-2191)
 - Tracking of view and download counts for Files, Datasets and Collections.
   [CATS-374](https://opensource.ncsa.illinois.edu/jira/browse/CATS-374)
   [CATS-375](https://opensource.ncsa.illinois.edu/jira/browse/CATS-375)
