@@ -4,29 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
-## 1.5.0 - 2018-10-01
-**Warning: This update will reset all permissions assigned to roles. 
-Please review the current roles match your use case.**
+## 1.5.0 - 2018-10-15
+**_Warning:_ This update will reset all permissions assigned to roles. 
+Please review the defintion of roles in your instance before and after the upgrade to make sure that they match 
+your needs.**
 
 ### Added
-- Support for adding multiple comma-separated tags on dataset and file pages
+- Support for adding multiple comma-separated tags on dataset and file pages.
 - Ability to send events to extractors only if they are enabled in a space. Refactored some of the extraction code.
   Added more explicit fields to the extraction message regarding event type, source and target. Tried to keep backward
   compatibility.
   [CATS-799](https://opensource.ncsa.illinois.edu/jira/browse/CATS-799)
 - Update Docker image's `custom.conf` to allow for override of Mongo and RabbitMQ URIs.
   [BD-2181](https://opensource.ncsa.illinois.edu/jira/browse/BD-2128)
-- Script to create the mongo command to add a service account.
-- Modified zenodo.json file to include more Orcid Ids.
-  [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
-- Added a new view to display Extractor Details (ExtractorInfo).
+- Script to add a service account directly into Mongo `scripts/create-account.sh`.
+- Added a new view to display Extractor Details.
   [CATS-892](https://opensource.ncsa.illinois.edu/jira/browse/CATS-892)
 - New API endpoints for proxying GET, POST, PUT, and DELETE requests through Clowder.
+  There are still some issues with POST depending on the backend service (for example Geoserver).
   [CATS-793](https://opensource.ncsa.illinois.edu/jira/browse/CATS-793)
   [CATS-889](https://opensource.ncsa.illinois.edu/jira/browse/CATS-889)
   [CATS-895](https://opensource.ncsa.illinois.edu/jira/browse/CATS-895)
-- Displayed more ExtractorInfo in each Space's "Update Extractors" view.
-  [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 - Ability to enable disable extractors at the instance level (versus space level).
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
 - Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on 
@@ -35,7 +33,7 @@ Please review the current roles match your use case.**
 - Tracking of view and download counts for Files, Datasets and Collections.
   [CATS-374](https://opensource.ncsa.illinois.edu/jira/browse/CATS-374)
   [CATS-375](https://opensource.ncsa.illinois.edu/jira/browse/CATS-375)
-- Ability to downloads CSV reports of usage metrics for Files, Datasets and Collections via new API.
+- Ability to downloads CSV reports of usage metrics for Files, Datasets and Collections via new API endpoints.
   [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
@@ -45,6 +43,10 @@ Please review the current roles match your use case.**
   [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)
 - Changing gravatar picture to be https in the database
   [CATS-882](https://opensource.ncsa.illinois.edu/jira/browse/CATS-882)
+- Modified zenodo.json file to include more Orcid IDs.
+  [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
+- Display more extractor information in each Space's "Update Extractors" view.
+  [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.
@@ -54,8 +56,8 @@ Please review the current roles match your use case.**
 - In DatasetService, rename function of findByFileID to findByFileIdDirectlyContain. Add a new function 
   findByFileIdAllContain to return back datasets directly and indirectly contain the given file. 
   [CATS-897](https://opensource.ncsa.illinois.edu/jira/projects/CATS/issues/CATS-897)
-- Parameters subdocument is escaped in rabbitmq message.
-  [CATS-906](https://opensource.ncsa.illinois.edu/jira/browse/CATS-906)
+- Parameters subdocument is now properly escaped in rabbitmq message.
+  [CATS-905](https://opensource.ncsa.illinois.edu/jira/browse/CATS-905)
 - Removed erroneous occurrences of .{format} from swagger.yml.
   [CATS-910](https://opensource.ncsa.illinois.edu/jira/browse/CATS-910)
 - Previews on the file page are now shown whether they are because of a `Preview` entry on the file 
