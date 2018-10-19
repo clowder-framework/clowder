@@ -69,34 +69,43 @@ class Files @Inject() (
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
+        // get previews attached to the file in the database
         val previewsFromDB = previews.findByFileId(file.id)
-        val previewers = Previewers.findPreviewers
+        // get compatible previewers from disk
+        val previewers = Previewers.findFilePreviewers()
 
-        //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
+        // TODO Extract to standalone method since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
+          // for each preview in the database, check that is compatible and add it to the list
           val pvf = for (
-            p <- previewers; pv <- previewsFromDB
-            if (!p.collection)
-            if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
+              previewer <- previewers;
+              previewData <- previewsFromDB
+              if (previewer.preview)
+              if (!file.showPreviews.equals("None")) && (previewer.contentType.contains(previewData.contentType))
           ) yield {
-            val tabtitle: String = pv.title.getOrElse("")
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
+            val tabTitle = previewData.title.getOrElse("Preview")
+            (previewData.id.toString, previewer.id, previewer.path, previewer.main,
+              api.routes.Previews.download(previewData.id).toString, previewData.contentType, previewData.length,
+              tabTitle)
           }
+          // for each previewer on disk, check that it is compatible and add it to the list
           val ff = for (
-            p <- previewers
-            if (!p.collection)
-            if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
+            previewer <- previewers
+            if (previewer.file)
+            if (!file.showPreviews.equals("None")) && (previewer.contentType.contains(file.contentType))
           ) yield {
-            if (file.licenseData.isDownloadAllowed(user) || Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-              (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length, "")
-            }
-            else {
-              (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length, "")
+            val tabTitle = "Preview"
+            if (file.licenseData.isDownloadAllowed(user) ||
+              Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+              (file.id.toString, previewer.id, previewer.path, previewer.main, routes.Files.file(file.id) + "/blob",
+                file.contentType, file.length, tabTitle)
+            } else {
+              (file.id.toString, previewer.id, previewer.path, previewer.main, "null", file.contentType, file.length, tabTitle)
             }
           }
+          // take the union of both lists
           val prevs = pvf ++ ff
           Map(file -> prevs)
-
         }
 
         // add sections to file

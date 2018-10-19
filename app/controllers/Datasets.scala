@@ -523,7 +523,7 @@ class Datasets @Inject() (
   def dataset(id: UUID, currentSpace: Option[String], limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
     implicit val user = request.user
-    Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
+    Previewers.findDatasetPreviewers().foreach(p => Logger.debug("Previewer found " + p.id))
     datasets.get(id) match {
       case Some(dataset) => {
 

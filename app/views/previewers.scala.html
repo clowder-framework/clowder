@@ -1,4 +1,4 @@
-@(previewers: Array[models.Previewer])
+@(previewers: List[models.Previewer])
 
 @main("Previewers") {
 	<div class="page-header">
@@ -6,12 +6,20 @@
 	</div>
 	<div class="row">
 		<div class="col-md-12">
+			<p>List of available previewers and the resource types they work with.</p>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
 			<table class="table table-bordered table-hover">
 				<thead>
 					<tr>
-						<th>id</th>
-						<th>path</th>
-						<th>main</th>
+						<th>ID</th>
+						<th>Path</th>
+						<th>File</th>
+						<th>Preview</th>
+						<th>Dataset</th>
+						<th>Collection</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -19,7 +27,10 @@
 						<tr>
 							<td><a href="@(routes.Assets.at(previewer.path + "/package.json"))">@previewer.id</a></td>
 							<td>@previewer.path</td>
-							<td>@previewer.main</td>
+							<td align="center">@if(previewer.file) {X}</td>
+							<td align="center">@if(previewer.preview) {X}</td>
+							<td align="center">@if(previewer.dataset) {X}</td>
+							<td align="center">@if(previewer.collection) {X}</td>
 						</tr>
 					}
 				</tbody>

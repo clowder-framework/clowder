@@ -10,6 +10,9 @@ Please review the defintion of roles in your instance before and after the upgra
 your needs.**
 
 ### Added
+- Ability to specify whether a previewer fires on a preview object in the database (`preview: true`) or the 
+  raw file/metadata (`file:true`) in the previewer `package.json` file.
+  [CATS-934](https://opensource.ncsa.illinois.edu/jira/browse/CATS-934)
 - Support for adding multiple comma-separated tags on dataset and file pages.
 - Ability to send events to extractors only if they are enabled in a space. Refactored some of the extraction code.
   Added more explicit fields to the extraction message regarding event type, source and target. Tried to keep backward
@@ -47,6 +50,8 @@ your needs.**
   [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
 - Display more extractor information in each Space's "Update Extractors" view.
   [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
+- Clean up of the list of previewers page `/previewers/list` and added link to it from the admin menu.
+  [CATS-934](https://opensource.ncsa.illinois.edu/jira/browse/CATS-934)
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.

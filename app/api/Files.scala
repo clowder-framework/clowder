@@ -1415,7 +1415,7 @@ class Files @Inject()(
           case Some(file) => {
 
             val previewsFromDB = previews.findByFileId(file.id)
-            val previewers = Previewers.findPreviewers
+            val previewers = Previewers.findFilePreviewers()
             //Logger.debug("Number of previews " + previews.length);
             val files = List(file)
             //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers

@@ -1,4 +1,5 @@
 { "name" : "GeospatialViewer",
   "main" : "geospatial.js",
+  "file": true,
   "contentType" : ["application/zip","application/x-zip","application/x-7z-compressed", "multi/files-zipped", "image/tif", "image/tiff"]
   }
