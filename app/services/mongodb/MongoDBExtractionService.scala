@@ -1,7 +1,7 @@
 package services.mongodb
 
 import services.ExtractionService
-import models.{UUID, Extraction}
+import models.{UUID, Extraction, ResourceRef}
 import org.bson.types.ObjectId
 import play.api.Play.current
 import com.novus.salat.dao.ModelCompanion
@@ -31,8 +31,8 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.findAll().toList
   }
 
-  def findByFileId(fileId: UUID): List[Extraction]= {
-    Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
+  def findById(resource: ResourceRef): List[Extraction] = {
+    Extraction.find(MongoDBObject("file_id" -> new ObjectId(resource.id.stringify))).toList
   }
 
   def insert(extraction: Extraction) {
