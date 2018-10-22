@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
-## 1.5.0 - 2018-10-15
+## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
 Please review the defintion of roles in your instance before and after the upgrade to make sure that they match 
 your needs.**
@@ -40,6 +40,7 @@ your needs.**
   [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
+- Offline updates for mongodb added to `scripts/updates`.
   
 ### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.
