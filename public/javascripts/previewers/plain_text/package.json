@@ -1,4 +1,5 @@
-{ "name" : "Text",
-  "main" : "plain_text.js",
-  "contentType" : ["application/cnv","text/plain","text/csv"]
+{ "name": "Text",
+  "main": "plain_text.js",
+  "preview": true,
+  "contentType": ["application/cnv","text/plain","text/csv"]
   }

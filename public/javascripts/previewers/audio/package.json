@@ -1,4 +1,5 @@
-{ "name" : "Audio",
-  "main" : "audio.js",
-  "contentType" : ["audio/mp3", "audio/mpeg", "audio/mpeg3"]
+{ "name": "Audio",
+  "main": "audio.js",
+  "preview": true,
+  "contentType": ["audio/mp3", "audio/mpeg", "audio/mpeg3"]
 }

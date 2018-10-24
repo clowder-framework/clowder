@@ -1,4 +1,5 @@
-{ "name" : "HTML",
-  "main" : "html-iframe.js",
-  "contentType" : ["text/html"]
+{ "name": "HTML",
+  "main": "html-iframe.js",
+  "file": true,
+  "contentType": ["text/html"]
   }

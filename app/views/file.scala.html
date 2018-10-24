@@ -1,6 +1,6 @@
 
 @(file: models.File, id: String, comments: List[Comment],
-		previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
+		previews : Map[models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
 		mds: List[models.Metadata],
 		rdfExported: Boolean,

@@ -1661,13 +1661,13 @@ class  Datasets @Inject()(
   }
 
   // TODO make a case class to represent very long tuple below
-  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+  def jsonPreviewsFiles(filesList: List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
     val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
     toJson(list)
   }
 
   // TODO make a case class to represent very long tuple below
-  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+  def jsonPreviews(prvFile: models.File, prvs: List[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
     val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
     val listJson = toJson(list.toList)
     toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
@@ -1691,7 +1691,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         val datasetWithFiles = dataset.copy(files = dataset.files)
         val datasetFiles: List[models.File] = datasetWithFiles.files.flatMap(f => files.get(f))
-        val previewers = Previewers.findPreviewers
+        val previewers = Previewers.findDatasetPreviewers()
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewslist = for (f <- datasetFiles; if (f.showPreviews.equals("DatasetLevel"))) yield {
           val pvf = for (p <- previewers; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
@@ -1713,7 +1713,7 @@ class  Datasets @Inject()(
             (f -> ff)
           }
         }
-        Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
+        Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
       }
       case None => {
         Logger.error("Error getting dataset" + id); InternalServerError
