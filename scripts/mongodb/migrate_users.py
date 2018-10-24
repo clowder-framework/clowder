@@ -16,7 +16,7 @@ from bson.objectid import ObjectId
 
 
 # XXX: Set the desired script operation
-fixmongo = True
+fixmongo = False
 verbose = False
 showok = False
 promptempty = True
