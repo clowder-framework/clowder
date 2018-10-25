@@ -76,7 +76,6 @@ your needs.**
   added by an extractor or by `contentType` in `package.json` for each previewer.
   [CATS-904](https://opensource.ncsa.illinois.edu/jira/browse/CATS-904)
 
-
 ## 1.4.3 - 2018-09-26
 
 ### Fixed 
