@@ -1,4 +1,5 @@
 { "name" : "Thumbnail",
   "main" : "thumbnail-previewer.js",
-  "contentType" : ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"]
+  "contentType" : ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"],
+  "preview": true
   }

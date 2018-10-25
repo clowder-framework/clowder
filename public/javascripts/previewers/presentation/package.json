@@ -1,4 +1,5 @@
-{ "name" : "Video presentation",
-  "main" : "some-library.js",
-  "contentType" : ["video/presentation"]
+{ "name": "Video presentation",
+  "main": "some-library.js",
+  "preview": true,
+  "contentType": ["video/presentation"]
   }
