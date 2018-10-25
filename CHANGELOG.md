@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
+- Script to cleanup/migrate userpass account data to cilogon accounts.
 
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
