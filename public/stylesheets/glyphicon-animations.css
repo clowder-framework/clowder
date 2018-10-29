@@ -1,0 +1,47 @@
+/*!
+ *  Font Awesome 4.7.0 by @davegandy - http://fontawesome.io - @fontawesome
+ *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
+ *
+ *  Subset of font-awesome CSS modified to use with Bootstrap's glyphicon library
+ *
+ *  Example usage:
+ *    <span class="glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-5x"></span>
+ *    <span class="glyphicon glyphicon-hourglass glyphicon-animation-pulse glyphicon-5x"></span>
+ *
+ */
+
+/** Icon Size */
+.glyphicon-2x { font-size: 1.5em; }
+.glyphicon-3x { font-size: 2.0em; }
+.glyphicon-4x { font-size: 2.5em; }
+.glyphicon-5x { font-size: 3.0em; }
+
+/** Icon Animations */
+.glyphicon-animation-spin {
+    -webkit-animation: glyphicon-animation-spin 2s infinite linear;
+    animation: glyphicon-animation-spin 2s infinite linear;
+}
+.glyphicon-animation-pulse {
+    -webkit-animation: glyphicon-animation-spin 1s infinite steps(8);
+    animation: glyphicon-animation-spin 1s infinite steps(8);
+}
+@-webkit-keyframes glyphicon-animation-spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
+}
+@keyframes glyphicon-animation-spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
+}
