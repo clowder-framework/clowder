@@ -114,7 +114,7 @@ class Folders @Inject() (
                         }
 
                         events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "added_folder")
-                        Ok(toJson(Map("status" -> "success")))
+                        Ok(folderToJson(folder))
                       }
                       case None => InternalServerError(s"Parent Dataset $parentDatasetId not found")
                     }
@@ -128,6 +128,19 @@ class Folders @Inject() (
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
 
+  }
+
+  private def folderToJson(folder: Folder) = {
+    toJson(Map(
+      "id" -> folder.id.stringify,
+      "name" -> folder.name,
+      "parentDatasetID" -> folder.parentDatasetId.stringify,
+      "parentId" -> folder.parentId.stringify,
+      "parentType" -> folder.parentType,
+      "files" -> folder.files.mkString(","),
+      "folders" -> folder.folders.mkString(","),
+      "created" -> folder.created.toString
+    ))
   }
 
   def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.RemoveResourceFromDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
@@ -222,7 +235,6 @@ class Folders @Inject() (
     }
     Ok(toJson(response))
   }
-
 
   def moveFileBetweenFolders(datasetId: UUID, newFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId)))(parse.json) { implicit request =>
     implicit val user = request.user
