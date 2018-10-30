@@ -48,6 +48,9 @@ your needs.**
   [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
+- Extraction history for dataset extractors is now displayed on dataset page.
+  [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
+- API route for creating a new folder now returns folder information on success.
 - Offline updates for mongodb added to `scripts/updates`.
   
 ### Changed 
