@@ -1386,12 +1386,12 @@ class Files @Inject()(
   }
 
 
-  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+  def jsonPreviewsFiles(filesList: List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
     val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
     toJson(list)
   }
 
-  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+  def jsonPreviews(prvFile: models.File, prvs: List[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
     val list = for (prv <- prvs) yield jsonPreview(UUID(prv._1), prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
     val listJson = toJson(list.toList)
     toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
@@ -1415,32 +1415,45 @@ class Files @Inject()(
           case Some(file) => {
 
             val previewsFromDB = previews.findByFileId(file.id)
-            val previewers = Previewers.findPreviewers
+            val previewers = Previewers.findFilePreviewers()
             //Logger.debug("Number of previews " + previews.length);
             val files = List(file)
             //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
             val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
-              val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+              val pvf = for (
+                previewer <- previewers;
+                previewData <- previewsFromDB
+                if (previewer.preview)
+                if (previewer.contentType.contains(previewData.contentType))
+              ) yield {
+                (previewData.id.toString, previewer.id, previewer.path, previewer.main,
+                  api.routes.Previews.download(previewData.id).toString, previewData.contentType, previewData.length)
               }
               if (pvf.length > 0) {
                 (file -> pvf)
               } else {
-                val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                val ff = for (
+                  previewer <- previewers
+                  if (previewer.file)
+                  if (previewer.contentType.contains(file.contentType))
+                ) yield {
+                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
                     //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                    if (f.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    if (f.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user,
+                      Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                        (file.id.toString, previewer.id, previewer.path, previewer.main,
+                          controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     else {
-                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                        (f.id.toString, previewer.id, previewer.path, previewer.main, "null", f.contentType, f.length)
                     }
                 }
                 (file -> ff)
               }
             }
 
-            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
+            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String,
+              String, java.lang.String, String, Long)])]]))
           }
           case None => {
             Logger.error("Error getting file" + id);

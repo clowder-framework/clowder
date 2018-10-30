@@ -5,48 +5,65 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
 ## [Unreleased]
-**Warning: This update will reset all permissions assigned to roles. 
-Please review the current roles match your use case.**
 
 ### Added
-- Support for adding multiple comma-separated tags on dataset and file pages
+- Extraction history for dataset extractors is now displayed on dataset page.
+  [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
+- Loading indicator should now show on Datasets page while files/folders are loading.
+- Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
+
+## 1.5.0 - 2018-10-23
+**_Warning:_ This update will reset all permissions assigned to roles. 
+Please review the defintion of roles in your instance before and after the upgrade to make sure that they match 
+your needs.**
+
+### Added
+- Ability to specify whether a previewer fires on a preview object in the database (`preview: true`) or the 
+  raw file/metadata (`file:true`) in the previewer `package.json` file.
+  [CATS-934](https://opensource.ncsa.illinois.edu/jira/browse/CATS-934)
+- Support for adding multiple comma-separated tags on dataset and file pages.
 - Ability to send events to extractors only if they are enabled in a space. Refactored some of the extraction code.
   Added more explicit fields to the extraction message regarding event type, source and target. Tried to keep backward
   compatibility.
   [CATS-799](https://opensource.ncsa.illinois.edu/jira/browse/CATS-799)
 - Update Docker image's `custom.conf` to allow for override of Mongo and RabbitMQ URIs.
   [BD-2181](https://opensource.ncsa.illinois.edu/jira/browse/BD-2128)
-- Script to create the mongo command to add a service account.
-- Modified zenodo.json file to include more Orcid Ids.
-  [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
-- Added a new view to display Extractor Details (ExtractorInfo).
+- Script to add a service account directly into Mongo `scripts/create-account.sh`.
+- Added a new view to display Extractor Details.
   [CATS-892](https://opensource.ncsa.illinois.edu/jira/browse/CATS-892)
 - New API endpoints for proxying GET, POST, PUT, and DELETE requests through Clowder.
+  There are still some issues with POST depending on the backend service (for example Geoserver).
   [CATS-793](https://opensource.ncsa.illinois.edu/jira/browse/CATS-793)
   [CATS-889](https://opensource.ncsa.illinois.edu/jira/browse/CATS-889)
   [CATS-895](https://opensource.ncsa.illinois.edu/jira/browse/CATS-895)
-- Displayed more ExtractorInfo in each Space's "Update Extractors" view.
-  [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
 - Ability to enable disable extractors at the instance level (versus space level).
   [CATS-891](https://opensource.ncsa.illinois.edu/jira/browse/CATS-891)
 - Add flag to specify not to run any extraction on uploaded files to dataset. By default, we always run extraction on 
   uploaded files to dataset.
-  [BD-2191] https://opensource.ncsa.illinois.edu/jira/browse/BD-2191
+  [BD-2191](https://opensource.ncsa.illinois.edu/jira/browse/BD-2191)
 - Tracking of view and download counts for Files, Datasets and Collections.
   [CATS-374](https://opensource.ncsa.illinois.edu/jira/browse/CATS-374)
   [CATS-375](https://opensource.ncsa.illinois.edu/jira/browse/CATS-375)
-- Ability to downloads CSV reports of usage metrics for Files, Datasets and Collections via new API.
+- Ability to downloads CSV reports of usage metrics for Files, Datasets and Collections via new API endpoints.
   [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
+- API route for creating a new folder now returns folder information on success.
+- Offline updates for mongodb added to `scripts/updates`.
   
 ### Changed 
 - If no local password and only 1 provider, redirect to the provider login page immediately.
   [CATS-868](https://opensource.ncsa.illinois.edu/jira/browse/CATS-868)
 - Changing gravatar picture to be https in the database
   [CATS-882](https://opensource.ncsa.illinois.edu/jira/browse/CATS-882)
+- Modified zenodo.json file to include more Orcid IDs.
+  [CATS-884](https://opensource.ncsa.illinois.edu/jira/browse/CATS-884)
+- Display more extractor information in each Space's "Update Extractors" view.
+  [CATS-890](https://opensource.ncsa.illinois.edu/jira/browse/CATS-890)
+- Clean up of the list of previewers page `/previewers/list` and added link to it from the admin menu.
+  [CATS-934](https://opensource.ncsa.illinois.edu/jira/browse/CATS-934)
 
 ### Fixed
 - In a private mode, a superadmin can now see datasets in a space that he/she is not part of.
@@ -56,14 +73,13 @@ Please review the current roles match your use case.**
 - In DatasetService, rename function of findByFileID to findByFileIdDirectlyContain. Add a new function 
   findByFileIdAllContain to return back datasets directly and indirectly contain the given file. 
   [CATS-897](https://opensource.ncsa.illinois.edu/jira/projects/CATS/issues/CATS-897)
-- Parameters subdocument is escaped in rabbitmq message.
-  [CATS-906](https://opensource.ncsa.illinois.edu/jira/browse/CATS-906)
+- Parameters subdocument is now properly escaped in rabbitmq message.
+  [CATS-905](https://opensource.ncsa.illinois.edu/jira/browse/CATS-905)
 - Removed erroneous occurrences of .{format} from swagger.yml.
   [CATS-910](https://opensource.ncsa.illinois.edu/jira/browse/CATS-910)
 - Previews on the file page are now shown whether they are because of a `Preview` entry on the file 
   added by an extractor or by `contentType` in `package.json` for each previewer.
   [CATS-904](https://opensource.ncsa.illinois.edu/jira/browse/CATS-904)
-
 
 ## 1.4.3 - 2018-09-26
 

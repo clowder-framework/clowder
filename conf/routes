@@ -704,6 +704,8 @@ GET            /api/reports/metrics                                             
 GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics()
 GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics()
 GET            /api/reports/metrics/collections                                         @api.Reporting.collectionMetrics()
+GET            /api/reports/metrics/spaces                                              @api.Reporting.spaceMetrics()
+GET            /api/reports/metrics/users                                               @api.Reporting.userMetrics()
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS
