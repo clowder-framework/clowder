@@ -11,8 +11,10 @@
 
     var btn = document.createElement("button");
     btn.id = "zipLoadBtn";
-    btn.className = "btn btn-default";
-    btn.innerText = "Load Zip Contents";
+    btn.className = "btn btn-link";
+    btn.style["margin"] = "10px auto 10px auto";
+    btn.style["display"] = "block";
+    btn.innerText = "Click to Preview Zip Contents";
     $(Configuration.tab).append(btn);
 
     var initialTab = Configuration.tab;
@@ -25,7 +27,7 @@
 
     var loadZipContents = function() {
         console.log("Button clicked!");
-        $(initialTab).append("<link rel=\"stylesheet\"' href=\"@routes.Assets.at(\"stylesheets/glyphicon-animations.css\")\">")
+        $(initialTab).append("<link rel=\"stylesheet\"' href=\"@routes.Assets.at(\'stylesheets/glyphicon-animations.css\')\">")
         $(initialTab).append("<span class='glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-2x'></span> Zip file contents are loading...");
 
         var xhr = new XMLHttpRequest();

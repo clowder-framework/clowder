@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
 - Loading indicator should now show on Datasets page while files/folders are loading.
 - Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
+- Previewer for displaying internal contents of Zip Files.
+  [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
 
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
