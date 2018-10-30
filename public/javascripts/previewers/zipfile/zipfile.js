@@ -1,4 +1,6 @@
 (function($, Configuration) {
+    var initialTab = Configuration.tab;
+
     console.log("Zipfile previewer for " + Configuration.id);
 
     // load the zip library
@@ -12,13 +14,12 @@
     var btn = document.createElement("button");
     btn.id = "zipLoadBtn";
     btn.className = "btn btn-link";
-    btn.style["margin"] = "10px auto 10px auto";
+    btn.style["margin"] = "20vh auto 20vh auto";
     btn.style["display"] = "block";
-    btn.innerText = "Click to Preview Zip Contents";
-    $(Configuration.tab).append(btn);
+    btn.innerText = "Click to Preview Zip File Contents";
 
-    var initialTab = Configuration.tab;
     $(document).ready(function() {
+        $(initialTab).append(btn);
         $("#zipLoadBtn").click(function () {
             loadZipContents(initialTab);
             $("zipLoadBtn").hide();
