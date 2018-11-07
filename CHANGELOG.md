@@ -3,7 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
- 
+
+## 1.5.1 - 2018-11-07
+
+### Fixed
+- Previewer tabs on the file page were showing default title "Preview" instead of the one defined in the previewer manifest.
+  [CATS-939](https://opensource.ncsa.illinois.edu/jira/browse/CATS-939)
+
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
 Please review the defintion of roles in your instance before and after the upgrade to make sure that they match 
