@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Previewer tabs on the file page were showing default title "Preview" instead of the one defined in the previewer manifest.
   [CATS-939](https://opensource.ncsa.illinois.edu/jira/browse/CATS-939)
+- Add flag smtp.mimicuser=false that will force emails to always come from the user that is configured in clwoder.
+  [CATS-944](https://opensource.ncsa.illinois.edu/jira/browse/CATS-944)
 
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
