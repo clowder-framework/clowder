@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Previewer tabs on the file page were showing default title "Preview" instead of the one defined in the previewer manifest.
   [CATS-939](https://opensource.ncsa.illinois.edu/jira/browse/CATS-939)
+- Remove signup button if signup is disabled using `securesocial.registrationEnabled=false`.
+  [CATS-943](https://opensource.ncsa.illinois.edu/jira/browse/CATS-943)
 
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
