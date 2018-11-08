@@ -94,7 +94,7 @@ class Files @Inject() (
             if (previewer.file)
             if (!file.showPreviews.equals("None")) && (previewer.contentType.contains(file.contentType))
           ) yield {
-            val tabTitle = "Preview"
+            val tabTitle = previewer.id
             if (file.licenseData.isDownloadAllowed(user) ||
               Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
               (file.id.toString, previewer.id, previewer.path, previewer.main, routes.Files.file(file.id) + "/blob",

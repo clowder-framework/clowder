@@ -20,7 +20,7 @@ $(dirname $0)/docker.sh
 
 # find out the version
 if [ "${BRANCH}" = "master" ]; then
-    VERSION=${VERSION:-"1.5.0 1.5 1 latest"}
+    VERSION=${VERSION:-"1.5.1 1.5 1 latest"}
 elif [ "${BRANCH}" = "develop" ]; then
     VERSION="develop"
 else

@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
- 
+
 ## [Unreleased]
 
 ### Added
@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
 - Previewer for displaying internal contents of Zip Files.
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
+
+## 1.5.1 - 2018-11-07
+
+### Fixed
+- Previewer tabs on the file page were showing default title "Preview" instead of the one defined in the previewer manifest.
+  [CATS-939](https://opensource.ncsa.illinois.edu/jira/browse/CATS-939)
+- Remove signup button if signup is disabled using `securesocial.registrationEnabled=false`.
+  [CATS-943](https://opensource.ncsa.illinois.edu/jira/browse/CATS-943)
+- Add flag smtp.mimicuser=false that will force emails to always come from the user defined in the configuration file
+  instead of the Clowder user.
+  [CATS-944](https://opensource.ncsa.illinois.edu/jira/browse/CATS-944)
 
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
