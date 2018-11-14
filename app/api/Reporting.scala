@@ -162,7 +162,7 @@ class Reporting @Inject()(selections: SelectionService,
     var contents = ""
 
     // Parent datasets, collections & spaces are sublists within the columns
-    val parent_datasets = datasets.findByFileIdDirectlyContain(f.id)
+    val parent_datasets = datasets.findByFileIdAllContain(f.id)
     var ds_list = ""
     var coll_list = ""
     var space_list = ""
