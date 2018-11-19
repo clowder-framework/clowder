@@ -1,4 +1,28 @@
 #!/usr/bin/env python
+#
+# The purpose of this script is to assist with removing
+# "userpass" account from Clowder's MongoDB collections.
+#
+# In "Audit Users" mode, this script will loop over all
+# users in MongoDB. For each user, it will tally how many
+# resources of each type the user has created. If no items
+# have been created, the user is considered EMPTY or INACTIVE.
+# Such users will be automatically deleted if the appropriate 
+# prompt flags are set to False.
+#
+# ACTIVE users are those that have created resources in Clowder.
+# The script will prompt you to migrate such users by asking
+# for a new id to associate their resources. If a new id is
+# provided, the resources are updated in MongoDB.
+#
+# This script can also migrate the resources owned by an arbitrary
+# user to be instead owned by another arbitrary user. Simply pass
+# an old_id and new_id as the first and second parameters.
+#
+# Usage
+#    Audit Users: python ./migrate_users.py
+#    Migrate Single User: python ./migrate_users.py <old_id> <new_id>
+#
 
 import os
 import sys
@@ -69,6 +93,25 @@ id_map = {
 
 def main():
     global clowder, verbose, showok 
+
+    if len(sys.argv) > 1:
+        if verbose:
+            print('Script arguments given: ' + str(sys.argv))
+            print('Skipping check loop...')
+        if len(sys.argv) == 3:
+            old_id = sys.argv[1].strip()
+            new_id = sys.argv[2].strip()
+            print('Migrating artifacts owned by user id %s to new user id %s' % (old_id, new_id))
+            # Lookup user by id, migrate their artifacts to new_id
+            user = clowder['social.users'].find_one({ '_id': ObjectId(old_id) })
+            new_user = clowder['social.users'].find_one({ '_id': ObjectId(new_id) })
+            if query_yes_no('Migrate user %s (%s) -> %s (%s)' % (user['_id'], user['email'], new_user['_id'], new_user['email']), default='no'):
+                migrate_user(user, new_id)
+        else:
+            print('Invalid number of arguments specified: %s (expected 2)' % len(sys.argv))
+            print('\nUsage: python migrate_users.py <old_id> <new_id>')
+            exit(1)
+        exit(0)
 
     # Check for and report on any userpass accounts
     results = check(verbose=verbose, showok=showok)
