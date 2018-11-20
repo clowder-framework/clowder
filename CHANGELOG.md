@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Previewer for displaying internal contents of Zip Files.
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
 
+### Fixed
+- GeospatialViewer previewer added content to incorrect tab.
+  [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
+
 ## 1.5.1 - 2018-11-07
 
 ### Fixed
