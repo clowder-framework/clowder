@@ -1,9 +1,14 @@
 (function($, Configuration) {
-	console.log("geospatial data previewer for " + Configuration.id);
+	// Preserve these in our current scope
+    var initialTab = Configuration.tab;
+    var initialID = Configuration.id;
+    var initialPreviewer = Configuration.previewer;
+
+	console.log("geospatial data previewer for " + initialID);
 
 	var defaultOpacity = 0.8;
 	// retrieve the metadata
-	var metadataApiUrl = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.id).url;
+	var metadataApiUrl = jsRoutes.api.Files.getTechnicalMetadataJSON(initialID).url;
 	var request = $.ajax({
 		type : "GET",
 		url : metadataApiUrl,
@@ -38,22 +43,22 @@
                 if (geoMetadataIndex == -1)
                     return;
 
-				console.log("Updating tab " + Configuration.tab);
+				console.log("Updating tab " + initialTab);
 
 				// add css for ol3
-				var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.previewer + "/../../openlayers/ol.css'>");
-				$(Configuration.tab).append(cssLink);
+				var cssLink = $("<link rel='stylesheet' type='text/css' href='" + initialPreviewer + "/../../openlayers/ol.css'>");
+				$(initialTab).append(cssLink);
 
 				// add map div for ol3
-				$(Configuration.tab).append(
+				$(initialTab).append(
 						"<div id='map' class='fit-in-space' style='height:400px;width:100%'></div>");
 				// loading the ol3 javascript
 				$
 						.getScript(
-								Configuration.previewer + "/../../openlayers/ol.js",
+                            initialPreviewer + "/../../openlayers/ol.js",
 								function() {
 									// add layer opacity control
-									$(Configuration.tab).append(
+									$(initialTab).append(
 											"<div id='layer-opacity-control'><label>Layer Opacity: </label><input id='opacity' type='range' min='0' max='1' value='"+defaultOpacity+"' step='0.01' style='width:200px;' /></div>");
 									
 									// drawing the map

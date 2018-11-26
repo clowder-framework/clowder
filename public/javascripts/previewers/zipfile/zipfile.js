@@ -28,7 +28,7 @@
 
     var loadZipContents = function() {
         console.log("Button clicked!");
-        $(initialTab).append("<link rel=\"stylesheet\"' href=\"@routes.Assets.at(\'stylesheets/glyphicon-animations.css\')\">")
+        $(initialTab).append("<link rel='stylesheet' href='/assets/stylesheets/glyphicon-animations.css'>")
         $(initialTab).append("<span class='glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-2x'></span> Zip file contents are loading...");
 
         var xhr = new XMLHttpRequest();
