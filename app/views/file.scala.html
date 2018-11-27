@@ -1032,12 +1032,14 @@
 									request.done(function (response, textStatus, jqXHR){
 										console.log("Response " + response);
 										for (var i = 0; i < tagList.length; i++) {
-											var aTag=tagList[i].trim();
-											var url = jsRoutes.controllers.Tags.search(aTag).url;
-											$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) +"' data-id='newId" + tmpId + "'>" + aTag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
-											$newTag.hover(removeIconMouseIn,removeIconMouseOut);
-											$newTag.find(".glyphicon-remove").click(removeTag);
-											tmpId = tmpId+1;
+											var aTag= tagList[i].trim();
+											if (aTag != "") {
+												var url = jsRoutes.controllers.Tags.search(aTag).url;
+												$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "'>" + aTag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+												$newTag.hover(removeIconMouseIn, removeIconMouseOut);
+												$newTag.find(".glyphicon-remove").click(removeTag);
+												tmpId = tmpId + 1;
+											}
 										}
 										$('#tagField').val("");
 									});
