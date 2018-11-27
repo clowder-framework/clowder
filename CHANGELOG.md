@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Previewer for displaying internal contents of Zip Files.
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
 
+### Changed 
+- Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
+  and the File pages now have metadata and comments under tabs as well.
+  [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
+
 ### Fixed
 - GeospatialViewer previewer added content to incorrect tab.
   [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)

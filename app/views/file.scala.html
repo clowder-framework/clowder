@@ -4,7 +4,7 @@
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
 		mds: List[models.Metadata],
 		rdfExported: Boolean,
-		extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
+		extractionsStatus: Map[String, ExtractionGroup], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
 		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
 		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)
 
@@ -568,47 +568,48 @@
 			}
 
 
-			<div class="row">
-				<div class="col-md-12">
-					<h4>Metadata</h4>
-				</div>
-			</div>
-			@if(user.isDefined) {
-				<div class="row">
-					<div class="col-md-12">
-					@metadatald.addMetadata("file", file.id.toString, "metadata-content")
+
+			<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
+				<ul class="nav nav-tabs margin-bottom-20" >
+					<li role="presentation" class="active"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
+					<li role="presentation"><a href="#tab-extractions" role="tab" data-toggle="tab">Extractions </a></li>
+					<li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane fade in active" id="tab-metadata">
+						@if(user.isDefined) {
+							<div class="row">
+								<div class="col-md-12">
+								@metadatald.addMetadata("file", file.id.toString, "metadata-content")
+								</div>
+							</div>
+						}
+						<div class="row">
+							<div class="col-md-12" id="metadata-content">
+							@metadatald.view(mds, true)
+							</div>
+						</div>
 					</div>
-				</div>
-			}
-			<div class="row bottom-padding">
-				<div class="col-md-12" id="metadata-content">
-				@metadatald.view(mds, true)
-				</div>
-			</div>
-
-
-			<div class="row bottom-padding">
-				<div class="col-md-12">
-					<h4>Extractions</h4>
-					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
-						aria-controls="listExtractions">
-						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
-					</a>
-					<div class="collapse" id="extractions">
-					@extractions.extractionsList(extractionsStatus)
+					<div role="tabpanel" class="tab-pane fade" id="tab-extractions">
+						<div class="row">
+							<div class="col-md-12" id="extractions-content">
+							@extractions.extractionsList(extractionsStatus)
+							</div>
+						</div>
 					</div>
-				</div>
-			</div>
-
-			<div class="row bottom-padding">
-				<div class="col-md-12">
-					<h4>Comments</h4>
-					@if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.file, file.id))) {
-						@commentform(file.id.toString, "file", file.filename)
-					}
-					<ol class="list-unstyled" id="reply_@file.id.toString">
-					@comment(comments)
-					</ol>
+					<div role="tabpanel" class="tab-pane fade" id="tab-comments">
+							<!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
+						@if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.file, file.id))) {
+							@commentform(file.id.toString, "file", file.filename)
+						}
+						<div class="list-unstyled" id="reply_@file.id.toString">
+						@comment(comments)
+						</div>
+					</div>
+					<div class="row bottom-padding">
+						<div class="col-md-12">
+						</div>
+					</div>
 				</div>
 			</div>
 

@@ -131,6 +131,7 @@ object ExtractorInfo {
 case class Repository(repType: String, repUrl: String)
 
 
+
 /**
   * Events that should trigger this extractor to begin to process.
   *
@@ -145,4 +146,9 @@ case class ExtractorProcessTriggers(dataset: List[String] = List.empty,
                                     file: List[String] = List.empty,
                                     metadata: List[String] = List.empty)
 
-
+case class ExtractionGroup(
+                          firstMsgTime: String,
+                          latestMsgTime: String,
+                          latestMsg: String,
+                          allMsgs: List[Extraction]
+                          )

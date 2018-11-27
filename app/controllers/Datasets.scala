@@ -665,6 +665,7 @@ class Datasets @Inject() (
         val stagingAreaDefined = play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined
 
         val extractionsByDataset = extractions.findById(new ResourceRef('dataset, id))
+        val extractionGroups = extractions.groupByType(extractionsByDataset)
 
         // Increment view count for dataset
         val view_data = datasets.incrementViews(id, user)
@@ -673,7 +674,7 @@ class Datasets @Inject() (
         Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), fileList,
           filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, accessData, canAddDatasetToCollection,
-          stagingAreaDefined, view_data, extractionsByDataset))
+          stagingAreaDefined, view_data, extractionGroups))
       }
       case None => {
         Logger.error("Error getting dataset" + id)

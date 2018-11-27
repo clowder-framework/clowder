@@ -202,6 +202,8 @@ class Files @Inject() (
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val extractionsByFile = extractions.findById(new ResourceRef('file, id))
+        val extractionGroups = extractions.groupByType(extractionsByFile)
+
 
         var folderHierarchy = new ListBuffer[Folder]()
         if (foldersContainingFile.length > 0) {
@@ -236,7 +238,7 @@ class Files @Inject() (
             plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
           }
           case None =>
             Logger.debug("Polyglot plugin not found")
@@ -247,7 +249,7 @@ class Files @Inject() (
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, isRDFExportEnabled, extractionsByFile, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
         }
       }
 
