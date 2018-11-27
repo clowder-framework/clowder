@@ -445,6 +445,48 @@ paths:
       summary: Retrieve metadata as JSON-LD
       description: Get metadata of the file object as JSON-LD.
 
+  /files/metadata.jsonld:
+      post:
+        responses:
+          200:
+            description: OK
+        tags:
+          - files
+        summary: Add JSON-LD metadata to multiple files at once.
+        description: |
+          JSON object in post should have a list of file IDs under "files" key and metadata under "metadata" key.
+          Metadata will be added to each file in metadata Mongo db collection.
+        parameters:
+          - in: body
+            name: contents
+            description: the metadata to add and the file IDs to add it to
+            schema:
+              type: object
+              required:
+                - files
+                - metadata
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                metadata:
+                  type: object
+
+      get:
+        responses:
+          200:
+            description: OK
+        parameters:
+          - required: true
+            type: string
+            name: id
+            in: path
+        tags:
+          - files
+        summary: Retrieve metadata as JSON-LD for multiple files at once
+        description: Use ?id=123&id=456&... to retrieve metadata for multiple files at once.
+
   /files/{id}/tags:
     post:
       responses:

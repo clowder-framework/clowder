@@ -306,6 +306,10 @@ DELETE         /api/datasets/:id/metadata.jsonld                                
 POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
 GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
 DELETE         /api/files/:id/metadata.jsonld                                           @api.Files.removeMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
+POST           /api/files/metadata.jsonld                                               @api.Files.addBatchMetadataJsonLD()
+GET            /api/files/metadata.jsonld                                               @api.Files.getBatchMetadataJsonLD()
+
+
 
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
 DELETE         /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)

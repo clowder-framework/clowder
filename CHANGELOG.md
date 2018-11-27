@@ -13,19 +13,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
 - Previewer for displaying internal contents of Zip Files.
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
+- Additional API endpoints for adding and retrieving file metadata in bulk.
+  [CATS-941](https://opensource.ncsa.illinois.edu/jira/browse/CATS-941)
   
 ### Fixed
 - Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly
   return space list depending on user permissions even if instance is set to private.
-
+- GeospatialViewer previewer added content to incorrect tab.
+  [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
+  
 ### Changed 
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
-
-### Fixed
-- GeospatialViewer previewer added content to incorrect tab.
-  [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
 
 ## 1.5.1 - 2018-11-07
 
