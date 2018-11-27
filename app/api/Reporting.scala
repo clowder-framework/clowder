@@ -1,10 +1,11 @@
 package api
 
+import api.Permission._
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.Controller
 import play.api.Logger
 import javax.inject.Inject
-import java.util.Date
+import java.util.{TimeZone, Date}
 import services._
 import models.{File, Dataset, Collection, ProjectSpace, User, UserStatus}
 
@@ -19,10 +20,13 @@ class Reporting @Inject()(selections: SelectionService,
                           spaces: SpaceService,
                           users: UserService) extends Controller with ApiController {
 
+  val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
+
   def fileMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating file metrics report")
 
-    var contents: String = "type,id,name,owner,size_kb,uploaded,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
+    var contents: String = "type,id,name,owner,owner_id,size_kb,uploaded,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
 
     files.getMetrics(None).foreach(f => {
       contents += _buildFileRow(f)
@@ -37,7 +41,7 @@ class Reporting @Inject()(selections: SelectionService,
   def datasetMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating dataset metrics report")
 
-    var contents: String = "type,id,name,owner,created,views,downloads,last_viewed,last_downloaded,parent_collections,parent_spaces\n"
+    var contents: String = "type,id,name,owner,owner_id,created,views,downloads,last_viewed,last_downloaded,parent_collections,parent_spaces\n"
 
     datasets.getMetrics(None).foreach(ds => {
       contents += _buildDatasetRow(ds)
@@ -52,7 +56,7 @@ class Reporting @Inject()(selections: SelectionService,
   def collectionMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating collection metrics report")
 
-    var contents: String = "type,id,name,owner,created,views,last_viewed,parent_collections,parent_spaces\n"
+    var contents: String = "type,id,name,owner,owner_id,created,views,last_viewed,parent_collections,parent_spaces\n"
 
     collections.getMetrics(None).foreach(coll => {
       contents += _buildCollectionRow(coll)
@@ -68,7 +72,7 @@ class Reporting @Inject()(selections: SelectionService,
   def allMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating all metrics report")
 
-    var contents: String = "type,id,name,owner,size_kb,uploaded/created,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
+    var contents: String = "type,id,name,owner,owner_id,size_kb,uploaded/created,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
 
     collections.getMetrics(None).foreach(coll => {
       contents += _buildCollectionRow(coll, true)
@@ -89,20 +93,20 @@ class Reporting @Inject()(selections: SelectionService,
   def spaceMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating space metrics report")
 
-    var contents: String = "type,id,name,description,creator,created,datasets,collections,users\n"
+    var contents: String = "type,id,name,description,creator_id,created,datasets,collections,users\n"
 
-    spaces.list().foreach(sp => {
-      val creator_name = users.get(sp.creator) match {
-        case Some(u) => u.getMiniUser.fullName
+    spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, false, false, false).foreach(sp => {
+      val creator_id = users.get(sp.creator) match {
+        case Some(u) => u.getMiniUser.id
         case None => ""
       }
 
-      contents += "space,"
-      contents += sp.id.toString+","
+      contents += "\"space\","
+      contents += "\""+sp.id.toString+"\","
       contents += "\""+sp.name+"\","
       contents += "\""+sp.description+"\","
-      contents += creator_name+","
-      contents += sp.created+","
+      contents += "\""+creator_id+"\","
+      contents += dateFormat.format(sp.created)+","
       contents += sp.datasetCount.toString+","
       contents += sp.collectionCount.toString+","
       contents += sp.userCount.toString+","
@@ -131,14 +135,14 @@ class Reporting @Inject()(selections: SelectionService,
           member_spaces += 1
       })
 
-      contents += "user,"
-      contents += u.id.toString+","
+      contents += "\"user\","
+      contents += "\""+u.id.toString+"\","
       contents += "\""+u.getMiniUser.fullName+"\","
       contents += "\""+u.email.getOrElse("")+"\","
-      contents += u.identityId.providerId+","
+      contents += "\""+u.identityId.providerId+"\","
       u.lastLogin match {
         case Some(lastdate) => {
-          contents += lastdate+","
+          contents += dateFormat.format(lastdate)+","
           val currdate = new Date
           val difference =  (currdate.getTime()-currdate.getTime())/86400000
           contents += Math.abs(difference).toString+","
@@ -182,17 +186,26 @@ class Reporting @Inject()(selections: SelectionService,
       i += 1
     })
 
-    contents += "file,"
-    contents += f.id.toString+","
+    contents += "\"file\","
+    contents += "\""+f.id.toString+"\","
     contents += "\""+f.filename+"\","
     contents += "\""+f.author.fullName+"\","
+    contents += "\""+f.author.id+"\","
     contents += (f.length/1000).toInt.toString+","
-    contents += f.uploadDate+","
+    contents += dateFormat.format(f.uploadDate)+","
     contents += f.stats.views.toString+","
     contents += f.stats.downloads.toString+","
-    contents += "\""+f.stats.last_viewed.getOrElse("")+"\","
-    contents += "\""+f.stats.last_downloaded.getOrElse("")+"\","
-    contents += f.loader_id+","
+    val lvstr = f.stats.last_viewed match {
+      case Some(lvdate) => dateFormat.format(lvdate)
+      case None => ""
+    }
+    contents += "\""+lvstr+"\","
+    val ldstr = f.stats.last_downloaded match {
+      case Some(lddate) => dateFormat.format(lddate)
+      case None => ""
+    }
+    contents += "\""+ldstr+"\","
+    contents += "\""+f.loader_id+"\","
     contents += "\""+ds_list+"\","
     contents += "\""+coll_list+"\","
     contents += "\""+space_list+"\""
@@ -219,16 +232,25 @@ class Reporting @Inject()(selections: SelectionService,
       k += 1
     })
 
-    contents += "dataset,"
-    contents += ds.id.toString+","
+    contents += "\"dataset\","
+    contents += "\""+ds.id.toString+"\","
     contents += "\""+ds.name+"\","
     contents += "\""+ds.author.fullName+"\","
+    contents += "\""+ds.author.id+"\","
     if (returnAllColums) contents += "," // datasets do not have size
-    contents += ds.created+","
+    contents += dateFormat.format(ds.created)+","
     contents += ds.stats.views.toString+","
     contents += ds.stats.downloads.toString+","
-    contents += "\""+ds.stats.last_viewed.getOrElse("")+"\","
-    contents += "\""+ds.stats.last_downloaded.getOrElse("")+"\","
+    val lvstr = ds.stats.last_viewed match {
+      case Some(lvdate) => dateFormat.format(lvdate)
+      case None => ""
+    }
+    contents += "\""+lvstr+"\","
+    val ldstr = ds.stats.last_downloaded match {
+      case Some(lddate) => dateFormat.format(lddate)
+      case None => ""
+    }
+    contents += "\""+ldstr+"\","
     if (returnAllColums) contents += "," // datasets do not have location
     if (returnAllColums) contents += "," // datasets do not have parent_datasets
     contents += "\""+coll_list+"\","
@@ -257,15 +279,20 @@ class Reporting @Inject()(selections: SelectionService,
       k += 1
     })
 
-    contents += "collection,"
-    contents += coll.id.toString+","
+    contents += "\"collection\","
+    contents += "\""+coll.id.toString+"\","
     contents += "\""+coll.name+"\","
     contents += "\""+coll.author.fullName+"\","
+    contents += "\""+coll.author.id+"\","
     if (returnAllColums) contents += "," // collections do not have size
-    contents += coll.created+","
+    contents += dateFormat.format(coll.created)+","
     contents += coll.stats.views.toString+","
     if (returnAllColums) contents += "," // collections do not have downloads
-    contents += "\""+coll.stats.last_viewed.getOrElse("")+"\","
+    val lvstr = coll.stats.last_viewed match {
+        case Some(lvdate) => dateFormat.format(lvdate)
+        case None => ""
+      }
+    contents += "\""+lvstr+"\","
     if (returnAllColums) contents += "," // collections do not have last_downloaded
     if (returnAllColums) contents += "," // collections do not have location
     if (returnAllColums) contents += "," // collections do not have parent_datasets
