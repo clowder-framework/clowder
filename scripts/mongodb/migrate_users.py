@@ -19,10 +19,58 @@
 # user to be instead owned by another arbitrary user. Simply pass
 # an old_id and new_id as the first and second parameters.
 #
-# Usage
+#
+# Script Usage
 #    Audit Users: python ./migrate_users.py
 #    Migrate Single User: python ./migrate_users.py <old_id> <new_id>
 #
+#
+# Appendix A: Script Flags
+#   * `fixmongo`: If False, perform a read-only audit. If True, 
+#                 attempt to actually repair/remove entries from 
+#                 Mongo to automatically perform migrations
+#   * `verbose`: If True, print additional verbose log info
+#   * `showok`: If True, include `cilogon` accounts in the initial 
+#               audit (NOTE: it's safe - in its current form, this 
+#               script will never delete/migrate a `cilogon` account)
+#   * `promptempty`: If True, prompt the user to delete each EMPTY 
+#                    account, one at a time. If False, these users 
+#                    are deleted automatically without prompt.
+#   * `promptinactive`: If True, prompt the user to delete each 
+#                       INACTIVE account, one at a time. If False, 
+#                       these users are deleted automatically without 
+#                       prompt.
+#   * `promptactive`: If True, prompt the user to migrate each ACTIVE 
+#                     account, one at a time. If False, the user is 
+#                     simply notified that manual migration is needed.
+#
+#
+# Appendix B: Account State Definitions
+#   **EMPTY** accounts are defined as those that have not uploaded any 
+#             objects and have not created any api keys
+#   **INACTIVE** accounts are defined as those that do not have a 
+#                value for their `lastLogin` field and also qualify 
+#                as EMPTY
+#   **ACTIVE** accounts are defined as those that have both logged-in 
+#              and created objects in Clowder
+#
+#
+# Appendix C: Collections Examined
+#   * social.users
+#   * collections
+#   * comments
+#   * datasets
+#   * folders
+#   * metadata
+#   * spaces.project
+#   * uploads
+#
+#
+#   The following collections are explicitly ignored:
+#   * events
+#
+
+
 
 import os
 import sys
