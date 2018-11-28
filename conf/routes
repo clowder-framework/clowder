@@ -306,6 +306,10 @@ DELETE         /api/datasets/:id/metadata.jsonld                                
 POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
 GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
 DELETE         /api/files/:id/metadata.jsonld                                           @api.Files.removeMetadataJsonLD(id: UUID, extractor: Option[String] ?= None)
+POST           /api/files/metadata.jsonld                                               @api.Files.addBatchMetadataJsonLD()
+GET            /api/files/metadata.jsonld                                               @api.Files.getBatchMetadataJsonLD()
+
+
 
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
 DELETE         /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)
@@ -704,6 +708,8 @@ GET            /api/reports/metrics                                             
 GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics()
 GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics()
 GET            /api/reports/metrics/collections                                         @api.Reporting.collectionMetrics()
+GET            /api/reports/metrics/spaces                                              @api.Reporting.spaceMetrics()
+GET            /api/reports/metrics/users                                               @api.Reporting.userMetrics()
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS

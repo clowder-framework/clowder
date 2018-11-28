@@ -16,7 +16,8 @@
   canAddDatasetToCollection: Boolean,
   stagingAreaDefined: Boolean,
   view: (Int, java.util.Date),
-  extractionsStatus: List[Extraction])(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
+  extractionsStatus: Map[String, ExtractionGroup]
+)(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
 
 @import api.Permission
 @import play.api.Play.current
@@ -270,6 +271,7 @@
                 <ul class="nav nav-tabs margin-bottom-20" >
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
                     <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
+                    <li role="presentation"><a href="#tab-extractions" role="tab" data-toggle="tab">Extractions </a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                 </ul>
@@ -301,19 +303,18 @@
                             </div>
                         </div>
                     </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-extractions">
+                        <div class="row">
+                            <div class="col-md-12" id="extractions-content">
+                            @extractions.extractionsList(extractionsStatus)
+                            </div>
+                        </div>
+                    </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                         @datasets.previews(dataset, previewers)
                     </div>
                     <div class="row bottom-padding">
                         <div class="col-md-12">
-                            <h4>Extractions</h4>
-                            <a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
-                            aria-controls="listExtractions">
-                                <span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
-                            </a>
-                            <div class="collapse" id="extractions">
-                            @extractions.extractionsList(extractionsStatus)
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -3,14 +3,42 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
- 
+
 ## [Unreleased]
 
 ### Added
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
 - Script to cleanup/migrate userpass account data to cilogon accounts.
+- Script to verify / fix mongo uploads collection if file bytes are missing.
 - Loading indicator should now show on Datasets page while files/folders are loading.
+- Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
+- Previewer for displaying internal contents of Zip Files.
+  [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
+- Additional API endpoints for adding and retrieving file metadata in bulk.
+  [CATS-941](https://opensource.ncsa.illinois.edu/jira/browse/CATS-941)
+  
+### Fixed
+- Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly
+  return space list depending on user permissions even if instance is set to private.
+- GeospatialViewer previewer added content to incorrect tab.
+  [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
+  
+### Changed 
+- Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
+  and the File pages now have metadata and comments under tabs as well.
+  [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
+
+## 1.5.1 - 2018-11-07
+
+### Fixed
+- Previewer tabs on the file page were showing default title "Preview" instead of the one defined in the previewer manifest.
+  [CATS-939](https://opensource.ncsa.illinois.edu/jira/browse/CATS-939)
+- Remove signup button if signup is disabled using `securesocial.registrationEnabled=false`.
+  [CATS-943](https://opensource.ncsa.illinois.edu/jira/browse/CATS-943)
+- Add flag smtp.mimicuser=false that will force emails to always come from the user defined in the configuration file
+  instead of the Clowder user.
+  [CATS-944](https://opensource.ncsa.illinois.edu/jira/browse/CATS-944)
 
 ## 1.5.0 - 2018-10-23
 **_Warning:_ This update will reset all permissions assigned to roles. 
@@ -48,6 +76,9 @@ your needs.**
   [CATS-918](https://opensource.ncsa.illinois.edu/jira/browse/CATS-918)
 - Ability to provide API key in HTTP X-API-Key request header.
   [CATS-919](https://opensource.ncsa.illinois.edu/jira/browse/CATS-919)
+- Extraction history for dataset extractors is now displayed on dataset page.
+  [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
+- API route for creating a new folder now returns folder information on success.
 - Offline updates for mongodb added to `scripts/updates`.
   
 ### Changed 

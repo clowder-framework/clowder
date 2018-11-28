@@ -306,75 +306,164 @@ class Files @Inject()(
   /**
    * Add metadata in JSON-LD format.
    */
-  def addMetadataJsonLD(id: UUID) =
-    PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-      files.get(id) match {
-        case Some(x) => {
-          val json = request.body
+  def addMetadataJsonLD(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+    files.get(id) match {
+      case Some(x) => {
+        val json = request.body
 
-          // parse request for JSON-LD model
-          var model: RDFModel = null
-          json.validate[RDFModel] match {
-            case e: JsError => {
-              Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + json.toString())
-              BadRequest(JsError.toFlatJson(e))
-            }
-            case s: JsSuccess[RDFModel] => { 
-              model = s.get 
-          
-              //parse request for agent/creator info
-              //creator can be UserAgent or ExtractorAgent
-              var creator: models.Agent = null
-              json.validate[Agent] match {
-                case s: JsSuccess[Agent] => {
-                  creator = s.get
-                  //if creator is found, continue processing
-                  val context: JsValue = (json \ "@context")
-    
-                  // check if the context is a URL to external endpoint
-                  val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
-    
-                  // check if context is a JSON-LD document
-                  val contextID: Option[UUID] =
-                    if (context.isInstanceOf[JsObject]) {
-                      context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
-                    } else if (context.isInstanceOf[JsArray]) {
-                      context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
-                    } else None
-    
-                  // when the new metadata is added
-                  val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
-    
-                  //parse the rest of the request to create a new models.Metadata object
-                  val attachedTo = ResourceRef(ResourceRef.file, id)
-                  val content = (json \ "content")
-                  val version = None
-                  val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                    content, version)
-    
-                  //add metadata to mongo
-                  val metadataId = metadataService.addMetadata(metadata)
-                  val mdMap = metadata.getExtractionSummary
-    
-                  //send RabbitMQ message
-                  current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
-                  }
-                  
-                  files.index(id)
-                  Ok(toJson("Metadata successfully added to db"))
+        // parse request for JSON-LD model
+        var model: RDFModel = null
+        json.validate[RDFModel] match {
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + json.toString())
+            BadRequest(JsError.toFlatJson(e))
+          }
+          case s: JsSuccess[RDFModel] => {
+            model = s.get
+
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
+                //if creator is found, continue processing
+                val context: JsValue = (json \ "@context")
+
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] =
+                  if (context.isInstanceOf[JsObject]) {
+                    context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                  } else if (context.isInstanceOf[JsArray]) {
+                    context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                  } else None
+
+                // when the new metadata is added
+                val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
+
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.file, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
+
+                //add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
+
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
                 }
-                case e: JsError => {
-                  Logger.error("Error getting creator")
-                  BadRequest(toJson(s"Creator data is missing or incorrect."))
-                }
+
+                files.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator")
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
               }
             }
           }
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+      }
+      case None => Logger.error(s"Error getting file $id"); NotFound
+    }
+  }
+
+  def addBatchMetadataJsonLD() = PermissionAction(Permission.AddMetadata)(parse.json){ implicit request =>
+    val json = request.body.as[JsObject]
+
+    try {
+      val fileList: JsValue = (json \ "files")
+      val metadata: JsValue = (json \ "metadata")
+
+      // parse request for JSON-LD model
+      var model: RDFModel = null
+      metadata.validate[RDFModel] match {
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + metadata.toString())
+          BadRequest(JsError.toFlatJson(e))
+        }
+        case s: JsSuccess[RDFModel] => {
+          model = s.get
+
+          //parse request for agent/creator info
+          //creator can be UserAgent or ExtractorAgent
+          var creator: models.Agent = null
+          metadata.validate[Agent] match {
+            case s: JsSuccess[Agent] => {
+              creator = s.get
+              //if creator is found, continue processing
+              val context: JsValue = (metadata \ "@context")
+
+              // check if the context is a URL to external endpoint
+              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+
+              // check if context is a JSON-LD document
+              val contextID: Option[UUID] =
+                if (context.isInstanceOf[JsObject]) {
+                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                } else if (context.isInstanceOf[JsArray]) {
+                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                } else None
+
+              // when the new metadata is added
+              val createdAt = Parsers.parseDate((metadata \ "created_at")).fold(new Date())(_.toDate)
+
+              //parse the rest of the request to create a new models.Metadata object
+              val content = (metadata \ "content")
+              val version = None
+
+              fileList.asInstanceOf[JsArray].value.foreach(v => {
+                files.get(UUID(v.toString.replace("\"", ""))) match {
+                  case Some(f) => {
+                    val attachedTo = ResourceRef(ResourceRef.file, f.id)
+                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                      content, version)
+
+                    //add metadata to mongo
+                    val metadataId = metadataService.addMetadata(metadata)
+                    val mdMap = metadata.getExtractionSummary
+
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
+                    }
+
+                    files.index(f.id)
+                  }
+                  case None => {
+                    Logger.debug("Skipping file id "+v.toString+" (not found)")
+                  }
+                }
+              })
+
+
+              Ok(toJson("Metadata successfully added to db"))
+            }
+            case e: JsError => {
+              Logger.error("Error getting creator")
+              BadRequest(toJson(s"Creator data is missing or incorrect."))
+            }
+          }
+        }
+      }
+    } catch {
+      case e: ClassCastException => {
+        Logger.error("Malformed JSON object")
+        BadRequest(toJson("'files' list and 'metadata' object not found in JSON object"))
+      }
+      case e: Exception => {
+        BadRequest(toJson(e.toString))
       }
     }
+
+  }
 
   def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
@@ -394,6 +483,30 @@ class Files @Inject()(
         BadRequest(toJson("Error getting file  " + id))
       }
     }
+  }
+
+  def getBatchMetadataJsonLD() = PermissionAction(Permission.ViewMetadata) { implicit request =>
+    val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
+    
+    val fileList = request.queryString.getOrElse("id", Seq[String]())
+    var resultList = Map[String, List[JsValue]]()
+
+    fileList.foreach(v => {
+      val fileId = UUID(v.replace("\"", ""))
+      files.get(fileId) match {
+        case Some(f) => {
+          val fileMd = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+            .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
+
+          resultList = resultList + (f.id.stringify -> fileMd.toList)
+        }
+        case None => Logger.error("Error getting file "+fileId.toString)
+      }
+    })
+
+    Ok(toJson(resultList))
+
+
   }
 
   def removeMetadataJsonLD(id: UUID, extractorId: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>

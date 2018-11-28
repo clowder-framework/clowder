@@ -1,18 +1,46 @@
-@(extractions: List[Extraction])
+@(extractions: Map[String, ExtractionGroup])
 
 <div class="well">
     @if(extractions.size == 0) {
         <p>No extraction events recorded.</p>
     } else {
         <table class="table">
-            <thead><th>Extractor</th><th>Start</th><th>End</th><th>Status</th></thead>
+            <thead>
+                <th width="20%">Extractor</th>
+                <th width="20%">Started</th>
+                <th width="20%">Latest Update</th>
+                <th width="40%">Latest Status</th>
+            </thead>
             <tbody>
-            @for(e <- extractions) {
+            @for(e <- extractions.keysIterator) {
                 <tr>
-                    <td>@e.extractor_id</td>
-                    <td>@e.start</td>
-                    <td>@e.end.getOrElse("N/A")</td>
-                    <td>@e.status</td>
+                    <td>
+                        <a class="btn btn-link" data-toggle="collapse" href="#extractions-"+@e aria-expanded="false"
+                        aria-controls="listExtractions">
+                            @e
+                        </a>
+                    </td>
+                    <td>@extractions(e).firstMsgTime</td>
+                    <td>@extractions(e).latestMsgTime</td>
+                    <td>@extractions(e).latestMsg.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
+
+                </tr>
+                <tr class="collapse" id="extractions-"@e>
+                    <td colspan="4">
+                        <table class="table">
+                            <tbody>
+                                @for(e2 <- extractions(e).allMsgs) {
+                                    <tr>
+                                        <td width="19%"></td>
+                                        <td width="81%"><b>@e2.start</b><br/>
+                                            @e2.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
+                                        </td>
+                                    </tr>
+
+                                }
+                            </tbody>
+                        </table>
+                    </td>
                 </tr>
             }
             </tbody>

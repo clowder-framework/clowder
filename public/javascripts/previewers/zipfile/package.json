@@ -1,0 +1,5 @@
+{ "name" : "Zip Content List",
+  "main" : "zipfile.js",
+  "contentType" : ["application/zip","application/x-zip","application/x-7z-compressed", "multi/files-zipped"],
+  "file": true
+}

@@ -1,6 +1,6 @@
 package services
 
-import models.{ResourceRef, UUID, Extraction, WebPageResource}
+import models._
 import java.util.Date
 
 
@@ -25,4 +25,6 @@ trait ExtractionService {
   def save(webpr: WebPageResource): UUID
   
   def getWebPageResource(id: UUID): Map[String,String]
+
+  def groupByType(extraction_list: List[Extraction]): Map[String, ExtractionGroup]
 }

@@ -60,16 +60,21 @@ object Mail {
   def sendEmail(subject: String, from: String, recipients: Iterable[String], body: Html) {
     // this needs to be done otherwise the request object is lost and this will throw an
     // error.
+    val (realfrom: String, realto: Iterable[String]) = if (!current.configuration.getBoolean("smtp.mimicuser").getOrElse(true)) {
+      (emailAddress(None), recipients.toSet + from)
+    } else {
+      (from, recipients)
+    }
     val text = body.body
-    if ( Logger.isDebugEnabled ) {
-      Logger.debug("Sending email to %s".format(recipients.toList:_*))
+    if (Logger.isDebugEnabled) {
+      Logger.debug("Sending email to %s".format(realto.toList:_*))
       Logger.debug("Mail = [%s]".format(text))
     }
     Akka.system.scheduler.scheduleOnce(1.seconds) {
       val mail = use[MailerPlugin].email
       mail.setSubject(subject)
-      mail.setRecipient(recipients.toList:_*)
-      mail.setFrom(from)
+      mail.setRecipient(realto.toList:_*)
+      mail.setFrom(realfrom)
 
       // the mailer plugin handles null / empty string gracefully
       mail.send("", text)
