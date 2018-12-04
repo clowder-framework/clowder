@@ -7,7 +7,7 @@
 # users in MongoDB. For each user, it will tally how many
 # resources of each type the user has created. If no items
 # have been created, the user is considered EMPTY or INACTIVE.
-# Such users will be automatically deleted if the appropriate 
+# Such users will be automatically deleted if the appropriate
 # prompt flags are set to False.
 #
 # ACTIVE users are those that have created resources in Clowder.
@@ -26,32 +26,32 @@
 #
 #
 # Appendix A: Script Flags
-#   * `fixmongo`: If False, perform a read-only audit. If True, 
-#                 attempt to actually repair/remove entries from 
+#   * `fixmongo`: If False, perform a read-only audit. If True,
+#                 attempt to actually repair/remove entries from
 #                 Mongo to automatically perform migrations
 #   * `verbose`: If True, print additional verbose log info
-#   * `showok`: If True, include `cilogon` accounts in the initial 
-#               audit (NOTE: it's safe - in its current form, this 
+#   * `showok`: If True, include `cilogon` accounts in the initial
+#               audit (NOTE: it's safe - in its current form, this
 #               script will never delete/migrate a `cilogon` account)
-#   * `promptempty`: If True, prompt the user to delete each EMPTY 
-#                    account, one at a time. If False, these users 
+#   * `promptempty`: If True, prompt the user to delete each EMPTY
+#                    account, one at a time. If False, these users
 #                    are deleted automatically without prompt.
-#   * `promptinactive`: If True, prompt the user to delete each 
-#                       INACTIVE account, one at a time. If False, 
-#                       these users are deleted automatically without 
+#   * `promptinactive`: If True, prompt the user to delete each
+#                       INACTIVE account, one at a time. If False,
+#                       these users are deleted automatically without
 #                       prompt.
-#   * `promptactive`: If True, prompt the user to migrate each ACTIVE 
-#                     account, one at a time. If False, the user is 
+#   * `promptactive`: If True, prompt the user to migrate each ACTIVE
+#                     account, one at a time. If False, the user is
 #                     simply notified that manual migration is needed.
 #
 #
 # Appendix B: Account State Definitions
-#   **EMPTY** accounts are defined as those that have not uploaded any 
+#   **EMPTY** accounts are defined as those that have not uploaded any
 #             objects and have not created any api keys
-#   **INACTIVE** accounts are defined as those that do not have a 
-#                value for their `lastLogin` field and also qualify 
+#   **INACTIVE** accounts are defined as those that do not have a
+#                value for their `lastLogin` field and also qualify
 #                as EMPTY
-#   **ACTIVE** accounts are defined as those that have both logged-in 
+#   **ACTIVE** accounts are defined as those that have both logged-in
 #              and created objects in Clowder
 #
 #
@@ -140,13 +140,25 @@ id_map = {
 }
 
 def main():
-    global clowder, verbose, showok 
+    global clowder, verbose, showok
 
     if len(sys.argv) > 1:
         if verbose:
             print('Script arguments given: ' + str(sys.argv))
             print('Skipping check loop...')
-        if len(sys.argv) == 3:
+        if len(sys.argv) == 2:
+            delete_id = sys.argv[1].strip()
+            for user in aggregate_users():
+                if user['_id'] == ObjectId(delete_id):
+                    if userHasCreatedObjects(user):
+                        print("Can not delete user id %s since it has associated objects." % delete_id)
+                    else:
+                        if query_yes_no('Delete user %s (%s)' % (user['_id'], user['email']), default='no'):
+                            if fixmongo:
+                                delete_user(user)
+                            else:
+                                print("Would have deleted user")
+        elif len(sys.argv) == 3:
             old_id = sys.argv[1].strip()
             new_id = sys.argv[2].strip()
             print('Migrating artifacts owned by user id %s to new user id %s' % (old_id, new_id))
@@ -177,6 +189,7 @@ def main():
 def print_user(user, verbose=False, message=None):
     print(str(user['_id']))
     print("\tuserId        : " + user['identityId']['userId'])
+    print("\tname          : " + user['fullName'] + " <" + user['email'] + ">")
     print("\tproviderId    : " + user['identityId']['providerId'])
     print("\ttotal created : " + str(user['total_created']))
     if verbose:
@@ -193,7 +206,7 @@ def print_user(user, verbose=False, message=None):
         #print("\tevents        : " + str(len(user['events'])))
     if message is not None:
         print('\tmessage       : ' + str(message))
-       
+
 def prompt_for_new_id():
     """Ask the user to enter the new id of the user. The answer
        can be used to reassociate their old entries to a new user.
@@ -279,7 +292,7 @@ def check(verbose=False, showok=False):
     global clowder, duplicates, fixmongo
 
     results = { 'active': [], 'inactive': [], 'empty': [] }
-    for user in aggregate_users(): 
+    for user in aggregate_users():
         if userIsUserpass(user):
             if not userHasCreatedObjects(user):
                 print_user(user, verbose, 'Found EMPTY userpass account')
@@ -417,7 +430,7 @@ def migrate_user(user, new_id):
         query[id_map[collection]] = user['_id']
         set_fields = {}
         set_fields[id_map[collection]] = ObjectId(new_id)
-        result = clowder[collection].update_many(query, { "$set": set_fields }) 
+        result = clowder[collection].update_many(query, { "$set": set_fields })
         print('Migrated %s/%s documents from %s to %s in %s' % (result.modified_count, result.matched_count, user['_id'], new_id, collection))
 
     # Lookup new user to retrieve their identityId / apikeys
@@ -453,7 +466,7 @@ def migrate_user(user, new_id):
 # A long query to join our user collection with the resources owned by that user
 def aggregate_users():
     global clowder
-    
+
     pipeline = [
         {"$lookup": { "from": "social.users", "localField": "email", "foreignField": "email", "as": "user_aliases" }},
         {"$lookup": { "from": "spaces.projects", "localField": "_id", "foreignField": "creator", "as": "user_spaces" }},
@@ -470,16 +483,17 @@ def aggregate_users():
             # Preserve some essential fields from each user
             "_id": 1,
             "email": 1,
+            "fullName": 1,
             "identityId.providerId": 1,
             "identityId.userId": 1,
-            "lastLogin": { "$ifNull": [ "$lastLogin", "N / A" ] }, 
+            "lastLogin": { "$ifNull": [ "$lastLogin", "N / A" ] },
 
             # Preserve all space permissions so they can be migrated
             "spaceandrole": 1,
 
             # Save all of our joined values from above?
             "aliases": { "$filter": { "input" : { "$map":  { "input": "$user_aliases", "as": "user", "in": "$$user.identityId" } }, "as": "identity", "cond": { "$eq": [ "$$identity.providerId", "cilogon" ] } } },
-            "uploads":  "$user_uploads", 
+            "uploads":  "$user_uploads",
             "collections":  "$user_collections",
             "datasets":  "$user_datasets",
             "events_from": "$user_events_from",
@@ -491,14 +505,14 @@ def aggregate_users():
             "apikeys": {"$filter": { "input": "$user_apikeys", "as": "key", "cond": { "$eq": [ "$$key.identityId.providerId", "$$ROOT.identityId.providerId" ]  }  } },
 
             # Sum the total objects created
-            "total_created": { "$sum": [ 
-                { "$size": "$user_uploads" }, 
-                { "$size": "$user_collections" },  
-                { "$size": "$user_spaces" },  
-                { "$size": "$user_datasets"},  
-                { "$size": "$user_folders" },  
+            "total_created": { "$sum": [
+                { "$size": "$user_uploads" },
+                { "$size": "$user_collections" },
+                { "$size": "$user_spaces" },
+                { "$size": "$user_datasets"},
+                { "$size": "$user_folders" },
                 #{ "$size": "$user_apikeys" },       # Don't count apikeys as created objects
-                { "$size": "$user_comments" },  
+                { "$size": "$user_comments" },
                 #{ "$size": "$user_events_to" },     # Safe to ignore events_to for now
                 #{ "$size": "$user_events_from" },   # Safe to ignore events_from for now
                 { "$size": "$user_metadata" },
@@ -513,4 +527,3 @@ def aggregate_users():
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     main()
-
