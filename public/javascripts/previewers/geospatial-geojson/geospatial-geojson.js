@@ -336,10 +336,10 @@
 
     var dataset_id = Configuration.dataset_id;
 
-    // Request list of files in this dataset
+    // list first 20 files in dataset
     var req = $.ajax({
         type: "GET",
-        url: jsRoutes.api.Datasets.datasetFilesList(dataset_id).url,
+        url: jsRoutes.api.Datasets.datasetAllFilesList(dataset_id, 20).url,
         dataType: "json"
     });
 

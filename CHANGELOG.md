@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Filtering using Rabbitmq does not take into account exchanges. [CATS-954](https://opensource.ncsa.illinois.edu/jira/browse/CATS-954)
 - The icon used for spaces in a few places was the wrong icon. [CATS-955](https://opensource.ncsa.illinois.edu/jira/browse/CATS-955)
+- GeoJSON dataset previewer loads all files in a dataset. [CATS-956](https://opensource.ncsa.illinois.edu/jira/browse/CATS-956)
 
 ## 1.5.1 - 2018-11-07
 
