@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.5.2
+
+### Fixed
+- Filtering using Rabbitmq does not take into account exchanges. [CATS-954](https://opensource.ncsa.illinois.edu/jira/browse/CATS-954)
+
 ## 1.5.1 - 2018-11-07
 
 ### Fixed

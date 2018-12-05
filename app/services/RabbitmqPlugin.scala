@@ -187,7 +187,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val replyQueueName = channel.get.queueDeclare().getQueue
       Logger.debug("Reply queue name: " + replyQueueName)
 
-      val queueBindingsFuture = getBindings
+      val queueBindingsFuture = getQueuesNamesForAnExchange(exchange)
       import scala.concurrent.ExecutionContext.Implicits.global
       queueBindingsFuture map { x =>
         implicit val peopleReader = Json.reads[Binding]
