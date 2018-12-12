@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   return space list depending on user permissions even if instance is set to private.
 - GeospatialViewer previewer added content to incorrect tab.
   [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
+- Error when showing ordered list of tags and Elasticsearch included an empty tag. Also removed the ability to add empty 
+  tags both from the UI as well as the API.
+  [CATS-952](https://opensource.ncsa.illinois.edu/jira/browse/CATS-952)
   
 ### Changed 
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,

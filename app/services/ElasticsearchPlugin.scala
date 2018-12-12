@@ -456,9 +456,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val aggr = response.getAggregations
           .get[org.elasticsearch.search.aggregations.bucket.terms.StringTerms]("by_tag")
         aggr.getBuckets().toArray().foreach(bucket => {
-          val term = bucket.asInstanceOf[Bucket].getKey
+          val term = bucket.asInstanceOf[Bucket].getKey.toString
           val count = bucket.asInstanceOf[Bucket].getDocCount
-          results.update(term.toString, count)
+          if (!term.isEmpty) {
+            results.update(term, count)
+          }
         })
         results.toMap
       }
