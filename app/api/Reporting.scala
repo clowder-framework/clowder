@@ -103,8 +103,8 @@ class Reporting @Inject()(selections: SelectionService,
 
       contents += "\"space\","
       contents += "\""+sp.id.toString+"\","
-      contents += "\""+sp.name+"\","
-      contents += "\""+sp.description+"\","
+      contents += "\""+sp.name.replace("\"", "\"\"")+"\","
+      contents += "\""+sp.description.replace("\"", "\"\"")+"\","
       contents += "\""+creator_id+"\","
       contents += dateFormat.format(sp.created)+","
       contents += sp.datasetCount.toString+","
@@ -123,6 +123,9 @@ class Reporting @Inject()(selections: SelectionService,
     Logger.debug("Generating user metrics report")
 
     var contents: String = "type,id,name,email,provider,last_login,days_since_last_login,active,admin,admin_spaces,member_spaces\n"
+
+    // Hard-code Anonymous user for now
+    contents += "\"user\",\"000000000000000000000000\",\"Anonymous User\",\"\",\"\",,,,,,\n"
 
     users.list().foreach(u => {
       // Get owned and member space counts
@@ -147,7 +150,7 @@ class Reporting @Inject()(selections: SelectionService,
           val difference =  (currdate.getTime()-currdate.getTime())/86400000
           contents += Math.abs(difference).toString+","
         }
-        case None => ",,"
+        case None => contents += ",,"
       }
       contents += (if (u.status==UserStatus.Inactive) "false" else "true")+","
       contents += (if (u.status==UserStatus.Admin) "true" else "false")+","
@@ -199,12 +202,12 @@ class Reporting @Inject()(selections: SelectionService,
       case Some(lvdate) => dateFormat.format(lvdate)
       case None => ""
     }
-    contents += "\""+lvstr+"\","
+    contents += lvstr+","
     val ldstr = f.stats.last_downloaded match {
       case Some(lddate) => dateFormat.format(lddate)
       case None => ""
     }
-    contents += "\""+ldstr+"\","
+    contents += ldstr+","
     contents += "\""+f.loader_id+"\","
     contents += "\""+ds_list+"\","
     contents += "\""+coll_list+"\","
@@ -234,7 +237,7 @@ class Reporting @Inject()(selections: SelectionService,
 
     contents += "\"dataset\","
     contents += "\""+ds.id.toString+"\","
-    contents += "\""+ds.name+"\","
+    contents += "\""+ds.name.replace("\"", "\"\"")+"\","
     contents += "\""+ds.author.fullName+"\","
     contents += "\""+ds.author.id+"\","
     if (returnAllColums) contents += "," // datasets do not have size
@@ -245,12 +248,12 @@ class Reporting @Inject()(selections: SelectionService,
       case Some(lvdate) => dateFormat.format(lvdate)
       case None => ""
     }
-    contents += "\""+lvstr+"\","
+    contents += lvstr+","
     val ldstr = ds.stats.last_downloaded match {
       case Some(lddate) => dateFormat.format(lddate)
       case None => ""
     }
-    contents += "\""+ldstr+"\","
+    contents += ldstr+","
     if (returnAllColums) contents += "," // datasets do not have location
     if (returnAllColums) contents += "," // datasets do not have parent_datasets
     contents += "\""+coll_list+"\","
@@ -281,7 +284,7 @@ class Reporting @Inject()(selections: SelectionService,
 
     contents += "\"collection\","
     contents += "\""+coll.id.toString+"\","
-    contents += "\""+coll.name+"\","
+    contents += "\""+coll.name.replace("\"", "\"\"")+"\","
     contents += "\""+coll.author.fullName+"\","
     contents += "\""+coll.author.id+"\","
     if (returnAllColums) contents += "," // collections do not have size
@@ -292,7 +295,7 @@ class Reporting @Inject()(selections: SelectionService,
         case Some(lvdate) => dateFormat.format(lvdate)
         case None => ""
       }
-    contents += "\""+lvstr+"\","
+    contents += lvstr+","
     if (returnAllColums) contents += "," // collections do not have last_downloaded
     if (returnAllColums) contents += "," // collections do not have location
     if (returnAllColums) contents += "," // collections do not have parent_datasets
