@@ -1,19 +1,21 @@
-<form class="form-horizontal col-md-12">
-    <div class="form-group">
-        <label for="field-value" class="col-sm-2 control-label" title="{{field_id}}">
-            <strong>{{field_label}}</strong>
-        </label>
-        <div class="col-sm-7">
-            <input type="text" class="form-control" id="field-value" data-id="{{field_id}}"
+<div class="row">
+    <form class="form-horizontal col-md-12">
+        <div class="form-group">
+            <label for="field-value" class="col-sm-2 control-label" title="{{field_id}}">
+                <strong>{{field_label}}</strong>
+            </label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control field-value" id="field-value" data-type="string" data-id="{{field_id}}"
                    data-label="{{field_label}}" placeholder="type here...">
+            </div>
         </div>
-        <div class="col-sm-3">
-            <button id="add-metadata-button" type="submit" class="btn btn-default"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+
+        {{#if field_description}}
+        <div class="row form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                {{field_description}}
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-offset-2 col-sm-7">
-            {{field_description}}
-        </div>
-    </div>
-</form>
+        {{/if}}
+    </form>
+</div>
