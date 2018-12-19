@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
 - Additional API endpoints for adding and retrieving file metadata in bulk.
   [CATS-941](https://opensource.ncsa.illinois.edu/jira/browse/CATS-941)
+- Optional form to adding multiple metadata fields at once via UI under "Advanced."
+  [CATS-940](https://opensource.ncsa.illinois.edu/jira/browse/CATS-940)
   
 ### Fixed
 - Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly
