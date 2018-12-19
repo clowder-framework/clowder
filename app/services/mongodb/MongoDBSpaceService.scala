@@ -200,7 +200,9 @@ class MongoDBSpaceService @Inject() (
               if (onlyTrial) {
                 statusFilter
               }
-              else if (permissions.contains(Permission.ViewSpace) && play.Play.application().configuration().getBoolean("enablePublic") && showPublic && showOnlyShared) {
+              else if (u.superAdminMode) {
+                MongoDBObject()
+              } else if (permissions.contains(Permission.ViewSpace) && play.Play.application().configuration().getBoolean("enablePublic") && showPublic && showOnlyShared) {
                 $or(author, statusFilter, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).filter((p: UserSpaceAndRole) =>
                   get(p.spaceId) match {
                     case Some(space) => {

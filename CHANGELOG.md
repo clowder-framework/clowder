@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Error when showing ordered list of tags and Elasticsearch included an empty tag. Also removed the ability to add empty 
   tags both from the UI as well as the API.
   [CATS-952](https://opensource.ncsa.illinois.edu/jira/browse/CATS-952)
+- In SuperAdmin mode, the Spaces page will correctly show all spaces.
+  [CATS-958](https://opensource.ncsa.illinois.edu/jira/browse/CATS-958)
   
 ### Changed 
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
