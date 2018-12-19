@@ -15,8 +15,7 @@
             @for(e <- extractions.keysIterator) {
                 <tr>
                     <td>
-                        <a class="btn btn-link" data-toggle="collapse" href="#extractions-"+@e aria-expanded="false"
-                        aria-controls="listExtractions">
+                        <a class="btn btn-link" data-toggle="collapse" data-target="#extractions-@e.replace('.','-')">
                             @e
                         </a>
                     </td>
@@ -25,7 +24,7 @@
                     <td>@extractions(e).latestMsg.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
 
                 </tr>
-                <tr class="collapse" id="extractions-"@e>
+                <tr class="collapse" id="extractions-@e.replace('.','-')">
                     <td colspan="4">
                         <table class="table">
                             <tbody>
