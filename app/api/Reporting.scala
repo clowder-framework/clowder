@@ -178,13 +178,17 @@ class Reporting @Inject()(selections: SelectionService,
       ds_list += (if (i>1) ", " else "") + ds.id
       var j = 1
       ds.collections.foreach(coll => {
-        coll_list += (if (j>1) ", " else "") + coll.uuid
-        j += 1
+        if (!coll_list.contains(coll.uuid)) {
+          coll_list += (if (j>1) ", " else "") + coll.uuid
+          j += 1
+        }
       })
       var k = 1
       ds.spaces.foreach(sp => {
-        space_list += (if (k>1) ", " else "") + sp.uuid
-        k += 1
+        if (!space_list.contains(sp.uuid)) {
+          space_list += (if (k > 1) ", " else "") + sp.uuid
+          k += 1
+        }
       })
       i += 1
     })
