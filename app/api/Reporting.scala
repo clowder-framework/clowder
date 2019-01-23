@@ -109,7 +109,7 @@ class Reporting @Inject()(selections: SelectionService,
       contents += dateFormat.format(sp.created)+","
       contents += sp.datasetCount.toString+","
       contents += sp.collectionCount.toString+","
-      contents += sp.userCount.toString+","
+      contents += sp.userCount.toString
       contents += "\n"
     })
 
