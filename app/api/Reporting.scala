@@ -127,7 +127,7 @@ class Reporting @Inject()(selections: SelectionService,
     // Hard-code Anonymous user for now
     contents += "\"user\",\"000000000000000000000000\",\"Anonymous User\",\"\",\"\",,,,,,\n"
 
-    users.list().foreach(u => {
+    users.list(limit=0).foreach(u => {
       // Get owned and member space counts
       var admin_spaces = 0
       var member_spaces = 0
