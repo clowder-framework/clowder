@@ -31,7 +31,7 @@ class Search @Inject() (
         var datasetsFound = ListBuffer.empty[String]
         var collectionsFound = ListBuffer.empty[String]
 
-        val response = plugin.search(query.replaceAll("([:/\\\\])", "\\\\$1"))
+        val response = plugin.search(query)
 
         for (resource <- response) {
           resource.resourceType match {
