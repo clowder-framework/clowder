@@ -1629,7 +1629,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def getMetrics(user: Option[User]): Iterable[Dataset] = {
-    Dataset.find(MongoDBObject("stats" -> MongoDBObject("$exists" -> true), "trash" -> false)).toIterable
+    Dataset.find(MongoDBObject("trash" -> false)).toIterable
   }
 }
 
