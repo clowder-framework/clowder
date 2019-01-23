@@ -15,9 +15,8 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress
 import java.net.InetAddress
 
 import org.elasticsearch.common.xcontent.XContentFactory._
-import org.elasticsearch.action.search.SearchType
+import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
 import org.elasticsearch.client.transport.NoNodeAvailableException
-import org.elasticsearch.action.search.SearchResponse
 
 import models.{Collection, Dataset, File, UUID, ResourceRef, Section}
 import play.api.Play.current
@@ -45,7 +44,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
 
-  val mustOperators = List("==", "<", ">")
+  val mustOperators = List("==", "<", ">", ":")
   val mustNotOperators = List("!=")
 
 
@@ -147,26 +146,31 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       prepareElasticJsonQuery(query)
     } else {
       // Plain text search with no field qualifiers
-      jsonBuilder().startObject()
-        .startObject("match").field("_all", query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
-      .endObject()
+      jsonBuilder().startObject().startObject("regexp").field("_all", query).endObject().endObject()
     }
 
-    val response = _search(queryObj, index)
-
-    var results = MutableList[ResourceRef]()
-    Option(response.getHits()) match {
-      case Some(hits) => {
-        for (hit <- hits.getHits()) {
-          val resource_type = hit.getSource().get("resource_type").toString
-          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+    try {
+      val response = _search(queryObj, index)
+      var results = MutableList[ResourceRef]()
+      Option(response.getHits()) match {
+        case Some(hits) => {
+          for (hit <- hits.getHits()) {
+            val resource_type = hit.getSource().get("resource_type").toString
+            results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+          }
         }
+        case None => {}
       }
-      case None => {}
+
+      results.toList
+    } catch {
+      case spee: SearchPhaseExecutionException => {
+        List[ResourceRef]()
+      }
+      case e: Exception => {
+        List[ResourceRef]()
+      }
     }
-
-
-    results.toList
   }
 
   /*** Execute query */
@@ -207,7 +211,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         .startObject("analysis")
           .startObject("analyzer")
             .startObject("default")
-              .field("type", "snowball")
+              .field("type", "standard")
             .endObject()
           .endObject()
         .endObject()
@@ -598,15 +602,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
-    """dynamic_templates": [
-    { "nonindexer": {
-      "match": "*",
-      "match_mapping_type":"string",
-      "mapping": {
-      "type": "string",
-      "index": "not_analyzed"
-    }
-    }}
+    """dynamic_templates": [{
+       "nonindexer": {
+          "match": "*",
+          "match_mapping_type":"string",
+          "mapping": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      }
     ],"""
 
     """{"clowder_object": {
@@ -644,15 +649,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
     // TODO: Suppert lte, gte (<=, >=)
     operator match {
-      /**case ":" => {
-        // TODO: Elasticsearch recommends not starting query with wildcard
-        // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
-        //builder.startObject("wildcard").field(key, value+"*").endObject()
-        builder.startObject().startObject("match").field(key, value).endObject().endObject()
-      }**/
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
       case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
       case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      case ":" => builder.startObject().startObject("query_string").field("default_field", key).field("query", "*"+value+"*").endObject().endObject()
       case _ => {}
     }
     builder

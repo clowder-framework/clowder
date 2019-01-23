@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-941](https://opensource.ncsa.illinois.edu/jira/browse/CATS-941)
 - Optional form to adding multiple metadata fields at once via UI under "Advanced."
   [CATS-940](https://opensource.ncsa.illinois.edu/jira/browse/CATS-940)
+- CONTAINS operator added to Advanced Search interface and wildcards (e.g. ".*") now supported in search box.
+  [CATS-962](https://opensource.ncsa.illinois.edu/jira/browse/CATS-962)
   
 ### Fixed
 - Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly
