@@ -193,6 +193,22 @@ class Reporting @Inject()(selections: SelectionService,
       i += 1
     })
 
+    // Get stats if they exist, otherwise use default values
+    val vwcount = if (f.stats == null) "0" else f.stats.views.toString
+    val lvstr = if (f.stats == null) "" else {
+      f.stats.last_viewed match {
+        case Some(lvdate) => dateFormat.format(lvdate)
+        case None => ""
+      }
+    }
+    val dlcount = if (f.stats == null) "0" else f.stats.downloads.toString
+    val ldstr = if (f.stats == null) "" else {
+      f.stats.last_downloaded match {
+        case Some(lddate) => dateFormat.format(lddate)
+        case None => ""
+      }
+    }
+
     contents += "\"file\","
     contents += "\""+f.id.toString+"\","
     contents += "\""+f.filename+"\","
@@ -200,17 +216,9 @@ class Reporting @Inject()(selections: SelectionService,
     contents += "\""+f.author.id+"\","
     contents += (f.length/1000).toInt.toString+","
     contents += dateFormat.format(f.uploadDate)+","
-    contents += f.stats.views.toString+","
-    contents += f.stats.downloads.toString+","
-    val lvstr = f.stats.last_viewed match {
-      case Some(lvdate) => dateFormat.format(lvdate)
-      case None => ""
-    }
+    contents += vwcount+","
+    contents += dlcount+","
     contents += lvstr+","
-    val ldstr = f.stats.last_downloaded match {
-      case Some(lddate) => dateFormat.format(lddate)
-      case None => ""
-    }
     contents += ldstr+","
     contents += "\""+f.loader_id+"\","
     contents += "\""+ds_list+"\","
@@ -239,6 +247,22 @@ class Reporting @Inject()(selections: SelectionService,
       k += 1
     })
 
+    // Get stats if they exist, otherwise use default values
+    val vwcount = if (ds.stats == null) "0" else ds.stats.views.toString
+    val lvstr = if (ds.stats == null) "" else {
+      ds.stats.last_viewed match {
+        case Some(lvdate) => dateFormat.format(lvdate)
+        case None => ""
+      }
+    }
+    val dlcount = if (ds.stats == null) "0" else ds.stats.downloads.toString
+    val ldstr = if (ds.stats == null) "" else {
+      ds.stats.last_downloaded match {
+        case Some(lddate) => dateFormat.format(lddate)
+        case None => ""
+      }
+    }
+
     contents += "\"dataset\","
     contents += "\""+ds.id.toString+"\","
     contents += "\""+ds.name.replace("\"", "\"\"")+"\","
@@ -246,17 +270,9 @@ class Reporting @Inject()(selections: SelectionService,
     contents += "\""+ds.author.id+"\","
     if (returnAllColums) contents += "," // datasets do not have size
     contents += dateFormat.format(ds.created)+","
-    contents += ds.stats.views.toString+","
-    contents += ds.stats.downloads.toString+","
-    val lvstr = ds.stats.last_viewed match {
-      case Some(lvdate) => dateFormat.format(lvdate)
-      case None => ""
-    }
+    contents += vwcount+","
+    contents += dlcount+","
     contents += lvstr+","
-    val ldstr = ds.stats.last_downloaded match {
-      case Some(lddate) => dateFormat.format(lddate)
-      case None => ""
-    }
     contents += ldstr+","
     if (returnAllColums) contents += "," // datasets do not have location
     if (returnAllColums) contents += "," // datasets do not have parent_datasets
@@ -286,6 +302,15 @@ class Reporting @Inject()(selections: SelectionService,
       k += 1
     })
 
+    // Get stats if they exist, otherwise use default values
+    val vwcount = if (coll.stats == null) "0" else coll.stats.views.toString
+    val lvstr = if (coll.stats == null) "" else {
+      coll.stats.last_viewed match {
+        case Some(lvdate) => dateFormat.format(lvdate)
+        case None => ""
+      }
+    }
+
     contents += "\"collection\","
     contents += "\""+coll.id.toString+"\","
     contents += "\""+coll.name.replace("\"", "\"\"")+"\","
@@ -293,12 +318,8 @@ class Reporting @Inject()(selections: SelectionService,
     contents += "\""+coll.author.id+"\","
     if (returnAllColums) contents += "," // collections do not have size
     contents += dateFormat.format(coll.created)+","
-    contents += coll.stats.views.toString+","
+    contents += vwcount+","
     if (returnAllColums) contents += "," // collections do not have downloads
-    val lvstr = coll.stats.last_viewed match {
-        case Some(lvdate) => dateFormat.format(lvdate)
-        case None => ""
-      }
     contents += lvstr+","
     if (returnAllColums) contents += "," // collections do not have last_downloaded
     if (returnAllColums) contents += "," // collections do not have location
