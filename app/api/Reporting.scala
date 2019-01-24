@@ -174,19 +174,19 @@ class Reporting @Inject()(selections: SelectionService,
     var coll_list = ""
     var space_list = ""
     var i = 1
+    var j = 1
+    var k = 1
     parent_datasets.foreach(ds => {
       ds_list += (if (i>1) ", " else "") + ds.id
-      var j = 1
       ds.collections.foreach(coll => {
         if (!coll_list.contains(coll.uuid)) {
           coll_list += (if (j>1) ", " else "") + coll.uuid
           j += 1
         }
       })
-      var k = 1
       ds.spaces.foreach(sp => {
         if (!space_list.contains(sp.uuid)) {
-          space_list += (if (k > 1) ", " else "") + sp.uuid
+          space_list += (if (k>1) ", " else "") + sp.uuid
           k += 1
         }
       })
