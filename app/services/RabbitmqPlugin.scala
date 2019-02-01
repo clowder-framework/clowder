@@ -41,6 +41,7 @@ import scala.util.Try
   */
 case class ExtractorMessage(
   fileId: UUID,
+  notifies: List[String],
   intermediateId: UUID,
   host: String,
   queue: String,
@@ -375,7 +376,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       case Some(d) =>
         getQueues(d, routingKey, file.contentType).foreach{ queue =>
           val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
-          val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString,
+
+          val notifies = file.author.email match {
+            case Some(useremail) => List[String](useremail)
+            case None => List[String]()
+          }
+
+          val msg = ExtractorMessage(file.id, notifies, file.id, host, queue, extraInfo, file.length.toString,
             d.id, "", apiKey, routingKey, source, "created", None)
           extractWorkQueue(msg)
         }
@@ -396,7 +403,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
-    val msg = ExtractorMessage(file.id, file.id, host, routingKey, extraInfo, file.length.toString, null,
+    //FIXME, should we pass user's email address?
+    val notifies = List[String]()
+
+    val msg = ExtractorMessage(file.id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
   }
@@ -416,7 +426,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     queues.foreach{ extractorId =>
       val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
-      val msg = ExtractorMessage(file.id, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+
+      val notifies = file.author.email match {
+        case Some(useremail) => List[String](useremail)
+        case None => List[String]()
+      }
+
+      val msg = ExtractorMessage(file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
       extractWorkQueue(msg)
     }
@@ -436,7 +452,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     queues.foreach{ extractorId =>
       val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
-      val msg = ExtractorMessage(file.id, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+
+      val notifies = file.author.email match {
+        case Some(useremail) => List[String](useremail)
+        case None => List[String]()
+      }
+
+      val msg = ExtractorMessage(file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "removed", Some(target))
       extractWorkQueue(msg)
     }
@@ -457,7 +479,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
-    val msg = ExtractorMessage(file.id, file.id, host, queue, extraInfo, file.length.toString, datasetId,
+
+    val notifies = file.author.email match {
+      case Some(useremail) => List[String](useremail)
+      case None => List[String]()
+    }
+
+    val msg = ExtractorMessage(file.id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
   }
@@ -470,10 +498,19 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param datasetId
     * @param newFlags
     */
-  def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String): Unit = {
+  def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String, user: Option[User]): Unit = {
     Logger.debug(s"Sending message $queue from $host with extraInfo $extraInfo")
     val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
-    val msg = ExtractorMessage(datasetId, datasetId, host, queue, extraInfo, 0.toString, datasetId,
+
+    val notifies = user match {
+      case Some(u) => u.email match {
+        case Some(email) => List[String](email)
+        case None => List[String]()
+      }
+      case None => List[String]()
+    }
+
+    val msg = ExtractorMessage(datasetId, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
   }
@@ -497,7 +534,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             getQueues(dataset, routingKey, "").foreach { extractorId =>
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
-              val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+              //FIXME, should we pass user's email address?
+              val notifies = List[String]()
+
+              val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "added", Some(target))
               extractWorkQueue(msg)
             }
@@ -512,7 +552,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           getQueues(dataset, routingKey, fileType).foreach { extractorId =>
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
-            val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+            //FIXME, should we pass user's email address?
+            val notifies = List[String]()
+
+            val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "added", Some(target))
             extractWorkQueue(msg)
           }
@@ -534,6 +577,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       "resourceType"->resourceRef.resourceType.name,
       "resourceId"->resourceRef.id.toString)
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    //FIXME, should we pass user's email address?
+    val notifies = List[String]()
 
     resourceRef.resourceType match {
       // metadata added to dataset
@@ -543,7 +588,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             getQueues(dataset, routingKey, "").foreach { extractorId =>
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
-              val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+              val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "removed", Some(target))
               extractWorkQueue(msg)
             }
@@ -558,7 +603,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           getQueues(dataset, routingKey, fileType).foreach { extractorId =>
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
-            val msg = ExtractorMessage(resourceRef.id, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+            val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "removed", Some(target))
             extractWorkQueue(msg)
           }
@@ -580,8 +625,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     //since the thumbnail extractor during processing will need to upload to correct mongo collection.
     val routingKey = exchange +".query." + contentType.replace("/", ".")
     Logger.debug(s"Sending message $routingKey from $host")
+    //FIXME, should we pass user's email address?
+    val notifies = List[String]()
     val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
-    val msg = ExtractorMessage(tempFileId, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
+    val msg = ExtractorMessage(tempFileId, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
   }
@@ -597,7 +644,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val extraInfo = Map("section_id"->sectionId)
     val source = Entity(ResourceRef(ResourceRef.preview, preview.id), None, JsObject(Seq.empty))
     val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
-    val msg = ExtractorMessage(sectionId, sectionId, host, routingKey, extraInfo, 0.toString, null,
+    //FIXME, should we pass user's email address?
+    val notifies = List[String]()
+    val msg = ExtractorMessage(sectionId, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
       "", apiKey, routingKey, source, "added", Some(target))
     extractWorkQueue(msg)
   }
@@ -687,7 +736,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
   val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
 
   def receive = {
-    case ExtractorMessage(id, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
+    case ExtractorMessage(id, notifies, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
     source, activity, target) => {
       var theDatasetId = ""
       if (datasetId != null)
@@ -705,6 +754,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
       }
 
       val msgMap = scala.collection.mutable.Map(
+        "notifies" -> Json.toJson(notifies),
         "id" -> Json.toJson(id.stringify),
         "intermediateId" -> Json.toJson(intermediateId.stringify),
         "fileSize" -> Json.toJson(fileSize),

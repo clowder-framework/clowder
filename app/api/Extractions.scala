@@ -558,7 +558,7 @@ class Extractions @Inject()(
               "parameters" -> parameters.toString,
               "action" -> "manual-submission")
 
-            p.submitDatasetManually(host, key, extra, ds_id, "")
+            p.submitDatasetManually(host, key, extra, ds_id, "", request.user)
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>
