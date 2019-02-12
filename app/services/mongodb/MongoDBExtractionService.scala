@@ -35,7 +35,7 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.find(MongoDBObject("file_id" -> new ObjectId(resource.id.stringify))).toList
   }
 
-  def insert(extraction: Extraction) {
+  def insert(extraction: Extraction): Option[ObjectId] = {
     Extraction.insert(extraction)
   }
   

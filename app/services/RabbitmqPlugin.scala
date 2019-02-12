@@ -13,6 +13,7 @@ import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client._
 import models._
+import org.bson.types.ObjectId
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
@@ -40,6 +41,7 @@ import scala.util.Try
   * @param secretKey
   */
 case class ExtractorMessage(
+  msgid: UUID,
   fileId: UUID,
   notifies: List[String],
   intermediateId: UUID,
@@ -362,6 +364,23 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
+    * Post the event of SUBMITTED
+    * @param file_id the UUID of file
+    * @param extractor_id the extractor queue name to be submitted
+    */
+  def postSubmissionEven(file_id: UUID, extractor_id: String): UUID = {
+      val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+
+      import java.text.SimpleDateFormat
+      val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
+      val submittedDateConvert = Some(new java.util.Date())
+      extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "SUBMITTED", submittedDateConvert, None)) match {
+        case Some(objectid) => UUID(objectid.toString)
+        case None => UUID("")
+      }
+  }
+
+  /**
     * Publish to the proper queues when a new file is uploaded to the system.
     * @param file the file that was just uploaded
     * @param dataset the dataset the file belongs to
@@ -382,7 +401,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             case None => List[String]()
           }
 
-          val msg = ExtractorMessage(file.id, notifies, file.id, host, queue, extraInfo, file.length.toString,
+          val id = postSubmissionEven(file.id, queue)
+
+          val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString,
             d.id, "", apiKey, routingKey, source, "created", None)
           extractWorkQueue(msg)
         }
@@ -405,8 +426,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
     //FIXME, should we pass user's email address?
     val notifies = List[String]()
-
-    val msg = ExtractorMessage(file.id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
+    val id = postSubmissionEven(file.id, routingKey)
+    val msg = ExtractorMessage(id, file.id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
   }
@@ -432,7 +453,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         case None => List[String]()
       }
 
-      val msg = ExtractorMessage(file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+      val id = postSubmissionEven(file.id, extractorId)
+
+      val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
       extractWorkQueue(msg)
     }
@@ -457,8 +480,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         case Some(useremail) => List[String](useremail)
         case None => List[String]()
       }
-
-      val msg = ExtractorMessage(file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+      val id = postSubmissionEven(file.id, extractorId)
+      val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "removed", Some(target))
       extractWorkQueue(msg)
     }
@@ -484,8 +507,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       case Some(useremail) => List[String](useremail)
       case None => List[String]()
     }
-
-    val msg = ExtractorMessage(file.id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
+    val id = postSubmissionEven(file.id, queue)
+    val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
   }
@@ -509,8 +532,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       }
       case None => List[String]()
     }
-
-    val msg = ExtractorMessage(datasetId, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
+    val id = postSubmissionEven(datasetId, queue)
+    val msg = ExtractorMessage(id, datasetId, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
   }
@@ -537,7 +560,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
               //FIXME, should we pass user's email address?
               val notifies = List[String]()
 
-              val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+              val id = postSubmissionEven(resourceRef.id, extractorId)
+              val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "added", Some(target))
               extractWorkQueue(msg)
             }
@@ -554,8 +578,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
             //FIXME, should we pass user's email address?
             val notifies = List[String]()
-
-            val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+            val id = postSubmissionEven(resourceRef.id, extractorId)
+            val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "added", Some(target))
             extractWorkQueue(msg)
           }
@@ -588,7 +612,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             getQueues(dataset, routingKey, "").foreach { extractorId =>
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
-              val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+
+              val id = postSubmissionEven(resourceRef.id, extractorId)
+              val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "removed", Some(target))
               extractWorkQueue(msg)
             }
@@ -603,7 +629,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           getQueues(dataset, routingKey, fileType).foreach { extractorId =>
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
-            val msg = ExtractorMessage(resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+
+            val id = postSubmissionEven(resourceRef.id, extractorId)
+            val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "removed", Some(target))
             extractWorkQueue(msg)
           }
@@ -628,7 +656,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     //FIXME, should we pass user's email address?
     val notifies = List[String]()
     val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
-    val msg = ExtractorMessage(tempFileId, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
+
+    val id = postSubmissionEven(tempFileId, routingKey)
+    val msg = ExtractorMessage(id, tempFileId, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
   }
@@ -646,7 +676,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
     //FIXME, should we pass user's email address?
     val notifies = List[String]()
-    val msg = ExtractorMessage(sectionId, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
+
+    val id = postSubmissionEven(sectionId, routingKey)
+    val msg = ExtractorMessage(id, sectionId, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
       "", apiKey, routingKey, source, "added", Some(target))
     extractWorkQueue(msg)
   }
@@ -736,7 +768,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
   val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
 
   def receive = {
-    case ExtractorMessage(id, notifies, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
+    case ExtractorMessage(msgid, fileid, notifies, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
     source, activity, target) => {
       var theDatasetId = ""
       if (datasetId != null)
@@ -755,7 +787,8 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
 
       val msgMap = scala.collection.mutable.Map(
         "notifies" -> Json.toJson(notifies),
-        "id" -> Json.toJson(id.stringify),
+        "msgid" -> Json.toJson(msgid.stringify),
+        "id" -> Json.toJson(fileid.stringify),
         "intermediateId" -> Json.toJson(intermediateId.stringify),
         "fileSize" -> Json.toJson(fileSize),
         "host" -> Json.toJson(actualHost),
