@@ -201,10 +201,11 @@ line-height: 1.5;
                     // reset submission value
                     $("#@id #addMetadataBasic #selected_field").empty();
                     $("#@id #addMetadataBasic #add-metadata-select").val('').trigger("chosen:updated");
-                    if($('#'+'@contentDiv'+' .panel').length == 0) {
-                        $('#' + "@contentDiv").empty();
-                    }
-                    $('#'+"@contentDiv").prepend(response);
+                    $('#no-metadata-label').empty();
+
+                    // Pull both the new card and new table row from the response and render it in the DOM
+                    $('#metadata-cards').prepend(response['cards']);
+                    $('#metadata-table-body').prepend(response['table']);
                     notify("Metadata successfully added.", "success", false, 2000);
                 });
 
@@ -312,7 +313,11 @@ line-height: 1.5;
                             $(selector).val('');
                         }
                         $("#@id #addMetadataBasic #add-metadata-select").val('').trigger("chosen:updated");
-                        $('#'+"@contentDiv").prepend(response);
+                        $('#no-metadata-label').empty();
+
+                        // Pull both the new card and new table row from the response and render it in the DOM
+                        $('#metadata-cards').prepend(response['cards']);
+                        $('#metadata-table-body').prepend(response['table']);
                         notify("Metadata successfully added.", "success", false, 2000);
                     });
 

@@ -365,7 +365,13 @@ class Metadata @Inject() (
                   case None =>
                     Logger.error("Metadata missing attachedTo subdocument")
                 }
-                Ok(views.html.metadatald.view(List(metadata), true)(request.user))
+
+                // FIXME: the API should return JSON, not raw HTML
+                // Emit our newly-created metadata as both a new card and a new table row
+                Ok(Json.obj(
+                  "cards" -> views.html.metadatald.newCard(metadata)(request.user).toString(),
+                  "table" -> views.html.metadatald.newTableRow(metadata)(request.user).toString()
+                ))
               } else {
                 BadRequest(toJson("Invalid resource type"))
               }

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- New view for Files/Datasets offering a Table View of the attached Metadata.
 - Pass user email address in the extraction rabbitmq message when file uploading and manually submitting extraction.
   [CATS-963](https://opensource.ncsa.illinois.edu/jira/browse/CATS-963)
 - Extraction history for dataset extractors is now displayed on dataset page.
