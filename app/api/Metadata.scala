@@ -147,6 +147,7 @@ class Metadata @Inject() (
                 body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
               }
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
+              Ok(JsObject(Seq("status" -> JsString("ok"))))
             }
             case None => BadRequest("The space does not exist")
           }
@@ -172,6 +173,18 @@ class Metadata @Inject() (
               body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
             }
             addDefinitionHelper(uri, body, None, user, None)
+
+            // Now, propagate global definition to all spaces
+            spaceService.list().foreach(space => {
+              // assign a default uri if not specified
+              if (uri == "") {
+                // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
+                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+              }
+              addDefinitionHelper(uri, body, Some(space.id), user, Some(space))
+            })
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
           } else {
             BadRequest(toJson("Invalid Resource type"))
           }
@@ -266,6 +279,22 @@ class Metadata @Inject() (
               case None if Permission.checkServerAdmin(Some(user)) => {
                 metadataService.deleteDefinition(id)
                 events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "delete_metadata_instance", new Date()))
+
+                // FIXME: How should we handle URI conflicts between global and space?
+                // FIXME: propagate global deletion to all spaces
+                /*
+                val mdUri = (md.json \ "uri").toString().replace("\"", "")
+                spaceService.list().foreach(space => {
+                  metadataService.getDefinitionByUriAndSpace(mdUri, Option(space.id.toString())) match {
+                    case Some(spaceMd) => {
+                      metadataService.deleteDefinition(spaceMd.id)
+                      events.addObjectEvent(Some(user), space.id, space.name, "delete_metadata_space")
+                    }
+                    case None => Logger.debug("Skipping deletion.. no metadata defn found for (uri, spaceId) = " +
+                      "(" + mdUri.toString() + ", " + space.id.toString() + ")")
+                  }
+                })
+                */
                 Ok(JsObject(Seq("status" -> JsString("ok"))))
               }
               case _ => {

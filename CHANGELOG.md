@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Cascade creation and deletion of global metadata definitions to all spaces.
+  [CATS-967](https://opensource.ncsa.illinois.edu/jira/browse/CATS-967)
 - New view for Files/Datasets offering a Table View of the attached Metadata.
 - Add SUBMITTED event on the GUI of extractions and pass this submitted event id into the rabbitmq message.
   [CATS-969] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-969)
