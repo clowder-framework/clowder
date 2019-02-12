@@ -7,7 +7,12 @@
     var s = document.createElement("script");
     s.type = "text/javascript";
     s.src = Configuration.previewer + "/../../zip.js";
-    $(Configuration.tab).append(s);
+    $(initialTab).append(s);
+
+    var l = document.createElement("link");
+    l.rel = 'stylesheet';
+    l.href = '/assets/stylesheets/glyphicon-animations.css';
+    $(initialTab).append(l);
 
     zip.workerScriptsPath = Configuration.previewer + '../../../';
 
@@ -20,39 +25,50 @@
 
     $(document).ready(function() {
         $(initialTab).append(btn);
+        $(initialTab).append("<div id='loading-animation' style='display:none;'>" +
+            "<span class='glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-2x'></span>" +
+            " Zip file contents are loading...</div>");
         $("#zipLoadBtn").click(function () {
             loadZipContents(initialTab);
-            $("zipLoadBtn").hide();
         });
     });
 
     var loadZipContents = function() {
-        console.log("Button clicked!");
-        $(initialTab).append("<link rel='stylesheet' href='/assets/stylesheets/glyphicon-animations.css'>")
-        $(initialTab).append("<span class='glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-2x'></span> Zip file contents are loading...");
+        $('#loading-animation').show();
 
         var xhr = new XMLHttpRequest();
         xhr.tab = initialTab;
         xhr.onreadystatechange = function (response) {
-            if (this.readyState == 4 && this.status == 200) {
-                var data = this.response;
-                var box = this.tab;
+            if (this.readyState == 4) {
+                if (this.status == 200) {
+                    var data = this.response;
+                    var box = this.tab;
 
-                zip.createReader(new zip.BlobReader(data), function (reader) {
-                    // get all entries from the zip
-                    reader.getEntries(function (entries) {
-                        if (entries.length) {
-                            var content = "</br><p>" + entries.length + " contents listed in zip file:</p></br>";
-                            ;
-                            content += "<ul>"
-                            for (var e = 0; e < entries.length; e++) {
-                                content += "<li>" + entries[e]['filename'] + "</li>"
+                    zip.createReader(new zip.BlobReader(data), function (reader) {
+                        // get all entries from the zip
+                        reader.getEntries(function (entries) {
+                            if (entries.length) {
+                                var content = "</br><p>" + entries.length + " contents listed in zip file:</p></br>";
+                                ;
+                                content += "<ul>"
+                                for (var e = 0; e < entries.length; e++) {
+                                    content += "<li>" + entries[e]['filename'] + "</li>"
+                                }
+                                content += "</ul>";
+                                $(box).html(content);
                             }
-                            content += "</ul>";
-                            $(box).html(content);
-                        }
+                        });
                     });
-                });
+
+                    // Hide the button after successful load
+                    $("#zipLoadBtn").hide();
+                } else if (this.status == 403) {
+                    // Show an error message on unsuccessful load
+                    $("#zipLoadBtn").html("You do not have permission to view this file's contents");
+                }
+
+                // Always hide the loading animation/icon
+                $('#loading-animation').hide();
             }
         };
         xhr.open('GET', Configuration.url);
