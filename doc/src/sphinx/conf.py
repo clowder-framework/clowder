@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Clowder'
-copyright = u'2017, ISDA, NCSA'
+copyright = u'2019, ISDA, NCSA'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

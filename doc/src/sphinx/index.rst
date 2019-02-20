@@ -2,7 +2,7 @@
 Clowder: Data Management for Long Tail Data
 ===========================================
 
-Welcome to Clowder's documentation. Clowder is an web-based data management system that allows users to share,
+Welcome to Clowder's documentation. Clowder is a web-based data management system that allows users to share,
 annotate, organize and analyze large collections of datasets. It provides support for extensible metadata annotation
 and distributed analytics for automatic curation of uploaded data. Clowder is open source software that can
 be customized and deployed on your own cloud.
