@@ -3938,7 +3938,7 @@ paths:
           type: string
           name: endpoint
           in: path
-        - required: false
+        - required: true
           type: string
           name: pathSuffix
           in: path
@@ -3955,7 +3955,7 @@ paths:
           type: string
           name: endpoint
           in: path
-        - required: false
+        - required: true
           type: string
           name: pathSuffix
           in: path
@@ -3978,7 +3978,7 @@ paths:
           type: string
           name: endpoint
           in: path
-        - required: false
+        - required: true
           type: string
           name: pathSuffix
           in: path
@@ -4001,7 +4001,7 @@ paths:
           type: string
           name: endpoint
           in: path
-        - required: false
+        - required: true
           type: string
           name: pathSuffix
           in: path
@@ -4014,16 +4014,14 @@ paths:
   /reports/metrics:
     get:
       responses:
-        200:
+        '200':
           description: A CSV with usage metrics
           schema:
             type: file
-          headers:
-            Content-type:
-              type: file
-              description: text/csv
         401:
           description: Not authorized
+      produces:
+        - text/csv
       tags:
         - reporting
       summary: Download usage metrics report for files, datasets and collections as CSV.
