@@ -4014,7 +4014,7 @@ paths:
   /reports/metrics:
     get:
       responses:
-        '200':
+        200:
           description: A CSV with usage metrics
           schema:
             type: file
@@ -4641,3 +4641,4 @@ definitions:
         enum: [by-nc-nd, by-nd, by-nc, by-nc-sa, by-sa, by]
       allowDownload:
         type: string
+        
