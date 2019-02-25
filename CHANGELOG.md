@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
+- Cleaned up clowder init code docker image see README.
 
 ## 1.5.2 - 2018-12-14
 
