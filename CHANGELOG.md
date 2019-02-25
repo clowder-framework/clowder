@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Allow user to create and manage Controlled Vocabularies within Clowder.
 - Cascade creation and deletion of global metadata definitions to all spaces.
   [CATS-967](https://opensource.ncsa.illinois.edu/jira/browse/CATS-967)
 - New view for Files/Datasets offering a Table View of the attached Metadata.

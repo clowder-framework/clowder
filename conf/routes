@@ -817,6 +817,17 @@ GET         /api/vocabterms/:id                                                 
 
 
 # ----------------------------------------------------------------------
+# STANDARDVOCABULARY API
+# ----------------------------------------------------------------------
+
+GET          /api/standardvocab                                                            @api.Metadata.getVocabularies()
+POST         /api/standardvocab                                                            @api.Metadata.createVocabulary()
+GET          /api/standardvocab/:id                                                        @api.Metadata.getVocabulary(id: UUID)
+GET          /api/standardvocab/:id/terms                                                  @api.Metadata.getVocabularyTerms(id: UUID)
+PUT          /api/standardvocab/:id                                                        @api.Metadata.updateVocabulary(id:UUID)
+DELETE       /api/standardvocab/:id                                                        @api.Metadata.deleteVocabulary(id: UUID)
+
+# ----------------------------------------------------------------------
 # PROXY API
 # ----------------------------------------------------------------------
 

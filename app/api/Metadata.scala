@@ -36,6 +36,7 @@ class Metadata @Inject() (
   datasets: DatasetService,
   files: FileService,
   curations: CurationService,
+  vocabs: StandardVocabularyService,
   events: EventService,
   spaceService: SpaceService) extends ApiController {
 
@@ -110,8 +111,10 @@ class Metadata @Inject() (
     val foo = for {
       md <- metadataService.getDefinition(id)
       url <- (md.json \ "definitions_url").asOpt[String]
+      // If original request had a Cookie header, copy it to the proxied request
+      cookies <- request.headers.get("Cookie")
     } yield {
-      WS.url(url).get().map(response => Ok(response.body.trim))
+      WS.url(url).withHeaders(COOKIE -> cookies).get().map(response => (Status(response.status))(response.body.trim))
     }
     foo.getOrElse {
       Future(InternalServerError)
@@ -190,6 +193,117 @@ class Metadata @Inject() (
           }
         }
         case None => BadRequest(toJson("Invalid user"))
+      }
+  }
+
+  // Return all standard vocabularies
+  def getVocabularies() = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          val vocabList = vocabs.retrieve()
+          Ok(toJson(vocabList))
+        }
+      }
+  }
+
+  // Given a vocab ID, look up and return the terms list of
+  // the matching standard vocabulary
+  def getVocabularyTerms(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => BadRequest(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(vocab) => {
+              Ok(toJson(vocab.terms))
+            }
+          }
+        }
+      }
+  }
+
+  // Given a vocab ID, look up and return the matching
+  // standard vocabulary
+  def getVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => BadRequest(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              Ok(toJson(v))
+            }
+          }
+        }
+      }
+  }
+
+  // Given a list of terms, create a new standard vocabulary from the list
+  // Expects a JSON array of Strings as the request body
+  def createVocabulary() = AuthenticatedAction(parse.json) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          val terms: List[String] = request.body.asOpt[List[String]]
+            .getOrElse(List.empty)
+            .map(term => term.trim())
+            .filter(term => !term.isEmpty)
+          if (terms.isEmpty()) {
+            BadRequest(toJson("Empty terms list is not allowed"))
+          } else {
+            val vocabulary = vocabs.create(terms)
+            Ok(toJson(vocabulary))
+          }
+        }
+      }
+  }
+
+  // Given an ID, replace the entire terms list of a standard vocabulary
+  // Expects a JSON array of Strings as the request body
+  def updateVocabulary(id: UUID) = AuthenticatedAction(parse.json) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => NotFound(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              // Update and return vocabulary
+              val terms: List[String] = request.body.asOpt[List[String]]
+                .getOrElse(List.empty)
+                .map(term => term.trim())
+                .filter(term => !term.isEmpty)
+              if (terms.isEmpty()) {
+                BadRequest(toJson("Empty terms list is not allowed"))
+              } else {
+                val vocabulary = vocabs.update(id, terms)
+                Ok(toJson(vocabulary))
+              }
+            }
+          }
+        }
+      }
+  }
+
+  // Given an ID, delete the standard vocabulary with that ID
+  def deleteVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => NotFound(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              vocabs.delete(id)
+              Ok(toJson(v))
+            }
+          }
+        }
       }
   }
 

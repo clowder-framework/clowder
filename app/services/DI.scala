@@ -52,6 +52,7 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[LogoService]).to(get("service.logos", "services.mongodb.MongoDBLogoService"))
     bind(classOf[VocabularyService]).to(get("service.vocabularies", "services.mongodb.MongoDBVocabularyService"))
     bind(classOf[VocabularyTermService]).to(get("service.vocabularyterms", "services.mongodb.MongoDBVocabularyTermService"))
+    bind(classOf[StandardVocabularyService]).to(get("service.standardvocabulary", "services.mongodb.MongoDBStandardVocabularyService"))
     bind(classOf[SelectionService]).to(get("service.select", "services.mongodb.MongoDBSelectionService"))
   }
 
