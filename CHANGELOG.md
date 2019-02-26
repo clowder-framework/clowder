@@ -48,6 +48,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
 - Cleaned up clowder init code docker image see README.
+- /api/search endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
+  [CATS-968](https://opensource.ncsa.illinois.edu/jira/browse/CATS-968)
+
 
 ## 1.5.2 - 2018-12-14
 

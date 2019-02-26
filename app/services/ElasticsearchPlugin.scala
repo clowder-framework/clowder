@@ -173,6 +173,93 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
+  /** Search using a simple text string */
+  def searchAdvanced(query: String, resource_type: Option[String],
+                     datasetid: Option[String], collectionid: Option[String],
+                     field: Option[String], tag: Option[String], index: String = nameOfIndex): List[ResourceRef] = {
+
+    // whether to restrict to a particular metadata field, or search all fields (including tags, name, etc.)
+    val mdfield = field match {
+      case Some(k) => "metadata."+k
+      case None => "_all"
+    }
+
+    // BEGIN CREATING ELASTICSEARCH QUERY OBJECT -----
+    val queryObj = jsonBuilder().startObject().startObject("bool").startArray("must")
+
+    if (query != "") {
+      // Include actual query string wrapped in regex
+      queryObj.startObject().startObject("regexp").field(mdfield, query).endObject().endObject()
+    }
+
+    // Restrict to a particular tag - currently requires exact match
+    tag match {
+      case Some(t) => queryObj.startObject().startObject("match").field("tags.name", t).endObject().endObject()
+      case None => {}
+    }
+
+    // Restrict to particular resource_type if requested
+    resource_type match {
+      case Some(restype) => queryObj.startObject().startObject("match").field("resource_type", restype).endObject().endObject()
+      case None => {}
+    }
+
+    // Restrict to particular dataset ID (only return files)
+    datasetid match {
+      case Some(dsid) => {
+        queryObj.startObject().startObject("match").field("resource_type", "file").endObject().endObject()
+        queryObj.startObject().startObject("match").field("child_of", dsid).endObject().endObject()
+      }
+      case None => {}
+    }
+
+    // Restrict to particular collection ID (only return datasets)
+    collectionid match {
+      case Some(cid) => {
+        queryObj.startObject().startObject("bool").startArray("should")
+        // type=dataset and parent=collection
+        queryObj.startObject().startObject("bool").startArray("must")
+          .startObject().startObject("match").field("resource_type", "dataset").endObject().endObject()
+          .startObject().startObject("match").field("child_of", cid).endObject().endObject()
+          .endArray().endObject().endObject()
+        // TODO: OR type=file and parent dataset has parent=collection
+        /* TODO: has_parent requires explicit Elasticsearch relationships we don't currently have. joins not possible.
+        queryObj.startObject().startObject("bool").startArray("must")
+          .startObject().startObject("has_parent").field("parent_type", "clowder_object")
+          .startObject("query").startObject("bool").startArray("must")
+          .startObject().startObject("match").field("resource_type", "dataset").endObject().endObject()
+          .startObject().startObject("match").field("child_of", cid).endObject().endObject()
+          .endArray().endObject().endObject().endObject().endObject()
+        queryObj.endArray().endObject().endObject()
+        */
+          .endArray().endObject().endObject()
+      }
+      case None => {}
+    }
+
+    queryObj.endArray().endObject().endObject()
+    // FINISH CREATING ELASTICSEARCH QUERY OBJECT -----
+
+
+    try {
+      val response = _search(queryObj, index)
+      var results = MutableList[ResourceRef]()
+      for (hit <- response.getHits().getHits()) {
+        val resource_type = hit.getSource().get("resource_type").toString
+        results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+      }
+
+      results.toList
+    } catch {
+      case spee: SearchPhaseExecutionException => {
+        List[ResourceRef]()
+      }
+      case e: Exception => {
+        List[ResourceRef]()
+      }
+    }
+  }
+
   /*** Execute query */
   def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Option[Int] = Some(0), size: Option[Int] = Some(60)): SearchResponse = {
     connect()

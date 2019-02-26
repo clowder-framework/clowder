@@ -26,6 +26,8 @@ consumes:
 #                                   Tags                                       #
 ################################################################################
 tags:
+  - name: search
+    description: The basic search endpoint allows searching across resources.
   - name: files
     description: A file is the raw bytes plus metadata.
   - name: folders
@@ -69,6 +71,53 @@ security:
 # Paths                                                                        #
 ################################################################################
 paths:
+
+  ##############################################################################
+  # Search                                                                     #
+  ##############################################################################
+  /search:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: false
+          type: string
+          name: query
+          in: query
+          description: String term to search for. Can include regular expressions using Elasticsearch syntax.
+        - required: false
+          type: string
+          name: resource_type
+          in: query
+          description: Restrict search results to "file", "dataset", or "collection".
+        - required: false
+          type: string
+          name: datasetid
+          in: query
+          description: Return only files belonging to a specific dataset.
+        - required: false
+          type: string
+          name: collectionid
+          in: query
+          description: Return only datasets belonging to a specific collection.
+        - required: false
+          type: string
+          name: field
+          in: query
+          description: Restrict search to a specific metadata field, e.g. "Alternative Title".
+        - required: false
+          type: string
+          name: tag
+          in: query
+          description: Search for resources with a specific tag.
+      tags:
+        - search
+      summary: Perform a basic search
+      description: |
+        Return files, datasets and/or collections matching query criteria. Search
+        can be filtered by a specific resource ID, limited to tags or specific
+        metadata fields.
 
   ##############################################################################
   # Files                                                                      #

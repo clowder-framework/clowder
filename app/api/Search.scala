@@ -54,6 +54,62 @@ class Search @Inject() (
     }
   }
 
+  /** Search using a simple text string with filters */
+  def search(query: String, resource_type: Option[String],
+             datasetid: Option[String], collectionid: Option[String],
+             field: Option[String], tag: Option[String]) = PermissionAction(Permission.ViewDataset) { implicit request =>
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        var filesFound = ListBuffer.empty[String]
+        var datasetsFound = ListBuffer.empty[String]
+        var collectionsFound = ListBuffer.empty[String]
+
+        val response = plugin.searchAdvanced(query, resource_type, datasetid, collectionid, field, tag)
+
+        for (resource <- response) {
+          resource.resourceType match {
+            case ResourceRef.file => filesFound += resource.id.stringify
+            case ResourceRef.dataset => datasetsFound += resource.id.stringify
+            case ResourceRef.collection => collectionsFound += resource.id.stringify
+          }
+        }
+
+        resource_type match {
+          case Some("file") => Ok(toJson(Map[String,JsValue]("files" -> toJson(filesFound))))
+          case Some("dataset") => Ok(toJson(Map[String,JsValue]("datasets" -> toJson(datasetsFound))))
+          case Some("collection") => Ok(toJson(Map[String,JsValue]("collections" -> toJson(collectionsFound))))
+
+          case _ => {
+            // If datasetid is provided, only files are returned
+            datasetid match {
+              case Some(dsid) => Ok(toJson( Map[String,JsValue](
+                  "files" -> toJson(filesFound)
+                )))
+              case None => {
+
+                // If collectionid is provided, only datasets returned
+                collectionid match {
+                  case Some(collid) => Ok(toJson( Map[String,JsValue](
+                    "datasets" -> toJson(datasetsFound)
+                  )))
+                  case None => Ok(toJson( Map[String,JsValue](
+                    "files" -> toJson(filesFound),
+                    "datasets" -> toJson(datasetsFound),
+                    "collections" -> toJson(collectionsFound)
+                  )))
+                }
+              }
+            }
+          }
+        }
+      }
+      case None => {
+        Logger.debug("Search plugin not enabled")
+        Ok(views.html.pluginNotEnabled("Text search"))
+      }
+    }
+  }
+
   /** Search using string-encoded Json object (e.g. built by Advanced Search form) */
   def searchJson(query: String, grouping: String, from: Option[Int], size: Option[Int]) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
