@@ -510,7 +510,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Events.getEvents,
         controllers.routes.javascript.Collections.sortedListInSpace,
         controllers.routes.javascript.Datasets.sortedListInSpace,
-        controllers.routes.javascript.Users.sendEmail
+        controllers.routes.javascript.Users.sendEmail,
+        controllers.routes.javascript.FileLinks.createLink
       )
     ).as(JSON) 
   }

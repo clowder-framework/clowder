@@ -101,6 +101,13 @@ GET            /fileThumbnail/:id/blob                                          
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
 
+# ----------
+# File Links
+# ----------
+GET            /files/:fileId/share                                                     @controllers.FileLinks.share(fileId: UUID)
+GET            /files/links/:linkId                                                     @controllers.FileLinks.download(linkId: UUID)
+POST           /files/:fileId/links                                                     @controllers.FileLinks.createLink(fileId: UUID)
+
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
