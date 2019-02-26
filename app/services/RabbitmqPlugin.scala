@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
+import com.rabbitmq.client.AMQP.Queue
 import com.rabbitmq.client._
 import models._
 import org.bson.types.ObjectId
@@ -57,7 +58,7 @@ case class ExtractorMessage(
   source: Entity,
   activity: String,
   target: Option[Entity]
-  )
+)
 
 // TODO add other optional fields
 case class Entity(
@@ -66,6 +67,8 @@ case class Entity(
   extra: JsObject
 )
 
+case class CancellationMessage(id: UUID, queueName: String, msgid: UUID)
+
 object Entity {
   implicit val implicitEntityWrites = Json.format[Entity]
 }
@@ -73,8 +76,8 @@ object Entity {
 
 
 /**
- * Rabbitmq service.
- */
+  * Rabbitmq service.
+  */
 class RabbitmqPlugin(application: Application) extends Plugin {
   val files: FileService = DI.injector.getInstance(classOf[FileService])
   val spacesService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
@@ -82,6 +85,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   val datasetService: DatasetService = DI.injector.getInstance(classOf[DatasetService])
 
   var extractQueue: Option[ActorRef] = None
+  val cancellationDownloadQueueName: String = "clowder.jobs.temp"
+  var cancellationQueue: Option[ActorRef] = None
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
   var factory: Option[ConnectionFactory] = None
@@ -146,7 +151,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     if (connection.isDefined) {
       Logger.debug("Connection closing")
       try {
-      connection.get.close()
+        connection.get.close()
       } catch {
         case e: Exception => Logger.error("Error closing connection.", e)
       }
@@ -175,17 +180,17 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       vhost = URLEncoder.encode(factory.get.getVirtualHost)
       username = factory.get.getUsername
       password = factory.get.getPassword
-            
+
       connection = Some(factory.get.newConnection())
       channel = Some(connection.get.createChannel())
 
       Logger.debug("vhost: "+ vhost)
-      
+
       // setup exchange if provided
       if (exchange != "") {
         channel.get.exchangeDeclare(exchange, "topic", true)
       }
-     
+
       // create an anonymous queue for replies
       val replyQueueName = channel.get.queueDeclare().getQueue
       Logger.debug("Reply queue name: " + replyQueueName)
@@ -218,7 +223,24 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       // Actor to submit to the rabbitmq broker
       extractQueue = Some(Akka.system.actorOf(Props(new PublishDirectActor(channel = channel.get,
         replyQueueName = replyQueueName))))
-
+      try {
+        val cancellationSearchTimeout: Long = configuration.getString("submission.cancellation.search.timeout").getOrElse("500").toLong
+        // create cancellation download queue to hold pending rabbitmq message
+        channel.get.queueDeclare(cancellationDownloadQueueName, true, false, false, null)
+        // Actor to connect to a rabbitmq queue to cancel the pending request
+        cancellationQueue = Some(Akka.system.actorOf(Props(new PendingRequestCancellationActor(exchange, connection, cancellationDownloadQueueName, cancellationSearchTimeout))))
+        // connect to cancellation download queue to re-dispatch the residual pending requests to their target rabbitmq queues.
+        val redispatch_cancellation_requests_channel: Channel = connection.get.createChannel()
+        val cancellationQueueConsumer: QueueingConsumer = new QueueingConsumer(redispatch_cancellation_requests_channel)
+        val cancellationQueueConsumerTag: String = redispatch_cancellation_requests_channel.basicConsume(cancellationDownloadQueueName, false, cancellationQueueConsumer)
+        resubmitPendingRequests(cancellationQueueConsumer, redispatch_cancellation_requests_channel, cancellationSearchTimeout)
+        redispatch_cancellation_requests_channel.basicCancel(cancellationQueueConsumerTag)
+        redispatch_cancellation_requests_channel.close()
+      } catch {
+        case e: Exception => {
+          Logger.error(s"[CANCELLATION] failed to re-dispatch residual requests from $cancellationDownloadQueueName", e)
+        }
+      }
       true
     } catch {
       case t: Throwable => {
@@ -282,7 +304,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         }
       }
     }
-}
+  }
 
   /**
     * Query list of global extractors for those enabled and filter by operation.
@@ -290,10 +312,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   private def getGlobalExtractorsByOperation(operation: String): List[String] = {
     extractorsService.getEnabledExtractors().flatMap(exId =>
       extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-        containsOperation(exInfo.process.dataset, operation) ||
+      containsOperation(exInfo.process.dataset, operation) ||
         containsOperation(exInfo.process.file, operation) ||
         containsOperation(exInfo.process.metadata, operation)
-      ).map(_.name)
+    ).map(_.name)
   }
 
   /**
@@ -306,7 +328,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     dataset.spaces.flatMap(s =>
       spacesService.getAllExtractors(s).flatMap(exId =>
         extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-      containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name))
+        containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name))
   }
 
   /**
@@ -369,15 +391,15 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param extractor_id the extractor queue name to be submitted
     */
   def postSubmissionEven(file_id: UUID, extractor_id: String): UUID = {
-      val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+    val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
 
-      import java.text.SimpleDateFormat
-      val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
-      val submittedDateConvert = Some(new java.util.Date())
-      extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "SUBMITTED", submittedDateConvert, None)) match {
-        case Some(objectid) => UUID(objectid.toString)
-        case None => UUID("")
-      }
+    import java.text.SimpleDateFormat
+    val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
+    val submittedDateConvert = Some(new java.util.Date())
+    extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "SUBMITTED", submittedDateConvert, None)) match {
+      case Some(objectid) => UUID(objectid.toString)
+      case None => UUID("")
+    }
   }
 
   /**
@@ -498,7 +520,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param newFlags
     */
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
-    datasetId: UUID, newFlags: String): Unit = {
+                         datasetId: UUID, newFlags: String): Unit = {
     Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
@@ -703,39 +725,39 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     }
   }
 
- /**
- * Get the exchange list for a given host
- */
+  /**
+    * Get the exchange list for a given host
+    */
   def getExchanges : Future[Response] = {
     connect
     getRestEndPoint("/api/exchanges/" + vhost )
   }
-  
+
   /**
-   * get list of queues attached to an exchange
-   */
+    * get list of queues attached to an exchange
+    */
   def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
     connect
     getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
   }
-  
+
   /**
-   * Get the binding lists (lists of routing keys) from the rabbitmq broker
-   */
+    * Get the binding lists (lists of routing keys) from the rabbitmq broker
+    */
   def getBindings: Future[Response] = {
     getRestEndPoint("/api/bindings")
   }
 
   /**
-   * Get Channel list from rabbitmq broker
-   */
+    * Get Channel list from rabbitmq broker
+    */
   def getChannelsList: Future[Response] = {
     getRestEndPoint("/api/channels")
   }
-  
+
   /**
-   * Get queue details for a given queue
-   */
+    * Get queue details for a given queue
+    */
   def getQueueDetails(qname: String): Future[Response] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname)
@@ -743,18 +765,204 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
 
   /**
-   * Get queue bindings for a given host and queue from rabbitmq broker
-   */
+    * Get queue bindings for a given host and queue from rabbitmq broker
+    */
   def getQueueBindings(qname: String): Future[Response] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname + "/bindings")
   }
 
   /**
-   * Get Channel information from rabbitmq broker for given channel id 'cid'
-   */
+    * Get Channel information from rabbitmq broker for given channel id 'cid'
+    */
   def getChannelInfo(cid: String): Future[Response] = {
     getRestEndPoint("/api/channels/" + cid)
+  }
+
+  def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID): Unit = {
+    connect
+    cancellationQueue match {
+      case Some(x) => x ! new CancellationMessage(id, queueName, msg_id)
+      case None => Logger.warn("Could not send message over RabbitMQ")
+    }
+  }
+
+  /**
+    * loop through the queue and dispatch the message via the routing key.
+    *
+    * @param cancellationQueueConsumer  the queue consumer to download the requests from the cancellation downloaded queue
+    * @param channel                    the channel connecting to the rabbitmq
+    * @param cancellationSearchTimeout  the timeout of downloading the requests from the rabbitmq
+    */
+  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long) = {
+    var loop = true
+    while( loop ) {
+      val delivery: QueueingConsumer.Delivery = cancellationQueueConsumer.nextDelivery(cancellationSearchTimeout)
+      delivery match {
+        case null => {
+          Logger.debug(s"[CANCELLATION] read $cancellationDownloadQueueName timeout, exit the looping on the cancellation download queue")
+          loop = false
+        }
+        case _ => {
+          val body = delivery.getBody()
+          val delivery_tag = delivery.getEnvelope.getDeliveryTag
+          val body_text = new String(body)
+          val json = Json.parse(body_text)
+          val routing_key: String = (json \ "routing_key").as[String]
+          val basicProperties = new BasicProperties().builder()
+            .contentType("application\\json")
+            .deliveryMode(2)
+            .build()
+          try {
+            val request_id = (json \ "msgid").asOpt[String] match {
+              case Some(id)=> Some(UUID(id))
+              case None => None
+            }
+
+            channel.basicAck(delivery_tag, false)
+            Logger.debug(s"[CANCELLATION] ACK $request_id to be removed from $cancellationDownloadQueueName")
+            channel.basicPublish(exchange, routing_key, true, basicProperties, body)
+            Logger.debug(s"[CANCELLATION] resubmit to $request_id, $routing_key, $body_text ")
+          } catch {
+            case e: Exception => {
+              Logger.error(s"[CANCELLATION] failed to publish, $routing_key", e)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+  * First, it will connect to the target rabbitmq queue to download each pending submission request and search the
+  * cancellation submission by comparing the message id of each pending submission request.
+  * This search will terminate when any of the following condition stands:
+  *   1. the cancellation submission has been found.
+  *   2. within the certain timeout, the target queue has no new pending submission.
+  *   3. the number of downloaded pending submission requests exceeds the Threshold.
+  *
+  * each downloaded submission(except the cancellation submission) will be forwarded to a named rabbitmq queue.
+  *
+  * Second, when the searching is terminated, it will remove and resubmit each submission from the named rabbitmq queue
+  * to the extractor queue(s) based on the routing key of each submission.
+  *
+  * @param exchange                       the exchange of the rabbitmq
+  * @param connection                     the connection to the rabbitmq
+  * @param cancellationDownloadQueueName  the queue name of the cancellation downloaded queue
+  */
+class PendingRequestCancellationActor(exchange: String, connection: Option[Connection], cancellationDownloadQueueName: String, cancellationSearchTimeout: Long) extends Actor {
+  val configuration = play.api.Play.configuration
+  val CancellationSearchNumLimits: Integer = configuration.getString("submission.cancellation.search.numlimits").getOrElse("100").toInt
+  def receive = {
+    case CancellationMessage(id, queueName, msg_id) => {
+      val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+      val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
+      var startDate = Some(new java.util.Date())
+      extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Requested", startDate, None))
+
+      val channel: Channel = connection.get.createChannel()
+      //1. connect to the target rabbitmq queue
+      val queueConsumer: QueueingConsumer = new QueueingConsumer(channel)
+      val queueConsumerTag: String = channel.basicConsume(queueName, false, queueConsumer)
+      val pendingMessages: Integer = channel.queueDeclarePassive(queueName).getMessageCount()
+      val maxSearchNum = math.max(CancellationSearchNumLimits, pendingMessages)
+      Logger.debug(s"[CANCELLATION] receive the cancellation request, $queueName, $msg_id search num limits: $maxSearchNum timeout: $cancellationSearchTimeout")
+      var loop: Boolean = true
+      // 2. parse each pending request and search for the cancellation request
+      var counts = 0
+      var foundCancellationRequest = false
+      while( loop ) {
+        val delivery: QueueingConsumer.Delivery = queueConsumer.nextDelivery(cancellationSearchTimeout)
+        delivery match {
+          case null => {
+            Logger.debug(s"[CANCELLATION] read, $queueName timeout, exit the searching of cancellation submission")
+            loop = false
+          }
+          case _ => {
+            val body = delivery.getBody()
+            val delivery_tag = delivery.getEnvelope.getDeliveryTag
+            val body_text = new String(body)
+            val json = Json.parse(body_text)
+
+            val request_id = (json \ "msgid").asOpt[String] match {
+              case Some(id)=> Some(UUID(id))
+              case None => None
+            }
+
+            if(request_id.isDefined && msg_id.toString() == request_id.get.toString()) {
+              Logger.debug(s"found cancellation request and then skip $request_id")
+              loop = false
+              foundCancellationRequest = true
+            } else {
+              // upload parsed pending requests to the cancellation download queue
+              try {
+                val basicProperties = new BasicProperties().builder()
+                  .contentType("application\\json")
+                  .deliveryMode(2)
+                  .build()
+                channel.basicPublish("", cancellationDownloadQueueName, basicProperties, body)
+                Logger.debug(s"[CANCELLATION] publish $request_id to the queue: $cancellationDownloadQueueName, $body_text")
+              } catch {
+                case e: Exception => {
+                  Logger.error(s"[CANCELLATION] failed to publish to queue: $cancellationDownloadQueueName", e)
+                }
+              }
+            }
+            try {
+              channel.basicAck(delivery_tag, false)
+              Logger.debug(s"[CANCELLATION] ACK $request_id to be removed from $queueName")
+            } catch {
+              case e: Exception => {
+                Logger.error(s"[CANCELLATION] failed to ACK $request_id, $body_text", e)
+              }
+            }
+          }
+        }
+        counts += 1;
+        if (counts > maxSearchNum) {
+          loop = false
+        }
+      }
+      // update extraction event
+      startDate = Some(new java.util.Date())
+      if(foundCancellationRequest) {
+        extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Success", startDate, None))
+      } else {
+        extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Failed", startDate, None))
+      }
+
+      try {
+        channel.basicCancel(queueConsumerTag)
+
+      } catch {
+        case e: Exception => {
+          Logger.error(s"[CANCELLATION] failed to cancel, $queueConsumerTag", e)
+        }
+      }
+
+      //3. resubmit pending requests from cancellation download queue to the target queue.
+      val cancellationQueueConsumer: QueueingConsumer = new QueueingConsumer(channel)
+      val cancellationQueueConsumerTag: String = channel.basicConsume(cancellationDownloadQueueName, false, cancellationQueueConsumer)
+      current.plugin[RabbitmqPlugin] match {
+        case Some(p) => p.resubmitPendingRequests(cancellationQueueConsumer, channel, cancellationSearchTimeout)
+        case None => Logger.error(s"[CANCELLATION] RabbitmqPlugin not enabled")
+      }
+
+      try {
+        channel.basicCancel(cancellationQueueConsumerTag)
+        channel.close()
+      } catch {
+        case e: Exception => {
+          Logger.error(s"[CANCELLATION] failed to cancel $queueConsumerTag", e)
+        }
+      }
+      Logger.debug(s"[CANCELLATION] finish cancellation request $queueName, $msg_id")
+
+    }
+    case _ => {
+      Logger.error("[CANCELLATION] Unknown message type submitted.")
+    }
   }
 }
 
@@ -842,8 +1050,8 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
 
 
 /**
- * Listen for responses coming back on replyQueue
- */
+  * Listen for responses coming back on replyQueue
+  */
 class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(channel) {
   override def handleDelivery(consumer_tag: String,
                               envelope: Envelope,
@@ -858,8 +1066,8 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 }
 
 /**
- * Actual message on reply queue
- */
+  * Actual message on reply queue
+  */
 class EventFilter(channel: Channel, queue: String) extends Actor {
   val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
 
@@ -891,4 +1099,4 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
 }
 
 case class Binding(source: String, vhost: String, destination: String, destination_type: String, routing_key: String,
-  arguments: JsObject, properties_key: String)
+                   arguments: JsObject, properties_key: String)

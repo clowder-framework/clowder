@@ -1,5 +1,4 @@
-@(extractions: Map[String, ExtractionGroup])
-
+@(extractions: Map[String, ExtractionGroup], extractType: String)
 <div class="well">
     @if(extractions.size == 0) {
         <p>No extraction events recorded.</p>
@@ -33,6 +32,11 @@
                                         <td width="19%"></td>
                                         <td width="81%"><b>@e2.start</b><br/>
                                             @e2.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
+                                            @if(e2.status == "SUBMITTED") {
+                                                <a class="btn btn-link" id='@(e2.id)' onclick="cancelSubmission('@(e2.file_id)', '@(e2.id)', '@(e2.extractor_id)', '@(extractType)')">
+                                                    Cancel
+                                                </a>
+                                            }
                                         </td>
                                     </tr>
 
@@ -46,3 +50,29 @@
         </table>
     }
 </div>
+<script type="text/javascript">
+        function cancelSubmission(id, submit_id, extractor_id, extractType) {
+            console.log("cancel submit: " + id + ", submit id: " + submit_id);
+            var dataBody = {'extractor': extractor_id};
+            var apicall = null
+
+            if (extractType == "dataset") {// dataset submission
+                apicall = jsRoutes.api.Extractions.cancelDatasetExtractionSubmission
+            } else if(extractType == "file"){
+                apicall = jsRoutes.api.Extractions.cancelFileExtractionSubmission
+            }
+            var request = apicall(id, submit_id).ajax({
+                data: JSON.stringify(dataBody),
+                type: 'POST',
+                contentType: "application/json",
+            });
+
+            request.done(function (response, textStatus, jqXHR){
+                notify("Cancellation request has been submitted", "success");
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+            });
+        }
+</script>
