@@ -114,20 +114,22 @@
                                                 }
                                             }
                                             @if(o.fields.length > 1){
-                                                <tr id="row_@m.id">
-                                                    <td><a href="#">Extraction</a></td>
-                                                    <td class="md-block tree" style="padding-left: 0;">
-                                                    @printContent(m, "content", i, true)
-                                                    </td>
-                                                    <td>@printContent(m, "header", i, true)</td>
-                                                    <td>
+                                                @for((key, value) <- o.fields.headOption.toList) {
+                                                    <tr id="row_@m.id">
+                                                        <td><a href="#">@key</a></td>
+                                                        <td class="md-block tree" style="padding-left: 0;">
+                                                        @printContent(m, "content", i, true)
+                                                        </td>
+                                                        <td>@printContent(m, "header", i, true)</td>
+                                                        <td>
                                                         @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                                                             <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
                                                                 <span class="panel-icon glyphicon glyphicon-trash"></span>
                                                             </a>
                                                         }
-                                                    </td>
-                                                </tr>
+                                                        </td>
+                                                    </tr>
+                                                }
                                             }
                                         }
                                         case _ => {

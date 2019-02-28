@@ -10,7 +10,7 @@
         @for((m, i) <- List(m).zipWithIndex) {
             @m.content match {
                 case o: JsObject => {
-                    @for((key, value) <- o.fields) {
+                    @for((key, value) <- o.fields.headOption.toList) {
                         <div class="panel panel-default" id="panel_@m.id">
                             <div class="panel-heading" role="tab" id="heading_@m.id">
                                 <a data-toggle="collapse" href="#collapse_@m.id" class="collapse-icon">

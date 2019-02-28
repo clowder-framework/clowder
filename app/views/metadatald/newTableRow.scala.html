@@ -10,7 +10,7 @@
         @for((m, i) <- List(m).zipWithIndex) {
             @m.content match {
                 case o: JsObject => {
-                    @for((key, value) <- o.fields) {
+                    @for((key, value) <- o.fields.headOption.toList) {
                         <tr id="row_@m.id">
                             <td><a href="#">@key</a></td>
                             <td class="md-block tree" style="padding-left:0;">
