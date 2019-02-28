@@ -68,7 +68,7 @@
 <script src="@routes.Assets.at("javascripts/jquery-ui-timepicker-addon.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/terraformer/terraformer-1.0.5.min.js")"></script>
 <script src="@routes.Assets.at("javascripts/terraformer/terraformer-wkt-parser-1.1.0.min.js")"></script>
-
+<script src="@routes.Assets.at("javascripts/metadata/addMetadata.js")"></script>
 <style>
 .ui-autocomplete-category {
 font-weight: bold;
@@ -140,7 +140,7 @@ line-height: 1.5;
         var field_type = $("#@id #addMetadataBasic #add-metadata-select option:selected").data("type");
         var field_value = "";
         var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1,
-            "datetime": 1, "wkt": 1};
+            "datetime": 1, "wkt": 1, "annotation": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#@id #addMetadataBasic #field-value").val();
         } else if (field_type === "list") {
@@ -171,6 +171,12 @@ line-height: 1.5;
                 var unit_val = $("#@id #unit-value").val();
                 if (unit_val) {
                     content["Unit"] = unit_val;
+                }
+            } else if (field_type === "annotation") {
+                content[field_label] = field_value;
+                var standard_name = $("#@id #standard-name option:selected").val();
+                if (standard_name) {
+                    content["Standard Name"] = standard_name;
                 }
             } else if (field_type === "wkt") {
                 try {
@@ -240,7 +246,7 @@ line-height: 1.5;
             console.log("Adding metadata field " + field_id + "...");
             var field_value = "";
             var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1,
-                "datetime": 1, "wkt": 1};
+                "datetime": 1, "wkt": 1, "annotation": 1};
             if (field_type in field_types_with_simple_values) {
                 field_value = fieldContext.val();
             } else if (field_type === "list") {
@@ -273,6 +279,14 @@ line-height: 1.5;
                     var unit_val = unitValue.value;
                     if (unit_val) {
                         content["Unit"] = unit_val;
+                    }
+                } else if (field_type === "annotation") {
+                    content[field_label] = field_value;
+                    var values = fieldContext.parent().find("[data-id=\'" + field_id + "\']");
+                    var standard_name = values[1];
+                    // var unit_val = standard_name.value;
+                    if (standard_name) {
+                        content["Standard Name"] = standard_name;
                     }
                 } else if (field_type === "wkt") {
                     try {
@@ -309,6 +323,10 @@ line-height: 1.5;
                             var values = fieldContext.parent().find("[data-id=\'" + field_id + "\']");
                             values[0].value = '';
                             values[1].value = '';
+                        } else if (field_type === "annotation") {
+                            var values = fieldContext.parent().find("[data-id=\'" + field_id + "\']");
+                            values[0].value = '';
+                            $(selector).val('').trigger("chosen:updated");
                         } else {
                             $(selector).val('');
                         }
@@ -431,6 +449,7 @@ line-height: 1.5;
                             "listjquery": "add_metadata_listjquery",
                             "listgeocode": "add_metadata_string",
                             "scientific_variable": "add_metadata_scientific_variable",
+                            "annotation" : "add_metadata_annotation",
                             "datetime": "add_metadata_datetime",
                             "wkt": "add_metadata_wktlocation"
                         };
@@ -444,170 +463,11 @@ line-height: 1.5;
                     return true;
                 }
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
-                var html = modalTemplate({'field_label': field_label, 'field_description': field_description,
-                    'field_id': field_id, 'field_type': field_type});
-                var footerHtml = "";
-                if(typeof space_id !== 'undefined' && showSpaceInfo) {
-                    var request2 = jsRoutes.api.Spaces.get(space_id).ajax({
-                        type: 'GET',
-                        contentType: "application/json"
-                    });
-                    request2.done(function (response, textStatus, jqXHR) {
-                        var footerTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/footer")");
-                        var spaceName= response.name;
-                        footerHtml = footerTemplate({'space_name': spaceName, 'space_url': jsRoutes.controllers.Spaces.getSpace(space_id).url, 'uri':field_id });
-                        $('#advanced-metadata-form').append(html + footerHtml);
-                    });
-                    request2.fail(function (jqXHR, textStatus, errorThrown){
-                        $('#advanced-metadata-form').append(html);
-                    });
-                } else {
-                    $('#advanced-metadata-form').append(html);
-                }
-
-                if (field_type === "scientific_variable") {
-                    // Find the field with the specific uri.
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#@id").find("#advanced-metadata-form").find("#field-value [data-id=\'" + field_id + "\']").catcomplete({
-                        minLength: 3,
-                        source: function( request, response ) {
-
-                            var useSyn = $("#@id  #useSynonyms").prop("checked");
-                            var query_param = field[0].json.query_parameter;
-                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term + "&useSynonyms=" + useSyn);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                //dataType: "jsonp",
-                                dataType: "json",
-                                //data: { term: request.term, useSynonyms: useSyn },
-                                success: function( data ) {
-                                    // The vars list is in data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't filter again. Returns cat_data with the vars listif present, otherwise returns the original data.
-                                    if ('cat_data' in data) {
-                                        var res = data.cat_data.concat(data.vars_data);
-                                        response(res);
-                                    } else {
-                                        response(data);
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    $("#@id").find("#advanced-metadata-form").find("#unit-value [data-id=\'" + field_id + "\']").autocomplete({
-                        minLength: 1,
-                        source: function( request, response ) {
-                            var url = encodeURIComponent(field[0].json.definitions_url);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                dataType: "json",
-                                success: function( data ) {
-                                    if (! ('unit_data' in data)) {
-                                        response(Array("Error: no unit_data field in the returned result."));
-                                    } else {
-                                        var searchspace = data.unit_data;
-                                        var searchwords = request.term.split(" ");
-                                        $.each(searchwords, function() {
-                                            searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                        });
-                                        response(searchspace);
-                                    }
-                                }
-                            });
-                        }
-                    });
-                } else if (field_type === "datetime") {
-                    // This widget uses the ISO 8601 format, such as 2016-01-01T10:00:00-06:00 or 2016-01-01T10:00:00Z.
-                    // This uses Trent Richardson's jQuery UI Timepicker add-on.
-                    // jQuery UI Datepicker options: http://api.jqueryui.com/datepicker/
-                    // jQuery UI Timepicker addon options: http://trentrichardson.com/examples/timepicker/
-                    $("#@id").find("#advanced-metadata-form").find("[data-id=\'" + field_id + "\']").datetimepicker(
-                            { controlType: 'select',
-                                // Uses "select" instead of the default slider.
-                                // If we put "T" in the "separator" option instead of "timeFormat", the widget changes 2-digit year values xx we put directly into the field to 20xx; if we put "T" in timeFormat, then the year values are kept. So we used the latter.
-                                dateFormat: $.datepicker.ISO_8601,
-                                timeFormat: "'T'HH:mm:ssZ",
-                                separator: '',
-                                // Allows direct input.
-                                timeInput: true
-                            });
-                } else if (field_type === "listjquery") {
-                    // Find the field with the specific uri.
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    var selector = "#@id #advanced-metadata-form [data-id=\'" + field_id + "\']";
-                    $(selector).autocomplete({
-                        minLength: 3,
-                        source: function( request, response ) {
-                            // Get the query parameter from the saved json, not hardcoded.
-                            var query_param = field[0].json.query_parameter;
-                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                dataType: "json",
-                                success: function( data ) {
-                                    var searchspace = data;
-                                    var searchwords = request.term.split(" ");
-                                    $.each(searchwords, function() {
-                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                    });
-                                    response(searchspace);
-                                }
-                            });
-                        }
-                    });
-                } else if (field_type === "listgeocode") {
-                    // Find the field with the specific uri.
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    var selector = "#@id #advanced-metadata-form [data-id=\'" + field_id + "\']";
-                    $(selector).autocomplete({
-                        minLength: 3,
-                        source: function( request, response ) {
-                            // Sets a variable query parameter in $.ajax.data below.
-                            var query_param = field[0].json.query_parameter;
-                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                //dataType: "jsonp",
-                                dataType: "json",
-                                //data: query_data,
-                                success: function( data ) {
-                                    // Assuming that the remote service returns filtered data, no need to filter again.
-                                    response(data);
-                                }
-                            });
-                        }
-                    });
-                } else if (field_type === "list") {
-                    // find field with the specific uri
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    var selector = "#@id #advanced-metadata-form [data-id=\'" + field_id + "\']";
-
-                    // make call to external service
-                    var request = jsRoutes.api.Metadata.getDefinition(field[0].id).ajax({
-                        type: 'GET',
-                        contentType: "application/json"
-                    });
-
-                    request.done(function (response, textStatus, jqXHR) {
-                        var vocabulary = JSON.parse(response);
-                        // modalTemplate was assigned above using the map.
-                        var html = modalTemplate({'field_label': field_label, 'field_description': field_description,
-                            'field_id': field_id, 'field_type': field_type, 'options': vocabulary});
-                        var selector = "#@id #advanced-metadata-form [data-id=\'" + field_id + "\']";
-                        $(selector).html(html + footerHtml);
-                        // chosen pulldown configuration
-                        $(selector).chosen({
-                            no_results_text: "Not found. Press enter to add ",
-                            add_search_option: true,
-                            search_contains: true,
-                            width: "100%",
-                            placeholder_text_single: "Select field"});
-                    });
-
-                    request.fail(function (jqXHR, textStatus, errorThrown){
-                        console.error("The following error occured: " + textStatus, errorThrown);
-                        notify("Could not retrieve external vocabulary: " + errorThrown, "error");
-                    });
-                }
-            });
+                var footerTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/footer")");
+                loadExternalResource(field_label, field_description, field_id, field_type, fields, space_id,
+                        modalTemplate, footerTemplate, "@id",
+                        "#advanced-metadata-form" );
+                });
         });
 
         // register basic submit listener
@@ -634,170 +494,15 @@ line-height: 1.5;
                      "listjquery": "add_metadata_listjquery",
                      "listgeocode": "add_metadata_string",
                      "scientific_variable": "add_metadata_scientific_variable",
+                     "annotation": "add_metadata_annotation",
                      "datetime": "add_metadata_datetime",
                      "wkt": "add_metadata_wktlocation"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
-                var html = modalTemplate({'field_label': field_label, 'field_description': field_description,
-                    'field_id': field_id, 'field_type': field_type});
-                var footerHtml = "";
-                if(typeof space_id !== 'undefined' && showSpaceInfo) {
-                    var request2 = jsRoutes.api.Spaces.get(space_id).ajax({
-                        type: 'GET',
-                        contentType: "application/json"
-                    });
-                    request2.done(function (response, textStatus, jqXHR) {
-                        var footerTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/footer")");
-                        var spaceName= response.name;
-                        footerHtml = footerTemplate({'space_name': spaceName, 'space_url': jsRoutes.controllers.Spaces.getSpace(space_id).url, 'uri':field_id });
-                        $('#@id #addMetadataBasic #selected_field').html(html + footerHtml);
-                    });
-                    request2.fail(function (jqXHR, textStatus, errorThrown){
-                        $('#@id #addMetadataBasic #selected_field').html(html);
-                    });
-                } else {
-                    $('#@id #addMetadataBasic #selected_field').html(html);
-                }
+                var footerTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/footer")");
+                loadExternalResource(field_label, field_description, field_id, field_type, fields, space_id, modalTemplate,
+                        footerTemplate, "@id", "#addMetadataBasic")
 
-
-                if (field_type === "scientific_variable") {
-                    // Find the field with the specific uri.
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#@id #addMetadataBasic #field-value").catcomplete({
-                        minLength: 3,
-                        source: function( request, response ) {
-
-                            var useSyn = $("#@id  #useSynonyms").prop("checked");
-                            var query_param = field[0].json.query_parameter;
-                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term + "&useSynonyms=" + useSyn);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                //dataType: "jsonp",
-                                dataType: "json",
-                                //data: { term: request.term, useSynonyms: useSyn },
-                                success: function( data ) {
-                                    // The vars list is in data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't filter again. Returns cat_data with the vars listif present, otherwise returns the original data.
-                                    if ('cat_data' in data) {
-                                        var res = data.cat_data.concat(data.vars_data);
-                                        response(res);
-                                    } else {
-                                        response(data);
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    $("#@id #addMetadataBasic #unit-value").autocomplete({
-                        minLength: 1,
-                        source: function( request, response ) {
-                            var url = encodeURIComponent(field[0].json.definitions_url);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                dataType: "json",
-                                success: function( data ) {
-                                    if (! ('unit_data' in data)) {
-                                        response(Array("Error: no unit_data field in the returned result."));
-                                    } else {
-                                        var searchspace = data.unit_data;
-                                        var searchwords = request.term.split(" ");
-                                        $.each(searchwords, function() {
-                                            searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                        });
-                                        response(searchspace);
-                                    }
-                                }
-                            });
-                        }
-                    });
-                } else if (field_type === "datetime") {
-                    // This widget uses the ISO 8601 format, such as 2016-01-01T10:00:00-06:00 or 2016-01-01T10:00:00Z.
-                    // This uses Trent Richardson's jQuery UI Timepicker add-on.
-                    // jQuery UI Datepicker options: http://api.jqueryui.com/datepicker/
-                    // jQuery UI Timepicker addon options: http://trentrichardson.com/examples/timepicker/
-                    $("#@id").find("#addMetadataBasic").find("[data-id=\'" + field_id + "\']").datetimepicker(
-                        { controlType: 'select',
-                          // Uses "select" instead of the default slider.
-                          // If we put "T" in the "separator" option instead of "timeFormat", the widget changes 2-digit year values xx we put directly into the field to 20xx; if we put "T" in timeFormat, then the year values are kept. So we used the latter.
-                          dateFormat: $.datepicker.ISO_8601,
-                          timeFormat: "'T'HH:mm:ssZ",
-                          separator: '',
-                          // Allows direct input.
-                          timeInput: true
-                        });
-                } else if (field_type === "listjquery") {
-                    // Find the field with the specific uri.
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#@id #addMetadataBasic #field-value").autocomplete({
-                        minLength: 3,
-                        source: function( request, response ) {
-                            // Get the query parameter from the saved json, not hardcoded.
-                            var query_param = field[0].json.query_parameter;
-                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                dataType: "json",
-                                success: function( data ) {
-                                    var searchspace = data;
-                                    var searchwords = request.term.split(" ");
-                                    $.each(searchwords, function() {
-                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                    });
-                                    response(searchspace);
-                                }
-                            });
-                        }
-                    });
-                } else if (field_type === "listgeocode") {
-                    // Find the field with the specific uri.
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#@id #addMetadataBasic #field-value").autocomplete({
-                        minLength: 3,
-                        source: function( request, response ) {
-                            // Sets a variable query parameter in $.ajax.data below.
-                            var query_param = field[0].json.query_parameter;
-                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term);
-                            $.ajax({
-                                url: jsRoutes.api.Metadata.getUrl(url).url,
-                                //dataType: "jsonp",
-                                dataType: "json",
-                                //data: query_data,
-                                success: function( data ) {
-                                    // Assuming that the remote service returns filtered data, no need to filter again.
-                                    response(data);
-                                }
-                            });
-                        }
-                    });
-                } else if (field_type === "list") {
-                    // find field with the specific uri
-                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-
-                    // make call to external service
-                    var request = jsRoutes.api.Metadata.getDefinition(field[0].id).ajax({
-                        type: 'GET',
-                        contentType: "application/json"
-                    });
-
-                    request.done(function (response, textStatus, jqXHR) {
-                        var vocabulary = JSON.parse(response);
-                        // modalTemplate was assigned above using the map.
-                        var html = modalTemplate({'field_label': field_label, 'field_description': field_description,
-                            'field_id': field_id, 'field_type': field_type, 'options': vocabulary});
-                        $("#@id #addMetadataBasic #selected_field").html(html + footerHtml);
-                        // chosen pulldown configuration
-                        $("#@id #addMetadataBasic #field-value").chosen({
-                            no_results_text: "Not found. Press enter to add ",
-                            add_search_option: true,
-                            search_contains: true,
-                            width: "100%",
-                            placeholder_text_single: "Select field"});
-                      });
-
-                    request.fail(function (jqXHR, textStatus, errorThrown){
-                        console.error("The following error occured: " + textStatus, errorThrown);
-                        notify("Could not retrieve external vocabulary: " + errorThrown, "error");
-                    });
-                }
             });
         });
 

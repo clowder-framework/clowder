@@ -33,10 +33,9 @@
                     validateButton.attr("disabled", true);
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
-                } else if ($(this).val() == "list") {
-                    definedBy.removeAttr("disabled");
-                    definitionsList.removeAttr("disabled");
+                } else if ($(this).val() == "list" || $(this).val() == "annotation") {
                     definitions.removeAttr("disabled");
+                    definitionsList.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
@@ -123,7 +122,8 @@
                     }
                 });
                 if (data['query_parameter_value']) delete data['query_parameter_value'];
-                if (data.type == "list" || data.type == "listjquery" || data.type == "scientific_variable" || data.type == "listgeocode") {
+                if (data.type == "list" || data.type == "listjquery" || data.type == "scientific_variable"
+                        || data.type == "listgeocode" || data.type == "annotation") {
                     var vocabulary_id = $("#vocabulary_id").val();
                     if (data.definitions_url) {
                         addDefinition(data, window.location.href, "@spaceId");
@@ -234,7 +234,7 @@
                         <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A short label or name."><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th>Description <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Description" data-content="A long description."><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th>URI <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference."><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                        <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-html=true data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-html=true data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li><li>Annotation: mapping between a String type and a List type.</li></ul>"><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th>Definitions <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions / URL" data-content="This should correspond to a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th>Query Parameter <a tabindex="0" role="button" data-toggle="popover" title="Query Parameter" data-content="Some list types support filtering the data by use of a query parameter. Example: example.com?searchterm=value" aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th>Actions</th>
@@ -258,6 +258,7 @@
                                     case "list" => {List}
                                     case "listjquery" => {Queryable List}
                                     case "scientific_variable" => {Scientific Variable}
+                                    case "annotation" => {Annotation}
                                     case "datetime" => {Date and Time}
                                     case "listgeocode" => {Location}
                                     case "wkt" => {WKT Location}
@@ -325,7 +326,7 @@
 
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>" data-original-title="Metadata Type (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li><li>Annotation: mapping between a String type and a List type.</li></ul>" data-original-title="Metadata Type (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-4">
                                 <select name="type" id="type" class="form-control" required>
                                     <option value="string">String</option>
@@ -334,6 +335,7 @@
                                     <option value="listgeocode">Location</option>
                                     <option value="wkt">WKT Location</option>
                                     <option value="scientific_variable">Scientific Variable</option>
+                                    <option value="annotation">Annotation</option>
                                     <option value="datetime">Date and Time</option>
                                 </select>
                             </div>

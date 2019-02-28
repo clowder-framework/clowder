@@ -42,6 +42,10 @@ object MetadataDefinition {
           "uri":"http://csdms.colorado.edu/wiki/CSN_Searchable_List",
           "type":"list",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/CSN"}"""),
+      Json.parse("""{"label":"Annotating CSV File",
+          "uri":"https://clowder.ncsa.illinois.edu/metadata/terms/variable_annotation",
+          "type":"annotation",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/CSN"}"""),
         Json.parse("""{
           "label":"ODM2 Variable Name",
           "uri":"http://vocabulary.odm2.org/variablename",
