@@ -243,16 +243,16 @@
                 <tbody>
                     @for(m <- metadata) {
                         <tr>
-                            <td>
+                            <td class="text-wrap" style="max-width:10vw">
                                 @((m.json \ "label").asOpt[String].getOrElse(""))
                             </td>
-                            <td>
+                            <td class="text-wrap" style="max-width:20vw">
                                 @((m.json \ "description").asOpt[String].getOrElse(""))
                             </td>
-                            <td>
+                            <td class="text-wrap no-hyphens" style="max-width:20vw">
                                 @((m.json \ "uri").asOpt[String].getOrElse(""))
                             </td>
-                            <td>
+                            <td class="text-wrap" style="max-width:15vw">
                                 @((m.json \ "type").asOpt[String].getOrElse("")) match {
                                     case "string" => {String}
                                     case "list" => {List}
@@ -265,13 +265,13 @@
                                     case _ => {Error: unrecognized type}
                                 }
                             </td>
-                            <td>
+                            <td class="text-wrap no-hyphens" style="max-width:20vw">
                                 @((m.json \ "definitions_url").asOpt[String].getOrElse(""))
                             </td>
-                            <td>
+                            <td class="text-wrap" style="max-width:10vw">
                                 @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
                             </td>
-                            <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a>
+                            <td style="max-width:10vw"><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a>
                                 / <a id="@m.id" href="#" title="Delete metadata definition" class="delete-definition">Delete</a>
                             </td>
                         </tr>
