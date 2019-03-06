@@ -34,6 +34,7 @@
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
                 } else if ($(this).val() == "list" || $(this).val() == "annotation") {
+                    definedBy.attr("disabled", false);
                     definitions.removeAttr("disabled");
                     definitionsList.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
