@@ -178,7 +178,9 @@ class Metadata @Inject() (
             addDefinitionHelper(uri, body, None, user, None)
 
             // Now, propagate global definition to all spaces
-            spaceService.list().foreach(space => {
+            // NOTE: argument list is REQUIRED when Configuration.permissions="private"
+            val spaceList = spaceService.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, request.user.fold(false)(_.superAdminMode), true, false, false)
+            spaceList.foreach(space => {
               // assign a default uri if not specified
               if (uri == "") {
                 // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
