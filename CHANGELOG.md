@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - In SuperAdmin mode, the Spaces page will correctly show all spaces.
   [CATS-958](https://opensource.ncsa.illinois.edu/jira/browse/CATS-958)
 - In FileMetrics report, space and collection IDs are only added to the report once to avoid repeating.
+- Apply 'max' restriction when fetching dataset file lists earlier, to avoid long load times for certain previewers.
+  [CATS-899](https://opensource.ncsa.illinois.edu/jira/browse/CATS-899)
   
 ### Changed 
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,

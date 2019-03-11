@@ -809,20 +809,24 @@ class  Datasets @Inject()(
     }
   }
 
-  def datasetFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def datasetFilesList(id: UUID, count: Boolean = false) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
-        val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-          case Some(file) => {
-            val serveradmin = request.user match {
-              case Some(u) => (u.status==UserStatus.Admin)
-              case None => false
+        if (count == true) {
+          Ok(toJson(dataset.files.length))
+        } else {
+          val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
+            case Some(file) => {
+              val serveradmin = request.user match {
+                case Some(u) => (u.status==UserStatus.Admin)
+                case None => false
+              }
+              jsonFile(file, serveradmin)
             }
-            jsonFile(file, serveradmin)
-          }
-          case None => Logger.error(s"Error getting File $fileId")
-        }).asInstanceOf[List[JsValue]]
-        Ok(toJson(list))
+            case None => Logger.error(s"Error getting File $fileId")
+          }).asInstanceOf[List[JsValue]]
+          Ok(toJson(list))
+        }
       }
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
@@ -835,30 +839,34 @@ class  Datasets @Inject()(
     * @param max max number of files to return, default is
     * @return
     */
-  def datasetAllFilesList(id: UUID, max: Option[Int] = None) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def datasetAllFilesList(id: UUID, max: Int = -1) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
-        val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-          case Some(file) => {
-            val serveradmin = request.user match {
-              case Some(u) => (u.status==UserStatus.Admin)
-              case None => false
-            }
-            jsonFile(file, serveradmin)
-          }
-          case None => Logger.error(s"Error getting File $fileId")
-        }).asInstanceOf[List[JsValue]]
         val serveradmin = request.user match {
           case Some(u) => (u.status==UserStatus.Admin)
           case None => false
         }
-        val list = listFiles ++ getFilesWithinFolders(id, serveradmin)
-        // Keep only the first `max` elements in the list
-        val filteredFiles = max match {
-          case Some(i) => list.take(i)
-          case None => list
+        val listFiles = new ListBuffer[JsValue]()
+        var resultCount = 0
+
+        dataset.files.foreach(fileId => {
+          // Only get file from database if below max requested value
+          if (max < 0 || resultCount < max) {
+            files.get(fileId) match {
+              case Some(f) => listFiles += jsonFile(f, serveradmin)
+              case None => Logger.error(s"Error getting File $fileId")
+            }
+            resultCount += 1
+          }
+        })
+
+        // Only get more files from folders if max size isn't reached
+        val list = if (max < 0 || resultCount < max) {
+          listFiles.toList ++ getFilesWithinFolders(id, serveradmin, max-resultCount)
+        } else {
+          listFiles.toList
         }
-        Ok(toJson(filteredFiles))
+        Ok(toJson(list))
       }
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
@@ -897,24 +905,26 @@ class  Datasets @Inject()(
   }
 
 
-  private def getFilesWithinFolders(id: UUID, serveradmin: Boolean = false): List[JsValue] = {
+  private def getFilesWithinFolders(id: UUID, serveradmin: Boolean=false, max: Int = -1): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
+    var resultCount = 0
     datasets.get(id) match {
       case Some(dataset) => {
-        val childFolders = folders.findByParentDatasetId(id)
-        childFolders.map {
-          folder =>
-            folder.files.map {
-              fileId => files.get(fileId) match {
+        folders.findByParentDatasetId(id).map { folder =>
+          folder.files.foreach { fileId =>
+            if (max < 0 || resultCount < max) {
+              files.get(fileId) match {
                 case Some(file) => output += jsonFile(file, serveradmin)
                 case None => Logger.error(s"Error getting file $fileId")
               }
+              resultCount += 1
             }
+          }
         }
       }
       case None => Logger.error(s"Error getting dataset $id")
     }
-    output.toList.asInstanceOf[List[JsValue]]
+    output.toList
   }
 
   def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
