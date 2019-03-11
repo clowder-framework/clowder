@@ -56,7 +56,7 @@ class Search @Inject() (
 
   /** Search using a simple text string with filters */
   def search(query: String, resource_type: Option[String],
-             datasetid: Option[String], collectionid: Option[String],
+             datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
              field: Option[String], tag: Option[String]) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
@@ -64,7 +64,7 @@ class Search @Inject() (
         var datasetsFound = ListBuffer.empty[String]
         var collectionsFound = ListBuffer.empty[String]
 
-        val response = plugin.searchAdvanced(query, resource_type, datasetid, collectionid, field, tag)
+        val response = plugin.searchAdvanced(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag)
 
         for (resource <- response) {
           resource.resourceType match {
@@ -75,29 +75,23 @@ class Search @Inject() (
         }
 
         resource_type match {
-          case Some("file") => Ok(toJson(Map[String,JsValue]("files" -> toJson(filesFound))))
-          case Some("dataset") => Ok(toJson(Map[String,JsValue]("datasets" -> toJson(datasetsFound))))
-          case Some("collection") => Ok(toJson(Map[String,JsValue]("collections" -> toJson(collectionsFound))))
+          case Some("file") => Ok(toJson(Map[String, JsValue]("files" -> toJson(filesFound))))
+          case Some("dataset") => Ok(toJson(Map[String, JsValue]("datasets" -> toJson(datasetsFound))))
+          case Some("collection") => Ok(toJson(Map[String, JsValue]("collections" -> toJson(collectionsFound))))
 
           case _ => {
             // If datasetid is provided, only files are returned
             datasetid match {
-              case Some(dsid) => Ok(toJson( Map[String,JsValue](
-                  "files" -> toJson(filesFound)
-                )))
+              case Some(dsid) => Ok(toJson(Map[String, JsValue](
+                "files" -> toJson(filesFound)
+              )))
               case None => {
-
-                // If collectionid is provided, only datasets returned
-                collectionid match {
-                  case Some(collid) => Ok(toJson( Map[String,JsValue](
-                    "datasets" -> toJson(datasetsFound)
-                  )))
-                  case None => Ok(toJson( Map[String,JsValue](
-                    "files" -> toJson(filesFound),
-                    "datasets" -> toJson(datasetsFound),
-                    "collections" -> toJson(collectionsFound)
-                  )))
-                }
+                // collection and space IDs do not restrict resource type
+                Ok(toJson(Map[String, JsValue](
+                  "files" -> toJson(filesFound),
+                  "datasets" -> toJson(datasetsFound),
+                  "collections" -> toJson(collectionsFound)
+                )))
               }
             }
           }

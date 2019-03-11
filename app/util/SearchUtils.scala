@@ -7,6 +7,7 @@ import services._
 
 import java.util.Date
 import scala.collection.immutable.List
+import scala.collection.mutable.ListBuffer
 
 
 object SearchUtils {
@@ -22,8 +23,23 @@ object SearchUtils {
     val id = f.id
 
     // Get child_of relationships for File
-    val child_of = datasets.findByFileIdDirectlyContain(id).map(ds => ds.id.toString ) ++
-      folders.findByFileId(id).map( fld => fld.parentDatasetId.toString )
+    var child_of: ListBuffer[String] = ListBuffer()
+    datasets.findByFileIdDirectlyContain(id).map(ds => {
+      child_of += ds.id.toString
+      ds.spaces.map(spid => child_of += spid.toString)
+      ds.collections.map(collid => child_of += collid.toString)
+    })
+    folders.findByFileId(id).map( fld => {
+      child_of += fld.id.toString
+      child_of += fld.parentDatasetId.toString
+      datasets.get(fld.parentDatasetId).map(ds => {
+        child_of += ds.id.toString
+        ds.spaces.map(spid => child_of += spid.toString)
+        ds.collections.map(collid => child_of += collid.toString)
+      })
+    })
+    val child_of_distinct = child_of.toList.distinct
+
 
     // Get comments for file
     val fcomments = for (c <- comments.findCommentsByFileId(id)) yield {
@@ -71,7 +87,7 @@ object SearchUtils {
       f.uploadDate,
       f.originalname,
       List.empty,
-      child_of,
+      child_of_distinct,
       f.description,
       f.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
       fcomments,
@@ -82,6 +98,18 @@ object SearchUtils {
   /**Convert Dataset to ElasticsearchObject and return, fetching metadata as necessary**/
   def getElasticsearchObject(ds: Dataset): Option[ElasticsearchObject] = {
     val id = ds.id
+
+    // Get parent collections and spaces
+    var child_of: ListBuffer[String] = ListBuffer()
+    ds.collections.map(collId => child_of += collId.toString)
+    ds.spaces.map(spid => child_of += spid.toString)
+    val child_of_distinct = child_of.toList.distinct
+
+    // Get child files & folders
+    var parent_of: ListBuffer[String] = ListBuffer()
+    ds.files.map(fileId => parent_of += fileId.toString)
+    ds.folders.map(folderId => parent_of += folderId.toString)
+    var parent_of_distinct = parent_of.toList.distinct
 
     // Get comments for dataset
     val dscomments = for (c <- comments.findCommentsByDatasetId(id)) yield {
@@ -129,8 +157,8 @@ object SearchUtils {
       ds.author.id.toString,
       ds.created,
       "",
-      ds.files.map(fileId => fileId.toString),
-      ds.collections.map(collId => collId.toString),
+      parent_of_distinct,
+      child_of_distinct,
       ds.description,
       ds.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
       dscomments,
@@ -143,7 +171,13 @@ object SearchUtils {
     // Get parent_of relationships for Collection
     // TODO: Re-enable after listCollection implements Iterator; crashes on large databases otherwise
     //var parent_of = datasets.listCollection(c.id.toString).map( ds => ds.id.toString )
-    var parent_of = c.parent_collection_ids.map( pc_id => pc_id.toString) //++ parent_of
+    var parent_of = c.child_collection_ids.map( cc_id => cc_id.toString)
+
+    // Get child relationships
+    var child_of: ListBuffer[String] = ListBuffer()
+    c.parent_collection_ids.map( pc_id => child_of += pc_id.toString)
+    c.spaces.map( spid => child_of += spid.toString)
+    val child_of_distinct = child_of.toList.distinct
 
     Some(new ElasticsearchObject(
       ResourceRef(ResourceRef.collection, c.id),
@@ -152,7 +186,7 @@ object SearchUtils {
       c.created,
       "",
       parent_of,
-      c.child_collection_ids.map( cc_id => cc_id.toString),
+      child_of_distinct,
       c.description,
       List.empty,
       List.empty,

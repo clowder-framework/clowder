@@ -631,7 +631,7 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND", from: Option[Int], size: Option[Int])
 GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
-GET            /api/search                                                              @api.Search.search(query: String ?= "", resource_type: Option[String], datasetid: Option[String], collectionid: Option[String], field: Option[String], tag: Option[String])
+GET            /api/search                                                              @api.Search.search(query: String ?= "", resource_type: Option[String], datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String])
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT

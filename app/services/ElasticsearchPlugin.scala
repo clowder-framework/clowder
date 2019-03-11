@@ -18,7 +18,7 @@ import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
 import org.elasticsearch.client.transport.NoNodeAvailableException
 
-import models.{Collection, Dataset, File, UUID, ResourceRef, Section}
+import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section}
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
@@ -36,6 +36,7 @@ import org.elasticsearch.indices.IndexAlreadyExistsException
 class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
   val files: FileService = DI.injector.getInstance(classOf[FileService])
+  val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var client: Option[TransportClient] = None
@@ -175,7 +176,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Search using a simple text string */
   def searchAdvanced(query: String, resource_type: Option[String],
-                     datasetid: Option[String], collectionid: Option[String],
+                     datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
                      field: Option[String], tag: Option[String], index: String = nameOfIndex): List[ResourceRef] = {
 
     // whether to restrict to a particular metadata field, or search all fields (including tags, name, etc.)
@@ -215,25 +216,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Restrict to particular collection ID (only return datasets)
     collectionid match {
-      case Some(cid) => {
-        queryObj.startObject().startObject("bool").startArray("should")
-        // type=dataset and parent=collection
-        queryObj.startObject().startObject("bool").startArray("must")
-          .startObject().startObject("match").field("resource_type", "dataset").endObject().endObject()
-          .startObject().startObject("match").field("child_of", cid).endObject().endObject()
-          .endArray().endObject().endObject()
-        // TODO: OR type=file and parent dataset has parent=collection
-        /* TODO: has_parent requires explicit Elasticsearch relationships we don't currently have. joins not possible.
-        queryObj.startObject().startObject("bool").startArray("must")
-          .startObject().startObject("has_parent").field("parent_type", "clowder_object")
-          .startObject("query").startObject("bool").startArray("must")
-          .startObject().startObject("match").field("resource_type", "dataset").endObject().endObject()
-          .startObject().startObject("match").field("child_of", cid).endObject().endObject()
-          .endArray().endObject().endObject().endObject().endObject()
-        queryObj.endArray().endObject().endObject()
-        */
-          .endArray().endObject().endObject()
-      }
+      case Some(cid) => queryObj.startObject().startObject("match").field("child_of", cid).endObject().endObject()
+      case None => {}
+    }
+
+    spaceid match {
+      case Some(spid) => queryObj.startObject().startObject("match").field("child_of", spid).endObject().endObject()
+      case None => {}
+    }
+
+    folderid match {
+      case Some(fid) => queryObj.startObject().startObject("match").field("child_of", fid).endObject().endObject()
       case None => {}
     }
 
@@ -424,6 +417,21 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             index(f)
           }
           case None => Logger.error(s"Error getting file $fileId for recursive indexing")
+        }
+      }
+      for (folderid <- dataset.folders) {
+        folders.get(folderid) match {
+          case Some(f) => {
+            for (fileid <- f.files) {
+              files.get(fileid) match {
+                case Some(fi) => {
+                  index(fi)
+                }
+                case None => Logger.error(s"Error getting file $fileid for recursive indexing")
+              }
+            }
+          }
+          case None => Logger.error(s"Error getting file $folderid for recursive indexing")
         }
       }
     }
