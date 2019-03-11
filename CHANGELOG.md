@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Using EventType enum class, fixed events not created.
+- [CATS-961](https://opensource.ncsa.illinois.edu/jira/browse/CATS-961)
 - Add cancel button aside the submission event and remove that submission from rabbitmq queue.
   [CATS-970](https://opensource.ncsa.illinois.edu/jira/browse/CATS-970)
 - Allow user to create and manage Controlled Vocabularies within Clowder.

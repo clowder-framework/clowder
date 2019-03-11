@@ -492,6 +492,11 @@ class Metadata @Inject() (
                       case ResourceRef.dataset => {
                         datasets.index(resource.id)
                         //send RabbitMQ message
+                        datasets.get(resource.id) match {
+                          case Some(ds) => {
+                            events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
+                          }
+                        }
                         current.plugin[RabbitmqPlugin].foreach { p =>
                           p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
                         }
@@ -499,6 +504,11 @@ class Metadata @Inject() (
                       case ResourceRef.file => {
                         files.index(resource.id)
                         //send RabbitMQ message
+                        files.get(resource.id) match {
+                          case Some(f) => {
+                            events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
+                          }
+                        }
                         current.plugin[RabbitmqPlugin].foreach { p =>
                           p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
                         }
