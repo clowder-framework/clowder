@@ -90,6 +90,30 @@ var registerMDAutocomplete = function(inputElement, definitionData, selectElemen
     });
   };
 
+  this.annotation = function(inputElement, definitionData) {
+      $(inputElement).autocomplete({
+          source: function(request, response) {
+              var url = encodeURIComponent(definitionData.definitions_url + "?" + definitionData.query_parameter + "=" + request.term);
+              $.ajax({
+                  url: jsRoutes.api.Metadata.getUrl(url).url,
+                  dataType: 'json',
+                  success: function(data) {
+                      // The vars list is in data.vars_data, and the categories in data.cat_data.
+                      // Assuming that "listjquery" will use a URL that returns filtered data,
+                      // we don't filter again. Returns cat_data with the vars list
+                      // if present, otherwise returns the original data.
+                      if ('cat_data' in data) {
+                          var res = data.cat_data.concat(data.vars_data);
+                          response(res);
+                      } else {
+                          response(data);
+                      }
+                  }
+              });
+          }
+      });
+  };
+
   this.datetime = function(inputElement, definitionData, selectElement) {
     // calling getScript makes sure that $.datepicker is available
     $.getScript(jsRoutes.controllers.Assets.at('javascripts/jquery-ui-timepicker-addon.js').url, function(e) {

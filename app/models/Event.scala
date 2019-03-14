@@ -36,7 +36,9 @@ import services.DI
  * create_dataset, create_collection => "user created dataset/collection: object_name"
  *
  * delete_file, delete_dataset, delete_collection => "user deleted dataset/collection/file: object_name"
- * 
+ *
+ * move_collection_trash, move_dataset_trash => "user moved collection/dataset: object_name to trash"
+ *
  * add_tags_dataset, add_tags_file => "user added tags to dataset/file: object_name"
  *
  * remove_tags_dataset, remove_tags_file => "user removed tags from dataset/file: object_name"
@@ -120,3 +122,46 @@ object Events {
   }
 }
 
+object EventType extends Enumeration {
+  val FOLLOW_USER = Value("follow_user")
+  val UNFOLLOW_USER = Value("unfollow_user")
+  val FOLLOW_FILE = Value("follow_file")
+  val UNFOLLOW_FILE = Value("unfollow_file")
+  val FOLLOW_DATASET = Value("follow_dataset")
+  val UNFOLLOW_DATASET = Value("unfollow_dataset")
+  val FOLLOW_COLLECTION = Value("follow_collection")
+  val UNFOLLOW_COLLECTION = Value("unfollow_collection")
+  val EDIT_PROFILE = Value("edit_profile")
+  // val UPLOAD_FILE = Value("upload_file")
+  val ADD_FILE = Value("add_file")
+  val ADD_FILE_1 = Value("add_file_1")
+  val ADD_FILE_2 = Value("add_file_2")
+  val ADD_FILE_3 = Value("add_file_3")
+  val ADD_FILE_FOLDER = Value("add_file_folder")
+  val DELETE_FILE = Value("delete_file")
+  val CREATE_COLLECTION = Value("create_collection")
+  val DELETE_COLLECTION = Value("delete_collection")
+  val CREATE_DATASET = Value("create_dataset")
+  val DELETE_DATASET = Value("delete_dataset")
+  val MOVE_COLLECTION_TRASH = Value("move_collection_trash")
+  val MOVE_DATASET_TRASH = Value("move_dataset_trash")
+  val ADD_TAGS_DATASET = Value("add_tags_dataset")
+  val REMOVE_TAGS_DATASET = Value("remove_tags_dataset")
+  val ADD_TAGS_FILE = Value("add_tags_file")
+  val REMOVE_TAGS_FILE = Value("remove_tags_file")
+  val ATTACH_DATASET_COLLECTION = Value("attach_dataset_collection")
+  val REMOVE_DATASET_COLLECTION = Value("remove_dataset_collection")
+  val REMOVE_COLLECTION_SPACE = Value("remove_collection_space")
+  val REMOVE_DATASET_SPACE = Value("remove_dataset_space")
+  val ADD_COLLECTION_SPACE = Value("add_collection_space")
+  val ADD_DATASET_SPACE = Value("add_dataset_space")
+  val ADD_METADATA_DATASET = Value("addMetadata_dataset")
+  val ADD_METADATA_FILE = Value("addMetadata_file")
+  val UPDATE_DATASET_INFORMATION = Value("update_dataset_information")
+  val COMMENT_FILE = Value("comment_file")
+  val ADD_COMMENT_DATASET = Value("add_comment_dataset")
+  val EDIT_COMMENT = Value("edit_comment")
+  val SET_NOTE_FILE = Value("set_note_file")
+  val DOWNLOAD_FILE = Value("download_file")
+  val TOS_UPDATE = Value("tos_update")
+}

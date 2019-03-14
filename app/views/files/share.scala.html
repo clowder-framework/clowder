@@ -1,0 +1,66 @@
+@(file: File, links: List[(String, String)])(implicit user: Option[models.User])
+
+@main("Share") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1 id="file-name-title" class="inline"><span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <p>Create a shared link for this file. <em>Anyone</em> with the <em>link</em> can download this file.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <p><a href="javascript:getFileLink()" class="btn btn-primary">Create a link</a></p>
+        </div>
+    </div>
+
+    <div id="fileLinks">
+        @for((link, expire) <-links) {
+            <div class="row margin-bottom-20">
+                <div class="col-md-8">
+                    <input id="file_link_@link" type="text" name="link" value="@link" class="form-control" readonly>
+                </div>
+                <div class="col-md-1">
+                    <a href="javascript:copyToClipboard('file_link_@link')">Copy link</a>
+                </div>
+                <div class="col-md-3">(expires @expire) </div>
+            </div>
+        }
+    </div>
+
+    <script language="javascript">
+        function getFileLink() {
+            var request = jsRoutes.controllers.FileLinks.createLink('@file.id').ajax({
+                data: JSON.stringify({}),
+                type: 'POST',
+                contentType: "application/json"
+            });
+
+            request.done(function (response, textStatus, jqXHR) {
+                console.log("Response " + textStatus + " " + response['id']);
+                if ('link' in response && 'expire' in response) {
+
+                    file_downloadlink = "file_link_" + response['link']
+                    $("#fileLinks").append('<div class="row margin-bottom-20"> <div class="col-md-8"> <input id=' + file_downloadlink + ' type="text" name="link" value="' + response['link'] + '" ' +
+                            'class="form-control" readonly></div><div class="col-md-1"><a href="javascript:copyToClipboard(\'' + file_downloadlink + '\')">Copy link</a></div><div class="col-md-3">(expires ' + response['expire'] + ') </div></div>');
+                }
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to remove a tag from a file.";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("The tag was not removed from the file due to : " + errorThrown, "error");
+                }
+            });
+        }
+        function copyToClipboard(textBoxId) {
+            var copyText = document.getElementById(textBoxId);
+            copyText.select();
+            document.execCommand("copy");
+        }
+    </script>
+}

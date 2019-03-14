@@ -546,13 +546,13 @@ object FileUtils {
       folder match {
         case Some(folder) => {
           if(!multipleFile) {
-            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file_folder")
+            events.addObjectEvent(Some(user), ds.id, ds.name, EventType.ADD_FILE_FOLDER.toString)
           }
           folders.addFile(folder.id, file.id)
         }
         case None => {
           if(!multipleFile) {
-            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
+            events.addObjectEvent(Some(user), ds.id, ds.name, EventType.ADD_FILE.toString)
           }
           datasets.addFile(ds.id, file)
         }

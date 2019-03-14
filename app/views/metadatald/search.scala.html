@@ -72,9 +72,9 @@
                         "<select id='add-metadata-select-"+rowStr+"'><option value=''></option></select></div>" +
                     <!-- OPERATOR DROPDOWN -->
                     "<div class='form-group col-lg-2 col-md-2'> <select id='add-metadata-operator-"+rowStr+"'>" +
-                        // "<option value=':'>contains</option>" +
                         "<option value='=='>equals</option>" +
                         "<option value='!='>does not equal</option>" +
+                        "<option value=':'>contains</option>" +
                         "<option value='>'>greater than</option>" +
                         "<option value='<'>less than</option>" +
                     "</select></div>" +
@@ -175,7 +175,7 @@
                                         var entryData = {id: entry, text: entry.substring(entry.lastIndexOf('.')+1, entry.length)}
                                     } else {
                                         // Simple entry
-                                        var entryGroup = ""
+                                        var entryGroup = "";
                                         var entryData = {text: entry, id: entry}
                                     }
                                 }
@@ -247,7 +247,7 @@
             from_count = from_count || 0;
             console.log("Querying result set from "+String(from_count)+" with size "+String(count_stepsize));
             var query = generateSearchObject();
-            var grouping = $("#add-metadata-grouping").val()
+            var grouping = $("#add-metadata-grouping").val();
             if (query != []) {
                 var request = jsRoutes.api.Search.searchJson(JSON.stringify(query), grouping, from_count, count_stepsize).ajax({
                     type: 'GET',

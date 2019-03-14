@@ -158,7 +158,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService, eve
 	    		                 Logger.debug(s"editComment from file with id  $commentId.")
 
 	    		                 comments.editComment(commentId, commentText)
-	    		                 events.addObjectEvent(request.user, commentId, commentText, "edit_comment")
+	    		                 events.addObjectEvent(request.user, commentId, commentText, EventType.EDIT_COMMENT.toString)
 	    		                 Ok(Json.obj("status" -> "success"))
 	    		             }
 	    		             else {

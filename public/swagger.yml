@@ -26,6 +26,8 @@ consumes:
 #                                   Tags                                       #
 ################################################################################
 tags:
+  - name: search
+    description: The basic search endpoint allows searching across resources.
   - name: files
     description: A file is the raw bytes plus metadata.
   - name: folders
@@ -69,6 +71,53 @@ security:
 # Paths                                                                        #
 ################################################################################
 paths:
+
+  ##############################################################################
+  # Search                                                                     #
+  ##############################################################################
+  /search:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: false
+          type: string
+          name: query
+          in: query
+          description: String term to search for. Can include regular expressions using Elasticsearch syntax.
+        - required: false
+          type: string
+          name: resource_type
+          in: query
+          description: Restrict search results to "file", "dataset", or "collection".
+        - required: false
+          type: string
+          name: datasetid
+          in: query
+          description: Return only files belonging to a specific dataset.
+        - required: false
+          type: string
+          name: collectionid
+          in: query
+          description: Return only datasets belonging to a specific collection.
+        - required: false
+          type: string
+          name: field
+          in: query
+          description: Restrict search to a specific metadata field, e.g. "Alternative Title".
+        - required: false
+          type: string
+          name: tag
+          in: query
+          description: Search for resources with a specific tag.
+      tags:
+        - search
+      summary: Perform a basic search
+      description: |
+        Return files, datasets and/or collections matching query criteria. Search
+        can be filtered by a specific resource ID, limited to tags or specific
+        metadata fields.
 
   ##############################################################################
   # Files                                                                      #
@@ -775,6 +824,140 @@ paths:
         - files
       summary: Add thumbnail to a query image
       description: Attaches an already-existing thumbnail to a query image.
+
+
+
+  ##############################################################################
+  # StandardVocabulary                                                         #
+  ##############################################################################
+  /standardvocab:
+    post:
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        401:
+          description: Not authorized
+        403:
+          description: Forbidden
+      parameters:
+        - required: true
+          in: body
+          name: body
+          description: The list of terms to add to this vocabulary.
+          schema:
+            type: array
+            items:
+              type: string
+      tags:
+        - metadata
+      summary: Create a new Standard Vocabulary
+      description: |
+        Requires that the request body contains a List[String] of terms.
+    get:
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        401:
+          description: Not authorized
+        403:
+          description: Forbidden
+      tags:
+        - metadata
+      summary: List all Standard Vocabularies
+      description: |
+        Retrieve all Standard Vocabulary objects.
+
+  /standardvocab/{id}:
+    get:
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        401:
+          description: Not authorized
+        403:
+          description: Forbidden
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - metadata
+      summary: Get a specific Standard Vocabulary
+      description: |
+        Lookup and return an existing Standard Vocabulary using its ID.
+    put:
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        401:
+          description: Not authorized
+        403:
+          description: Forbidden
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+        - required: true
+          in: body
+          name: body
+          description: The list of terms to add to this vocabulary.
+          schema:
+            type: array
+            items:
+              type: string
+      tags:
+        - metadata
+      summary: Update a Standard Vocabulary
+      description: |
+        Requires that the request body contains a List[String] of terms.
+    delete:
+      responses:
+        200:
+          description: OK
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - metadata
+      summary: Delete a Standard Vocabulary
+      description: |
+        Lookup and remove a Standard Vocabulary using its ID.
+
+  /standardvocab/{id}/terms:
+    get:
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        401:
+          description: Not authorized
+        403:
+          description: Forbidden
+      parameters:
+        - required: true
+          type: string
+          name: id
+          in: path
+      tags:
+        - metadata
+      summary: Get the terms list of a specific Standard Vocabulary
+      description: |
+        Lookup and return the term list of an existing Standard Vocabulary
+        using its ID.
+
 
   ##############################################################################
   # Folders                                                                    #

@@ -16,6 +16,28 @@ body {
 	word-wrap: break-word;
 }
 
+.text-wrap {
+	word-wrap: break-word;       /* Internet Explorer 5.5+ */
+	word-break: break-all;
+	overflow-wrap: break-word;
+}
+
+.no-hyphens {
+	hyphens: none !important;
+}
+
+/* Override default "no-wrap" behavior in Bootstrap's table-responsive class */
+@media screen and (max-width: 767px) {
+	.table-responsive > .table > thead > tr > th,
+	.table-responsive > .table > tbody > tr > th,
+	.table-responsive > .table > tfoot > tr > th,
+	.table-responsive > .table > thead > tr > td,
+	.table-responsive > .table > tbody > tr > td,
+	.table-responsive > .table > tfoot > tr > td {
+		white-space: normal !important;
+	}
+}
+
 /* Lastly, apply responsive CSS fixes as necessary */
 @media ( max-width : 767px) {
 	#footer {
@@ -779,6 +801,10 @@ table#sensorsListTable>thead>tr>th.headerSortDown {
 	white-space: -moz-pre-wrap;
 	white-space: -o-pre-wrap;
 	word-wrap: break-word;
+}
+
+td.md-block.tree > ul {
+	padding-left: 0;
 }
 
 .collapse-icon:link, .collapse-icon:visited, .collapse-icon:hover, .collapse-icon:active  {

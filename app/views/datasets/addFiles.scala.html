@@ -9,18 +9,18 @@
     <div class="row">
         <ol class="breadcrumb">
         @if(spaces.length == 1) {
-            <li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
+            <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
         } else {
             @if(spaces.length > 1) {
                 <li>
                     <span class="dropdown">
                         <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="true">
-                            <span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+                            <span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
                         @spaces.map { s =>
-                            <li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-tent"></span> @Html(ellipsize(s.name, 18))</a></li>
+                            <li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
                         }
                         </ul>
                     </span>

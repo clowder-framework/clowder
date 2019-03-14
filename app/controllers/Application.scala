@@ -466,9 +466,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.listPeople,
         api.routes.javascript.Metadata.getPerson,
         api.routes.javascript.Metadata.getRepository,
+        api.routes.javascript.Metadata.createVocabulary,
+        api.routes.javascript.Metadata.updateVocabulary,
+        api.routes.javascript.Metadata.deleteVocabulary,
         api.routes.javascript.Events.sendExceptionEmail,
         api.routes.javascript.Extractions.submitFileToExtractor,
         api.routes.javascript.Extractions.submitDatasetToExtractor,
+        api.routes.javascript.Extractions.cancelFileExtractionSubmission,
+        api.routes.javascript.Extractions.cancelDatasetExtractionSubmission,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -505,7 +510,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Events.getEvents,
         controllers.routes.javascript.Collections.sortedListInSpace,
         controllers.routes.javascript.Datasets.sortedListInSpace,
-        controllers.routes.javascript.Users.sendEmail
+        controllers.routes.javascript.Users.sendEmail,
+        controllers.routes.javascript.FileLinks.createLink
       )
     ).as(JSON) 
   }

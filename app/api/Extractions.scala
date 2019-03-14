@@ -558,7 +558,7 @@ class Extractions @Inject()(
               "parameters" -> parameters.toString,
               "action" -> "manual-submission")
 
-            p.submitDatasetManually(host, key, extra, ds_id, "")
+            p.submitDatasetManually(host, key, extra, ds_id, "", request.user)
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>
@@ -572,5 +572,57 @@ class Extractions @Inject()(
   /*convert list of JsObject to JsArray*/
   private def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  }
+
+  def cancelFileExtractionSubmission(file_id: models.UUID, msg_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
+    file_id)))(parse.json) { implicit request =>
+    Logger.debug(s"Cancel file submitted extraction with body $request.body")
+    // send file to rabbitmq for processing
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
+        files.get(file_id) match {
+          case Some(file) => {
+            // check that the file is ready for processing
+            if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
+              (request.body \ "extractor").asOpt[String] match {
+                case Some(extractorId) =>
+                  p.cancelPendingSubmission(file_id, extractorId, msg_id)
+                    Ok(Json.obj("status" -> "OK"))
+                case None =>
+                  BadRequest(toJson(Map("request" -> "extractor field not found")))
+              }
+            } else {
+              Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
+            }
+          }
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
+        }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
+  }
+
+  def cancelDatasetExtractionSubmission(ds_id: models.UUID, msg_id: UUID)= PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
+    ds_id)))(parse.json)  { implicit request =>
+    Logger.debug(s"Cancel dataset submitted extraction with body $request.body")
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
+        datasets.get(ds_id) match {
+          case Some(ds) => {
+            (request.body \ "extractor").asOpt[String] match {
+              case Some(extractorId) =>
+                p.cancelPendingSubmission(ds_id, extractorId, msg_id)
+                Ok(Json.obj("status" -> "OK"))
+              case None => BadRequest(toJson(Map("request" -> "extractor field not found")))
+            }
+          }
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
+        }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
+
   }
 }

@@ -101,6 +101,13 @@ GET            /fileThumbnail/:id/blob                                          
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
 
+# ----------
+# File Links
+# ----------
+GET            /files/:fileId/share                                                     @controllers.FileLinks.share(fileId: UUID)
+GET            /files/links/:linkId                                                     @controllers.FileLinks.download(linkId: UUID)
+POST           /files/:fileId/links                                                     @controllers.FileLinks.createLink(fileId: UUID)
+
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
@@ -412,6 +419,10 @@ POST           /api/extractions/upload_file                                     
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
+
+DELETE         /api/files/:file_id/extractions/:msg_id                                  @api.Extractions.cancelFileExtractionSubmission(file_id:UUID, msg_id: UUID)
+DELETE         /api/datasets/:ds_id/extractions/:msg_id                               @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
+
 # End of change segment
 
 # ----------------------------------------------------------------------
@@ -545,9 +556,9 @@ POST           /api/datasets/:id/usermetadata                                   
 GET            /api/datasets/:id/technicalmetadatajson                                  @api.Datasets.getTechnicalMetadataJSON(id: UUID)
 GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
-GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
-GET            /api/datasets/:id/listAllFiles                                           @api.Datasets.datasetAllFilesList(id:UUID, max: Option[Int] ?= None)
-GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID, max: Option[Int] ?= None)
+GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID, count: Boolean ?= false)
+GET            /api/datasets/:id/listAllFiles                                           @api.Datasets.datasetAllFilesList(id:UUID, max: Int ?= -1)
+GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID, max: Int ?= -1)
 POST           /api/datasets/:id/files                                                  @api.Datasets.uploadToDatasetFile(id: UUID)
 POST           /api/datasets/:id/urls                                                   @api.Datasets.uploadToDatasetJSON(id: UUID)
 GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1, tracking: Boolean ?= true)
@@ -620,7 +631,7 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND", from: Option[Int], size: Option[Int])
 GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
-GET            /api/search                                                              @api.Search.search(query: String ?= "")
+GET            /api/search                                                              @api.Search.search(query: String ?= "", resource_type: Option[String], datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String])
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -815,6 +826,17 @@ POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id              
 GET         /api/vocabterms/list                                                        @api.VocabularyTerms.list()
 GET         /api/vocabterms/:id                                                         @api.VocabularyTerms.get(id : UUID)
 
+
+# ----------------------------------------------------------------------
+# STANDARDVOCABULARY API
+# ----------------------------------------------------------------------
+
+GET          /api/standardvocab                                                            @api.Metadata.getVocabularies()
+POST         /api/standardvocab                                                            @api.Metadata.createVocabulary()
+GET          /api/standardvocab/:id                                                        @api.Metadata.getVocabulary(id: UUID)
+GET          /api/standardvocab/:id/terms                                                  @api.Metadata.getVocabularyTerms(id: UUID)
+PUT          /api/standardvocab/:id                                                        @api.Metadata.updateVocabulary(id:UUID)
+DELETE       /api/standardvocab/:id                                                        @api.Metadata.deleteVocabulary(id: UUID)
 
 # ----------------------------------------------------------------------
 # PROXY API

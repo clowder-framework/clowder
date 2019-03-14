@@ -4,8 +4,14 @@
             <label for="field-value" class="col-sm-2 control-label" title="{{field_id}}">
                 <strong>{{field_label}}</strong>
             </label>
-            <div class="col-sm-10">
-                <select class="field-value" id="field-value" data-id="{{field_id}}" data-type="list" data-label="{{field_label}}">
+            <div class="col-sm-5">
+                <p>Column Name</p>
+                <input type="text" class="form-control field-value" id="field-value" data-type="annotation"  data-id="{{field_id}}"
+                       data-label="{{field_label}}" placeholder="type here...">
+            </div>
+            <div class="col-sm-5">
+                <p>Standard Name</p>
+                <select class="form-control" id="standard-name" data-id="{{field_id}}">
                     <option value=""></option>
                     {{#each options}}<option value="{{this}}">{{this}}</option>{{/each}}
                 </select>

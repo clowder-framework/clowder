@@ -124,8 +124,8 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
 
     // Now the real work: adding the tags.
     if ("" == error_str) {
-      // Clean up leading, trailing and multiple contiguous white spaces.
-      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
+      // Clean up leading, trailing and multiple contiguous white spaces and drop empty tags
+      val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " ")).filter(!_.isEmpty)
       (obj_type) match {
         case TagCheck_File => files.addTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => {

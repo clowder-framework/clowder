@@ -1,5 +1,59 @@
-to create a user account into clowder.
+Docker container to create a user account in clowder.
 
-An example creates useraccount admin@test.com with passwd testing0909, connecting to your service stack network, e.g. clowder_clowder
+If no password is given as an argument the docker container will print a password. Make sure to copy this password since
+this will be the only time the password is shown.
 
-`docker run --rm -it -e "ADMIN=true" -e "CLOWDER_SERVER=clowder" -e "RABBITMQ_PORT_15672_TCP_ADDR=rabbitmq" -e "ADMIN=true" -e "PASSWORD=testing0909" -e "EMAIL_ADDRESS=admin@test.com" -e "MONGO_URI=mongodb://mongo:27017/clowder" --name create-useraccount --network clowder_clowder browndog/create-useraccount:develop`
+For example the following command will create an useraccount with email address (and login name) admin@test.com with
+passwd testing0909. This will be created in the mongo database that is started with in the clowder stack. The network
+option will make sure it can connect to the appropriate database.
+
+```
+docker run --rm -it \
+    --network clowder_clowder \
+    -e "ADMIN=true" \
+    -e "PASSWORD=testing0909" \
+    -e "EMAIL_ADDRESS=admin@test.com" \
+    -e "MONGO_URI=mongodb://mongo:27017/clowder" \
+    clowder/init`
+```
+
+An example script that can be used to create a new user account with a api key that can be shared is the following:
+
+```
+#!/bin/bash
+
+function sha256sum() { shasum -a 256 "$@" ; }
+
+SERVICENAME="uploadservice"
+KEYNAME="apikey"
+PASSWORD=$( date +%s | sha256sum | base64 | head -c 32 )
+
+URL="http://localhost:9000"
+MONGO_URI="mongodb://clowder:27017/clowder"
+
+USERNAME=$( echo ${SERVICENAME} | tr '[:upper:]' '[:lower:]' )
+FIRSTNAME="${SERVICENAME}"
+LASTNAME="SERVICE"
+EMAIL="devnull+${USERNAME}@ncsa.illinois.edu"
+
+docker run --rm -ti \
+  --network clowder_clowder \
+  -e "MONGO_URI=${MONGO_URI}" \
+  -e "FIRST_NAME=${FIRSTNAME}"  \
+  -e "LAST_NAME=${LASTNAME}"  \
+  -e "EMAIL_ADDRESS=${EMAIL}" \
+  -e "USERNAME=${USERNAME}" \
+  -e "PASSWORD=${PASSWORD}" \
+  kooper/clowder-init
+
+USER_KEY=$( curl -XPOST -s -u "${EMAIL}:${PASSWORD}" "${URL}/api/users/keys?name=${KEYNAME}" | sed 's/.*"key":"\([^"]*\)".*/\1/' )
+
+echo ""
+echo "USERNAME = ${USERNAME}"
+echo "EMAIL    = ${EMAIL}"
+echo "PASSWORD = ${PASSWORD}"
+echo "USERKEY  = ${PASSWORD}"
+echo ""
+echo
+```
+

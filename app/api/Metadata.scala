@@ -36,6 +36,7 @@ class Metadata @Inject() (
   datasets: DatasetService,
   files: FileService,
   curations: CurationService,
+  vocabs: StandardVocabularyService,
   events: EventService,
   spaceService: SpaceService) extends ApiController {
 
@@ -110,8 +111,10 @@ class Metadata @Inject() (
     val foo = for {
       md <- metadataService.getDefinition(id)
       url <- (md.json \ "definitions_url").asOpt[String]
+      // If original request had a Cookie header, copy it to the proxied request
+      cookies <- request.headers.get("Cookie")
     } yield {
-      WS.url(url).get().map(response => Ok(response.body.trim))
+      WS.url(url).withHeaders(COOKIE -> cookies).get().map(response => (Status(response.status))(response.body.trim))
     }
     foo.getOrElse {
       Future(InternalServerError)
@@ -147,6 +150,7 @@ class Metadata @Inject() (
                 body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
               }
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
+              Ok(JsObject(Seq("status" -> JsString("ok"))))
             }
             case None => BadRequest("The space does not exist")
           }
@@ -172,11 +176,136 @@ class Metadata @Inject() (
               body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
             }
             addDefinitionHelper(uri, body, None, user, None)
+
+            // Now, propagate global definition to all spaces
+            // NOTE: argument list is REQUIRED when Configuration.permissions="private"
+            val spaceList = spaceService.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, request.user.fold(false)(_.superAdminMode), true, false, false)
+            spaceList.foreach(space => {
+              // assign a default uri if not specified
+              if (uri == "") {
+                // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
+                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+              }
+              addDefinitionHelper(uri, body, Some(space.id), user, Some(space))
+            })
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
           } else {
             BadRequest(toJson("Invalid Resource type"))
           }
         }
         case None => BadRequest(toJson("Invalid user"))
+      }
+  }
+
+  // Return all standard vocabularies
+  def getVocabularies() = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          val vocabList = vocabs.retrieve()
+          Ok(toJson(vocabList))
+        }
+      }
+  }
+
+  // Given a vocab ID, look up and return the terms list of
+  // the matching standard vocabulary
+  def getVocabularyTerms(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => BadRequest(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(vocab) => {
+              Ok(toJson(vocab.terms))
+            }
+          }
+        }
+      }
+  }
+
+  // Given a vocab ID, look up and return the matching
+  // standard vocabulary
+  def getVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => BadRequest(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              Ok(toJson(v))
+            }
+          }
+        }
+      }
+  }
+
+  // Given a list of terms, create a new standard vocabulary from the list
+  // Expects a JSON array of Strings as the request body
+  def createVocabulary() = AuthenticatedAction(parse.json) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          val terms: List[String] = request.body.asOpt[List[String]]
+            .getOrElse(List.empty)
+            .map(term => term.trim())
+            .filter(term => !term.isEmpty)
+          if (terms.isEmpty()) {
+            BadRequest(toJson("Empty terms list is not allowed"))
+          } else {
+            val vocabulary = vocabs.create(terms)
+            Ok(toJson(vocabulary))
+          }
+        }
+      }
+  }
+
+  // Given an ID, replace the entire terms list of a standard vocabulary
+  // Expects a JSON array of Strings as the request body
+  def updateVocabulary(id: UUID) = AuthenticatedAction(parse.json) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => NotFound(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              // Update and return vocabulary
+              val terms: List[String] = request.body.asOpt[List[String]]
+                .getOrElse(List.empty)
+                .map(term => term.trim())
+                .filter(term => !term.isEmpty)
+              if (terms.isEmpty()) {
+                BadRequest(toJson("Empty terms list is not allowed"))
+              } else {
+                val vocabulary = vocabs.update(id, terms)
+                Ok(toJson(vocabulary))
+              }
+            }
+          }
+        }
+      }
+  }
+
+  // Given an ID, delete the standard vocabulary with that ID
+  def deleteVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => NotFound(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              vocabs.delete(id)
+              Ok(toJson(v))
+            }
+          }
+        }
       }
   }
 
@@ -266,6 +395,22 @@ class Metadata @Inject() (
               case None if Permission.checkServerAdmin(Some(user)) => {
                 metadataService.deleteDefinition(id)
                 events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "delete_metadata_instance", new Date()))
+
+                // FIXME: How should we handle URI conflicts between global and space?
+                // FIXME: propagate global deletion to all spaces
+                /*
+                val mdUri = (md.json \ "uri").toString().replace("\"", "")
+                spaceService.list().foreach(space => {
+                  metadataService.getDefinitionByUriAndSpace(mdUri, Option(space.id.toString())) match {
+                    case Some(spaceMd) => {
+                      metadataService.deleteDefinition(spaceMd.id)
+                      events.addObjectEvent(Some(user), space.id, space.name, "delete_metadata_space")
+                    }
+                    case None => Logger.debug("Skipping deletion.. no metadata defn found for (uri, spaceId) = " +
+                      "(" + mdUri.toString() + ", " + space.id.toString() + ")")
+                  }
+                })
+                */
                 Ok(JsObject(Seq("status" -> JsString("ok"))))
               }
               case _ => {
@@ -347,6 +492,11 @@ class Metadata @Inject() (
                       case ResourceRef.dataset => {
                         datasets.index(resource.id)
                         //send RabbitMQ message
+                        datasets.get(resource.id) match {
+                          case Some(ds) => {
+                            events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
+                          }
+                        }
                         current.plugin[RabbitmqPlugin].foreach { p =>
                           p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
                         }
@@ -354,6 +504,11 @@ class Metadata @Inject() (
                       case ResourceRef.file => {
                         files.index(resource.id)
                         //send RabbitMQ message
+                        files.get(resource.id) match {
+                          case Some(f) => {
+                            events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
+                          }
+                        }
                         current.plugin[RabbitmqPlugin].foreach { p =>
                           p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
                         }
@@ -365,7 +520,13 @@ class Metadata @Inject() (
                   case None =>
                     Logger.error("Metadata missing attachedTo subdocument")
                 }
-                Ok(views.html.metadatald.view(List(metadata), true)(request.user))
+
+                // FIXME: the API should return JSON, not raw HTML
+                // Emit our newly-created metadata as both a new card and a new table row
+                Ok(Json.obj(
+                  "cards" -> views.html.metadatald.newCard(metadata)(request.user).toString(),
+                  "table" -> views.html.metadatald.newTableRow(metadata)(request.user).toString()
+                ))
               } else {
                 BadRequest(toJson("Invalid resource type"))
               }

@@ -451,7 +451,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               case Some(s) => {
                 spaces.addCollection(collection.id, s.id, user)
                 collections.addToRootSpaces(collection.id, s.id)
-                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
+                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               }
               case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
             }
@@ -464,7 +464,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)
-          events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
+          events.addObjectEvent(option_user, collection.id, collection.name, EventType.CREATE_COLLECTION.toString)
 
           // redirect to collection page
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}

@@ -3,6 +3,8 @@ package services
 import models._
 import java.util.Date
 
+import org.bson.types.ObjectId
+
 
 /**
  * Track information about individual extractions.
@@ -16,7 +18,7 @@ trait ExtractionService {
 
   def findById(resource: ResourceRef): List[Extraction]
 
-  def insert(extraction: Extraction)
+  def insert(extraction: Extraction): Option[ObjectId]
   
   def getExtractorList(fileId:UUID): collection.mutable.Map[String,String]
   

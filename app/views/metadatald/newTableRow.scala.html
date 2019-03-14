@@ -1,0 +1,144 @@
+@(m: models.Metadata)(implicit user: Option[models.User])
+    @import java.net.URL
+    @import play.api.libs.json.JsString
+    @import play.api.libs.json.JsObject
+    @import play.api.libs.json.JsValue
+    @import play.api.libs.json.JsArray
+    @import api.Permission
+
+    @defining(1) { counter: Int =>
+        @for((m, i) <- List(m).zipWithIndex) {
+            @m.content match {
+                case o: JsObject => {
+                    @for((key, value) <- o.fields.headOption.toList) {
+                        <tr id="row_@m.id">
+                            <td><a href="#">@key</a></td>
+                            <td class="md-block tree" style="padding-left:0;">
+                            @printContent(m, "content", i, true)
+                            </td>
+                            <td>@printContent(m, "header", i, true)</td>
+                            <td>
+                                @if(Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
+                                    <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
+                                        <span class="panel-icon glyphicon glyphicon-trash"></span>
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            }
+        }
+    }
+
+
+    <script>
+        $(function () {
+            $('#row_@m.id > [data-toggle="tooltip"]').tooltip();
+
+            $('#row_@m.id > .tree li').on('click', function (e) {
+                var children = $(this).find('> ul > li');
+                if (children.is(":visible")) {
+                    children.hide('fast');
+                    $(this).find(".glyphicon-minus").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+                } else {
+                    children.show('fast');
+                    $(this).find(".glyphicon-plus").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+                }
+                e.stopPropagation();
+            });
+        })
+
+        $(function () {
+            $('.delete-icon').unbind().on('click', function(){
+                var delete_icon = $(this);
+                var metadataId = this.id;
+                var request = jsRoutes.api.Metadata.removeMetadata(metadataId).ajax({
+                    type: 'DELETE'
+                });
+
+                request.done(function (response, textStatus, jqXHR) {
+                    // Remove both the panel and the table row for this entry
+                    $("#panel_" + metadataId).remove();
+                    $("#row_" + metadataId).remove();
+
+                    // No more panels left, display placeholder text instead
+                    if($('#metadata-content .panel').length == 0) {
+                        $('#no-metadata-label').text('No metadata available for this resource');
+                    }
+                });
+
+                request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error("The following error occured: " + textStatus, errorThrown);
+                    var errMsg = "You must be logged in to add metadata";
+                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                        notify("Metadata was not removed due to : " + errorThrown, "error");
+                    }
+                });
+            });
+        })
+
+        $(document).on('mouseenter', '#row_@m.id > .context-key', function(){
+            var contextId = this.id.split("-",1)[0];
+            getMetadataContext(this.id, contextId, this.textContent)
+        });
+
+        $(document).on('mouseenter', '#row_@m.id > .context-url-key', function() {
+            var contextUrl = $(this).data("url");
+            $('#'+this.id).addClass("popping");
+            showPopover(this.id, contextUrl);
+        });
+
+        $(document).on('mouseleave', '#row_@m.id > .context-url-key', function() {
+            leaveMetadataContext(this.id)
+        });
+
+
+        $(document).on('mouseleave', '#row_@m.id > .context-key', function(){
+            leaveMetadataContext(this.id)
+        });
+
+        // get metadata definitions
+        function getMetadataContext(mid, uuid, key) {
+            var request = jsRoutes.api.ContextLD.getContextById(uuid).ajax({
+                type: 'GET',
+                contentType: "application/json"
+            });
+            $("#row_@m.id > #"+mid).addClass("popping");
+            request.done(function (response, textStatus, jqXHR) {
+                var fields = response;
+                var context = "Context is not defined.";
+                if (fields['@@context'][1] && typeof fields['@@context'][1][key] !== 'undefined') {
+                    context = JSON.stringify(fields['@@context'][1][key]);
+                }
+                showPopover(mid, context)
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                $("#"+mid).removeClass("popping");
+                console.error("The following error occured: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to retrieve metadata definitions";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("Metadata context was not shown due to : " + errorThrown, "error");
+                }
+            });
+        }
+
+        function showPopover(id, context) {
+            $("#row_@m.id > #"+id).popover({
+                content:context,
+                placement:'top',
+                template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
+            });
+            $("#row_@m.id > #"+id).popover('show');
+            if (!$("#row_@m.id > #"+id).hasClass("popping")) {
+                setTimeout(leaveMetadataContext, 500, id);
+            }
+
+        }
+
+        function leaveMetadataContext(mid) {
+            $("#row_@m.id > #"+mid).removeClass("popping");
+            $("#row_@m.id > #"+mid).popover('hide');
+        }
+    </script>

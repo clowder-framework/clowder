@@ -1,9 +1,9 @@
 package api
 
 import java.util.Date
-import javax.inject.Inject
 
-import models.{ ClowderUser, Event, UUID, UserStatus }
+import javax.inject.Inject
+import models._
 import org.apache.commons.lang3.StringEscapeUtils
 import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
@@ -17,7 +17,7 @@ import util.Mail
 
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{ JsString, JsUndefined, JsValue }
+import play.api.libs.json.{JsString, JsUndefined, JsValue}
 
 /**
  * Admin endpoints for JSON API.
@@ -80,7 +80,7 @@ class Admin @Inject() (userService: UserService,
     getValueString(request.body, "parameters").foreach(AppConfiguration.setParametersTitle(_))
     getValueString(request.body, "parameter").foreach(AppConfiguration.setParameterTitle(_))
     getValueString(request.body, "tosText").foreach { tos =>
-      events.addEvent(Event(request.user.get, event_type = "tos_update"))
+      events.addEvent(Event(request.user.get, event_type = EventType.TOS_UPDATE.toString))
       AppConfiguration.setTermsOfServicesText(tos)
       request.user.foreach(u => userService.acceptTermsOfServices(u.id))
     }

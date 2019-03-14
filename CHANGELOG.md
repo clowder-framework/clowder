@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Using EventType enum class, fixed events not created.
+- [CATS-961](https://opensource.ncsa.illinois.edu/jira/browse/CATS-961)
+- Add cancel button aside the submission event and remove that submission from rabbitmq queue.
+  [CATS-970](https://opensource.ncsa.illinois.edu/jira/browse/CATS-970)
+- Allow user to create and manage Controlled Vocabularies within Clowder.
+- Cascade creation and deletion of global metadata definitions to all spaces.
+  [CATS-967](https://opensource.ncsa.illinois.edu/jira/browse/CATS-967)
+- New view for Files/Datasets offering a Table View of the attached Metadata.
+- Add SUBMITTED event on the GUI of extractions and pass this submitted event id into the rabbitmq message.
+  [CATS-969] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-969)
+- Pass user email address in the extraction rabbitmq message when file uploading and manually submitting extraction.
+  [CATS-963](https://opensource.ncsa.illinois.edu/jira/browse/CATS-963)
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
 - Script to cleanup/migrate userpass account data to cilogon accounts.
@@ -17,17 +29,43 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
 - Additional API endpoints for adding and retrieving file metadata in bulk.
   [CATS-941](https://opensource.ncsa.illinois.edu/jira/browse/CATS-941)
+- Optional form to adding multiple metadata fields at once via UI under "Advanced."
+  [CATS-940](https://opensource.ncsa.illinois.edu/jira/browse/CATS-940)
+- CONTAINS operator added to Advanced Search interface and wildcards (e.g. ".*") now supported in search box.
+  [CATS-962](https://opensource.ncsa.illinois.edu/jira/browse/CATS-962)
+- New widget to add standard name mappings [BD-2321](https://opensource.ncsa.illinois.edu/jira/browse/BD-2321)
   
 ### Fixed
 - Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly
   return space list depending on user permissions even if instance is set to private.
 - GeospatialViewer previewer added content to incorrect tab.
   [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
+- Handle 403 errors appropriately from the ZipFile Previewer.
+  [CATS-948](https://opensource.ncsa.illinois.edu/jira/browse/CATS-948)
+- Error when showing ordered list of tags and Elasticsearch included an empty tag. Also removed the ability to add empty 
+  tags both from the UI as well as the API.
+  [CATS-952](https://opensource.ncsa.illinois.edu/jira/browse/CATS-952)
+- In SuperAdmin mode, the Spaces page will correctly show all spaces.
+  [CATS-958](https://opensource.ncsa.illinois.edu/jira/browse/CATS-958)
+- In FileMetrics report, space and collection IDs are only added to the report once to avoid repeating.
+- Apply 'max' restriction when fetching dataset file lists earlier, to avoid long load times for certain previewers.
+  [CATS-899](https://opensource.ncsa.illinois.edu/jira/browse/CATS-899)
   
 ### Changed 
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
+- Cleaned up clowder init code docker image see README.
+- /api/search endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
+  [CATS-968](https://opensource.ncsa.illinois.edu/jira/browse/CATS-968)
+
+
+## 1.5.2 - 2018-12-14
+
+### Fixed
+- Filtering using Rabbitmq does not take into account exchanges. [CATS-954](https://opensource.ncsa.illinois.edu/jira/browse/CATS-954)
+- The icon used for spaces in a few places was the wrong icon. [CATS-955](https://opensource.ncsa.illinois.edu/jira/browse/CATS-955)
+- GeoJSON dataset previewer loads all files in a dataset. [CATS-956](https://opensource.ncsa.illinois.edu/jira/browse/CATS-956)
 
 ## 1.5.1 - 2018-11-07
 

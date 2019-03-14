@@ -295,6 +295,8 @@ class Files @Inject()(
               p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request))
             }
 
+            // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
+
             files.index(id)
             Ok(toJson(Map("status" -> "success")))
           }
@@ -359,6 +361,8 @@ class Files @Inject()(
                 current.plugin[RabbitmqPlugin].foreach { p =>
                   p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
                 }
+
+                events.addObjectEvent(None, id, x.filename,EventType.ADD_METADATA_FILE.toString)
 
                 files.index(id)
                 Ok(toJson("Metadata successfully added to db"))
@@ -741,7 +745,7 @@ class Files @Inject()(
         files.addUserMetadata(id, theJSON)
         files.get(id) match {
           case Some(file) =>{
-            events.addObjectEvent(request.user, file.id, file.filename, "addMetadata_file")
+            events.addObjectEvent(request.user, file.id, file.filename, EventType.ADD_METADATA_FILE.toString)
           }
         }
         files.index(id)
@@ -1271,7 +1275,7 @@ class Files @Inject()(
     val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
     case Some(file) =>{
-      events.addObjectEvent(request.user, file.id, file.filename, "add_tags_file")
+      events.addObjectEvent(request.user, file.id, file.filename, EventType.ADD_TAGS_FILE.toString)
       }
     }
     // Now the real work: adding the tags.
@@ -1292,7 +1296,7 @@ class Files @Inject()(
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
     files.get(id) match {
           case Some(file) =>{
-            events.addObjectEvent(request.user, file.id, file.filename, "remove_tags_file")
+            events.addObjectEvent(request.user, file.id, file.filename, EventType.REMOVE_TAGS_FILE.toString)
           }
         }
 
@@ -1459,7 +1463,7 @@ class Files @Inject()(
               comments.insert(comment)
               files.get(id) match {
               case Some(file) =>{
-                events.addSourceEvent(request.user, comment.id, comment.text, file.id, file.filename, "comment_file")
+                events.addSourceEvent(request.user, comment.id, comment.text, file.id, file.filename, EventType.COMMENT_FILE.toString)
                 }
               }
               files.index(id)
@@ -1654,7 +1658,7 @@ class Files @Inject()(
   def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
-          events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
+          events.addObjectEvent(request.user, file.id, file.filename, EventType.DELETE_FILE.toString)
           // notify rabbitmq
           current.plugin[RabbitmqPlugin].foreach { p =>
             datasets.findByFileIdAllContain(file.id).foreach{ds =>
@@ -1793,7 +1797,7 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              events.addObjectEvent(user, id, file.filename, "follow_file")
+              events.addObjectEvent(user, id, file.filename, EventType.FOLLOW_FILE.toString)
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
 
@@ -1821,7 +1825,7 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              events.addObjectEvent(user, id, file.filename, "unfollow_file")
+              events.addObjectEvent(user, id, file.filename, EventType.UNFOLLOW_FILE.toString)
               files.removeFollower(id, loggedInUser.id)
               userService.unfollowFile(loggedInUser.id, id)
               Ok
