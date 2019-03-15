@@ -19,6 +19,7 @@ import play.api.libs.ws.{Response, WS}
 import play.api.mvc.MultipartFormData
 import services._
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 
@@ -309,7 +310,6 @@ class Extractions @Inject()(
       } //user
   }
 
-
   def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
 
     var isActivity = "false"
@@ -394,7 +394,6 @@ class Extractions @Inject()(
     val listNamesJson = toJson(listNames)
     Ok(listNamesJson)
   }
-
 
   def getExtractorInputTypes() = AuthenticatedAction { implicit request =>
     val listInputTypes = extractors.getExtractorInputTypes()
@@ -625,4 +624,29 @@ class Extractions @Inject()(
     }
 
   }
+
+  def addNewFilesetEvent(datasetid: String, fileids: List[String]) = AuthenticatedAction {implicit request =>
+    datasets.get(UUID(datasetid)) match {
+      case Some(ds) => {
+        val filelist: ListBuffer[File] = ListBuffer()
+        var missingfile = false
+        fileids.map(fid => {
+          files.get(UUID(fid)) match {
+            case Some(f) => filelist += f
+            case None => missingfile = true
+          }
+        })
+        if (missingfile)
+          BadRequest(toJson("Not all files found"))
+        else
+          current.plugin[RabbitmqPlugin].foreach {
+            _.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request))
+          }
+      }
+      case None => BadRequest(toJson("Dataset "+datasetid+" not found"))
+    }
+
+    Ok(toJson("added new event"))
+  }
+
 }

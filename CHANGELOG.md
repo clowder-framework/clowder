@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - CONTAINS operator added to Advanced Search interface and wildcards (e.g. ".*") now supported in search box.
   [CATS-962](https://opensource.ncsa.illinois.edu/jira/browse/CATS-962)
 - New widget to add standard name mappings [BD-2321](https://opensource.ncsa.illinois.edu/jira/browse/BD-2321)
+- Add a new event for extractors "dataset.files.added" that is triggered when a user uploads multiple files at once via UI.
+  [CATS-973](https://opensource.ncsa.illinois.edu/jira/browse/CATS-973)
   
 ### Fixed
 - Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly

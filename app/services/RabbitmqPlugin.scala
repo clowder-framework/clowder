@@ -379,7 +379,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val globalExtractors = getGlobalExtractorsByOperation(operation)
     // get extractors enabled at the space level
     val spaceExtractors = getSpaceExtractorsByOperation(dataset, operation)
-    // get gueues based on RabbitMQ bindings (old method).
+    // get queues based on RabbitMQ bindings (old method).
     val queuesFromBindings = getQueuesFromBindings(routingKey)
     // take the union of queues so that we publish to a specific queue only once
     globalExtractors.toSet union spaceExtractors.toSet union queuesFromBindings.toSet
@@ -479,6 +479,37 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
       val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
+      extractWorkQueue(msg)
+    }
+  }
+
+  /**
+    * Send message when a group of files is added to a dataset via UI.
+    * Use both old method using topic queues and new method using work queues and extractors registration in Clowder.
+    * @param filelist the list of files that were added to the dataset
+    * @param dataset the dataset it was added to
+    * @param host the Clowder host URL for sharing extractors across instances
+    */
+  def fileSetAddedToDataset(dataset: Dataset, filelist: List[File], host: String): Unit = {
+    val routingKey = s"$exchange.dataset.files.added"
+    Logger.debug(s"Sending message $routingKey from $host")
+    val queues = getQueues(dataset, routingKey, "")
+    val sourceExtra = JsObject((Seq("filenames" -> JsArray(filelist.map(f=>JsString(f.filename)).toSeq))))
+    val msgExtra = Map("filenames" -> filelist.map(f=>f.filename))
+    queues.foreach{ extractorId =>
+      val source = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, sourceExtra)
+
+      val notifies = dataset.author.email match {
+        case Some(useremail) => List[String](useremail)
+        case None => List[String]()
+      }
+
+      val id = postSubmissionEven(dataset.id, extractorId)
+
+      var totalsize: Long = 0
+      filelist.map(f => totalsize += f.length)
+      val msg = ExtractorMessage(id, dataset.id, notifies, dataset.id, host, extractorId, msgExtra, totalsize.toString, dataset.id,
+        "", apiKey, routingKey, source, "added", None)
       extractWorkQueue(msg)
     }
   }
