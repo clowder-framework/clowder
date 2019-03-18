@@ -3,12 +3,16 @@ function addDefinition(data, pageURL, spaceId){
   if(spaceId != "") {
     url = jsRoutes.api.Metadata.addDefinitionToSpace(spaceId);
   }
+
+  data.description = data.description.replace(/\n/g, '    ');
+
   if($(".definitionAction").text().indexOf( "Edit") > -1) {
     var id = $('.definitionAction').attr('id');
     var editUrl = jsRoutes.api.Metadata.editDefinition(id);
     if(spaceId != "") {
     	editUrl = jsRoutes.api.Metadata.editDefinition(id, spaceId);
     }
+
     var request = editUrl.ajax({
       type: 'POST',
       data: JSON.stringify(data),
@@ -63,7 +67,10 @@ function editDefinition(id, json, element) {
     $("#type").val(json.type).change();
   }
   if (json.definitions_url) {
-    if (json.definitions_url.indexOf(window.location.origin) === -1) {
+    // Grab the origin + default path from the URL
+    var origin = getHostPrefixFromUrl(window.location.href);
+
+    if (json.definitions_url.indexOf(origin) === -1) {
       $("#defined_by").val("url");
       $("#defined_by_list").hide();
       $("#definitions_list").val('');
@@ -106,11 +113,26 @@ function reset(element) {
 }
 
 function getVocabularyIdFromUrl(url) {
+    // Grab the origin + default path from the URL
+    var origin = getHostPrefixFromUrl(window.location.href);
+
     // Strip out the hostname to make things easier
-    var suffix = url.replace(window.location.origin, '');
+    var suffix = url.replace(origin, '');
 
     // Suffix takes the form /api/standardvocab/:id/terms - we just want the ID
     return suffix.split('/')[3];
+}
+
+function getHostPrefixFromUrl(url) {
+    var origin = null;
+    if (url.indexOf('/admin/metadata/definitions') !== -1) {
+        origin = url.split('/admin/metadata/definitions')[0];
+    } else if (url.indexOf(/\/spaces\/.*\/metadata/) !== -1) {
+        origin = url.split(/\/spaces\/.*\/metadata/)[0];
+    } else {
+        console.log('Unsupported href encountered: ' + window.location.href);
+    }
+    return origin;
 }
 
 function createVocabulary(terms) {
