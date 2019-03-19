@@ -362,7 +362,7 @@ class Files @Inject()(
                   p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
                 }
 
-                events.addObjectEvent(None, id, x.filename,EventType.ADD_METADATA_FILE.toString)
+                events.addObjectEvent(request.user, id, x.filename,EventType.ADD_METADATA_FILE.toString)
 
                 files.index(id)
                 Ok(toJson("Metadata successfully added to db"))

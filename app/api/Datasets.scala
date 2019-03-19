@@ -615,7 +615,7 @@ class  Datasets @Inject()(
           p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
         }
 
-        events.addObjectEvent(None, id, x.name, EventType.ADD_METADATA_DATASET.toString)
+        events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
