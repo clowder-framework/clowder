@@ -446,10 +446,26 @@ def migrate_user(user, new_id):
     if result.matched_count > 0 and result.modified_count > 0:
         print('Migrated %s/%s documents from %s to %s in %s' % (result.modified_count, result.matched_count, user['_id'], new_id, 'users.apikey'))
 
-    # Migrate user's space permissions
-    for spacerole in user['spaceandrole']:
-        if spacerole not in new_user['spaceandrole']:
-            new_user['spaceandrole'].append(spacerole)
+    # Keep a count of any added roles
+    added_roles_count = 0
+
+    # Merge old user's space permissions into new user
+    for old_space_role in user['spaceandrole']:
+        # Check if this space already exists in new_users space permissions
+        new_space_role = (old_space_role['spaceId'] == new_role['spaceId'] for new_role in new_user['spaceandrole'])
+
+        # If new user already has some permissions for this space
+        if not any(new_space_role):
+            # Add entire spaceandrole object to new_user
+            new_user['spaceandrole'].append(old_space_role)
+            added_roles_count += 1
+            
+    # Update new user's space and role permissions in MongoDB
+    result = clowder['social.users'].update_one({ '_id': new_user['_id'] }, { '$set': { 'spaceandrole': new_user['spaceandrole'] } })
+
+    # Report updated counts if successful
+    if result.matched_count > 0 and result.modified_count > 0:
+        print('Added %s space roles from %s to %s in %s' % (added_roles_count, user['_id'], new_id, 'social.users["spaceandrole.role.permissions"]'))
 
     # TODO: Confirm success?
 
@@ -473,7 +489,8 @@ def aggregate_users():
         {"$lookup": { "from": "collections", "localField": "_id", "foreignField": "author._id", "as": "user_collections" }},
         {"$lookup": { "from": "datasets", "localField": "_id", "foreignField": "author._id", "as": "user_datasets" }},
         {"$lookup": { "from": "folders", "localField": "_id", "foreignField": "author._id", "as": "user_folders" }},
-        {"$lookup": { "from": "uploads", "localField": "_id", "foreignField": "author._id", "as": "user_uploads" }},
+        # XXX: Larger databases can throw an error fetching these uploads, see below
+        #{"$lookup": { "from": "uploads", "localField": "_id", "foreignField": "author._id", "as": "user_uploads" }},
         {"$lookup": { "from": "comments", "localField": "_id", "foreignField": "author._id", "as": "user_comments" }},
         {"$lookup": { "from": "events_to", "localField": "_id", "foreignField": "targetuser._id", "as": "user_events_to" }},
         {"$lookup": { "from": "events_from", "localField": "_id", "foreignField": "user._id", "as": "user_events_from" }},
@@ -493,7 +510,7 @@ def aggregate_users():
 
             # Save all of our joined values from above?
             "aliases": { "$filter": { "input" : { "$map":  { "input": "$user_aliases", "as": "user", "in": "$$user.identityId" } }, "as": "identity", "cond": { "$eq": [ "$$identity.providerId", "cilogon" ] } } },
-            "uploads":  "$user_uploads",
+            #"uploads":  "$user_uploads",
             "collections":  "$user_collections",
             "datasets":  "$user_datasets",
             "events_from": "$user_events_from",
@@ -506,7 +523,7 @@ def aggregate_users():
 
             # Sum the total objects created
             "total_created": { "$sum": [
-                { "$size": "$user_uploads" },
+                #{ "$size": "$user_uploads" },
                 { "$size": "$user_collections" },
                 { "$size": "$user_spaces" },
                 { "$size": "$user_datasets"},
@@ -520,7 +537,18 @@ def aggregate_users():
         }},
     ]
 
-    return list(clowder['social.users'].aggregate(pipeline))
+    # Fetch everything besides the user's "uploads" using the pipeline
+    users = list(clowder['social.users'].aggregate(pipeline, allowDiskUse=True, cursor={ 'batchSize': 999999999 }))
+
+    # Artifically inject "uploads" before returning to workaround the 16MB BSON limit
+    # XXX: Larger databases can throw an error fetching these uploads in the aggregate above
+    # See https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size
+    for user in users:
+        user_uploads = list(clowder['uploads'].find({ 'author._id': user['_id'] }))
+        user['uploads'] = user_uploads
+        user['total_created'] = user['total_created'] + len(user_uploads)
+
+    return users
 
 # ----------------------------------------------------------------------
 # start of program
