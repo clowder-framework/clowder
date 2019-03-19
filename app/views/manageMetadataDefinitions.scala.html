@@ -34,7 +34,7 @@
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
                 } else if ($(this).val() == "list" || $(this).val() == "annotation") {
-                    definedBy.attr("disabled", false);
+                    definedBy.removeAttr("disabled");
                     definitions.removeAttr("disabled");
                     definitionsList.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
@@ -139,6 +139,7 @@
                         // Parse text list into a JSON array of strings before sending
                         var terms = data.definitions_list.split(/\r?\n/g);
                         var promise = null;
+                        var origin = getHostPrefixFromUrl(window.location.href);
 
                         // Check for an existing vocabulary id
                         if (vocabulary_id) {
@@ -152,7 +153,7 @@
                         promise.then(function(vocab) {
                             // Replace our literal values with a URL
                             delete data.definitions_list;
-                            data.definitions_url = window.location.origin + vocab.url;
+                            data.definitions_url = origin + vocab.url;
 
                             // Save vocabulary ID and new URL with this metadata definition
                             data.vocabulary_id = vocab.id;

@@ -556,6 +556,7 @@ POST           /api/datasets/:id/usermetadata                                   
 GET            /api/datasets/:id/technicalmetadatajson                                  @api.Datasets.getTechnicalMetadataJSON(id: UUID)
 GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
+POST           /api/datasets/:id/filesetUploadEvent                                     @api.Extractions.addNewFilesetEvent(id: String, fileids: List[String])
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID, count: Boolean ?= false)
 GET            /api/datasets/:id/listAllFiles                                           @api.Datasets.datasetAllFilesList(id:UUID, max: Int ?= -1)
 GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID, max: Int ?= -1)
