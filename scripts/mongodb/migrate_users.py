@@ -216,7 +216,10 @@ def prompt_for_new_id():
     try:
         while True:
             sys.stdout.write(prompt)
-            new_id = raw_input().lower()
+            if sys.version_info[0]==3:
+                new_id = input().lower()
+            else:
+                new_id = raw_input().lower()
             if new_id is not None and new_id != '':
                 return new_id
             else:
@@ -249,7 +252,10 @@ def query_yes_no(question, default="yes"):
     try:
         while True:
             sys.stdout.write(question + prompt)
-            choice = raw_input().lower()
+            if sys.version_info[0]==3:
+                choice = input().lower()
+            else:
+                choice = raw_input().lower()
             if default is not None and choice == '':
                 return valid[default]
             elif choice in valid:
