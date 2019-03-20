@@ -459,6 +459,8 @@ def migrate_user(user, new_id):
             # Add entire spaceandrole object to new_user
             new_user['spaceandrole'].append(old_space_role)
             added_roles_count += 1
+        else:
+            print('Skipped migrating permissions for spaceId=' + str(new_space_role['_id']))
             
     # Update new user's space and role permissions in MongoDB
     result = clowder['social.users'].update_one({ '_id': new_user['_id'] }, { '$set': { 'spaceandrole': new_user['spaceandrole'] } })
