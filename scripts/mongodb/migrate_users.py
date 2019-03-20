@@ -88,11 +88,11 @@ from bson.objectid import ObjectId
 
 
 # XXX: Set the desired script operation
-fixmongo = False
+fixmongo = True
 verbose = False
 showok = False
-promptempty = True
-promptinactive = True
+promptempty = False
+promptinactive = False
 promptactive = True
 
 
@@ -457,6 +457,8 @@ def migrate_user(user, new_id):
 
     # Merge old user's space permissions into new user
     for old_space_role in user['spaceandrole']:
+        if 'spaceandrole' not in new_user:
+            new_user['spaceandrole'] = []
         # Check if this space already exists in new_users space permissions
         new_space_role = (old_space_role['spaceId'] == new_role['spaceId'] for new_role in new_user['spaceandrole'])
 
