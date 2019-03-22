@@ -43,6 +43,10 @@
 #   * `promptactive`: If True, prompt the user to migrate each ACTIVE
 #                     account, one at a time. If False, the user is
 #                     simply notified that manual migration is needed.
+#   * `automigrate`: If TRUE and fixmongo also TRUE, then if there is only one
+#                    cilogon account found matching an existing user/pass account,
+#                    then the user/pass account is automatically migrated to the cilogon
+#                    account, with no prompts in terminal.
 #
 #
 # Appendix B: Account State Definitions
@@ -88,13 +92,13 @@ from bson.objectid import ObjectId
 
 
 # XXX: Set the desired script operation
-fixmongo = True
+fixmongo = False
 verbose = False
 showok = False
 promptempty = False
 promptinactive = False
 promptactive = True
-
+automigrate = False
 
 # XXX: Target a particular instance of Clowder/Mongo
 clowder_url = 'http://localhost:9000/'
@@ -353,6 +357,7 @@ def fix(results):
         print('Migration needed for %s' % (user['_id']))
 
         possible_aliases = clowder['social.users'].find({ 'email': user['email'], 'identityId.providerId': 'cilogon' })
+
         aliases = [{ '_id': alias['_id'], 'identityId': alias['identityId'] } for alias in possible_aliases]
         print('    Possible cilogon aliases:')
         for alias in aliases:
@@ -360,8 +365,14 @@ def fix(results):
         if len(aliases) == 0:
             print('      - N / A')
 
+        # if automigrate, and only one cilogon account found for user, migrate account
+        if len(aliases) == 1 and automigrate and aliases[0]['identityId']['providerId'] == 'cilogon':
+            print('Migrating user %s (%s) to %s' % (user['_id'], user['email'], aliases[0]['_id']))
+            new_id = aliases[0]['_id']
+            migrate_user(user, new_id)
+
         # Prompt for new_user_id
-        if promptactive and query_yes_no('Migrate user %s (%s)?' % (user['_id'], user['email']), default='no'):
+        if not automigrate and promptactive and query_yes_no('Migrate user %s (%s)?' % (user['_id'], user['email']), default='no'):
             new_id = prompt_for_new_id()
             migrate_user(user, new_id)
 
