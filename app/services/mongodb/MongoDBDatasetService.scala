@@ -1371,7 +1371,7 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def removeDataset(id: UUID, host: String) {
+  def removeDataset(id: UUID, host: String, apiKey: Option[String], user: Option[User]) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
         dataset.collections.foreach(c => collections.removeDataset(c, dataset.id))
@@ -1381,10 +1381,10 @@ class MongoDBDatasetService @Inject() (
         for (f <- dataset.files) {
           val notTheDataset = for (currDataset <- findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
-            files.removeFile(f, host)
+            files.removeFile(f, host, apiKey, user)
         }
         for (folder <- dataset.folders ) {
-          folders.delete(folder, host)
+          folders.delete(folder, host, apiKey, user)
         }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
@@ -1392,7 +1392,7 @@ class MongoDBDatasetService @Inject() (
         for(space <- dataset.spaces) {
           spaces.removeDataset(dataset.id, space)
         }
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), host)
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), host, apiKey, user)
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>

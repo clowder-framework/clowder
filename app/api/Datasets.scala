@@ -612,7 +612,7 @@ class  Datasets @Inject()(
 
         //send RabbitMQ message
         current.plugin[RabbitmqPlugin].foreach { p =>
-          p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
+          p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
         }
 
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
@@ -672,7 +672,7 @@ class  Datasets @Inject()(
 
                     //send RabbitMQ message
                     current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
+                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                     }
 
                     events.addObjectEvent(None, id, x.name,EventType.ADD_METADATA_DATASET.toString)
@@ -752,15 +752,15 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         val metadataIds = extractorId match {
           case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), f,
-            Utils.baseUrl(request))
+            Utils.baseUrl(request), request.apiKey, request.user)
           case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id),
-            Utils.baseUrl(request))
+            Utils.baseUrl(request), request.apiKey, request.user)
         }
 
         // send extractor message after attached to resource
         current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach {mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request))
+          metadataIds.foreach { mId =>
+            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
           }
         }
 
@@ -879,7 +879,7 @@ class  Datasets @Inject()(
   def uploadToDatasetFile(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset))
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), apiKey=request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -895,7 +895,7 @@ class  Datasets @Inject()(
   def uploadToDatasetJSON(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.json) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesJSON(request, Some(dataset))
+        val uploadedFiles = FileUtils.uploadFilesJSON(request, Some(dataset), apiKey=request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -1783,7 +1783,7 @@ class  Datasets @Inject()(
           case _ => Logger.debug("userdfSPARQLStore not enabled")
         }
         events.addObjectEvent(request.user, dataset.id, dataset.name, EventType.DELETE_DATASET.toString)
-        datasets.removeDataset(id, Utils.baseUrl(request))
+        datasets.removeDataset(id, Utils.baseUrl(request), request.apiKey, request.user)
         appConfig.incrementCount('datasets, -1)
 
         current.plugin[ElasticsearchPlugin].foreach {
@@ -1841,7 +1841,7 @@ class  Datasets @Inject()(
         val trashDatasets = datasets.listUserTrash(request.user,0)
         for (ds <- trashDatasets){
           events.addObjectEvent(request.user, ds.id, ds.name, EventType.DELETE_DATASET.toString)
-          datasets.removeDataset(ds.id, Utils.baseUrl(request))
+          datasets.removeDataset(ds.id, Utils.baseUrl(request), request.apiKey, request.user)
           appConfig.incrementCount('datasets, -1)
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "dataset", ds.id.stringify)

@@ -97,7 +97,7 @@ class Selected @Inject()(selections: SelectionService,
     request.user match {
       case Some(user) => {
         selections.get(user.email.get).map(d => {
-          datasets.removeDataset(d.id, Utils.baseUrl(request))
+          datasets.removeDataset(d.id, Utils.baseUrl(request), request.apiKey, request.user)
           selections.remove(d.id, user.email.get)
         })
         Ok(toJson(Map("sucess"->"true")))

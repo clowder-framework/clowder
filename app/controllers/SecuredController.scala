@@ -25,6 +25,9 @@ import scala.concurrent.Future
  *
  */
 trait SecuredController extends Controller {
+
+  val userservice = DI.injector.getInstance(classOf[services.UserService])
+
   /** get user if logged in */
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
@@ -210,10 +213,18 @@ trait SecuredController extends Controller {
         case Some(u) => Some(u)
         case None => None
       }
-      return UserRequest(user, request)
+
+      // find or create an api key for extractor submissions
+      user match {
+        case Some(u) =>
+          val apiKey = userservice.getExtractionApiKey(u.identityId)
+          return UserRequest(user, request, Some(apiKey.key))
+        case None =>
+          return UserRequest(None, request, None)
+      }
     }
 
     // 2) anonymous access
-    UserRequest(None, request)
+    UserRequest(None, request, None)
   }
 }

@@ -15,7 +15,7 @@ import services.mongodb.MongoContext.context
  * Use Mongodb to store folders
  */
 @Singleton
-class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetService) extends FolderService{
+class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetService) extends FolderService {
 
   /**
    * Get Folder
@@ -39,14 +39,14 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
   /**
    * Delete folder and any reference of it.
    */
-  def delete(folderId: UUID, host: String) {
+  def delete(folderId: UUID, host: String, apiKey: Option[String], user: Option[User]) {
 
     get(folderId) match {
       case Some(folder) => {
         folder.files.map {
           fileId => {
             files.get(fileId) match {
-              case Some(file) => files.removeFile(file.id, host)
+              case Some(file) => files.removeFile(file.id, host, apiKey, user)
               case None =>
             }
           }
@@ -54,7 +54,7 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
         folder.folders.map {
           subfolderId => {
             get(subfolderId)  match {
-              case Some(subfolder) => delete(subfolder.id, host)
+              case Some(subfolder) => delete(subfolder.id, host, apiKey, user)
               case None =>
             }
           }

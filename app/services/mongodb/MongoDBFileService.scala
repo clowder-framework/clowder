@@ -685,7 +685,7 @@ class MongoDBFileService @Inject() (
       false, false, WriteConcern.Safe)
   }
 
-  def removeFile(id: UUID, host: String){
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
         if(!file.isIntermediate){
@@ -748,7 +748,7 @@ class MongoDBFileService @Inject() (
         FileDAO.removeById(file.id)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host)
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
       }
       case None => Logger.debug("File not found")
     }
@@ -944,14 +944,14 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def removeOldIntermediates(){
+  def removeOldIntermediates(apiKey: Option[String], user: Option[User]){
     val cal = Calendar.getInstance()
     val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
     cal.add(Calendar.HOUR, -timeDiff)
     val oldDate = cal.getTime()
     val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
     for(file <- fileList)
-      removeFile(file.id, "")
+      removeFile(file.id, "", apiKey, user)
   }
 
   /**

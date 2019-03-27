@@ -25,7 +25,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
             previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
                 current.plugin[RabbitmqPlugin].foreach{
-                  _.submitSectionPreviewManually(p, new UUID(section_id), Utils.baseUrl(request))
+                  _.submitSectionPreviewManually(p, new UUID(section_id), Utils.baseUrl(request), request.apiKey)
                 }
                 val fileType = p.contentType
                 current.plugin[VersusPlugin].foreach{

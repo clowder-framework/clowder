@@ -48,7 +48,7 @@ trait FileService {
   /**
    * Remove the file from mongo
    */
-  def removeFile(id: UUID, host: String)
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User])
 
   /**
    * List all files in the system.
@@ -191,7 +191,7 @@ trait FileService {
 
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String): MongoDBObject
 
-  def removeOldIntermediates()
+  def removeOldIntermediates(apiKey: Option[String], user: Option[User])
   
   /**
    * Update the license data that is currently associated with the file.

@@ -783,6 +783,7 @@ class Datasets @Inject() (
    */
   def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
+
     Logger.debug("------- in Datasets.submit ---------")
 
     val folder = folderId.flatMap(id => folders.get(UUID(id)))
@@ -790,7 +791,8 @@ class Datasets @Inject() (
       case Some(ds) => {
         datasets.get(UUID(ds)) match {
           case Some(dataset) => {
-            val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = "DatasetLevel", dataset = Some(dataset), folder = folder)
+            val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = "DatasetLevel",
+              dataset = Some(dataset), folder = folder, apiKey=request.apiKey)
             Map("files" -> uploadedFiles.map(f => toJson(Map(
               "name" -> toJson(f.filename),
               "size" -> toJson(f.length),

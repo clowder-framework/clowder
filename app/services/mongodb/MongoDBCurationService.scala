@@ -47,15 +47,15 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> "Published", "publishedDate" -> Some(new Date())), false, false, WriteConcern.Safe)
   }
 
-  def remove(id: UUID, host: String): Unit = {
+  def remove(id: UUID, host: String, apiKey: Option[String], user: Option[User]): Unit = {
     val curation = get(id)
     curation match {
       case Some(c) => {
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id), host)
-        c.files.map(f => deleteCurationFile(f, host))
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id), host, apiKey, user)
+        c.files.map(f => deleteCurationFile(f, host, apiKey, user))
         c.folders.map(f => {
           removeCurationFolder("dataset", id, f)
-          deleteCurationFolder(f, host)
+          deleteCurationFolder(f, host, apiKey, user)
         })
         spaces.removeCurationObject(c.space, c.id)
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
@@ -237,22 +237,22 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     }
   }
 
-  def deleteCurationFile(curationFileId: UUID, host: String) : Unit = {
-    metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, curationFileId), host: String)
+  def deleteCurationFile(curationFileId: UUID, host: String, apiKey: Option[String], user: Option[User]) : Unit = {
+    metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, curationFileId), host: String, apiKey, user)
     CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(curationFileId.stringify)))
   }
 
-  def deleteCurationFolder(id: UUID, host: String): Unit = {
+  def deleteCurationFolder(id: UUID, host: String, apiKey: Option[String], user: Option[User]): Unit = {
     getCurationFolder(id) match {
       case Some(curationFolder )=> {
         curationFolder.folders.map { cf => {
           removeCurationFolder("folders", id, cf)
-          deleteCurationFolder(cf, host)
+          deleteCurationFolder(cf, host, apiKey, user)
         }
         }
         curationFolder.files.map { cf => {
           removeCurationFile("folders", id, cf)
-          deleteCurationFile(cf, host)
+          deleteCurationFile(cf, host, apiKey, user)
         }
         }
 

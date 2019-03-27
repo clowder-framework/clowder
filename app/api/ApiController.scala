@@ -24,6 +24,9 @@ import scala.concurrent.Future
  *
  */
 trait ApiController extends Controller {
+
+  val userservice = DI.injector.getInstance(classOf[services.UserService])
+
   /** get user if logged in */
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
@@ -134,7 +137,15 @@ trait ApiController extends Controller {
         case Some(u) => Some(u)
         case None => None
       }
-      return UserRequest(user, request)
+
+      // find or create an api key for extractor submissions
+      user match {
+        case Some(u) =>
+          val apiKey = userservice.getExtractionApiKey(u.identityId)
+          return UserRequest(user, request, Some(apiKey.key))
+        case None =>
+          return UserRequest(None, request, None)
+      }
     }
 
     // 2) basic auth, this allows you to call the api with your username/password
@@ -150,41 +161,48 @@ trait ApiController extends Controller {
             case Some(u) => Some(u)
             case None => None
           }
-          return UserRequest(user, request)
+
+          // find or create an api key for extractor submissions
+          user match {
+            case Some(u) =>
+              val apiKey = userservice.getExtractionApiKey(u.identityId)
+              return UserRequest(user, request, Some(apiKey.key))
+            case None =>
+              return UserRequest(None, request, None)
+          }
         }
       }
     }
 
     // 3) X-API-Key, header Authorization is user API key
-    request.headers.get("X-API-Key").foreach { authHeader =>
-      val userservice = DI.injector.getInstance(classOf[services.UserService])
-      userservice.findByKey(authHeader) match {
+    request.headers.get("X-API-Key").foreach { apiKey =>
+      userservice.findByKey(apiKey) match {
         case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
-          return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request)
+          return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request, Some(apiKey))
         }
         case Some(u) => {
-          return UserRequest(Some(u), request)
+          return UserRequest(Some(u), request, Some(apiKey))
         }
-        case None => Logger.debug(s"key ${authHeader} not associated with a user.")
+        case None => Logger.debug(s"key ${apiKey} not associated with a user.")
       }
     }
 
-    // 4) key, if key is commkey, it will assume you are anonymous, otherwise will match the user
+    // 4) check api key, either the global one in the config file or the user key in the database
     request.queryString.get("key").foreach { key =>
       val userservice = DI.injector.getInstance(classOf[services.UserService])
       val commkey = play.Play.application().configuration().getString("commKey")
       key.foreach { realkey =>
         // check to see if this is the global key
         if (realkey == commkey) {
-          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request)
+          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request, Some(realkey))
         }
         // check to see if this is a key for a specific user
         userservice.findByKey(realkey) match {
           case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
-            return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request)
+            return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request, Some(realkey))
           }
           case Some(u) => {
-            return UserRequest(Some(u), request)
+            return UserRequest(Some(u), request, Some(realkey))
           }
           case None => Logger.debug(s"key ${realkey} not associated with a user.")
         }
@@ -192,6 +210,6 @@ trait ApiController extends Controller {
     }
 
     // 4) anonymous access
-    UserRequest(None, request)
+    UserRequest(None, request, None)
   }
 }

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- User API Keys are now sent over to extractors (instead of the global key). If user doesn't provide a user key with the
+  request, one is gets created with name `_extraction_key`.
+  [CATS-901](https://opensource.ncsa.illinois.edu/jira/browse/CATS-901)
 - Using EventType enum class, fixed events not created.
 - [CATS-961](https://opensource.ncsa.illinois.edu/jira/browse/CATS-961)
 - Add cancel button aside the submission event and remove that submission from rabbitmq queue.

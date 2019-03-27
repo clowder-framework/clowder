@@ -44,7 +44,8 @@ class Extractions @Inject()(
    * This may change accordingly.
    */
   def uploadExtract(showPreviews: String = "DatasetLevel", extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    val uploadedFiles = _root_.util.FileUtils.uploadFilesMultipart(request, key="File", index=false, showPreviews=showPreviews, runExtractors=extract, insertDTSRequests = true)
+    val uploadedFiles = _root_.util.FileUtils.uploadFilesMultipart(request, key="File", index=false,
+      showPreviews=showPreviews, runExtractors=extract, insertDTSRequests = true, apiKey=request.apiKey)
     uploadedFiles.length match {
       case 0 => BadRequest("No files uploaded")
       case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
@@ -57,7 +58,8 @@ class Extractions @Inject()(
    *
    */
   def uploadByURL(extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.json) { implicit request =>
-    val uploadedFiles = _root_.util.FileUtils.uploadFilesJSON(request, key="fileurl", index=false, runExtractors=extract, insertDTSRequests = true)
+    val uploadedFiles = _root_.util.FileUtils.uploadFilesJSON(request, key="fileurl", index=false, runExtractors=extract,
+      insertDTSRequests = true, apiKey=request.apiKey)
     uploadedFiles.length match {
       case 0 => BadRequest("No fileurls uploaded")
       case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
@@ -92,7 +94,7 @@ class Extractions @Inject()(
                     // notify extractors
                     current.plugin[RabbitmqPlugin].foreach {
                       // FIXME dataset not available?
-                      _.fileCreated(f, None, Utils.baseUrl(request))
+                      _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
                     }
                     /*--- Insert DTS Requests  ---*/
                     val clientIP = request.remoteAddress
@@ -141,7 +143,7 @@ class Extractions @Inject()(
             case Some(file) => {
               current.plugin[RabbitmqPlugin].foreach {
                 // FIXME dataset not available?
-                _.fileCreated(file, None, Utils.baseUrl(request))
+                _.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
               }
               Ok("Sent for Extraction. check the status")
             }
@@ -517,9 +519,10 @@ class Extractions @Inject()(
               // if extractor_id is not specified default to execution of all extractors matching mime type
               val key = (request.body \ "extractor").asOpt[String] match {
                 case Some(extractorId) =>
-                  p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra, datasetId, newFlags)
+                  p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
+                    datasetId, newFlags, request.apiKey, request.user)
                 case None =>
-                  p.fileCreated(file, None, Utils.baseUrl(request))
+                  p.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
               }
               Ok(Json.obj("status" -> "OK"))
             } else {
@@ -557,7 +560,7 @@ class Extractions @Inject()(
               "parameters" -> parameters.toString,
               "action" -> "manual-submission")
 
-            p.submitDatasetManually(host, key, extra, ds_id, "", request.user)
+            p.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>
@@ -640,7 +643,7 @@ class Extractions @Inject()(
           BadRequest(toJson("Not all files found"))
         else
           current.plugin[RabbitmqPlugin].foreach {
-            _.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request))
+            _.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request), request.apiKey)
           }
       }
       case None => BadRequest(toJson("Dataset "+datasetid+" not found"))

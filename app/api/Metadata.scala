@@ -498,7 +498,7 @@ class Metadata @Inject() (
                           }
                         }
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                         }
                       }
                       case ResourceRef.file => {
@@ -510,7 +510,7 @@ class Metadata @Inject() (
                           }
                         }
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                         }
                       }
                       case _ =>
@@ -557,7 +557,8 @@ class Metadata @Inject() (
                     files.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request))
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
+                      request.apiKey, request.user)
                   }
                 }
                 case ResourceRef.dataset => {
@@ -567,7 +568,7 @@ class Metadata @Inject() (
                     datasets.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request))
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
                   }
                 }
                 case _ => {
