@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - New view for Files/Datasets offering a Table View of the attached Metadata.
 - Add SUBMITTED event on the GUI of extractions and pass this submitted event id into the rabbitmq message.
   [CATS-969] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-969)
-- Pass user email address in the extraction rabbitmq message when file uploading and manually submitting extraction.
+- Send email address of user who initiated an extraction so that extractors can notify user by email when job is done.
   [CATS-963](https://opensource.ncsa.illinois.edu/jira/browse/CATS-963)
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
 - Cleaned up clowder init code docker image see README.
-- /api/search endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
+- `/api/search` endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
   [CATS-968](https://opensource.ncsa.illinois.edu/jira/browse/CATS-968)
 
 

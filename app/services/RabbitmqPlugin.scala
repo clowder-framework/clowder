@@ -439,10 +439,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         getQueues(d, routingKey, file.contentType).foreach{ queue =>
           val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
 
-          val notifies = file.author.email match {
-            case Some(useremail) => List[String](useremail)
-            case None => List[String]()
-          }
+          val notifies = getEmailNotificationEmailList(requestAPIKey)
 
           val id = postSubmissionEven(file.id, queue)
 
@@ -468,8 +465,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
-    //FIXME, should we pass user's email address?
-    val notifies = List[String]()
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
     val id = postSubmissionEven(file.id, routingKey)
     val msg = ExtractorMessage(id, file.id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
       "", apiKey, routingKey, source, "created", None)
@@ -493,10 +489,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
 
-      val notifies = file.author.email match {
-        case Some(useremail) => List[String](useremail)
-        case None => List[String]()
-      }
+      val notifies = getEmailNotificationEmailList(requestAPIKey)
 
       val id = postSubmissionEven(file.id, extractorId)
 
@@ -523,10 +516,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     queues.foreach{ extractorId =>
       val source = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, sourceExtra)
 
-      val notifies = dataset.author.email match {
-        case Some(useremail) => List[String](useremail)
-        case None => List[String]()
-      }
+      val notifies = getEmailNotificationEmailList(requestAPIKey)
 
       val id = postSubmissionEven(dataset.id, extractorId)
 
@@ -554,10 +544,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
 
-      val notifies = file.author.email match {
-        case Some(useremail) => List[String](useremail)
-        case None => List[String]()
-      }
+      val notifies = getEmailNotificationEmailList(requestAPIKey)
       val id = postSubmissionEven(file.id, extractorId)
       val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "removed", Some(target))
@@ -582,10 +569,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
 
-    val notifies = file.author.email match {
-      case Some(useremail) => List[String](useremail)
-      case None => List[String]()
-    }
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
     val id = postSubmissionEven(file.id, queue)
     val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
@@ -606,13 +590,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val apiKey = getApiKey(requestAPIKey, user)
     val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
 
-    val notifies = user match {
-      case Some(u) => u.email match {
-        case Some(email) => List[String](email)
-        case None => List[String]()
-      }
-      case None => List[String]()
-    }
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+
     val id = postSubmissionEven(datasetId, queue)
     val msg = ExtractorMessage(id, datasetId, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
@@ -633,6 +612,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
 
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+
     resourceRef.resourceType match {
       // metadata added to dataset
       case ResourceRef.dataset =>
@@ -641,8 +622,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             getQueues(dataset, routingKey, "").foreach { extractorId =>
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
-              //FIXME, should we pass user's email address?
-              val notifies = List[String]()
 
               val id = postSubmissionEven(resourceRef.id, extractorId)
               val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
@@ -660,8 +639,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           getQueues(dataset, routingKey, fileType).foreach { extractorId =>
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
-            //FIXME, should we pass user's email address?
-            val notifies = List[String]()
+
             val id = postSubmissionEven(resourceRef.id, extractorId)
             val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "added", Some(target))
@@ -686,8 +664,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       "resourceType"->resourceRef.resourceType.name,
       "resourceId"->resourceRef.id.toString)
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
-    //FIXME, should we pass user's email address?
-    val notifies = List[String]()
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
 
     resourceRef.resourceType match {
       // metadata added to dataset
@@ -739,8 +716,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val routingKey = exchange +".query." + contentType.replace("/", ".")
     val apiKey = requestAPIKey.getOrElse(globalAPIKey)
     Logger.debug(s"Sending message $routingKey from $host")
-    //FIXME, should we pass user's email address?
-    val notifies = List[String]()
+
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
     val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
 
     val id = postSubmissionEven(tempFileId, routingKey)
@@ -761,8 +738,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val extraInfo = Map("section_id"->sectionId)
     val source = Entity(ResourceRef(ResourceRef.preview, preview.id), None, JsObject(Seq.empty))
     val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
-    //FIXME, should we pass user's email address?
-    val notifies = List[String]()
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
 
     val id = postSubmissionEven(sectionId, routingKey)
     val msg = ExtractorMessage(id, sectionId, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
@@ -850,6 +826,22 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       case Some(x) => x ! new CancellationMessage(id, queueName, msg_id)
       case None => Logger.warn("Could not send message over RabbitMQ")
     }
+  }
+
+  /**
+    * a helper function to get user email address from user's request api key.
+    * @param requestAPIKey user request apikey
+    * @return a list of email address
+    */
+  def getEmailNotificationEmailList(requestAPIKey: Option[String]): List[String] = {
+    (for {
+      apiKey <- requestAPIKey
+      user <- userService.findByKey(apiKey)
+      email <- user.email
+    } yield {
+      Logger.debug(s"[getEmailNotificationEmailList] $email")
+      List[String](email)
+    }).getOrElse(List[String]())
   }
 
   /**
