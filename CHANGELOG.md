@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
 - Cleaned up clowder init code docker image see README.
-
+- Updated Sphinx dependencies in `doc/src/sphinx/requirements.txt` for building documentation.
 
 ## 1.5.2 - 2018-12-14
 
