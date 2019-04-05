@@ -4035,10 +4035,6 @@ paths:
           description: A CSV with usage metrics
           schema:
             type: file
-          headers:
-            Content-type:
-              type: file
-              description: text/csv
         401:
           description: Not authorized
       tags:
@@ -4054,10 +4050,6 @@ paths:
           description: A CSV with usage metrics
           schema:
             type: file
-          headers:
-            Content-type:
-              type: file
-              description: text/csv
         401:
           description: Not authorized
       tags:
@@ -4073,10 +4065,6 @@ paths:
           description: A CSV with usage metrics
           schema:
             type: file
-          headers:
-            Content-type:
-              type: file
-              description: text/csv
         401:
           description: Not authorized
       tags:
