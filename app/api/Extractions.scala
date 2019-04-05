@@ -564,7 +564,7 @@ class Extractions @Inject()(
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>
-            BadRequest(toJson(Map("request" -> "File not found")))
+            BadRequest(toJson(Map("request" -> "Dataset not found")))
         }
       case None =>
         Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
