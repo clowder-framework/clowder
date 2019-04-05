@@ -95,8 +95,8 @@ from bson.objectid import ObjectId
 fixmongo = False
 verbose = False
 showok = False
-promptempty = False
-promptinactive = False
+promptempty = True
+promptinactive = True
 promptactive = True
 automigrate = False
 
