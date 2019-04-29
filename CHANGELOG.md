@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - A double quote character in a metadata description disallows edit.
   [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
-
+- Script to cleanup/migrate userpass account data to cilogon accounts.
 
 ## 1.6.0 - 2019-04-01
 
@@ -29,7 +29,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-963](https://opensource.ncsa.illinois.edu/jira/browse/CATS-963)
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
-- Script to cleanup/migrate userpass account data to cilogon accounts.
 - Script to verify / fix mongo uploads collection if file bytes are missing.
 - Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
 - Previewer for displaying internal contents of Zip Files.
