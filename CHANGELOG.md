@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-779] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-779)
 - Fixed creation of standard vocabularies in a single space case.
 
+### Changed
+- Changed the HTTP return codes for the generic error handlers in Clowder.
+
 
 ## 1.6.0 - 2019-04-01
 
