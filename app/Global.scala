@@ -132,7 +132,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
   override def onHandlerNotFound(request: RequestHeader) = {
     if (request.path.contains("/api/")) {
-      Future(InternalServerError(toJson(Map("status" -> "not found",
+      Future(NotFound(toJson(Map("status" -> "not found",
         "request" -> request.toString()))))
     } else {
       implicit val user = SecureSocial.currentUser(request) match {
@@ -145,7 +145,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
   override def onBadRequest(request: RequestHeader, error: String) = {
     if (request.path.contains("/api/")) {
-      Future(InternalServerError(toJson(Map("status" -> "bad request",
+      Future(BadRequest(toJson(Map("status" -> ("bad request"),
         "message" -> error,
         "request" -> request.toString()))))
     } else {

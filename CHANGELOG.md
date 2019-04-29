@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - A double quote character in a metadata description disallows edit.
   [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
 
+### Changed
+- Changed the HTTP return codes for the generic error handlers in Clowder.
+
 
 ## 1.6.0 - 2019-04-01
 
