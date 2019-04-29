@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - A double quote character in a metadata description disallows edit.
   [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
+- Fixed creation of standard vocabularies in a single space case.
 
 
 ## 1.6.0 - 2019-04-01
