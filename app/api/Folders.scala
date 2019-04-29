@@ -143,7 +143,8 @@ class Folders @Inject() (
     ))
   }
 
-  def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.RemoveResourceFromDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
+  def deleteFolder(parentDatasetId: UUID, folderId: UUID) =
+    PermissionAction(Permission.RemoveResourceFromDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
     Logger.debug("--- Api Deleting Folder ---")
     datasets.get(parentDatasetId) match {
       case Some(parentDataset) => {
@@ -151,7 +152,7 @@ class Folders @Inject() (
           case Some(folder) => {
 
             events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "deleted_folder")
-            folders.delete(folderId, Utils.baseUrl(request))
+            folders.delete(folderId, Utils.baseUrl(request), request.apiKey, request.user)
             if(folder.parentType == "dataset") {
               datasets.removeFolder(parentDatasetId, folderId)
             } else if(folder.parentType == "folder") {

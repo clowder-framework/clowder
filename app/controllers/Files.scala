@@ -452,7 +452,7 @@ class Files @Inject() (
                 // submit for extraction
                 current.plugin[RabbitmqPlugin].foreach {
                   // FIXME dataset not available?
-                  _.fileCreated(f, None, Utils.baseUrl(request))
+                  _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
                 }
 
                 /** *** Inserting DTS Requests   **/
@@ -595,7 +595,7 @@ class Files @Inject() (
               /****************************/
 	            current.plugin[RabbitmqPlugin].foreach{
                 // FIXME dataset not available?
-                _.fileCreated(f, None, Utils.baseUrl(request))
+                _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
               }
 	            
 	            //for metadata files
@@ -974,7 +974,7 @@ class Files @Inject() (
             }
 
             current.plugin[RabbitmqPlugin].foreach {
-              _.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request))
+              _.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
             }
 
             //for metadata files
@@ -1071,7 +1071,7 @@ class Files @Inject() (
             val extra = Map("filename" -> f.filename, "action" -> "upload")
 
             current.plugin[RabbitmqPlugin].foreach {
-              _.fileCreated(f, host)
+              _.fileCreated(f, host, request.apiKey)
             }
 
             //for metadata files
@@ -1209,8 +1209,8 @@ class Files @Inject() (
 
                     // notify extractors that a file has been uploaded and added to a dataset
                     current.plugin[RabbitmqPlugin].foreach { rabbitMQ =>
-                      rabbitMQ.fileCreated(f, Some(dataset), Utils.baseUrl(request))
-                      rabbitMQ.fileAddedToDataset(f, dataset, Utils.baseUrl(request))
+                      rabbitMQ.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
+                      rabbitMQ.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
                     }
 
                     // add file to RDF triple store if triple store is used

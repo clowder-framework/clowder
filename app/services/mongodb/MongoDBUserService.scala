@@ -9,7 +9,7 @@ import com.novus.salat._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
-import securesocial.core.{AuthenticationMethod, Identity, _}
+import securesocial.core.{AuthenticationMethod, Identity, IdentityId, UserServicePlugin}
 import play.api.Application
 import play.api.Play.current
 import com.mongodb.casbah.commons.MongoDBObject
@@ -220,6 +220,19 @@ class MongoDBUserService @Inject() (
 
   def getUserKeys(identityId: IdentityId): List[UserApiKey] = {
     UserApiKeyDAO.dao.find(MongoDBObject("identityId.userId" -> identityId.userId, "identityId.providerId" -> identityId.providerId)).toList
+  }
+
+  /**
+    * Get extraction API key. If it doesn't exist create it.
+    */
+  def getExtractionApiKey(identityId: IdentityId): UserApiKey = {
+    val userKeys = getUserKeys(identityId)
+    val key = userKeys.find(k => k.name.startsWith("_")).getOrElse {
+      val userApiKey = UserApiKey("_extraction_key", java.util.UUID.randomUUID().toString, identityId)
+      addUserKey(userApiKey.identityId, userApiKey.name, userApiKey.key)
+      userApiKey
+    }
+    key
   }
 
   def addUserKey(identityId: IdentityId, name: String, key: String): Unit = {

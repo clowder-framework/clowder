@@ -6,24 +6,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- A double quote character in a metadata description disallows edit.
+  [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
+
+
+## 1.6.0 - 2019-04-01
+
 ### Added
-- Using EventType enum class, fixed events not created.
-- [CATS-961](https://opensource.ncsa.illinois.edu/jira/browse/CATS-961)
-- Add cancel button aside the submission event and remove that submission from rabbitmq queue.
+- User API Keys are now sent over to extractors (instead of the global key). If user doesn't provide a user key with the
+  request, one is gets created with name `_extraction_key`. If no user is available, the global key is used.
+  [CATS-901](https://opensource.ncsa.illinois.edu/jira/browse/CATS-901)
+- Ability to cancel a submission to the extraction bus. A cancel button is available in the list of extraction events.
   [CATS-970](https://opensource.ncsa.illinois.edu/jira/browse/CATS-970)
-- Allow user to create and manage Controlled Vocabularies within Clowder.
+- Allow user to create and manage controlled vocabularies within Clowder.
 - Cascade creation and deletion of global metadata definitions to all spaces.
   [CATS-967](https://opensource.ncsa.illinois.edu/jira/browse/CATS-967)
-- New view for Files/Datasets offering a Table View of the attached Metadata.
-- Add SUBMITTED event on the GUI of extractions and pass this submitted event id into the rabbitmq message.
-  [CATS-969] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-969)
-- Pass user email address in the extraction rabbitmq message when file uploading and manually submitting extraction.
+- New view for files and datasets offering a table view of the attached metadata.
+- Add SUBMITTED event on the GUI of extractions and pass this submitted event id in extraction message.
+  [CATS-969](https://opensource.ncsa.illinois.edu/jira/browse/CATS-969)
+- Send email address of user who initiated an extraction so that extractors can notify user by email when job is done.
   [CATS-963](https://opensource.ncsa.illinois.edu/jira/browse/CATS-963)
 - Extraction history for dataset extractors is now displayed on dataset page.
   [CATS-796](https://opensource.ncsa.illinois.edu/jira/browse/CATS-796)
 - Script to cleanup/migrate userpass account data to cilogon accounts.
 - Script to verify / fix mongo uploads collection if file bytes are missing.
-- Loading indicator should now show on Datasets page while files/folders are loading.
 - Additional columns added to reporting API endpoint including date, parent resources, file location, size and ownership.
 - Previewer for displaying internal contents of Zip Files.
   [CATS-936](https://opensource.ncsa.illinois.edu/jira/browse/CATS-936)
@@ -33,13 +40,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-940](https://opensource.ncsa.illinois.edu/jira/browse/CATS-940)
 - CONTAINS operator added to Advanced Search interface and wildcards (e.g. ".*") now supported in search box.
   [CATS-962](https://opensource.ncsa.illinois.edu/jira/browse/CATS-962)
-- New widget to add standard name mappings [BD-2321](https://opensource.ncsa.illinois.edu/jira/browse/BD-2321)
+- New widget to add standard name mappings.
+  [BD-2321](https://opensource.ncsa.illinois.edu/jira/browse/BD-2321)
 - Add a new event for extractors "dataset.files.added" that is triggered when a user uploads multiple files at once via UI.
   [CATS-973](https://opensource.ncsa.illinois.edu/jira/browse/CATS-973)
+- `/api/search` endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
+  [CATS-968](https://opensource.ncsa.illinois.edu/jira/browse/CATS-968)
   
 ### Fixed
-- Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now correctly
-  return space list depending on user permissions even if instance is set to private.
+- Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now 
+  correctly return space list depending on user permissions even if instance is set to private.
 - GeospatialViewer previewer added content to incorrect tab.
   [CATS-946](https://opensource.ncsa.illinois.edu/jira/browse/CATS-946)
 - Handle 403 errors appropriately from the ZipFile Previewer.
@@ -53,15 +63,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Apply 'max' restriction when fetching dataset file lists earlier, to avoid long load times for certain previewers.
   [CATS-899](https://opensource.ncsa.illinois.edu/jira/browse/CATS-899)
 - Unable to edit metadata definition when description included newlines characters.
+- Fixed user events not being created. Migrated to EventType enum class for tracking event types.
+  [CATS-961](https://opensource.ncsa.illinois.edu/jira/browse/CATS-961)
+- Loading indicator should now show on datasets page while files and folders are loading.
   
 ### Changed 
 - Extraction events on File and Dataset pages are now grouped by extractor. The events view has been moved to a tab for both,
   and the File pages now have metadata and comments under tabs as well.
   [CATS-942](https://opensource.ncsa.illinois.edu/jira/browse/CATS-942)
 - Cleaned up clowder init code docker image see README.
-- /api/search endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
-  [CATS-968](https://opensource.ncsa.illinois.edu/jira/browse/CATS-968)
-
+- Updated Sphinx dependencies in `doc/src/sphinx/requirements.txt` for building documentation.
 
 ## 1.5.2 - 2018-12-14
 

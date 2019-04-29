@@ -273,7 +273,7 @@
                             <td class="text-wrap" style="max-width:10vw">
                                 @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
                             </td>
-                            <td style="max-width:10vw"><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a>
+                            <td style="max-width:10vw"><a href="#addDefinition" onclick="editDefinition('@(m.id)');">Edit</a>
                                 / <a id="@m.id" href="#" title="Delete metadata definition" class="delete-definition">Delete</a>
                             </td>
                         </tr>

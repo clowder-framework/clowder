@@ -30,6 +30,7 @@ import scala.concurrent.Future
  */
 @Singleton
 class Metadata @Inject() (
+  spaces: SpaceService,
   metadataService: MetadataService,
   contextService: ContextLDService,
   userService: UserService,
@@ -103,6 +104,15 @@ class Metadata @Inject() (
         Ok(toJson(metadataDefinitions.toList))
       }
       case None => BadRequest(toJson("The request dataset does not exist"))
+    }
+  }
+
+  def getMetadataDefinition(id: UUID) = PermissionAction(Permission.AddMetadata) {
+    metadataService.getDefinition(id) match {
+      case Some(metadata) => {
+        Ok(toJson(metadata))
+      }
+      case None => BadRequest("not found this metadata definition: " + id)
     }
   }
 
@@ -498,7 +508,7 @@ class Metadata @Inject() (
                           }
                         }
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                         }
                       }
                       case ResourceRef.file => {
@@ -510,7 +520,7 @@ class Metadata @Inject() (
                           }
                         }
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                         }
                       }
                       case _ =>
@@ -557,7 +567,8 @@ class Metadata @Inject() (
                     files.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request))
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
+                      request.apiKey, request.user)
                   }
                 }
                 case ResourceRef.dataset => {
@@ -567,7 +578,7 @@ class Metadata @Inject() (
                     datasets.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request))
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
                   }
                 }
                 case _ => {

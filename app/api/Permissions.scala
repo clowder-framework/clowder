@@ -523,4 +523,4 @@ object Permission extends Enumeration {
 /**
  * A request that adds the User for the current call
  */
-case class UserRequest[A](user: Option[User], request: Request[A]) extends WrappedRequest[A](request)
+case class UserRequest[A](user: Option[User], request: Request[A], apiKey: Option[String]) extends WrappedRequest[A](request)

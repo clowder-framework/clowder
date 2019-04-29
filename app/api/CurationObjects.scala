@@ -323,7 +323,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             } else {
               curations.removeCurationFile("folder", parentId, curationFileId)
             }
-            curations.deleteCurationFile(curationFileId, Utils.baseUrl(request))
+            curations.deleteCurationFile(curationFileId, Utils.baseUrl(request), request.apiKey, request.user)
             Ok(toJson("Success"))
           }
           case _ => InternalServerError("Cannot modify Publication Request")
@@ -343,7 +343,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             } else {
               curations.removeCurationFolder("folder", parentId, curationFolderId)
             }
-            curations.deleteCurationFolder(curationFolderId, Utils.baseUrl(request))
+            curations.deleteCurationFolder(curationFolderId, Utils.baseUrl(request), request.apiKey, request.user)
             Ok(toJson("Success"))
           }
           case _ => InternalServerError("Cannot modify Publication Request")

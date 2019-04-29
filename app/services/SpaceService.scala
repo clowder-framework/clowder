@@ -21,7 +21,7 @@ trait SpaceService {
   def update(model: ProjectSpace)
 
   /** delete given space. */
-  def delete(id: UUID, host: String)
+  def delete(id: UUID, host: String, apiKey: Option[String], user: Option[User])
 
   /** Count all spaces */
   def count(): Long
@@ -122,7 +122,7 @@ trait SpaceService {
    * @param space The identifier for the space that will be purged
    *
    */
-  def purgeExpiredResources(space: UUID, host: String)
+  def purgeExpiredResources(space: UUID, host: String, apiKey: Option[String], user: Option[User])
 
   /**
    * Service access to retrieve a list of collections in a given space, of prescribed list length.

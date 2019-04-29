@@ -91,6 +91,11 @@ trait UserService  {
   def getUserKeys(identityId: IdentityId): List[UserApiKey]
 
   /**
+    * Get extractor key. If it doesn't exist create it.
+    */
+  def getExtractionApiKey(identityId: IdentityId): UserApiKey
+
+  /**
    * Adds an api key for the user
    */
   def addUserKey(identityId: IdentityId, name: String, key: String)

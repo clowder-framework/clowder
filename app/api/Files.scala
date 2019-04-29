@@ -292,7 +292,8 @@ class Files @Inject()(
 
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
-              p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request))
+              p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
+                request.apiKey, request.user)
             }
 
             // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
@@ -359,7 +360,7 @@ class Files @Inject()(
 
                 //send RabbitMQ message
                 current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                 }
 
                 events.addObjectEvent(request.user, id, x.filename,EventType.ADD_METADATA_FILE.toString)
@@ -436,7 +437,8 @@ class Files @Inject()(
 
                     //send RabbitMQ message
                     current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request))
+                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                        request.apiKey, request.user)
                     }
 
                     files.index(f.id)
@@ -491,7 +493,7 @@ class Files @Inject()(
 
   def getBatchMetadataJsonLD() = PermissionAction(Permission.ViewMetadata) { implicit request =>
     val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
-    
+
     val fileList = request.queryString.getOrElse("id", Seq[String]())
     var resultList = Map[String, List[JsValue]]()
 
@@ -517,13 +519,16 @@ class Files @Inject()(
     files.get(id) match {
       case Some(file) => {
         val metadataIds = extractorId match {
-          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f, Utils.baseUrl(request))
-          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Utils.baseUrl(request))
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f,
+            Utils.baseUrl(request), request.apiKey, request.user)
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Utils.baseUrl(request),
+            request.apiKey, request.user)
         }
         // send extractor message after attached to resource
         current.plugin[RabbitmqPlugin].foreach { p =>
           metadataIds.foreach{ mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request))
+            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
+              request.apiKey, request.user)
           }
         }
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
@@ -561,7 +566,8 @@ class Files @Inject()(
    */
   @deprecated
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+    val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews=showPreviews, originalZipFile=originalZipFile,
+      flagsFromPrevious=flagsFromPrevious, apiKey=request.apiKey)
     uploadedFiles.length match {
       case 0 => BadRequest("No files uploaded")
       case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -575,7 +581,7 @@ class Files @Inject()(
   def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors=extract)
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors=extract, apiKey=request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -593,7 +599,8 @@ class Files @Inject()(
    */
   def uploadIntermediate(originalIdAndFlags: String) =
     PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-      val uploadedFiles = FileUtils.uploadFilesMultipart(request, key="File", intermediateUpload=true, flagsFromPrevious=originalIdAndFlags)
+      val uploadedFiles = FileUtils.uploadFilesMultipart(request, key="File", intermediateUpload=true,
+        flagsFromPrevious=originalIdAndFlags, apiKey=request.apiKey)
       uploadedFiles.length match {
         case 0 => BadRequest("No files uploaded")
         case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -652,7 +659,7 @@ class Files @Inject()(
 
         current.plugin[RabbitmqPlugin].foreach {
           // FIXME dataset not available?
-          _.fileCreated(theFile, None, Utils.baseUrl(request))
+          _.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
         }
 
         Ok(toJson(Map("id" -> id.stringify)))
@@ -1662,7 +1669,7 @@ class Files @Inject()(
           // notify rabbitmq
           current.plugin[RabbitmqPlugin].foreach { p =>
             datasets.findByFileIdAllContain(file.id).foreach{ds =>
-              p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request))
+              p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
             }
           }
 
@@ -1672,7 +1679,7 @@ class Files @Inject()(
             _.removeFromIndexes(id)        
           }
           Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id, Utils.baseUrl(request))
+          files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
           appConfig.incrementCount('files, -1)
           appConfig.incrementCount('bytes, -file.length)
 

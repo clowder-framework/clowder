@@ -153,7 +153,15 @@
                 </div>
                 @keys.map{key =>
                     <div class="row wrapped" id="key-@key.name">
-                        <div class="col-md-1"><a href='javascript:deleteUserKey("@key.name");'><span class="glyphicon glyphicon-trash"></span></a></div>
+                        <div class="col-md-1">
+                            @if(key.name.startsWith("_")) {
+                                <span class="glyphicon glyphicon-trash"
+                                  title="System API keys start with and underscore and connot be deleted from the user interface"></span>
+                            } else {
+                                <a href='javascript:deleteUserKey("@key.name");' title="Delete this user API key">
+                                    <span class="glyphicon glyphicon-trash"></span></a>
+                            }
+                        </div>
                         <div class="col-md-2">@key.name</div>
                         <div class="col-md-9">@key.key</div>
                     </div>
