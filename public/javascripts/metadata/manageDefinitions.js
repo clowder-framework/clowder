@@ -140,8 +140,8 @@ function getHostPrefixFromUrl(url) {
     var origin = null;
     if (url.indexOf('/admin/metadata/definitions') !== -1) {
         origin = url.split('/admin/metadata/definitions')[0];
-    } else if (url.indexOf(/\/spaces\/.*\/metadata/) !== -1) {
-        origin = url.split(/\/spaces\/.*\/metadata/)[0];
+    } else if (url.indexOf('/spaces') !== -1) {
+        origin = url.split('/spaces')[0];
     } else {
         console.log('Unsupported href encountered: ' + window.location.href);
     }

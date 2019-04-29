@@ -215,9 +215,18 @@ class Application @Inject() (files: FileService, collections: CollectionService,
        followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
       }
       case _ => {
-        val counts = appConfig.getIndexCounts()
-        Ok(views.html.index(counts.numDatasets, counts.numFiles, counts.numBytes,
-          counts.numCollections, counts.numSpaces, counts.numUsers,
+        // Set bytes from appConfig
+        val filesBytes = appConfig.getIndexCounts.numBytes
+
+        // Set other counts from DB
+        val datasetsCount = datasets.count()
+        val filesCount = files.count()
+        val collectionsCount = collections.count()
+        val spacesCount = spaces.count()
+        val usersCount = users.count()
+
+        Ok(views.html.index(datasetsCount, filesCount, filesBytes,
+          collectionsCount, spacesCount, usersCount,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
       }
     }
@@ -225,9 +234,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
 
   def about = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
+
+    // Set bytes from appConfig
+    val appConfig = DI.injector.getInstance(classOf[AppConfigurationService])
+    val filesBytes = appConfig.getIndexCounts.numBytes
+
+    // Set other counts from DB
     val datasetsCount = datasets.count()
     val filesCount = files.count()
-    val filesBytes = 0
     val collectionsCount = collections.count()
     val spacesCount = spaces.count()
     val usersCount = users.count()
