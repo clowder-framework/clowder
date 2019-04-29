@@ -59,6 +59,9 @@ trait AppConfigurationService {
   /** Increment configuration property with specified key by value. **/
   def incrementCount(key: Symbol, value: Long)
 
+  /** Reset configuration property with specified key to zero. **/
+  def resetCount(key: Symbol)
+
 }
 
 /**
