@@ -30,6 +30,7 @@ import scala.concurrent.Future
  */
 @Singleton
 class Metadata @Inject() (
+  spaces: SpaceService,
   metadataService: MetadataService,
   contextService: ContextLDService,
   userService: UserService,
@@ -103,6 +104,15 @@ class Metadata @Inject() (
         Ok(toJson(metadataDefinitions.toList))
       }
       case None => BadRequest(toJson("The request dataset does not exist"))
+    }
+  }
+
+  def getMetadataDefinition(id: UUID) = PermissionAction(Permission.AddMetadata) {
+    metadataService.getDefinition(id) match {
+      case Some(metadata) => {
+        Ok(toJson(metadata))
+      }
+      case None => BadRequest("not found this metadata definition: " + id)
     }
   }
 

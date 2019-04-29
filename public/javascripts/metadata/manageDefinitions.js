@@ -47,57 +47,70 @@ function addDefinition(data, pageURL, spaceId){
   }
 }
 
-function editDefinition(id, json, element) {
+function editDefinition(id) {
   reset();
   $(".definitionAction").text("Edit");
   $(".definitionActionButton").text(" Save");
   $(".glyphicon-plus").attr("class", "glyphicon glyphicon-send");
   $(".definitionAction").attr("id",id);
-  json = JSON.parse(json);
-  if (json.label) {
-    $("#label").val(json.label);
-  }
-  if (json.description) {
-    $("#description").val(json.description);
-  }
-  if (json.uri) {
-    $("#uri").val(json.uri);
-  }
-  if (json.type) {
-    $("#type").val(json.type).change();
-  }
-  if (json.definitions_url) {
-    // Grab the origin + default path from the URL
-    var origin = getHostPrefixFromUrl(window.location.href);
 
-    if (json.definitions_url.indexOf(origin) === -1) {
-      $("#defined_by").val("url");
-      $("#defined_by_list").hide();
-      $("#definitions_list").val('');
-      $("#defined_by_url").show();
-      $("#definitions_url").val(json.definitions_url);
-    } else {
-      $("#defined_by").val("list");
-      $("#defined_by_url").hide();
-      $("#definitions_url").val('');
-      $("#defined_by_list").show();
-      var request = $.ajax({
-        url: json.definitions_url,
-        type: 'GET',
-        contentType: "application/json"
-      });
-      request.done(function (response, textStatus, jqXHR) {
-        $("#definitions_list").val(response.join("\n"));
-        $("#vocabulary_id").val(getVocabularyIdFromUrl(json.definitions_url));
-      });
-      request.fail(function (jqXHR, textStatus, errorThrown) {
-        notify("ERROR: " + jqXHR.responseJSON + " Standard Vocabulary not found.", "error");
-      });
+  var metadataDefinitionUrl = jsRoutes.api.Metadata.getMetadataDefinition(id);
+
+  var request = metadataDefinitionUrl.ajax({
+    type: 'GET',
+    contentType: "application/json"
+  });
+
+  request.done(function (response, textStatus, jqXHR) {
+    var json = response.json;
+    if (json.label) {
+      $("#label").val(json.label);
     }
-  }
-  if (json.query_parameter) {
-    $("#query_parameter").val(json.query_parameter);
-  }
+    if (json.description) {
+      $("#description").val(json.description);
+    }
+    if (json.uri) {
+      $("#uri").val(json.uri);
+    }
+    if (json.type) {
+      $("#type").val(json.type).change();
+    }
+    if (json.definitions_url) {
+      // Grab the origin + default path from the URL
+      var origin = getHostPrefixFromUrl(window.location.href);
+
+      if (json.definitions_url.indexOf(origin) === -1) {
+        $("#defined_by").val("url");
+        $("#defined_by_list").hide();
+        $("#definitions_list").val('');
+        $("#defined_by_url").show();
+        $("#definitions_url").val(json.definitions_url);
+      } else {
+        $("#defined_by").val("list");
+        $("#defined_by_url").hide();
+        $("#definitions_url").val('');
+        $("#defined_by_list").show();
+        var request = $.ajax({
+          url: json.definitions_url,
+          type: 'GET',
+          contentType: "application/json"
+        });
+        request.done(function (response, textStatus, jqXHR) {
+          $("#definitions_list").val(response.join("\n"));
+          $("#vocabulary_id").val(getVocabularyIdFromUrl(json.definitions_url));
+        });
+        request.fail(function (jqXHR, textStatus, errorThrown) {
+          notify("ERROR: " + jqXHR.responseJSON + " Standard Vocabulary not found.", "error");
+        });
+      }
+    }
+    if (json.query_parameter) {
+      $("#query_parameter").val(json.query_parameter);
+    }
+  });
+  request.fail(function (jqXHR, textStatus, errorThrown) {
+    notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not edited.", "error");
+  });
 
   $("#cancelButton").show();
 }

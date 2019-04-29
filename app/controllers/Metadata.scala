@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import play.api.libs.json.Json._
 import api.Permission
 import models.{ResourceRef, UUID}
 import services._
@@ -69,5 +70,4 @@ class Metadata @Inject() (
     }
 
   }
-
 }

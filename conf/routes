@@ -323,6 +323,7 @@ DELETE         /api/metadata.jsonld/:id                                         
 
 #GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
 
+GET            /api/metadata/definition/:id                                             @api.Metadata.getMetadataDefinition(id: UUID)
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/distinctdefinitions                                        @api.Metadata.getDefinitionsDistinctName()
 GET            /api/metadata/autocompletenames                                          @api.Metadata.getAutocompleteName(filter: String)

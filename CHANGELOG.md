@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- A double quote character in a metadata description disallows edit.
+  [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
+
+
 ## 1.6.0 - 2019-04-01
 
 ### Added
