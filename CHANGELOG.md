@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
+  [CATS-992] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
+
 ### Fixed
 - A double quote character in a metadata description disallows edit.
   [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)

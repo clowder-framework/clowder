@@ -129,7 +129,12 @@ object ApplicationBuild extends Build {
     "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
 
     // jsonp return from /api
-    "org.julienrf" %% "play-jsonp-filter" % "1.1"
+    "org.julienrf" %% "play-jsonp-filter" % "1.1",
+
+    // Official AWS Java SDK
+    "com.amazonaws" % "aws-java-sdk-bom" % "1.11.106",
+
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory
