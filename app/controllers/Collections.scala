@@ -542,17 +542,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             decodedDatasetsInside += dDataset
           }
 
-          val commentMap = datasetsInside.map { dataset =>
-            var allComments = comments.findCommentsByDatasetId(dataset.id)
-            dataset.files.map { file =>
-              allComments ++= comments.findCommentsByFileId(file)
-              sections.findByFileId(file).map { section =>
-                allComments ++= comments.findCommentsBySectionId(section.id)
-              }
-            }
-            dataset.id -> allComments.size
-          }.toMap
-
           val child_collections = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
             SortingUtils.sortCollections(dCollection.child_collection_ids.flatMap(c => collections.get(c)), sortOrder).slice(0, limit)
           } else {
@@ -630,7 +619,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           val (view_count, view_date) = collections.incrementViews(id, user)
 
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
-            Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
+            Some(decodedParentCollections.toList),dCollection, filteredPreviewers, Some(collectionSpaces_canRemove),
             prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections, view_count, view_date))
 
         }
@@ -654,16 +643,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           decodedDatasetsInside += dDataset
         }
 
-        val commentMap = datasetsInside.map { dataset =>
-          var allComments = comments.findCommentsByDatasetId(dataset.id)
-          dataset.files.map { file =>
-            allComments ++= comments.findCommentsByFileId(file)
-            sections.findByFileId(file).map { section =>
-              allComments ++= comments.findCommentsBySectionId(section.id)
-            }
-          }
-          dataset.id -> allComments.size
-        }.toMap
         val prev = index-1
         val next = if(datasetsInside.length > (index+1) * limit) {
           index + 1
@@ -675,9 +654,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             val selectIds = selections.get(u.email.get).map(d => {
               d.id.toString
             })
-            Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next, selectIds))
+            Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, id, prev, next, selectIds))
           }
-          case None => Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next, List.empty))
+          case None => Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, id, prev, next, List.empty))
         }
 
 

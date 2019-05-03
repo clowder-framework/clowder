@@ -1,4 +1,4 @@
-@(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: Int, next: Int, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], userSelections: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(datasetsList: List[models.Dataset], prev: Int, next: Int, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], userSelections: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @main("Following Datasets") {
 
@@ -93,9 +93,9 @@
             <div id="masonry">
             @datasetsList.map { dataset =>
                 @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                    @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", true, false, routes.Datasets.followingDatasets(prev+1, limit, ""), true)
+                    @datasets.tile(dataset, space, "col-lg-3 col-md-3 col-sm-3", true, false, routes.Datasets.followingDatasets(prev+1, limit, ""), true)
                 } else {
-                    @datasets.tile(dataset, None, comments, "col-lg-3 col-md-3 col-sm-3", true, false, routes.Datasets.followingDatasets(prev+1, limit, ""), false))
+                    @datasets.tile(dataset, None, "col-lg-3 col-md-3 col-sm-3", true, false, routes.Datasets.followingDatasets(prev+1, limit, ""), false))
                 }
             }
             </div>
@@ -106,9 +106,9 @@
         <div class="col-md-12">
         @datasetsList.map { dataset =>
             @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                @datasets.listitem(dataset, None, comments, routes.Datasets.followingDatasets(prev+1, limit, ""), true)
+                @datasets.listitem(dataset, None, routes.Datasets.followingDatasets(prev+1, limit, ""), true)
             } else {
-                @datasets.listitem(dataset, None, comments, routes.Datasets.followingDatasets(prev+1, limit, ""), false)
+                @datasets.listitem(dataset, None, routes.Datasets.followingDatasets(prev+1, limit, ""), false)
             }
         }
         </div>

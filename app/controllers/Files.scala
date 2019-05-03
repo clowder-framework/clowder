@@ -286,14 +286,6 @@ class Files @Inject() (
           }
         }
 
-        val commentMap = fileList.map { file =>
-          var allComments = comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
-          }
-          file.id -> allComments.size
-        }.toMap
-
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
         //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
@@ -308,7 +300,7 @@ class Files @Inject() (
           }
 
         //Pass the viewMode into the view
-        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode))
+        Ok(views.html.users.followingFiles(fileList.toList, prev, next, limit, viewMode))
       }
       case None => InternalServerError("User not found")
     }

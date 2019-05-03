@@ -119,16 +119,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
         newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
-        val datasetcommentMap = datasetsUser.map { dataset =>
-          var allComments = comments.findCommentsByDatasetId(dataset.id)
-          dataset.files.map { file =>
-            allComments ++= comments.findCommentsByFileId(file)
-            sections.findByFileId(file).map { section =>
-              allComments ++= comments.findCommentsBySectionId(section.id)
-            }
-          }
-          dataset.id -> allComments.size
-        }.toMap
         val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
@@ -211,8 +201,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
-        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
-       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
+        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser,
+          decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12), followedFiles.take(8),
+          followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
       }
       case _ => {
         // Set bytes from appConfig

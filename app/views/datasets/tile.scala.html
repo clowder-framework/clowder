@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, space: Option[String], comments: Map[UUID, Int],classes:String, isFollowing: Boolean, isSpace: Boolean, redirect: Call, selected: Boolean)(implicit user: Option[models.User])
+@(dataset: models.Dataset, space: Option[String], classes:String, isFollowing: Boolean, isSpace: Boolean, redirect: Call, selected: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.i18n.Messages
 <div class="post-box @classes" id="@dataset.id-tile">
