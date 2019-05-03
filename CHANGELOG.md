@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Changed the HTTP return codes for the generic error handlers in Clowder.
+- Adjusted display of Advanced Search matching options to include (AND) / (OR).
+  [CATS-998](https://opensource.ncsa.illinois.edu/jira/browse/CATS-998)
 
 ### Added
 - Script to cleanup/migrate userpass account data to cilogon accounts.
