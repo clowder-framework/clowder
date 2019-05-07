@@ -632,11 +632,16 @@ class Datasets @Inject() (
         // increment view count for dataset
         val view_data = datasets.incrementViews(id, user)
 
+        // related datasets
+        val relatedThings = relations.findRelationships(dataset.id.stringify, ResourceType.dataset, ResourceType.dataset)
+        val relatedDatasets = for(r <- relatedThings) yield NodeDataset(datasets.get(UUID(r.target.id)).get, r.rdfType)
+
+
         // view_data is passed as tuple in dataset case only, because template is at limit of 22 parameters
         Ok(views.html.dataset(dataset, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
           currentSpace, limit, showDownload, accessData, canAddDatasetToCollection,
-          stagingAreaDefined, view_data, extractionGroups))
+          stagingAreaDefined, view_data, extractionGroups, relatedDatasets))
       }
       case None => {
         Logger.error("Error getting dataset" + id)

@@ -14,7 +14,8 @@
   canAddDatasetToCollection: Boolean,
   stagingAreaDefined: Boolean,
   view: (Int, java.util.Date),
-  extractionsStatus: Map[String, ExtractionGroup]
+  extractionsStatus: Map[String, ExtractionGroup],
+  relatedDataset: List[NodeDataset]
 )(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
 
 @import api.Permission
@@ -272,6 +273,9 @@
                     <li role="presentation"><a href="#tab-extractions" role="tab" data-toggle="tab">Extractions </a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
+                    @if(relatedDataset.size > 0) {
+                        <li role="relation"><a href="#tab-relations" role="tab" data-toggle="tab">Related</a></li>
+                    }
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-files">
@@ -311,6 +315,11 @@
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                         @datasets.previews(dataset, previewers)
                     </div>
+                    @if(relatedDataset.size > 0) {
+                        <div role="tabpanel" class="tab-pane fade" id="tab-relations">
+                        @relations.list(relatedDataset)
+                        </div>
+                    }
                     <div class="row bottom-padding">
                         <div class="col-md-12">
                         </div>

@@ -1,0 +1,18 @@
+@(relatedDatasets: List[NodeDataset])
+
+<table class="table table-condensed">
+    <thead>
+        <th>Relationship Type</th>
+        <th>Target Dataset</th>
+    </thead>
+    <tbody>
+        @for(rd <- relatedDatasets) {
+            <tr>
+                <td>@rd.rdfType.getOrElse("Generic relation")</td>
+                <td><a href="@routes.Datasets.dataset(rd.dataset.id)">@rd.dataset.name</a></td></tr>
+        }
+    </tbody>
+</table>
+
+
+
