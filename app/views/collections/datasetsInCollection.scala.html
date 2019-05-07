@@ -1,13 +1,13 @@
-@(datasetsList: List[Dataset], commentMap:  Map[UUID, Int], collectionId: UUID, prev: Int, next: Int,
+@(datasetsList: List[Dataset], collectionId: UUID, prev: Int, next: Int,
         userSelections: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import api.Permission
 
 @datasetsList.map { dataset =>
     @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-        @datasets.listitem(dataset,Some(collectionId.uuid),commentMap,routes.Collections.collection(collectionId), true)
+        @datasets.listitem(dataset,Some(collectionId.uuid), routes.Collections.collection(collectionId), true)
     } else {
-        @datasets.listitem(dataset,Some(collectionId.uuid),commentMap,routes.Collections.collection(collectionId), false)
+        @datasets.listitem(dataset,Some(collectionId.uuid), routes.Collections.collection(collectionId), false)
     }
 }
 @if(datasetsList.isEmpty){

@@ -3,7 +3,6 @@
   parentCollections: Option[List[models.Collection]],
   collection: models.Collection,
   previewers: List[Previewer],
-  commentMap : Map[UUID, Int],
   collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
   prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int, canAddToParent: Boolean,
   userSelections: List[String],
@@ -260,7 +259,7 @@
 						</div>
 					</div>
 					<div id="datasets">
-					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd, userSelections)
+					@collections.datasetsInCollection(datasetsInCollection, collection.id, prevd, nextd, userSelections)
 					</div>
 				</div>
 			</div>

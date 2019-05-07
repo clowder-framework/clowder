@@ -12,11 +12,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - About page should no longer show "0 Bytes", counts should be more accurate.
   [CATS-779] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-779)
 - Fixed creation of standard vocabularies in a single space case.
+- Slow load times in dataset page by removing queries for comments and tags on files within a dataset.
+  [CATS-999] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-999)
 
 ### Changed
 - Changed the HTTP return codes for the generic error handlers in Clowder.
 - Adjusted display of Advanced Search matching options to include (AND) / (OR).
   [CATS-998](https://opensource.ncsa.illinois.edu/jira/browse/CATS-998)
+- Dataset page does not show comments on files within the dataset anymore.
+- dataset-image previewer turned off by default since it is expensive for datasets with many files but does not much
+  information to the dataset page.
+- Removed unused queries for comments throughout the application.
 
 ### Added
 - When a folder has been deleted, clowder will traverse each file (directly/indirectly) under this folder and send file deletion event to Rabbitmq.

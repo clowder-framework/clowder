@@ -5,8 +5,6 @@
   collectionsInside: List[models.Collection],
   relatedSensors: List[(String,String,String)],
   datasetSpaces_canRemove : Option[Map[ProjectSpace,Boolean]],
-  fileList: List[File],
-  filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
@@ -334,7 +332,7 @@
             </div>
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
             @datasets.collections(dataset, collectionsInside, canAddDatasetToCollection)
-            @datasets.tags(dataset, fileList, filesTags)
+            @datasets.tags(dataset)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }

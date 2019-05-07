@@ -1,4 +1,4 @@
-@(file: File, comments: Map[UUID, Int], redirect: Call, dataset: Option[String], space: Option[String], folder: Option[String], showMove: Boolean)(implicit user: Option[models.User])
+@(file: File, redirect: Call, dataset: Option[String], space: Option[String], folder: Option[String], showMove: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 @import _root_.util.Formatters.humanReadableByteCount
 <div class="panel panel-default file-panel" id="@file.id-listitem">
