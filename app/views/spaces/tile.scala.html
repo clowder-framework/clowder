@@ -38,6 +38,16 @@
                         </div>
                     }
 
+                    <!-- If user can view, the search button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                        <a href="@routes.Metadata.search()?spaceid=@space.id" class="btn btn-link pull-right" title="Search metadata within the @Messages("space.title")">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </a>
+                    } else {
+                        <div class="inline" title="Not enough permission to search the @Messages("space.title")">
+                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-search"></span></button>
+                        </div>
+                    }
                 }
             </li>
         </ul>

@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-973](https://opensource.ncsa.illinois.edu/jira/browse/CATS-973)
 - `/api/search` endpoint now supports additional flags including tag, field, datasetid, and others detailed in SwaggerAPI.
   [CATS-968](https://opensource.ncsa.illinois.edu/jira/browse/CATS-968)
+- Add a dropdown to Advanced Search UI for filtering by space.
+  [CATS-985](https://opensource.ncsa.illinois.edu/jira/browse/CATS-985)
   
 ### Fixed
 - Enhancements to reporting date and string formatting. Space listing on spaces report and on New Collections page now 
