@@ -4,11 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.6.1- 2019-05-07
+## Unreleased
 
 ### Added
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
+
+## 1.6.1- 2019-05-07
 
 ### Fixed
 - A double quote character in a metadata description disallowing edit of metadata definition.
