@@ -40,6 +40,12 @@
                     <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))">
                         <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
                 }
+                <!-- If user can view, the search button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                    <a href="@routes.Metadata.search()?spaceid=@space.id" class="btn btn-link" title="Search metadata within the @Messages("space.title")">
+                        <span class="glyphicon glyphicon-search"></span> Search
+                    </a>
+                }
                 @if(play.Play.application().configuration().getBoolean("enablePublic") && (Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) || Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)))){
                     <hr/>
                 }

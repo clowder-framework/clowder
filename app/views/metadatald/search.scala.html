@@ -1,25 +1,62 @@
-@()(implicit user: Option[models.User])
+@(spaces: List[ProjectSpace], selectedSpace: Option[ProjectSpace] = None)(implicit user: Option[models.User])
 
 @main("Search metadata") {
-    <h2>Advanced Search</h2>
+    @selectedSpace match {
+        case None => {
+            <h2>Advanced Search</h2>
+        }
+        case Some(space) => {
+            <h2>Search within Space: "@space.name"</h2>
+        }
+    }
     <div class="row">
         <div class="panel panel-default">
             <div class="panel-body">
                 <form class="form top-padding" id="metadata-search">
 
                     <div id="basic-search-container">
-                        <!-- ANY/ALL DROPDOWN -->
-                        <div class='form-group col-lg-4 col-md-4'>
-                            <select id='add-metadata-grouping'>
-                                <option value='AND'>Match ALL of the selected terms (AND)</option>
-                                <option value='OR'>Match ANY of the selected terms (OR)</option>
-                            </select>
-                        </div>
+                        <div class="row">
+                            <!-- ANY/ALL DROPDOWN -->
+                            <div class='form-group col-lg-4 col-md-4'>
+                                <select id='add-metadata-grouping'>
+                                    <option value='AND'>Match ALL of the selected terms (AND)</option>
+                                    <option value='OR'>Match ANY of the selected terms (OR)</option>
+                                </select>
+                            </div>
 
-                        <!-- ADD TERM BTN -->
-                        <div class="form-group col-lg-8 col-md-8">
-                            <a class='btn btn-default' id='add-clause' onclick='getBasicDefinitions(2)'>
-                                <span class='glyphicon glyphicon-plus'></span> Add term</a>
+                            <!-- ADD TERM BTN -->
+                            @selectedSpace match {
+                                case None => {
+                                    <div class="form-group col-lg-2 col-md-2">
+                                }
+                                case Some(space) => {
+                                    <div class="form-group col-lg-8 col-md-8">
+                                }
+                            }
+                                <a class='btn btn-default' id='add-clause' onclick='getBasicDefinitions(2)'>
+                                    <span class='glyphicon glyphicon-plus'></span> Add term</a>
+                            </div>
+
+                            <!-- SPACEID SELECTOR (OPTIONAL) -->
+                            <!-- Hide space selector if a space is already provided -->
+                            @selectedSpace match {
+                                case None => {
+                                    <div class="form-group col-lg-6 col-md-6">
+                                        <select id="spaceid-filter-select" class="form-control">
+                                                <!-- Default text shown if no space is selected -->
+                                            <option value="">Show Results from All Spaces</option>
+
+                                            @for(space <- spaces) {
+                                                <option value="@space.id">@space.name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                }
+                                case Some(_) => {
+                                    <!-- Empty matcher is required here to route correctly
+                                    with a spaceid query string parameter specified. -->
+                                }
+                            }
                         </div>
 
                         <!-- SET OF TERM ROWS (populated in script below) -->
@@ -48,12 +85,17 @@
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
+        $("#spaceid-filter-select").select2({
+            theme: "bootstrap",
+            allowClear: false
+        });
+
         var row_list = [];
         $("#add-metadata-grouping").select2({
             theme: "bootstrap",
             allowClear: false,
             width: "100%"
-        })
+        });
 
         getBasicDefinitions(1);
         // Count is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
@@ -66,7 +108,7 @@
 
             // Basic row definition
             $("#metadata-search-rows").append(
-                $("<p><div id='metadata-clause-"+rowStr+"'>" +
+                $("<p><div class='row' id='metadata-clause-"+rowStr+"'>" +
                     <!-- FIELD SELECTOR DROPDOWN -->
                     "<div class='form-group col-lg-4 col-md-4'>" +
                         "<select id='add-metadata-select-"+rowStr+"'><option value=''></option></select></div>" +
@@ -213,6 +255,31 @@
         // Construct a JSON object with search information
         function generateSearchObject() {
             var searchObj = [];
+
+            @selectedSpace match {
+                case Some(space) => {
+                    searchObj.push({
+                        "field_key": "child_of",
+                        "operator": "==",
+                        "field_value": "@space.id",
+                        "extractor_key": null,
+                        "field_leaf_key": "@space.id"
+                    });
+                }
+                case None => {
+                    var selectedSpaceId = $('#spaceid-filter-select option:selected').val();
+                    if (selectedSpaceId && selectedSpaceId !== '') {
+                        searchObj.push({
+                            "field_key": "child_of",
+                            "operator": "==",
+                            "field_value": selectedSpaceId,
+                            "extractor_key": null,
+                            "field_leaf_key": selectedSpaceId
+                        });
+                    }
+                }
+            }
+
             for (var row=0; row<row_list.length; row++) {
                 var rowkey = $("#add-metadata-select-"+row_list[row]+" :selected").val();
                 var rowop = $("#add-metadata-operator-"+row_list[row]).val();
@@ -221,12 +288,12 @@
                 // Ignore any terms without a value
                 if (rowval != "") {
                     if (rowkey.indexOf('.') > -1) {
-                        var keyvals = rowkey.split('.')
-                        var extractorKey = keyvals[0]
-                        var leafKey = keyvals[keyvals.length-1]
+                        var keyvals = rowkey.split('.');
+                        var extractorKey = keyvals[0];
+                        var leafKey = keyvals[keyvals.length-1];
                     } else {
-                        var extractorKey = null
-                        var leafKey = rowkey
+                        var extractorKey = null;
+                        var leafKey = rowkey;
                     }
 
                     searchObj.push({

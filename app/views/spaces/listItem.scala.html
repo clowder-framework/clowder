@@ -38,16 +38,28 @@
                             <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount
                             @if(user.isDefined) {
 
-                                    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="confirmDeleteResource('space','@Messages("space.title")','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
-                                            <span class="glyphicon glyphicon-trash"></span>
-                                        </button>
-                                    } else {
-                                        <div class="inline" title="Not enough permission to delete the @Messages("space.title")">
-                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
-                                        </div>
-                                    }
+                                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                                    <button onclick="confirmDeleteResource('space','@Messages("space.title")','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
+                                        <span class="glyphicon glyphicon-trash"></span>
+                                    </button>
+                                } else {
+                                    <div class="inline" title="Not enough permission to delete the @Messages("space.title")">
+                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                                    </div>
+                                }
+
+
+                                <!-- If user can view, the search button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                                    <a href="@routes.Metadata.search()?spaceid=@space.id" class="btn btn-link" title="Search metadata within the @Messages("space.title")">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </a>
+                                } else {
+                                    <div class="inline" title="Not enough permission to search the @Messages("space.title")">
+                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-search"></span></button>
+                                    </div>
+                                }
 
                             }
                         </div>
