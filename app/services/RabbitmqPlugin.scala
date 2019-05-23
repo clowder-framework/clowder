@@ -15,6 +15,7 @@ import com.rabbitmq.client.AMQP.Queue
 import com.rabbitmq.client._
 import models._
 import org.bson.types.ObjectId
+import play.api.http.MimeTypes
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
@@ -757,7 +758,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       case Some(x) => {
         val url = x + path
         Logger.trace("RESTURL: "+ url)
-        WS.url(url).withHeaders("Accept" -> "application/json").withAuth(username, password, AuthScheme.BASIC).get()
+        WS.url(url).withHeaders("Accept" -> MimeTypes.JSON).withAuth(username, password, AuthScheme.BASIC).get()
       }
       case None => {
         Logger.warn("Could not get bindings")
@@ -867,7 +868,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           val json = Json.parse(body_text)
           val routing_key: String = (json \ "routing_key").as[String]
           val basicProperties = new BasicProperties().builder()
-            .contentType("application\\json")
+            .contentType(MimeTypes.JSON)
             .deliveryMode(2)
             .build()
           try {
@@ -955,7 +956,7 @@ class PendingRequestCancellationActor(exchange: String, connection: Option[Conne
               // upload parsed pending requests to the cancellation download queue
               try {
                 val basicProperties = new BasicProperties().builder()
-                  .contentType("application\\json")
+                  .contentType(MimeTypes.JSON)
                   .deliveryMode(2)
                   .build()
                 channel.basicPublish("", cancellationDownloadQueueName, basicProperties, body)
@@ -1081,7 +1082,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
       val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?
       // setup properties
       val basicProperties = new BasicProperties().builder()
-        .contentType("application\\json")
+        .contentType(MimeTypes.JSON)
         .correlationId(corrId)
         .replyTo(replyQueueName)
         .deliveryMode(2)
