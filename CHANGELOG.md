@@ -10,16 +10,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 
-## 1.6.1- 2019-05-07
+## 1.6.2 - 2019-05-23
+
+### Fixed
+- Mimetype of RabbitMQ message body should be `application/json` instead of `application\json`.
+  [GH-12](https://github.com/ncsa/clowder/issues/12)
+
+## 1.6.1 - 2019-05-07
 
 ### Fixed
 - A double quote character in a metadata description disallowing edit of metadata definition.
-  [CATS-991] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
+  [CATS-991](https://opensource.ncsa.illinois.edu/jira/browse/CATS-991)
 - About page should no longer show "0 Bytes", counts should be more accurate.
-  [CATS-779] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-779)
+  [CATS-779](https://opensource.ncsa.illinois.edu/jira/browse/CATS-779)
 - Fixed creation of standard vocabularies within a space.
 - Slow load times in dataset page by removing queries for comments and tags on files within a dataset.
-  [CATS-999] (https://opensource.ncsa.illinois.edu/jira/browse/CATS-999)
+  [CATS-999](https://opensource.ncsa.illinois.edu/jira/browse/CATS-999)
 - Send file delete events over RabbitMQ when a folder is deleted that contains files.
   [CATS-995](https://opensource.ncsa.illinois.edu/jira/browse/CATS-995)
 
