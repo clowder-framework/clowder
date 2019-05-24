@@ -56,6 +56,7 @@
                 <thead>
                     <tr>
                         <th>Extractor's Name</th>
+                        <th>Description</th>
                         @*<th>Parameters</th>*@
                         <th>Submit</th>
                     </tr>
@@ -63,9 +64,12 @@
                 <tbody>
                     @for(e <- extractors) {
                         <tr>
-                            <td>@e.name</td>
+                            <td>
+                                <a href="@routes.Extractors.showExtractorInfo(e.name)">@e.name</a>
+                            </td>
+                            <td>@e.description</td>
                             @*<td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>*@
-                            <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@file.id')">Submit</button></td>
+                            <td><button id="@e.id" class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@file.id','@e.id')">Submit</button></td>
                         </tr>
                     }
                 </tbody>
@@ -73,7 +77,31 @@
         </div>
     </div>
     <script type="text/javascript">
-        function submit(extractor_name, textbox_id, file_id) {
+            function disableSubmit(btn) {
+                btn.attr('disabled', true);
+                btn.addClass('disabled');
+                btn.removeClass('btn-primary');
+                btn.addClass('btn-success');
+                btn.html('Submitted');
+            }
+
+            function enableSubmit(btn) {
+                btn.html('Submit');
+                btn.removeClass('disabled');
+                btn.removeClass('btn-success');
+                btn.addClass('btn-primary');
+                btn.attr('disabled', false);
+            }
+
+        function submit(extractor_name, textbox_id, file_id, submit_id) {
+            var clickedBtn = $('#' + submit_id);
+
+            // Throttle submissions to one every 3 seconds
+            disableSubmit(clickedBtn);
+            setTimeout(function() {
+                enableSubmit(clickedBtn);
+            }, 3000);
+
             //TODO: comment out since no extractors use parameters, may enable it in future.
             //var params = $('#'+textbox_id).val();
             //if (params === "") params = "{}";
