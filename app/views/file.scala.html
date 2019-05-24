@@ -822,8 +822,13 @@
                 });
 
                 function downloadFile() {
-                    var downloadRoute = "@routes.Files.download(UUID(id))";
-                    window.open(downloadRoute, '_blank');
+					if ("@file.status"=="ARCHIVED") {
+						var emailForm = "@routes.Application.email("Accessing archived file "+file.id, "Please contact me about accessing the archived file.")";
+						window.open(emailForm, "_blank");
+					} else {
+						var downloadRoute = "@routes.Files.download(UUID(id))";
+						window.open(downloadRoute, '_blank');
+					}
                 }
 
                 function downloadFileAs(downloadRoute) {

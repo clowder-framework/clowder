@@ -1905,6 +1905,19 @@ class Files @Inject()(
       case None => NotFound(s"File $id not found")
     }
   }
+
+  def archive(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        files.setStatus(id, FileStatus.ARCHIVED)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting file " + id);
+        InternalServerError
+      }
+    }
+  }
 }
 
 object MustBreak extends Exception {}

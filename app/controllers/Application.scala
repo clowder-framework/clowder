@@ -241,12 +241,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
-  def email(subject: String) = UserAction(needActive=false) { implicit request =>
+  def email(subject: String, body: String) = UserAction(needActive=false) { implicit request =>
     if (request.user.isEmpty) {
       Redirect(routes.Application.index())
     } else {
       implicit val user = request.user
-      Ok(views.html.emailAdmin(subject))
+      Ok(views.html.emailAdmin(subject, body))
     }
   }
 

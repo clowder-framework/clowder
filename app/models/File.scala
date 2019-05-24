@@ -37,7 +37,7 @@ case class File(
 // what is the status of the file
 object FileStatus extends Enumeration {
   type FileStatus = Value
-  val UNKNOWN, CREATED, UPLOADED, PROCESSED = Value
+  val UNKNOWN, CREATED, UPLOADED, PROCESSED, ARCHIVED = Value
 }
 
 case class Versus(

@@ -16,7 +16,7 @@ GET            /*path/                                                          
 GET            /                                                                        @controllers.Application.index
 GET            /about                                                                   @controllers.Application.about
 GET            /tos                                                                     @controllers.Application.tos(redirect: Option[String] ?= None)
-GET            /email                                                                   @controllers.Application.email(subject: String ?= "")
+GET            /email                                                                   @controllers.Application.email(subject: String ?= "", body: String ?= "")
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
@@ -399,6 +399,7 @@ PUT            /api/files/:id/filename                                          
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 GET            /api/files/:id/users                                                     @api.Files.users(id: UUID)
 GET            /api/files/:id/paths                                                     @api.Files.paths(id: UUID)
+POST           /api/files/:id/archive                                                   @api.Files.archive(id: UUID)
 
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS

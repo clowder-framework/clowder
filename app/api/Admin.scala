@@ -103,7 +103,15 @@ class Admin @Inject() (userService: UserService,
     val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
-    val htmlbody = "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+    val htmlbody = if (!current.configuration.getBoolean("smtp.mimicuser").getOrElse(true)) {
+      val sender = request.user match {
+        case Some(u) => u.email.getOrElse("")
+        case None => ""
+      }
+      "<html><body><p>" + body + "</p>" + views.html.emails.footer(sender) + "</body></html>"
+    } else {
+      "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+    }
 
     Mail.sendEmailAdmins(subj, request.user, Html(htmlbody))
     Ok(toJson(Map("status" -> "success")))
