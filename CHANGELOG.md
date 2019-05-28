@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-981](https://opensource.ncsa.illinois.edu/jira/browse/CATS-981)
 
 ### Changed
+- Improved Advanced Search UI to retain search results between navigations.
+  [CATS-1001](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1001)
 - Display more info on the manual submission page, link to ExtractorDetails view.
   [CATS-959](https://opensource.ncsa.illinois.edu/jira/browse/CATS-959)
 
