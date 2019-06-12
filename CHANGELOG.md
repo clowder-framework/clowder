@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.
   [CATS-981](https://opensource.ncsa.illinois.edu/jira/browse/CATS-981)
+- Listen for heartbeat messages from extractors and update list of registered extractors
+  based on extractor info received. For extractors using this method they will not need
+  to manually register themselves through API to be listed.
+  [CATS-1004](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1004)
 
 ### Changed
 - Improved Advanced Search UI to retain search results between navigations.
