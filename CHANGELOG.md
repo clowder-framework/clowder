@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-1001](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1001)
 - Display more info on the manual submission page, link to ExtractorDetails view.
   [CATS-959](https://opensource.ncsa.illinois.edu/jira/browse/CATS-959)
+- Updated the mongo-init docker image to aks for inputs if not specified as
+  an environment variable.
+  `docker run -ti --rm --network clowder_clowder clowder/mongo-init`
 
 ## 1.6.2 - 2019-05-23
 
