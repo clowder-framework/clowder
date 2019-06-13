@@ -6,7 +6,6 @@ import sys
 import uuid
 
 import pymongo
-import pymongo.results
 from passlib.hash import bcrypt
 
 mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/clowder')
@@ -15,20 +14,45 @@ user_email = os.getenv('EMAIL_ADDRESS', '')
 user_firstname = os.getenv('FIRST_NAME', '')
 user_lastname = os.getenv('LAST_NAME', '')
 user_password = os.getenv('PASSWORD', '')
-user_admin = os.getenv('ADMIN', 'false').lower() == 'true'
+user_admin = os.getenv('ADMIN', '')
 
-# use email if not explicitly set username
-if not user_name:
+# check values
+if not user_email:
+    if sys.stdin.isatty():
+        user_email = input('EMAIL_ADDRESS : ')
     if not user_email:
-        print("Need to specify USERNAME or EMAIL_ADDRESS")
-        os.exit(-1)
+        print("Need to specify EMAIL_ADDRESS")
+        sys.exit(-1)
+if not user_name:
     user_name = user_email
-
-# make sure to have firstname/lastname
 if not user_firstname:
-    user_firstname = "Example"
+    if sys.stdin.isatty():
+        user_firstname = input('FIRST_NAME    : ')
+    if not user_firstname:
+        print("Need to specify FIRST_NAME")
+        sys.exit(-1)
 if not user_lastname:
-    user_lastname = "User"
+    if sys.stdin.isatty():
+        user_lastname = input('LAST_NAME     : ')
+    if not user_lastname:
+        print("Need to specify LAST_NAME")
+        sys.exit(-1)
+if not user_password:
+    if sys.stdin.isatty():
+        user_password = input('PASSWORD.     : ')
+    else:
+        user_password = str(uuid.uuid4()).replace('-', '')
+        print('PASSWORD      : ' + user_password)
+    if not user_password:
+        print("Need to specify PASSWORD")
+        sys.exit(-1)
+if not user_admin:
+    if sys.stdin.isatty():
+        user_admin = input('ADMIN         : ')
+    if not user_admin:
+        print("Need to specify ADMIN")
+        sys.exit(-1)
+user_admin = user_admin.lower() == 'true'
 
 # connect to mongo
 client = pymongo.MongoClient(mongo_uri)
@@ -41,39 +65,36 @@ if users.find_one({"identityId.userId": user_name, "identityId.providerId": "use
     sys.exit(-1)
 
 # generate password if not specified
-if not user_password:
-    user_password = str(uuid.uuid4()).replace('-', '')
-    print("GENERATED PASSWORD == " + user_password)
-encrypted_password = "$2a" + bcrypt.encrypt(user_password, rounds=10)[3:]
+encrypted_password = "$2a" + bcrypt.hash(user_password, rounds=10)[3:]
 
 # create document that will be inserted
 user_document = {
-  "identityId": {
-    "userId": user_name,
-    "providerId": "userpass"
-  },
-  "_typeHint": "models.ClowderUser", 
-  "firstName": user_firstname,
-  "lastName": user_lastname,
-  "fullName": user_firstname + " " + user_lastname,
-  "email": user_email,
-  "authMethod": {
-    "_typeHint": "securesocial.core.AuthenticationMethod", 
-    "method": "userPassword"
-  },
-  "passwordInfo": {
-    "_typeHint": "securesocial.core.PasswordInfo", 
-    "hasher": "bcrypt", 
-    "password": encrypted_password
-  },
-  "admin": False,
-  "serverAdmin": False,
-  "status": "Active",
-  "termsOfServices": {
-    "accepted": True,
-    "acceptedDate": datetime.datetime.now(),
-    "acceptedVersion": "2016-06-06",
-  }
+    "identityId": {
+        "userId": user_name,
+        "providerId": "userpass"
+    },
+    "_typeHint": "models.ClowderUser",
+    "firstName": user_firstname,
+    "lastName": user_lastname,
+    "fullName": user_firstname + " " + user_lastname,
+    "email": user_email,
+    "authMethod": {
+        "_typeHint": "securesocial.core.AuthenticationMethod",
+        "method": "userPassword"
+    },
+    "passwordInfo": {
+        "_typeHint": "securesocial.core.PasswordInfo",
+        "hasher": "bcrypt",
+        "password": encrypted_password
+    },
+    "admin": False,
+    "serverAdmin": False,
+    "status": "Active",
+    "termsOfServices": {
+        "accepted": True,
+        "acceptedDate": datetime.datetime.now(),
+        "acceptedVersion": "2016-06-06",
+    }
 }
 
 if user_admin:
@@ -88,7 +109,7 @@ if not result.acknowledged:
 else:
     print("Inserted user (id=%s)" % result.inserted_id)
 
-result = dbase['app.configuration'].update_one({"key": "countof.users"}, {"$inc": { "value": 1}})
+result = dbase['app.configuration'].update_one({"key": "countof.users"}, {"$inc": {"value": 1}})
 if not result.acknowledged:
     print("ERROR updating user count")
 else:
