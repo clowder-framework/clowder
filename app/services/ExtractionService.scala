@@ -1,7 +1,9 @@
 package services
 
-import models.{UUID, Extraction,WebPageResource}
+import models._
 import java.util.Date
+
+import org.bson.types.ObjectId
 
 
 /**
@@ -14,9 +16,9 @@ trait ExtractionService {
 
   def findAll(): List[Extraction]
 
-  def findByFileId(fileId: UUID): List[Extraction]
+  def findById(resource: ResourceRef): List[Extraction]
 
-  def insert(extraction: Extraction)
+  def insert(extraction: Extraction): Option[ObjectId]
   
   def getExtractorList(fileId:UUID): collection.mutable.Map[String,String]
   
@@ -25,4 +27,6 @@ trait ExtractionService {
   def save(webpr: WebPageResource): UUID
   
   def getWebPageResource(id: UUID): Map[String,String]
+
+  def groupByType(extraction_list: List[Extraction]): Map[String, ExtractionGroup]
 }

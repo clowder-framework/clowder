@@ -1,4 +1,5 @@
-{ "name" : "Oni",
-  "main" : "some-library.js",
-  "contentType" : ["text/oni-view"]
+{ "name": "Oni",
+  "main": "some-library.js",
+  "preview": true,
+  "contentType": ["text/oni-view"]
   }

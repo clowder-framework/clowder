@@ -7,27 +7,49 @@
     <script src="@routes.Assets.at("javascripts/metadata/manageDefinitions.js")" type="text/javascript"></script>
 	<script>
         $(document).ready(function() {
+            $("#defined_by").on('change', function() {
+                var value = $(this).find(":selected").val();
+                if (value === "list") {
+                    $("#defined_by_url").hide();
+                    $("#definitions_url").val('');
+                    $("#defined_by_list").show();
+                } else if (value === "url") {
+                    $("#defined_by_list").hide();
+                    $("#definitions_list").val('');
+                    $("#defined_by_url").show();
+                }
+            });
             $("#type").change(function() {
+                var definedBy = $("#defined_by");
+                var definitionsList = $("#definitions_list");
                 var definitions = $("#definitions_url");
                 var validateButton = $("#validateButton");
                 var queryParameter = $("#query_parameter");
                 var queryParameterValue = $("#query_parameter_value");
                 if ($(this).val() == "string") {
+                    definedBy.attr("disabled", true);
+                    definitionsList.attr("disabled", true);
                     definitions.attr("disabled", true);
                     validateButton.attr("disabled", true);
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
-                } else if ($(this).val() == "list") {
+                } else if ($(this).val() == "list" || $(this).val() == "annotation") {
+                    definedBy.removeAttr("disabled");
                     definitions.removeAttr("disabled");
+                    definitionsList.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
                 } else if ($(this).val() == "wkt") {
+                    definedBy.attr("disabled", true);
+                    definitionsList.attr("disabled", true);
                     definitions.attr("disabled", true);
                     validateButton.attr("disabled", true);
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
                 } else {
+                    definedBy.removeAttr("disabled");
+                    definitionsList.removeAttr("disabled");
                     definitions.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
                     queryParameter.removeAttr("disabled");
@@ -101,17 +123,53 @@
                     }
                 });
                 if (data['query_parameter_value']) delete data['query_parameter_value'];
-                if (data.type == "list" || data.type == "listjquery" || data.type == "scientific_variable") {
-                    if (!data.definitions_url) {
+                if (data.type == "list" || data.type == "listjquery" || data.type == "scientific_variable"
+                        || data.type == "listgeocode" || data.type == "annotation") {
+                    var vocabulary_id = $("#vocabulary_id").val();
+                    if (data.definitions_url) {
+                        addDefinition(data, window.location.href, "@spaceId");
+
+                        // FIXME: How can we make sure this isn't used anywhere else before deleting
+                        // Check for an existing vocabulary id
+                        if (vocabulary_id) {
+                            // Delete unused vocabulary
+                            // deleteVocabulary(data.vocabulary_id);
+                        }
+                    } else if (data.definitions_list) {
+                        // Parse text list into a JSON array of strings before sending
+                        var terms = data.definitions_list.split(/\r?\n/g);
+                        var promise = null;
+                        var origin = getHostPrefixFromUrl(window.location.href);
+
+                        // Check for an existing vocabulary id
+                        if (vocabulary_id) {
+                            // Update existing vocabulary with new list of terms
+                            promise = updateVocabulary(vocabulary_id, terms);
+                        } else {
+                            // Create a new vocabulary from the list of terms
+                            promise = createVocabulary(terms);
+                        }
+
+                        promise.then(function(vocab) {
+                            // Replace our literal values with a URL
+                            delete data.definitions_list;
+                            data.definitions_url = origin + vocab.url;
+
+                            // Save vocabulary ID and new URL with this metadata definition
+                            data.vocabulary_id = vocab.id;
+                            addDefinition(data, window.location.href, "@spaceId");
+                        });
+                    } else {
                         $("#validationResults").html(
-                            '<div class="alert alert-danger fade in">' +
-                            '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
-                            '<strong>Error!</strong> Definitions URL is required for Lists</div>');
+                                '<div class="alert alert-danger fade in">' +
+                                '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
+                                '<strong>Error!</strong> Definitions or URL required for Lists</div>');
+
                         return false;
                     }
+                } else {
+                    addDefinition(data, window.location.href, "@spaceId");
                 }
-
-                addDefinition(data, window.location.href, "@spaceId");
             });
 
              $('.delete-definition').unbind().on('click', function(){
@@ -123,6 +181,12 @@
                         request.done(function (response, textStatus, jqXHR) {
                             console.log("success");
                             delete_object.closest("TR").remove();
+
+                            // FIXME: How can we make sure this isn't used anywhere else before deleting
+                            var vocabulary_id = getVocabularyIdFromUrl(delete_object.url);
+                            if (vocabulary_id) {
+                                // deleteVocabulary(vocabulary_id);
+                            }
                         });
 
                         request.fail(function (jqXHR, textStatus, errorThrown){
@@ -165,55 +229,58 @@
 	</div>
 	}
 	@if(metadata.size > 0) {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A short label or name."><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>Description <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Description" data-content="A long description."><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>URI <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference."><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-html=true data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>Definitions URL <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions URL" data-content="This URL should return a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>Query Parameter <a tabindex="0" role="button" data-toggle="popover" title="Query Parameter" data-content="Some list types support filtering the data by use of a query parameter. Example: example.com?searchterm=value" aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for(m <- metadata) {
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>
-                            @((m.json \ "label").asOpt[String].getOrElse(""))
-                        </td>
-                        <td>
-                            @((m.json \ "description").asOpt[String].getOrElse(""))
-                        </td>
-                        <td>
-                            @((m.json \ "uri").asOpt[String].getOrElse(""))
-                        </td>
-                        <td>
-                            @((m.json \ "type").asOpt[String].getOrElse("")) match {
-                                case "string" => {String}
-                                case "list" => {List}
-                                case "listjquery" => {Queryable List}
-                                case "scientific_variable" => {Scientific Variable}
-                                case "datetime" => {Date and Time}
-                                case "listgeocode" => {Location}
-                                case "wkt" => {WKT Location}
-                                case _ => {Error: unrecognized type}
-                            }
-                        </td>
-                        <td>
-                            @((m.json \ "definitions_url").asOpt[String].getOrElse(""))
-                        </td>
-                        <td>
-                            @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
-                        </td>
-                        <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a>
-                            / <a id="@m.id" href="#" title="Delete metadata definition" class="delete-definition">Delete</a>
-                        </td>
+                        <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A short label or name."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Description <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Description" data-content="A long description."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>URI <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-html=true data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li><li>Annotation: mapping between a String type and a List type.</li></ul>"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Definitions <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions / URL" data-content="This should correspond to a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Query Parameter <a tabindex="0" role="button" data-toggle="popover" title="Query Parameter" data-content="Some list types support filtering the data by use of a query parameter. Example: example.com?searchterm=value" aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @for(m <- metadata) {
+                        <tr>
+                            <td class="text-wrap" style="max-width:10vw">
+                                @((m.json \ "label").asOpt[String].getOrElse(""))
+                            </td>
+                            <td class="text-wrap" style="max-width:20vw">
+                                @((m.json \ "description").asOpt[String].getOrElse(""))
+                            </td>
+                            <td class="text-wrap no-hyphens" style="max-width:20vw">
+                                @((m.json \ "uri").asOpt[String].getOrElse(""))
+                            </td>
+                            <td class="text-wrap" style="max-width:15vw">
+                                @((m.json \ "type").asOpt[String].getOrElse("")) match {
+                                    case "string" => {String}
+                                    case "list" => {List}
+                                    case "listjquery" => {Queryable List}
+                                    case "scientific_variable" => {Scientific Variable}
+                                    case "annotation" => {Annotation}
+                                    case "datetime" => {Date and Time}
+                                    case "listgeocode" => {Location}
+                                    case "wkt" => {WKT Location}
+                                    case _ => {Error: unrecognized type}
+                                }
+                            </td>
+                            <td class="text-wrap no-hyphens" style="max-width:20vw">
+                                @((m.json \ "definitions_url").asOpt[String].getOrElse(""))
+                            </td>
+                            <td class="text-wrap" style="max-width:10vw">
+                                @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
+                            </td>
+                            <td style="max-width:10vw"><a href="#addDefinition" onclick="editDefinition('@(m.id)');">Edit</a>
+                                / <a id="@m.id" href="#" title="Delete metadata definition" class="delete-definition">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 	}
 
     <hr/>
@@ -261,7 +328,7 @@
 
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>" data-original-title="Metadata Type (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li><li>Annotation: mapping between a String type and a List type.</li></ul>" data-original-title="Metadata Type (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-4">
                                 <select name="type" id="type" class="form-control" required>
                                     <option value="string">String</option>
@@ -270,11 +337,28 @@
                                     <option value="listgeocode">Location</option>
                                     <option value="wkt">WKT Location</option>
                                     <option value="scientific_variable">Scientific Variable</option>
+                                    <option value="annotation">Annotation</option>
                                     <option value="datetime">Date and Time</option>
                                 </select>
                             </div>
                         </div>
+                        <input type="hidden" class="form-control" id="vocabulary_id" name="vocabulary_id" />
                         <div class="form-group">
+                            <div class="col-sm-3"><label for="type">Defined By </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported definition types:<br /><ul><li>URL: a URL resolving to a JSON array of accepted metadata values.</li><li>Literal: a JSON array of accepted metadata values.</li></ul>" data-original-title="Defined By (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-4">
+                                <select name="defined_by" id="defined_by" class="form-control" required disabled>
+                                    <option value="url">URL</option>
+                                    <option value="list">Literal</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" id="defined_by_list" style="display:none;">
+                            <div class="col-sm-3"><label for="definitions_list">Literal Definitions</label> <a tabindex="0" role="button" data-toggle="popover" title="Definitions List" data-content="This List should contain a list of one value per line that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-9">
+                                <textarea class="form-control" id="definitions_list" placeholder="Enter one value per line..." ></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group" id="defined_by_url">
                             <div class="col-sm-3"><label for="definitions_url">Definitions URL</label> <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions URL" data-content="This URL should return a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-7">
                                 <input type="url" class="form-control" id="definitions_url" placeholder="http://" disabled />

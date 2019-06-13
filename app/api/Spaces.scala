@@ -65,7 +65,7 @@ class Spaces @Inject()(spaces: SpaceService,
     spaces.get(spaceId) match {
       case Some(space) => {
         removeContentsFromSpace(spaceId,request.user)
-        spaces.delete(spaceId)
+        spaces.delete(spaceId, Utils.baseUrl(request), request.apiKey, request.user)
         appConfig.incrementCount('spaces, -1)
         events.addObjectEvent(request.user , space.id, space.name, "delete_space")
         current.plugin[AdminsNotifierPlugin].foreach {
@@ -148,7 +148,7 @@ class Spaces @Inject()(spaces: SpaceService,
           } else {
             spaces.addCollection(collectionId, spaceId, request.user)
             collectionService.addToRootSpaces(collectionId, spaceId)
-            events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, "add_collection_space")
+            events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
             spaces.get(spaceId) match {
               case Some(space) => {
                 if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
@@ -173,7 +173,7 @@ class Spaces @Inject()(spaces: SpaceService,
             Forbidden(toJson(s"You are not the ${Messages("owner").toLowerCase()} of the dataset"))
           } else {
             spaces.addDataset(datasetId, spaceId)
-            events.addSourceEvent(request.user,  d.id, d.name, s.id, s.name, "add_dataset_space")
+            events.addSourceEvent(request.user,  d.id, d.name, s.id, s.name, EventType.ADD_DATASET_SPACE.toString)
             Ok(Json.obj("datasetsInSpace" -> (s.datasetCount + 1).toString))
           }
         }
@@ -196,7 +196,7 @@ class Spaces @Inject()(spaces: SpaceService,
                 updateSubCollections(spaceId, collectionId)
               }
 
-              events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
+              events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, EventType.REMOVE_COLLECTION_SPACE.toString)
               Ok(toJson("success"))
             } else {
               BadRequest("Space is not part of root spaces")
@@ -319,7 +319,7 @@ class Spaces @Inject()(spaces: SpaceService,
     (spaces.get(spaceId), datasetService.get(datasetId)) match {
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
-        events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
+        events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, EventType.REMOVE_DATASET_SPACE.toString)
 
         Ok(Json.obj("isTrial"-> datasets.get(datasetId).exists(_.isTRIAL).toString))
       }

@@ -105,4 +105,20 @@ class MongoDBAppConfigurationService extends AppConfigurationService {
       upsert=true, concern=WriteConcern.Safe)
   }
 
+  /** Reset configuration property with specified key to zero. **/
+  def resetCount(key: Symbol) = {
+    val fullKey = key match {
+      case 'users => "countof.users"
+      case 'files => "countof.files"
+      case 'bytes => "countof.bytes"
+      case 'datasets => "countof.datasets"
+      case 'collections => "countof.collections"
+      case 'spaces => "countof.spaces"
+      case _ => ""
+    }
+    val zero: Long = 0L
+    getCollection.update(MongoDBObject("key" -> fullKey), $inc("value" -> zero),
+      upsert=true, concern=WriteConcern.Safe)
+  }
+
 }

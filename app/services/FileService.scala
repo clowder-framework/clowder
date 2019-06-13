@@ -1,6 +1,7 @@
 package services
 
 import java.io.InputStream
+import java.util.Date
 
 import models._
 import com.mongodb.casbah.Imports._
@@ -47,7 +48,7 @@ trait FileService {
   /**
    * Remove the file from mongo
    */
-  def removeFile(id: UUID)
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User])
 
   /**
    * List all files in the system.
@@ -190,7 +191,7 @@ trait FileService {
 
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String, Any], root: String): MongoDBObject
 
-  def removeOldIntermediates()
+  def removeOldIntermediates(apiKey: Option[String], user: Option[User])
   
   /**
    * Update the license data that is currently associated with the file.
@@ -222,5 +223,11 @@ trait FileService {
   def updateDescription(fileId : UUID, description : String)
 
   def updateAuthorFullName(userId: UUID, fullName: String)
+
+  def incrementViews(id: UUID, user: Option[User]): (Int, Date)
+
+  def incrementDownloads(id: UUID, user: Option[User])
+
+  def getMetrics(user: Option[User]): Iterable[File]
 
 }

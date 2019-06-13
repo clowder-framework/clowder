@@ -1,10 +1,12 @@
 package api
 
-import java.net.{ URL, URLEncoder }
+import api.Permission.Permission
+import java.net.{URL, URLEncoder}
 import java.util.Date
-import javax.inject.{ Inject, Singleton }
 
-import models.{ ResourceRef, UUID, UserAgent, _ }
+import controllers.Utils
+import javax.inject.{Inject, Singleton}
+import models.{ResourceRef, UUID, UserAgent, _}
 import org.elasticsearch.action.search.SearchResponse
 import org.apache.commons.lang.WordUtils
 import play.api.Play.current
@@ -16,7 +18,6 @@ import play.api.libs.ws.WS
 import play.api.mvc.Result
 import services._
 import play.api.i18n.Messages
-
 import play.api.libs.json.JsValue
 
 import scala.collection.JavaConversions._
@@ -29,14 +30,16 @@ import scala.concurrent.Future
  */
 @Singleton
 class Metadata @Inject() (
-    metadataService: MetadataService,
-    contextService: ContextLDService,
-    userService: UserService,
-    datasets: DatasetService,
-    files: FileService,
-    curations: CurationService,
-    events: EventService,
-    spaceService: SpaceService) extends ApiController {
+  spaces: SpaceService,
+  metadataService: MetadataService,
+  contextService: ContextLDService,
+  userService: UserService,
+  datasets: DatasetService,
+  files: FileService,
+  curations: CurationService,
+  vocabs: StandardVocabularyService,
+  events: EventService,
+  spaceService: SpaceService) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -104,13 +107,24 @@ class Metadata @Inject() (
     }
   }
 
+  def getMetadataDefinition(id: UUID) = PermissionAction(Permission.AddMetadata) {
+    metadataService.getDefinition(id) match {
+      case Some(metadata) => {
+        Ok(toJson(metadata))
+      }
+      case None => BadRequest("not found this metadata definition: " + id)
+    }
+  }
+
   def getDefinition(id: UUID) = PermissionAction(Permission.AddMetadata).async { implicit request =>
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val foo = for {
       md <- metadataService.getDefinition(id)
       url <- (md.json \ "definitions_url").asOpt[String]
+      // If original request had a Cookie header, copy it to the proxied request
+      cookies <- request.headers.get("Cookie")
     } yield {
-      WS.url(url).get().map(response => Ok(response.body.trim))
+      WS.url(url).withHeaders(COOKIE -> cookies).get().map(response => (Status(response.status))(response.body.trim))
     }
     foo.getOrElse {
       Future(InternalServerError)
@@ -146,6 +160,7 @@ class Metadata @Inject() (
                 body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
               }
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
+              Ok(JsObject(Seq("status" -> JsString("ok"))))
             }
             case None => BadRequest("The space does not exist")
           }
@@ -171,6 +186,20 @@ class Metadata @Inject() (
               body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
             }
             addDefinitionHelper(uri, body, None, user, None)
+
+            // Now, propagate global definition to all spaces
+            // NOTE: argument list is REQUIRED when Configuration.permissions="private"
+            val spaceList = spaceService.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, request.user.fold(false)(_.superAdminMode), true, false, false)
+            spaceList.foreach(space => {
+              // assign a default uri if not specified
+              if (uri == "") {
+                // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
+                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+              }
+              addDefinitionHelper(uri, body, Some(space.id), user, Some(space))
+            })
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
           } else {
             BadRequest(toJson("Invalid Resource type"))
           }
@@ -179,7 +208,119 @@ class Metadata @Inject() (
       }
   }
 
-  //On GUI, URI is not required, however URI is required in DB. a default one will be generated when needed.
+  // Return all standard vocabularies
+  def getVocabularies() = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          val vocabList = vocabs.retrieve()
+          Ok(toJson(vocabList))
+        }
+      }
+  }
+
+  // Given a vocab ID, look up and return the terms list of
+  // the matching standard vocabulary
+  def getVocabularyTerms(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => BadRequest(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(vocab) => {
+              Ok(toJson(vocab.terms))
+            }
+          }
+        }
+      }
+  }
+
+  // Given a vocab ID, look up and return the matching
+  // standard vocabulary
+  def getVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => BadRequest(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              Ok(toJson(v))
+            }
+          }
+        }
+      }
+  }
+
+  // Given a list of terms, create a new standard vocabulary from the list
+  // Expects a JSON array of Strings as the request body
+  def createVocabulary() = AuthenticatedAction(parse.json) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          val terms: List[String] = request.body.asOpt[List[String]]
+            .getOrElse(List.empty)
+            .map(term => term.trim())
+            .filter(term => !term.isEmpty)
+          if (terms.isEmpty()) {
+            BadRequest(toJson("Empty terms list is not allowed"))
+          } else {
+            val vocabulary = vocabs.create(terms)
+            Ok(toJson(vocabulary))
+          }
+        }
+      }
+  }
+
+  // Given an ID, replace the entire terms list of a standard vocabulary
+  // Expects a JSON array of Strings as the request body
+  def updateVocabulary(id: UUID) = AuthenticatedAction(parse.json) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => NotFound(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              // Update and return vocabulary
+              val terms: List[String] = request.body.asOpt[List[String]]
+                .getOrElse(List.empty)
+                .map(term => term.trim())
+                .filter(term => !term.isEmpty)
+              if (terms.isEmpty()) {
+                BadRequest(toJson("Empty terms list is not allowed"))
+              } else {
+                val vocabulary = vocabs.update(id, terms)
+                Ok(toJson(vocabulary))
+              }
+            }
+          }
+        }
+      }
+  }
+
+  // Given an ID, delete the standard vocabulary with that ID
+  def deleteVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+    implicit request =>
+      request.user match {
+        case None => BadRequest(toJson("Invalid user"))
+        case Some(u) => {
+          vocabs.retrieve(id) match {
+            case None => NotFound(toJson("No standard vocabulary found with ID: " + id.stringify))
+            case Some(v) => {
+              vocabs.delete(id)
+              Ok(toJson(v))
+            }
+          }
+        }
+      }
+  }
+
+  // On GUI, URI is not required, however URI is required in DB. a default one
+  // will be generated when needed.
   private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
     metadataService.getDefinitionByUriAndSpace(uri, space map { _.id.toString() }) match {
       case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
@@ -199,7 +340,7 @@ class Metadata @Inject() (
     }
   }
 
-  def editDefinition(id: UUID, spaceId: Option[String]) = ServerAdminAction(parse.json) {
+  def editDefinition(id: UUID, spaceId: Option[String]) = AuthenticatedAction(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -210,19 +351,26 @@ class Metadata @Inject() (
               case Some(metadata) => if (metadata.id != id) {
                 BadRequest(toJson("Metadata definition with same uri exists."))
               } else {
-                metadataService.editDefinition(id, body)
+
                 metadata.spaceId match {
-                  case Some(spaceId) => {
+                  case Some(spaceId) if Permission.checkPermission(Some(user), Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) => {
+                    metadataService.editDefinition(id, body)
                     spaceService.get(spaceId) match {
                       case Some(s) => events.addObjectEvent(Some(user), s.id, s.name, "edit_metadata_space")
                       case None =>
                     }
+                    Ok(JsObject(Seq("status" -> JsString("ok"))))
                   }
-                  case None => {
+                  case None if Permission.checkServerAdmin(Some(user)) => {
+                    metadataService.editDefinition(id, body)
                     events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "edit_metadata_instance", new Date()))
+                    Ok(JsObject(Seq("status" -> JsString("ok"))))
+                  }
+                  case _ => {
+                    Unauthorized(" Not Authorized")
                   }
                 }
-                Ok(JsObject(Seq("status" -> JsString("ok"))))
+
               }
               case None => {
                 metadataService.editDefinition(id, body)
@@ -238,26 +386,48 @@ class Metadata @Inject() (
       }
   }
 
-  def deleteDefinition(id: UUID) = ServerAdminAction { implicit request =>
+  def deleteDefinition(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(user) => {
         metadataService.getDefinition(id) match {
           case Some(md) => {
-            metadataService.deleteDefinition(id)
 
             md.spaceId match {
-              case Some(spaceId) => {
+              case Some(spaceId) if Permission.checkPermission(Some(user), Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) => {
+                metadataService.deleteDefinition(id)
                 spaceService.get(spaceId) match {
                   case Some(s) => events.addObjectEvent(Some(user), s.id, s.name, "delete_metadata_space")
                   case None =>
                 }
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
               }
-              case None => {
+              case None if Permission.checkServerAdmin(Some(user)) => {
+                metadataService.deleteDefinition(id)
                 events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "delete_metadata_instance", new Date()))
+
+                // FIXME: How should we handle URI conflicts between global and space?
+                // FIXME: propagate global deletion to all spaces
+                /*
+                val mdUri = (md.json \ "uri").toString().replace("\"", "")
+                spaceService.list().foreach(space => {
+                  metadataService.getDefinitionByUriAndSpace(mdUri, Option(space.id.toString())) match {
+                    case Some(spaceMd) => {
+                      metadataService.deleteDefinition(spaceMd.id)
+                      events.addObjectEvent(Some(user), space.id, space.name, "delete_metadata_space")
+                    }
+                    case None => Logger.debug("Skipping deletion.. no metadata defn found for (uri, spaceId) = " +
+                      "(" + mdUri.toString() + ", " + space.id.toString() + ")")
+                  }
+                })
+                */
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
+              case _ => {
+                Unauthorized(" Not Authorized")
               }
             }
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
+
           }
           case None => BadRequest(toJson("Invalid metadata definition"))
         }
@@ -322,8 +492,8 @@ class Metadata @Inject() (
                 val metadata = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creator,
                   content, version)
 
-                //add metadata to mongo
-                metadataService.addMetadata(metadata)
+                // add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
                 val mdMap = metadata.getExtractionSummary
 
                 attachedTo match {
@@ -332,28 +502,41 @@ class Metadata @Inject() (
                       case ResourceRef.dataset => {
                         datasets.index(resource.id)
                         //send RabbitMQ message
+                        datasets.get(resource.id) match {
+                          case Some(ds) => {
+                            events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
+                          }
+                        }
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          val dtkey = s"${p.exchange}.metadata.added"
-                          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
-                            dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                         }
                       }
                       case ResourceRef.file => {
                         files.index(resource.id)
                         //send RabbitMQ message
+                        files.get(resource.id) match {
+                          case Some(f) => {
+                            events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
+                          }
+                        }
                         current.plugin[RabbitmqPlugin].foreach { p =>
-                          val dtkey = s"${p.exchange}.metadata.added"
-                          p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request),
-                            dtkey, mdMap, "", UUID(""), ""))
+                          p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                         }
                       }
-                      case _ => {}
+                      case _ =>
+                        Logger.error("File resource type not recognized")
                     }
                   }
-                  case None => {}
+                  case None =>
+                    Logger.error("Metadata missing attachedTo subdocument")
                 }
 
-                Ok(views.html.metadatald.view(List(metadata), true)(request.user))
+                // FIXME: the API should return JSON, not raw HTML
+                // Emit our newly-created metadata as both a new card and a new table row
+                Ok(Json.obj(
+                  "cards" -> views.html.metadatald.newCard(metadata)(request.user).toString(),
+                  "table" -> views.html.metadatald.newTableRow(metadata)(request.user).toString()
+                ))
               } else {
                 BadRequest(toJson("Invalid resource type"))
               }
@@ -376,26 +559,30 @@ class Metadata @Inject() (
               metadataService.removeMetadata(id)
               val mdMap = m.getExtractionSummary
 
-              current.plugin[RabbitmqPlugin].foreach { p =>
-                val dtkey = s"${p.exchange}.metadata.removed"
-                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdMap, "", id, ""))
-              }
-
-              Logger.debug("re-indexing after metadata removal")
-              current.plugin[ElasticsearchPlugin].foreach { p =>
-                // Delete existing index entry and re-index
-                m.attachedTo.resourceType match {
-                  case ResourceRef.file => {
+              m.attachedTo.resourceType match {
+                case ResourceRef.file => {
+                  current.plugin[ElasticsearchPlugin].foreach { p =>
+                    // Delete existing index entry and re-index
                     p.delete("data", "file", m.attachedTo.id.stringify)
                     files.index(m.attachedTo.id)
                   }
-                  case ResourceRef.dataset => {
+                  current.plugin[RabbitmqPlugin].foreach { p =>
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
+                      request.apiKey, request.user)
+                  }
+                }
+                case ResourceRef.dataset => {
+                  current.plugin[ElasticsearchPlugin].foreach { p =>
+                    // Delete existing index entry and re-index
                     p.delete("data", "dataset", m.attachedTo.id.stringify)
                     datasets.index(m.attachedTo.id)
                   }
-                  case _ => {
-                    Logger.error("unknown attached resource type for metadata - not reindexing")
+                  current.plugin[RabbitmqPlugin].foreach { p =>
+                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
                   }
+                }
+                case _ => {
+                  Logger.error("Unknown attached resource type for metadata")
                 }
               }
 
@@ -486,7 +673,7 @@ class Metadata @Inject() (
       }
       result
     } else { //TBD - just get list of Clowder users
-    /*  val lcTerm = term.toLowerCase()
+      /*  val lcTerm = term.toLowerCase()
       Future(Ok(Json.toJson(userService.list.map(jsonPerson).filter((x) => {
         if (term.length == 0) {
           true
@@ -509,4 +696,33 @@ class Metadata @Inject() (
       "@id" -> user.id.stringify,
       "email" -> user.email)
   }
+
+  def getRepository(id: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
+
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    val repoEndpoint = (play.Play.application().configuration().getString("SEADservices.uri")) + "repositories"
+    if (repoEndpoint != null) {
+      val endpoint = (repoEndpoint + "/" + URLEncoder.encode(id, "UTF-8"))
+      val futureResponse = WS.url(endpoint).get()
+      var success = false
+      val result = futureResponse.map {
+        case response =>
+          if (response.status >= 200 && response.status < 300 || response.status == 304) {
+            Ok(response.json).as("application/json")
+          } else {
+            if (response.status == 404) {
+
+              NotFound(toJson(Map("failure" -> { "Repository with identifier " + id + " not found" }))).as("application/json")
+
+            } else {
+              InternalServerError(toJson(Map("failure" -> { "Status: " + response.status.toString() + " returned from SEAD /api/repository/<id> service" }))).as("application/json")
+            }
+          }
+      }
+      result
+    } else {
+      Future(NotFound(toJson(Map("failure" -> { "Repository with identifier " + id + " not found" }))).as("application/json"))
+    }
+  }
+
 }

@@ -1,0 +1,162 @@
+{
+  "title": "Clowder: Open Source Data Management for Long Tail Data",
+  "description": "A customizable and scalable data management system you can install in the cloud or on your own hardware.",
+  "creators": [
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Luigi Marini",
+      "orcid": "0000-0002-8511-0211"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Rob Kooper",
+      "orcid": "0000-0002-5781-7287"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Indira Gutierrez",
+      "orcid": "0000-0001-5684-3419"
+    },
+    {
+      "name": "Constantinos Sophocleous"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Max Burnette"
+    },
+    {
+      "affiliation": "Coordinated Science Laboratory, University of Illinois at Urbana-Champaign",
+      "name": "Todd Nicholson"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Michal Ondrejcek"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Bing Zhang"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Inna Zharnitsky"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Sandeep Puthanveetil Satheesan",
+      "orcid": "0000-0001-9075-3740"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Smruti Padhy"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Yan Zhao"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Rui Liu"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Ashwini Vaidya"
+    },
+    {
+      "name": "Jim Myers",
+      "orcid": "0000-0001-8462-650X"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Mario Felarca"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Brock Angelo"
+    },
+
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Gene Roeder"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Jong Lee"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Will Hennessy"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Theerasit Issaranon"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Yibo Guo"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Xiaocheng Yuan"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Varun Kethineedi"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Avinash Kumar"
+    },
+    {
+      "affiliation": "University of Illinois at Urbana-Champaign",
+      "name": "Nishant Nayudu"
+    },
+    {
+      "affiliation": "Center for Molecular Modeling, Ghent University",
+      "name": "Ward Poelmans"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Winston Jansz"
+    },
+    {
+      "affiliation": "College of Information Studies, University of Maryland",
+      "name": "Gregory Jansen"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Chris Navarro"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Michelle Pitcel"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Nicholas Tenczar"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Chen Wang"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Mike Lambert"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Kenton McHenry",
+      "orcid": "0000-0003-0367-2550"
+    }
+  ],
+  "upload_type": "software",
+  "license": "NCSA",
+  "access_right": "open",
+  "keywords": [
+    "data-management",
+    "cyberinfrastructure",
+    "clowder",
+    "open-data",
+    "open-science"
+  ],
+  "notes": "This research has been partially funded by grants: NSF #BCS-0941268, #EAR- 331906, #ACI-1261582, #ACI-1443013, #OCI-0940824, #OCI-0525308; NIH #1P01AI089556-01A1. Illinois - Indiana Sea Grant #DW92329201, European Commission #RI-261600, XSEDE #OCI-1053575, ARPA- E #DE-AR0000594."
+}

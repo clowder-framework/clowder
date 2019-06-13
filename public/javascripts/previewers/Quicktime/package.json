@@ -1,4 +1,5 @@
-{ "name" : "Quicktime",
-  "main" : "some-library.js",
-  "contentType" : ["x-world/x-qtvr"]
+{ "name": "Quicktime",
+  "main": "some-library.js",
+  "preview": true,
+  "contentType": ["x-world/x-qtvr"]
   }

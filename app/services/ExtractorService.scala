@@ -10,7 +10,13 @@ import play.api.libs.json.JsValue
 trait ExtractorService {
   
   def getExtractorServerIPList(): List[String]
-  
+
+  def disableAllExtractors(): Boolean
+
+  def getEnabledExtractors(): List[String]
+
+  def enableExtractor(extractor: String)
+
   def getExtractorNames(): List[String]
   
   def getExtractorInputTypes(): List[String]

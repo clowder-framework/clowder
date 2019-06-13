@@ -1,6 +1,7 @@
 package api
 
-import models.Event
+import models.{Event, UUID, File}
+import play.api.Play._
 import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
@@ -13,7 +14,9 @@ import scala.util.{Failure, Success, Try}
 import controllers.Utils
 
 
-class Events @Inject() (events: EventService) extends ApiController {
+class Events @Inject() (events: EventService,
+                        files: FileService,
+                        datasets: DatasetService) extends ApiController {
 
   /*
    * Add a new event to the database

@@ -1,0 +1,205 @@
+@(m: models.Metadata, directive: String, i: Int, tableView: Boolean = false)(implicit user: Option[models.User])
+    @import java.net.URL
+    @import play.api.libs.json.JsString
+    @import play.api.libs.json.JsObject
+    @import play.api.libs.json.JsValue
+    @import play.api.libs.json.JsArray
+    @import api.Permission
+
+    @dateFormatter(date: java.util.Date) = @{
+        val formatter = new java.text.SimpleDateFormat("MMM d, yyyy")
+        formatter.format(date);
+    }
+
+    @printContentValue(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID, counter: Int, tableView: Boolean = false) = {
+        @content match {
+            case o: JsObject => {
+                <ul>
+                @for((key, value) <- o.fields) {
+                    @value match {
+                        case o: JsObject => {
+                            <li class="md-block">
+                                <a class="collapse-icon">
+                                    <span class="glyphicon glyphicon-minus"></span>
+                                </a>
+
+                                <!-- only with context and user (not extractor) generated -->
+                                @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                                    <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
+                                    @defining(contextId.get + "-" + key.replaceAll("[() ]", "") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                        @if(user.isDefined) {
+                                            <a class='context-key' id='@{
+                                                mid
+                                            }' href="javascript:void(0)">@key</a>
+                                            <span>:</span>
+                                        } else {
+                                            @key:
+                                        }
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                } else {
+                                @contextURL match {
+                                    case Some(u) => {
+                                        @defining(key.replaceAll("[() ]", "") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                            <a class="context-url-key" id="@mid" data-url="@u.toString()" href="javascript:void(0)">@key
+                                                :</a>
+                                        }
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                    case None => {
+                                        <strong>@key:</strong>
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                }
+                            }
+                            </li>
+                        }
+                        case o: JsArray => {
+                            <li class="md-block">
+                                <a class="collapse-icon">
+                                    <span class="glyphicon glyphicon-minus"></span>
+                                </a>
+                                @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                                    @defining(contextId.get + "-" + key.replaceAll("[() ]", "") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                        @if(!tableView) {
+                                            @if(user.isDefined) {
+                                                <a class='context-key' id='@{
+                                                    mid
+                                                }' href="javascript:void(0)">@key</a>
+                                                <span>:</span>
+                                            } else {
+                                                @key:
+                                            }
+                                        }
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                } else {
+                                    @contextURL match {
+                                        case Some(u) => {
+                                            @defining(key.replaceAll("[() ]", "") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                                <a class="context-url-key" id="@mid" data-url="@u.toString()" href="javascript:void(0)">@key
+                                                    :</a>
+                                            }
+                                            @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                        }
+                                        case None => {
+                                            <strong>@key:</strong>
+                                            @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                        }
+                                    }
+                                }
+                            </li>
+                        }
+                        case _ => {
+                            <li class="md-block">
+                            @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                                @defining(contextId.get + "-" + key.replaceAll("[() ]", "") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                    @if(!tableView) {
+                                        @if(user.isDefined) {
+                                            <a class='context-key' id='@{
+                                                mid
+                                            }' href="javascript:void(0)">@key</a>
+                                            <span>:</span>
+                                        } else {
+                                            @key:
+                                        }
+                                    }
+                                    @if(key.equals("Creator") || key.equals("Contact")) {
+                                        @printPerson(agent, value, contextId, contextURL, resourceId)
+                                    } else {
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                }
+                            } else {
+                                @contextURL match {
+                                    case Some(u) => {
+                                        @defining(key.replaceAll("[() ]", "") + "-" + resourceId.toString() + "-" + counter.toString()) { mid: String =>
+                                            <a class="context-url-key" id="@mid" data-url="@u.toString()" href="javascript:void(0)">@key:</a>
+                                        }
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                    case None => {
+                                        <strong>@key:</strong>
+                                        @printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)
+                                    }
+                                }
+                            }
+                            </li>
+                        }
+                    }
+
+                }
+                </ul>
+            }
+            case a: JsArray => {
+                <ul>
+                @for((value, i) <- a.value.zipWithIndex) {
+                    <li class="md-block">@printContentValue(agent, value, contextId, contextURL, resourceId, counter + 1, tableView)</li>
+                }
+                </ul>
+            }
+            case s: JsString => {
+                @if(s.value.startsWith("http")) {
+                    <a target="_blank" href="@s.value">@s.value</a>
+                } else {
+                    @s.value
+                }
+            }
+            case _ => {
+                @content
+            }
+        }
+    }
+
+    @printPerson(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID) = {
+        @content match {
+            case s: JsString => {
+                @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                    <span class='person'>@s.value</span>
+                } else {
+                    @if(s.value.startsWith("http")) {
+                        <a target="_blank" href="@s.value">@s.value</a>
+                    } else {
+                        @s.value
+                    }
+                }
+            }
+            case _ => {
+                @content
+            }
+        }
+    }
+
+    @printHeader(agent: Agent, date: java.util.Date) = {
+        @agent.operation by
+        @if(agent.displayName.length > 0) {
+            @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                @if(user.isDefined) {
+                    <a href= "@routes.Profile.viewProfileUUID(agent.asInstanceOf[UserAgent].user.id)">@agent.displayName</a>
+                } else {
+                    @agent.displayName
+                }
+            } else {
+                @if(agent.url.isDefined) {
+                    <a href="@agent.url" target="_blank">@agent.displayName</a>
+                } else {
+                    @agent.displayName
+                }
+            }
+        } else {
+            @if(agent.url.isDefined) {
+                <a href="@agent.url" target="_blank">@agent.url</a>
+            } else {
+                unknown
+            }
+        }
+        on @dateFormatter(date)
+    }
+
+    @defining(1) { counter: Int =>
+        @if(directive == "header") {
+            @printHeader(m.creator, m.createdAt)
+        } else {
+            @printContentValue(m.creator, m.content, m.contextId, m.contextURL, m.attachedTo.id, counter * i + 1, tableView)
+        }
+    }

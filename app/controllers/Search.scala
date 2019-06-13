@@ -48,7 +48,7 @@ class Search @Inject() (
                 case Some(f) => {
                   if (Permission.checkPermission(Permission.ViewFile, resource)) {
                     var fileDatasets = ListBuffer(): ListBuffer[(String, String)]
-                    datasets.findByFileId(f.id).map(ds => {
+                    datasets.findByFileIdDirectlyContain(f.id).map(ds => {
                       fileDatasets = fileDatasets :+ (ds.id.toString, ds.name)
                     })
                     mapdatasetIds.put(f.id.toString, fileDatasets)

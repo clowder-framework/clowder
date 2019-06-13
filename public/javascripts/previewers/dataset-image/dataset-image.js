@@ -1,4 +1,5 @@
 (function($, Configuration) {
+    // FIXME this is very expensive for datasets that have a lot of previewers
 	var req = $.ajax({
 		type: "GET",
 		url: jsRoutes.api.Datasets.getPreviews(Configuration.dataset_id).url,

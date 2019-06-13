@@ -23,3 +23,4 @@ doc/src/sphinx/_build
 /conf/custom.conf
 .DS_Store
 /doc/src/sphinx/_build
+**/.c9/*

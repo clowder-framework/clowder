@@ -28,6 +28,7 @@ case class Dataset(
   trash : Boolean = false,
   dateMovedToTrash : Option[Date] = None,
   followers: List[UUID] = List.empty,
+  stats: Statistics = new Statistics(),
   status: String = DatasetStatus.PRIVATE.toString, // dataset has four status: trial, default, private and public. yet editors of the dataset
   // can only see the default, private and public, where trial equals to private. viewers can only see private and
   // public, where trial and default equals to private/public of its space

@@ -102,11 +102,25 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
-  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser , ViewVocabulary, ViewVocabularyTerm)
+  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewSensor, ViewGeoStream,
+    ViewMetadata, ViewSection, ViewSpace, ViewTags, ViewUser , ViewVocabulary, ViewVocabularyTerm)
+
   if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
      READONLY += DownloadFiles
   }
+
+  val EDITOR_PERMISSIONS = READONLY ++ Set[Permission](CreateSpace, AddResourceToSpace, RemoveResourceFromSpace,
+    CreateDataset, EditDataset, AddResourceToDataset, RemoveResourceFromDataset, ExecuteOnDataset, PublicDataset,
+    CreateCollection, EditCollection, AddResourceToCollection, RemoveResourceFromCollection,
+    AddFile, EditFile, DownloadFiles, EditLicense, CreatePreview, MultimediaIndexDocument,
+    CreateSection, EditSection, DeleteSection,
+    AddMetadata, EditMetadata, DeleteMetadata,
+    AddTag, DeleteTag, AddComment, DeleteComment, EditComment,
+    CreateSensor, DeleteSensor, AddGeoStream, DeleteGeoStream, AddDatapoints,
+    CreateRelation, ViewRelation, DeleteRelation,
+    CreateVocabulary, DeleteVocabulary, EditVocabulary,
+    CreateVocabularyTerm, DeleteVocabularyTerm, EditVocabularyTerm
+  )
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
@@ -208,7 +222,7 @@ object Permission extends Enumeration {
     // check specific resource
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => {
-        (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id)) match {
+        (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileIdDirectlyContain(id)) match {
           case dataset :: _ => dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)
           case Nil => false
         }
@@ -300,7 +314,7 @@ object Permission extends Enumeration {
       }
       case ResourceRef(ResourceRef.file, id) => {
         for (clowderUser <- getUserByIdentity(user)) {
-          datasets.findByFileId(id).foreach { dataset =>
+          datasets.findByFileIdDirectlyContain(id).foreach { dataset =>
             if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
               && READONLY.contains(permission)) return true
             dataset.spaces.map{
@@ -509,4 +523,4 @@ object Permission extends Enumeration {
 /**
  * A request that adds the User for the current call
  */
-case class UserRequest[A](user: Option[User], request: Request[A]) extends WrappedRequest[A](request)
+case class UserRequest[A](user: Option[User], request: Request[A], apiKey: Option[String]) extends WrappedRequest[A](request)

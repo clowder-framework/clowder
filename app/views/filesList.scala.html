@@ -103,7 +103,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
 				@filesList.map { file =>
-                    @files.listitem(file, comments, routes.Application.index(), None, None, None, false)
+                    @files.listitem(file, routes.Application.index(), None, None, None, false)
 				}
         </div>
     </div>

@@ -119,16 +119,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
         newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
-        val datasetcommentMap = datasetsUser.map { dataset =>
-          var allComments = comments.findCommentsByDatasetId(dataset.id)
-          dataset.files.map { file =>
-            allComments ++= comments.findCommentsByFileId(file)
-            sections.findByFileId(file).map { section =>
-              allComments ++= comments.findCommentsBySectionId(section.id)
-            }
-          }
-          dataset.id -> allComments.size
-        }.toMap
         val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
@@ -211,13 +201,23 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
-        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
-       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
+        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser,
+          decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12), followedFiles.take(8),
+          followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
       }
       case _ => {
-        val counts = appConfig.getIndexCounts()
-        Ok(views.html.index(counts.numDatasets, counts.numFiles, counts.numBytes,
-          counts.numCollections, counts.numSpaces, counts.numUsers,
+        // Set bytes from appConfig
+        val filesBytes = appConfig.getIndexCounts.numBytes
+
+        // Set other counts from DB
+        val datasetsCount = datasets.count()
+        val filesCount = files.count()
+        val collectionsCount = collections.count()
+        val spacesCount = spaces.count()
+        val usersCount = users.count()
+
+        Ok(views.html.index(datasetsCount, filesCount, filesBytes,
+          collectionsCount, spacesCount, usersCount,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
       }
     }
@@ -225,9 +225,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
 
   def about = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
+
+    // Set bytes from appConfig
+    val appConfig = DI.injector.getInstance(classOf[AppConfigurationService])
+    val filesBytes = appConfig.getIndexCounts.numBytes
+
+    // Set other counts from DB
     val datasetsCount = datasets.count()
     val filesCount = files.count()
-    val filesBytes = 0
     val collectionsCount = collections.count()
     val spacesCount = spaces.count()
     val usersCount = users.count()
@@ -236,12 +241,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
-  def email(subject: String) = UserAction(needActive=false) { implicit request =>
+  def email(subject: String, body: String) = UserAction(needActive=false) { implicit request =>
     if (request.user.isEmpty) {
       Redirect(routes.Application.index())
     } else {
       implicit val user = request.user
-      Ok(views.html.emailAdmin(subject))
+      Ok(views.html.emailAdmin(subject, body))
     }
   }
 
@@ -455,6 +460,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.getDefinitions,
         api.routes.javascript.Metadata.getDefinition,
+        api.routes.javascript.Metadata.getMetadataDefinition,
         api.routes.javascript.Metadata.getDefinitionsDistinctName,
         api.routes.javascript.Metadata.getAutocompleteName,
         api.routes.javascript.Metadata.getUrl,
@@ -465,9 +471,16 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Metadata.listPeople,
         api.routes.javascript.Metadata.getPerson,
+        api.routes.javascript.Metadata.getRepository,
+        api.routes.javascript.Metadata.createVocabulary,
+        api.routes.javascript.Metadata.updateVocabulary,
+        api.routes.javascript.Metadata.deleteVocabulary,
         api.routes.javascript.Events.sendExceptionEmail,
+        api.routes.javascript.Extractions.addNewFilesetEvent,
         api.routes.javascript.Extractions.submitFileToExtractor,
         api.routes.javascript.Extractions.submitDatasetToExtractor,
+        api.routes.javascript.Extractions.cancelFileExtractionSubmission,
+        api.routes.javascript.Extractions.cancelDatasetExtractionSubmission,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -504,7 +517,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Events.getEvents,
         controllers.routes.javascript.Collections.sortedListInSpace,
         controllers.routes.javascript.Datasets.sortedListInSpace,
-        controllers.routes.javascript.Users.sendEmail
+        controllers.routes.javascript.Users.sendEmail,
+        controllers.routes.javascript.FileLinks.createLink
       )
     ).as(JSON) 
   }

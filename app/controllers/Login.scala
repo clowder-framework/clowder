@@ -8,7 +8,6 @@ import securesocial.core.{SecureSocial, UserService}
 import services.LdapProvider
 import com.unboundid.ldap.sdk._
 import com.unboundid.util.ssl.{JVMDefaultTrustManager, SSLUtil, TrustAllTrustManager}
-import securesocial.core.providers.utils.{GravatarHelper, RoutesHelper}
 import models.UUID
 import securesocial.core._
 import play.api.libs.json._
@@ -66,7 +65,7 @@ class Login extends SecuredController {
           val entry = searchResult.getSearchEntries().get(0)
 
           Ok(Json.obj("user" -> Json.obj(
-            "userId" -> LdapProvider.ldap,
+            "userId" -> uid,
             "firstName" -> entry.getAttributeValue("givenName"),
             "lastName" -> entry.getAttributeValue("sn"),
             "fullName" -> entry.getAttributeValue("cn"),

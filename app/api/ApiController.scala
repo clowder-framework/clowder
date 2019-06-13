@@ -24,13 +24,16 @@ import scala.concurrent.Future
  *
  */
 trait ApiController extends Controller {
+
+  val userservice = DI.injector.getInstance(classOf[services.UserService])
+
   /** get user if logged in */
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if needActive && (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
+        case Some(u) if needActive && (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case _ => block(userRequest)
       }
     }
@@ -43,8 +46,8 @@ trait ApiController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
+        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
@@ -57,8 +60,8 @@ trait ApiController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
+        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) => block(userRequest)
         case None => Future.successful(Unauthorized("Not authorized"))
       }
@@ -70,8 +73,8 @@ trait ApiController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
+        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
       }
@@ -83,8 +86,8 @@ trait ApiController extends Controller {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
+        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => {
           affectedResource match {
@@ -134,13 +137,22 @@ trait ApiController extends Controller {
         case Some(u) => Some(u)
         case None => None
       }
-      return UserRequest(user, request)
+
+      // find or create an api key for extractor submissions
+      user match {
+        case Some(u) =>
+          val apiKey = userservice.getExtractionApiKey(u.identityId)
+          return UserRequest(user, request, Some(apiKey.key))
+        case None =>
+          return UserRequest(None, request, None)
+      }
     }
 
     // 2) basic auth, this allows you to call the api with your username/password
     request.headers.get("Authorization").foreach { authHeader =>
       val header = new String(Base64.decodeBase64(authHeader.slice(6, authHeader.length).getBytes))
       val credentials = header.split(":")
+
       UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
         val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
         if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
@@ -149,28 +161,48 @@ trait ApiController extends Controller {
             case Some(u) => Some(u)
             case None => None
           }
-          return UserRequest(user, request)
+
+          // find or create an api key for extractor submissions
+          user match {
+            case Some(u) =>
+              val apiKey = userservice.getExtractionApiKey(u.identityId)
+              return UserRequest(user, request, Some(apiKey.key))
+            case None =>
+              return UserRequest(None, request, None)
+          }
         }
       }
     }
 
-    // 3) key, this will need to become better, right now it will only accept the one key, when using the
-    //    key it will assume you are anonymous!
+    // 3) X-API-Key, header Authorization is user API key
+    request.headers.get("X-API-Key").foreach { apiKey =>
+      userservice.findByKey(apiKey) match {
+        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
+          return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request, Some(apiKey))
+        }
+        case Some(u) => {
+          return UserRequest(Some(u), request, Some(apiKey))
+        }
+        case None => Logger.debug(s"key ${apiKey} not associated with a user.")
+      }
+    }
+
+    // 4) check api key, either the global one in the config file or the user key in the database
     request.queryString.get("key").foreach { key =>
       val userservice = DI.injector.getInstance(classOf[services.UserService])
       val commkey = play.Play.application().configuration().getString("commKey")
       key.foreach { realkey =>
         // check to see if this is the global key
         if (realkey == commkey) {
-          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request)
+          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request, Some(realkey))
         }
         // check to see if this is a key for a specific user
         userservice.findByKey(realkey) match {
           case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
-            return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request)
+            return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request, Some(realkey))
           }
           case Some(u) => {
-            return UserRequest(Some(u), request)
+            return UserRequest(Some(u), request, Some(realkey))
           }
           case None => Logger.debug(s"key ${realkey} not associated with a user.")
         }
@@ -178,6 +210,6 @@ trait ApiController extends Controller {
     }
 
     // 4) anonymous access
-    UserRequest(None, request)
+    UserRequest(None, request, None)
   }
 }

@@ -17,7 +17,7 @@ class TempFilesPlugin(application: Application) extends Plugin {
     //Delete garbage files (ie past intermediate extractor results files) from DB
     var timeInterval = play.Play.application().configuration().getInt("intermediateCleanup.checkEvery")
     Akka.system().scheduler.schedule(0.hours, timeInterval.intValue().hours) {
-      files.removeOldIntermediates()
+      files.removeOldIntermediates(None, None)
     }
   }
 

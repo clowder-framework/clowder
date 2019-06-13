@@ -95,15 +95,20 @@ class Files @Inject()(
   /**
    * Download file using http://en.wikipedia.org/wiki/Chunked_transfer_encoding
    */
-  def download(id: UUID) =
+  def download(id: UUID, tracking: Boolean) =
     PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+      implicit val user = request.user
       //Check the license type before doing anything.
       files.get(id) match {
           case Some(file) => {    
               if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
 		        files.getBytes(id) match {            
 		          case Some((inputStream, filename, contentType, contentLength)) => {
-		
+
+                // Increment download count if tracking is enabled
+                if (tracking)
+                  files.incrementDownloads(id, user)
+
 		            request.headers.get(RANGE) match {
 		              case Some(value) => {
 		                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
@@ -130,6 +135,7 @@ class Files @Inject()(
 		              }
 		              case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
+
                     Ok.chunked(Enumerator.fromStream(inputStream))
 		                  .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
@@ -216,7 +222,7 @@ class Files @Inject()(
             }
           }
           case None => {
-            val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+            val datasetsContainingFile = datasets.findByFileIdDirectlyContain(file.id).sortBy(_.name)
             val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
 
             datasetsContainingFile.foreach{ dataset =>
@@ -258,7 +264,7 @@ class Files @Inject()(
         Logger.debug(s"Adding metadata to file $id")
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
         files.get(id) match {
-          case Some(x) => {
+          case Some(file) => {
             val json = request.body
             //parse request for agent/creator info
             //creator can be UserAgent or ExtractorAgent
@@ -281,14 +287,16 @@ class Files @Inject()(
               json, version)
 
             //add metadata to mongo
-            metadataService.addMetadata(metadata)
+            val metadataId = metadataService.addMetadata(metadata)
             val mdMap = metadata.getExtractionSummary
 
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
-              val dtkey = s"${p.exchange}.metadata.added"
-              p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+              p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
+                request.apiKey, request.user)
             }
+
+            // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
 
             files.index(id)
             Ok(toJson(Map("status" -> "success")))
@@ -301,76 +309,167 @@ class Files @Inject()(
   /**
    * Add metadata in JSON-LD format.
    */
-  def addMetadataJsonLD(id: UUID) =
-    PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-      files.get(id) match {
-        case Some(x) => {
-          val json = request.body
+  def addMetadataJsonLD(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+    files.get(id) match {
+      case Some(x) => {
+        val json = request.body
 
-          // parse request for JSON-LD model
-          var model: RDFModel = null
-          json.validate[RDFModel] match {
-            case e: JsError => {
-              Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + json.toString())
-              BadRequest(JsError.toFlatJson(e))
-            }
-            case s: JsSuccess[RDFModel] => { 
-              model = s.get 
-          
-              //parse request for agent/creator info
-              //creator can be UserAgent or ExtractorAgent
-              var creator: models.Agent = null
-              json.validate[Agent] match {
-                case s: JsSuccess[Agent] => {
-                  creator = s.get
-                  //if creator is found, continue processing
-                  val context: JsValue = (json \ "@context")
-    
-                  // check if the context is a URL to external endpoint
-                  val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
-    
-                  // check if context is a JSON-LD document
-                  val contextID: Option[UUID] =
-                    if (context.isInstanceOf[JsObject]) {
-                      context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
-                    } else if (context.isInstanceOf[JsArray]) {
-                      context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
-                    } else None
-    
-                  // when the new metadata is added
-                  val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
-    
-                  //parse the rest of the request to create a new models.Metadata object
-                  val attachedTo = ResourceRef(ResourceRef.file, id)
-                  val content = (json \ "content")
-                  val version = None
-                  val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                    content, version)
-    
-                  //add metadata to mongo
-                  metadataService.addMetadata(metadata)
-                  val mdMap = metadata.getExtractionSummary
-    
-                  //send RabbitMQ message
-                  current.plugin[RabbitmqPlugin].foreach { p =>
-                    val dtkey = s"${p.exchange}.metadata.added"
-                    p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
-                  }
-                  
-                  files.index(id)
-                  Ok(toJson("Metadata successfully added to db"))
+        // parse request for JSON-LD model
+        var model: RDFModel = null
+        json.validate[RDFModel] match {
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + json.toString())
+            BadRequest(JsError.toFlatJson(e))
+          }
+          case s: JsSuccess[RDFModel] => {
+            model = s.get
+
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
+                //if creator is found, continue processing
+                val context: JsValue = (json \ "@context")
+
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] =
+                  if (context.isInstanceOf[JsObject]) {
+                    context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                  } else if (context.isInstanceOf[JsArray]) {
+                    context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                  } else None
+
+                // when the new metadata is added
+                val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
+
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.file, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
+
+                //add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
+
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                 }
-                case e: JsError => {
-                  Logger.error("Error getting creator")
-                  BadRequest(toJson(s"Creator data is missing or incorrect."))
-                }
+
+                events.addObjectEvent(request.user, id, x.filename,EventType.ADD_METADATA_FILE.toString)
+
+                files.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator")
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
               }
             }
           }
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+      }
+      case None => Logger.error(s"Error getting file $id"); NotFound
+    }
+  }
+
+  def addBatchMetadataJsonLD() = PermissionAction(Permission.AddMetadata)(parse.json){ implicit request =>
+    val json = request.body.as[JsObject]
+
+    try {
+      val fileList: JsValue = (json \ "files")
+      val metadata: JsValue = (json \ "metadata")
+
+      // parse request for JSON-LD model
+      var model: RDFModel = null
+      metadata.validate[RDFModel] match {
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + metadata.toString())
+          BadRequest(JsError.toFlatJson(e))
+        }
+        case s: JsSuccess[RDFModel] => {
+          model = s.get
+
+          //parse request for agent/creator info
+          //creator can be UserAgent or ExtractorAgent
+          var creator: models.Agent = null
+          metadata.validate[Agent] match {
+            case s: JsSuccess[Agent] => {
+              creator = s.get
+              //if creator is found, continue processing
+              val context: JsValue = (metadata \ "@context")
+
+              // check if the context is a URL to external endpoint
+              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+
+              // check if context is a JSON-LD document
+              val contextID: Option[UUID] =
+                if (context.isInstanceOf[JsObject]) {
+                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                } else if (context.isInstanceOf[JsArray]) {
+                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                } else None
+
+              // when the new metadata is added
+              val createdAt = Parsers.parseDate((metadata \ "created_at")).fold(new Date())(_.toDate)
+
+              //parse the rest of the request to create a new models.Metadata object
+              val content = (metadata \ "content")
+              val version = None
+
+              fileList.asInstanceOf[JsArray].value.foreach(v => {
+                files.get(UUID(v.toString.replace("\"", ""))) match {
+                  case Some(f) => {
+                    val attachedTo = ResourceRef(ResourceRef.file, f.id)
+                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                      content, version)
+
+                    //add metadata to mongo
+                    val metadataId = metadataService.addMetadata(metadata)
+                    val mdMap = metadata.getExtractionSummary
+
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                        request.apiKey, request.user)
+                    }
+
+                    files.index(f.id)
+                  }
+                  case None => {
+                    Logger.debug("Skipping file id "+v.toString+" (not found)")
+                  }
+                }
+              })
+
+
+              Ok(toJson("Metadata successfully added to db"))
+            }
+            case e: JsError => {
+              Logger.error("Error getting creator")
+              BadRequest(toJson(s"Creator data is missing or incorrect."))
+            }
+          }
+        }
+      }
+    } catch {
+      case e: ClassCastException => {
+        Logger.error("Malformed JSON object")
+        BadRequest(toJson("'files' list and 'metadata' object not found in JSON object"))
+      }
+      case e: Exception => {
+        BadRequest(toJson(e.toString))
       }
     }
+
+  }
 
   def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
@@ -392,21 +491,47 @@ class Files @Inject()(
     }
   }
 
-  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getBatchMetadataJsonLD() = PermissionAction(Permission.ViewMetadata) { implicit request =>
+    val (baseUrlExcludingContext, isHttps) = RequestUtils.getBaseUrlAndProtocol(request, false)
+
+    val fileList = request.queryString.getOrElse("id", Seq[String]())
+    var resultList = Map[String, List[JsValue]]()
+
+    fileList.foreach(v => {
+      val fileId = UUID(v.replace("\"", ""))
+      files.get(fileId) match {
+        case Some(f) => {
+          val fileMd = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+            .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
+
+          resultList = resultList + (f.id.stringify -> fileMd.toList)
+        }
+        case None => Logger.error("Error getting file "+fileId.toString)
+      }
+    })
+
+    Ok(toJson(resultList))
+
+
+  }
+
+  def removeMetadataJsonLD(id: UUID, extractorId: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        val num_removed = extFilter match {
-          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
-          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        val metadataIds = extractorId match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f,
+            Utils.baseUrl(request), request.apiKey, request.user)
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Utils.baseUrl(request),
+            request.apiKey, request.user)
         }
         // send extractor message after attached to resource
         current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.metadata.removed"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
-            "resourceType"->ResourceRef.file,
-            "resourceId"->id.toString), "", id, ""))
+          metadataIds.foreach{ mId =>
+            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
+              request.apiKey, request.user)
+          }
         }
-        Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
+        Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
       }
       case None => {
         Logger.error("Error getting file  " + id);
@@ -441,7 +566,8 @@ class Files @Inject()(
    */
   @deprecated
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+    val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews=showPreviews, originalZipFile=originalZipFile,
+      flagsFromPrevious=flagsFromPrevious, apiKey=request.apiKey)
     uploadedFiles.length match {
       case 0 => BadRequest("No files uploaded")
       case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -452,10 +578,10 @@ class Files @Inject()(
   /**
    * Upload a file to a specific dataset
    */
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious)
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors=extract, apiKey=request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -473,7 +599,8 @@ class Files @Inject()(
    */
   def uploadIntermediate(originalIdAndFlags: String) =
     PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-      val uploadedFiles = FileUtils.uploadFilesMultipart(request, key="File", intermediateUpload=true, flagsFromPrevious=originalIdAndFlags)
+      val uploadedFiles = FileUtils.uploadFilesMultipart(request, key="File", intermediateUpload=true,
+        flagsFromPrevious=originalIdAndFlags, apiKey=request.apiKey)
       uploadedFiles.length match {
         case 0 => BadRequest("No files uploaded")
         case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -530,9 +657,9 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        // TODO replace null with None
         current.plugin[RabbitmqPlugin].foreach {
-          _.extract(ExtractorMessage(id, id, host, key, extra, theFile.length.toString, null, flags))
+          // FIXME dataset not available?
+          _.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
         }
 
         Ok(toJson(Map("id" -> id.stringify)))
@@ -625,7 +752,7 @@ class Files @Inject()(
         files.addUserMetadata(id, theJSON)
         files.get(id) match {
           case Some(file) =>{
-            events.addObjectEvent(request.user, file.id, file.filename, "addMetadata_file")
+            events.addObjectEvent(request.user, file.id, file.filename, EventType.ADD_METADATA_FILE.toString)
           }
         }
         files.index(id)
@@ -772,7 +899,7 @@ class Files @Inject()(
           thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
               files.updateThumbnail(file_id, thumbnail_id)
-              val datasetList = datasets.findByFileId(file.id)
+              val datasetList = datasets.findByFileIdDirectlyContain(file.id)
               for (dataset <- datasetList) {
                 if (dataset.thumbnail_id.isEmpty) {
                   datasets.updateThumbnail(dataset.id, thumbnail_id)
@@ -1155,7 +1282,7 @@ class Files @Inject()(
     val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
     case Some(file) =>{
-      events.addObjectEvent(request.user, file.id, file.filename, "add_tags_file")
+      events.addObjectEvent(request.user, file.id, file.filename, EventType.ADD_TAGS_FILE.toString)
       }
     }
     // Now the real work: adding the tags.
@@ -1176,7 +1303,7 @@ class Files @Inject()(
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
     files.get(id) match {
           case Some(file) =>{
-            events.addObjectEvent(request.user, file.id, file.filename, "remove_tags_file")
+            events.addObjectEvent(request.user, file.id, file.filename, EventType.REMOVE_TAGS_FILE.toString)
           }
         }
 
@@ -1287,8 +1414,8 @@ class Files @Inject()(
     if (UUID.isValid(id.stringify)) {
       files.get(id) match {
         case Some(file) =>
-          // 1. get name of dataset directorly containing this file.
-          val datasetList = datasets.findByFileId(file.id)
+          // 1. get name of dataset directly containing this file.
+          val datasetList = datasets.findByFileIdDirectlyContain(file.id)
           val datasetNames = for(dataset <- datasetList) yield(dataset.name)
           //2. get paths from datasets to the parent folders containing this file.
           val foldersContainingFile = folders.findByFileId(file.id)
@@ -1343,7 +1470,7 @@ class Files @Inject()(
               comments.insert(comment)
               files.get(id) match {
               case Some(file) =>{
-                events.addSourceEvent(request.user, comment.id, comment.text, file.id, file.filename, "comment_file")
+                events.addSourceEvent(request.user, comment.id, comment.text, file.id, file.filename, EventType.COMMENT_FILE.toString)
                 }
               }
               files.index(id)
@@ -1383,12 +1510,12 @@ class Files @Inject()(
   }
 
 
-  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+  def jsonPreviewsFiles(filesList: List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
     val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
     toJson(list)
   }
 
-  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+  def jsonPreviews(prvFile: models.File, prvs: List[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
     val list = for (prv <- prvs) yield jsonPreview(UUID(prv._1), prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
     val listJson = toJson(list.toList)
     toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
@@ -1412,32 +1539,45 @@ class Files @Inject()(
           case Some(file) => {
 
             val previewsFromDB = previews.findByFileId(file.id)
-            val previewers = Previewers.findPreviewers
+            val previewers = Previewers.findFilePreviewers()
             //Logger.debug("Number of previews " + previews.length);
             val files = List(file)
             //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
             val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
-              val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+              val pvf = for (
+                previewer <- previewers;
+                previewData <- previewsFromDB
+                if (previewer.preview)
+                if (previewer.contentType.contains(previewData.contentType))
+              ) yield {
+                (previewData.id.toString, previewer.id, previewer.path, previewer.main,
+                  api.routes.Previews.download(previewData.id).toString, previewData.contentType, previewData.length)
               }
               if (pvf.length > 0) {
                 (file -> pvf)
               } else {
-                val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                val ff = for (
+                  previewer <- previewers
+                  if (previewer.file)
+                  if (previewer.contentType.contains(file.contentType))
+                ) yield {
+                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
                     //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                    if (f.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    if (f.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user,
+                      Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                        (file.id.toString, previewer.id, previewer.path, previewer.main,
+                          controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
                     }
                     else {
-                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                        (f.id.toString, previewer.id, previewer.path, previewer.main, "null", f.contentType, f.length)
                     }
                 }
                 (file -> ff)
               }
             }
 
-            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
+            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String,
+              String, java.lang.String, String, Long)])]]))
           }
           case None => {
             Logger.error("Error getting file" + id);
@@ -1525,13 +1665,11 @@ class Files @Inject()(
   def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       files.get(id) match {
         case Some(file) => {
-          events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
+          events.addObjectEvent(request.user, file.id, file.filename, EventType.DELETE_FILE.toString)
           // notify rabbitmq
           current.plugin[RabbitmqPlugin].foreach { p =>
-            val clowderurl = Utils.baseUrl(request)
-            datasets.findByFileId(file.id).foreach{ds =>
-              val dtkey = s"${p.exchange}.dataset.file.removed"
-              p.extract(ExtractorMessage(file.id, file.id, clowderurl, dtkey, Map.empty, file.length.toString, ds.id, ""))
+            datasets.findByFileIdAllContain(file.id).foreach{ds =>
+              p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
             }
           }
 
@@ -1541,7 +1679,7 @@ class Files @Inject()(
             _.removeFromIndexes(id)        
           }
           Logger.debug("Deleting file: " + file.filename)
-          files.removeFile(id)
+          files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
           appConfig.incrementCount('files, -1)
           appConfig.incrementCount('bytes, -file.length)
 
@@ -1666,7 +1804,7 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              events.addObjectEvent(user, id, file.filename, "follow_file")
+              events.addObjectEvent(user, id, file.filename, EventType.FOLLOW_FILE.toString)
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
 
@@ -1694,7 +1832,7 @@ class Files @Inject()(
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              events.addObjectEvent(user, id, file.filename, "unfollow_file")
+              events.addObjectEvent(user, id, file.filename, EventType.UNFOLLOW_FILE.toString)
               files.removeFollower(id, loggedInUser.id)
               userService.unfollowFile(loggedInUser.id, id)
               Ok
@@ -1733,7 +1871,7 @@ class Files @Inject()(
     var userList: List[User] = List.empty
     files.get(id) match {
       case Some(file) => {
-        datasets.findByFileId(id).foreach(dataset => {
+        datasets.findByFileIdDirectlyContain(id).foreach(dataset => {
           dataset.spaces.foreach { spaceId =>
             spaces.get(spaceId) match {
               case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
@@ -1765,6 +1903,19 @@ class Files @Inject()(
         else NotFound(s"Error: No user found for $id.")
       }
       case None => NotFound(s"File $id not found")
+    }
+  }
+
+  def archive(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        files.setStatus(id, FileStatus.ARCHIVED)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting file " + id);
+        InternalServerError
+      }
     }
   }
 }

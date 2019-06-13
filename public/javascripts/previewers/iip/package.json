@@ -1,4 +1,5 @@
-{ "name" : "IIP",
-  "main" : "some-library.js",
-  "contentType" : ["image/previewUrl"]
+{ "name": "IIP",
+  "main": "some-library.js",
+  "preview": true,
+  "contentType": ["image/previewUrl"]
   }

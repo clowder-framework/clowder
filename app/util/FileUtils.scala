@@ -90,7 +90,7 @@ object FileUtils {
                            key: String = "", index: Boolean = true,
                            showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                            flagsFromPrevious: String = "", intermediateUpload: Boolean = false,
-                           runExtractors: Boolean = true, insertDTSRequests: Boolean = false) : List[File] = {
+                           runExtractors: Boolean = true, insertDTSRequests: Boolean = false, apiKey: Option[String]) : List[File] = {
     if (request.user.isEmpty) {
       Logger.error ("No user object given, should not happen.")
       return List.empty[File]
@@ -155,7 +155,8 @@ object FileUtils {
           }
         }
       }
-      processFileMultipart(f, metadata, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, multipleFile, runExtractors).foreach(uploadedFiles += _ )
+      processFileMultipart(f, metadata, user, creator, clowderurl, dataset, folder, key, index, showPreviews,
+        originalZipFile, flagsFromPrevious, intermediateUpload, multipleFile, runExtractors, apiKey).foreach(uploadedFiles += _ )
     }
 
     // ------------------------------------------------------------
@@ -170,7 +171,8 @@ object FileUtils {
           jsv \ "path" match {
             case x:JsString => {
               val path = Parsers.parseString(x)
-              processPath(path, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, runExtractors).foreach(uploadedFiles += _)
+              processPath(path, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews,
+                originalZipFile, flagsFromPrevious, intermediateUpload, runExtractors, apiKey).foreach(uploadedFiles += _)
             }
             case _ => {}
           }
@@ -220,11 +222,11 @@ object FileUtils {
                             key: String = "", index: Boolean = true,
                             showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                             flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile: Boolean,
-                            runExtractors: Boolean = true) : Option[File] = {
+                            runExtractors: Boolean = true, apiKey: Option[String]) : Option[File] = {
 
     files.setStatus(copiedFile.id, FileStatus.UPLOADED)
-    processFile(copiedFile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors)
-    processDataset(copiedFile, dataset, folder, clowderurl, user, index, runExtractors)
+    processFile(copiedFile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
+    processDataset(copiedFile, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
     files.setStatus(copiedFile.id, FileStatus.PROCESSED)
     Some(copiedFile)
   }
@@ -288,7 +290,7 @@ object FileUtils {
                         key: String = "", index: Boolean = true,
                         showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                         flagsFromPrevious: String = "", intermediateUpload: Boolean = false,
-                        runExtractors: Boolean = true, insertDTSRequests: Boolean = false) : List[File] = {
+                        runExtractors: Boolean = true, insertDTSRequests: Boolean = false, apiKey: Option[String]) : List[File] = {
 
     if (request.user.isEmpty) {
       Logger.error ("No user object given, should not happen.")
@@ -331,10 +333,10 @@ object FileUtils {
         }
       }
       if (url.isSuccess && url.get.isDefined) {
-        url.get.foreach(processURL(_, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, runExtractors).foreach(uploadedFiles += _))
+        url.get.foreach(processURL(_, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, runExtractors, apiKey).foreach(uploadedFiles += _))
       } else if (jsv.keys.contains("path")) {
         val path = Parsers.parseString(jsv \ "path")
-        processPath(path, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, runExtractors).foreach(uploadedFiles += _)
+        processPath(path, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, runExtractors, apiKey).foreach(uploadedFiles += _)
       }
     }}
 
@@ -355,26 +357,26 @@ object FileUtils {
                           key: String = "", index: Boolean = true,
                           showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                           flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile:Boolean,
-                          runExtractors: Boolean = true): Option[File] = {
-    val file = File(UUID.generate(), "", f.filename, user, new Date(),
+                          runExtractors: Boolean = true, apiKey: Option[String]): Option[File] = {
+    val file = File(UUID.generate(), "", f.filename, f.filename, user, new Date(),
       FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "",
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
-      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
+      licenseData = License.fromAppConfig(), stats = new Statistics(), status = FileStatus.CREATED.toString)
     files.save(file)
     Logger.debug(s"created file ${file.id}")
 
-    associateMetaData(creator, file, metadata, clowderurl)
+    associateMetaData(creator, file, metadata, clowderurl, apiKey, Some(user))
     associateDataset(file, dataset, folder, user, multipleFile)
 
     // process rest of file in background
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
     Future {
       try {
-        saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
+        saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
           processFileBytes(fixedfile, f.ref.file, dataset)
           files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors)
-          processDataset(file, dataset, folder, clowderurl, user, index, runExtractors)
+          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
+          processDataset(file, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
           files.setStatus(fixedfile.id, FileStatus.PROCESSED)
         }
       } finally {
@@ -391,7 +393,7 @@ object FileUtils {
                          key: String = "", index: Boolean = true,
                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false,
-                         runExtractors: Boolean = true): Option[File] = {
+                         runExtractors: Boolean = true, apiKey: Option[String]): Option[File] = {
     val fileds = jsv \ "dataset" match {
       case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
       case _ => dataset
@@ -400,10 +402,10 @@ object FileUtils {
     // craete the file object
     val path = url.getPath
     val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
-    val file = File(UUID.generate(), path, filename, user, new Date(),
+    val file = File(UUID.generate(), path, filename, filename, user, new Date(),
       FileUtils.getContentType(filename, None), -1, "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
-      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+      licenseData=License.fromAppConfig(), stats = new Statistics(), status = FileStatus.CREATED.toString)
     files.save(file)
 
     // extract metadata
@@ -419,17 +421,17 @@ object FileUtils {
       }
       case x => Some(Seq(Json.stringify(x), source))
     }
-    associateMetaData(creator, file, metadata, clowderurl)
+    associateMetaData(creator, file, metadata, clowderurl, apiKey, Some(user))
     associateDataset(file, fileds, folder, user)
 
     // process rest of file in background
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
     Future {
-      saveURL(file, url).foreach { fixedfile =>
+      saveURL(file, url, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
         processFileBytes(fixedfile, new java.io.File(path), fileds)
         files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds, runExtractors)
-        processDataset(file, fileds, folder, clowderurl, user, index, runExtractors)
+        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds, runExtractors, apiKey)
+        processDataset(file, fileds, folder, clowderurl, user, index, runExtractors, apiKey)
         files.setStatus(fixedfile.id, FileStatus.PROCESSED)
       }
     }(fileExecutionContext)
@@ -443,7 +445,7 @@ object FileUtils {
                           key: String = "", index: Boolean = true,
                           showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                           flagsFromPrevious: String = "", intermediateUpload: Boolean = false,
-                          runExtractors: Boolean = true): Option[File] = {
+                          runExtractors: Boolean = true, apiKey: Option[String]): Option[File] = {
     val fileds = jsv \ "dataset" match {
       case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
       case _ => dataset
@@ -460,10 +462,10 @@ object FileUtils {
       val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
       val length = new java.io.File(path).length()
       val loader = classOf[services.filesystem.DiskByteStorageService].getName
-      val file = File(UUID.generate(), path, filename, user, new Date(),
+      val file = File(UUID.generate(), path, filename, filename, user, new Date(),
         FileUtils.getContentType(filename, None), length, loader,
         isIntermediate=intermediateUpload, showPreviews=showPreviews,
-        licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+        licenseData=License.fromAppConfig(), stats = new Statistics(), status = FileStatus.CREATED.toString)
       files.save(file)
 
       // extract metadata
@@ -478,7 +480,7 @@ object FileUtils {
       }
 
 
-      associateMetaData(creator, file, metadata, clowderurl)
+      associateMetaData(creator, file, metadata, clowderurl, apiKey, Some(user))
       associateDataset(file, fileds, folder, user)
 
       // process rest of file in background
@@ -487,8 +489,8 @@ object FileUtils {
         savePath(file, path).foreach { fixedfile =>
           processFileBytes(fixedfile, new java.io.File(path), fileds)
           files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds, runExtractors)
-          processDataset(file, fileds, folder, clowderurl, user, index, runExtractors)
+          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds, runExtractors, apiKey)
+          processDataset(file, fileds, folder, clowderurl, user, index, runExtractors, apiKey)
           files.setStatus(fixedfile.id, FileStatus.PROCESSED)
         }
       }(fileExecutionContext)
@@ -501,7 +503,8 @@ object FileUtils {
   }
 
   /** Associate all metadata with file, added by agent */
-  private def associateMetaData(agent: Agent, file: File, mds: Option[Seq[String]], requestHost: String): Unit = {
+  private def associateMetaData(agent: Agent, file: File, mds: Option[Seq[String]], requestHost: String,
+    apiKey: Option[String], user: Option[User]): Unit = {
     mds.getOrElse(List.empty[String]).foreach { md =>
       // TODO: should do a metadata validity check first
       // Extract context from metadata object and remove it so it isn't repeated twice
@@ -527,14 +530,13 @@ object FileUtils {
       val version = None
       val metadata = models.Metadata(UUID.generate(), attachedTo, contextID, contextURL, createdAt, agent, content, version)
 
-      //add metadata to mongo
-      metadataService.addMetadata(metadata)
+      // add metadata to mongo
+      val metadataId = metadataService.addMetadata(metadata)
       val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
       current.plugin[RabbitmqPlugin].foreach { p =>
-        val dtkey = s"${p.exchange}.metadata.added"
-        p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), requestHost, dtkey, mdMap, "", UUID(""), ""))
+        p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
       }
     }
   }
@@ -547,13 +549,13 @@ object FileUtils {
       folder match {
         case Some(folder) => {
           if(!multipleFile) {
-            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file_folder")
+            events.addObjectEvent(Some(user), ds.id, ds.name, EventType.ADD_FILE_FOLDER.toString)
           }
           folders.addFile(folder.id, file.id)
         }
         case None => {
           if(!multipleFile) {
-            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
+            events.addObjectEvent(Some(user), ds.id, ds.name, EventType.ADD_FILE.toString)
           }
           datasets.addFile(ds.id, file)
         }
@@ -562,7 +564,8 @@ object FileUtils {
   }
 
   /** stream the data from the uploaded path to final resting spot, this can be slow */
-  private def saveFile(file: File, path: java.io.File, originalZipFile: String): Option[File] = {
+  private def saveFile(file: File, path: java.io.File, originalZipFile: String, host: String, apiKey: Option[String],
+    user: Option[User]): Option[File] = {
     // If intermediate upload, get flags from originalIdAndFlags
     var nameOfFile = file.filename
     if (!file.isIntermediate) {
@@ -627,7 +630,7 @@ object FileUtils {
       }
       case None => {
         Logger.error(s"Could not save bytes, deleting file ${file.id}")
-        files.removeFile(file.id)
+        files.removeFile(file.id, host, apiKey, user)
         None
       }
     }
@@ -650,7 +653,7 @@ object FileUtils {
   }
 
   /** Fix file object based on path file, no uploading just compute sha512 */
-  private def saveURL(file: File, url: URL): Option[File] = {
+  private def saveURL(file: File, url: URL, host: String, apiKey: Option[String], user: Option[User]): Option[File] = {
     // actually save the file
     val conn = url.openConnection()
     ByteStorageService.save(conn.getInputStream, "uploads") match {
@@ -672,7 +675,7 @@ object FileUtils {
       }
       case None => {
         Logger.error(s"Could not save bytes, deleting file ${file.id}")
-        files.removeFile(file.id)
+        files.removeFile(file.id, host, apiKey, user)
         None
       }
     }
@@ -708,7 +711,8 @@ object FileUtils {
   }
 
   /** process the file, index, rabbitmq, etc */
-  private def processFile(file: File, clowderurl: String, index: Boolean, idAndFlags: String, showPreviews: String, dataset: Option[Dataset], runExtractors: Boolean = true): Unit = {
+  private def processFile(file: File, clowderurl: String, index: Boolean, idAndFlags: String, showPreviews: String,
+    dataset: Option[Dataset], runExtractors: Boolean = true, apiKey: Option[String]): Unit = {
     // TODO this not work correctly, filename is already chopped, if not done earlier this will fail on second time processing, this needs to be metadata of the file
 //    var flags = ""
 //    if (nameOfFile.toLowerCase().endsWith(".ptm")) {
@@ -758,9 +762,7 @@ object FileUtils {
     // send file to rabbitmq for processing
     if (runExtractors) {
       current.plugin[RabbitmqPlugin].foreach { p =>
-        val key = s"${p.exchange}.file.${file.contentType.replace(".", "_").replace("/", ".")}"
-        val extra = Map("filename" -> file.filename)
-        p.extract(ExtractorMessage(new UUID(originalId), new UUID(file.id.toString()), clowderurl, key, extra, file.length.toString, dataset.fold[UUID](null)(_.id), newFlags))
+        p.fileCreated(file, dataset, clowderurl, apiKey)
       }
     }
 
@@ -779,14 +781,14 @@ object FileUtils {
   }
 
   /** dataset processing */
-  private def processDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], clowderurl: String, user: User, index: Boolean, runExtractors: Boolean = true): Unit = {
+  private def processDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], clowderurl: String,
+    user: User, index: Boolean, runExtractors: Boolean = true, apiKey: Option[String]): Unit = {
     // add metadata to dataset
     dataset.foreach{ds =>
 
       if (runExtractors) {
         current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.dataset.file.added"
-          p.extract(ExtractorMessage(file.id, file.id, clowderurl, dtkey, Map.empty, file.length.toString, ds.id, ""))
+          p.fileAddedToDataset(file, ds, clowderurl, apiKey)
         }
       }
 

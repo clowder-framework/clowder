@@ -53,7 +53,7 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 	<div class="col-md-12">
 		<h2>Selected Datasets</h2>
 		@for(d <- selectedDatasets) {
-			@datasets.tile(d, None, Map.empty, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Application.index(), true)
+			@datasets.tile(d, None, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Application.index(), true)
 		}
 	</div>
 	<!-- TODO: Old code for drag+drop relationship modification; revisit eventually -->

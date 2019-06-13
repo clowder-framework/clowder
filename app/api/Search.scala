@@ -31,7 +31,7 @@ class Search @Inject() (
         var datasetsFound = ListBuffer.empty[String]
         var collectionsFound = ListBuffer.empty[String]
 
-        val response = plugin.search(query.replaceAll("([:/\\\\])", "\\\\$1"))
+        val response = plugin.search(query)
 
         for (resource <- response) {
           resource.resourceType match {
@@ -54,15 +54,65 @@ class Search @Inject() (
     }
   }
 
+  /** Search using a simple text string with filters */
+  def search(query: String, resource_type: Option[String],
+             datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
+             field: Option[String], tag: Option[String]) = PermissionAction(Permission.ViewDataset) { implicit request =>
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        var filesFound = ListBuffer.empty[String]
+        var datasetsFound = ListBuffer.empty[String]
+        var collectionsFound = ListBuffer.empty[String]
+
+        val response = plugin.searchAdvanced(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag)
+
+        for (resource <- response) {
+          resource.resourceType match {
+            case ResourceRef.file => filesFound += resource.id.stringify
+            case ResourceRef.dataset => datasetsFound += resource.id.stringify
+            case ResourceRef.collection => collectionsFound += resource.id.stringify
+          }
+        }
+
+        resource_type match {
+          case Some("file") => Ok(toJson(Map[String, JsValue]("files" -> toJson(filesFound))))
+          case Some("dataset") => Ok(toJson(Map[String, JsValue]("datasets" -> toJson(datasetsFound))))
+          case Some("collection") => Ok(toJson(Map[String, JsValue]("collections" -> toJson(collectionsFound))))
+
+          case _ => {
+            // If datasetid is provided, only files are returned
+            datasetid match {
+              case Some(dsid) => Ok(toJson(Map[String, JsValue](
+                "files" -> toJson(filesFound)
+              )))
+              case None => {
+                // collection and space IDs do not restrict resource type
+                Ok(toJson(Map[String, JsValue](
+                  "files" -> toJson(filesFound),
+                  "datasets" -> toJson(datasetsFound),
+                  "collections" -> toJson(collectionsFound)
+                )))
+              }
+            }
+          }
+        }
+      }
+      case None => {
+        Logger.debug("Search plugin not enabled")
+        Ok(views.html.pluginNotEnabled("Text search"))
+      }
+    }
+  }
+
   /** Search using string-encoded Json object (e.g. built by Advanced Search form) */
-  def searchJson(query: String, grouping: String) = PermissionAction(Permission.ViewDataset) {
+  def searchJson(query: String, grouping: String, from: Option[Int], size: Option[Int]) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       implicit val user = request.user
 
       current.plugin[ElasticsearchPlugin] match {
         case Some(plugin) => {
           val queryList = Json.parse(query).as[List[JsValue]]
-          val results = plugin.search(queryList, grouping)
+          val results = plugin.search(queryList, grouping, from, size)
 
           val collectionsResults = results.flatMap { c =>
             if (c.resourceType == ResourceRef.collection) collections.get(c.id) else None
@@ -78,7 +128,8 @@ class Search @Inject() (
           Ok(JsObject(Seq(
             "datasets" -> toJson(datasetsResults.distinct),
             "files" -> toJson(filesResults.distinct),
-            "collections" -> toJson(collectionsResults.distinct)
+            "collections" -> toJson(collectionsResults.distinct),
+            "count" -> toJson(results.length)
           )))
         }
         case None => {

@@ -25,8 +25,9 @@
         </div>
         <ul class="list-group">
             <li class="list-group-item file-panel-footer">
-                <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                 <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                <span class="glyphicon glyphicon-eye-open" title="@file.stats.views views"></span> @file.stats.views
+                <span class="glyphicon glyphicon-circle-arrow-down" title="@file.stats.downloads downloads"></span> @file.stats.downloads
                 @if(user.isDefined) {
                     @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <button onclick="confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))', false, '@redirect')" class="btn btn-link" title="Delete the file">

@@ -7,9 +7,9 @@
 
         @filesList.map { file =>
             @if(parent.resourceType == ResourceRef.folder) {
-                @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, Some(parent.id.stringify), showMove)
+                @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, Some(parent.id.stringify), showMove)
             } else {
-                @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, None,showMove)
+                @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, None,showMove)
             }
 
         }

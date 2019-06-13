@@ -69,28 +69,21 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     }
 
     // Get database counts from appConfig; generate them if unavailable or user count = 0
-    appConfig.getProperty[Long]("countof.users") match {
-      case Some(usersCount) =>
-        Logger.debug("user counts found in appConfig; skipping database counting")
+    appConfig.getProperty[Long]("countof.bytes") match {
+      case Some(filesBytes) =>
+        Logger.info("Byte count found in appConfig; skipping database counting")
       case None => {
-        // Write 0 to users count, so other instances can see this and not trigger additional counts
-        appConfig.incrementCount('users, 0)
+        // Reset byte count to zero before incrementing
+        appConfig.resetCount('bytes)
 
+        Logger.info("Byte count not found in appConfig; scheduling database counting in 10s...")
         Akka.system().scheduler.scheduleOnce(10 seconds) {
-          Logger.debug("initializing appConfig counts")
-          val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+          Logger.debug("Initializing appConfig byte count...")
           val files: FileService = DI.injector.getInstance(classOf[FileService])
-          val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-          val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
-          val users: UserService = DI.injector.getInstance(classOf[UserService])
 
-          // Store the results in appConfig so they can be fetched quickly later
-          appConfig.incrementCount('datasets, datasets.count())
-          appConfig.incrementCount('files, files.count())
+          // Store the byte count in appConfig so it can be fetched quickly later
           appConfig.incrementCount('bytes, files.bytes())
-          appConfig.incrementCount('collections, collections.count())
-          appConfig.incrementCount('spaces, spaces.count())
-          appConfig.incrementCount('users, users.count())
+          Logger.info("Initialized appConfig byte count")
         }
       }
     }
@@ -132,7 +125,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
   override def onHandlerNotFound(request: RequestHeader) = {
     if (request.path.contains("/api/")) {
-      Future(InternalServerError(toJson(Map("status" -> "not found",
+      Future(NotFound(toJson(Map("status" -> "not found",
         "request" -> request.toString()))))
     } else {
       implicit val user = SecureSocial.currentUser(request) match {
@@ -145,7 +138,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
   override def onBadRequest(request: RequestHeader, error: String) = {
     if (request.path.contains("/api/")) {
-      Future(InternalServerError(toJson(Map("status" -> "bad request",
+      Future(BadRequest(toJson(Map("status" -> ("bad request"),
         "message" -> error,
         "request" -> request.toString()))))
     } else {

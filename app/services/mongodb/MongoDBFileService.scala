@@ -187,7 +187,8 @@ class MongoDBFileService @Inject() (
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
     ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
       case Some(x) => {
-        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        val file = File(UUID.generate(), x._1, filename, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType),
+          x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig(), stats = new Statistics())
         FileDAO.save(file)
         Some(file)
       }
@@ -659,8 +660,19 @@ class MongoDBFileService @Inject() (
 
   def renameFile(id: UUID, newName: String){
     events.updateObjectName(id, newName)
+        get(id) match{
+      case Some(file) => {
+        if(file.originalname.length >0) {
+      
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
       WriteConcern.Safe)
+        } else {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName, "originalname" -> file.filename ), false, false,
+      WriteConcern.Safe)
+          
+        }
+      }
+    }
   }
 
   def setContentType(id: UUID, newType: String){
@@ -673,11 +685,11 @@ class MongoDBFileService @Inject() (
       false, false, WriteConcern.Safe)
   }
 
-  def removeFile(id: UUID){
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
         if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileId(file.id)
+          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
           for(fileDataset <- fileDatasets){
             datasets.removeFile(fileDataset.id, id)
             if(!file.xmlMetadata.isEmpty){
@@ -732,10 +744,11 @@ class MongoDBFileService @Inject() (
           ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
         }
 
-        FileDAO.remove(file)
+        import UUIDConversions._
+        FileDAO.removeById(file.id)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
       }
       case None => Logger.debug("File not found")
     }
@@ -931,14 +944,14 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def removeOldIntermediates(){
+  def removeOldIntermediates(apiKey: Option[String], user: Option[User]){
     val cal = Calendar.getInstance()
     val timeDiff = play.Play.application().configuration().getInt("intermediateCleanup.removeAfter")
     cal.add(Calendar.HOUR, -timeDiff)
     val oldDate = cal.getTime()
     val fileList = FileDAO.find($and("isIntermediate" $eq true, "uploadDate" $lt oldDate)).toList
     for(file <- fileList)
-      removeFile(file.id)
+      removeFile(file.id, "", apiKey, user)
   }
 
   /**
@@ -1036,6 +1049,50 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
+
+  def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
+    Logger.debug("updating views for file "+id.toString)
+    val viewdate = new Date
+
+    val updated = FileDAO.dao.collection.findAndModify(
+      query=MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      update=$inc("stats.views" -> 1) ++ $set("stats.last_viewed" -> viewdate),
+      upsert=true, fields=null, sort=null, remove=false, returnNew=true)
+
+    user match {
+      case Some(u) => {
+        Logger.debug("updating views for user "+u.toString)
+        FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
+          $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
+      }
+      case None => {}
+    }
+
+    // Return updated count & updated date
+    return updated match {
+      case Some(u) => (u.get("stats").asInstanceOf[BasicDBObject].get("views").asInstanceOf[Int], viewdate)
+      case None => (0, viewdate)
+    }
+  }
+
+  def incrementDownloads(id: UUID, user: Option[User]) = {
+    Logger.debug("updating downloads for file "+id.toString)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+
+    user match {
+      case Some(u) => {
+        Logger.debug("updating downloads for user "+u.toString)
+        FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
+          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+      }
+      case None => {}
+    }
+  }
+
+  def getMetrics(user: Option[User]): Iterable[File] = {
+    FileDAO.find(MongoDBObject()).toIterable
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -1054,3 +1111,9 @@ object VersusDAO extends ModelCompanion[Versus,ObjectId]{
   }
 }
 
+object FileStats extends ModelCompanion[StatisticUser, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[StatisticUser, ObjectId](collection = x.collection("statistics.users")) {}
+  }
+}

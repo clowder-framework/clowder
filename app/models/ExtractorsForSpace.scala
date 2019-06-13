@@ -5,6 +5,5 @@ package models
  */
 case class ExtractorsForSpace(
     spaceId:String,
-    extractors:List[String]     
+    extractors:List[String]
  )
- 

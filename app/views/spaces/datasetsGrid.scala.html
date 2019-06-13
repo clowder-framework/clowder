@@ -40,9 +40,11 @@
         <div id="masonry-datasets">
         @datasetsList.map { dataset =>
             @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)), true)
+                @datasets.tile(dataset, Some(space.id.stringify), "col-lg-4 col-md-4 col-sm-4", false, true,
+                    routes.Spaces.getSpace(UUID(space.id.stringify)), true)
             } else {
-                @datasets.tile(dataset, Some(space.id.stringify), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space.id.stringify)), false)
+                @datasets.tile(dataset, Some(space.id.stringify), "col-lg-4 col-md-4 col-sm-4", false, true,
+                    routes.Spaces.getSpace(UUID(space.id.stringify)), false)
             }
         }
         </div>

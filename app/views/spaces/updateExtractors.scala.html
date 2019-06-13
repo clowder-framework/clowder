@@ -1,4 +1,4 @@
-@(runningExtractors: List[String], selectedExtractors: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], globalSelections: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 
@@ -18,20 +18,74 @@
      <div class="page-header">
         <h1> Update Extractors </h1>
     </div>
-    
+
 	@form(action = routes.Spaces.updateExtractors(space), 'id->"formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal"  ){
 	   	<!--  Pass the space id to the controller -->                        
   		<input type="hidden" name="space_id" value="@space">
-  	
-   		<!-- Display all running extractors. If extractor already in this space, check the box. -->
-     	@runningExtractors.map { extractor =>
-     		<input type="checkbox" name="extractors" value="@extractor"	 
-     			@if(selectedExtractors.contains(extractor)) {checked} else {unchecked} >
-	 		@extractor	     	
-	 		<br>
-	 	}
-	 	<p> 	
-	 	@updateButton()	 	 
+
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Enabled</th>
+					<th>Name</th>
+					<th>Description</th>
+					<th>Author</th>
+					<th>Process Triggers</th>
+				</tr>
+			</thead>
+			<tbody>
+
+			<!-- Display all running extractors. If extractor already in this space, check the box. -->
+			@runningExtractors.map { extractor =>
+				<tr>
+					<td><input type="checkbox" name="extractors" value="@extractor.name"
+						@if(globalSelections.contains(extractor.name)) {disabled="disabled"}
+						@if(globalSelections.contains(extractor.name) ||
+								selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
+					<td>@extractor.name</td>
+					<td>@extractor.description</td>
+					<td>@extractor.author</td>
+					<td>
+						<!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
+						<p @if(extractor.process.dataset.isEmpty) {hidden}>
+						Datasets:
+						<span @if(extractor.process.dataset.length > 1) {hidden}>@extractor.process.dataset</span>
+						<ul @if(extractor.process.dataset.length == 1) {hidden}>
+						@extractor.process.dataset.map { eventName =>
+							<li>@eventName</li>
+						}
+						</ul>
+						</p>
+						<p @if(extractor.process.file.isEmpty) {hidden}>
+						Files:
+						<span @if(extractor.process.file.length > 1) {hidden}>@extractor.process.file</span>
+						<ul @if(extractor.process.file.length == 1) {hidden}>
+						@extractor.process.file.map { fileType =>
+							<li>@fileType</li>
+						}
+						</ul>
+						</p>
+						<p @if(extractor.process.metadata.isEmpty) {hidden}>
+						Metadata:
+						<span @if(extractor.process.metadata.length > 1) {hidden}>@extractor.process.metadata</span>
+						<ul @if(extractor.process.metadata.length == 1) {hidden}>
+						@extractor.process.metadata.map { eventName =>
+							<li>@eventName</li>
+						}
+						</ul>
+						</p>
+						<p @if(!extractor.process.metadata.isEmpty
+							|| !extractor.process.file.isEmpty
+							|| !extractor.process.dataset.isEmpty) {hidden}>
+						None
+						</p>
+					</td>
+				</tr>
+			}
+			</tbody>
+		</table>
+	 	<p>
+	 	@updateButton()
 	}<!-- end of form -->
  }  
 }    

@@ -28,6 +28,7 @@ import play.api.libs.json.{JsArray, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
 
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -357,14 +358,15 @@ class MongoDBDatasetService @Inject() (
         case Some(u) => {
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+          if(u.superAdminMode) {
+            // superAdmin can access all datasets, in a space page or /datasets
+            orlist += MongoDBObject()
+          }
           if (permissions.contains(Permission.ViewDataset) && enablePublic && showPublic) {
             // if enablePublic == true, only list the dataset user can access, in a space page or /datasets
             if(!u.superAdminMode) {
               orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
               orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
-            } else {
-              // superAdmin can access all datasets, in a space page or /datasets
-              orlist += MongoDBObject()
             }
           }
           //if you are viewing other user's datasets, return the ones you have permission. otherwise filterAccess should
@@ -750,12 +752,65 @@ class MongoDBDatasetService @Inject() (
     Dataset.dao.findOne(MongoDBObject("files" -> new ObjectId(file_id.stringify)))
   }
 
-  def findByFileId(file_id: UUID): List[Dataset] = {
+  /**
+    * get dataset which contains the folder
+    * @param folder a Folder object
+    * @return dataset containing this folder.
+    */
+  @tailrec final def folderPath(folder: Folder) : Option[Dataset]= {
+    folder.parentType match {
+      case "folder" => {
+        folders.get(folder.parentId) match {
+          case Some(fparent) => folderPath(fparent)
+          case _ => None
+        }
+      }
+      case "dataset" => {
+        get(folder.parentDatasetId) match {
+          case Some(dataset) => Some(dataset)
+          case _ => None
+        }
+      }
+      case _ => None
+    }
+  }
+
+  /**
+    * to get a list of datasets which directly contain the given file.
+    *
+    * Note: directly contain a file means that the given file is not under any folder of a dataset.
+    * Warning: this function will not return the dataset if the given file is under a folder of this dataset.
+    *
+    * @param file_id file id of a given file
+    * @return a list of dataset objects with option type
+    */
+  def findByFileIdDirectlyContain(file_id: UUID): List[Dataset] = {
     Dataset.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
   }
 
+  /**
+    * to get a list of datasets which contain the given file.
+    *
+    * Note: this function will return back a list of dataset, where a given file is either under a dataset directly or
+    * under a folder of a dataset.
+    *
+    * This function will first get a list of dataset which directly contain a given file.
+    * Then to get a dataset which indirectly contain a given file,
+    * it will traverse back on the hierarchical paths from the folder of that give file to a dataset.
+    *
+    * @param file_id  file id of a given file
+    * @return a list of dataset objects
+    */
+  def findByFileIdAllContain(file_id: UUID): List[Dataset] = {
+    //1. get list of datasets which directly contains this file.
+    val datasetList = findByFileIdDirectlyContain(file_id)
+    //2. get list of datasets which indirectly contains this file.
+    val foldersContainingFile = folders.findByFileId(file_id)
+    (datasetList ::: (for(folder <- foldersContainingFile) yield (folderPath(folder))).flatten).distinct
+  }
+
   def findNotContainingFile(file_id: UUID): List[Dataset] = {
-    val listContaining = findByFileId(file_id)
+    val listContaining = findByFileIdDirectlyContain(file_id)
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
 
@@ -1316,7 +1371,7 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def removeDataset(id: UUID) {
+  def removeDataset(id: UUID, host: String, apiKey: Option[String], user: Option[User]) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
         dataset.collections.foreach(c => collections.removeDataset(c, dataset.id))
@@ -1324,12 +1379,12 @@ class MongoDBDatasetService @Inject() (
           comments.removeComment(comment)
         }
         for (f <- dataset.files) {
-          val notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          val notTheDataset = for (currDataset <- findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
-            files.removeFile(f)
+            files.removeFile(f, host, apiKey, user)
         }
         for (folder <- dataset.folders ) {
-          folders.delete(folder)
+          folders.delete(folder, host, apiKey, user)
         }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
@@ -1337,7 +1392,7 @@ class MongoDBDatasetService @Inject() (
         for(space <- dataset.spaces) {
           spaces.removeDataset(dataset.id, space)
         }
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), host, apiKey, user)
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>
@@ -1459,7 +1514,7 @@ class MongoDBDatasetService @Inject() (
 		    return unsuccessfulDumps.toList
 	}
 
-    def dumpAllDatasetGroupings(): List[String] = {
+  def dumpAllDatasetGroupings(): List[String] = {
 
 		    Logger.debug("Dumping dataset groupings of all datasets.")
 
@@ -1533,6 +1588,49 @@ class MongoDBDatasetService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
+    Logger.debug("updating views for dataset "+id.toString)
+    val viewdate = new Date
+
+    val updated = Dataset.dao.collection.findAndModify(
+      query=MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      update=$inc("stats.views" -> 1) ++ $set("stats.last_viewed" -> viewdate),
+      upsert=true, fields=null, sort=null, remove=false, returnNew=true)
+
+    user match {
+      case Some(u) => {
+        Logger.debug("updating views for user "+u.toString)
+        DatasetStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "dataset"),
+          $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
+      }
+      case None => {}
+    }
+
+    // Return updated count
+    return updated match {
+      case Some(u) => (u.get("stats").asInstanceOf[BasicDBObject].get("views").asInstanceOf[Int], viewdate)
+      case None => (0, viewdate)
+    }
+  }
+
+  def incrementDownloads(id: UUID, user: Option[User]) = {
+    Logger.debug("updating downloads for dataset "+id.toString)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+
+    user match {
+      case Some(u) => {
+        Logger.debug("updating downloads for user "+u.toString)
+        DatasetStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "dataset"),
+          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+      }
+      case None => {}
+    }
+  }
+
+  def getMetrics(user: Option[User]): Iterable[Dataset] = {
+    Dataset.find(MongoDBObject("trash" -> false)).toIterable
+  }
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
@@ -1563,3 +1661,9 @@ object LicenseData extends ModelCompanion[LicenseData, ObjectId] {
   }
 }
 
+object DatasetStats extends ModelCompanion[StatisticUser, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[StatisticUser, ObjectId](collection = x.collection("statistics.users")) {}
+  }
+}

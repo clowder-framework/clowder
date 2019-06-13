@@ -19,9 +19,9 @@ object Role {
   val adminPerm = Permission.values
   val Admin = new Role(name = "Admin", description = "Admin Role", permissions = adminPerm.map(_.toString).toSet)
   // editor role
-  val editorPerm = for(perm <- adminPerm if perm.toString.toLowerCase.indexOf("admin") == -1) yield perm
+  val editorPerm = Permission.EDITOR_PERMISSIONS
   val Editor = new Role(name="Editor", description="Editor Role", permissions = editorPerm.map(_.toString).toSet)
   // viewer role
-  val viewerPerm = Permission.READONLY + Permission.DownloadFiles
+  val viewerPerm = Permission.READONLY
   val Viewer = new Role(name="Viewer", description="Viewer Role", permissions = viewerPerm.map(_.toString))
 }

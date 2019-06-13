@@ -1,11 +1,12 @@
 
 @(file: models.File, id: String, comments: List[Comment],
-		previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
+		previews : Map[models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
 		mds: List[models.Metadata],
 		rdfExported: Boolean,
-		extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
-		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset])(implicit user: Option[models.User], request: RequestHeader)
+		extractionsStatus: Map[String, ExtractionGroup], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
+		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
+		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)
 
 @import helper._
 @import play.api.Play.current
@@ -328,8 +329,12 @@
                                 Submit for extraction
                             </a>
                         }
-						}
-						<hr/>
+						<a href="@routes.FileLinks.share(UUID(id))" class="btn btn-link" >
+							<span class="glyphicon glyphicon-send"></span>
+							Share
+						</a>
+					}
+					<hr/>
 					</div>
 				</div>
 
@@ -567,47 +572,48 @@
 			}
 
 
-			<div class="row">
-				<div class="col-md-12">
-					<h4>Metadata</h4>
-				</div>
-			</div>
-			@if(user.isDefined) {
-				<div class="row">
-					<div class="col-md-12">
-					@metadatald.addMetadata("file", file.id.toString, "metadata-content")
+
+			<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
+				<ul class="nav nav-tabs margin-bottom-20" >
+					<li role="presentation" class="active"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
+					<li role="presentation"><a href="#tab-extractions" role="tab" data-toggle="tab">Extractions </a></li>
+					<li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane fade in active" id="tab-metadata">
+						@if(user.isDefined) {
+							<div class="row">
+								<div class="col-md-12">
+								@metadatald.addMetadata("file", file.id.toString, "metadata-content")
+								</div>
+							</div>
+						}
+						<div class="row">
+							<div class="col-md-12" id="metadata-content">
+							@metadatald.view(mds, true)
+							</div>
+						</div>
 					</div>
-				</div>
-			}
-			<div class="row bottom-padding">
-				<div class="col-md-12" id="metadata-content">
-				@metadatald.view(mds, true)
-				</div>
-			</div>
-
-
-			<div class="row bottom-padding">
-				<div class="col-md-12">
-					<h4>Extractions</h4>
-					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
-						aria-controls="listExtractions">
-						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
-					</a>
-					<div class="collapse" id="extractions">
-					@extractions.extractionsByFile(extractionsStatus)
+					<div role="tabpanel" class="tab-pane fade" id="tab-extractions">
+						<div class="row">
+							<div class="col-md-12" id="extractions-content">
+							@extractions.extractionsList(extractionsStatus, "file")
+							</div>
+						</div>
 					</div>
-				</div>
-			</div>
-
-			<div class="row bottom-padding">
-				<div class="col-md-12">
-					<h4>Comments</h4>
-					@if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.file, file.id))) {
-						@commentform(file.id.toString, "file", file.filename)
-					}
-					<ol class="list-unstyled" id="reply_@file.id.toString">
-					@comment(comments)
-					</ol>
+					<div role="tabpanel" class="tab-pane fade" id="tab-comments">
+							<!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
+						@if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.file, file.id))) {
+							@commentform(file.id.toString, "file", file.filename)
+						}
+						<div class="list-unstyled" id="reply_@file.id.toString">
+						@comment(comments)
+						</div>
+					</div>
+					<div class="row bottom-padding">
+						<div class="col-md-12">
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -703,9 +709,23 @@
 										<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
 								}
 							}
+							@if(file.loader == "services.s3.S3ByteStorageService") {
+								<td>
+									S3 Bucket: 
+									@if(file.loader_id.length>10) {
+										<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
+									} else {
+										@file.loader_id
+									}
+									<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+								</td>
+							}
 						</tr>
 					}
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+					@if(file.originalname.length > 0) {
+					<tr><td><b>Uploaded&nbsp;as:</b></td><td> @file.originalname</td></tr>
+					}
 					<tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
 					@if( play.Play.application().configuration().getBoolean("enablePublic")) {
 						<tr><td><b>Access:</b></td><td> @access</td></tr>
@@ -713,6 +733,16 @@
 					<tr><td><b>Status:</b></td><td> @file.status</td></tr>
                 </table>
             </div>
+
+			<div class="row ds-section-sm file-info">
+				<h4>Statistics</h4>
+				<table class="table table-condensed">
+					<tr><td><b>Views:</b></td><td> @view_count</td></tr>
+					<tr><td><b>Last viewed:</b></td><td> @view_date.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+					<tr><td><b>Downloads:</b></td><td> @file.stats.downloads</td></tr>
+					<tr><td><b>Last downloaded:</b></td><td> @if(file.stats.last_downloaded.isDefined){@file.stats.last_downloaded.get.format("MMM dd, yyyy HH:mm:ss")}else{Never}</td></tr>
+				</table>
+			</div>
 
 			<!-- License elements-->
             <div class="row ds-section-sm">
@@ -792,8 +822,13 @@
                 });
 
                 function downloadFile() {
-                    var downloadRoute = "@routes.Files.download(UUID(id))";
-                    window.open(downloadRoute, '_blank');
+					if ("@file.status"=="ARCHIVED") {
+						var emailForm = "@routes.Application.email("Accessing archived file "+file.id, "Please contact me about accessing the archived file.")";
+						window.open(emailForm, "_blank");
+					} else {
+						var downloadRoute = "@routes.Files.download(UUID(id))";
+						window.open(downloadRoute, '_blank');
+					}
                 }
 
                 function downloadFileAs(downloadRoute) {
@@ -1006,21 +1041,27 @@
 								});
 
 								if (tag !== "" && isTagPresent != true) {
+									var tagList = tag.split(',');
 									console.log("submitting tag " + tag);
 									var request = jsRoutes.api.Files.addTags('@file.id').ajax({
-										data: JSON.stringify({"tags":[tag]}),
+										data: JSON.stringify({"tags":tagList}),
 										type: 'POST',
 										contentType: "application/json",
 									});
 
 									request.done(function (response, textStatus, jqXHR){
 										console.log("Response " + response);
-										var url = jsRoutes.controllers.Tags.search(tag).url;
-										$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
-										$newTag.hover(removeIconMouseIn,removeIconMouseOut);
-										$newTag.find(".glyphicon-remove").click(removeTag);
+										for (var i = 0; i < tagList.length; i++) {
+											var aTag= tagList[i].trim();
+											if (aTag != "") {
+												var url = jsRoutes.controllers.Tags.search(aTag).url;
+												$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "'>" + aTag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+												$newTag.hover(removeIconMouseIn, removeIconMouseOut);
+												$newTag.find(".glyphicon-remove").click(removeTag);
+												tmpId = tmpId + 1;
+											}
+										}
 										$('#tagField').val("");
-										tmpId = tmpId+1;
 									});
 
 									request.fail(function (jqXHR, textStatus, errorThrown){

@@ -9,7 +9,8 @@ import play.api.mvc._
 import securesocial.controllers.ProviderController._
 import securesocial.core._
 import securesocial.core.providers.Token
-import securesocial.core.providers.utils.{GravatarHelper, RoutesHelper}
+import securesocial.core.providers.utils.RoutesHelper
+import util.GravatarUtils
 
 /**
  * Provider for CROWD. This could be used with other services as well. See scripts/crowd/clowder.php for
@@ -49,7 +50,7 @@ class CrowdProvider(application: Application) extends IdentityProvider(applicati
                 case Some(x) => {
                   val json = Json.parse(x)
                   val email = (json \ "email").as[String]
-                  val avatar = GravatarHelper.avatarFor(email)
+                  val avatar = GravatarUtils.avatarFor(email)
                   val user = new SocialUser(IdentityId((json \ "userId").as[String], CrowdProvider.crowd),
                     (json \ "firstName").as[String], (json \ "lastName").as[String], (json \ "fullName").as[String],
                     Some(email), avatar, authMethod, None, None, None)

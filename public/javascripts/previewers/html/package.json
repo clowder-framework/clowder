@@ -1,0 +1,5 @@
+{ "name": "HTML",
+  "main": "html-iframe.js",
+  "file": true,
+  "contentType": ["text/html"]
+  }

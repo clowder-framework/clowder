@@ -431,7 +431,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           var collection : Collection = null
           if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
-              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty)
+              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty, stats = new Statistics())
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
@@ -440,7 +440,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             if(parentCollectionIds.length == 0) {
               root_spaces = colSpaces
             }
-            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_spaces = root_spaces)
+            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_spaces = root_spaces, stats = new Statistics())
           }
 
           Logger.debug("Saving collection " + collection.name)
@@ -451,7 +451,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               case Some(s) => {
                 spaces.addCollection(collection.id, s.id, user)
                 collections.addToRootSpaces(collection.id, s.id)
-                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
+                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               }
               case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
             }
@@ -464,7 +464,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)
-          events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
+          events.addObjectEvent(option_user, collection.id, collection.name, EventType.CREATE_COLLECTION.toString)
 
           // redirect to collection page
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
@@ -542,17 +542,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             decodedDatasetsInside += dDataset
           }
 
-          val commentMap = datasetsInside.map { dataset =>
-            var allComments = comments.findCommentsByDatasetId(dataset.id)
-            dataset.files.map { file =>
-              allComments ++= comments.findCommentsByFileId(file)
-              sections.findByFileId(file).map { section =>
-                allComments ++= comments.findCommentsBySectionId(section.id)
-              }
-            }
-            dataset.id -> allComments.size
-          }.toMap
-
           val child_collections = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
             SortingUtils.sortCollections(dCollection.child_collection_ids.flatMap(c => collections.get(c)), sortOrder).slice(0, limit)
           } else {
@@ -625,9 +614,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(u) => selections.get(u.email.get).map(ds => ds.id.toString)
             case None => List.empty
           }
+
+          // Increment view count for collection
+          val (view_count, view_date) = collections.incrementViews(id, user)
+
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
-            Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
-            prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections))
+            Some(decodedParentCollections.toList),dCollection, filteredPreviewers, Some(collectionSpaces_canRemove),
+            prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections, view_count, view_date))
 
         }
         case None => {
@@ -650,16 +643,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           decodedDatasetsInside += dDataset
         }
 
-        val commentMap = datasetsInside.map { dataset =>
-          var allComments = comments.findCommentsByDatasetId(dataset.id)
-          dataset.files.map { file =>
-            allComments ++= comments.findCommentsByFileId(file)
-            sections.findByFileId(file).map { section =>
-              allComments ++= comments.findCommentsBySectionId(section.id)
-            }
-          }
-          dataset.id -> allComments.size
-        }.toMap
         val prev = index-1
         val next = if(datasetsInside.length > (index+1) * limit) {
           index + 1
@@ -671,9 +654,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             val selectIds = selections.get(u.email.get).map(d => {
               d.id.toString
             })
-            Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next, selectIds))
+            Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, id, prev, next, selectIds))
           }
-          case None => Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next, List.empty))
+          case None => Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, id, prev, next, List.empty))
         }
 
 

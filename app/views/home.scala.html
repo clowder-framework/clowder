@@ -1,5 +1,5 @@
 
-@(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collectionsList:List[Collection], spacesList: List[ProjectSpace],
+@(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset], collectionsList:List[Collection], spacesList: List[ProjectSpace],
         deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
         followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)],
         followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
@@ -90,9 +90,9 @@
                 <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
                     @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                        @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), true)
+                        @datasets.tile(dataset, None, "col-xs-3", false, false, routes.Application.index(), true)
                     } else {
-                        @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index(), false)
+                        @datasets.tile(dataset, None, "col-xs-3", false, false, routes.Application.index(), false)
                     }
 
                 }

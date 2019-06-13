@@ -54,10 +54,10 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
+            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, stats = new Statistics())
             case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
 
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), stats = new Statistics())
             } else {
               BadRequest(toJson("Bad space = " + space))
             }
@@ -69,7 +69,7 @@ class Collections @Inject() (datasets: DatasetService,
               c.spaces.map(spaceId => spaces.get(spaceId)).flatten.map{ s =>
                 spaces.addCollection(c.id, s.id, user)
                 collections.addToRootSpaces(c.id, s.id)
-                events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, "add_collection_space")
+                events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               }
               Ok(toJson(Map("id" -> id)))
             }
@@ -93,7 +93,7 @@ class Collections @Inject() (datasets: DatasetService,
                 if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
                   collections.addDatasetToCollectionSpaces(collection.id,dataset.id, request.user)
                 }
-                events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
+                events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, EventType.ATTACH_DATASET_COLLECTION.toString)
               }
               case None =>
             }
@@ -136,7 +136,7 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(collection) => {
           datasets.get(datasetId) match {
             case Some(dataset) => {
-              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection")
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, EventType.REMOVE_DATASET_COLLECTION.toString)
             }
             case None =>
           }
@@ -157,7 +157,7 @@ class Collections @Inject() (datasets: DatasetService,
       case Some(collection) => {
         val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
         if (!useTrash || (useTrash && collection.trash)){
-          events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
+          events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collectionId)
           appConfig.incrementCount('collections, -1)
           current.plugin[AdminsNotifierPlugin].foreach {
@@ -208,7 +208,7 @@ class Collections @Inject() (datasets: DatasetService,
       case Some(u) => {
         val trashcollections = collections.listUserTrash(request.user,0)
         for (collection <- trashcollections){
-          events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
+          events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collection.id)
           appConfig.incrementCount('collections, -1)
           current.plugin[AdminsNotifierPlugin].foreach {
@@ -234,7 +234,7 @@ class Collections @Inject() (datasets: DatasetService,
         allCollectionsTrash.foreach( c => {
           val dateInTrash = c.dateMovedToTrash.getOrElse(new Date())
           if (dateInTrash.getTime() < deleteBeforeDateTime) {
-            events.addObjectEvent(request.user , c.id, c.name, "delete_collection")
+            events.addObjectEvent(request.user , c.id, c.name, EventType.DELETE_COLLECTION.toString)
             collections.delete(c.id)
             appConfig.incrementCount('collections, -1)
             current.plugin[AdminsNotifierPlugin].foreach {
@@ -485,7 +485,7 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              events.addObjectEvent(user, id, collection.name, "follow_collection")
+              events.addObjectEvent(user, id, collection.name, EventType.FOLLOW_COLLECTION.toString)
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
 
@@ -513,7 +513,7 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              events.addObjectEvent(user, id, collection.name, "unfollow_collection")
+              events.addObjectEvent(user, id, collection.name, EventType.UNFOLLOW_COLLECTION.toString)
               collections.removeFollower(id, loggedInUser.id)
               userService.unfollowCollection(loggedInUser.id, id)
               Ok
@@ -574,9 +574,9 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity, root_spaces = List.empty)
+            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity, root_spaces = List.empty, stats = new Statistics())
             case Some(space) => if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)), stats = new Statistics())
             } else {
               BadRequest(toJson("Bad space = " + space))
             }
@@ -589,7 +589,7 @@ class Collections @Inject() (datasets: DatasetService,
                 spaces.get(spaceId)}.flatten.map{ s =>
                   spaces.addCollection(c.id, s.id, request.user)
                   collections.addToRootSpaces(c.id, s.id)
-                  events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, "add_collection_space")
+                  events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               }
 
               //do stuff with parent here
@@ -668,7 +668,7 @@ class Collections @Inject() (datasets: DatasetService,
       case (Some(collection), Some(space)) => {
         spaces.addCollection(collectionId, spaceId, request.user)
         collections.addToRootSpaces(collectionId, spaceId)
-        events.addSourceEvent(request.user, collection.id, collection.name, space.id, space.name, "add_collection_space")
+        events.addSourceEvent(request.user, collection.id, collection.name, space.id, space.name, EventType.ADD_COLLECTION_SPACE.toString)
         Ok(jsonCollection(collection))
       } case (None, _) => {
         Logger.error("Error getting collection  " + collectionId)

@@ -11,6 +11,9 @@
 	<div class="row">
 		<div class="col-md-12">
 			No results found. Sorry!
+			@if(query.startsWith("^") || query.endsWith("$")) {
+				<br/><br/>The search box query is treated as a regular expression and automatically anchored, so characters ^ and $ are not necessary.
+			}
 		</div>
 	</div>
 	}

@@ -138,7 +138,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
         val fullName = users.findById(followeeUUID).map(u => u.fullName).getOrElse("")
-        events.addObjectEvent(user, followeeUUID, fullName, "follow_user")
+        events.addObjectEvent(user, followeeUUID, fullName, EventType.FOLLOW_USER.toString)
         users.followUser(followeeUUID, followerUUID)
 
         val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
@@ -159,7 +159,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
         val fullName = users.findById(followeeUUID).map(u => u.fullName).getOrElse("")
-        events.addObjectEvent(user, followeeUUID, fullName, "unfollow_user")
+        events.addObjectEvent(user, followeeUUID, fullName, EventType.UNFOLLOW_USER.toString)
         users.unfollowUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }

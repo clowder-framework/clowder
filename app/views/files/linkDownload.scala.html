@@ -1,0 +1,15 @@
+@(file: File, links: FileLink)
+
+@main("Download File") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1 id="file-name-title" class="inline"><span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <p><a href="" class="btn btn-primary">Download File</a></p>
+            <ul id="fileLinks"></ul>
+        </div>
+    </div>
+}

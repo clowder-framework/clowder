@@ -15,11 +15,10 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress
 import java.net.InetAddress
 
 import org.elasticsearch.common.xcontent.XContentFactory._
-import org.elasticsearch.action.search.SearchType
+import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
 import org.elasticsearch.client.transport.NoNodeAvailableException
-import org.elasticsearch.action.search.SearchResponse
 
-import models.{Collection, Dataset, File, UUID, ResourceRef, Section}
+import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section}
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
@@ -37,6 +36,7 @@ import org.elasticsearch.indices.IndexAlreadyExistsException
 class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
   val files: FileService = DI.injector.getInstance(classOf[FileService])
+  val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var client: Option[TransportClient] = None
@@ -45,7 +45,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
 
-  val mustOperators = List("==", "<", ">")
+  val mustOperators = List("==", "<", ">", ":")
   val mustNotOperators = List("!=")
 
 
@@ -114,7 +114,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
-  def search(query: List[JsValue], grouping: String): List[ResourceRef] = {
+  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int]): List[ResourceRef] = {
     /** Each item in query list has properties:
       *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
       *   "operator":       type of query for this term, e.g. '=='
@@ -123,7 +123,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
     val queryObj = prepareElasticJsonQuery(query, grouping)
-    val response: SearchResponse = _search(queryObj)
+    val response: SearchResponse = _search(queryObj, from=from, size=size)
 
     var results = MutableList[ResourceRef]()
     Option(response.getHits()) match {
@@ -147,40 +147,132 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       prepareElasticJsonQuery(query)
     } else {
       // Plain text search with no field qualifiers
-      jsonBuilder().startObject()
-        .startObject("match").field("_all", query.replaceAll("([+:/\\\\])", "\\\\$1")).endObject()
-      .endObject()
+      jsonBuilder().startObject().startObject("regexp").field("_all", query).endObject().endObject()
     }
 
-    val response = _search(queryObj, index)
-
-    var results = MutableList[ResourceRef]()
-    Option(response.getHits()) match {
-      case Some(hits) => {
-        for (hit <- hits.getHits()) {
-          val resource_type = hit.getSource().get("resource_type").toString
-          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+    try {
+      val response = _search(queryObj, index)
+      var results = MutableList[ResourceRef]()
+      Option(response.getHits()) match {
+        case Some(hits) => {
+          for (hit <- hits.getHits()) {
+            val resource_type = hit.getSource().get("resource_type").toString
+            results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+          }
         }
+        case None => {}
+      }
+
+      results.toList
+    } catch {
+      case spee: SearchPhaseExecutionException => {
+        List[ResourceRef]()
+      }
+      case e: Exception => {
+        List[ResourceRef]()
+      }
+    }
+  }
+
+  /** Search using a simple text string */
+  def searchAdvanced(query: String, resource_type: Option[String],
+                     datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
+                     field: Option[String], tag: Option[String], index: String = nameOfIndex): List[ResourceRef] = {
+
+    // whether to restrict to a particular metadata field, or search all fields (including tags, name, etc.)
+    val mdfield = field match {
+      case Some(k) => "metadata."+k
+      case None => "_all"
+    }
+
+    // BEGIN CREATING ELASTICSEARCH QUERY OBJECT -----
+    val queryObj = jsonBuilder().startObject().startObject("bool").startArray("must")
+
+    if (query != "") {
+      // Include actual query string wrapped in regex
+      queryObj.startObject().startObject("regexp").field(mdfield, query).endObject().endObject()
+    }
+
+    // Restrict to a particular tag - currently requires exact match
+    tag match {
+      case Some(t) => queryObj.startObject().startObject("match").field("tags.name", t).endObject().endObject()
+      case None => {}
+    }
+
+    // Restrict to particular resource_type if requested
+    resource_type match {
+      case Some(restype) => queryObj.startObject().startObject("match").field("resource_type", restype).endObject().endObject()
+      case None => {}
+    }
+
+    // Restrict to particular dataset ID (only return files)
+    datasetid match {
+      case Some(dsid) => {
+        queryObj.startObject().startObject("match").field("resource_type", "file").endObject().endObject()
+        queryObj.startObject().startObject("match").field("child_of", dsid).endObject().endObject()
       }
       case None => {}
     }
 
+    // Restrict to particular collection ID (only return datasets)
+    collectionid match {
+      case Some(cid) => queryObj.startObject().startObject("match").field("child_of", cid).endObject().endObject()
+      case None => {}
+    }
 
-    results.toList
+    spaceid match {
+      case Some(spid) => queryObj.startObject().startObject("match").field("child_of", spid).endObject().endObject()
+      case None => {}
+    }
+
+    folderid match {
+      case Some(fid) => queryObj.startObject().startObject("match").field("child_of", fid).endObject().endObject()
+      case None => {}
+    }
+
+    queryObj.endArray().endObject().endObject()
+    // FINISH CREATING ELASTICSEARCH QUERY OBJECT -----
+
+
+    try {
+      val response = _search(queryObj, index)
+      var results = MutableList[ResourceRef]()
+      for (hit <- response.getHits().getHits()) {
+        val resource_type = hit.getSource().get("resource_type").toString
+        results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+      }
+
+      results.toList
+    } catch {
+      case spee: SearchPhaseExecutionException => {
+        List[ResourceRef]()
+      }
+      case e: Exception => {
+        List[ResourceRef]()
+      }
+    }
   }
 
   /*** Execute query */
-  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Int = 0, to: Int = 60): SearchResponse = {
+  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Option[Int] = Some(0), size: Option[Int] = Some(60)): SearchResponse = {
     connect()
     client match {
       case Some(x) => {
         Logger.info("Searching Elasticsearch: "+queryObj.string())
-        val response = x.prepareSearch(index)
+        var responsePrep = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
-          .setFrom(from).setSize(to).setExplain(true)
-          .execute()
-          .actionGet()
+
+        from match {
+          case Some(f) => responsePrep = responsePrep.setFrom(f)
+          case None => {}
+        }
+        size match {
+          case Some(s) => responsePrep = responsePrep.setSize(s)
+          case None => {}
+        }
+
+        val response = responsePrep.setExplain(true).execute().actionGet()
         Logger.debug("Search hits: " + response.getHits().getTotalHits())
         response
       }
@@ -199,7 +291,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         .startObject("analysis")
           .startObject("analyzer")
             .startObject("default")
-              .field("type", "snowball")
+              .field("type", "standard")
             .endObject()
           .endObject()
         .endObject()
@@ -327,6 +419,21 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           case None => Logger.error(s"Error getting file $fileId for recursive indexing")
         }
       }
+      for (folderid <- dataset.folders) {
+        folders.get(folderid) match {
+          case Some(f) => {
+            for (fileid <- f.files) {
+              files.get(fileid) match {
+                case Some(fi) => {
+                  index(fi)
+                }
+                case None => Logger.error(s"Error getting file $fileid for recursive indexing")
+              }
+            }
+          }
+          case None => Logger.error(s"Error getting file $folderid for recursive indexing")
+        }
+      }
     }
     index(SearchUtils.getElasticsearchObject(dataset))
   }
@@ -359,6 +466,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               // BASIC INFO
               .field("creator", eso.creator)
               .field("created", eso.created)
+              .field("created_as", eso.created_as)
               .field("resource_type", eso.resource.resourceType.name)
               .field("name", eso.name)
               .field("description", eso.description)
@@ -447,9 +555,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val aggr = response.getAggregations
           .get[org.elasticsearch.search.aggregations.bucket.terms.StringTerms]("by_tag")
         aggr.getBuckets().toArray().foreach(bucket => {
-          val term = bucket.asInstanceOf[Bucket].getKey
+          val term = bucket.asInstanceOf[Bucket].getKey.toString
           val count = bucket.asInstanceOf[Bucket].getDocCount
-          results.update(term.toString, count)
+          if (!term.isEmpty) {
+            results.update(term, count)
+          }
         })
         results.toMap
       }
@@ -587,15 +697,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
-    """dynamic_templates": [
-    { "nonindexer": {
-      "match": "*",
-      "match_mapping_type":"string",
-      "mapping": {
-      "type": "string",
-      "index": "not_analyzed"
-    }
-    }}
+    """dynamic_templates": [{
+       "nonindexer": {
+          "match": "*",
+          "match_mapping_type":"string",
+          "mapping": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      }
     ],"""
 
     """{"clowder_object": {
@@ -633,15 +744,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
     // TODO: Suppert lte, gte (<=, >=)
     operator match {
-      /**case ":" => {
-        // TODO: Elasticsearch recommends not starting query with wildcard
-        // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
-        //builder.startObject("wildcard").field(key, value+"*").endObject()
-        builder.startObject().startObject("match").field(key, value).endObject().endObject()
-      }**/
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
       case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
       case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      case ":" => builder.startObject().startObject("query_string").field("default_field", key).field("query", "*"+value+"*").endObject().endObject()
       case _ => {}
     }
     builder

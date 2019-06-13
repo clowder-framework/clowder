@@ -14,6 +14,7 @@ case class File(
   id: UUID = UUID.generate,
   loader_id: String = "",
   filename: String,
+  originalname: String = "",
   author: MiniUser,
   uploadDate: Date,
   contentType: String,
@@ -30,12 +31,13 @@ case class File(
   @deprecated("use Metadata","since the use of jsonld") xmlMetadata: Map[String, Any] = Map.empty,
   licenseData: LicenseData = new LicenseData(),
   followers: List[UUID] = List.empty,
+  stats: Statistics = new Statistics(),
   status: String = FileStatus.UNKNOWN.toString) // can't use enums in salat
 
 // what is the status of the file
 object FileStatus extends Enumeration {
   type FileStatus = Value
-  val UNKNOWN, CREATED, UPLOADED, PROCESSED = Value
+  val UNKNOWN, CREATED, UPLOADED, PROCESSED, ARCHIVED = Value
 }
 
 case class Versus(

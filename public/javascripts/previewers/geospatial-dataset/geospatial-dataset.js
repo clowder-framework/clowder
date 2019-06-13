@@ -214,8 +214,8 @@
 			// Populate layer control for each layer
 
 			// create id by using wms layer name
-			var visVar = name[1] + '-visible';
-			var opVar = name[1] + '-opacity';
+			var visVar = fileId + '-visible';
+			var opVar = fileId + '-opacity';
 
 			// add checkbox and range input
 			var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />' +

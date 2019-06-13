@@ -1,4 +1,4 @@
-@(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int,
+@(datasetsList: List[models.Dataset], prev: String, next: String, limit: Int,
         mode: Option[String], space: Option[String], spaceName: Option[String], status: Option[String],
         title: Option[String], owner:Option[String], ownerName: Option[String], when: String, date: String,
         userSelections: List[String], showTrash: Boolean = false)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
@@ -243,9 +243,9 @@
 		<div id="masonry">
 		@datasetsList.map { dataset =>
             @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list(when, date, limit, space, None, "", owner), true)
+                @datasets.tile(dataset, space, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list(when, date, limit, space, None, "", owner), true)
             } else {
-                @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list(when, date, limit, space, None, "", owner), false)
+                @datasets.tile(dataset, space, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list(when, date, limit, space, None, "", owner), false)
             }
 		}
 		</div>
@@ -256,9 +256,9 @@
 	<div class="col-md-12">
         @datasetsList.map { dataset =>
             @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                @datasets.listitem(dataset,None,comments, routes.Datasets.list(when, date, limit, space, None, "", owner), true)
+                @datasets.listitem(dataset,None, routes.Datasets.list(when, date, limit, space, None, "", owner), true)
             } else {
-                @datasets.listitem(dataset,None,comments, routes.Datasets.list(when, date, limit, space, None, "", owner), false)
+                @datasets.listitem(dataset,None, routes.Datasets.list(when, date, limit, space, None, "", owner), false)
             }
         }
 	</div>

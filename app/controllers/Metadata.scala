@@ -1,8 +1,10 @@
 package controllers
 
 import javax.inject.Inject
-
+import play.api.libs.json.Json._
+import play.Logger
 import api.Permission
+import api.Permission.Permission
 import models.{ResourceRef, UUID}
 import services._
 
@@ -55,7 +57,21 @@ class Metadata @Inject() (
 
   def search() = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
-    Ok(views.html.metadatald.search())
+    // We should set some of these listAccess parameters to sensible defaults...
+    val userAccessibleSpaces = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, request.user.fold(false)(_.superAdminMode), true, false, false)
+    val spaceid = request.request.getQueryString("spaceid")
+    spaceid match {
+      case Some(sid) => {
+        if (sid == "") {
+          Ok(views.html.metadatald.search(userAccessibleSpaces))
+        } else {
+          Ok(views.html.metadatald.search(userAccessibleSpaces, spaces.get(UUID(sid))))
+        }
+      }
+      case None => {
+        Ok(views.html.metadatald.search(userAccessibleSpaces))
+      }
+    }
   }
 
   def getMetadataBySpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
@@ -69,5 +85,4 @@ class Metadata @Inject() (
     }
 
   }
-
 }
