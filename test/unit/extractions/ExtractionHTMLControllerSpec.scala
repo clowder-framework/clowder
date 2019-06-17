@@ -61,7 +61,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
   val mockthumbnails = mock[ThumbnailService]
   val mockAppConfig = mock[AppConfigurationService]
 
-  when(mockExtractors.getExtractorNames).thenReturn(List("ncsa.cv.face", "ncsa.ocr"))
+  when(mockExtractors.getExtractorNames(List.empty)).thenReturn(List("ncsa.cv.face", "ncsa.ocr"))
   when(mockExtractors.getExtractorServerIPList).thenReturn(List("dts1.ncsa.illinois.edu", "141.142.220.244"))
   when(mockExtractors.getExtractorInputTypes).thenReturn(List("image", "text"))
   doNothing().when(mockExtractors).insertExtractorNames(List("ncsa.cv.face", "ncsa.ocr"))
@@ -71,7 +71,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
   "The OneAppPerSuite trait for Extraction API Controller get actions" must {
      "return List of Extractors Names" in {
       val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockAppConfig)
-      val resultExNames = extractions_apicontroller.getExtractorNames.apply(FakeRequest())
+      val resultExNames = extractions_apicontroller.getExtractorNames(List.empty).apply(FakeRequest())
       contentType(resultExNames) mustEqual Some("application/json")
       contentAsString(resultExNames) must include ("Extractors")
       info("Extractors names "+contentAsString(resultExNames))

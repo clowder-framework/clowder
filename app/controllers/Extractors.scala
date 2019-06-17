@@ -33,7 +33,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     */
   def selectExtractors() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    val runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo()
+    val runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     Ok(views.html.updateExtractors(runningExtractors, selectedExtractors))
   }
@@ -73,7 +73,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def showExtractorInfo(extractorName: String) = ServerAdminAction { implicit request =>
     implicit val user = request.user
-    val targetExtractor = extractorService.listExtractorsInfo().find(p => p.name == extractorName)
+    val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
       case Some(extractor) => Ok(views.html.extractorDetails(extractor))
       case None => InternalServerError("Extractor not found: " + extractorName)
@@ -82,7 +82,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def submitFileExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     implicit val user = request.user
-    val all_extractors = extractorService.listExtractorsInfo()
+    val all_extractors = extractorService.listExtractorsInfo(List("EXTRACT", "CONVERT"))
     val extractors = all_extractors.filter(!_.process.file.isEmpty)
     fileService.get(file_id) match {
 
@@ -126,7 +126,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def submitDatasetExtraction(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, ds_id))) { implicit request =>
     implicit val user = request.user
-    val all_extractors = extractorService.listExtractorsInfo()
+    val all_extractors = extractorService.listExtractorsInfo(List("EXTRACT", "CONVERT"))
     val extractors = all_extractors.filter(!_.process.dataset.isEmpty)
     datasetService.get(ds_id) match {
       case Some(ds) => Ok(views.html.extractions.submitDatasetExtraction(extractors, ds))
