@@ -64,7 +64,7 @@ class Search @Inject() (
         var datasetsFound = ListBuffer.empty[String]
         var collectionsFound = ListBuffer.empty[String]
 
-        val response = plugin.searchAdvanced(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag)
+        val response = plugin.searchWithParameters(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag)
 
         for (resource <- response) {
           resource.resourceType match {

@@ -40,10 +40,20 @@ object SearchUtils {
     })
     val child_of_distinct = child_of.toList.distinct
 
+    // Get tags for file and its sections
+    var ftags: ListBuffer[String] = ListBuffer()
+    f.tags.foreach(t =>
+      ftags += t.name
+    )
+    f.sections.foreach(sect => {
+      sect.tags.foreach(sect_tag =>
+        ftags += sect_tag.name
+      )
+    })
 
     // Get comments for file
     val fcomments = for (c <- comments.findCommentsByFileId(id)) yield {
-      Comment.toElasticsearchComment(c)
+      c.text
     }
 
     // Get metadata for File
@@ -89,7 +99,7 @@ object SearchUtils {
       List.empty,
       child_of_distinct,
       f.description,
-      f.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      ftags.toList,
       fcomments,
       metadata
     ))
@@ -113,7 +123,7 @@ object SearchUtils {
 
     // Get comments for dataset
     val dscomments = for (c <- comments.findCommentsByDatasetId(id)) yield {
-      Comment.toElasticsearchComment(c)
+      c.text
     }
 
     // Get metadata for Dataset
@@ -160,7 +170,7 @@ object SearchUtils {
       parent_of_distinct,
       child_of_distinct,
       ds.description,
-      ds.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      ds.tags.map( (t:Tag) => t.name ),
       dscomments,
       metadata
     ))
@@ -244,7 +254,7 @@ object SearchUtils {
       List.empty,
       child_of,
       s.description.getOrElse(""),
-      s.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      s.tags.map( (t:Tag) => t.name ),
       List.empty,
       metadata
     ))

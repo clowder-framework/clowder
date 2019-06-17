@@ -18,7 +18,7 @@
         -->
         @dataset.tags.map { tag =>
             <div id='@tag.name' class="tag" data-id="@tag.id">
-                <a href="@routes.Tags.search(tag.name)">@Html(tag.name)</a>
+                <a href="@routes.Search.search("tag:"+tag.name)">@Html(tag.name)</a>
                 <!-- If the user can delete the tag, the link is enabled, otherwise the link is not present to save space. -->
                 @if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
                     <a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete"></span></a>
@@ -135,7 +135,7 @@
                     console.log("Response " + response);
                     for (var i = 0; i < tagList.length; i++) {
                         var aTag=tagList[i].trim();
-                        var url = jsRoutes.controllers.Tags.search(aTag).url;
+                        var url = jsRoutes.controllers.Search.search("tag:"+aTag).url;
                         //The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
                         //and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
                         //

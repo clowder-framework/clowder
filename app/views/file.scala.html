@@ -933,15 +933,22 @@
 			<div class="row ds-section-sm border-top">
 				<h4>Tags</h4>
 				<ul id="tagList">
-						<!-- Do the tags need to have [File] and [Section] appeneded to them? -->
-					@file.tags.map { tag =>
-						<li class="tag"><a href="@routes.Tags.search(tag.name)" id="@tag.name" data-id="@tag.id">@Html(tag.name) [File]</a>
-							<a href='javascript:void(0);'>
-								<span style="display:none;" id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></span></a></li>
+					<div id="tagListFile">
+						@{if (file.sections.length>0)
+								<b>On File</b><br/>
+						}
+						@file.tags.map { tag =>
+							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)" id="@tag.name" data-id="@tag.id">@Html(tag.name)</a>
+								<a href='javascript:void(0);'>
+									<span style="display:none;" id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></span></a></li>
+						}
+					</div>
+					@{if (file.sections.length>0)
+						<br/><b>On Sections</b><br/>
 					}
 					@file.sections.map { section =>
 						@section.tags.map { tag =>
-							<li><a href="@routes.Tags.search(tag.name)">@Html(tag.name) [Section]</a></li>
+							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)">@Html(tag.name)</a></li>
 						}
 					}
 				</ul>
@@ -1054,8 +1061,8 @@
 										for (var i = 0; i < tagList.length; i++) {
 											var aTag= tagList[i].trim();
 											if (aTag != "") {
-												var url = jsRoutes.controllers.Tags.search(aTag).url;
-												$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "'>" + aTag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+												var url = jsRoutes.controllers.Search.search("tag:"+aTag).url;
+												$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "'>" + aTag + "</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagListFile');
 												$newTag.hover(removeIconMouseIn, removeIconMouseOut);
 												$newTag.find(".glyphicon-remove").click(removeTag);
 												tmpId = tmpId + 1;

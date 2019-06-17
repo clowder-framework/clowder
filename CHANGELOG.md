@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+**This update will require a reindex of Elasticsearch. After deploying the update either call `POST to /api/reindex`
+or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 
 ### Added
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
@@ -24,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Updated the mongo-init docker image to aks for inputs if not specified as
   an environment variable.
   `docker run -ti --rm --network clowder_clowder clowder/mongo-init`
+- Rework of the Elasticsearch index to include improved syntax and better documentation on the basic search page.
 
 ## 1.6.2 - 2019-05-23
 

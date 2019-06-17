@@ -1784,14 +1784,6 @@ class  Datasets @Inject()(
         }
         events.addObjectEvent(request.user, dataset.id, dataset.name, EventType.DELETE_DATASET.toString)
         datasets.removeDataset(id, Utils.baseUrl(request), request.apiKey, request.user)
-        appConfig.incrementCount('datasets, -1)
-
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete("data", "dataset", id.stringify)
-        }
-
-        for(file <- dataset.files)
-          files.index(file)
 
         current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
         Ok(toJson(Map("status"->"success")))
@@ -1842,10 +1834,6 @@ class  Datasets @Inject()(
         for (ds <- trashDatasets){
           events.addObjectEvent(request.user, ds.id, ds.name, EventType.DELETE_DATASET.toString)
           datasets.removeDataset(ds.id, Utils.baseUrl(request), request.apiKey, request.user)
-          appConfig.incrementCount('datasets, -1)
-          current.plugin[ElasticsearchPlugin].foreach {
-            _.delete("data", "dataset", ds.id.stringify)
-          }
         }
       }
       case None =>

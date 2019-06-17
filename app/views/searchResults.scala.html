@@ -11,12 +11,58 @@
 	<div class="row">
 		<div class="col-md-12">
 			No results found. Sorry!
-			@if(query.startsWith("^") || query.endsWith("$")) {
-				<br/><br/>The search box query is treated as a regular expression and automatically anchored, so characters ^ and $ are not necessary.
-			}
 		</div>
 	</div>
 	}
+	<div class="col-md-12">
+		<a class="btn btn-link" data-toggle="collapse" href="#searchhelp" aria-expanded="false">
+			<b>@Messages("help.search.toggle")</b><br/>
+		</a>
+		<!--TODO: Move this to Scala messages for translation purposes, etc.-->
+		<div class="collapse" id="searchhelp">
+			<ul>
+				<li>@Messages("help.search.overview1")</li>
+				<li>@Messages("help.search.overview2")</li>
+				<li>@Messages("help.search.overview3")</li>
+				<li>@Messages("help.search.overview4") <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-regexp-query.html#regexp-syntax">@Messages("help.search.overview5")</a></li>
+			</ul>
+			<table style="width:100%;">
+				<tr><td width="120"><b>@Messages("help.search.col1")</b></td>
+					<td width="250"><b>@Messages("help.search.col2")</b></td>
+					<td width="400"></td></tr>
+				<tr><td><i>(basic)</i></td>
+					<td>agriculture</td>
+					<td>searches <b>@Messages("help.search.allfields")</b> fields</td></tr>
+				<tr><td><i>(regular expression)</i></td>
+					<td>tre.*s</td>
+					<td>@Messages("help.search.regex1")</td></tr>
+				<tr><td>name</td>
+					<td>name:VIS_SV_180_z1_1207272.png</td>
+					<td>@Messages("help.search.name", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+				<tr><td>creator</td>
+					<td>creator:5a8c4bd574d559ca9b46ef58</td>
+					<td>@Messages("help.search.creator")</td></tr>
+				<tr><td>resource_type</td>
+					<td>resource_type:collection</td>
+					<td>@Messages("help.search.resource_type", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+				<tr><td>tag</td>
+					<td>tag:animal</td>
+					<td>@Messages("help.search.tag")</td></tr>
+				<tr><td>in</td>
+					<td>in:5ccafdf97ceaec481ae86812</td>
+					<td>@Messages("help.search.in", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+				<tr><td>contains</td>
+					<td>contains:5ccafe167ceaec481ae86816</td>
+					<td>@Messages("help.search.contains", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+				<tr><td>metadata</td>
+					<td>"Funding Institution":"University of Illinois"</td>
+					<td>@Messages("help.search.metadata")</td></tr>
+				<tr><td><i>(multiple)</i></td>
+					<td>test resource_type:file tag:^tr.*s</td>
+					<td>@Messages("help.search.complex")</td></tr>
+			</table>
+		</div>
+	</div>
 	<div class="row">
 	  @if(files.size!=0){
 	  		@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {

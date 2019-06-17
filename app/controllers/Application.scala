@@ -280,7 +280,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Admin.deleteIndex,
         routes.javascript.Admin.deleteAllIndexes,
         routes.javascript.Admin.getIndexes,
-        routes.javascript.Tags.search,
         routes.javascript.Admin.getAdapters,
         routes.javascript.Admin.getExtractors,
         routes.javascript.Admin.getMeasures,
@@ -518,7 +517,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Collections.sortedListInSpace,
         controllers.routes.javascript.Datasets.sortedListInSpace,
         controllers.routes.javascript.Users.sendEmail,
-        controllers.routes.javascript.FileLinks.createLink
+        controllers.routes.javascript.FileLinks.createLink,
+        controllers.routes.javascript.Search.search
       )
     ).as(JSON) 
   }
