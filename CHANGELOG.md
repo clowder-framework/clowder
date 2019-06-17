@@ -23,6 +23,9 @@ or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
   [CATS-1001](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1001)
 - Display more info on the manual submission page, link to ExtractorDetails view.
   [CATS-959](https://opensource.ncsa.illinois.edu/jira/browse/CATS-959)
+- Clean up of Search pages. Renamed Advanced Search to Metadata Search. Added search form and Metadata Search link to 
+  main Search page. Consistent and improved search results on both search pages.
+  [CATS-994](https://opensource.ncsa.illinois.edu/jira/browse/CATS-994)
 - Updated the mongo-init docker image to aks for inputs if not specified as
   an environment variable.
   `docker run -ti --rm --network clowder_clowder clowder/mongo-init`

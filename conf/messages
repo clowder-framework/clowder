@@ -59,7 +59,7 @@ securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
 
 #Search help text
-help.search.toggle=Toggle search syntax help
+help.search.toggle=Search Syntax
 help.search.overview1=If the term or metadata field contains spaces, use double quotes to enclose the phrase.
 help.search.overview2=By default, word parts are searched ("bag" returns "side airbags"), so you don't need to include wildcards at the start and end.
 help.search.overview3=Case does not matter.

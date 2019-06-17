@@ -1,0 +1,36 @@
+@(file: File)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@import _root_.util.Formatters.humanReadableByteCount
+<div class="panel panel-default collection-panel" id="@file.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2" style="text-align: center">
+            @if(!file.thumbnail_id.isEmpty){
+                <a href="@(routes.Files.file(file.id, None, None, None))">
+                    <img class="img-responsive fit-in-space"
+                      src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))"
+                      alt="Thumbnail of @Html(file.filename)">
+                </a>
+            } else {
+                <a href="@(routes.Files.file(file.id, None, None, None))">
+                    <span class="searchicon glyphicon glyphicon-file"></span>
+                </a>
+            }
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h4><a href="@(routes.Files.file(file.id))">@Html(file.filename)</a></h4>
+                <div class="row">
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <p>
+                            <span><a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></span> &#183;
+                            <span>@file.uploadDate.format("MMM dd, yyyy")</span> &#183;
+                            <span>@file.stats.views views</span> &#183;
+                            <span>@file.stats.downloads downloads</span> &#183;
+                            <span>@(if(file.contentType != null) file.contentType else "N/A")</span> &#183;
+                            <span>@humanReadableByteCount(file.length)</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
