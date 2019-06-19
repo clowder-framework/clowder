@@ -16,6 +16,6 @@ The activity tab displays events on datasets, collections, spaces, files and use
 
 In the top navigation, you can also access the listing of all spaces, dataset, collections and users through the 'Explore' dropdown, indicated by a purple square.
 
-.. image:: _static/ug-homepage-1.png
+.. image:: /_static/ug-homepage-1.png
     :width: 80%
     :align: center

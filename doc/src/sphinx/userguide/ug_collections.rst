@@ -12,31 +12,31 @@ Similarly as a dataset, a collection can be created from the home page, the top 
  
 To create a collection from the home page click on the 'Create Collection' button below your name in the links section. Displayed in blue in the next image. 
 
-.. image:: _static/ug_collections-1.png
+.. image:: /_static/ug_collections-1.png
     :width: 80%
     :align: center
 
 To create a collection from the top navigation. Click in the create dropdown in the top navigation displayed in blue in the next image. Next click in collections displayed in green in the next image. 
 
-.. image:: _static/ug_collections-2.png
+.. image:: /_static/ug_collections-2.png
     :width: 80%
     :align: center
 
 To create a collection from the list of collections page click on the create button in the top right. The list of collections is displayed below.
  
-.. image:: _static/ug_collections-3.png
+.. image:: /_static/ug_collections-3.png
     :width: 80%
     :align: center
 
 To create a collection within a space, go into the space and click on the create collection button displayed in the image below within a blue box.
 
-.. image:: _static/ug_collections-4.png
+.. image:: /_static/ug_collections-4.png
     :width: 80%
     :align: center
 
 A collection  has a name, description and space. The name field is the only required field. After you start the creating process for a collection with any of the above methods. A page like the one in the image is below. Once you have input the information that you want for your space. You can click on the create collection button at the end of the page, and you will be redirected to your new collection page. 
 
-.. image:: _static/ug_collections-5.png
+.. image:: /_static/ug_collections-5.png
     :width: 80%
     :align: center
 
@@ -45,13 +45,13 @@ Editing a Collection
 
 In a collection, you can edit the name and the description. In order to do so, hover over the collection name or description and an edit symbol will show up. The button that shows up is displayed within a blue box on the next image.
 
-.. image:: _static/ug_collections-6.png
+.. image:: /_static/ug_collections-6.png
     :width: 80%
     :align: center
  
 On click it will show an input field with the current name which you can update and then click on the save button. A similar behavior exists for the description field. 
 
-.. image:: _static/ug_collections-7.png
+.. image:: /_static/ug_collections-7.png
     :width: 80%
     :align: center
 
@@ -60,7 +60,7 @@ Adding Datasets to a Collection
 
 If you want to add a new dataset to  a collection, you can create it within the collection page by clicking the create dataset button highlighted in the image below.
 
-.. image:: _static/ug_collections-8.png
+.. image:: /_static/ug_collections-8.png
     :width: 80%
     :align: center
 
@@ -68,7 +68,7 @@ You can create a dataset as indicated in the instructions on the dataset section
 
 If you want to add an existing dataset to a collection, you need to go into the datasets page. In the right navigation there is a section called 'Collections containing the dataset' where a list of the collections that a dataset is part of will show up, if it is part of a collection. At the end, there is a dropdown that will show the collections you can add the dataset to. You can select one and click on the Add button. The section where you can add a dataset to a collection is highlighted below in a blue box. 
 
-.. image:: _static/ug_collections-9.png
+.. image:: /_static/ug_collections-9.png
     :width: 80%
     :align: center
  
@@ -79,13 +79,13 @@ You can remove a dataset from a collection within the dataset page or within the
 
 To remove a dataset from the dataset page, In the right navigation in the 'Collections containing the dataset' you can click on the remove button next to the collection you want to remove the dataset from. The remove link is highlighted in the next figure. 
 
-.. image:: _static/ug_collections-10.png
+.. image:: /_static/ug_collections-10.png
     :width: 80%
     :align: center
 
 To remove a dataset from the collections page, in the list of dataset, you can click on the remove button in the dataset list item. The button is highlighted in the image below with a blue box. 
 
-.. image:: _static/ug_collections-11.png
+.. image:: /_static/ug_collections-11.png
     :width: 80%
     :align: center
 
@@ -96,19 +96,19 @@ Child collections are a way to organize collections in a hierarchical way. You c
 
 To create a child collection within a collection page. Click on the 'Create Child Collection' button in the Child Collections in the Collection section. The button is highlighted in a blue box in the next image. 
 
-.. image:: _static/ug_collections-12.png
+.. image:: /_static/ug_collections-12.png
     :width: 80%
     :align: center
 
 The Create Child Collection page looks as below. It is a little different than creating a collection page, because it cannot be added to a space directly. It will inherit the spaces from the parent collection. After adding a name and optional description you can click on the create button in the bottom. 
 
-.. image:: _static/ug_collections-13.png
+.. image:: /_static/ug_collections-13.png
     :width: 80%
     :align: center
 
 To add an existing collection to a parent collection. You can click in the dropdown in the 'Parent Collections' area in the right navigation of the collection page. After selecting a collection from the dropdown, click on the Add button next to it. The Parent Collections area is highlighted in a blue box in the next image. 
 
-.. image:: _static/ug_collections-14.png
+.. image:: /_static/ug_collections-14.png
     :width: 80%
     :align: center
 
@@ -117,7 +117,7 @@ Removing a Child Collection
 
 A child collection can only be removed from within the parents collection page. In the listing of Child Collections within the collection page, click on the remove button on the tile for the corresponding collection. In the next image the remove button for the child collection is highlighted. 
 
-.. image:: _static/ug_collections-15.png
+.. image:: /_static/ug_collections-15.png
     :width: 80%
     :align: center
 
@@ -128,7 +128,7 @@ You can add an existing collection to a space by going to the collection page an
 
 The section where you can add a collection to a space is highlighted by a blue box in the next image. 
 
-.. image:: _static/ug_collections-16.png
+.. image:: /_static/ug_collections-16.png
     :width: 80%
     :align: center
 
@@ -138,13 +138,13 @@ Removing from a Space
 A collection can be removed from a space within the collection page or within the space page. 
 To remove the collection within the collection page, click the 'Remove' button next to the space you want to remove it from. This is highlighted in the next image with a blue box.
 
-.. image:: _static/ug_collections-17.png
+.. image:: /_static/ug_collections-17.png
     :width: 80%
     :align: center
 
 In a space page, go to the collection tile that you want to remove and click on the x button within the tile. The x  button's for collections are highlighted in the image below with a blue box. 
 
-.. image:: _static/ug_collections-18.png
+.. image:: /_static/ug_collections-18.png
     :width: 80%
     :align: center
 
@@ -155,20 +155,20 @@ If you want to completely delete a collection from Clowder, you can do so within
 
 Within the collection, page click on the Delete button displayed below in a blue box. 
 
-.. image:: _static/ug_collections-19.png
+.. image:: /_static/ug_collections-19.png
     :width: 80%
     :align: center
 
 To delete a collection from the collection list page, click on the trash button within the tiles. They are highlighted below in blue boxes. 
 
-.. image:: _static/ug_collections-20.png
+.. image:: /_static/ug_collections-20.png
     :width: 80%
     :align: center
  
 
 If you created a collection, you can delete them from your home page. Go into the 'My Collections' tab displayed below with a blue surrounding box. And then click on the trash can icon in the collection you want to delete, highlighted in green in the image below.
 
-.. image:: _static/ug_collections-21.png
+.. image:: /_static/ug_collections-21.png
     :width: 80%
     :align: center
  

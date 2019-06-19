@@ -32,7 +32,7 @@ core infrastructure.
     :maxdepth: 1
     :caption: Getting Started
 
-    ug_index
+    userguide/ug_index
     api
 
 .. toctree::
