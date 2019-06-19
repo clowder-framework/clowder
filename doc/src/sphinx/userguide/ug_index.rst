@@ -2,7 +2,8 @@
 User Guide
 ===========================================
 
-What is up?
+This user guide is intended for first time users. It covers some basic initial interactions with the user
+interface.
 
 .. toctree::
     :maxdepth: 2

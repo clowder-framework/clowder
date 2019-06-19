@@ -13,3 +13,21 @@ It provides a simple Python library to write new extractors in Python. Please se
 
 That being said, extractors can be written in any language that supports HTTP, JSON and AMQP
 (ideally a `RabbitMQ client library <https://www.rabbitmq.com/>`_ is available for it).
+
+Clowder capture several events and sends out specific messages for each. Extractors that are registered for a specific
+event type will receive the message and can then act on it. This is defined in the extractor manifest.
+
+The current list of supported events is:
+
+* File uploaded
+* File added to dataset
+* File Batch uploaded to dataset
+* File remove from dataset
+* Metadata added to file
+* Metadata remove from file
+* Metadata added to dataset
+* Metadata removed from dataset
+* File/Dataset manual submission to extractor
+
+Users can also manually submit datasets and files to a specific extractor from the "Submit to Extractor" page.
+
