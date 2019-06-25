@@ -382,8 +382,8 @@ class Extractions @Inject()(
     Ok(Json.obj("Servers" -> listServersIPs))
   }
 
-  def getExtractorNames() = AuthenticatedAction { implicit request =>
-    val listNames = extractors.getExtractorNames()
+  def getExtractorNames(categories: List[String]) = AuthenticatedAction { implicit request =>
+    val listNames = extractors.getExtractorNames(categories)
     val listNamesJson = toJson(listNames)
     Ok(toJson(Map("Extractors" -> listNamesJson)))
    }
@@ -435,8 +435,8 @@ class Extractions @Inject()(
     Ok(jarr)
   }
 
-  def listExtractors() = AuthenticatedAction  { implicit request =>
-    Ok(Json.toJson(extractors.listExtractorsInfo()))
+  def listExtractors(categories: List[String]) = AuthenticatedAction  { implicit request =>
+    Ok(Json.toJson(extractors.listExtractorsInfo(categories)))
   }
 
   def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
@@ -450,9 +450,15 @@ class Extractions @Inject()(
 
     // If repository is of type object, change it into an array.
     // This is for backward compatibility with requests from existing extractors.
-    val requestJson = request.body \ "repository" match {
+    var requestJson = request.body \ "repository" match {
       case rep: JsObject => request.body.as[JsObject] ++ Json.obj("repository" ->  Json.arr(rep))
       case _ => request.body
+    }
+
+    // If extractor doesn't have categories specified, set a default
+    requestJson = requestJson \ "categories" match {
+      case cats: JsUndefined => requestJson.as[JsObject] ++ Json.obj("categories" ->  Json.arr(ExtractorCategory.EXTRACT.toString))
+      case _ => requestJson
     }
 
     val extractionInfoResult = requestJson.validate[ExtractorInfo]

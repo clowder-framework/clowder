@@ -17,6 +17,7 @@ or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
   based on extractor info received. For extractors using this method they will not need
   to manually register themselves through API to be listed.
   [CATS-1004](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1004)
+- Added support for extractor categories that can be used for retrieving filtered lists of extrators by category.
 
 ### Changed
 - Improved Advanced Search UI to retain search results between navigations.
