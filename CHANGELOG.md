@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.7.0 - 2019-06-28
 **This update will require a reindex of Elasticsearch. After deploying the update either call `POST to /api/reindex`
 or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 
