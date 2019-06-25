@@ -1,24 +1,31 @@
 
-Clowder: Data Management for Long Tail Data
-===========================================
+##################
+Clowder Framework
+##################
 
 Welcome to Clowder's documentation. Clowder is a web-based data management system that allows users to share,
 annotate, organize and analyze large collections of datasets. It provides support for extensible metadata annotation
 and distributed analytics for automatic curation of uploaded data. Clowder is open source software that can
 be customized and deployed on your own cloud.
 
-* For a high level overview of the project please visit `https://clowder.ncsa.illinois.edu <https://clowder.ncsa.illinois.edu/>`_.
+.. note::
 
-* If you have questions for the Clowder you can chat with the developers on
-  `Slack <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM>`_
-  or by sending an email to the mailing list *clowder@lists.illinois.edu*
-  (`sign up <https://lists.illinois.edu/lists/subscribe/clowder>`_).
+  * For a high level overview of the project please visit `https://clowder.ncsa.illinois.edu <https://clowder.ncsa.illinois.edu/>`_.
 
-* Issue tracking, internal documents, continuous build and other information is available on
-  `NCSA Opensource <https://opensource.ncsa.illinois.edu/projects/CATS>`_. A copy of the source code can also be found
-  on `GitHub <https://github.com/ncsa/clowder>`_.
+  * If you have questions for the Clowder you can chat with the developers on
+    `Slack <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM>`_
+    or by sending an email to the mailing list *clowder@lists.illinois.edu*
+    (`sign up <https://lists.illinois.edu/lists/subscribe/clowder>`_).
 
-* We are always looking for `contributions <https://github.com/ncsa/clowder/blob/master/CONTRIBUTING.md>`_.
+  * Issue tracking, internal documents, continuous build and other information is available on
+    `NCSA Opensource <https://opensource.ncsa.illinois.edu/projects/CATS>`_. A copy of the source code can also be found
+    on `GitHub <https://github.com/ncsa/clowder>`_.
+
+  * We are always looking for `contributions <https://github.com/ncsa/clowder/blob/master/CONTRIBUTING.md>`_.
+
+********
+Contents
+********
 
 .. toctree::
     :maxdepth: 1
@@ -37,18 +44,20 @@ be customized and deployed on your own cloud.
 
 .. toctree::
     :maxdepth: 1
-    :caption: Deploying
+    :caption: Administration
 
-    administration
+    admin/installing
+    admin/upgrading
+    admin/customizing
 
 .. toctree::
     :maxdepth: 1
     :caption: Development
 
-    architecture
-    setup_dev
-    extractors
-    previewers
+    develop/architecture
+    develop/setup_dev
+    develop/extractors
+    develop/previewers
 
 .. toctree::
     :maxdepth: 1

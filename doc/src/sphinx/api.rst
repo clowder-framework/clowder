@@ -1,6 +1,6 @@
 .. index:: Application Programming Interface
 
-Using the Web Service API
+Web Service API
 =============
 
 The RESTful application programming interface is the best way to interact with Clowder programmatically. Much of the web
@@ -29,26 +29,4 @@ Here is an example of requesting the metadata attached to a *file* and providing
 
 .. code-block:: bash
 
-  curl -X GET "https://clowder.ncsa.illinois.edu/clowder/api/files/5d07b5fe5e0ec351d75ff064/metadata.jsonld" -H "X-API-Key: *yourapikey*"
-
-pyClowder
----------
-
-If you are writing Python scripts or extractors against the Clowder API, the
-`pyClowder2 library <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/browse>`_ provides some of the
-API functionality with simplified wrapper functions. After using ``python setup.py install`` to install the library,
-you can use it to get and post data to Clowder.
-
-**When to use**
-
-pyClowder2 provides straight forward submodules for various Clowder API endpoints. Python scripts that interact with
-Clowder can usually be simplified by replacing custom implementations with calls to the appropriate pyClowder2 methods.
-
-- **files** (e.g. upload/download/get metadata/update/submit for extraction)
-- **datasets** (e.g. create/download/get metadata & contents/submit for extraction)
-- **collections** (e.g. create/get datasets)
-- Additional functionality (such as support for geostreams) in development.
-
-For details about pyClowder2 functions and how they can be used, please see the `library documentation <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/browse/docs>`_.
-
-pyClowder2 is updated as relevant API endpoints in Clowder are added or changed, so by using this library your code is better insulated from breaking changes as well.
+  curl -X GET -H "X-API-Key: *yourapikey*" "https://clowder.ncsa.illinois.edu/clowder/api/files/5d07b5fe5e0ec351d75ff064/metadata.jsonld"

@@ -2,7 +2,7 @@
 User Guide
 ===========================================
 
-This user guide is intended for first time users. It covers some basic initial interactions with the user
+This user guide is intended for first time users. It covers some basic initial interactions with the system through the user
 interface.
 
 .. toctree::
