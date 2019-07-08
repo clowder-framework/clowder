@@ -4,7 +4,7 @@ Previewers
 ==========
 
 Previewers are custom Javascript code to visualize information about datasets and files (collection support is
-experimental). Usualy those are used to provide a preview of a file, when the file is big, but they can be used to
+experimental). Usually those are used to provide a preview of a file, when the file is big, but they can be used to
 visualize more interesting aspects of a resource. For example, the GIS previewers enable overlaying geospatial data
 on a interactive map in the browser.
 
