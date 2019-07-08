@@ -581,7 +581,6 @@ class  Datasets @Inject()(
 
   def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     Logger.debug(s"Adding metadata to dataset $id")
-    //datasets.addMetadata(id, Json.stringify(request.body))
 
     datasets.get(id) match {
       case Some(x) => {
@@ -629,6 +628,7 @@ class  Datasets @Inject()(
     */
   def addMetadataJsonLD(id: UUID) =
      PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
@@ -675,7 +675,7 @@ class  Datasets @Inject()(
                       p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                     }
 
-                    events.addObjectEvent(None, id, x.name,EventType.ADD_METADATA_DATASET.toString)
+                    events.addObjectEvent(request.user, id, x.name,EventType.ADD_METADATA_DATASET.toString)
 
                     datasets.index(id)
                     Ok(toJson("Metadata successfully added to db"))
