@@ -20,7 +20,18 @@ $(dirname $0)/docker.sh
 
 # find out the version
 if [ "${BRANCH}" = "master" ]; then
-    VERSION=${VERSION:-"1.x.x 1.x 1 latest"}
+    VERSION=${VERSION:-""}
+    if [ "${VERSION}" == "" ]; then
+        TMPVERSION=$(awk '/version = / { print $4 }' $(dirname $0)/project/Build.scala | sed 's/"//g')
+        echo "Detected version ${TMPVERSION}"
+        VERSION="latest"
+        OLDVERSION=""
+        while [ "$OLDVERSION" != "$TMPVERSION" ]; do
+            VERSION="${VERSION} ${TMPVERSION}"
+            OLDVERSION="${TMPVERSION}"
+            TMPVERSION=$(echo ${OLDVERSION} | sed 's/\.[0-9]*$//')
+        done
+    fi
 elif [ "${BRANCH}" = "develop" ]; then
     VERSION="develop"
 else

@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.7.1 - 2019-07-09
+
+### Fixed
+- Logging was accidently set to DEBUG, reverted it back to INFO
+
 ## 1.7.0 - 2019-07-08
+
 **This update will require a reindex of Elasticsearch. After deploying the update either call `POST to /api/reindex`
 or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 
