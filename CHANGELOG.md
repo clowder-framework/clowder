@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.7.2 - ???
+
+### Fixed
+- RabbitMQ plugin would throw an exception if rabbitmq server restarted. 
+  [CATS-1012](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1012)
+
 ## 1.7.1 - 2019-07-09
 
 ### Fixed
