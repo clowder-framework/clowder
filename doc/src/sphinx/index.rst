@@ -8,6 +8,10 @@ annotate, organize and analyze large collections of datasets. It provides suppor
 and distributed analytics for automatic curation of uploaded data. Clowder is open source software that can
 be customized and deployed on your own cloud.
 
+.. warning::
+  This documentation is being updated. Please bear with us as we make this a much more useful document. If you want
+  to contribute to the documentation the source is available `here <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/clowder/browse/doc/src/sphinx?at=refs%2Fheads%2FCATS-865-updated-sphinx-documentation>`_. Thank you!
+
 .. note::
 
   * For a high level overview of the project please visit `https://clowder.ncsa.illinois.edu <https://clowder.ncsa.illinois.edu/>`_.

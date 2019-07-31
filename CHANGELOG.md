@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-1001](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1001)
 - Display more info on the manual submission page, link to ExtractorDetails view.
   [CATS-959](https://opensource.ncsa.illinois.edu/jira/browse/CATS-959)
+- Updated core documentation, both the content and version of Sphinx.
+  [CATS-865](https://opensource.ncsa.illinois.edu/jira/browse/CATS-865)
 
 ## 1.6.2 - 2019-05-23
 
