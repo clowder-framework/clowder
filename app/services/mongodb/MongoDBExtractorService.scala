@@ -74,22 +74,22 @@ class MongoDBExtractorService extends ExtractorService {
     ExtractorsForInstanceDAO.update(query, $addToSet("extractors" -> extractor), true, false, WriteConcern.Safe)
   }
 
-  def getExtractorNames() = {
+  def getExtractorNames(categories: List[String]) = {
     var list_queue = List[String]()
 
-    Logger.debug("[MongoDBExtractorService]- getExtractorNames")
-    var allDocs = ExtractorNames.dao.collection.find()
+    val allDocs = ExtractorInfoDAO.findAll()
     for (doc <- allDocs) {
-      var doc1 = com.mongodb.util.JSON.serialize(doc)
-      var doc2 = Json.parse(doc1)
-      var doc3 = doc2.\("name").asOpt[String]
-      doc3.map {
-        t => list_queue = t :: list_queue
-      }.getOrElse {}
+      // If no categories are specified, return all extractor names
+      var category_match = categories.isEmpty
+      if (!category_match) {
+        // Otherwise check if any extractor categories overlap requested categories (force uppercase)
+        val upper_categories = categories.map(cat => cat.toUpperCase)
+        category_match = doc.categories.intersect(upper_categories).length > 0
+      }
 
+      if (category_match)
+        list_queue = doc.name :: list_queue
     }
-    Logger.debug("[MongoDBExtractorService]- Extractor Name List-")
-    Logger.debug(list_queue.toString)
     list_queue.distinct
   }
 
@@ -167,8 +167,24 @@ class MongoDBExtractorService extends ExtractorService {
     }
   }
 
-  def listExtractorsInfo(): List[ExtractorInfo] = {
-    ExtractorInfoDAO.findAll().toList
+  def listExtractorsInfo(categories: List[String]): List[ExtractorInfo] = {
+    var list_queue = List[ExtractorInfo]()
+
+    val allDocs = ExtractorInfoDAO.findAll()
+    for (doc <- allDocs) {
+      // If no categories are specified, return all extractor names
+      var category_match = categories.isEmpty
+      if (!category_match) {
+        // Otherwise check if any extractor categories overlap requested categories (force uppercase)
+        val upper_categories = categories.map(cat => cat.toUpperCase)
+        category_match = doc.categories.intersect(upper_categories).length > 0
+      }
+
+      if (category_match)
+        list_queue = doc :: list_queue
+    }
+
+    list_queue
   }
 
   def getExtractorInfo(extractorName: String): Option[ExtractorInfo] = {

@@ -1,150 +1,109 @@
-@(query: String, files: Array[models.File], datasets: Array[models.Dataset], collections: Array[models.Collection], mapdatasetIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]], mapcollectionIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]])(implicit user: Option[models.User])
-
+@(query: String, filesArray: Array[models.File], datasetsArray: Array[models.Dataset], collectionsArray: Array[models.Collection], mapdatasetIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]], mapcollectionIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import scala.collection.mutable.ListBuffer
 
-@main("Search Results") {
-	<div class="page-header">
-		<h1>Search Results <small>@query</small></h1>
+@main("Search") {
+	<div class="row with-margin-md">
+		<div class="col-md-12">
+			<h1>Search</h1>
+		</div>
+		<div class="col-md-10">
+			<form role="search" action="@routes.Search.search("")">
+				<div class="input-group">
+					<input type="text" class="form-control" placeholder="Search" name="query" value="@query">
+					<div class="input-group-btn">
+						<button class="btn btn-default" type="submit">
+							<span class="glyphicon glyphicon-search"></span>
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+		<div class="col-md-2 vcenter">
+            <a data-toggle="collapse" href="#searchhelp" aria-expanded="false">
+            @Messages("help.search.toggle")</a><br>
+			<a href="@routes.Metadata.search" title="Search for datasets and files based on metadata fields">
+				Metadata Search</a>
+		</div>
 	</div>
-	@if(files.size == 0 && datasets.size == 0 && collections.size == 0) {
+
+    <div class="col-md-12">
+        <!--TODO: Move this to Scala messages for translation purposes, etc.-->
+        <div class="collapse" id="searchhelp">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <ul>
+                        <li>@Messages("help.search.overview1")</li>
+                        <li>@Messages("help.search.overview2")</li>
+                        <li>@Messages("help.search.overview3")</li>
+                        <li>@Messages("help.search.overview4") <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-regexp-query.html#regexp-syntax">@Messages("help.search.overview5")</a></li>
+                    </ul>
+                    <table style="width:100%;">
+                        <tr><td width="120"><b>@Messages("help.search.col1")</b></td>
+                            <td width="250"><b>@Messages("help.search.col2")</b></td>
+                            <td width="400"></td></tr>
+                        <tr><td><i>(basic)</i></td>
+                            <td>agriculture</td>
+                            <td>searches <b>@Messages("help.search.allfields")</b> fields</td></tr>
+                        <tr><td><i>(regular expression)</i></td>
+                            <td>tre.*s</td>
+                            <td>@Messages("help.search.regex1")</td></tr>
+                        <tr><td>name</td>
+                            <td>name:VIS_SV_180_z1_1207272.png</td>
+                            <td>@Messages("help.search.name", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+                        <tr><td>creator</td>
+                            <td>creator:5a8c4bd574d559ca9b46ef58</td>
+                            <td>@Messages("help.search.creator")</td></tr>
+                        <tr><td>resource_type</td>
+                            <td>resource_type:collection</td>
+                            <td>@Messages("help.search.resource_type", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+                        <tr><td>tag</td>
+                            <td>tag:animal</td>
+                            <td>@Messages("help.search.tag")</td></tr>
+                        <tr><td>in</td>
+                            <td>in:5ccafdf97ceaec481ae86812</td>
+                            <td>@Messages("help.search.in", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+                        <tr><td>contains</td>
+                            <td>contains:5ccafe167ceaec481ae86816</td>
+                            <td>@Messages("help.search.contains", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+                        <tr><td>metadata</td>
+                            <td>"Funding Institution":"University of Illinois"</td>
+                            <td>@Messages("help.search.metadata")</td></tr>
+                        <tr><td><i>(multiple)</i></td>
+                            <td>test resource_type:file tag:^tr.*s</td>
+                            <td>@Messages("help.search.complex")</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	@if(filesArray.size == 0 && datasetsArray.size == 0 && collectionsArray.size == 0 && !query.isEmpty) {
 	<div class="row">
 		<div class="col-md-12">
-			No results found. Sorry!
-			@if(query.startsWith("^") || query.endsWith("$")) {
-				<br/><br/>The search box query is treated as a regular expression and automatically anchored, so characters ^ and $ are not necessary.
-			}
+			<h4 class="text-center">Your query returned no results. Please try a different query.</h4>
 		</div>
 	</div>
 	}
-	<div class="row">
-	  @if(files.size!=0){
-	  		@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {
-		    	<div class="col-md-4">
-		    }
-		    @if(files.size == 0 || datasets.size == 0 || collections.size == 0) {
-		    	<div class="col-md-6">
-		    }
-		   
-		    <h3 id="search-file-title"><span class="glyphicon glyphicon-file"></span> Files</h3>
-		    @for(file <- files) {
-			  <div class="row elasticsearchResult" id="filediv_@file.id.toString">
-				<div class="col-md-2">
-					@if(!file.thumbnail_id.isEmpty){
-						<a href="@(routes.Files.file(file.id))">
-							<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
-						</a>
-					}
-				</div>
-				<div class="col-md-10">
-					<dl class="dl-horizontal">
-						<dt>Filename:</dt>
-						<dd><a href="@(routes.Files.file(file.id))">@file.filename</a></dd>
-						<dt>Type:</dt>
-						<dd>@file.contentType</dd>
-						<dt>Uploaded on:</dt>
-						<dd>@file.uploadDate</dd>
-						<dt>Dataset name(s):</dt>
-						<dd>
-							@for(currMapping <- mapdatasetIds.get(file.id.toString).get){
-								<a href="@(routes.Datasets.dataset(UUID(currMapping._1.trim)))">@currMapping._2.trim</a><br/>
-							}
-						</dd>
-					</dl>
-				</div>
-			</div>
-			<script>
 
-				$("#filediv_@file.id.toString br").last().remove();
+	@if(collectionsArray.size!=0) {
+		<h3>Collections</h3>
+		@for(collection <- collectionsArray) {
+			@search.searchResultCollection(collection)
+		}
+	}
 
-			</script>
-			}
-			</div>
+	@if(datasetsArray.size!=0) {
+		<h3>Datasets</h3>
+		@for(dataset <- datasetsArray) {
+			@search.searchResultDataset(dataset)
 		}
-	@if(datasets.size!=0){
-			@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {
-		    	<div class="col-md-4">
-		    }
-		    @if(files.size == 0 || datasets.size == 0 || collections.size == 0) {
-		    	<div class="col-md-6">
-		    }
-						    
-	       <h3 id="search-dataset-title"> <span class="glyphicon glyphicon-briefcase"></span> Datasets</h3>
-	    @for(dataset <- datasets) {
-		  <div class="row elasticsearchResult" id="datasetdiv_@dataset.id.toString">
-		    <div class="col-md-2">
-				@if(!dataset.thumbnail_id.isEmpty){
-					<a href="@(routes.Datasets.dataset(dataset.id))">
-						<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
-					</a>
-				}
-			</div>
-			<div class="col-md-10">
-				<dl class="dl-horizontal">
-					<dt> Name:</dt>
-					<dd><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></dd>
-					<dt>  Description:</dt>
-					<dd> @Html(dataset.description.replace("\n","<br/>"))</dd>
-					<dt>Collection name(s):</dt>
-					<dd>
-						@for(currMapping <- mapcollectionIds.get(dataset.id.toString).get){
-							<a href="@(routes.Collections.collection(UUID(currMapping._1.trim)))">@currMapping._2.trim</a><br/>
-						}
-					</dd>
-				</dl>
-			</div>
-		</div>
-		<script>
-				$("#datasetdiv_@dataset.id.toString br").last().remove();
-		</script>
-		}
-		</div>
 	}
-	
-	@if(collections.size!=0){
-			@if(files.size != 0 && datasets.size != 0 && collections.size != 0) {
-		    	<div class="col-md-4">
-		    }
-		    @if(files.size == 0 || datasets.size == 0 || collections.size == 0) {
-		    	<div class="col-md-6">
-		    }
-			    
-	       <h3 id="search-collection-title"> <span class="glyphicon glyphicon-th-large"></span> Collections</h3>
-	    @for(collection <- collections) {
-		  <div class="row elasticsearchResult">
-		    <div class="col-md-2">
-				@if(!collection.thumbnail_id.isEmpty){
-					<a href="@(routes.Collections.collection(collection.id))">
-						<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
-					</a>
-				}
-			</div>
-			<div class="col-md-10">
-				<dl class="dl-horizontal">
-					<dt> Name:</dt>
-					<dd><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></dd>
-					<dt>  Description:</dt>
-					<dd> @Html(collection.description.replace("\n","<br>"))</dd>
-				</dl>
-			</div>
-		</div>
+
+	@if(filesArray.size!=0){
+		<h3>Files</h3>
+		@for(file <- filesArray) {
+			@search.searchResultFile(file)
 		}
-		</div>
 	}
-	
-	
-	</div>
-	<script>
-		$(".col-md-4 > div > div > img").css("width", "100");
-		
-		$(".dl-horizontal").css("position", "relative");
-		
-		$(".col-md-4 .dl-horizontal").each(function () {
-	        this.style.top = "-10px"   ;
-	    });
-		$(".col-md-6 .dl-horizontal").each(function () {
-	        this.style.top = "-10px"   ;
-	    });
-		
-	</script>
 }

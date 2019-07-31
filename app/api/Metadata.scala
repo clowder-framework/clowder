@@ -563,7 +563,7 @@ class Metadata @Inject() (
                 case ResourceRef.file => {
                   current.plugin[ElasticsearchPlugin].foreach { p =>
                     // Delete existing index entry and re-index
-                    p.delete("data", "file", m.attachedTo.id.stringify)
+                    p.delete(m.attachedTo.id.stringify)
                     files.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>
@@ -574,7 +574,7 @@ class Metadata @Inject() (
                 case ResourceRef.dataset => {
                   current.plugin[ElasticsearchPlugin].foreach { p =>
                     // Delete existing index entry and re-index
-                    p.delete("data", "dataset", m.attachedTo.id.stringify)
+                    p.delete(m.attachedTo.id.stringify)
                     datasets.index(m.attachedTo.id)
                   }
                   current.plugin[RabbitmqPlugin].foreach { p =>

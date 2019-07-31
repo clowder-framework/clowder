@@ -17,7 +17,7 @@ trait ExtractorService {
 
   def enableExtractor(extractor: String)
 
-  def getExtractorNames(): List[String]
+  def getExtractorNames(categories: List[String]): List[String]
   
   def getExtractorInputTypes(): List[String]
   
@@ -35,7 +35,7 @@ trait ExtractorService {
   
   def dropAllExtractorStatusCollection()
 
-  def listExtractorsInfo(): List[ExtractorInfo]
+  def listExtractorsInfo(categories: List[String]): List[ExtractorInfo]
 
   def getExtractorInfo(extractorName: String): Option[ExtractorInfo]
 

@@ -1,0 +1,39 @@
+@(dataset: Dataset)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+<div class="panel panel-default collection-panel" id="@dataset.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2" style="text-align: center">
+            @if(!dataset.thumbnail_id.isEmpty){
+                <a href="@(routes.Datasets.dataset(dataset.id))">
+                    <img class="img-responsive fit-in-space"
+                      src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))"
+                      alt="Thumbnail of @Html(dataset.name)">
+                </a>
+            } else {
+                <a href="@(routes.Datasets.dataset(dataset.id))">
+                    <span class="searchicon glyphicon glyphicon-briefcase"></span>
+                </a>
+            }
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h4><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h4>
+                <div class="row">
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <p>
+                            <span><a href = "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName</a></span> &#183;
+                            <span>@dataset.created.format("MMM dd, yyyy")</span> &#183;
+                            <span>@dataset.stats.views views</span> &#183;
+                            <span>@dataset.stats.downloads downloads</span> &#183;
+                            <span>@dataset.folders.size folders</span> &#183;
+                            <span>@dataset.files.size files</span>
+                        </p>
+                        @if(dataset.description != "") {
+                            <p class="abstractsummary">@Html(dataset.description)</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

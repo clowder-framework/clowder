@@ -87,24 +87,31 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   val datasetService: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val userService: UserService = DI.injector.getInstance(classOf[UserService])
 
-  var extractQueue: Option[ActorRef] = None
-  val cancellationDownloadQueueName: String = "clowder.jobs.temp"
-  var cancellationQueue: Option[ActorRef] = None
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
   var factory: Option[ConnectionFactory] = None
-  var restURL: Option[String] = None
+
+  var extractQueue: Option[ActorRef] = None
+  var cancellationQueue: Option[ActorRef] = None
   var event_filter: Option[ActorRef] = None
+  var extractorsHeartbeats: Option[ActorRef] = None
+
+  var bindings = List.empty[Binding]
+
+  val cancellationDownloadQueueName: String = "clowder.jobs.temp"
+
+  var restURL: Option[String] = None
+
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
   var rabbitmquri: String = ""
   var exchange: String = ""
   var mgmtPort: String = ""
-  var bindings = List.empty[Binding]
 
   var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
 
+  /** On start connect to broker. */
   override def onStart() {
     Logger.info("Starting RabbitMQ Plugin")
     val configuration = play.api.Play.configuration
@@ -125,19 +132,21 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     }
   }
 
+  /** On stop clean up connection. */
   override def onStop() {
     Logger.debug("Shutting down Rabbitmq Plugin")
     factory = None
     close()
   }
 
+  /** Check if play plugin is enabled **/
   override lazy val enabled = {
     !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
   }
 
+  /** Close connection to broker. **/
   def close() {
     Logger.debug("Closing connection")
-    extractQueue = None
     restURL = None
     vhost = ""
     username = ""
@@ -160,7 +169,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       }
       connection = None
     }
-
     if (event_filter.isDefined) {
       event_filter.get ! PoisonPill
       event_filter = None
@@ -168,6 +176,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     if (extractQueue.isDefined) {
       extractQueue.get ! PoisonPill
       extractQueue = None
+    }
+    if (cancellationQueue.isDefined) {
+      cancellationQueue.get ! PoisonPill
+      cancellationQueue = None
     }
   }
 
@@ -198,23 +210,22 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val replyQueueName = channel.get.queueDeclare().getQueue
       Logger.debug("Reply queue name: " + replyQueueName)
 
+      // get bindings stored in broker
       val queueBindingsFuture = getQueuesNamesForAnExchange(exchange)
       import scala.concurrent.ExecutionContext.Implicits.global
       queueBindingsFuture map { x =>
-        implicit val peopleReader = Json.reads[Binding]
+        implicit val bindingsReader = Json.reads[Binding]
         bindings = x.json.as[List[Binding]]
         Logger.debug("Bindings successufully retrieved")
       }
       Await.result(queueBindingsFuture, 5000 millis)
 
-      // status consumer
+      // Start actor to listen for extractor status messages
       Logger.info("Starting extraction status receiver")
-
       event_filter = Some(Akka.system.actorOf(
         Props(new EventFilter(channel.get, replyQueueName)),
         name = "EventFilter"
       ))
-
       Logger.debug("Initializing a MsgConsumer for the EventFilter")
       channel.get.basicConsume(
         replyQueueName,
@@ -223,9 +234,31 @@ class RabbitmqPlugin(application: Application) extends Plugin {
         new MsgConsumer(channel.get, event_filter.get)
       )
 
-      // Actor to submit to the rabbitmq broker
+      // Start actor to listen to extractor heartbeats
+      Logger.info("Starting extractor heartbeat listener")
+      // create fanout exchange if it doesn't already exist
+      channel.get.exchangeDeclare("extractors", "fanout", true)
+      // anonymous queue
+      val heartbeatsQueue = channel.get.queueDeclare().getQueue
+      // bind queue to exchange
+      channel.get.queueBind(heartbeatsQueue, "extractors", "*")
+      extractorsHeartbeats = Some(Akka.system.actorOf(
+        Props(new ExtractorsHeartbeats(channel.get, heartbeatsQueue)), name = "ExtractorsHeartbeats"
+      ))
+      Logger.debug("Initializing a MsgConsumer for the ExtractorsHeartbeats")
+      channel.get.basicConsume(
+        heartbeatsQueue,
+        false, // do not auto ack
+        "ExtractorsHeartbeats", // tagging the consumer is important if you want to stop it later
+        new MsgConsumer(channel.get, extractorsHeartbeats.get)
+      )
+
+      // Setup Actor to submit new extractions to broker
       extractQueue = Some(Akka.system.actorOf(Props(new PublishDirectActor(channel = channel.get,
         replyQueueName = replyQueueName))))
+
+      // Setup cancellation queue. Pop messages from extraction queue until we find the one we want to cancel.
+      // Store messages in the extraction queue temporarely in this queue.
       try {
         val cancellationSearchTimeout: Long = configuration.getString("submission.cancellation.search.timeout").getOrElse("500").toLong
         // create cancellation download queue to hold pending rabbitmq message
@@ -1105,8 +1138,6 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
   }
 }
 
-
-
 /**
   * Listen for responses coming back on replyQueue
   */
@@ -1124,7 +1155,7 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 }
 
 /**
-  * Actual message on reply queue
+  * Actual message on reply queue.
   */
 class EventFilter(channel: Channel, queue: String) extends Actor {
   val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
@@ -1156,5 +1187,48 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
   }
 }
 
+/**
+  * Listen for heartbeats messages sent by extractors.
+  * @param channel
+  * @param queue
+  */
+class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
+  val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+  val extractorsService: ExtractorService = DI.injector.getInstance(classOf[ExtractorService])
+
+  def receive = {
+    case statusBody: String =>
+      Logger.debug("Received extractor heartbeat: " + statusBody)
+      val json = Json.parse(statusBody)
+      // TODO store running extractors ids
+      val id = UUID((json \ "id").as[String])
+      val queue = (json \ "queue").as[String]
+      val extractor_info = (json \ "extractor_info")
+      val extractionInfoResult = extractor_info.validate[ExtractorInfo]
+      extractionInfoResult.fold(
+        errors => {
+          Logger.error("Received extractor heartbeat with bad format: " + extractor_info)
+        },
+        info => {
+          extractorsService.getExtractorInfo(info.name) match {
+            case Some(infoFromDB) => {
+              // TODO only update if new semantic version is greater than old semantic version
+              if (infoFromDB.version != info.version) {
+                // TODO keep older versions of extractor info instead of just the latest one
+                extractorsService.updateExtractorInfo(info)
+                Logger.info("Updated extractor definition for " + info.name)
+              }
+            }
+            case None => {
+              extractorsService.updateExtractorInfo(info)
+              Logger.info(s"New extractor ${info.name} registered from heartbeat")
+            }
+          }
+        }
+      )
+  }
+}
+
+/** RabbitMQ Bindings retrieve from management API **/
 case class Binding(source: String, vhost: String, destination: String, destination_type: String, routing_key: String,
                    arguments: JsObject, properties_key: String)

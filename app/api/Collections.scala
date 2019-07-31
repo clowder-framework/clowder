@@ -159,7 +159,6 @@ class Collections @Inject() (datasets: DatasetService,
         if (!useTrash || (useTrash && collection.trash)){
           events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collectionId)
-          appConfig.incrementCount('collections, -1)
           current.plugin[AdminsNotifierPlugin].foreach {
             _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
           }
@@ -210,7 +209,6 @@ class Collections @Inject() (datasets: DatasetService,
         for (collection <- trashcollections){
           events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collection.id)
-          appConfig.incrementCount('collections, -1)
           current.plugin[AdminsNotifierPlugin].foreach {
             _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
           }
@@ -236,7 +234,6 @@ class Collections @Inject() (datasets: DatasetService,
           if (dateInTrash.getTime() < deleteBeforeDateTime) {
             events.addObjectEvent(request.user , c.id, c.name, EventType.DELETE_COLLECTION.toString)
             collections.delete(c.id)
-            appConfig.incrementCount('collections, -1)
             current.plugin[AdminsNotifierPlugin].foreach {
               _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",c.id.stringify, c.name)
             }

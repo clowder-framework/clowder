@@ -14,6 +14,8 @@ owner.title = {0}''s {1}
 owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
 resource.in.title= {0} in {1} <a href="{2}">{3}</a>
 list.title= {0}
+
+# Basic terms
 users.title=Users
 user.title=User
 datasets.title=Datasets
@@ -28,6 +30,7 @@ collection.parent.title=Parent Collection
 collection.child.title = Child Collection
 spaces.title=Spaces
 space.title=Space
+
 curationobject.label = Publication Request
 dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
 dataset.create.collection.message=This {0} will be added to {1}
@@ -54,3 +57,23 @@ metadata.uri= A unique URI where this metadata is defined. This is not queried o
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
+
+#Search help text
+help.search.toggle=Search Syntax
+help.search.overview1=If the term or metadata field contains spaces, use double quotes to enclose the phrase.
+help.search.overview2=By default, word parts are searched ("bag" returns "side airbags"), so you don't need to include wildcards at the start and end.
+help.search.overview3=Case does not matter.
+help.search.overview4=Regular expressions are supported.
+help.search.overview5=(Elasticsearch regular expression syntax help)
+help.search.col1=field
+help.search.col2=example
+help.search.allfields=name, description, creator name, and tag
+help.search.regex1=get anything with "trees" or "streetcars" in basic fields
+help.search.name=searches file, {0} or {1} names
+help.search.creator=creator ID can be found in their profile URL
+help.search.resource_type=can be file, {0} or {1}
+help.search.tag=filter search results by specific tags
+help.search.in=a {0} or {1} ID can be specified
+help.search.contains=a file, {0} or {1} ID can be specified
+help.search.metadata=if the field is not any of the above, it is assumed to be a metadata field
+help.search.complex=get any files tagged "trees" or "trust", and with "test" in basic fields

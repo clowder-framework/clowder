@@ -189,7 +189,6 @@ GET            /metadata/:id                                                    
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
 # Tags
-GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 
@@ -404,7 +403,7 @@ POST           /api/files/:id/archive                                           
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/extractors                                                          @api.Extractions.listExtractors()
+GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
@@ -413,7 +412,7 @@ POST           /api/datasets/:ds_id/extractions                                 
 
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
-GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
+GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames(categories: List[String] ?= List.empty)
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
 #API for temporary fix for BD-289
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()

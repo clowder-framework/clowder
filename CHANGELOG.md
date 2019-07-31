@@ -6,19 +6,46 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Changed
+- Updated core documentation, both the content and version of Sphinx.
+  [CATS-865](https://opensource.ncsa.illinois.edu/jira/browse/CATS-865)
+
+## 1.7.1 - 2019-07-09
+
+### Fixed
+- Logging was accidently set to DEBUG, reverted it back to INFO
+
+## 1.7.0 - 2019-07-08
+
+**This update will require a reindex of Elasticsearch. After deploying the update either call `POST to /api/reindex`
+or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
+
+### Fixed
+- HTTP 500 error when posting new metadata.
+
 ### Added
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.
   [CATS-981](https://opensource.ncsa.illinois.edu/jira/browse/CATS-981)
+- Listen for heartbeat messages from extractors and update list of registered extractors
+  based on extractor info received. For extractors using this method they will not need
+  to manually register themselves through API to be listed.
+  [CATS-1004](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1004)
+- Added support for extractor categories that can be used for retrieving filtered lists of extrators by category.
 
 ### Changed
 - Improved Advanced Search UI to retain search results between navigations.
   [CATS-1001](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1001)
 - Display more info on the manual submission page, link to ExtractorDetails view.
   [CATS-959](https://opensource.ncsa.illinois.edu/jira/browse/CATS-959)
-- Updated core documentation, both the content and version of Sphinx.
-  [CATS-865](https://opensource.ncsa.illinois.edu/jira/browse/CATS-865)
+- Clean up of Search pages. Renamed Advanced Search to Metadata Search. Added search form and Metadata Search link to 
+  main Search page. Consistent and improved search results on both search pages.
+  [CATS-994](https://opensource.ncsa.illinois.edu/jira/browse/CATS-994)
+- Updated the mongo-init docker image to aks for inputs if not specified as
+  an environment variable.
+  `docker run -ti --rm --network clowder_clowder clowder/mongo-init`
+- Rework of the Elasticsearch index to include improved syntax and better documentation on the basic search page.
 
 ## 1.6.2 - 2019-05-23
 

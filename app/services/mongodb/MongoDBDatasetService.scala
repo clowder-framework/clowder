@@ -48,7 +48,8 @@ class MongoDBDatasetService @Inject() (
   userService: UserService,
   folders: FolderService,
   metadatas:MetadataService,
-  events: EventService) extends DatasetService {
+  events: EventService,
+  appConfig: AppConfigurationService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -1394,6 +1395,10 @@ class MongoDBDatasetService @Inject() (
         }
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), host, apiKey, user)
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
+        appConfig.incrementCount('datasets, -1)
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete(id.stringify)
+        }
       }
       case None =>
     }

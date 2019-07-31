@@ -1,19 +1,19 @@
 @(spaces: List[ProjectSpace], selectedSpace: Option[ProjectSpace] = None)(implicit user: Option[models.User])
 
-@main("Search metadata") {
+@main("Metadata Search") {
     @selectedSpace match {
         case None => {
-            <h2>Advanced Search</h2>
+            <h1>Metadata Search</h1>
         }
         case Some(space) => {
-            <h2>Search within Space: "@space.name"</h2>
+            <h1>Search Metadata within Space: "@space.name"</h1>
         }
     }
+    <p>Search for datasets and files based on metadata fields.</p>
     <div class="row">
         <div class="panel panel-default">
             <div class="panel-body">
                 <form class="form top-padding" id="metadata-search">
-
                     <div id="basic-search-container">
                         <div class="row">
                             <!-- ANY/ALL DROPDOWN -->
@@ -75,8 +75,10 @@
         </div>
     </div>
     <div class="row top-padding">
-        <div class="col-lg-6 col-md-6"><h2>Datasets</h2><div id="datasets-results"></div></div>
-        <div class="col-lg-6 col-md-6"><h2>Files</h2><div id="files-results"></div></div>
+        <div class="col-lg-12 col-md-12"><h3>Datasets</h3><div id="datasets-results"></div></div>
+    </div>
+    <div class="row top-padding">
+        <div class="col-lg-12 col-md-12"><h3>Files</h3><div id="files-results"></div></div>
     </div>
     <div class="row top-padding">
         <div id="getmore" class="col-lg-12 col-md-12 text-center">
@@ -217,7 +219,69 @@
                 theme: "bootstrap",
                 placeholder: "Select a type or field key",
                 allowClear: true,
-                width: "100%"
+                width: "100%",
+                ajax: {
+                    url: function(filter) {
+                        // Get autocomplete results if typing; otherwise return standard set of definitions
+                        if (filter.term == null || filter.term == "") {
+                            return jsRoutes.api.Metadata.getDefinitionsDistinctName().url
+                        }
+                        else {
+                            return jsRoutes.api.Metadata.getAutocompleteName(filter.term).url
+                        }
+                    },
+                    // Populate autocomplete as user types
+                    processResults: function(data, page) {
+                        var outMap = {}
+
+                        for (var rez=0; rez<data.length; rez++) {
+                            var entry = data[rez];
+
+                            // Metadata Definitions
+                            if (typeof(entry) == 'object') {
+                                var entryGroup = "Metadata Definitions";
+                                var entryData = {text: entry.json.label, id: "metadata."+entry.json.label};
+                                // suggestions from elasticsearch
+                            } else {
+                                if (entry.indexOf('.') > -1) {
+                                    if (entry.indexOf('/extractors/') > -1) {
+                                        // Group extractor-specific fields together under extractor
+                                        var entryGroup = entry.substring(entry.indexOf('/extractors/')+12, entry.lastIndexOf('.'))+" (Extractor)";
+                                    }
+                                    else if (entry.split('.').length > 2 ){
+                                        // Group user-submitted metadata under user's name
+                                        var entryGroup = entry.substring(entry.indexOf('.')+1, entry.lastIndexOf('.'))+" (User)";
+                                    }
+                                    else {
+                                        // This should be metadata definitions otherwise
+                                        var entryGroup = "Metadata Definitions";
+                                    }
+                                    var entryData = {id: entry, text: entry.substring(entry.lastIndexOf('.')+1, entry.length)}
+                                } else {
+                                    // Simple entry
+                                    var entryGroup = ""
+                                    var entryData = {text: entry, id: entry}
+                                }
+                            }
+                            if (!outMap.hasOwnProperty(entryGroup))
+                                outMap[entryGroup] = [];
+                            outMap[entryGroup].push(entryData)
+                        }
+
+                        var outList = []
+                        for (var group in outMap) {
+                            if (group == "") {
+                                for (var ungrouped=0; ungrouped<outMap[group].length; ungrouped++)
+                                    outList.push(outMap[group][ungrouped])
+                            } else
+                                outList.push({"text":group, "children": outMap[group]})
+                        }
+                        
+                        return {
+                            results: outList
+                        };
+                    }
+                }
             }).empty();
 
             var fields = metadata_definitions;
@@ -395,8 +459,15 @@
             var datasets = response.datasets;
             if (datasets.length == 0) $('#datasets-results').append("No datasets found</br>");
             for (var i=0; i<datasets.length; i++) {
+                var thumbnailId = (datasets[i].thumbnail == 'None')? "" : jsRoutes.controllers.Files.thumbnail(datasets[i].thumbnail).url;
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
-                var html = modalTemplate({'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url, 'name': datasets[i].name});
+                var html = modalTemplate(
+                    {'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url,
+                        'name': datasets[i].name,
+                        'description':  datasets[i].description,
+                        'created': datasets[i].created,
+                        'thumbnail': thumbnailId
+                    });
                 $('#datasets-results').append(html);
             }
 
@@ -404,7 +475,10 @@
             if (files.length == 0) $('#files-results').append("No files found</br>");
             for (var i=0; i<files.length; i++) {
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
-                var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
+                var html = modalTemplate({
+                    'url': jsRoutes.controllers.Files.file(files[i].id).url,
+                    'name': files[i].name
+                });
                 $('#files-results').append(html);
                 // TODO: example search strings
                 // TODO: Support API direct calls

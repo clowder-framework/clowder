@@ -1,22 +1,17 @@
-FROM ubuntu:16.04
+FROM python:3.7
 MAINTAINER Bing Zhang <bing@illinois.edu>
 
 ENV USERNAME="" \
-    EMAIL_ADDRESS="user@example.com" \
-    FIRST_NAME="Example" \
-    LAST_NAME="User" \
+    EMAIL_ADDRESS="" \
+    FIRST_NAME="" \
+    LAST_NAME="" \
     PASSWORD="" \
-    ADMIN="false" \
+    ADMIN="" \
     MONGO_URI="mongodb://mongo:27017/clowder"
 
-RUN apt-get update \
-    && apt-get install -y \
-        python-pymongo \
-        python-passlib \
-        python-bcrypt \
-    && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt /
+RUN pip install -r /requirements.txt
 
-#Copy files
-WORKDIR /
+# Copy files
 COPY mongo-init.py /
-CMD python mongo-init.py
+CMD python /mongo-init.py

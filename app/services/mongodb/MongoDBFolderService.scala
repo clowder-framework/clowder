@@ -46,7 +46,13 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
         folder.files.map {
           fileId => {
             files.get(fileId) match {
-              case Some(file) => files.removeFile(file.id, host, apiKey, user)
+              case Some(file) => {
+                // Check the file doesn't exist in other folders/datasets before deleting
+                val notTheDataset = for (currDataset <- datasets.findByFileIdDirectlyContain(fileId) if !folder.parentDatasetId.toString.equals(currDataset.id.toString)) yield currDataset
+                val notTheFolder = for (currFolder <- findByFileId(fileId) if !folder.id.toString.equals(currFolder.id.toString)) yield currFolder
+                if (notTheDataset.size == 0 && notTheFolder.size == 0)
+                  files.removeFile(file.id, host, apiKey, user)
+              }
               case None =>
             }
           }
