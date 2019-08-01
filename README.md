@@ -3,7 +3,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1196568.svg)](https://doi.org/10.5281/zenodo.1196568)
 
 A customizable and scalable data management system you can install in the cloud or on your own hardware.
-More information is available at [https://clowder.ncsa.illinois.edu/](https://clowder.ncsa.illinois.edu/).
+More information is available at [https://clowderframework.org/](https://clowderframework.org/).
 
 ## Installation
 

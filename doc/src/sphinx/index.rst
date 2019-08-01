@@ -14,7 +14,7 @@ be customized and deployed on your own cloud.
 
 .. note::
 
-  * For a high level overview of the project please visit `https://clowder.ncsa.illinois.edu <https://clowder.ncsa.illinois.edu/>`_.
+  * For a high level overview of the project please visit `https://clowderframework.org <https://clowderframework.org/>`_.
 
   * If you have questions for the Clowder you can chat with the developers on
     `Slack <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM>`_

@@ -150,7 +150,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the updateLicense(id: UUID) function routed by POST /api/datasets/:id/license" in {
       val req = FakeRequest(POST, "/api/datasets/" + datasetId + "/license?key=" + secretKey).
-              withJsonBody(Json.toJson(Map("licenseType" -> "NCSA Open Source", "rightsHolder" -> "API Test Suite", "licenseText" -> "by", "licenseUrl" -> "https://clowder.ncsa.illinois.edu", "allowDownload" -> "True")))
+              withJsonBody(Json.toJson(Map("licenseType" -> "NCSA Open Source", "rightsHolder" -> "API Test Suite", "licenseText" -> "by", "licenseUrl" -> "https://clowderframework.org", "allowDownload" -> "True")))
       val result_get = route(req).get
 
       status(result_get) mustEqual OK

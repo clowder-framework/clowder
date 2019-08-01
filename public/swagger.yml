@@ -4791,7 +4791,7 @@ definitions:
       {
         "@context":
         [
-          "https://clowder.ncsa.illinois.edu/contexts/metadata.jsonld",
+          "https://clowderframework.org/contexts/metadata.jsonld",
           {
             "csv_headers": "http://clowder.ncsa.illinois.edu/metadata/ncsa.csvheaders"
           }
@@ -4799,14 +4799,14 @@ definitions:
       "attached_to":
         {
           "resource_type": "cat:file",
-          "url": "https://clowder.ncsa.illinois.edu/clowder/files/5b2a836d5e0e8956ed865b29"
+          "url": "https://clowderframework.org/clowder/files/5b2a836d5e0e8956ed865b29"
         },
       "created_at": "Wed Jun 20 11:40:25 CDT 2018",
       "agent":
         {
           "@type": "cat:extractor",
-          "name": "https://clowder.ncsa.illinois.edu/clowder/extractors/ncsa.csvheaders/1.0",
-          "extractor_id": "https://clowder.ncsa.illinois.edu/clowder/extractors/ncsa.csvheaders/1.0"
+          "name": "https://clowderframework.org/clowder/extractors/ncsa.csvheaders/1.0",
+          "extractor_id": "https://clowderframework.org/clowder/extractors/ncsa.csvheaders/1.0"
         },
       "content":
         {

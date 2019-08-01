@@ -1,8 +1,8 @@
 # How to contribute
 
 We would love to get contributions from you! To keep the process manageable we please ask you to follow the workflow 
-below. By participating in this project, you agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/docs/Clowder-CoC.pdf).
-Before your code can be accepted, you will have to sign a [CLA](https://clowder.ncsa.illinois.edu/docs/Clowder-CLA.pdf)
+below. By participating in this project, you agree to abide by the [code of conduct](https://clowderframework.org/docs/Clowder-CoC.pdf).
+Before your code can be accepted, you will have to sign a [CLA](https://clowderframework.org/docs/Clowder-CLA.pdf)
 and mail it to lmarini@illinois.edu.
 
 Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `master` and `develop` branches are pushed to 
@@ -80,5 +80,5 @@ Developer documentation is available in [Confluence][confluence]. User documenta
 [wiki]: https://opensource.ncsa.illinois.edu/confluence/display/CATS
 [bitbucket]: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS
 [bamboo]: https://opensource.ncsa.illinois.edu/bamboo/browse/CATS
-[userdocs]: https://clowder.ncsa.illinois.edu/docs/
+[userdocs]: https://clowderframework.org/docs/
 [confluence]: https://opensource.ncsa.illinois.edu/confluence/display/CATS/Home

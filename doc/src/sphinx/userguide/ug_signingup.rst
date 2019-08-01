@@ -12,7 +12,7 @@ Signing up with a Third Party App
 The first one is to use a third-party network, like google, crowd, facebook, twitter, linkedin. They are enabled in
 some instances on Clowder, and you can ask your Clowder administrator to enable them if they are not.
 
-Each Clowder instance manages its own user database, for example: https://clowder.ncsa.illinois.edu/clowder/.
+Each Clowder instance manages its own user database, for example: https://clowderframework.org/clowder/.
 
 If you want to login using this method, you can click on the Login button in the top-right corner as marked by a blue
 square on Figure 1.
@@ -51,7 +51,7 @@ After accepting the terms of service, you will be redirected to the Clowder Home
 
 Signing up through a Local Account
 ==================================
-Click on the highlighted link in blue in your Clowder instance (https://clowder.ncsa.illinois.edu/clowder/r)
+Click on the highlighted link in blue in your Clowder instance (https://clowderframework.org/clowder/r)
 
 .. image:: /_static/ug-signingup-6.png
     :width: 80%
