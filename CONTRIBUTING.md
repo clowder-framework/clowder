@@ -72,7 +72,7 @@ Developer documentation is available in [Confluence][confluence]. User documenta
 `/doc/src/sphinx` and [online][userdocs].
 
 [confluence_signup]: https://opensource.ncsa.illinois.edu/confluence/signup.action
-[github]: https://github.com/ncsa/clowder
+[github]: https://github.com/clowder-framework
 [branches]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
 [scalatest]: http://www.scalatest.org/
 [slack]: https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM

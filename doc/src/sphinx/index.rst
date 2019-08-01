@@ -23,9 +23,9 @@ be customized and deployed on your own cloud.
 
   * Issue tracking, internal documents, continuous build and other information is available on
     `NCSA Opensource <https://opensource.ncsa.illinois.edu/projects/CATS>`_. A copy of the source code can also be found
-    on `GitHub <https://github.com/ncsa/clowder>`_.
+    on `GitHub <https://github.com/clowder-framework>`_.
 
-  * We are always looking for `contributions <https://github.com/ncsa/clowder/blob/master/CONTRIBUTING.md>`_.
+  * We are always looking for `contributions <https://github.com/clowder-framework/clowder/blob/master/CONTRIBUTING.md>`_.
 
 ********
 Contents

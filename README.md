@@ -28,7 +28,7 @@ For general questions you can write to the mailing list [clowder@lists.illinois.
 join the [Slack workspace](https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM).
 
 If you have found a bug, please check that it hasn't been filed already and if not open an issue on 
-[GitHub](https://github.com/ncsa/clowder/issues) or [Jira](https://opensource.ncsa.illinois.edu/jira/projects/CATS).
+[GitHub](https://github.com/clowder-framework/clowder/issues) or [Jira](https://opensource.ncsa.illinois.edu/jira/projects/CATS).
 
 
 ## Contributing
