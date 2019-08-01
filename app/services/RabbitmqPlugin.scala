@@ -181,6 +181,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       cancellationQueue.get ! PoisonPill
       cancellationQueue = None
     }
+    if (extractorsHeartbeats.isDefined) {
+      extractorsHeartbeats.get ! PoisonPill
+      extractorsHeartbeats = None
+    }
   }
 
   def connect: Boolean = {
