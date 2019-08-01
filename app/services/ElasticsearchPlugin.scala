@@ -724,7 +724,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
         else
-          builder.startObject().startObject("query_string").field("default_field", key).field("query", wrapRegex(value, true)).endObject().endObject()
+          builder.startObject().startObject("query_string").field("default_field", key).field("query", value).endObject().endObject()
       }
       case _ => {}
     }
