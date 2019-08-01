@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.7.2 - ???
+## 1.7.2 - 2019-08-01
 
 ### Fixed
 - RabbitMQ plugin would throw an exception if rabbitmq server restarted. 
   [CATS-1012](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1012)
+
+### Changed
+- Changed internal regex wrapping syntax on search box queries to better handle complex terms.
 
 ## 1.7.1 - 2019-07-09
 
