@@ -143,7 +143,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /** Search using a simple text string */
   def search(query: String, index: String = nameOfIndex): List[ResourceRef] = {
     val specialOperators = mustOperators ++ mustNotOperators
-    val queryObj = prepareElasticJsonQuery(query.toLowerCase)
+    val queryObj = prepareElasticJsonQuery(query)
 
     try {
       val response = _search(queryObj, index)
@@ -174,7 +174,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
                      datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
                      field: Option[String], tag: Option[String], index: String = nameOfIndex): List[ResourceRef] = {
 
-    var expanded_query = query.toLowerCase
+    var expanded_query = query
 
     // whether to restrict to a particular metadata field, or search all fields (including tags, name, etc.)
     val mdfield = field match {
@@ -852,11 +852,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else
           currterm += mt+":"
       } else if (query.contains(":"+mt) || query.contains(":\""+mt+"\"")) {
-        currterm += mt
+        currterm += mt.toLowerCase()
         terms += currterm
         currterm = ""
       } else {
-        terms += "_all:"+mt
+        terms += "_all:"+mt.toLowerCase()
       }
     })
 

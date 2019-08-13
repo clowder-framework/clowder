@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.7.3 - 2019-08-19
+
+### Fixed
+- Fixed bug where metadata field names in the search box were being forced to lowercase, omitting search results due to
+  case sensitivity.
+
 ## 1.7.2 - 2019-08-01
 
 ### Fixed
