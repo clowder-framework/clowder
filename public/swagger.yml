@@ -3816,6 +3816,15 @@ paths:
       summary: Delete thumbnail
       description: Remove thumbnail file from system).
 
+  /thumbnails/{id}/blob:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      summary: Download a specific thumbnail image
+      description: Download a thumbnail image associated with a resource.
+
   ##############################################################################
   # Curations                                                                  #
   ##############################################################################

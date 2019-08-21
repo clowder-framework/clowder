@@ -398,7 +398,7 @@
 										<td class="galleriaTheThumbnail">
 										@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
 											@if(s.thumbnail_id.isDefined){
-												<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.get)))"
+												<img src="@(api.routes.Thumbnails.get(UUID(s.thumbnail_id.get)))"
 											} else {
 												<img src="@api.routes.Previews.download(s.preview.get.id)"
 												}
@@ -850,7 +850,7 @@
 							<div class="col-md-2 col-sm-2 col-lg-2">
 							@if(!dataset.thumbnail_id.isEmpty){
 								<a href="@(routes.Datasets.dataset(dataset.id))">
-									<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
+									<img class="img-responsive fit-in-space" src="@(api.routes.Thumbnails.get(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
 								</a>
 							}
 							</div>

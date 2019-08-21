@@ -3,10 +3,7 @@ package api
 import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, MultimediaQueryService, ElasticsearchPlugin}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
-import scala.collection.JavaConversions.mapAsScalaMap
-import edu.illinois.ncsa.isda.lsva.ImageMeasures
-import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import util.{SearchUtils, SearchResult}
+import util.SearchResult
 import play.api.libs.json.{JsObject, Json, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{Inject, Singleton}
@@ -23,74 +20,48 @@ class Search @Inject() (
    queries: MultimediaQueryService,
    sparql: RdfSPARQLService)  extends ApiController {
 
-  /** Search using a simple text string */
-  def search(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
-    current.plugin[ElasticsearchPlugin] match {
-      case Some(plugin) => {
-        var filesFound = ListBuffer.empty[String]
-        var datasetsFound = ListBuffer.empty[String]
-        var collectionsFound = ListBuffer.empty[String]
-
-        val response = plugin.search(query)
-
-        for (resource <- response) {
-          resource.resourceType match {
-            case ResourceRef.file => filesFound += resource.id.stringify
-            case ResourceRef.dataset => datasetsFound += resource.id.stringify
-            case ResourceRef.collection => collectionsFound += resource.id.stringify
-          }
-        }
-
-        Ok(toJson( Map[String,JsValue](
-          "files" -> toJson(filesFound),
-          "datasets" -> toJson(datasetsFound),
-          "collections" -> toJson(collectionsFound)
-        )))
-      }
-     case None => {
-       Logger.debug("Search plugin not enabled")
-          Ok(views.html.pluginNotEnabled("Text search"))
-       }
-    }
-  }
-
   /** Search using a simple text string with filters */
   def search(query: String, resource_type: Option[String],
              datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
              field: Option[String], tag: Option[String]) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        var filesFound = ListBuffer.empty[String]
-        var datasetsFound = ListBuffer.empty[String]
-        var collectionsFound = ListBuffer.empty[String]
-
         val response = plugin.searchWithParameters(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag)
+
+        var filesFound = ListBuffer.empty[UUID]
+        var datasetsFound = ListBuffer.empty[UUID]
+        var collectionsFound = ListBuffer.empty[UUID]
 
         for (resource <- response) {
           resource.resourceType match {
-            case ResourceRef.file => filesFound += resource.id.stringify
-            case ResourceRef.dataset => datasetsFound += resource.id.stringify
-            case ResourceRef.collection => collectionsFound += resource.id.stringify
+            case ResourceRef.file => filesFound += resource.id
+            case ResourceRef.dataset => datasetsFound += resource.id
+            case ResourceRef.collection => collectionsFound += resource.id
+            case other => Logger.debug(s"search result resource type not supported: ${other.toString}")
           }
         }
 
+        val filesList = files.get(filesFound.toList).map(f => toJson(f))
+        val datasetsList = datasets.get(datasetsFound.toList).map(ds => toJson(ds))
+        val collectionsList = collections.get(collectionsFound.toList).map(c => toJson(c))
+
         resource_type match {
-          case Some("file") => Ok(toJson(Map[String, JsValue]("files" -> toJson(filesFound))))
-          case Some("dataset") => Ok(toJson(Map[String, JsValue]("datasets" -> toJson(datasetsFound))))
-          case Some("collection") => Ok(toJson(Map[String, JsValue]("collections" -> toJson(collectionsFound))))
+          case Some("file") => Ok(toJson(Map[String, JsValue]("files" -> toJson(filesList))))
+          case Some("dataset") => Ok(toJson(Map[String, JsValue]("datasets" -> toJson(datasetsList))))
+          case Some("collection") => Ok(toJson(Map[String, JsValue]("collections" -> toJson(collectionsList))))
 
           case _ => {
             // If datasetid is provided, only files are returned
             datasetid match {
               case Some(dsid) => Ok(toJson(Map[String, JsValue](
-                "files" -> toJson(filesFound)
+                "files" -> toJson(filesList)
               )))
               case None => {
                 // collection and space IDs do not restrict resource type
                 Ok(toJson(Map[String, JsValue](
-                  "files" -> toJson(filesFound),
-                  "datasets" -> toJson(datasetsFound),
-                  "collections" -> toJson(collectionsFound)
+                  "files" -> toJson(filesList),
+                  "datasets" -> toJson(datasetsList),
+                  "collections" -> toJson(collectionsList)
                 )))
               }
             }
@@ -104,7 +75,7 @@ class Search @Inject() (
     }
   }
 
-  /** Search using string-encoded Json object (e.g. built by Advanced Search form) */
+  /** Search using string-encoded Json object (e.g. built by Metadata Search form) */
   def searchJson(query: String, grouping: String, from: Option[Int], size: Option[Int]) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       implicit val user = request.user
@@ -114,21 +85,28 @@ class Search @Inject() (
           val queryList = Json.parse(query).as[List[JsValue]]
           val results = plugin.search(queryList, grouping, from, size)
 
-          val collectionsResults = results.flatMap { c =>
-            if (c.resourceType == ResourceRef.collection) collections.get(c.id) else None
+          var filesFound = ListBuffer.empty[UUID]
+          var datasetsFound = ListBuffer.empty[UUID]
+          var collectionsFound = ListBuffer.empty[UUID]
+
+          for (resource <- results) {
+            resource.resourceType match {
+              case ResourceRef.file => filesFound += resource.id
+              case ResourceRef.dataset => datasetsFound += resource.id
+              case ResourceRef.collection => collectionsFound += resource.id
+              case _ => {}
+            }
           }
-          val datasetsResults = results.flatMap { d =>
-            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-          }
-          val filesResults = results.flatMap { f =>
-            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-          }
+
+          val filesList = files.get(filesFound.toList).map(f => toJson(f))
+          val datasetsList = datasets.get(datasetsFound.toList).map(ds => toJson(ds))
+          val collectionsList = collections.get(collectionsFound.toList).map(c => toJson(c))
 
           // Use "distinct" to remove duplicate results.
           Ok(JsObject(Seq(
-            "datasets" -> toJson(datasetsResults.distinct),
-            "files" -> toJson(filesResults.distinct),
-            "collections" -> toJson(collectionsResults.distinct),
+            "datasets" -> toJson(datasetsList.distinct),
+            "files" -> toJson(filesList.distinct),
+            "collections" -> toJson(collectionsList.distinct),
             "count" -> toJson(results.length)
           )))
         }

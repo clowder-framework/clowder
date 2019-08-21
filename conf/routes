@@ -97,6 +97,7 @@ POST           /uploadSelectQuery                                               
 POST           /uploaddnd/:id                                                           @controllers.Files.uploaddnd(id: UUID)
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
+# deprecrated use thumbnails
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
@@ -678,6 +679,7 @@ GET            /api/geostreams/config                                           
 # ----------------------------------------------------------------------
 POST           /api/fileThumbnail                                                       @api.Thumbnails.uploadThumbnail
 GET            /api/thumbnails                                                          @api.Thumbnails.list
+GET            /api/thumbnails/:id/blob                                                 @api.Thumbnails.get(id: UUID)
 DELETE         /api/thumbnails/:id                                                      @api.Thumbnails.removeThumbnail(id: UUID)
 
 # ----------------------------------------------------------------------

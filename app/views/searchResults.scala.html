@@ -1,4 +1,4 @@
-@(query: String, filesArray: Array[models.File], datasetsArray: Array[models.Dataset], collectionsArray: Array[models.Collection], mapdatasetIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]], mapcollectionIds:scala.collection.mutable.HashMap[String,scala.collection.mutable.ListBuffer[(String, String)]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(query: String, filesArray: Array[models.File], datasetsArray: Array[models.Dataset], collectionsArray: Array[models.Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import scala.collection.mutable.ListBuffer
 
@@ -28,7 +28,6 @@
 	</div>
 
     <div class="col-md-12">
-        <!--TODO: Move this to Scala messages for translation purposes, etc.-->
         <div class="collapse" id="searchhelp">
             <div class="panel panel-default">
                 <div class="panel-body">
@@ -79,31 +78,46 @@
     </div>
 
 	@if(filesArray.size == 0 && datasetsArray.size == 0 && collectionsArray.size == 0 && !query.isEmpty) {
-	<div class="row">
-		<div class="col-md-12">
-			<h4 class="text-center">Your query returned no results. Please try a different query.</h4>
-		</div>
-	</div>
-	}
+        <div class="row">
+            <div class="col-md-12">
+                <h4 class="text-center">Your query returned no results. Please try a different query.</h4>
+            </div>
+        </div>
+	} else {
+        <div class="row top-padding">
+            <div class="col-lg-12 col-md-12"><h3>Collections</h3><div id="collections-results">
+            @if(collectionsArray.size!=0) {
+                @for(collection <- collectionsArray) {
+                    @search.searchResultCollection(collection)
+                }
+            } else {
+                No collections found
+            }
+            </div></div>
+        </div>
+        <div class="row top-padding">
+            <div class="col-lg-12 col-md-12"><h3>Datasets</h3><div id="datasets-results">
+            @if(datasetsArray.size!=0) {
+                @for(dataset <- datasetsArray) {
+                    @search.searchResultDataset(dataset)
+                }
+            } else {
+                No datasets found
+            }
+            </div></div>
+        </div>
+        <div class="row top-padding">
+            <div class="col-lg-12 col-md-12"><h3>Files</h3><div id="files-results">
+            @if(filesArray.size!=0){
+                @for(file <- filesArray) {
+                    @search.searchResultFile(file)
+                }
+            } else {
+                No files found
+            }
+            </div></div>
+        </div>
+    }
 
-	@if(collectionsArray.size!=0) {
-		<h3>Collections</h3>
-		@for(collection <- collectionsArray) {
-			@search.searchResultCollection(collection)
-		}
-	}
-
-	@if(datasetsArray.size!=0) {
-		<h3>Datasets</h3>
-		@for(dataset <- datasetsArray) {
-			@search.searchResultDataset(dataset)
-		}
-	}
-
-	@if(filesArray.size!=0){
-		<h3>Files</h3>
-		@for(file <- filesArray) {
-			@search.searchResultFile(file)
-		}
-	}
+    <!-- TODO: Need to overhaul this to support 'Show more results' button -->
 }

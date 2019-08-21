@@ -492,6 +492,14 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(id.stringify))
   }
 
+  def get(ids: List[UUID]): List[Dataset] = {
+    val objectIdList = ids.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+    Dataset.find(query).toList
+  }
+
   /**
    * Updated dataset.
    */
@@ -755,6 +763,7 @@ class MongoDBDatasetService @Inject() (
 
   /**
     * get dataset which contains the folder
+    *
     * @param folder a Folder object
     * @return dataset containing this folder.
     */

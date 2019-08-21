@@ -45,6 +45,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
+  val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
 
   val mustOperators = List("==", "<", ">", ":")
   val mustNotOperators = List("!=")
@@ -142,20 +143,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Search using a simple text string */
   def search(query: String, index: String = nameOfIndex): List[ResourceRef] = {
-    val specialOperators = mustOperators ++ mustNotOperators
     val queryObj = prepareElasticJsonQuery(query)
 
     try {
       val response = _search(queryObj, index)
       var results = MutableList[ResourceRef]()
-      Option(response.getHits()) match {
-        case Some(hits) => {
-          for (hit <- hits.getHits()) {
-            val resource_type = hit.getSource().get("resource_type").toString
-            results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
-          }
-        }
-        case None => {}
+      for (hit <- response.getHits().getHits()) {
+        val resource_type = hit.getSource().get("resource_type").toString
+        results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
       }
 
       results.toList
@@ -238,7 +233,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /*** Execute query */
-  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Option[Int] = Some(0), size: Option[Int] = Some(60)): SearchResponse = {
+  def _search(queryObj: XContentBuilder, index: String = nameOfIndex,
+              from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): SearchResponse = {
     connect()
     client match {
       case Some(x) => {

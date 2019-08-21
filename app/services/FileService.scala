@@ -85,6 +85,8 @@ trait FileService {
    */
   def get(id: UUID): Option[File]
 
+  def get(ids: List[UUID]): List[File]
+
   /**
     * Set the file status
     */

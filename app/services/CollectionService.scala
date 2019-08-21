@@ -121,6 +121,8 @@ trait CollectionService {
    */
   def get(id: UUID): Option[Collection]
 
+  def get(ids: List[UUID]): List[Collection]
+
   /**
    * Create collection.
    */

@@ -173,6 +173,8 @@ trait DatasetService {
    */
   def get(id: UUID): Option[Dataset]
 
+  def get(ids: List[UUID]): List[Dataset]
+
   /**
    * Insert dataset.
    */

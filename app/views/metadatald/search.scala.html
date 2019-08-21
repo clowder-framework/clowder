@@ -459,7 +459,7 @@
             var datasets = response.datasets;
             if (datasets.length == 0) $('#datasets-results').append("No datasets found</br>");
             for (var i=0; i<datasets.length; i++) {
-                var thumbnailId = (datasets[i].thumbnail == 'None')? "" : jsRoutes.controllers.Files.thumbnail(datasets[i].thumbnail).url;
+                var thumbnailId = (datasets[i].thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(datasets[i].thumbnail).url;
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
                 var html = modalTemplate(
                     {'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url,
@@ -474,10 +474,13 @@
             var files = response.files;
             if (files.length == 0) $('#files-results').append("No files found</br>");
             for (var i=0; i<files.length; i++) {
+                var thumbnailId = (files[i].thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(files[i].thumbnail).url;
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
                 var html = modalTemplate({
                     'url': jsRoutes.controllers.Files.file(files[i].id).url,
-                    'name': files[i].name
+                    'name': files[i].name,
+                    'created': files[i].created,
+                    'thumbnail': thumbnailId
                 });
                 $('#files-results').append(html);
                 // TODO: example search strings

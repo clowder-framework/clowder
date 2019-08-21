@@ -9,7 +9,7 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import models._
-import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -521,6 +521,14 @@ class MongoDBCollectionService @Inject() (
    */
   def get(id: UUID): Option[Collection] = {
     Collection.findOneById(new ObjectId(id.stringify))
+  }
+
+  def get(ids: List[UUID]): List[Collection] = {
+    val objectIdList = ids.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+    Collection.find(query).toList
   }
 
   def insert(collection: Collection): Option[String] = {

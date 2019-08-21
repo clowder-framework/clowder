@@ -4,11 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## Unreleased
+
+### Changed
+- `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
+
+### Added
+- new `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
+- new utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list
+
 ## 1.7.3 - 2019-08-19
 
 ### Fixed
 - Fixed bug where metadata field names in the search box were being forced to lowercase, omitting search results due to
   case sensitivity.
+
 
 ## 1.7.2 - 2019-08-01
 

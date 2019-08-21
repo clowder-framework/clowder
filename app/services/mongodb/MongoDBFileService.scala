@@ -246,7 +246,6 @@ class MongoDBFileService @Inject() (
     }
   }
 
-
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
 
@@ -271,7 +270,6 @@ class MongoDBFileService @Inject() (
       modifyRDFUserMetadata(changedFile.id)
     }
   }
-
 
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String = "1") = { implicit request: Request[Any] =>
     sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
@@ -405,9 +403,6 @@ class MongoDBFileService @Inject() (
       }
     }
   }
-  
- 
-  
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
@@ -451,10 +446,17 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  def get(ids: List[UUID]): List[File] = {
+    val objectIdList = ids.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+    FileDAO.find(query).toList
+  }
+
   override def setStatus(id: UUID, status: FileStatus): Unit = {
     FileDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.toString())), $set("status" -> status.toString))
   }
-
 
   def listOutsideDataset(dataset_id: UUID): List[File] = {
     datasets.get(dataset_id) match{
@@ -799,7 +801,6 @@ class MongoDBFileService @Inject() (
     Logger.debug("thequery: "+theQuery.toString)
     FileDAO.find(theQuery).toList
   }
-
 
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
     Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
