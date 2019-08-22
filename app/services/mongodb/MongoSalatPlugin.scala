@@ -439,6 +439,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates permissions for the editor Role
     updateMongo("update-editor-role", updateEditorRole)
+
+    // Updates permissions for the admin Role
+    updateMongo("update-admin-role", updateAdminRole)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1623,6 +1626,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       extraction.put("status", parsed_status)
       collection("extractions").save(extraction, WriteConcern.Safe)
     }
+  }
+
+
+  private def updateAdminRole(): Unit = {
+    val query = MongoDBObject("name" -> "Admin")
+    val operation = MongoDBObject("$addToSet" -> MongoDBObject("permissions" -> Permission.ArchiveFile.toString))
+    collection("roles").update(query, operation)
   }
 
   private def updateEditorRole(): Unit = {

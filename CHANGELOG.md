@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
+- Add archive button on file page which can trigger archive extractor to archive this file.
+
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.
