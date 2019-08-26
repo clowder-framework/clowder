@@ -45,6 +45,8 @@ or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 - HTTP 500 error when posting new metadata.
 
 ### Added
+- Add archive button on file page which can trigger archive extractor to archive this file.
+
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.

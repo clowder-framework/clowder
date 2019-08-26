@@ -3,11 +3,10 @@ package api
 import scala.annotation.tailrec
 import java.io.FileInputStream
 import java.net.{URL, URLEncoder}
+
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
-
-import _root_.util.{FileUtils, Parsers, JSONLD, SearchUtils, RequestUtils}
-
+import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils, SearchUtils}
 import com.mongodb.casbah.Imports._
 import controllers.Previewers
 import jsonutils.JsonUtil
@@ -19,17 +18,16 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.mvc.{ResponseHeader, SimpleResult}
-
+import play.api.mvc.{Action, ResponseHeader, Result, SimpleResult}
 import services._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
-
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import controllers.Utils
+import services.s3.S3ByteStorageService
 
 /**
  * Json API for files.
@@ -88,7 +86,7 @@ class Files @Inject()(
     PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     datasets.getFileId(datasetId, filename) match {
       case Some(id) => Redirect(routes.Files.download(id))
-      case None => Logger.error("Error getting dataset" + datasetId); InternalServerError
+      case None => Logger.error("Error getting dataset " + datasetId); InternalServerError
     }
   }
 
@@ -102,51 +100,51 @@ class Files @Inject()(
       files.get(id) match {
           case Some(file) => {    
               if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-		        files.getBytes(id) match {            
-		          case Some((inputStream, filename, contentType, contentLength)) => {
+                files.getBytes(id) match {
+                  case Some((inputStream, filename, contentType, contentLength)) => {
 
-                // Increment download count if tracking is enabled
-                if (tracking)
-                  files.incrementDownloads(id, user)
+                    // Increment download count if tracking is enabled
+                    if (tracking)
+                      files.incrementDownloads(id, user)
 
-		            request.headers.get(RANGE) match {
-		              case Some(value) => {
-		                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-		                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-		                  case x => (x(0).toLong, x(1).toLong)
-		                }
-		
-		                range match {
-		                  case (start, end) =>
-		                    inputStream.skip(start)
-		                    SimpleResult(
-		                      header = ResponseHeader(PARTIAL_CONTENT,
-		                        Map(
-		                          CONNECTION -> "keep-alive",
-		                          ACCEPT_RANGES -> "bytes",
-		                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-		                          CONTENT_LENGTH -> (end - start + 1).toString,
-		                          CONTENT_TYPE -> contentType
-		                        )
-		                      ),
-		                      body = Enumerator.fromStream(inputStream)
-		                    )
-		                }
-		              }
-		              case None => {
-                    val userAgent = request.headers.get("user-agent").getOrElse("")
+                    request.headers.get(RANGE) match {
+                      case Some(value) => {
+                        val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
+                          case x if x.length == 1 => (x.head.toLong, contentLength - 1)
+                          case x => (x(0).toLong, x(1).toLong)
+                        }
 
-                    Ok.chunked(Enumerator.fromStream(inputStream))
-		                  .withHeaders(CONTENT_TYPE -> contentType)
-                      .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
-		              }
-		            }
-		          }
-		          case None => {
-		            Logger.error("Error getting file" + id)
-		            NotFound
-		          }
-		        }
+                        range match {
+                          case (start, end) =>
+                            inputStream.skip(start)
+                            SimpleResult(
+                              header = ResponseHeader(PARTIAL_CONTENT,
+                                Map(
+                                  CONNECTION -> "keep-alive",
+                                  ACCEPT_RANGES -> "bytes",
+                                  CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
+                                  CONTENT_LENGTH -> (end - start + 1).toString,
+                                  CONTENT_TYPE -> contentType
+                                )
+                              ),
+                              body = Enumerator.fromStream(inputStream)
+                            )
+                        }
+                      }
+                      case None => {
+                        val userAgent = request.headers.get("user-agent").getOrElse("")
+
+                        Ok.chunked(Enumerator.fromStream(inputStream))
+                          .withHeaders(CONTENT_TYPE -> contentType)
+                          .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
+                      }
+                    }
+                  }
+                  case None => {
+                    Logger.error("Error getting file " + id)
+                    NotFound
+                  }
+                }
               }
               else {
             	  //Case where the checkLicenseForDownload fails
@@ -792,6 +790,25 @@ class Files @Inject()(
             "authorId" -> file.author.id.stringify,
             "status" -> file.status)
         else
+          defaultMap
+      }
+      case "services.s3.S3ByteStorageService" => {
+        if (serverAdmin) {
+          val bucketName = configuration.getString(S3ByteStorageService.BucketName).getOrElse("")
+          val serviceEndpoint = configuration.getString(S3ByteStorageService.ServiceEndpoint).getOrElse("")
+          Map(
+            "id" -> file.id.toString,
+            "filename" -> file.filename,
+            "service-endpoint" -> serviceEndpoint,
+            "bucket-name" -> bucketName,
+            "object-key" -> file.loader_id,
+            "filedescription" -> file.description,
+            "content-type" -> file.contentType,
+            "date-created" -> file.uploadDate.toString(),
+            "size" -> file.length.toString,
+            "authorId" -> file.author.id.stringify,
+            "status" -> file.status)
+        } else
           defaultMap
       }
       case _ => defaultMap
@@ -1900,17 +1917,94 @@ class Files @Inject()(
     }
   }
 
-  def archive(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def archive(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
         files.setStatus(id, FileStatus.ARCHIVED)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
-        Logger.error("Error getting file " + id);
+        Logger.error("Error getting file " + id)
         InternalServerError
       }
     }
+  }
+
+  def unarchive(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        files.setStatus(id, FileStatus.PROCESSED)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting file " + id)
+        InternalServerError
+      }
+    }
+  }
+
+  def sendArchiveRequest(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        val host = Utils.baseUrl(request)
+        val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)])) + ("operation" -> Json.toJson("archive"))
+        submitArchivalOperation(file, id, host, parameters, request.apiKey, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting file " + id)
+        InternalServerError
+      }
+    }
+  }
+
+  def sendUnarchiveRequest(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        val host = Utils.baseUrl(request)
+        val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)])) + ("operation" -> Json.toJson("unarchive"))
+        submitArchivalOperation(file, id, host, parameters, request.apiKey, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting file " + id)
+        InternalServerError
+      }
+    }
+  }
+
+  def submitArchivalOperation(file: File, id:UUID, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User]) = {
+    val idAndFlags = ""
+    val extra = Map("filename" -> file.filename,
+      "parameters" -> parameters,
+      "action" -> "manual-submission")
+    val showPreviews = file.showPreviews
+    val newFlags = if (showPreviews.equals("FileLevel"))
+      idAndFlags + "+filelevelshowpreviews"
+    else if (showPreviews.equals("None"))
+      idAndFlags + "+nopreviews"
+    else
+      idAndFlags
+
+    val originalId = if (!file.isIntermediate) {
+      file.id.toString()
+    } else {
+      idAndFlags
+    }
+
+    var datasetId: UUID = null
+    // search datasets containing this file, either directly under dataset or indirectly.
+    val datasetslists: List[Dataset] = datasets.findByFileIdAllContain(id)
+    // Note, we assume only at most one dataset will contain a given file.
+    if (0 != datasetslists.length) {
+      datasetId = datasetslists.head.id
+    }
+    val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+        datasetId, newFlags, apiKey, user)
+    }
+    Logger.info("Sent archive request for file " + id)
   }
 }
 

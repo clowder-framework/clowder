@@ -371,6 +371,7 @@ POST           /api/files/sendJob/:fileId/:fileType                             
 GET            /api/files/getRDFURLsForFile/:id                                         @api.Files.getRDFURLsForFile(id: UUID)
 GET            /api/files/rdfUserMetadata/:id                                           @api.Files.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
 GET            /api/files/:id/blob                                                      @api.Files.download(id: UUID, tracking: Boolean ?= true)
+
 # deprecrated use DELETE
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
@@ -400,6 +401,9 @@ POST           /api/files/:id/reindex                                           
 GET            /api/files/:id/users                                                     @api.Files.users(id: UUID)
 GET            /api/files/:id/paths                                                     @api.Files.paths(id: UUID)
 POST           /api/files/:id/archive                                                   @api.Files.archive(id: UUID)
+POST           /api/files/:id/sendArchiveRequest                                        @api.Files.sendArchiveRequest(id: UUID)
+POST           /api/files/:id/unarchive                                                 @api.Files.unarchive(id: UUID)
+POST           /api/files/:id/sendUnarchiveRequest                                      @api.Files.sendUnarchiveRequest(id: UUID)
 
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
