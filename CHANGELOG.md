@@ -4,10 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-
 ## Unreleased
 
 ### Changed
+- S3ByteStorageService now uses AWS TransferManager for saving bytes - uploads larger than ~1GB should now save more reliably.
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
 
 ### Added
@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed bug where metadata field names in the search box were being forced to lowercase, omitting search results due to
   case sensitivity.
-
 
 ## 1.7.2 - 2019-08-01
 
