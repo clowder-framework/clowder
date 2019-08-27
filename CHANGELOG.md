@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - new `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
 - new utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list
+- Trigger archival process automatically based on when a file was last viewed/downloaded and the size of the file.
 
 ## 1.7.3 - 2019-08-19
 
