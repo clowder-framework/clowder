@@ -1,7 +1,16 @@
 FROM python:3.7
 MAINTAINER Bing Zhang <bing@illinois.edu>
 
-ENV USERNAME="" \
+# environemnt variables
+ARG BRANCH="unknown"
+ARG VERSION="unknown"
+ARG BUILDNUMBER="unknown"
+ARG GITSHA1="unknown"
+ENV BRANCH=${BRANCH} \
+    VERSION=${VERSION} \
+    BUILDNUMBER=${BUILDNUMBER} \
+    GITSHA1=${GITSHA1} \
+    USERNAME="" \
     EMAIL_ADDRESS="" \
     FIRST_NAME="" \
     LAST_NAME="" \

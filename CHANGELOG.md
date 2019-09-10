@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - S3ByteStorageService now uses AWS TransferManager for saving bytes - uploads larger than ~1GB should now save more reliably.
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
+- Clean up docker build. Use new buildkit to speed up builds. Store version/branch/git as environment variables in 
+  docker image so that they can be inspected at runtime with Docker.
 
 ### Added
-- new `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
-- new utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list
+- New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
+- New utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list.
 - Trigger archival process automatically based on when a file was last viewed/downloaded and the size of the file.
 
 ## 1.7.3 - 2019-08-19

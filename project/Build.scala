@@ -18,9 +18,9 @@ object ApplicationBuild extends Build {
 
   def appVersion: String = {
     if (gitBranchName == "master") {
-      version
+      getVersion
     } else {
-      s"${version}-SNAPSHOT"
+      s"${getVersion}-SNAPSHOT"
     }
   }
 
@@ -37,29 +37,38 @@ object ApplicationBuild extends Build {
     res.toSeq
   }
 
+  def getVersion: String = {
+    sys.env.getOrElse("VERSION", version)
+  }
+
   def gitShortHash: String = {
-    try {
-      val hash = exec("git rev-parse --short HEAD")
-      assert(hash.length == 1)
-      hash(0)
-    } catch {
-      case e: Exception => "N/A"
-    }
+    sys.env.getOrElse("GITSHA1", default = {
+      try {
+        val hash = exec("git rev-parse --short HEAD")
+        assert(hash.length == 1)
+        hash(0)
+      } catch {
+        case e: Exception => "N/A"
+      }
+    })
   }
 
   def gitBranchName: String = {
-    try {
-      val branch = exec("git rev-parse --abbrev-ref HEAD")
-      assert(branch.length == 1)
-      if (branch(0) == "HEAD") return "detached"
-      branch(0)
-    } catch {
-      case e: Exception => "N/A"
-    }
+    val branch = sys.env.getOrElse("BRANCH", default = {
+      try {
+        val branch = exec("git rev-parse --abbrev-ref HEAD")
+        assert(branch.length == 1)
+        branch(0)
+      } catch {
+        case e: Exception => "N/A"
+      }
+    })
+    if (branch == "HEAD")  return "detached"
+    branch
   }
 
   def getBambooBuild: String = {
-    sys.env.getOrElse("bamboo_buildNumber", default = "local")
+    sys.env.getOrElse("BUILDNUMBER", default = "local")
   }
 
   val appDependencies = Seq(
