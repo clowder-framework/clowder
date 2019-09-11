@@ -4,6 +4,8 @@ import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
 
+import scala.List
+
 
 case class ElasticsearchObject (
   resource: ResourceRef,
@@ -18,6 +20,15 @@ case class ElasticsearchObject (
   comments: List[String] = List.empty,
   metadata: Map[String, JsValue] = Map()
 )
+
+case class ElasticsearchResult (
+ results: List[ResourceRef],
+ from: Int = 0,           // Starting index of results
+ size: Int = 240,         // Requested page size of query
+ scanned_size: Int = 240, // Number of records scanned to fill 'size' results after permission check
+ total_size: Long = 0     // Number of records across all pages
+)
+
 
 object ElasticsearchObject {
   /**

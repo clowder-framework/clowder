@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission._
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import models.{ResourceRef, UUID}
@@ -32,36 +33,7 @@ class Search @Inject() (
     implicit val user = request.user
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        var filesList = List.empty[models.File]
-        var datasetsList = List.empty[models.Dataset]
-        var collectionsList = List.empty[models.Collection]
-
-        if (query != "") {
-          // Execute query
-          val response = plugin.search(query)
-
-          // Get all objects from Mongo at once
-          var filesFound = ListBuffer.empty[UUID]
-          var datasetsFound = ListBuffer.empty[UUID]
-          var collectionsFound = ListBuffer.empty[UUID]
-
-          for (resource <- response) {
-            resource.resourceType match {
-              case ResourceRef.file => if (Permission.checkPermission(Permission.ViewFile, resource))
-                  filesFound += resource.id
-              case ResourceRef.dataset => if (Permission.checkPermission(Permission.ViewDataset, resource))
-                  datasetsFound += resource.id
-              case ResourceRef.collection => if (Permission.checkPermission(Permission.ViewDataset, resource))
-                  collectionsFound += resource.id
-            }
-          }
-
-          filesList = files.get(filesFound.toList)
-          datasetsList = datasets.get(datasetsFound.toList)
-          collectionsList = collections.get(collectionsFound.toList)
-        }
-
-        Ok(views.html.searchResults(query, filesList.toArray, datasetsList.toArray, collectionsList.toArray))
+        Ok(views.html.searchResults(query))
       }
       case None => {
         Logger.debug("Search plugin not enabled")

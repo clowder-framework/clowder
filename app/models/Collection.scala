@@ -41,7 +41,8 @@ object Collection {
         "description" -> collection.description,
         "created" -> collection.created.toString,
         "thumbnail" -> collectionThumbnail,
-        "authorId" -> collectionAuthor)
+        "authorId" -> collectionAuthor,
+        "resource_type" -> "collection")
     }
   }
 }

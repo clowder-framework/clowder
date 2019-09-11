@@ -58,7 +58,8 @@ object File {
         "name" -> file.filename,
         "status" -> file.status,
         "thumbnail" -> fileThumbnail,
-        "created" -> file.uploadDate.toString)
+        "created" -> file.uploadDate.toString,
+        "resource_type" -> "file")
     }
   }
 }

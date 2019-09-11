@@ -1,6 +1,7 @@
-@(query: String, filesArray: Array[models.File], datasetsArray: Array[models.Dataset], collectionsArray: Array[models.Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(query: String)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import scala.collection.mutable.ListBuffer
+@import play.api.Play.current
 
 @main("Search") {
 	<div class="row with-margin-md">
@@ -8,16 +9,14 @@
 			<h1>Search</h1>
 		</div>
 		<div class="col-md-10">
-			<form role="search" action="@routes.Search.search("")">
-				<div class="input-group">
-					<input type="text" class="form-control" placeholder="Search" name="query" value="@query">
-					<div class="input-group-btn">
-						<button class="btn btn-default" type="submit">
-							<span class="glyphicon glyphicon-search"></span>
-						</button>
-					</div>
-				</div>
-			</form>
+            <div class="input-group">
+                <input type="text" id="querybox" class="form-control" placeholder="Search" name="query" value="@query">
+                <div class="input-group-btn">
+                    <button class="btn btn-default" onclick="performNewSearch();">
+                        <span class="glyphicon glyphicon-search"></span>
+                    </button>
+                </div>
+            </div>
 		</div>
 		<div class="col-md-2 vcenter">
             <a data-toggle="collapse" href="#searchhelp" aria-expanded="false">
@@ -77,47 +76,157 @@
         </div>
     </div>
 
-	@if(filesArray.size == 0 && datasetsArray.size == 0 && collectionsArray.size == 0 && !query.isEmpty) {
-        <div class="row">
-            <div class="col-md-12">
-                <h4 class="text-center">Your query returned no results. Please try a different query.</h4>
-            </div>
+    <div class="row top-padding">
+        <div class="col-lg-12 col-md-12">
+            <div id="resultheader"><h3>Results</h3></div>
+            <div id="resultlist"></div>
+            <div id="resultsfooter" style="text-align:center"></div>
         </div>
-	} else {
-        <div class="row top-padding">
-            <div class="col-lg-12 col-md-12"><h3>Collections</h3><div id="collections-results">
-            @if(collectionsArray.size!=0) {
-                @for(collection <- collectionsArray) {
-                    @search.searchResultCollection(collection)
-                }
-            } else {
-                No collections found
-            }
-            </div></div>
-        </div>
-        <div class="row top-padding">
-            <div class="col-lg-12 col-md-12"><h3>Datasets</h3><div id="datasets-results">
-            @if(datasetsArray.size!=0) {
-                @for(dataset <- datasetsArray) {
-                    @search.searchResultDataset(dataset)
-                }
-            } else {
-                No datasets found
-            }
-            </div></div>
-        </div>
-        <div class="row top-padding">
-            <div class="col-lg-12 col-md-12"><h3>Files</h3><div id="files-results">
-            @if(filesArray.size!=0){
-                @for(file <- filesArray) {
-                    @search.searchResultFile(file)
-                }
-            } else {
-                No files found
-            }
-            </div></div>
-        </div>
-    }
+    </div>
 
-    <!-- TODO: Need to overhaul this to support 'Show more results' button -->
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+    <script>
+        // count_stepsize is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
+        var count_stepsize = @{play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)};
+        count_stepsize = 2;
+        var count = 0;
+        var skipped_count = 0;
+        // Whether all results for current search have been exhausted & displayed yet
+        var found_all = false;
+        // This is set to true when waiting for an auto-scroll result to avoid duplicating request if user scrolls again
+        var searching = false;
+
+        $(document).ready(function() {
+            // Hitting Enter
+            $('#querybox').keyup( function(event) {
+                if (event.keyCode === 13) {
+                    event.preventDefault();
+                    performNewSearch();
+                }
+            });
+
+            $(window).scroll(infiniteScroll);
+
+            if (!@query.isEmpty)
+                performSearch();
+        });
+
+        function infiniteScroll() {
+            // Attempt to load more results below the current ones automatically
+            if (!found_all && !searching) {
+                var scrollTop = $(document).scrollTop();
+                var windowHeight = $(window).height();
+                var height = $(document).height() - windowHeight;
+                var scrollPercentage = (scrollTop / height);
+                var lastResult = $("#resultsfooter").position().top + $("#resultsfooter").height();
+
+                // If scrolling to bottom or results are shorter than display (i.e. small pages), load more content.
+                if (scrollPercentage > 0.98 || lastResult < windowHeight)
+                    performSearch(false);
+            }
+        }
+
+        function performNewSearch() {
+            count = 0;
+            skipped_count = 0;
+            found_all = false;
+            $( "#resultsfooter" ).empty();
+            performSearch();
+        }
+
+        function performSearch(empty=true) {
+            var query = document.getElementById("querybox").value;
+
+            // Perform the search
+            console.log("Getting "+count_stepsize+" more results starting at index "+count);
+            searching = true;
+            var request = jsRoutes.api.Search.search(query, null, null, null, null, null, null, null, count, count_stepsize).ajax({
+                type: 'GET',
+                contentType: "application/json"
+            });
+
+            request.done(function(resp, status, err){
+                count += resp.scanned_size;
+                searching = false;
+
+                // Correctly increment skipped count
+                if (resp.count != resp.total_size) {
+                    if (resp.size > 0) {
+                        if (resp.total_size < resp.scanned_size)
+                            skipped_count += (resp.total_size - resp.count);
+                        else
+                            skipped_count += (resp.scanned_size - resp.count);
+                    } else if (resp.hasOwnProperty('next') || resp.total_size == resp.scanned_size) {
+                        skipped_count += resp.total_size
+                    }
+                }
+
+                if (resp.count == 0) {
+                    found_all = true;
+                    if (skipped_count>0)
+                        $('#resultsfooter').append("<i><b>All results displayed (omitted "+skipped_count+" results due to insufficient permissions).</b></i>");
+                    else
+                        $('#resultsfooter').append("<i><b>All results displayed.</b></i>");
+                    $('#resultsfooter').append("<br/>&nbsp;<br/>")
+                }
+
+                $("#resultheader").html("<h3>Results ("+resp.total_size+")</h3>");
+
+                updateResults(resp, empty);
+                // On initial page load, call this again just in case we have room to show more
+                infiniteScroll();
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+            });
+        }
+
+        function updateResults(response, empty=true) {
+            if (empty)
+                $( "#resultlist" ).empty();
+
+            var results = response["results"];
+
+            for (var i=0; i<results.length; i++) {
+                var thumbnailId = (results[i].thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(results[i].thumbnail).url;
+
+                if (results[i].resource_type == "file") {
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
+                    var html = modalTemplate({
+                        'url': jsRoutes.controllers.Files.file(results[i].id).url,
+                        'name': results[i].name,
+                        'created': results[i].created,
+                        'thumbnail': thumbnailId
+                    });
+                    $('#resultlist').append(html);
+                }
+
+                if (results[i].resource_type == "dataset") {
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
+                    var html = modalTemplate(
+                            {'url': jsRoutes.controllers.Datasets.dataset(results[i].id).url,
+                                'name': results[i].name,
+                                'description':  results[i].description,
+                                'created': results[i].created,
+                                'thumbnail': thumbnailId
+                            });
+                    $('#resultlist').append(html);
+                }
+
+                if (results[i].resource_type == "collection") {
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_collection_result")");
+                    var html = modalTemplate(
+                            {'url': jsRoutes.controllers.Collections.collection(results[i].id).url,
+                                'name': results[i].name,
+                                'description':  results[i].description,
+                                'created': results[i].created,
+                                'thumbnail': thumbnailId
+                            });
+                    $('#resultlist').append(html);
+                }
+            }
+        }
+    </script>
 }

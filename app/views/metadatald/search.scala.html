@@ -1,5 +1,7 @@
 @(spaces: List[ProjectSpace], selectedSpace: Option[ProjectSpace] = None)(implicit user: Option[models.User])
 
+@import play.api.Play.current
+
 @main("Metadata Search") {
     @selectedSpace match {
         case None => {
@@ -75,14 +77,10 @@
         </div>
     </div>
     <div class="row top-padding">
-        <div class="col-lg-12 col-md-12"><h3>Datasets</h3><div id="datasets-results"></div></div>
-    </div>
-    <div class="row top-padding">
-        <div class="col-lg-12 col-md-12"><h3>Files</h3><div id="files-results"></div></div>
-    </div>
-    <div class="row top-padding">
-        <div id="getmore" class="col-lg-12 col-md-12 text-center">
-            <a id="showmore" style="display:none" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>
+        <div class="col-lg-12 col-md-12">
+            <div id="resultstitle"><h3>Results</h3></div>
+            <div id="resultslist"></div>
+            <div id="resultsfooter" style="text-align:center"></div>
         </div>
     </div>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
@@ -123,16 +121,24 @@
 
         var metadata_definitions = [];
 
-        // Count is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
-        var count_stepsize = 60;
+        // count_stepsize is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
+        var count_stepsize = @{play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)};
         var count = 0;
+        var skipped_count = 0;
+        // Whether all results for current search have been exhausted & displayed yet
+        var found_all = false;
+        // This is set to true when waiting for an auto-scroll result to avoid duplicating request if user scrolls again
+        var searching = false;
 
         $(document).ready(function() {
+            $(window).scroll(infiniteScroll);
+
             // Fetch and cache metadata definitions
             var request = jsRoutes.api.Metadata.getDefinitionsDistinctName().ajax({
                 type: 'GET',
                 contentType: "application/json"
             });
+
             request.done(function (response, textStatus, jqXHR) {
                 metadata_definitions = response;
 
@@ -166,6 +172,23 @@
                 reject(errMsg);
             });
         });
+
+        // Automatically fetch new search results
+        function infiniteScroll() {
+            // Attempt to load more results below the current ones automatically
+            if (!found_all && !searching) {
+                var scrollTop = $(document).scrollTop();
+                var windowHeight = $(window).height();
+                var height = $(document).height() - windowHeight;
+                var scrollPercentage = (scrollTop / height);
+
+                var lastResult = $("#resultsfooter").position().top + $("#resultsfooter").height();
+
+                // If scrolling to bottom or results are shorter than display (i.e. small pages), load more content.
+                if (scrollPercentage > 0.98 || lastResult < windowHeight)
+                    search(count)
+            }
+        }
 
         // Add a new row to the set of criteria
         function getBasicDefinitions(rowId) {
@@ -201,6 +224,8 @@
                 // Allow Enter key to perform search on any value box
                 if (evt.keyCode == 13) {
                     count = 0;
+                    skipped_count = 0;
+                    found_all = false;
                     search();
                     return false
                 } else return true
@@ -232,7 +257,7 @@
                     },
                     // Populate autocomplete as user types
                     processResults: function(data, page) {
-                        var outMap = {}
+                        var outMap = {};
 
                         for (var rez=0; rez<data.length; rez++) {
                             var entry = data[rez];
@@ -426,12 +451,41 @@
         function performSearchAjax(searchQuery, grouping, from_count) {
 
             // Perform the search
+            searching = true;
             var request = jsRoutes.api.Search.searchJson(searchQuery, grouping, from_count, count_stepsize).ajax({
                 type: 'GET',
                 contentType: "application/json"
             });
 
             request.done(function(resp, status, err){
+                // Update counts for pagination
+                count += resp.scanned_size;
+                searching = false;
+
+                // Correctly increment skipped count
+                if (resp.count != resp.total_size) {
+                    if (resp.size > 0) {
+                        if (resp.total_size < resp.scanned_size)
+                            skipped_count += (resp.total_size - resp.count);
+                        else
+                            skipped_count += (resp.scanned_size - resp.count);
+                    } else if (resp.hasOwnProperty('next') || resp.total_size == resp.scanned_size) {
+                        skipped_count += resp.total_size
+                    }
+                }
+
+                if (resp.count == 0) {
+                    found_all = true;
+                    if (skipped_count>0)
+                        $('#resultsfooter').append("<i><b>All results displayed (omitted "+skipped_count+" results due to insufficient permissions).</b></i>");
+                    else
+                        $('#resultsfooter').append("<i><b>All results displayed.</b></i>");
+                    $('#resultsfooter').append("<br/>&nbsp;<br/>")
+                }
+
+                $('#resultstitle').html('<h3>Results ('+resp.total_size+')</h3>');
+
+                // Convert results into displayed list
                 if (from_count > 0) {
                     parseSearchResults(resp, status, err, false)
                 } else {
@@ -441,6 +495,7 @@
 
             request.fail(function (jqXHR, textStatus, errorThrown){
                 console.error("The following error occured: " + textStatus, errorThrown);
+                searching = false;
             });
         }
 
@@ -452,64 +507,43 @@
 
         function parseSearchResults(response, textStatus, jqXHR, empty=true) {
             if (empty) {
-                $( "#datasets-results" ).empty();
-                $( "#files-results" ).empty();
+                $( "#resultslist" ).empty();
+                $( "#resultsfooter" ).empty();
             }
 
-            var datasets = response.datasets;
-            if (datasets.length == 0) $('#datasets-results').append("No datasets found</br>");
-            for (var i=0; i<datasets.length; i++) {
-                var thumbnailId = (datasets[i].thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(datasets[i].thumbnail).url;
-                var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
-                var html = modalTemplate(
-                    {'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url,
-                        'name': datasets[i].name,
-                        'description':  datasets[i].description,
-                        'created': datasets[i].created,
+            for (var i=0; i < response.results.length; i++) {
+                var resource = response.results[i];
+                if (resource.resource_type == "dataset") {
+                    var thumbnailId = (resource.thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(resource.thumbnail).url;
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
+                    var html = modalTemplate(
+                            {'url': jsRoutes.controllers.Datasets.dataset(resource.id).url,
+                                'name': resource.name,
+                                'description':  resource.description,
+                                'created': resource.created,
+                                'thumbnail': thumbnailId
+                            });
+                    $('#resultslist').append(html);
+                }
+                else if (resource.resource_type == "file") {
+                    var thumbnailId = (resource.thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(resource.thumbnail).url;
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
+                    var html = modalTemplate({
+                        'url': jsRoutes.controllers.Files.file(resource.id).url,
+                        'name': resource.name,
+                        'created': resource.created,
                         'thumbnail': thumbnailId
                     });
-                $('#datasets-results').append(html);
+                    $('#resultslist').append(html);
+                }
             }
-
-            var files = response.files;
-            if (files.length == 0) $('#files-results').append("No files found</br>");
-            for (var i=0; i<files.length; i++) {
-                var thumbnailId = (files[i].thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(files[i].thumbnail).url;
-                var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
-                var html = modalTemplate({
-                    'url': jsRoutes.controllers.Files.file(files[i].id).url,
-                    'name': files[i].name,
-                    'created': files[i].created,
-                    'thumbnail': thumbnailId
-                });
-                $('#files-results').append(html);
-                // TODO: example search strings
-                // TODO: Support API direct calls
-            }
-
-            if (response.count >= count_stepsize) {
-
-                $('#showmore').show();
-                $('#showmore').off();
-                $('#showmore').click( function() {
-                    if (response.count < count_stepsize) {
-                        count += response.count;
-                    } else {
-                        count += count_stepsize;
-                    }
-                    search(count);
-                });
-            } else {
-                $('#showmore').hide();
-            }
-
         }
 
         // Wire up reset button
         $('#resetBtn').click(function(evt) {
             // Reset results state
-            $('#datasets-results').empty();
-            $('#files-results').empty();
+            $('#resultslist').empty();
+            $( "#resultsfooter" ).empty();
 
             // Reset form state
             row_list = [];
@@ -525,6 +559,7 @@
         $( "form[id='metadata-search']").submit(function( event ) {
             event.preventDefault();
             count = 0;
+            found_all = false;
             search();
 
         });
