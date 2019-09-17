@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Changed
+- `/api/search` endpoint now returns JSON objects describing each result rather than just the ID. This endpoint has three
+  new parameters - from, size, and page. The result JSON objects will also return pagination data such as next and 
+  previous page if Elasticsearch plugin is enabled and these parameters are used.
 - S3ByteStorageService now uses AWS TransferManager for saving bytes - uploads larger than ~1GB should now save more reliably.
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
 - Clean up docker build. Use new buildkit to speed up builds. Store version/branch/git as environment variables in 

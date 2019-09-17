@@ -1,9 +1,11 @@
 package services
 
+import api.Permission
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
+import play.api.libs.json.Json._
 import scala.util.Try
 import scala.collection.mutable.{MutableList, ListBuffer}
 import scala.collection.immutable.List
@@ -19,7 +21,7 @@ import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
 import org.elasticsearch.client.transport.NoNodeAvailableException
 
-import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section}
+import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section, ElasticsearchResult, User}
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
@@ -116,7 +118,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
-  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int]): List[ResourceRef] = {
+  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int], user: Option[User]): ElasticsearchResult = {
     /** Each item in query list has properties:
       *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
       *   "operator":       type of query for this term, e.g. '=='
@@ -125,49 +127,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
     val queryObj = prepareElasticJsonQuery(query, grouping)
-    val response: SearchResponse = _search(queryObj, from=from, size=size)
-
-    var results = MutableList[ResourceRef]()
-    Option(response.getHits()) match {
-      case Some(hits) => {
-        for (hit <- hits.getHits()) {
-          val resource_type = hit.getSource().get("resource_type").toString
-          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
-        }
-      }
-      case None => {}
-    }
-
-    results.toList
-  }
-
-  /** Search using a simple text string */
-  def search(query: String, index: String = nameOfIndex): List[ResourceRef] = {
-    val queryObj = prepareElasticJsonQuery(query)
-
-    try {
-      val response = _search(queryObj, index)
-      var results = MutableList[ResourceRef]()
-      for (hit <- response.getHits().getHits()) {
-        val resource_type = hit.getSource().get("resource_type").toString
-        results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
-      }
-
-      results.toList
-    } catch {
-      case spee: SearchPhaseExecutionException => {
-        List[ResourceRef]()
-      }
-      case e: Exception => {
-        List[ResourceRef]()
-      }
-    }
+    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
   }
 
   /** Search using a simple text string, appending parameters from API to string if provided */
-  def searchWithParameters(query: String, resource_type: Option[String],
-                     datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
-                     field: Option[String], tag: Option[String], index: String = nameOfIndex): List[ResourceRef] = {
+  def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
+             spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
+             from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User],
+             index: String = nameOfIndex): ElasticsearchResult = {
 
     var expanded_query = query
 
@@ -211,46 +178,103 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case None => {}
     }
 
-    val queryObj = prepareElasticJsonQuery(expanded_query)
-
-    try {
-      val response = _search(queryObj, index)
-      var results = MutableList[ResourceRef]()
-      for (hit <- response.getHits().getHits()) {
-        val resource_type = hit.getSource().get("resource_type").toString
-        results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
-      }
-
-      results.toList
-    } catch {
-      case spee: SearchPhaseExecutionException => {
-        List[ResourceRef]()
-      }
-      case e: Exception => {
-        List[ResourceRef]()
-      }
-    }
+    val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted)
+    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
   }
 
-  /*** Execute query */
+  /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
+  def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int,
+                           index: String = nameOfIndex): ElasticsearchResult = {
+    var total_results = ListBuffer.empty[ResourceRef]
+
+    // Fetch initial page & filter by permissions
+    val (results, total_size) = _search(queryObj, index, Some(from), Some(size))
+    Logger.debug(s"Found ${results.length} results with ${total_size} total")
+    val filtered = checkResultPermissions(results, user)
+    Logger.debug(s"Permission to see ${filtered.length} results")
+    var scanned_records = size
+    var new_from = from + size
+
+    // Make sure page is filled if possible
+    filtered.foreach(rr => total_results += rr)
+    var exhausted = false
+    while (total_results.length < size && !exhausted) {
+      Logger.debug(s"Only have ${total_results.length} total results; searching for ${size*2} more from ${new_from}")
+      val (results, total_size)  = _search(queryObj, index, Some(new_from), Some(size*2))
+      Logger.debug(s"Found ${results.length} results with ${total_size} total")
+      if (results.length == 0 || new_from+results.length == total_size) exhausted = true // No more results to find
+      val filtered = checkResultPermissions(results, user)
+      Logger.debug(s"Permission to see ${filtered.length} results")
+      var still_scanning = true
+      results.foreach(r => {
+        if (still_scanning) {
+          new_from += 1
+          scanned_records += 1
+        }
+        if (filtered.exists(fr => fr==r) && total_results.length < size) {
+          total_results += r
+        }
+        if (total_results.length >= size) {
+          // Only increment the records scanned while the page isn't full, to make next 'from' page link correct
+          still_scanning = false
+        }
+      })
+    }
+
+    new ElasticsearchResult(total_results.toList,
+      from,
+      total_results.length,
+      scanned_records,
+      total_size)
+  }
+
+  /** Return a filtered list of resources that user can actually access */
+  def checkResultPermissions(results: List[ResourceRef], user: Option[User]): List[ResourceRef] = {
+    var filteredResults = ListBuffer.empty[ResourceRef]
+
+    var filesFound = ListBuffer.empty[UUID]
+    var datasetsFound = ListBuffer.empty[UUID]
+    var collectionsFound = ListBuffer.empty[UUID]
+
+    // Check permissions for each resource
+    results.foreach(resource => {
+      resource.resourceType match {
+        case ResourceRef.file => if (Permission.checkPermission(user, Permission.ViewFile, resource))
+          filesFound += resource.id
+        case ResourceRef.dataset => if (Permission.checkPermission(user, Permission.ViewDataset, resource))
+          datasetsFound += resource.id
+        case ResourceRef.collection => if (Permission.checkPermission(user, Permission.ViewDataset, resource))
+          collectionsFound += resource.id
+        case _ => {}
+      }
+    })
+
+    // Reorganize the separate lists back into original Elasticsearch score order
+    results.foreach(resource => {
+      resource.resourceType match {
+        case ResourceRef.file => filesFound.filter(f => f == resource.id).foreach(f => filteredResults += resource)
+        case ResourceRef.dataset => datasetsFound.filter(d => d == resource.id).foreach(d => filteredResults += resource)
+        case ResourceRef.collection => collectionsFound.filter(c => c == resource.id).foreach(c => filteredResults += resource)
+        case _ => {}
+      }
+    })
+
+    filteredResults.distinct.toList
+  }
+
+  /*** Execute query and return list of results and total result count as tuple */
   def _search(queryObj: XContentBuilder, index: String = nameOfIndex,
-              from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): SearchResponse = {
+              from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
     connect()
-    client match {
+    val response = client match {
       case Some(x) => {
         Logger.info("Searching Elasticsearch: "+queryObj.string())
         var responsePrep = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
 
-        from match {
-          case Some(f) => responsePrep = responsePrep.setFrom(f)
-          case None => {}
-        }
-        size match {
-          case Some(s) => responsePrep = responsePrep.setSize(s)
-          case None => {}
-        }
+        responsePrep = responsePrep.setFrom(from.getOrElse(0))
+        responsePrep = responsePrep.setSize(size.getOrElse(maxResults))
 
         val response = responsePrep.setExplain(true).execute().actionGet()
         Logger.debug("Search hits: " + response.getHits().getTotalHits())
@@ -261,6 +285,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         new SearchResponse()
       }
     }
+
+    (response.getHits().getHits().map(h => {
+      new ResourceRef(Symbol(h.getSource().get("resource_type").toString), UUID(h.getId()))
+    }).toList, response.getHits().getTotalHits())
   }
 
 
@@ -521,10 +549,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             .setSize(0)
         // Filter to tags on a particular type of resource if given
         if (resourceType != "")
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+""))
+          searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty))
         else {
           // Exclude Section tags to avoid double-counting since those are duplicated in File document
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:file|dataset|collection"))
+          searcher.setQuery(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty))
         }
 
         val response = searcher.execute().actionGet()
@@ -812,7 +840,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /**Convert search string into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: String): XContentBuilder = {
+  def prepareElasticJsonQuery(query: String, permitted: List[UUID]): XContentBuilder = {
     /** OPERATORS
       *  ==  equals (exact match)
       *  !=  not equals (partial matches OK)
@@ -876,6 +904,21 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
+
+    // Include special OR condition for restricting to permitted spaces
+    if (permitted.length > 0) {
+      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+      if (!populatedMust) {
+        builder.startArray("must")
+        populatedMust = true
+      }
+      builder.startObject.startObject("bool").startArray("should")
+      permitted.foreach(ps => {
+        builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
+      })
+      builder.endArray().endObject().endObject()
+    }
+
     if (populatedMust) builder.endArray()
 
     // Second, populate the MUST NOT portion of Bool query

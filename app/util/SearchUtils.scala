@@ -1,7 +1,9 @@
 package util
 
+import api.Permission
 import models._
 import play.api.Logger
+import play.api.libs.json.Json._
 import play.api.libs.json._
 import services._
 
@@ -119,7 +121,7 @@ object SearchUtils {
     var parent_of: ListBuffer[String] = ListBuffer()
     ds.files.map(fileId => parent_of += fileId.toString)
     ds.folders.map(folderId => parent_of += folderId.toString)
-    var parent_of_distinct = parent_of.toList.distinct
+    val parent_of_distinct = parent_of.toList.distinct
 
     // Get comments for dataset
     val dscomments = for (c <- comments.findCommentsByDatasetId(id)) yield {
@@ -275,5 +277,77 @@ object SearchUtils {
       List.empty,
       Map()
     ))
+  }
+
+  /**Format a simple search result*/
+  def prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
+    var results = ListBuffer.empty[JsValue]
+
+    var filesFound = ListBuffer.empty[UUID]
+    var datasetsFound = ListBuffer.empty[UUID]
+    var collectionsFound = ListBuffer.empty[UUID]
+
+    for (resource <- response.results) {
+      resource.resourceType match {
+        case ResourceRef.file => filesFound += resource.id
+        case ResourceRef.dataset => datasetsFound += resource.id
+        case ResourceRef.collection => collectionsFound += resource.id
+        case _ => {}
+      }
+    }
+
+    // Use bulk Mongo queries to get many resources at once
+    val filesList = files.get(filesFound.toList)
+    val datasetsList = datasets.get(datasetsFound.toList)
+    val collectionsList = collections.get(collectionsFound.toList)
+
+    // Now reorganize the separate lists back into Elasticsearch score order
+    for (resource <- response.results) {
+      resource.resourceType match {
+        case ResourceRef.file => filesList.filter(f => f.id == resource.id).foreach(f => results += toJson(f))
+        case ResourceRef.dataset => datasetsList.filter(d => d.id == resource.id).foreach(d => results += toJson(d))
+        case ResourceRef.collection => collectionsList.filter(c => c.id == resource.id).foreach(c => results += toJson(c))
+      }
+    }
+
+    // TODO: add views etc. other properties for the handlebars template
+
+    val result = Map[String, JsValue](
+      "results" -> toJson(results.distinct),
+      "count" -> toJson(response.results.length),
+      "size" -> toJson(response.size),
+      "scanned_size" -> toJson(response.scanned_size),
+      "from" -> toJson(response.from),
+      "total_size" -> toJson(response.total_size)
+    )
+
+    addPageURLs(result, source_url, response)
+  }
+
+  /**Provide URLs referring to first/last/next/previous pages of current result set if possible*/
+  def addPageURLs(result: Map[String, JsValue], url_root: String, response: ElasticsearchResult): Map[String, JsValue] = {
+    var paged_result = result
+
+    val lead = if (url_root.contains('?')) "&" else "?"
+
+    // Add pagination fields if necessary
+    if (response.from > 0) {
+      val prev = List(response.from - response.size, 0).max
+      paged_result += ("first" -> toJson(url_root + lead + s"from=0&size=${response.size}"))
+      paged_result += ("prev"  -> toJson(url_root + lead + s"from=$prev&size=${response.size}"))
+    }
+
+    if (response.from + response.scanned_size < response.total_size) {
+      val next = List[Long](response.from + response.scanned_size, response.total_size).min
+      var last = next
+      while (last < response.total_size - response.size) {
+        last += response.size
+      }
+      val last_size = response.total_size - last
+      paged_result += ("last" -> toJson(url_root + lead + s"from=$last&size=${last_size}"))
+      paged_result += ("next"  -> toJson(url_root + lead + s"from=$next&size=${response.size}"))
+    }
+
+    paged_result
   }
 }
