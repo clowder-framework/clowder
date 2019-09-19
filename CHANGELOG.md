@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
 - Clean up docker build. Use new buildkit to speed up builds. Store version/branch/git as environment variables in 
   docker image so that they can be inspected at runtime with Docker.
+- Extractors are now in their own docker-compose file. Use traefik for proxy. Run monitor. Use env file for options.
 
 ### Added
 - New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.

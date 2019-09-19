@@ -1,9 +1,15 @@
-docker/files
+# ignore customizations to clowder
+docker-compose.override.yml
+.env
 custom
-logs
+
+# ignore build folders
 project/project
 project/target
 target
+
+logs
+docker/files
 tmp
 bin
 /*.sublime-workspace

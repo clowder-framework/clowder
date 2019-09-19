@@ -31,3 +31,9 @@ ${DEBUG} docker build --tag clowder/mongo-init:latest \
   --build-arg BUILDNUMBER=${BUILDNUMBER} \
   --build-arg GITSHA1=${GITSHA1} \
   scripts/mongo-init
+${DEBUG} docker build --tag clowder/monitor:latest \
+  --build-arg BRANCH=${BRANCH} \
+  --build-arg VERSION=${VERSION} \
+  --build-arg BUILDNUMBER=${BUILDNUMBER} \
+  --build-arg GITSHA1=${GITSHA1} \
+  scripts/monitor

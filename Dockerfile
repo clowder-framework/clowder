@@ -74,6 +74,13 @@ COPY --from=clowder-build /src/clowder /home/clowder/
 COPY docker/clowder.sh docker/healthcheck.sh /home/clowder/
 COPY docker/custom.conf docker/play.plugins /home/clowder/custom/
 
+# Containers should NOT run as root as a good practice
+# numeric id to be compatible with openshift, will run as random userid:0
+RUN mkdir /home/clowder/data && \
+    chgrp -R 0 /home/clowder/ && \
+    chmod g+w /home/clowder/logs /home/clowder/data /home/clowder/custom
+USER 10001
+
 # command to run when starting docker
 CMD /home/clowder/clowder.sh
 
