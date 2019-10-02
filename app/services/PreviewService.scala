@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, ThreeDAnnotation, Preview}
+import models.{UUID, ThreeDAnnotation, Preview, DBResult}
 import java.io.InputStream
 import play.api.libs.json.JsValue
 
@@ -22,6 +22,8 @@ trait PreviewService {
   def remove(id: UUID)
 
   def get(previewId: UUID): Option[Preview]
+
+  def get(previewIds: List[UUID]): DBResult[Preview]
 
   def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String)
 

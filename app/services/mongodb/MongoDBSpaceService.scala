@@ -39,6 +39,18 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
   }
 
+  def get(ids: List[UUID]): DBResult[ProjectSpace] = {
+    val objectIdList = ids.map(id => new ObjectId(id.stringify))
+
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+    val found = ProjectSpaceDAO.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+
+    if (notFound.length > 0)
+      Logger.error("Not all space IDs found for bulk get request")
+    return DBResult(found, notFound)
+  }
+
   /** count all spaces */
   def count(): Long = {
     ProjectSpaceDAO.count(MongoDBObject())  }
@@ -342,20 +354,12 @@ class MongoDBSpaceService @Inject() (
           }
         }
 
-        val childCollectionIds = current_collection.child_collection_ids
-        for (childCollectionId <- childCollectionIds){
-          collections.get(childCollectionId) match {
-            case Some(child_collection) => {
-              if (!child_collection.spaces.contains(space)){
-                addCollection(childCollectionId, space, user)
-              }
-              collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
-            }
-            case None => {
-              log.error("No collection found for " + childCollectionId)
-            }
+        collections.get(current_collection.child_collection_ids).found.foreach(child_collection => {
+          if (!child_collection.spaces.contains(space)){
+            addCollection(child_collection.id, space, user)
           }
-        }
+          collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
+        })
       } case None => {
         log.error("No collection found for " + collection)
       }

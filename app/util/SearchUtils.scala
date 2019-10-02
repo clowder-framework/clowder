@@ -31,14 +31,15 @@ object SearchUtils {
       ds.spaces.map(spid => child_of += spid.toString)
       ds.collections.map(collid => child_of += collid.toString)
     })
-    folders.findByFileId(id).map( fld => {
+    val folderlist = folders.findByFileId(id).map(fld => {
       child_of += fld.id.toString
       child_of += fld.parentDatasetId.toString
-      datasets.get(fld.parentDatasetId).map(ds => {
-        child_of += ds.id.toString
-        ds.spaces.map(spid => child_of += spid.toString)
-        ds.collections.map(collid => child_of += collid.toString)
-      })
+      fld.id
+    })
+    datasets.get(folderlist).found.foreach(ds => {
+      child_of += ds.id.toString
+      ds.spaces.map(spid => child_of += spid.toString)
+      ds.collections.map(collid => child_of += collid.toString)
     })
     val child_of_distinct = child_of.toList.distinct
 
@@ -283,30 +284,20 @@ object SearchUtils {
   def prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
     var results = ListBuffer.empty[JsValue]
 
-    var filesFound = ListBuffer.empty[UUID]
-    var datasetsFound = ListBuffer.empty[UUID]
-    var collectionsFound = ListBuffer.empty[UUID]
-
-    for (resource <- response.results) {
-      resource.resourceType match {
-        case ResourceRef.file => filesFound += resource.id
-        case ResourceRef.dataset => datasetsFound += resource.id
-        case ResourceRef.collection => collectionsFound += resource.id
-        case _ => {}
-      }
-    }
-
     // Use bulk Mongo queries to get many resources at once
-    val filesList = files.get(filesFound.toList)
-    val datasetsList = datasets.get(datasetsFound.toList)
-    val collectionsList = collections.get(collectionsFound.toList)
+    val filesList = files.get(Permission.checkPermissions(user, Permission.ViewFile,
+      response.results.filter(_.resourceType == 'file)).approved.map(_.id)).found
+    val datasetsList = datasets.get(Permission.checkPermissions(user, Permission.ViewDataset,
+      response.results.filter(_.resourceType == 'dataset)).approved.map(_.id)).found
+    val collectionsList = collections.get(Permission.checkPermissions(user, Permission.ViewCollection,
+      response.results.filter(_.resourceType == 'collection)).approved.map(_.id)).found
 
     // Now reorganize the separate lists back into Elasticsearch score order
     for (resource <- response.results) {
       resource.resourceType match {
-        case ResourceRef.file => filesList.filter(f => f.id == resource.id).foreach(f => results += toJson(f))
-        case ResourceRef.dataset => datasetsList.filter(d => d.id == resource.id).foreach(d => results += toJson(d))
-        case ResourceRef.collection => collectionsList.filter(c => c.id == resource.id).foreach(c => results += toJson(c))
+        case ResourceRef.file => filesList.filter(_.id == resource.id).foreach(f => results += toJson(f))
+        case ResourceRef.dataset => datasetsList.filter(_.id == resource.id).foreach(d => results += toJson(d))
+        case ResourceRef.collection => collectionsList.filter(_.id == resource.id).foreach(c => results += toJson(c))
       }
     }
 

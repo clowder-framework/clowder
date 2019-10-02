@@ -163,6 +163,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               case None =>
             }
           } else if (tidObject.objectType == "file") {
+            // TODO: Can use file.get(list[UUID]) here if the for loop is restructured (same for dataset, collection)
             val followedFile = files.get(tidObject.id)
             followedFile match {
               case Some(ffile) => {

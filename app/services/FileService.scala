@@ -101,7 +101,7 @@ trait FileService {
    */
   def get(id: UUID): Option[File]
 
-  def get(ids: List[UUID]): List[File]
+  def get(ids: List[UUID]): DBResult[File]
 
   /**
     * Set the file status

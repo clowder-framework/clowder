@@ -3,7 +3,7 @@ package services
 import java.util.Date
 
 import api.Permission.Permission
-import models.{Collection, Dataset, UUID, User}
+import models._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
@@ -121,7 +121,7 @@ trait CollectionService {
    */
   def get(id: UUID): Option[Collection]
 
-  def get(ids: List[UUID]): List[Collection]
+  def get(ids: List[UUID]): DBResult[Collection]
 
   /**
    * Create collection.
@@ -136,7 +136,7 @@ trait CollectionService {
   /**
     * Add datataset to collection spaces
     */
-  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]): Try[Unit]
+  def addDatasetToCollectionSpaces(collection: Collection, dataset: Dataset, user : Option[User]): Try[Unit]
 
   def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) : Try[Unit]
 

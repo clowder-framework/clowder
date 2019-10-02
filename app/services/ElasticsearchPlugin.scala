@@ -419,25 +419,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect()
     // Perform recursion first if necessary
     if (recursive) {
-      for (fileId <- dataset.files) {
-        files.get(fileId) match {
-          case Some(f) => {
-            index(f)
-          }
-          case None => Logger.error(s"Error getting file $fileId for recursive indexing")
-        }
-      }
+      files.get(dataset.files).found.foreach(f => index(f))
       for (folderid <- dataset.folders) {
         folders.get(folderid) match {
           case Some(f) => {
-            for (fileid <- f.files) {
-              files.get(fileid) match {
-                case Some(fi) => {
-                  index(fi)
-                }
-                case None => Logger.error(s"Error getting file $fileid for recursive indexing")
-              }
-            }
+            files.get(f.files).found.foreach(fi => index(fi))
           }
           case None => Logger.error(s"Error getting file $folderid for recursive indexing")
         }

@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, Section, Comment}
+import models.{UUID, Section, Comment, DBResult}
 import play.api.libs.json.JsValue
 import scala.collection.mutable.ArrayBuffer
 import models.User
@@ -13,6 +13,8 @@ trait SectionService {
   def listSections(): List[Section]
   
   def get(id: UUID): Option[Section]
+
+  def get(ids: List[UUID]): DBResult[Section]
 
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 

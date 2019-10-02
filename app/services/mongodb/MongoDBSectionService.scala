@@ -2,7 +2,7 @@ package services.mongodb
 
 import org.bson.types.ObjectId
 import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
-import models.{UUID, Tag, Comment, Section, User}
+import models._
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -60,6 +60,19 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
 
   def get(id: UUID): Option[Section] = {
     SectionDAO.findOneById(new ObjectId(id.stringify))
+  }
+
+  def get(ids: List[UUID]): DBResult[Section] = {
+    val objectIdList = ids.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+
+    val found = SectionDAO.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+    if (notFound.length > 0)
+      Logger.error("Not all section IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   def findByFileId(id: UUID): List[Section] = {

@@ -228,12 +228,8 @@ class Files @Inject()(
               dataset.spaces.foreach { space => spacesToCheck += space }
             }
 
-            foldersContainingFile.foreach { folder =>
-              datasets.get(folder.parentDatasetId) match {
-                case Some(dataset) => dataset.spaces.foreach { space => spacesToCheck += space }
-                case None =>
-              }
-
+            datasets.get(foldersContainingFile.map(_.parentDatasetId)).found.foreach{ ds =>
+              ds.spaces.foreach{ space => spacesToCheck += space }
             }
           }
         }
@@ -423,31 +419,23 @@ class Files @Inject()(
               val content = (metadata \ "content")
               val version = None
 
-              fileList.asInstanceOf[JsArray].value.foreach(v => {
-                files.get(UUID(v.toString.replace("\"", ""))) match {
-                  case Some(f) => {
-                    val attachedTo = ResourceRef(ResourceRef.file, f.id)
-                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                      content, version)
+              files.get(fileList.asInstanceOf[JsArray].value.map(v => UUID(v.toString.replace("\"", ""))).toList).found.foreach(f => {
+                val attachedTo = ResourceRef(ResourceRef.file, f.id)
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
-                    //add metadata to mongo
-                    val metadataId = metadataService.addMetadata(metadata)
-                    val mdMap = metadata.getExtractionSummary
+                //add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
-                    //send RabbitMQ message
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
-                        request.apiKey, request.user)
-                    }
-
-                    files.index(f.id)
-                  }
-                  case None => {
-                    Logger.debug("Skipping file id " + v.toString + " (not found)")
-                  }
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                    request.apiKey, request.user)
                 }
-              })
 
+                files.index(f.id)
+              })
 
               Ok(toJson("Metadata successfully added to db"))
             }
@@ -496,22 +484,13 @@ class Files @Inject()(
     val fileList = request.queryString.getOrElse("id", Seq[String]())
     var resultList = Map[String, List[JsValue]]()
 
-    fileList.foreach(v => {
-      val fileId = UUID(v.replace("\"", ""))
-      files.get(fileId) match {
-        case Some(f) => {
-          val fileMd = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
-            .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
-
-          resultList = resultList + (f.id.stringify -> fileMd.toList)
-        }
-        case None => Logger.error("Error getting file " + fileId.toString)
-      }
+    files.get(fileList.map(v => UUID(v.replace("\"", ""))).toList).found.foreach(f => {
+      val fileMd = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+        .map(JSONLD.jsonMetadataWithContext(_, baseUrlExcludingContext, isHttps))
+      resultList = resultList + (f.id.stringify -> fileMd.toList)
     })
 
     Ok(toJson(resultList))
-
-
   }
 
   def removeMetadataJsonLD(id: UUID, extractorId: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
@@ -923,12 +902,10 @@ class Files @Inject()(
             for (dataset <- datasetList) {
               if (dataset.thumbnail_id.isEmpty) {
                 datasets.updateThumbnail(dataset.id, thumbnail_id)
-                dataset.collections.foreach(c => {
-                  collections.get(c).foreach(col => {
-                    if (col.thumbnail_id.isEmpty) {
-                      collections.updateThumbnail(col.id, thumbnail_id)
-                    }
-                  })
+                collections.get(dataset.collections).found.foreach(col => {
+                  if (col.thumbnail_id.isEmpty) {
+                    collections.updateThumbnail(col.id, thumbnail_id)
+                  }
                 })
               }
             }
@@ -940,7 +917,6 @@ class Files @Inject()(
       case None => BadRequest(toJson("File not found " + file_id))
     }
   }
-
 
   /**
     * Add thumbnail to query file.

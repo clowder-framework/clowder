@@ -639,12 +639,9 @@ class Extractions @Inject()(
       case Some(ds) => {
         val filelist: ListBuffer[File] = ListBuffer()
         var missingfile = false
-        fileids.map(fid => {
-          files.get(UUID(fid)) match {
-            case Some(f) => filelist += f
-            case None => missingfile = true
-          }
-        })
+        files.get(fileids.map(fid => UUID(fid))).found.foreach(f =>
+          filelist += f
+        )
         if (missingfile)
           BadRequest(toJson("Not all files found"))
         else

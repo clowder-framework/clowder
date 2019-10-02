@@ -144,7 +144,7 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileIdDirectlyContain(file.id).sortBy(_.name)
-        val allDatasets = (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
+        val allDatasets = datasets.get(folders.findByFileId(id).map(_.parentDatasetId)).found ++ datasetsContainingFile
 
         val access = if (allDatasets == Nil) {
           "Private"
@@ -276,15 +276,7 @@ class Files @Inject() (
           -1
         }
 
-        for (tidObject <- fileIdsToUse) {
-          val followedFile = files.get(tidObject.id)
-          followedFile match {
-            case Some(ffile) => {
-              fileList += ffile
-            }
-            case None =>
-          }
-        }
+        files.get(fileIdsToUse.map(_.id)).found.foreach(ffile => fileList += ffile)
 
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
@@ -686,7 +678,7 @@ class Files @Inject() (
       //Check the license type before doing anything. 
       files.get(id) match {
         case Some(file) => {
-          if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+          if (file.licenseData.isDownloadAllowed(request.user)) {
             files.getBytes(id) match {
               case Some((inputStream, filename, contentType, contentLength)) => {
                 files.incrementDownloads(id, user)

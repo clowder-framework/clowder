@@ -2,6 +2,7 @@ package services.mongodb
 
 import java.util.Date
 
+import org.bson.types.ObjectId
 import services.{ByteStorageService, TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
@@ -49,6 +50,19 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
 
   def get(previewId: UUID): Option[Preview] = {
     PreviewDAO.findOneById(new ObjectId(previewId.stringify))
+  }
+
+  def get(previewIds: List[UUID]): DBResult[Preview] = {
+    val objectIdList = previewIds.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+
+    val found = PreviewDAO.find(query).toList
+    val notFound = previewIds.diff(found.map(_.id))
+    if (notFound.length > 0)
+      Logger.error("Not all file IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String) {

@@ -1,6 +1,6 @@
 package services.mongodb
 
-import models.{UUID, Comment}
+import models.{DBResult, UUID, Comment}
 import services.CommentService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -16,6 +16,19 @@ class MongoDBCommentService extends CommentService {
 
   def get(commentId: UUID): Option[Comment] = {
     Comment.findOneById(new ObjectId(commentId.stringify))
+  }
+
+  def get(commentIds: List[UUID]): DBResult[Comment] = {
+    val objectIdList = commentIds.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+
+    val found = Comment.find(query).toList
+    val notFound = commentIds.diff(found.map(f => f.id))
+    if (notFound.length > 0)
+      Logger.error("Not all file IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   def insert(comment: Comment): Option[String] = {

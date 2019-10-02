@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Clean up docker build. Use new buildkit to speed up builds. Store version/branch/git as environment variables in 
   docker image so that they can be inspected at runtime with Docker.
 - Extractors are now in their own docker-compose file. Use traefik for proxy. Run monitor. Use env file for options.
+- Utilize bulk get methods for resources widely across the application, including checking permissions for many resources
+  at once. Several instances where checks for resource existince were being done multiple times (e.g. in a method and then
+  in another method the first one calls) to reduce MongoDB query load. These bulk requests will also report any missing
+  IDs in the requested list so developers can handle those appropriately if needed.
 
 ### Added
 - New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.

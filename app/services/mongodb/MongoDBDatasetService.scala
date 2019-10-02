@@ -492,12 +492,16 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(id.stringify))
   }
 
-  def get(ids: List[UUID]): List[Dataset] = {
-    val objectIdList = ids.map(id => {
-      new ObjectId(id.stringify)
-    })
-    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
-    Dataset.find(query).toList
+  def get(ids: List[UUID]): DBResult[Dataset] = {
+    if (ids.length == 0) return DBResult(List.empty, List.empty)
+
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> ids.map(id => new ObjectId(id.stringify))))
+    val found = Dataset.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+
+    if (notFound.length > 0)
+      Logger.error("Not all dataset IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   /**
@@ -517,17 +521,13 @@ class MongoDBDatasetService @Inject() (
   def getFileId(datasetId: UUID, filename: String): Option[UUID] = {
     get(datasetId) match {
       case Some(dataset) => {
-        for (fileId <- dataset.files) {
-          files.get(fileId) match {
-            case Some(file) => {
-              if(file.filename.equals(filename)) {
-                return Some(fileId)
-              }
-            }
-            case None => Logger.error(s"Error getting file $fileId")
+        files.get(dataset.files).found.foreach(file => {
+          if(file.filename.equals(filename)) {
+            return Some(file.id)
           }
-        }
-        Logger.error("File does not exist in dataset" + datasetId); return None
+        })
+        Logger.error("File does not exist in dataset" + datasetId);
+        return None
       }
       case None => { Logger.error("Error getting dataset" + datasetId); return None }
     }
@@ -719,9 +719,7 @@ class MongoDBDatasetService @Inject() (
   def createThumbnail(datasetId: UUID) {
     get(datasetId) match {
       case Some(dataset) => {
-        val filesInDataset = dataset.files map {
-          f => files.get(f).getOrElse(None)
-        }
+        val filesInDataset = files.get(dataset.files).found
         for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
@@ -741,7 +739,7 @@ class MongoDBDatasetService @Inject() (
     get(datasetId) match {
       case Some(dataset) => {
         // TODO cleanup
-        val filesInDataset = dataset.files.map(f => files.get(f).getOrElse(None))
+        val filesInDataset = files.get(dataset.files).found
         for (file <- filesInDataset) {
           if (file.isInstanceOf[File]) {
             val theFile = file.asInstanceOf[File]
@@ -1359,13 +1357,7 @@ class MongoDBDatasetService @Inject() (
   def newThumbnail(datasetId: UUID) {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val filesInDataset = dataset.files map {
-          f => {
-            files.get(f).getOrElse {
-              None
-            }
-          }
-        }
+        val filesInDataset = files.get(dataset.files).found
         for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
@@ -1558,11 +1550,9 @@ class MongoDBDatasetService @Inject() (
 				  groupingFile.getParentFile().mkdirs()
 
 				  val filePrintStream =  new PrintStream(groupingFile)
-				  for(fileId <- dataset.files){
-            files.get(fileId).foreach(file =>
-				      filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
-            )
-				  }
+          files.get(dataset.files).found.foreach(file => {
+            filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
+          })
 				  filePrintStream.close()
 
 				  if(!dsDumpMoveDir.equals("")){

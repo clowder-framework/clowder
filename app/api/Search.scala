@@ -54,7 +54,6 @@ class Search @Inject() (
         val response = plugin.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
 
         val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
-        // TODO: Post-process this on batch query
         Ok(toJson(result))
       }
       case None => {

@@ -21,13 +21,9 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
   def getNextGenerationCollections(currentCollections : List[Collection]) : List[Collection] = {
     var nextGenerationCollections : ListBuffer[Collection] = ListBuffer.empty[Collection]
     for (currentCollection <- currentCollections){
-      val child_ids = currentCollection.child_collection_ids
-      for (child_id <- child_ids){
-        collections.get(child_id) match {
-          case Some(child_col) => nextGenerationCollections += child_col
-          case None => None
-        }
-      }
+      collections.get(currentCollection.child_collection_ids).found.foreach(child_col => {
+        nextGenerationCollections += child_col
+      })
     }
     nextGenerationCollections.toList
   }
@@ -46,6 +42,7 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
 
   var file_type = 0
 
+  // TODO: Repeat from api/Collections
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
       "created" -> collection.created.toString,"author"-> collection.author.email.toString, "root_flag" -> collections.hasRoot(collection).toString,

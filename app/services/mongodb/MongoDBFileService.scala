@@ -566,12 +566,16 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def get(ids: List[UUID]): List[File] = {
-    val objectIdList = ids.map(id => {
-      new ObjectId(id.stringify)
-    })
-    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
-    FileDAO.find(query).toList
+  def get(ids: List[UUID]): DBResult[File] = {
+    if (ids.length == 0) return DBResult(List.empty, List.empty)
+
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> ids.map(id => new ObjectId(id.stringify))))
+    val found = FileDAO.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+
+    if (notFound.length > 0)
+      Logger.error("Not all file IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   override def setStatus(id: UUID, status: FileStatus): Unit = {
@@ -822,18 +826,13 @@ class MongoDBFileService @Inject() (
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
               if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
                 datasets.newThumbnail(fileDataset.id)
-                	for(collectionId <- fileDataset.collections){
-                    collections.get(collectionId) match{
-                      case Some(collection) =>{
-                        if(!collection.thumbnail_id.isEmpty){
-                          if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-                            collections.createThumbnail(collection.id)
-                          }
-                        }
-                      }
-                      case None=>Logger.debug(s"Could not find collection $collectionId")
+                collections.get(fileDataset.collections).found.foreach(collection => {
+                  if(!collection.thumbnail_id.isEmpty){
+                    if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                      collections.createThumbnail(collection.id)
                     }
                   }
+                })
 		          }
             }
                      

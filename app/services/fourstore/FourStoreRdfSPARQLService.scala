@@ -172,42 +172,29 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
   }
   
   def removeDatasetFromGraphs(datasetId: UUID): Null = {
-          
-        //First, delete all RDF links having to do with files belonging only to the dataset to be deleted, as those files will be deleted together with the dataset
-         datasets.get(datasetId) match{
-          case Some(dataset)=> {
-                var filesString = "" 
-	            for(f <- dataset.files){
-				      var notTheDataset = for(currDataset<- datasets.findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
-				      if(notTheDataset.size == 0){
-                    files.get(f) match  {
-                      case Some(file) => {
-                        if (file.filename.endsWith(".xml")) {
-                          removeFileFromGraphs(f, "rdfXMLGraphName")
-                        }
-                        removeFileFromGraphs(f, "rdfCommunityGraphName")
-                      }
-                      case None => Logger.error(s"Unable to find file $f")
-                    }
-				      }
-				      else{
-                    files.get(f) match {
-                      case Some(file) => {
-                        if(file.filename.endsWith(".xml")){
-                          detachFileFromDataset(f, datasetId, "rdfXMLGraphName")
-                        }
-                      }
-                      case None => Logger.error(s"Unable to find file $f")
-                    }
-				      }
-				    }                
-	        
-	        //Then, delete the dataset itself
-	        removeDatasetFromUserGraphs(datasetId)
+    //First, delete all RDF links having to do with files belonging only to the dataset to be deleted, as those files will be deleted together with the dataset
+    datasets.get(datasetId) match {
+      case Some(dataset)=> {
+        files.get(dataset.files).found.foreach(file => {
+          val notTheDataset = for(currDataset<- datasets.findByFileIdDirectlyContain(file.id)
+                                  if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          if (notTheDataset.size == 0) {
+            if (file.filename.endsWith(".xml")) {
+              removeFileFromGraphs(file.id, "rdfXMLGraphName")
+            }
+            removeFileFromGraphs(file.id, "rdfCommunityGraphName")
+          } else {
+            if(file.filename.endsWith(".xml")){
+              detachFileFromDataset(file.id, datasetId, "rdfXMLGraphName")
+            }
           }
-        }
+        })
 
-		return null
+        //Then, delete the dataset itself
+        removeDatasetFromUserGraphs(datasetId)
+      }
+    }
+    return null
     
   }
       

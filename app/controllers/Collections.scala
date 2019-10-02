@@ -32,14 +32,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
+    val permittedSpaces = Permission.checkPermissions(Permission.AddResourceToSpace, spacesList.map(s => ResourceRef(ResourceRef.space, s.id))).approved
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-    for (aSpace <- spacesList) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-      }
-    }
+    permittedSpaces.map(ps => spacesList.filter(_.id == ps.id).foreach(sp =>
+      decodedSpaceList += Utils.decodeSpaceElements(sp)
+    ))
+
     space match {
       case Some(spaceId) => {
         spaceService.get(UUID(spaceId)) match {
@@ -96,15 +94,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         } else {
           -1
         }
-        for (tidObject <- collectionIdsToUse) {
-          val followedCollection = collections.get(tidObject.id)
-          followedCollection match {
-            case Some(fcoll) => {
-              collectionList += fcoll
-            }
-            case None =>
-          }
-        }
+        collections.get(collectionIdsToUse.map(_.id)).found.foreach(collectionList += _)
 
         val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
@@ -535,83 +525,38 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           } else {
             datasets.listCollection(id.stringify, user)
           }
-          val datasetIdsToUse = datasetsInside.slice(0, limit)
-          val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
-          for (aDataset <- datasetIdsToUse) {
-            val dDataset = Utils.decodeDatasetElements(aDataset)
-            decodedDatasetsInside += dDataset
-          }
+          val decodedDatasetsInside = datasetsInside.slice(0, limit).map(Utils.decodeDatasetElements(_))
 
           val child_collections = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
-            SortingUtils.sortCollections(dCollection.child_collection_ids.flatMap(c => collections.get(c)), sortOrder).slice(0, limit)
+            SortingUtils.sortCollections(collections.get(dCollection.child_collection_ids).found, sortOrder).slice(0, limit)
           } else {
-            dCollection.child_collection_ids.slice(0, limit).flatMap(c  => collections.get(c))
+            collections.get(dCollection.child_collection_ids.slice(0, limit)).found
           }
-          val decodedChildCollections = ListBuffer.empty[models.Collection]
-          for (child_collection <- child_collections) {
-                val decodedChild = Utils.decodeCollectionElements(child_collection)
-                decodedChildCollections += decodedChild
-          }
+          val decodedChildCollections = child_collections.map(Utils.decodeCollectionElements(_))
+          val decodedParentCollections = collections.get(dCollection.parent_collection_ids).found.map(Utils.decodeCollectionElements(_))
 
-          val parent_collection_ids = dCollection.parent_collection_ids
-          val decodedParentCollections = ListBuffer.empty[models.Collection]
-          for (parent_collection_id <- parent_collection_ids){
-            collections.get(parent_collection_id) match {
-              case Some(parent_collection) => {
-                val decodedParent = Utils.decodeCollectionElements(parent_collection)
-                decodedParentCollections += decodedParent
-              } case None => {
-                Logger.debug("No parent collection found for" + parent_collection_id)
-              }
-
-            }
-          }
-
-          var collectionSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          val collectionSpaces = spaceService.get(collection.spaces).found
           var collectionSpaces_canRemove : Map[ProjectSpace,Boolean] = Map.empty
-          collection.spaces.map{
-            sp =>
-              spaceService.get(sp) match {
-              case Some(s) => {
-                collectionSpaces = s :: collectionSpaces
-                var removeFromSpace = removeFromSpaceAllowed(dCollection.id,s.id)
-                collectionSpaces_canRemove += (Utils.decodeSpaceElements(s) -> removeFromSpace)
-              }
-              case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
-            }
-          }
+          collectionSpaces.foreach(s => {
+            collectionSpaces_canRemove += (Utils.decodeSpaceElements(s) -> removeFromSpaceAllowed(dCollection.id, s.id))
+          })
 
           val prevd = -1
-          val nextd = if(datasetsInside.length > limit) {
-            1
-          } else {
-            -1
-          }
+          val nextd = if(datasetsInside.length > limit) 1 else -1
           val prevcc = -1
-          val nextcc = if(dCollection.child_collection_ids.length > limit) {
-            1
-          } else {
-            -1
-          }
+          val nextcc = if(dCollection.child_collection_ids.length > limit) 1 else -1
 
-          val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+          val decodedSpaces_canRemove = collectionSpaces.map(collectionSpace => {
+            (Utils.decodeSpaceElements(collectionSpace) -> removeFromSpaceAllowed(dCollection.id,collectionSpace.id))
+          })
 
-          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
-          for (collectionSpace <- collectionSpaces){
-            val decodedSpace = Utils.decodeSpaceElements(collectionSpace)
-            val removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
-            decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
-          }
           var canAddToParent = Permission.checkOwner(user, ResourceRef(ResourceRef.collection, collection.id))
           if(!canAddToParent) {
-            collection.spaces.map(space => {
-              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space))) {
-                canAddToParent = true
-              }
-            })
+            val parent_space_refs = collection.spaces.map(ResourceRef(ResourceRef.space, _))
+            canAddToParent = !Permission.checkPermissions(Permission.AddResourceToCollection, parent_space_refs).approved.isEmpty
           }
           val userSelections = user match {
-            case Some(u) => selections.get(u.email.get).map(ds => ds.id.toString)
+            case Some(u) => selections.get(u.email.get).map(_.id.toString)
             case None => List.empty
           }
 
@@ -651,9 +596,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         }
         user match {
           case Some(u) => {
-            val selectIds = selections.get(u.email.get).map(d => {
-              d.id.toString
-            })
+            val selectIds = selections.get(u.email.get).map(_.id.toString)
             Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, id, prev, next, selectIds))
           }
           case None => Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, id, prev, next, List.empty))
@@ -670,25 +613,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(id) match {
       case Some(collection) => {
         val dCollection = Utils.decodeCollectionElements(collection)
-        val child_collections_ids = dCollection.child_collection_ids.slice(index*limit, (index+1)*limit)
-        val decodedChildCollections = ListBuffer.empty[models.Collection]
-        for (child_collection_id <- child_collections_ids) {
-          collections.get(child_collection_id) match {
-            case Some(child_collection) => {
-              val decodedChild = Utils.decodeCollectionElements(child_collection)
-              decodedChildCollections += decodedChild
-            } case None => {
-              Logger.debug("No child collection found for " + child_collection_id)
-            }
+        val child_ids = dCollection.child_collection_ids.slice(index*limit, (index+1)*limit)
+        val decodedChildCollections = collections.get(child_ids).found.map(Utils.decodeCollectionElements(_))
 
-          }
-        }
         val prev = index-1
-        val next = if(dCollection.child_collection_ids.length > (index+1) * limit) {
-          index + 1
-        } else {
+        val next = if (dCollection.child_collection_ids.length > (index+1)*limit)
+          index+1
+        else
           -1
-        }
 
         Ok(views.html.collections.childCollections(decodedChildCollections.toList, collection, prev, next))
       }
@@ -790,33 +722,25 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             title = Some(Messages("owner.title", p.fullName, Messages("collections.title")))
           }
         }
-        if (date != "") {
-          (collections.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-          //collections.listChildCollections(UUID(parentCollectionId))
-        } else {
-          (collections.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-          //collections.listChildCollections(UUID(parentCollectionId))
-        }
+        if (date != "")
+          (collections.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
+        else
+          (collections.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
       }
       case None => {
         space match {
           case Some(s) => {
             title = Some(Messages("resource.in.title", Messages("collections.title"), Messages("collection.parent.title"), routes.Collections.collection(parentCollection.get.id), parentCollection.get.name))
-            if (date != "") {
-              (collections.listSpace(date, nextPage, limit, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-              //collections.listChildCollections(UUID(parentCollectionId))
-            } else {
-              (collections.listSpace(limit, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-              //collections.listChildCollections(UUID(parentCollectionId))
-            }
+            if (date != "")
+              (collections.listSpace(date, nextPage, limit, s)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
+            else
+              (collections.listSpace(limit, s)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
           }
           case None => {
-            if (date != "") {
-              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true, false)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            } else {
-              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true, false)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            }
-
+            if (date != "")
+              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true, false)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
+            else
+              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true, false)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -828,11 +752,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)
       val c = person match {
-        case Some(p) => (collections.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+        case Some(p) => (collections.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
         case None => {
           space match {
-            case Some(s) => (collections.listSpace(first, nextPage = false, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true, false)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case Some(s) => (collections.listSpace(first, nextPage = false, 1, s)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true, false)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -849,11 +773,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     val next = if (collectionList.nonEmpty) {
       val last = Formatters.iso8601(collectionList.last.created)
       val ds = person match {
-        case Some(p) => (collections.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+        case Some(p) => (collections.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
         case None => {
           space match {
             case Some(s) => (collections.listSpace(last, nextPage = true, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true,false)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true,false)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
