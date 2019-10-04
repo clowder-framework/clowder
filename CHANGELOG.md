@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   at once. Several instances where checks for resource existince were being done multiple times (e.g. in a method and then
   in another method the first one calls) to reduce MongoDB query load. These bulk requests will also report any missing
   IDs in the requested list so developers can handle those appropriately if needed.
+- Clowder is now capable of using MongoDB 3.6 and below. This required the removal of aggregators which can result in
+  operations taking a little longer. This is needed to support clowder as a helmchart.
+  [CATS-806](https://opensource.ncsa.illinois.edu/jira/browse/CATS-806)
 
 ### Added
 - New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
@@ -26,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ability to pass runtime parameters to an extractor, with a UI form dynamically generated UI from extractor_info.json.
   [CATS-1019](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1019)
 - Trigger archival process automatically based on when a file was last viewed/downloaded and the size of the file.
+- Script to check if mongodb/rabbitmq is up and running, used by helm chart for clowder.
 
 ## 1.7.3 - 2019-08-19
 

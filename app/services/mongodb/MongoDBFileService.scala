@@ -38,6 +38,7 @@ import MongoContext.context
 import play.api.Play._
 import com.mongodb.casbah.Imports._
 import models.FileStatus.FileStatus
+import org.bson.types.ObjectId
 
 
 /**
@@ -72,18 +73,13 @@ class MongoDBFileService @Inject() (
   }
 
   def statusCount(): Map[FileStatus, Long] = {
-    val results = FileDAO.dao.collection.aggregate(MongoDBObject("$group" ->
-      MongoDBObject("_id" -> "$status", "count" -> MongoDBObject("$sum" -> 1L))))
-    results.results.map(x => FileStatus.withName(x.getAsOrElse[String]("_id", FileStatus.UNKNOWN.toString)) -> x.getAsOrElse[Long]("count", 0L)).toMap
+    FileStatus.values.map(x =>
+      (x, FileDAO.dao.count(MongoDBObject("status" -> x.toString)))
+    ).toMap
   }
 
   def bytes(): Long = {
-    val results = FileDAO.dao.collection.aggregate(MongoDBObject("$group" ->
-      MongoDBObject("_id" -> "size", "total" -> MongoDBObject("$sum" -> "$length"))))
-    results.results.find(x => x.containsField("total")) match {
-      case Some(x) => x.getAsOrElse[Long]("total", 0L)
-      case None => 0L
-    }
+    FileDAO.dao.find(MongoDBObject()).map(_.length).sum
   }
 
   def save(file: File): Unit = {
@@ -355,31 +351,30 @@ class MongoDBFileService @Inject() (
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
-      val x = FileDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
-    } else {
-      val x = FileDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    val filter = MongoDBObject("tags" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+    var tags = scala.collection.mutable.Map[String, Long]()
+    FileDAO.dao.find(buildTagFilter(user) ++ filter).foreach{ x =>
+      x.tags.foreach{ t =>
+        tags.put(t.name, tags.get(t.name).getOrElse(0L) + 1L)
+      }
     }
+    tags.toMap
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    if (user.isDefined && user.get.superAdminMode)
+      return MongoDBObject()
+
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
 
-    user match {
-      case Some(u) => {
-        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
-        //Get all datasets you have access to.
-        val datasetsList= datasets.listUser(u)
-        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
-        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
-        orlist += ("_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
-      }
-      case None => Map.empty
-    }
+    // all files where user is the author
+    user.foreach{u => orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))}
+
+    // Get all files in all datasets you have access to.
+    val datasetsList = datasets.listUser(user)
+    val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+    val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+    orlist += ("_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
 
     $or(orlist.map(_.asDBObject))
   }

@@ -104,7 +104,7 @@ services:
 
   # database to hold metadata (required)
   mongo:
-    image: mongo:3.4
+    image: mongo:3.6
     restart: unless-stopped
     networks:
       - clowder

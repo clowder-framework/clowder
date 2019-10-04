@@ -562,29 +562,26 @@ class MongoDBUserService @Inject() (
    */
   override def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[MiniEntity] = {
     val followerIDObjects = followerIDs.map(id => new ObjectId(id.stringify))
-    val excludeIDObjects = excludeIDs.map(id => new ObjectId(id.stringify))
 
-    val recs = UserDAO.dao.collection.aggregate(
-        MongoDBObject("$match" -> MongoDBObject("_id" -> MongoDBObject("$in" -> followerIDObjects))),
-        MongoDBObject("$unwind" -> "$followedEntities"),
-        MongoDBObject("$group" -> MongoDBObject(
-          "_id" -> "$followedEntities._id",
-          "objectType" -> MongoDBObject("$first" -> "$followedEntities.objectType"),
-          "score" -> MongoDBObject("$sum" -> 1)
-        )),
-        MongoDBObject("$match" -> MongoDBObject("_id" -> MongoDBObject("$nin" -> excludeIDObjects))),
-        MongoDBObject("$sort" -> MongoDBObject("score" -> -1)),
-        MongoDBObject("$limit" -> num)
-    )
+    // will contain all objects that are followed and how frequently it was seen
+    var recmap = scala.collection.mutable.Map[UUID, (UUID, String, Long)]()
 
-    recs.results.map(entity => new MiniEntity(
-      UUID(entity.as[ObjectId]("_id").toString),
-      getEntityName(
-        UUID(entity.as[ObjectId]("_id").toString),
-        entity.as[String]("objectType")
-      ),
-      entity.as[String]("objectType"))
-    ).toList
+    // get list of all followers
+    UserDAO.find(MongoDBObject("_id" -> MongoDBObject("$in" -> followerIDObjects))).flatMap{x =>
+      // find all objects followed by them and count how frequently it was seen.
+      x.followedEntities.map{y =>
+        if (!excludeIDs.contains(y.id)) {
+          val r = recmap.get(y.id).getOrElse((y.id, y.objectType, 0L))
+          recmap.put(y.id, (r._1, r._2, r._3 + 1L))
+        }
+      }
+    }
+
+    // order list by frequency
+    val recommendations = recmap.values.toList.sortBy(_._3)(Ordering[Long].reverse).take(num)
+
+    // return list of followed entities
+    for(x <- recommendations) yield new MiniEntity(x._1, getEntityName(x._1, x._2), x._2)
   }
 
   def getEntityName(uuid: UUID, objType: String): String = {

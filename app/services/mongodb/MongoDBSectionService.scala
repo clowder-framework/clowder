@@ -123,32 +123,32 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
-      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
-    } else {
-      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    val filter = MongoDBObject("tags" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+    var tags = scala.collection.mutable.Map[String, Long]()
+    SectionDAO.dao.find(buildTagFilter(user) ++ filter).foreach{ x =>
+      x.tags.foreach{ t =>
+        tags.put(t.name, tags.get(t.name).getOrElse(0L) + 1L)
+      }
     }
-
+    tags.toMap
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    if (user.isDefined && user.get.superAdminMode)
+      return MongoDBObject()
+
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
 
-    user match {
-      case Some(u) => {
-        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
-        //Get all datasets you have access to.
-        val datasetsList = datasets.listUser(u)
-        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
-        val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
-        orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
-      }
-      case None =>
-    }
+    // all sections where user is the author
+    user.foreach{u => orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))}
+
+    // Get all sections in all files in all datasets you have access to.
+    val datasetsList = datasets.listUser(user)
+    val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+    val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+    orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
+
+    // create orlist
     $or(orlist.map(_.asDBObject))
   }
   /**
