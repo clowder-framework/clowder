@@ -26,7 +26,8 @@ class Admin @Inject() (userService: UserService,
     datasets: DatasetService,
     collections: CollectionService,
     files: FileService,
-    events: EventService) extends Controller with ApiController {
+    events: EventService,
+    esqueue: ElasticsearchQueue) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
@@ -173,25 +174,8 @@ class Admin @Inject() (userService: UserService,
   }
 
   def reindex = ServerAdminAction { implicit request =>
-    Akka.system.scheduler.scheduleOnce(1 seconds) {
-      current.plugin[ElasticsearchPlugin] match {
-        case Some(plugin) => {
-          // Delete & recreate index
-          plugin.deleteAll
-          plugin.createIndex()
-
-          // Reindex everything
-          Logger.debug("Reindexing collections...")
-          collections.index(None)
-          Logger.debug("Reindexing datasets...")
-          datasets.index(None)
-          Logger.debug("Reindexing files...")
-          files.index(None)
-        }
-        case None => { BadRequest(toJson(Map("error" -> "Elasticsearch not connected"))) }
-      }
-    }
-
-    Ok(toJson(Map("status" -> "Success")))
+    val success = esqueue.queue("index_all")
+    if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
+    else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
   }
 }

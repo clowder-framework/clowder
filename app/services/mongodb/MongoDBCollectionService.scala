@@ -41,7 +41,8 @@ class MongoDBCollectionService @Inject() (
   spaceService: SpaceService,
   events:EventService,
   spaces:SpaceService,
-  appConfig: AppConfigurationService)  extends CollectionService {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -748,7 +749,6 @@ class MongoDBCollectionService @Inject() (
     return rootSpaceIds
   }
 
-
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
     var descendants = ListBuffer.empty[models.Collection]
 
@@ -768,7 +768,6 @@ class MongoDBCollectionService @Inject() (
 
     return descendants
   }
-
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Logger.debug(s"Removing dataset $datasetId from collection $collectionId")
@@ -893,21 +892,19 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def index(id: Option[UUID]) = {
-    id match {
-      case Some(collectionId) => index(collectionId)
-      case None => Collection.dao.find(MongoDBObject()).foreach(c => index(c.id))
-    }
+  def indexAll() = {
+    // Bypass Salat in case any of the file records are malformed to continue past them
+    Collection.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(c => {
+      index(new UUID(c.get("_id").toString))
+    })
   }
 
   def index(id: UUID) {
-    Collection.findOneById(new ObjectId(id.stringify)) match {
-      case Some(collection) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(collection, false)
-        }
-      }
-      case None => Logger.error("Collection not found: " + id.stringify)
+    try
+      esqueue.queue("index_collection", new ResourceRef('collection, id))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing collection ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing collection ${id.stringify}")
     }
   }
 
@@ -1056,7 +1053,6 @@ class MongoDBCollectionService @Inject() (
   def addParentCollectionId(subCollectionId: UUID, parentCollectionId: UUID) = Try {
     Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }
-
 
   def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
     var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]

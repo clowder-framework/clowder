@@ -42,7 +42,8 @@ class Collections @Inject() (datasets: DatasetService,
                              appConfig: AppConfigurationService,
                              folders : FolderService,
                              files: FileService,
-                             metadataService : MetadataService) extends ApiController {
+                             metadataService : MetadataService,
+                             esqueue: ElasticsearchQueue) extends ApiController {
 
   def createCollection() = PermissionAction(Permission.CreateCollection) (parse.json) { implicit request =>
     Logger.debug("Creating new collection")
@@ -114,10 +115,9 @@ class Collections @Inject() (datasets: DatasetService,
   def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, id))) {  implicit request =>
       collections.get(id) match {
         case Some(coll) => {
-          current.plugin[ElasticsearchPlugin].foreach {
-            _.index(coll, recursive)
-          }
-          Ok(toJson(Map("status" -> "success")))
+          val success = esqueue.queue("index_collection", new ResourceRef('collection, id), new ElasticsearchParameters(recursive=recursive))
+          if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
+          else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
         }
         case None => {
           Logger.error("Error getting collection" + id)
@@ -376,7 +376,7 @@ class Collections @Inject() (datasets: DatasetService,
         Logger.debug(s"Update title for collection with id $id. New name: $name")
         collections.updateName(id, name)
         events.addObjectEvent(user, id, name, "update_collection_information")
-        collections.index(Some(id))
+        collections.index(id)
         Ok(Json.obj("status" -> "success"))
       }
       else {
@@ -408,7 +408,7 @@ class Collections @Inject() (datasets: DatasetService,
           }
           case None => {}
         }
-        collections.index(Some(id))
+        collections.index(id)
         Ok(Json.obj("status" -> "success"))
       }
       else {

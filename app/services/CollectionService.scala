@@ -216,7 +216,6 @@ trait CollectionService {
     */
   def addSubCollection(collectionId: UUID, subCollectionId: UUID, user : Option[User]) : Try[Unit]
 
-
   def getSelfAndAncestors(collectionId :UUID) : List[Collection]
 
   def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) : Try[Unit]
@@ -243,10 +242,11 @@ trait CollectionService {
 
   def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID])
 
-  /**
-    * Index collection, if no id provided, index all collections.
-    */
-  def index(id: Option[UUID])
+  /** Queue all collections to be indexed in Elasticsearch. */
+  def indexAll()
+
+  /** Queue a collection to be indexed in Elasticsearch. */
+  def index(id: UUID)
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date)
 
