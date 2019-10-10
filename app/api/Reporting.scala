@@ -2,6 +2,8 @@ package api
 
 import api.Permission._
 import play.api.libs.iteratee.Enumerator
+import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import play.api.Logger
 import javax.inject.Inject
@@ -26,13 +28,31 @@ class Reporting @Inject()(selections: SelectionService,
   def fileMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating file metrics report")
 
-    var contents: String = "type,id,name,owner,owner_id,size_kb,uploaded,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
+    val results = files.getMetrics()
+    var headerRow = true
+    val enum = Enumerator.generateM({
+      val chunk = if (headerRow) {
+        val header = "type,id,name,owner,owner_id,size_kb,uploaded,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
+        headerRow = false
+        Some(header.getBytes("UTF-8"))
+      } else {
+        scala.concurrent.blocking {
+          if (results.hasNext) {
+            try {
+              Some(_buildFileRow(results.next).getBytes("UTF-8"))
+            }
+            catch {
+              case _ => Some("".getBytes("UTF-8"))
+            }
+          }
+          else None
+        }
+      }
 
-    files.getMetrics(None).foreach(f => {
-      contents += _buildFileRow(f)
+      Future(chunk)
     })
 
-    Ok.chunked(Enumerator(contents.getBytes("UTF-8")).andThen(Enumerator.eof)).withHeaders(
+    Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
       "Content-Type" -> "text/csv",
       "Content-Disposition" -> "attachment; filename=FileMetrics.csv"
     )
@@ -41,13 +61,31 @@ class Reporting @Inject()(selections: SelectionService,
   def datasetMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating dataset metrics report")
 
-    var contents: String = "type,id,name,owner,owner_id,created,views,downloads,last_viewed,last_downloaded,parent_collections,parent_spaces\n"
+    val results = datasets.getMetrics()
+    var headerRow = true
+    val enum = Enumerator.generateM({
+      val chunk = if (headerRow) {
+        val header = "type,id,name,owner,owner_id,created,views,downloads,last_viewed,last_downloaded,parent_collections,parent_spaces\n"
+        headerRow = false
+        Some(header.getBytes("UTF-8"))
+      } else {
+        scala.concurrent.blocking {
+          if (results.hasNext) {
+            try {
+              Some(_buildDatasetRow(results.next).getBytes("UTF-8"))
+            }
+            catch {
+              case _ => Some("".getBytes("UTF-8"))
+            }
+          }
+          else None
+        }
+      }
 
-    datasets.getMetrics(None).foreach(ds => {
-      contents += _buildDatasetRow(ds)
+      Future(chunk)
     })
 
-    Ok.chunked(Enumerator(contents.getBytes("UTF-8")).andThen(Enumerator.eof)).withHeaders(
+    Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
       "Content-Type" -> "text/csv",
       "Content-Disposition" -> "attachment; filename=DatasetMetrics.csv"
     )
@@ -56,13 +94,31 @@ class Reporting @Inject()(selections: SelectionService,
   def collectionMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating collection metrics report")
 
-    var contents: String = "type,id,name,owner,owner_id,created,views,last_viewed,parent_collections,parent_spaces\n"
+    val results = collections.getMetrics()
+    var headerRow = true
+    val enum = Enumerator.generateM({
+      val chunk = if (headerRow) {
+        val header = "type,id,name,owner,owner_id,created,views,last_viewed,parent_collections,parent_spaces\n"
+        headerRow = false
+        Some(header.getBytes("UTF-8"))
+      } else {
+        scala.concurrent.blocking {
+          if (results.hasNext) {
+            try {
+              Some(_buildCollectionRow(results.next).getBytes("UTF-8"))
+            }
+            catch {
+              case _ => Some("".getBytes("UTF-8"))
+            }
+          }
+          else None
+        }
+      }
 
-    collections.getMetrics(None).foreach(coll => {
-      contents += _buildCollectionRow(coll)
+      Future(chunk)
     })
 
-    Ok.chunked(Enumerator(contents.getBytes("UTF-8")).andThen(Enumerator.eof)).withHeaders(
+    Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
       "Content-Type" -> "text/csv",
       "Content-Disposition" -> "attachment; filename=CollectionMetrics.csv"
     )
@@ -72,15 +128,17 @@ class Reporting @Inject()(selections: SelectionService,
   def allMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating all metrics report")
 
+    // TODO: This will still fail on excessively large instances without Enumerator refactor - should we maintain this endpoint or remove?
+
     var contents: String = "type,id,name,owner,owner_id,size_kb,uploaded/created,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
 
-    collections.getMetrics(None).foreach(coll => {
+    collections.getMetrics().foreach(coll => {
       contents += _buildCollectionRow(coll, true)
     })
-    datasets.getMetrics(None).foreach(ds => {
+    datasets.getMetrics().foreach(ds => {
       contents += _buildDatasetRow(ds, true)
     })
-    files.getMetrics(None).foreach(f => {
+    files.getMetrics().foreach(f => {
       contents += _buildFileRow(f)
     })
 

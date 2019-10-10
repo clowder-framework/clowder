@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Trigger archival process automatically based on when a file was last viewed/downloaded and the size of the file.
 - Script to check if mongodb/rabbitmq is up and running, used by helm chart for clowder.
 
+### Fixed
+- Fixed bug where downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
+  to the client as they are generated instead of being generated on the server and sent at the end.
+  
 ## 1.7.3 - 2019-08-19
 
 ### Fixed
