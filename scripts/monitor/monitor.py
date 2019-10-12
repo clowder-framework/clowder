@@ -54,6 +54,9 @@ def get_mgmt_queue_messages(queue):
     global rabbitmq_username, rabbitmq_password
     try:
         response = requests.get(rabbitmq_mgmt_url + queue, auth=(rabbitmq_username, rabbitmq_password), timeout=5)
+        if response.status_code == 404:
+            # queue does not exist, so we assume 0 messages
+            return 0
         response.raise_for_status()
         return response.json()['messages']
     except Exception:

@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- docker-compose uses new monitor image from scripts folder
+- monitor will not print error, but just return 0 if queue is not found
+
 ### Changed
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID. This endpoint has three
   new parameters - from, size, and page. The result JSON objects will also return pagination data such as next and 
