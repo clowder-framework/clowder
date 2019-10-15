@@ -21,8 +21,8 @@ rabbitmq_password = None
 
 extractors = {}
 
-update_frequency = 10 #60
-extractor_remove = 30 #60 * 30
+update_frequency = 10
+extractor_remove = 10 * 60 # needs to be twice or more than heartbeat
 
 hostName = ""
 hostPort = 9999
