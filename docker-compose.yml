@@ -144,7 +144,7 @@ services:
 
   # monitor clowder extractors
   monitor:
-    image: clowder/extractors-monitor:${CLOWDER_VERSION:-latest}
+    image: clowder/monitor:${CLOWDER_VERSION:-latest}
     restart: unless-stopped
     networks:
       - clowder
