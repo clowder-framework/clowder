@@ -1211,8 +1211,8 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getMetrics(user: Option[User]): Iterable[File] = {
-    FileDAO.find(MongoDBObject()).toIterable
+  def getMetrics(): Iterator[File] = {
+    FileDAO.find(MongoDBObject()).toIterator
   }
 }
 

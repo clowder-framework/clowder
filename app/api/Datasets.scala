@@ -2112,18 +2112,25 @@ class  Datasets @Inject()(
     /*
      * Explanation for the cases
      *
-     * the level can be 0 (file) 1 (dataset) and 2 (bag).
+     * the level can be:
+     *    0 (file)
+     *    1 (dataset)
+     *    2 (bag)
      *
-     * when the level is file, the file_type can be 0 (info) 1 (metadata) or 2 (the actual files)
+     * when the level is file, the file_type can be:
+     *    0 (info)
+     *    1 (metadata)
+     *    2 (the actual files)
      *
-     * when the level is dataset, the file_type can be 0 (info) or 1 (metadata)
+     * when the level is dataset, the file_type can be:
+     *    0 (info)
+     *    1 (metadata)
      *
-     * when the level is bag, the file_type can be
-     *
-     * 0 - bagit.txt
-     * 1 - bag-info.txt
-     * 2 - manifest-md5.txt
-     * 3 - tagmanifest-md5.txt
+     * when the level is bag, the file_type can be:
+     *    0 - bagit.txt
+     *    1 - bag-info.txt
+     *    2 - manifest-md5.txt
+     *    3 - tagmanifest-md5.txt
      *
      * when the dataset is finished (in either mode) the level = -1 and file_type = -1 and
      * the enumerator is finished

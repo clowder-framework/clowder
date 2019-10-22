@@ -1116,8 +1116,8 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def getMetrics(user: Option[User]): Iterable[Collection] = {
-    Collection.find(MongoDBObject("trash" -> false)).toIterable
+  def getMetrics(): Iterator[Collection] = {
+    Collection.find(MongoDBObject("trash" -> false)).toIterator
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
