@@ -51,7 +51,8 @@ class Files @Inject()(
   folders: FolderService,
   spaces: SpaceService,
   userService: UserService,
-  appConfig: AppConfigurationService) extends ApiController {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -592,10 +593,9 @@ class Files @Inject()(
   def reindex(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(file)
-        }
-        Ok(toJson(Map("status" -> "success")))
+        val success = esqueue.queue("index_file", new ResourceRef('file, id))
+        if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
+        else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
       }
       case None => {
         Logger.error("Error getting file" + id)

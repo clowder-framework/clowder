@@ -48,7 +48,8 @@ class  Datasets @Inject()(
   relations: RelationService,
   userService: UserService,
   thumbnailService : ThumbnailService,
-  appConfig: AppConfigurationService) extends ApiController {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -391,10 +392,9 @@ class  Datasets @Inject()(
   def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(ds) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(ds, recursive)
-        }
-        Ok(toJson(Map("status" -> "success")))
+        val success = esqueue.queue("index_dataset", new ResourceRef('dataset, id), new ElasticsearchParameters(recursive=recursive))
+        if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
+        else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
       }
       case None => {
         Logger.error("Error getting dataset" + id)

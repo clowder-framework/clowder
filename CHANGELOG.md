@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-1019](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1019)
 - Trigger archival process automatically based on when a file was last viewed/downloaded and the size of the file.
 - Script to check if mongodb/rabbitmq is up and running, used by helm chart for clowder.
+- Queuing system that allows services such as Elasticsearch and RabbitMQ to store requested actions in MongoDB
+  for handling asynchronously, allowing API calls to return as soon as the action is queued rather than waiting for
+  the action to complete.
 
 ### Fixed
 - Fixed bug where downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed

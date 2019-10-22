@@ -49,7 +49,8 @@ class MongoDBDatasetService @Inject() (
   folders: FolderService,
   metadatas:MetadataService,
   events: EventService,
-  appConfig: AppConfigurationService) extends DatasetService {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -1406,21 +1407,19 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def index(id: Option[UUID]) = {
-    id match {
-      case Some(datasetId) => index(datasetId)
-      case None => Dataset.dao.find(MongoDBObject()).foreach(d => index(d.id))
-    }
+  def indexAll() = {
+    // Bypass Salat in case any of the file records are malformed to continue past them
+    Dataset.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(d => {
+      index(new UUID(d.get("_id").toString))
+    })
   }
 
   def index(id: UUID) {
-    Dataset.findOneById(new ObjectId(id.stringify)) match {
-      case Some(dataset) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(dataset, false)
-        }
-      }
-      case None => Logger.error("Dataset not found: " + id)
+    try
+      esqueue.queue("index_dataset", new ResourceRef('dataset, id))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing dataset ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing dataset ${id.stringify}")
     }
   }
 

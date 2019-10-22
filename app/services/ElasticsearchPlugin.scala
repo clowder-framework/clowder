@@ -9,7 +9,6 @@ import play.api.libs.json.Json._
 import scala.util.Try
 import scala.collection.mutable.{MutableList, ListBuffer}
 import scala.collection.immutable.List
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.{Plugin, Logger, Application}
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
@@ -20,16 +19,13 @@ import java.util.regex.Pattern
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
 import org.elasticsearch.client.transport.NoNodeAvailableException
+import org.elasticsearch.ElasticsearchException
+import org.elasticsearch.indices.IndexAlreadyExistsException
 
 import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section, ElasticsearchResult, User}
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
-
-import org.elasticsearch.index.query.QueryBuilders
-
-import org.elasticsearch.ElasticsearchException
-import org.elasticsearch.indices.IndexAlreadyExistsException
 
 
 /**
@@ -42,6 +38,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+  val queue: ElasticsearchQueue = DI.injector.getInstance(classOf[ElasticsearchQueue])
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
@@ -56,6 +53,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   override def onStart() {
     Logger.debug("ElasticsearchPlugin started but not yet connected")
     connect()
+    queue.listen()
   }
 
   def connect(force:Boolean = false): Boolean = {
