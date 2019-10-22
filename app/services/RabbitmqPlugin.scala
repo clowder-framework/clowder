@@ -1207,8 +1207,12 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
       // TODO store running extractors ids
       val id = UUID((json \ "id").as[String])
       val queue = (json \ "queue").as[String]
-      val extractor_info = (json \ "extractor_info")
+      val extractor_info = json \ "extractor_info"
+
+      // Validate document
       val extractionInfoResult = extractor_info.validate[ExtractorInfo]
+
+      // Update database
       extractionInfoResult.fold(
         errors => {
           Logger.error("Received extractor heartbeat with bad format: " + extractor_info)

@@ -455,13 +455,10 @@ class Extractions @Inject()(
       case _ => request.body
     }
 
-    // If extractor doesn't have categories specified, set a default
-    requestJson = requestJson \ "categories" match {
-      case cats: JsUndefined => requestJson.as[JsObject] ++ Json.obj("categories" ->  Json.arr(ExtractorCategory.EXTRACT.toString))
-      case _ => requestJson
-    }
-
+    // Validate document
     val extractionInfoResult = requestJson.validate[ExtractorInfo]
+
+    // Update database
     extractionInfoResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
