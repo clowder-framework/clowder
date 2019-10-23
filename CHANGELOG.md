@@ -41,7 +41,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed bug where downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
   to the client as they are generated instead of being generated on the server and sent at the end.
-  
+
+## 1.7.4 - 2019-10-21
+
+### Fixed
+- Extractors that don't specify EXTRACT as categories don't show up in the manual submission page.
+  [CATS-1023](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1023)
+
 ## 1.7.3 - 2019-08-19
 
 ### Fixed
@@ -74,7 +80,6 @@ or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 
 ### Added
 - Add archive button on file page which can trigger archive extractor to archive this file.
-
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.
