@@ -50,12 +50,19 @@ object Dataset {
   implicit val datasetWrites = new Writes[Dataset] {
     def writes(dataset: Dataset): JsValue = {
       val datasetThumbnail = if(dataset.thumbnail_id.isEmpty) {
-        "None"
+        null
       } else {
         dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
       }
-      Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "description" -> dataset.description,
-        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id, "spaces" -> dataset.spaces)
+      Json.obj(
+        "id" -> dataset.id.toString,
+        "name" -> dataset.name,
+        "description" -> dataset.description,
+        "created" -> dataset.created.toString,
+        "thumbnail" -> datasetThumbnail,
+        "authorId" -> dataset.author.id,
+        "spaces" -> dataset.spaces,
+        "resource_type" -> "dataset")
     }
   }
 }

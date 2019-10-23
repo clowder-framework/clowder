@@ -1,148 +1,177 @@
-version: "3.5"
+version: '3.5'
 
 services:
-  # clowder application
-  clowder:
-    image: clowder/clowder:latest
-    ports:
-      - 9000:9000
+  # ----------------------------------------------------------------------
+  # SINGLE ENTRYPOINT
+  # ----------------------------------------------------------------------
+  # webserver to handle all traffic. This can use let's encrypt to generate a SSL cert.
+  traefik:
+    image: traefik:1.7
+    command:
+      - --loglevel=INFO
+      - --api
+      # Entrypoints
+      - --defaultentrypoints=https,http
+      - --entryPoints=Name:http Address::80 ${TRAEFIK_HTTP_REDIRECT:-""}
+      - --entryPoints=Name:https Address::443 ${TRAEFIK_HTTPS_OPTIONS:-TLS}
+      # Configuration for acme (https://letsencrypt.org/)
+      - --acme=${TRAEFIK_ACME_ENABLE:-false}
+      #- --acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --acme.email=${TRAEFIK_ACME_EMAIL:-""}
+      - --acme.entrypoint=https
+      - --acme.onhostrule=true
+      - --acme.storage=/config/acme.json
+      - --acme.httpchallenge.entrypoint=http
+      - --acme.storage=/config/acme.json
+      - --acme.acmelogging=true
+      # DOCKER
+      - --docker=true
+      - --docker.endpoint=unix:///var/run/docker.sock
+      - --docker.exposedbydefault=false
+      - --docker.watch=true
+    restart: unless-stopped
     networks:
       - clowder
+    ports:
+      - "${TRAEFIK_HTTP_PORT-8000}:80"
+      - "${TRAEFIK_HTTPS_PORT-8443}:443"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=traefik"
+      - "traefik.port=8080"
+      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefixStrip: /traefik"
+      - "traefik.website.frontend.whiteList.sourceRange=${TRAEFIK_IPFILTER:-172.16.0.0/12}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik:/config
+
+  # ----------------------------------------------------------------------
+  # DOCKER MANAGEMENT APPLICATION
+  # ----------------------------------------------------------------------
+
+  # Allow to see all docker containers running, restart and see log files. (optional)
+  portainer:
+    image: portainer/portainer:latest
+    command:
+      - --admin-password=${PORTAINER_PASSWORD:-}
+      - --host=unix:///var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - clowder
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=portainer"
+      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefixStrip: /portainer"
+      - "traefik.website.frontend.whiteList.sourceRange=${TRAEFIK_IPFILTER:-172.16.0.0/12}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer:/data
+
+  # ----------------------------------------------------------------------
+  # CLOWDER APPLICATION
+  # ----------------------------------------------------------------------
+
+  # main clowder application
+  clowder:
+    image: clowder/clowder:${CLOWDER_VERSION:-latest}
+    restart: unless-stopped
+    networks:
+      - clowder
+    depends_on:
+      - mongo
+    environment:
+      - CLOWDER_ADMINS=${CLOWDER_ADMINS:-admin@example.com}
+      - CLOWDER_REGISTER=${CLOWDER_REGISTER:-false}
+      - CLOWDER_CONTEXT=${CLOWDER_CONTEXT:-/}
+      - CLOWDER_SSL=${CLOWDER_SSL:-false}
+      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
+      - RABBITMQ_CLOWDERURL=${RABBITMQ_CLOWDERURL:-http://clowder:9000}
+      - SMTP_MOCK=${SMTP_MOCK:-true}
+      - SMTP_SERVER=${SMTP_SERVER:-smtp}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=clowder"
+      - "traefik.port=9000"
+      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefix: ${CLOWDER_CONTEXT:-/}"
     volumes:
       - clowder-custom:/home/clowder/custom
       - clowder-data:/home/clowder/data
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
-    depends_on:
-      - mongo
-      - rabbitmq
-      - elasticsearch
 
-  # mongo database used to store metadata/data
+  # ----------------------------------------------------------------------
+  # CLOWDER DEPENDENCIES
+  # ----------------------------------------------------------------------
+
+  # database to hold metadata (required)
   mongo:
-    image: mongo:3.4
+    image: mongo:3.6
+    restart: unless-stopped
     networks:
       - clowder
-    ports:
-      - 27017
     volumes:
       - mongo:/data/db
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
 
-  # rabbitmq to connect to extractors
+  # message broker (optional but needed for extractors)
   rabbitmq:
     image: rabbitmq:management-alpine
+    restart: unless-stopped
     networks:
       - clowder
-    ports:
-      - 5672
-      - 15672
+    environment:
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_management path_prefix "/rabbitmq"
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=rabbitmq"
+      - "traefik.port=15672"
+      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefix: /rabbitmq"
+      - "traefik.website.frontend.whiteList.sourceRange=${TRAEFIK_IPFILTER:-172.16.0.0/12}"
     volumes:
       - rabbitmq:/var/lib/rabbitmq
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
 
-  # elasticsearch to allow indexing
+  # search index (optional, needed for search and sorting future) 
   elasticsearch:
     image: elasticsearch:2
     command: elasticsearch -Des.cluster.name="clowder"
     networks:
       - clowder
-    ports:
-      - 9200
-      - 9300
+    restart: unless-stopped
+    environment:
+      - cluster.name=clowder
     volumes:
       - elasticsearch:/usr/share/elasticsearch/data
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
 
-  # extractors
-  filedigest:
-    image: clowder/extractors-digest
+  # monitor clowder extractors
+  monitor:
+    image: clowder/monitor:${CLOWDER_VERSION:-latest}
+    restart: unless-stopped
     networks:
       - clowder
     depends_on:
       - rabbitmq
-      - clowder
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
+    environment:
+      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+      - RABBITMQ_MGMT_PORT=15672
+      - RABBITMQ_MGMT_PATH=/rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=monitor"
+      - "traefik.port=9999"
+      - "traefik.frontend.rule=${TRAEFIK_FRONTEND_RULE:-}PathPrefixStrip:/monitor"
 
-  audiopreview:
-    image: clowder/extractors-audio-preview
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
-
-  imagepreview:
-    image: clowder/extractors-image-preview
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    restart: unless-stopped
-    deploy:
-      mode: replicated
-      restart_policy:
-        condition: any
-
-  imagemetadata:
-    image: clowder/extractors-image-metadata
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    restart: unless-stopped
-    deploy:
-
-  pdfpreview:
-    image: clowder/extractors-pdf-preview
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    restart: unless-stopped
-    deploy:
-
-  videopreview:
-    image: clowder/extractors-video-preview
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    restart: unless-stopped
-    deploy:
-
+# ----------------------------------------------------------------------
+# NETWORK FOR CONTAINER COMMUNICATION
+# ----------------------------------------------------------------------
 networks:
-    clowder:
+  clowder:
 
+# ----------------------------------------------------------------------
+# VOLUMES FOR PERSISTENT STORAGE
+# ----------------------------------------------------------------------
 volumes:
+  traefik:
+  portainer:
   clowder-data:
   clowder-custom:
   mongo:

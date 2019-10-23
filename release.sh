@@ -7,7 +7,7 @@ set -e
 # BRANCH="master" SERVER=isda-registry.ncsa.illinois.edu/ ./release.sh
 
 # use DEBUG=echo ./release.sh to print all commands
-export DEBUG=${DEBUG:-""}
+DEBUG=${DEBUG:-""}
 
 # use SERVER=XYZ/ to push to a different server
 SERVER=${SERVER:-""}
@@ -16,7 +16,7 @@ SERVER=${SERVER:-""}
 BRANCH=${BRANCH:-"$(git rev-parse --abbrev-ref HEAD)"}
 
 # make sure docker is build
-$(dirname $0)/docker.sh
+BRANCH=${BRANCH} VERSION=${TMPVERSION} DEBUG=${DEBUG} $(dirname $0)/docker.sh
 
 # find out the version
 if [ "${BRANCH}" = "master" ]; then
@@ -39,7 +39,7 @@ else
 fi
 
 # tag all images and push if needed
-for i in clowder toolserver mongo-init; do
+for i in clowder toolserver mongo-init monitor check; do
     for v in ${VERSION}; do
         if [ "$v" != "latest" -o "$SERVER" != "" ]; then
             ${DEBUG} docker tag clowder/${i}:latest ${SERVER}clowder/${i}:${v}

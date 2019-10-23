@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, Comment}
+import models.{UUID, Comment, DBResult}
 
 /**
  * Service to manipulate comments in datasets and files.
@@ -8,6 +8,8 @@ import models.{UUID, Comment}
 trait CommentService {
 
   def get(commentId: UUID): Option[Comment]
+
+  def get(commentIds: List[UUID]): DBResult[Comment]
 
   def insert(comment: Comment): Option[String]
 

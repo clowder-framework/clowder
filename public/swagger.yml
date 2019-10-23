@@ -101,12 +101,22 @@ paths:
           type: string
           name: datasetid
           in: query
-          description: Return only files belonging to a specific dataset.
+          description: Return only resources belonging to a specific dataset.
         - required: false
           type: string
           name: collectionid
           in: query
-          description: Return only datasets belonging to a specific collection.
+          description: Return only resources belonging to a specific collection.
+        - required: false
+          type: string
+          name: spaceid
+          in: query
+          description: Return only resources belonging to a specific space.
+        - required: false
+          type: string
+          name: folderid
+          in: query
+          description: Return only resources belonging to a specific folder.
         - required: false
           type: string
           name: field
@@ -117,6 +127,21 @@ paths:
           name: tag
           in: query
           description: Search for resources with a specific tag.
+        - required: false
+          type: integer
+          name: from
+          in: query
+          description: Starting index of first result; useful for pagination.
+        - required: false
+          type: integer
+          name: size
+          in: query
+          description: Number of search results to include; useful for pagination.
+        - required: false
+          type: integer
+          name: page
+          in: query
+          description: An alternative to "from" for pagination. Return the Nth page assuming "size" items per page.
       tags:
         - search
       summary: Perform a basic search
@@ -3815,6 +3840,15 @@ paths:
         - thumbnails
       summary: Delete thumbnail
       description: Remove thumbnail file from system).
+
+  /thumbnails/{id}/blob:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      summary: Download a specific thumbnail image
+      description: Download a thumbnail image associated with a resource.
 
   ##############################################################################
   # Curations                                                                  #

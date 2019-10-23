@@ -1,24 +1,28 @@
 import java.io.{PrintWriter, StringWriter}
+import java.time.Duration
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 import play.api.{Application, GlobalSettings}
 import play.api.Logger
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
 import securesocial.core.SecureSocial
-import services.{AppConfiguration, AppConfigurationService, DI, UserService, DatasetService,
-                FileService, CollectionService, SpaceService}
+import services.{AppConfiguration, AppConfigurationService, CollectionService, DI, DatasetService, FileService, SpaceService, UserService}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 import models._
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
 import play.api.mvc.{RequestHeader, WithFilters}
 import play.api.mvc.Results._
 import akka.actor.Cancellable
 import filters.CORSFilter
 import julienrf.play.jsonp.Jsonp
+import play.Play
+import play.api.Play.configuration
 import play.api.libs.json.Json._
 
 /**
@@ -29,10 +33,12 @@ import play.api.libs.json.Json._
 object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) with GlobalSettings {
   var extractorTimer: Cancellable = null
   var jobTimer: Cancellable = null
+  var archivalTimer: Cancellable = null
 
 
   override def onStart(app: Application) {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+    val files: FileService = DI.injector.getInstance(classOf[FileService])
 
     ServerStartTime.startTime = Calendar.getInstance().getTime
     Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
@@ -55,6 +61,26 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // set default metadata definitions
     MetadataDefinition.registerDefaultDefinitions()
+
+    val archiveEnabled = Play.application.configuration.getBoolean("archiveEnabled", false)
+    if (archiveEnabled && archivalTimer == null) {
+      val archiveDebug = Play.application.configuration.getBoolean("archiveDebug", false)
+      val interval = if (archiveDebug) { 5 minutes } else { 1 day }
+
+      // Determine time until next midnight
+      val now = ZonedDateTime.now
+      val midnight = now.truncatedTo(ChronoUnit.DAYS)
+      val sinceLastMidnight = Duration.between(midnight, now).getSeconds
+      val delay = if (archiveDebug) { 10 seconds } else {
+        (Duration.ofDays(1).getSeconds - sinceLastMidnight) seconds
+      }
+
+      Logger.info("Starting archival loop - first iteration in " + delay + ", next iteration after " + interval)
+      archivalTimer = Akka.system.scheduler.schedule(delay, interval) {
+        Logger.info("Starting auto archive process...")
+        files.autoArchiveCandidateFiles()
+      }
+    }
 
     if (extractorTimer == null) {
       extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {

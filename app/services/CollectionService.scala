@@ -3,7 +3,7 @@ package services
 import java.util.Date
 
 import api.Permission.Permission
-import models.{Collection, Dataset, UUID, User}
+import models._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
@@ -121,6 +121,8 @@ trait CollectionService {
    */
   def get(id: UUID): Option[Collection]
 
+  def get(ids: List[UUID]): DBResult[Collection]
+
   /**
    * Create collection.
    */
@@ -134,7 +136,7 @@ trait CollectionService {
   /**
     * Add datataset to collection spaces
     */
-  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]): Try[Unit]
+  def addDatasetToCollectionSpaces(collection: Collection, dataset: Dataset, user : Option[User]): Try[Unit]
 
   def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) : Try[Unit]
 
@@ -214,7 +216,6 @@ trait CollectionService {
     */
   def addSubCollection(collectionId: UUID, subCollectionId: UUID, user : Option[User]) : Try[Unit]
 
-
   def getSelfAndAncestors(collectionId :UUID) : List[Collection]
 
   def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) : Try[Unit]
@@ -241,13 +242,14 @@ trait CollectionService {
 
   def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID])
 
-  /**
-    * Index collection, if no id provided, index all collections.
-    */
-  def index(id: Option[UUID])
+  /** Queue all collections to be indexed in Elasticsearch. */
+  def indexAll()
+
+  /** Queue a collection to be indexed in Elasticsearch. */
+  def index(id: UUID)
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date)
 
-  def getMetrics(user: Option[User]): Iterable[Collection]
+  def getMetrics(): Iterator[Collection]
 
 }

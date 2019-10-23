@@ -15,6 +15,12 @@ import play.Logger
 import play.api.Play
 import services.ByteStorageService
 
+
+import com.amazonaws.AmazonServiceException
+import com.amazonaws.services.s3.transfer.TransferManager
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder
+import com.amazonaws.services.s3.transfer.Upload
+
 /** Available configuration options for s3 storage */
 object S3ByteStorageService {
   val ServiceEndpoint: String = "clowder.s3.serviceEndpoint"
@@ -91,6 +97,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
       case None => Logger.error("Failed deleting bytes: failed to find configured S3 bucketName.")
       case Some(bucketName) => {
+        val xferManager = TransferManagerBuilder.standard().withS3Client(this.s3Bucket).build
         try {
           Logger.debug("Saving file to: /" + bucketName)
 
@@ -101,14 +108,18 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
           // TODO: What can this be used for?
           val metadata = new ObjectMetadata()
 
-          // Upload temp file to S3 bucket
-          this.s3Bucket.putObject(bucketName, targetPath, inputStream, metadata)
+          val xfer = xferManager.upload(bucketName, targetPath, inputStream, metadata)
+          // loop with Transfer.isDone()
+          //XferMgrProgress.showTransferProgress(xfer)
+          //  or block with Transfer.waitForCompletion()
+          xfer.waitForCompletion()
+          xferManager.shutdownNow()
 
           Logger.debug("File saved to: /" + bucketName + "/" + targetPath)
 
           return Option((targetPath, length))
 
-          // TODO: Verify transfered bytes with MD5?
+          // TODO: Verify transferred bytes with MD5?
         } catch {
           case ase: AmazonServiceException => handleASE(ase)
           case ace: AmazonClientException => handleACE(ace)

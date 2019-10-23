@@ -49,7 +49,8 @@ class MongoDBDatasetService @Inject() (
   folders: FolderService,
   metadatas:MetadataService,
   events: EventService,
-  appConfig: AppConfigurationService) extends DatasetService {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -267,14 +268,19 @@ class MongoDBDatasetService @Inject() (
   /**
     * Return a list of datasets a user can View.
     */
-  def listUser(user: User): List[Dataset] = {
+  def listUser(user: Option[User]): List[Dataset] = {
+    if (user.isDefined && user.get.superAdminMode)
+      return Dataset.find(new MongoDBObject()).toList
+
     val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
 
     orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
-    orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(user.id.stringify))
-    val okspaces = user.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
-    if (okspaces.nonEmpty) {
-      orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+    user.foreach{u =>
+      orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+      val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
+      if (okspaces.nonEmpty) {
+        orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+      }
     }
     if (orlist.isEmpty) {
       orlist += MongoDBObject("doesnotexist" -> true)
@@ -492,6 +498,18 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(id.stringify))
   }
 
+  def get(ids: List[UUID]): DBResult[Dataset] = {
+    if (ids.length == 0) return DBResult(List.empty, List.empty)
+
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> ids.map(id => new ObjectId(id.stringify))))
+    val found = Dataset.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+
+    if (notFound.length > 0)
+      Logger.error("Not all dataset IDs found for bulk get request")
+    return DBResult(found, notFound)
+  }
+
   /**
    * Updated dataset.
    */
@@ -509,17 +527,13 @@ class MongoDBDatasetService @Inject() (
   def getFileId(datasetId: UUID, filename: String): Option[UUID] = {
     get(datasetId) match {
       case Some(dataset) => {
-        for (fileId <- dataset.files) {
-          files.get(fileId) match {
-            case Some(file) => {
-              if(file.filename.equals(filename)) {
-                return Some(fileId)
-              }
-            }
-            case None => Logger.error(s"Error getting file $fileId")
+        files.get(dataset.files).found.foreach(file => {
+          if(file.filename.equals(filename)) {
+            return Some(file.id)
           }
-        }
-        Logger.error("File does not exist in dataset" + datasetId); return None
+        })
+        Logger.error("File does not exist in dataset" + datasetId);
+        return None
       }
       case None => { Logger.error("Error getting dataset" + datasetId); return None }
     }
@@ -664,36 +678,32 @@ class MongoDBDatasetService @Inject() (
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
-      val x = Dataset.dao.collection.aggregate( MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
-
-    } else {
-      val x = Dataset.dao.collection.aggregate(MongoDBObject("$match" ->  buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
-
+    val filter = MongoDBObject("tags" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+    var tags = scala.collection.mutable.Map[String, Long]()
+    Dataset.dao.find(buildTagFilter(user) ++ filter).foreach{ x =>
+      x.tags.foreach{ t =>
+        tags.put(t.name, tags.get(t.name).getOrElse(0L) + 1L)
+      }
     }
+    tags.toMap
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
     if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
       user match {
-        case Some(u)  => {
+        case Some(u) if u.superAdminMode => orlist += MongoDBObject()
+        case Some(u) if !u.superAdminMode => {
           orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString )
           orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
           if(okspaces.nonEmpty){
             orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
           }
-
         }
         case None => orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString )
       }
-    }
-    else {
+    } else {
       orlist += MongoDBObject()
     }
     $or(orlist.map(_.asDBObject))
@@ -711,9 +721,7 @@ class MongoDBDatasetService @Inject() (
   def createThumbnail(datasetId: UUID) {
     get(datasetId) match {
       case Some(dataset) => {
-        val filesInDataset = dataset.files map {
-          f => files.get(f).getOrElse(None)
-        }
+        val filesInDataset = files.get(dataset.files).found
         for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
@@ -733,7 +741,7 @@ class MongoDBDatasetService @Inject() (
     get(datasetId) match {
       case Some(dataset) => {
         // TODO cleanup
-        val filesInDataset = dataset.files.map(f => files.get(f).getOrElse(None))
+        val filesInDataset = files.get(dataset.files).found
         for (file <- filesInDataset) {
           if (file.isInstanceOf[File]) {
             val theFile = file.asInstanceOf[File]
@@ -755,6 +763,7 @@ class MongoDBDatasetService @Inject() (
 
   /**
     * get dataset which contains the folder
+    *
     * @param folder a Folder object
     * @return dataset containing this folder.
     */
@@ -1350,13 +1359,7 @@ class MongoDBDatasetService @Inject() (
   def newThumbnail(datasetId: UUID) {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val filesInDataset = dataset.files map {
-          f => {
-            files.get(f).getOrElse {
-              None
-            }
-          }
-        }
+        val filesInDataset = files.get(dataset.files).found
         for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
@@ -1404,21 +1407,19 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def index(id: Option[UUID]) = {
-    id match {
-      case Some(datasetId) => index(datasetId)
-      case None => Dataset.dao.find(MongoDBObject()).foreach(d => index(d.id))
-    }
+  def indexAll() = {
+    // Bypass Salat in case any of the file records are malformed to continue past them
+    Dataset.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(d => {
+      index(new UUID(d.get("_id").toString))
+    })
   }
 
   def index(id: UUID) {
-    Dataset.findOneById(new ObjectId(id.stringify)) match {
-      case Some(dataset) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(dataset, false)
-        }
-      }
-      case None => Logger.error("Dataset not found: " + id)
+    try
+      esqueue.queue("index_dataset", new ResourceRef('dataset, id))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing dataset ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing dataset ${id.stringify}")
     }
   }
 
@@ -1549,11 +1550,9 @@ class MongoDBDatasetService @Inject() (
 				  groupingFile.getParentFile().mkdirs()
 
 				  val filePrintStream =  new PrintStream(groupingFile)
-				  for(fileId <- dataset.files){
-            files.get(fileId).foreach(file =>
-				      filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
-            )
-				  }
+          files.get(dataset.files).found.foreach(file => {
+            filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
+          })
 				  filePrintStream.close()
 
 				  if(!dsDumpMoveDir.equals("")){
@@ -1633,8 +1632,8 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getMetrics(user: Option[User]): Iterable[Dataset] = {
-    Dataset.find(MongoDBObject("trash" -> false)).toIterable
+  def getMetrics(): Iterator[Dataset] = {
+    Dataset.find(MongoDBObject("trash" -> false)).toIterator
   }
 }
 

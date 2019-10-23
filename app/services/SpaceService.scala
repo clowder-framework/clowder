@@ -14,6 +14,8 @@ trait SpaceService {
   /** return space with specific id */
   def get(id: UUID): Option[ProjectSpace]
 
+  def get(ids: List[UUID]): DBResult[ProjectSpace]
+
   /** insert new space, will return id if successful. */
   def insert(model: ProjectSpace): Option[String]
 

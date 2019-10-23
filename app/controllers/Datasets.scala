@@ -48,14 +48,8 @@ class Datasets @Inject() (
   def newDataset(space: Option[String], collection: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-    for (aSpace <- spacesList) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-      }
-    }
+    val perms = Permission.checkPermissions(Permission.AddResourceToSpace, spacesList.map(s => ResourceRef(ResourceRef.space, s.id))).approved
+    val decodedSpaceList = spacesList.filter(sp => perms.map(_.id).exists(_ == sp.id)).map(Utils.decodeSpaceElements(_))
 
     var hasVerifiedSpace = false
     val (spaceId, spaceName) = space match {
@@ -158,15 +152,7 @@ class Datasets @Inject() (
           -1
         }
 
-        for (tidObject <- datasetIdsToUse) {
-          val followedDataset = datasets.get(tidObject.id)
-          followedDataset match {
-            case Some(fdset) => {
-              datasetList += fdset
-            }
-            case None =>
-          }
-        }
+        datasets.get(datasetIdsToUse.map(_.id)).found.foreach(followedDataset => datasetList += followedDataset)
 
         //Modifications to decode HTML entities that were stored in an encoded fashion as part
         //of the datasets names or descriptions
@@ -564,13 +550,13 @@ class Datasets @Inject() (
             }
         }
         // dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset
-        val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea,
-          ResourceRef(ResourceRef.space, space.id)))
+        val perms = Permission.checkPermissions(Permission.EditStagingArea, datasetSpaces.map(ds => ResourceRef(ResourceRef.space, ds.id))).approved
+        val stagingarea = datasetSpaces.filter(sp => perms.map(_.id).exists(_ == sp.id))
         val toPublish = !stagingarea.isEmpty
-        val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(
-          _.status == 'Published)
-        val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation =>
-          Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
+        val curObjs = curationService.getCurationObjectByDatasetId(dataset.id)
+        val curObjectsPublished = curObjs.filter(_.status == 'Published)
+        val coperms = Permission.checkPermissions(Permission.EditStagingArea, curObjs.map(co => ResourceRef(ResourceRef.curationObject, co.id))).approved
+        val curObjectsPermission = curObjs.filter(co => coperms.map(_.id).exists(_ == co.id))
         val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
         // download button
@@ -615,11 +601,8 @@ class Datasets @Inject() (
         // add to collection permissions
         var canAddDatasetToCollection = Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))
         if (!canAddDatasetToCollection) {
-          datasetSpaces.map(space =>
-            if (Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
-              canAddDatasetToCollection = true
-           }
-          )
+          val parent_space_refs = datasetSpaces.map(space => ResourceRef(ResourceRef.space, space.id))
+          canAddDatasetToCollection = !Permission.checkPermissions(Permission.AddResourceToCollection, parent_space_refs).approved.isEmpty
         }
 
         // staging area
@@ -663,7 +646,7 @@ class Datasets @Inject() (
                 val (foldersList: List[Folder], limitFileList: List[File]) =
                   if(play.Play.application().configuration().getBoolean("sortInMemory")) {
                     (SortingUtils.sortFolders(folder.folders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
-                     SortingUtils.sortFiles(folder.files.flatMap(f => files.get(f)), sortOrder).slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length))
+                     SortingUtils.sortFiles(files.get(folder.files).found, sortOrder).slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length))
                   } else {
                     (folder.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).flatMap(f => folders.get(f)),
                      folder.files.reverse.slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate+1) - folder.folders.length).flatMap(f => files.get(f)))
@@ -698,7 +681,7 @@ class Datasets @Inject() (
           case None => {
             val (foldersList: List[Folder], limitFileList: List[File]) = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
               (SortingUtils.sortFolders(dataset.folders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
-               SortingUtils.sortFiles(dataset.files.flatMap(f => files.get(f)), sortOrder).slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length))
+               SortingUtils.sortFiles(files.get(dataset.files).found, sortOrder).slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length))
             } else {
               (dataset.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).flatMap(f => folders.get(f)),
                dataset.files.reverse.slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate+1) - dataset.folders.length).flatMap(f => files.get(f)))

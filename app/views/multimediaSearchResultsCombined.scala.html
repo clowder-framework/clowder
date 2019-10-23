@@ -12,7 +12,7 @@
 
         @if(thumbnailId.isDefined) {
        <img class='mmd-img media-object' 
-          src='@(routes.Files.thumbnail(thumbnailId.get))'
+          src='@(api.routes.Thumbnails.get(thumbnailId.get))'
           title='Thumbnail of query file'>
         </img>
     }
@@ -37,7 +37,7 @@
 													
 							@if(!thumbnailId.isEmpty){
 								<img class='mmd-img media-object' 
-									src='@(routes.Files.thumbnail(UUID(thumbnailId)))'
+									src='@(api.routes.Thumbnails.get(UUID(thumbnailId)))'
 									alt='Thumbnail of @fileName' 
 									title='Thumbnail of @fileName'>
 								</img>

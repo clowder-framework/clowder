@@ -75,6 +75,7 @@ trait DatasetService {
    * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
    */
   def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset]
+
   /**
     * Return a list of datasets in a collection
     */
@@ -160,18 +161,19 @@ trait DatasetService {
     */
   def listUserTrash(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
-
   /**
     * Return a list of all the datasets the user can view or has created.
     */
-  def listUser( user: User): List[Dataset]
+  def listUser(user: Option[User]): List[Dataset]
 
-  def listUserTrash(user : Option[User],limit : Integer ) : List[Dataset]
+  def listUserTrash(user: Option[User], limit: Integer ) : List[Dataset]
 
   /**
    * Get dataset.
    */
   def get(id: UUID): Option[Dataset]
+
+  def get(ids: List[UUID]): DBResult[Dataset]
 
   /**
    * Insert dataset.
@@ -247,11 +249,10 @@ trait DatasetService {
 
   def selectNewThumbnailFromFiles(datasetId: UUID)
 
-  /**
-    * Index dataset, if no id provided, index all datasets.
-    */
-  def index(id: Option[UUID])
+  /** Queue all datasets to be indexed in Elasticsearch. */
+  def indexAll()
 
+  /** Queue a dataset to be indexed in Elasticsearch. */
   def index(id: UUID)
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
@@ -384,6 +385,6 @@ trait DatasetService {
 
   def incrementDownloads(id: UUID, user: Option[User])
 
-  def getMetrics(user: Option[User]): Iterable[Dataset]
+  def getMetrics(): Iterator[Dataset]
 
 }

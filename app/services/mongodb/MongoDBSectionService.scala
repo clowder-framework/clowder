@@ -2,7 +2,7 @@ package services.mongodb
 
 import org.bson.types.ObjectId
 import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
-import models.{UUID, Tag, Comment, Section, User}
+import models._
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -62,6 +62,19 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.findOneById(new ObjectId(id.stringify))
   }
 
+  def get(ids: List[UUID]): DBResult[Section] = {
+    val objectIdList = ids.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+
+    val found = SectionDAO.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+    if (notFound.length > 0)
+      Logger.error("Not all section IDs found for bulk get request")
+    return DBResult(found, notFound)
+  }
+
   def findByFileId(id: UUID): List[Section] = {
     SectionDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).sort(MongoDBObject("startTime" -> 1)).toList
   }
@@ -110,32 +123,32 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
-      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
-    } else {
-      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    val filter = MongoDBObject("tags" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+    var tags = scala.collection.mutable.Map[String, Long]()
+    SectionDAO.dao.find(buildTagFilter(user) ++ filter).foreach{ x =>
+      x.tags.foreach{ t =>
+        tags.put(t.name, tags.get(t.name).getOrElse(0L) + 1L)
+      }
     }
-
+    tags.toMap
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    if (user.isDefined && user.get.superAdminMode)
+      return MongoDBObject()
+
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
 
-    user match {
-      case Some(u) => {
-        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
-        //Get all datasets you have access to.
-        val datasetsList = datasets.listUser(u)
-        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
-        val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
-        orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
-      }
-      case None =>
-    }
+    // all sections where user is the author
+    user.foreach{u => orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))}
+
+    // Get all sections in all files in all datasets you have access to.
+    val datasetsList = datasets.listUser(user)
+    val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+    val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+    orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
+
+    // create orlist
     $or(orlist.map(_.asDBObject))
   }
   /**

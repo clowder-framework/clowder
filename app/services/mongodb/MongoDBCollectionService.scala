@@ -9,7 +9,7 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import models._
-import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -41,7 +41,8 @@ class MongoDBCollectionService @Inject() (
   spaceService: SpaceService,
   events:EventService,
   spaces:SpaceService,
-  appConfig: AppConfigurationService)  extends CollectionService {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -523,6 +524,18 @@ class MongoDBCollectionService @Inject() (
     Collection.findOneById(new ObjectId(id.stringify))
   }
 
+  def get(ids: List[UUID]): DBResult[Collection] = {
+    if (ids.length == 0) return DBResult(List.empty, List.empty)
+
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> ids.map(id => new ObjectId(id.stringify))))
+    val found = Collection.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+
+    if (notFound.length > 0)
+      Logger.error("Not all collection IDs found for bulk get request")
+    return DBResult(found, notFound)
+  }
+
   def insert(collection: Collection): Option[String] = {
     Collection.insert(collection).map(_.toString)
   }
@@ -608,38 +621,16 @@ class MongoDBCollectionService @Inject() (
   }
 
   //adds datasest to the spaces of the collection
-  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]) = Try {
-    Logger.debug(s"Adding dataset $datasetId to spaces of collection $collectionId")
-    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
-      case Some(collection) => {
-        datasets.get(datasetId) match {
-          case Some(dataset) => {
-            for (collectionSpace <- collection.spaces) {
-              spaceService.get(collectionSpace) match {
-                case Some(space) => {
-                  if (!dataset.spaces.contains(space.id)) {
-                    //check permission for space
-                    if (Permission.checkPermission(user, Permission.AddResourceToSpace,ResourceRef(ResourceRef.space, space.id))){
-                      spaceService.addDataset(datasetId, collectionSpace)
-                    } else
-                      Logger.debug("User does not have permission to add datasets to space " + space.id)
-                  }
-                }
-                case None => Logger.error("No space found for : " + collectionSpace)
-              }
-            }
-          }
-          case None => {
-            Logger.error("Error getting dataset " + datasetId)
-            Failure
-          }
-        }
+  def addDatasetToCollectionSpaces(collection: Collection, dataset: Dataset, user : Option[User]) = Try {
+    spaceService.get(collection.spaces).found.foreach(space => {
+      if (!dataset.spaces.contains(space.id)) {
+        //check permission for space
+        if (Permission.checkPermission(user, Permission.AddResourceToSpace,ResourceRef(ResourceRef.space, space.id))) {
+          spaceService.addDataset(dataset.id, space.id)
+        } else
+          Logger.debug("User does not have permission to add datasets to space " + space.id)
       }
-      case None => {
-        Logger.error("Error getting collection" + collectionId);
-        Failure
-      }
-    }
+    })
   }
 
   def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) = Try {
@@ -667,14 +658,9 @@ class MongoDBCollectionService @Inject() (
   }
 
   def listChildCollections(parentCollectionId : UUID): List[Collection] = {
-    val childCollections = List.empty[Collection]
     get(parentCollectionId) match {
-      case Some(collection) => {
-        val childCollectionIds = collection.child_collection_ids
-        val childList = for (childCollectionId <- childCollectionIds; if (get(childCollectionId).isDefined)) yield (get(childCollectionId)).get
-        return childList
-      }
-      case None => return childCollections
+      case Some(collection) => return get(collection.child_collection_ids).found
+      case None => return List.empty[Collection]
     }
   }
 
@@ -724,12 +710,9 @@ class MongoDBCollectionService @Inject() (
     get(collectionId) match {
       case Some(collection) => {
         val parentSpaces = ListBuffer.empty[UUID]
-        collection.parent_collection_ids.foreach{ parentId =>
-          get(parentId) match {
-            case Some(parent) => parent.spaces.foreach{ space => parentSpaces += space}
-            case None =>
-          }
-        }
+        get(collection.parent_collection_ids).found.foreach(parent => {
+          parent.spaces.foreach{ space => parentSpaces += space}
+        })
         collection.spaces.foreach { space =>
           if(!(parentSpaces contains space)) {
             if(!(initialRootSpaces contains space)) {
@@ -766,7 +749,6 @@ class MongoDBCollectionService @Inject() (
     return rootSpaceIds
   }
 
-
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
     var descendants = ListBuffer.empty[models.Collection]
 
@@ -786,7 +768,6 @@ class MongoDBCollectionService @Inject() (
 
     return descendants
   }
-
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Logger.debug(s"Removing dataset $datasetId from collection $collectionId")
@@ -895,39 +876,35 @@ class MongoDBCollectionService @Inject() (
   def createThumbnail(collectionId:UUID){
     get(collectionId) match{
 	    case Some(collection) => {
-	    		val selecteddatasets = datasets.listCollection(collectionId.stringify) map { ds =>{
-	    			datasets.get(ds.id).getOrElse{None}
-	    		}}
-			    for(dataset <- selecteddatasets){
-			      if(dataset.isInstanceOf[models.Dataset]){
-			          val theDataset = dataset.asInstanceOf[models.Dataset]
-				      if(!theDataset.thumbnail_id.isEmpty){
-				        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
-				        return
-				      }
-			      }
-			    }
-			    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
-	    }
+        val selecteddatasets = datasets.listCollection(collectionId.stringify)
+        for(dataset <- selecteddatasets){
+          if(dataset.isInstanceOf[models.Dataset]){
+              val theDataset = dataset.asInstanceOf[models.Dataset]
+            if(!theDataset.thumbnail_id.isEmpty){
+              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> theDataset.thumbnail_id.get), false, false, WriteConcern.Safe)
+              return
+            }
+          }
+        }
+        Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+      }
 	    case None =>
     }
   }
 
-  def index(id: Option[UUID]) = {
-    id match {
-      case Some(collectionId) => index(collectionId)
-      case None => Collection.dao.find(MongoDBObject()).foreach(c => index(c.id))
-    }
+  def indexAll() = {
+    // Bypass Salat in case any of the file records are malformed to continue past them
+    Collection.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(c => {
+      index(new UUID(c.get("_id").toString))
+    })
   }
 
   def index(id: UUID) {
-    Collection.findOneById(new ObjectId(id.stringify)) match {
-      case Some(collection) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(collection, false)
-        }
-      }
-      case None => Logger.error("Collection not found: " + id.stringify)
+    try
+      esqueue.queue("index_collection", new ResourceRef('collection, id))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing collection ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing collection ${id.stringify}")
     }
   }
 
@@ -1077,25 +1054,18 @@ class MongoDBCollectionService @Inject() (
     Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }
 
-
   def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
     var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]
     get(collectionId) match {
       case Some(collection) => {
         selfAndAncestors += collection
-        for (parentCollectionId <- collection.parent_collection_ids){
-          get(parentCollectionId) match {
-            case Some(parent_collection) => {
-              selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(parentCollectionId)
-            }
-            case None =>
-          }
-        }
+        get(collection.parent_collection_ids).found.foreach(parent_collection => {
+          selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(parent_collection.id)
+        })
       }
       case None =>
     }
     return selfAndAncestors.toList
-
   }
 
   def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean = {
@@ -1103,16 +1073,11 @@ class MongoDBCollectionService @Inject() (
       case Some(collection) => {
         spaceService.get(spaceId) match {
           case Some(space) => {
-            for (parentId <- collection.parent_collection_ids) {
-              get(parentId) match {
-                case Some(parentCollection) => {
-                  if (parentCollection.spaces.contains(spaceId)) {
-                    return true
-                  }
-                }
-                case None => return false
+            get(collection.parent_collection_ids).found.foreach(parentCollection => {
+              if (parentCollection.spaces.contains(spaceId)) {
+                return true
               }
-            }
+            })
           }
           case None =>
         }
@@ -1147,8 +1112,8 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def getMetrics(user: Option[User]): Iterable[Collection] = {
-    Collection.find(MongoDBObject("trash" -> false)).toIterable
+  def getMetrics(): Iterator[Collection] = {
+    Collection.find(MongoDBObject("trash" -> false)).toIterator
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {

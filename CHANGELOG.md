@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- docker-compose uses new monitor image from scripts folder
+- monitor will not print error, but just return 0 if queue is not found
+
+### Changed
+- `/api/search` endpoint now returns JSON objects describing each result rather than just the ID. This endpoint has three
+  new parameters - from, size, and page. The result JSON objects will also return pagination data such as next and 
+  previous page if Elasticsearch plugin is enabled and these parameters are used.
+- S3ByteStorageService now uses AWS TransferManager for saving bytes - uploads larger than ~1GB should now save more reliably.
+- `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
+- Clean up docker build. Use new buildkit to speed up builds. Store version/branch/git as environment variables in 
+  docker image so that they can be inspected at runtime with Docker.
+- Extractors are now in their own docker-compose file. Use traefik for proxy. Run monitor. Use env file for options.
+- Utilize bulk get methods for resources widely across the application, including checking permissions for many resources
+  at once. Several instances where checks for resource existince were being done multiple times (e.g. in a method and then
+  in another method the first one calls) to reduce MongoDB query load. These bulk requests will also report any missing
+  IDs in the requested list so developers can handle those appropriately if needed.
+- Clowder is now capable of using MongoDB 3.6 and below. This required the removal of aggregators which can result in
+  operations taking a little longer. This is needed to support clowder as a helmchart.
+  [CATS-806](https://opensource.ncsa.illinois.edu/jira/browse/CATS-806)
+
+### Added
+- New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
+- New utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list.
+- Ability to pass runtime parameters to an extractor, with a UI form dynamically generated UI from extractor_info.json.
+  [CATS-1019](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1019)
+- Trigger archival process automatically based on when a file was last viewed/downloaded and the size of the file.
+- Script to check if mongodb/rabbitmq is up and running, used by helm chart for clowder.
+- Queuing system that allows services such as Elasticsearch and RabbitMQ to store requested actions in MongoDB
+  for handling asynchronously, allowing API calls to return as soon as the action is queued rather than waiting for
+  the action to complete.
+
+### Fixed
+- Fixed bug where downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
+  to the client as they are generated instead of being generated on the server and sent at the end.
+  
 ## 1.7.4 - 2019-10-21
 
 ### Fixed
@@ -41,6 +79,8 @@ or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 - HTTP 500 error when posting new metadata.
 
 ### Added
+- Add archive button on file page which can trigger archive extractor to archive this file.
+
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.

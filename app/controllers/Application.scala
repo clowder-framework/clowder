@@ -163,6 +163,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               case None =>
             }
           } else if (tidObject.objectType == "file") {
+            // TODO: Can use file.get(list[UUID]) here if the for loop is restructured (same for dataset, collection)
             val followedFile = files.get(tidObject.id)
             followedFile match {
               case Some(ffile) => {
@@ -346,6 +347,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.restoreDataset,
         api.routes.javascript.Datasets.emptyTrash,
         api.routes.javascript.Files.download,
+        api.routes.javascript.Files.archive,
+        api.routes.javascript.Files.sendArchiveRequest,
+        api.routes.javascript.Files.unarchive,
+        api.routes.javascript.Files.sendUnarchiveRequest,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
         api.routes.javascript.Files.addTags,
@@ -486,10 +491,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Folders.getAllFoldersByDatasetId,
         api.routes.javascript.Folders.moveFileBetweenFolders,
         api.routes.javascript.Folders.moveFileToDataset,
+        api.routes.javascript.Thumbnails.get,
         controllers.routes.javascript.Login.isLoggedIn,
         controllers.routes.javascript.Login.ldapAuthenticate,
         controllers.routes.javascript.Files.file,
-        controllers.routes.javascript.Files.thumbnail,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Datasets.createStep2,

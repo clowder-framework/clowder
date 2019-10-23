@@ -6,7 +6,12 @@ import java.util.Date
 import models._
 import com.mongodb.casbah.Imports._
 import models.FileStatus.FileStatus
-import play.api.libs.json.{JsArray, JsObject, JsValue}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+
+object FileService {
+  val ARCHIVE_PARAMETER = ("operation" -> Json.toJson("archive"))
+  val UNARCHIVE_PARAMETER = ("operation" -> Json.toJson("unarchive"))
+}
 
 /**
  * Generic file service to store blobs of files and metadata about them.
@@ -14,6 +19,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue}
  *
  */
 trait FileService {
+
   /**
    * The number of files
    */
@@ -79,11 +85,23 @@ trait FileService {
    * List files for a specific user before a specified date.
    */
   def listUserFilesBefore(date: String, limit: Int, email: String): List[File]
-  
+
+  /**
+    * Submit a single archival operation to the appropriate queue/extractor
+    */
+  def submitArchivalOperation(file: File, id:UUID, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User])
+
+  /**
+    * Submit all archival candidates to the appropriate queue/extractor
+    */
+  def autoArchiveCandidateFiles()
+
   /**
    * Get file metadata.
    */
   def get(id: UUID): Option[File]
+
+  def get(ids: List[UUID]): DBResult[File]
 
   /**
     * Set the file status
@@ -105,7 +123,7 @@ trait FileService {
    */
   def first(): Option[File]
 
-  def index(id: Option[UUID])
+  def indexAll()
   
   def index(id: UUID)
 
@@ -228,6 +246,6 @@ trait FileService {
 
   def incrementDownloads(id: UUID, user: Option[User])
 
-  def getMetrics(user: Option[User]): Iterable[File]
+  def getMetrics(): Iterator[File]
 
 }

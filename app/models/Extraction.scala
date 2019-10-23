@@ -70,6 +70,11 @@ case class ExtractorDetail(
  * @param bibtex bibtext formatted citation of relevant papers
  * @param process events that should trigger this extractor to process
  * @param categories list of categories that apply to the extractor
+ * @param parameters JSON schema representing allowed parameters
+  *                    which can contain the following fields (and more):
+  *                     * schema: {} a mapping of property key to type/title/validation data
+  *                     * form: [] ordered form fields keyed by properties defined in the schema
+  * @see See [[https://github.com/jsonform/jsonform/wiki]] for full documentation regarding parameters
  */
 case class ExtractorInfo(
   id: UUID,
@@ -85,7 +90,8 @@ case class ExtractorInfo(
   libraries: List[String],
   bibtex: List[String],
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
-  categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString)
+  categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
+  parameters: JsValue = JsObject(Seq())
 )
 
 /** what are the categories of the extractor?
@@ -132,7 +138,8 @@ object ExtractorInfo {
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
-      (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString)))
+      (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
+      (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
     )(ExtractorInfo.apply _)
 }
 

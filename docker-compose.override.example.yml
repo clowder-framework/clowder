@@ -1,0 +1,17 @@
+version: '3.5'
+
+services:
+  mongo:
+    image: mongo:3.4
+    ports:
+      - 27017:27017
+  rabbitmq:
+    ports:
+      - 5672:5672
+
+volumes:
+  mongo:
+    driver_opts:
+      type: none
+      device: '${HOME}/docker/mongo'
+      o: bind

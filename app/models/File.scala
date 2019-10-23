@@ -48,10 +48,18 @@ case class Versus(
 object File {
   implicit object FileWrites extends Writes[File] {
     def writes(file: File): JsObject = {
+      val fileThumbnail = if(file.thumbnail_id.isEmpty) {
+        null
+      } else {
+        file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1)
+      }
       Json.obj(
         "id" -> file.id,
         "name" -> file.filename,
-        "status" -> file.status)
+        "status" -> file.status,
+        "thumbnail" -> fileThumbnail,
+        "created" -> file.uploadDate.toString,
+        "resource_type" -> "file")
     }
   }
 }

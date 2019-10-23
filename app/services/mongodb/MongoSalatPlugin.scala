@@ -439,6 +439,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates permissions for the editor Role
     updateMongo("update-editor-role", updateEditorRole)
+
+    // Updates permissions for the admin Role
+    updateMongo("update-admin-role", updateAdminRole)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1205,21 +1208,31 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
 
     // aggregate all metadata and update all records
-    val results = collection("metadata").aggregate(MongoDBObject("$group" ->
-      MongoDBObject("_id" -> "$attachedTo", "count" -> MongoDBObject("$sum" -> 1L)))).results.filter(x => x.containsField("count"))
-    results.foreach { x =>
-      x.getAs[DBObject]("_id").foreach { key =>
-        (key.getAs[String]("resourceType"), key.getAs[ObjectId]("_id"), x.getAs[Long]("count")) match {
-          case (Some(rt), Some(id), Some(count)) => {
-            collection(Symbol(rt)).foreach { c =>
-              try {
-                c.update(MongoDBObject("_id" -> id), $set("metadataCount" -> count))
-              } catch {
-                case e: BSONException => Logger.error(s"Unable to update the metadata counts for ${rt} with id ${id} to ${count}")
+    var lastId: ObjectId = null
+    var lastCollection: String = null
+    var count = 0
+    collection("metadata").find().sort(MongoDBObject("attachedTo" -> 1)).foreach{d =>
+      d.getAs[DBObject]("attachedTo").foreach{at =>
+        (at.getAs[ObjectId]("_id"), at.getAs[String]("resourceType")) match {
+          case (Some(id), Some(coll)) => {
+            if (id != lastId) {
+              if (lastId != null) {
+                try {
+                  collection(lastCollection).update(MongoDBObject("_id" -> lastId), $set("metadataCount" -> count))
+                } catch {
+                  case e: BSONException => Logger.error(s"Unable to update the metadata counts for ${lastCollection} with id ${id} to ${count}")
+                }
               }
+              lastId = id
+              lastCollection = coll
+              count = 1
+            } else {
+              count += 1
             }
           }
-          case (_, _, _) => Logger.error(s" Error parsing data : ${x}")
+          case (id, coll) => {
+            Logger.error(s"Unable to update the metadata counts for ${coll} with id ${id}")
+          }
         }
       }
     }
@@ -1623,6 +1636,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       extraction.put("status", parsed_status)
       collection("extractions").save(extraction, WriteConcern.Safe)
     }
+  }
+
+
+  private def updateAdminRole(): Unit = {
+    val query = MongoDBObject("name" -> "Admin")
+    val operation = MongoDBObject("$addToSet" -> MongoDBObject("permissions" -> Permission.ArchiveFile.toString))
+    collection("roles").update(query, operation)
   }
 
   private def updateEditorRole(): Unit = {

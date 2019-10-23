@@ -274,6 +274,22 @@
 								<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
 									Download </button>
 							}
+							@if( play.Play.application().configuration().getBoolean("archiveEnabled")) {
+								@if( Permission.checkPermission(Permission.ArchiveFile, ResourceRef(ResourceRef.file, file.id))) {
+									@if( file.status == "PROCESSED") {
+										<button id="archiveButton" type="button" onclick="return archiveFile('@(file.id)');" class="btn btn-link" title="Archive this file.">
+											<span class="glyphicon glyphicon-export"></span>
+											Archive
+										</button>
+									}
+									@if( play.Play.application().configuration().getBoolean("archiveAllowUnarchive") && file.status == "ARCHIVED") {
+										<button id="unarchiveButton" type="button" onclick="return unarchiveFile('@(file.id)');" class="btn btn-link" title="Unarchive this file.">
+											<span class="glyphicon glyphicon-import"></span>
+											Unarchive
+										</button>
+									}
+								}
+							}
 							<!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->
 							@if(!outputFormats.isEmpty){
 								<div class="btn-group" role="group">
@@ -398,7 +414,7 @@
 										<td class="galleriaTheThumbnail">
 										@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
 											@if(s.thumbnail_id.isDefined){
-												<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.get)))"
+												<img src="@(api.routes.Thumbnails.get(UUID(s.thumbnail_id.get)))"
 											} else {
 												<img src="@api.routes.Previews.download(s.preview.get.id)"
 												}
@@ -711,7 +727,7 @@
 							}
 							@if(file.loader == "services.s3.S3ByteStorageService") {
 								<td>
-									S3 Bucket: 
+									S3 Bucket:
 									@if(file.loader_id.length>10) {
 										<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
 									} else {
@@ -831,6 +847,60 @@
 					}
                 }
 
+				function archiveFile(fileid) {
+					if ("@file.status"=="ARCHIVED") {
+						notify("The file has been already archived", "success");
+					} else {
+						var dataBody = {'fileid': fileid};
+                        var request = jsRoutes.api.Files.sendArchiveRequest(fileid).ajax({
+							data: JSON.stringify(dataBody),
+                            type: 'POST',
+                            contentType: "application/json"
+                        });
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("The fileid " + fileid + " has been archived successfully");
+							notify("File is now being archived. The page will automatically reload in a few seconds...", "success");
+							setTimeout(function() {
+								location.reload();
+								$("#hiddenmt").attr("value", false);
+							}, 3000);
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error("The following error occured: " + textStatus, errorThrown);
+							notify("Failed to archive file.", "error");
+                        });
+
+                    }
+				}
+
+				function unarchiveFile(fileid) {
+					if ("@file.status"=="PROCESSED") {
+						notify("The file has been already unarchived", "success");
+					} else {
+						var dataBody = {'fileid': fileid};
+						var request = jsRoutes.api.Files.sendUnarchiveRequest(fileid).ajax({
+							data: JSON.stringify(dataBody),
+							type: 'POST',
+							contentType: "application/json"
+						});
+						request.done(function (response, textStatus, jqXHR){
+							console.log("The fileid " + fileid + " has been unarchived successfully");
+							notify("File is now being unarchived. The page will automatically reload in a few seconds...", "success");
+							setTimeout(function() {
+								location.reload();
+								$("#hiddenmt").attr("value", false);
+							}, 3000);
+						});
+
+						request.fail(function (jqXHR, textStatus, errorThrown){
+							console.error("The following error occured: " + textStatus, errorThrown);
+							notify("Failed to unarchive file.", "error");
+						});
+
+					}
+				}
+
                 function downloadFileAs(downloadRoute) {
                     console.log("downloadFileAs - route = " + downloadRoute);
                     window.open(downloadRoute, '_blank');
@@ -850,7 +920,7 @@
 							<div class="col-md-2 col-sm-2 col-lg-2">
 							@if(!dataset.thumbnail_id.isEmpty){
 								<a href="@(routes.Datasets.dataset(dataset.id))">
-									<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
+									<img class="img-responsive fit-in-space" src="@(api.routes.Thumbnails.get(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
 								</a>
 							}
 							</div>

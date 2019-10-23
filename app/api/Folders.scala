@@ -155,29 +155,18 @@ class Folders @Inject() (
     Logger.debug(s"[subfilesDeletionRabbitmqNotification] under folderid $folderId")
     folders.get(folderId) match {
       case Some(folder) => {
-        folder.files.map {
-          fileId => {
-            files.get(fileId) match {
-              case Some(file) => {
-                // notify rabbitmq
-                Logger.debug(s"[subfilesDeletionRabbitmqNotification] rabbitmq delete event of fileid ${file.id} under folderid $folderId")
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  datasets.findByFileIdAllContain(file.id).foreach { ds =>
-                    p.fileRemovedFromDataset(file, ds, host, requestAPIKey)
-                  }
-                }
-              }
-              case None => Logger.warn(s"[subfilesDeletionRabbitmqNotification] file: $fileId not exist!")
+        files.get(folder.files).found.foreach(file => {
+          // notify rabbitmq
+          Logger.debug(s"[subfilesDeletionRabbitmqNotification] rabbitmq delete event of fileid ${file.id} under folderid $folderId")
+          current.plugin[RabbitmqPlugin].foreach { p =>
+            datasets.findByFileIdAllContain(file.id).foreach { ds =>
+              p.fileRemovedFromDataset(file, ds, host, requestAPIKey)
             }
           }
-        }
+        })
         folder.folders.map {
-          subfolderId => {
-            folders.get(subfolderId)  match {
-              case Some(subfolder) => subfilesDeletionRabbitmqNotification(subfolder.id, host, requestAPIKey)
-              case None =>
-            }
-          }
+          // Don't need to do a get here since it's done first thing in the recursive call
+          subfolderId => subfilesDeletionRabbitmqNotification(subfolderId, host, requestAPIKey)
         }
       }
       case None => Logger.warn(s"[subfilesDeletionRabbitmqNotification] folder: $folderId not exist!")
