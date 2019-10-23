@@ -275,7 +275,7 @@ your needs.**
   [CATS-54](https://opensource.ncsa.illinois.edu/jira/browse/CATS-54)
 - Ability for users to create their own API keys.
   [CATS-686](https://opensource.ncsa.illinois.edu/jira/browse/CATS-686)
-- Abilty for CiLogon provider to filter by LDAP groups.
+- Ability for CiLogon provider to filter by LDAP groups.
 - *exact* flag on collection and dataset API endpoints that accept a *title* flag. This will use
   exact matching on the title field instead of regular expression fuzzy matching.
 - Having a temporary trash option. Can be set with useTrash boolean in the configuration file.
