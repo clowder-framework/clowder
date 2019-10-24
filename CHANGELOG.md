@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed bug where downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
   to the client as they are generated instead of being generated on the server and sent at the end.
+- Fixed bug where social accounts would not properly be added to a space after accepting an email invite to join it.
   
 ## 1.7.3 - 2019-08-19
 
