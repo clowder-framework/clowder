@@ -229,6 +229,7 @@ GET            /signup                                                          
 POST           /signup                                                                  securesocial.controllers.Registration.handleStartSignUp
 GET            /signup/:token                                                           securesocial.controllers.Registration.signUp(token)
 POST           /signup/:token                                                           @controllers.Registration.handleSignUp(token)
+GET            /signupInvite/:token                                                     @controllers.Registration.signUp(token)
 GET            /reset                                                                   securesocial.controllers.Registration.startResetPassword
 POST           /reset                                                                   securesocial.controllers.Registration.handleStartResetPassword
 GET            /reset/:token                                                            securesocial.controllers.Registration.resetPassword(token)

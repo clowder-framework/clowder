@@ -13,6 +13,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
 
   def onEvent(event: Event, request: RequestHeader, session: Session): Option[Session] = {
     val userService: UserService = DI.injector.getInstance(classOf[UserService])
+    val spaceService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
 
     event match {
       case e: SignUpEvent => {
@@ -21,6 +22,10 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
             val subject = s"[${AppConfiguration.getDisplayName}] new user signup"
             val body = views.html.emails.userSignup(user)(request)
             util.Mail.sendEmailAdmins(subject, Some(user), body)
+            user.email match {
+              case Some(e) => spaceService.processInvitation(e)
+              case None => Logger.debug("No email found for user "+user.id.stringify)
+            }
             userService.updateUserField(user.id, "lastLogin", new Date())
           }
           case None => {
@@ -35,6 +40,10 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
               val subject = s"[${AppConfiguration.getDisplayName}] new user signup"
               val body = views.html.emails.userSignup(user)(request)
               util.Mail.sendEmailAdmins(subject, Some(user), body)
+            }
+            user.email match {
+              case Some(e) => spaceService.processInvitation(e)
+              case None => Logger.debug("No email found for user "+user.id.stringify)
             }
             userService.updateUserField(user.id, "lastLogin", new Date())
           }

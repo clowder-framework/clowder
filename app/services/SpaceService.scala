@@ -253,6 +253,11 @@ trait SpaceService {
   def getInvitationByEmail(email: String): List[SpaceInvite]
 
   /**
+    * Find invitation for email and process it
+    */
+  def processInvitation(email: String)
+
+  /**
    * Add authorization request to a space.
    */
   def addRequest(id: UUID, userId: UUID, username: String)
