@@ -21,7 +21,7 @@ BRANCH=${BRANCH} VERSION=${TMPVERSION} DEBUG=${DEBUG} $(dirname $0)/docker.sh
 # find out the version
 if [ "${BRANCH}" = "master" ]; then
     VERSION=${VERSION:-""}
-    if [ "${VERSION}" == "" ]; then
+    if [ "${VERSION}" = "" ]; then
         TMPVERSION=$(awk '/version = / { print $4 }' $(dirname $0)/project/Build.scala | sed 's/"//g')
         echo "Detected version ${TMPVERSION}"
         VERSION="latest"
