@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Queuing system that allows services such as Elasticsearch and RabbitMQ to store requested actions in MongoDB
   for handling asynchronously, allowing API calls to return as soon as the action is queued rather than waiting for
   the action to complete.
+- Monitor docker container now has a UI that shows selected information about the extractors
 - New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
 - New utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list.
 
@@ -80,7 +81,6 @@ or navigate to the `Admin > Indexes` menu and click on the `Reindex` button.**
 
 ### Added
 - Add archive button on file page which can trigger archive extractor to archive this file.
-
 - Added S3ByteStorageService for storing uploaded bytes in S3-compatible buckets.
   [CATS-992](https://opensource.ncsa.illinois.edu/jira/browse/CATS-992)
 - Added support for archiving files in Clowder and preparing an admin email if user attempts to download archived file.

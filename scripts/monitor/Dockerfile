@@ -16,9 +16,11 @@ ENV BRANCH=${BRANCH} \
     RABBITMQ_MGMT_PATH="/" \
     RABBITMQ_MGMT_URL=""
 
-RUN pip install pika==0.11.2 requests==2.18.4
-
 WORKDIR /src
-COPY monitor.py /src/
+
+COPY requirements.txt /src/
+RUN pip3 install -r /src/requirements.txt
+
+COPY . /src/
 
 CMD python monitor.py

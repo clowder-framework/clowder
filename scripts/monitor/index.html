@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Clowder Extractor Monitor</title>
+
+    <link rel="icon" href="favicon.png">
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap table style -->
+    <lnkk href="bootstrap-table.min.css" rel="stylesheet">
+    
+    <!-- glyphs -->
+    <link href="fontawesome.min.css" rel="stylesheet">
+    <link href="solid.min.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <!-- Begin page content -->
+    <main role="main" class="container">
+      <h1 class="mt-5">Clowder Extractor Monitor</h1>
+
+      <table class="table table-striped" id="monitor"
+             data-toggle="table"
+             data-sortable="true"
+             data-search="true"
+             data-show-refresh="true"
+             data-url="extractors.json"
+             data-response-handler="responseHandler"
+             data-row-attributes="rowAttributes">
+        <thead>
+          <tr>
+            <th data-field="name" data-sortable="true" scope="col">Name</th>
+            <th data-field="version" data-sortable="true" scope="col">Version</th>
+            <th data-field="consumers" data-sortable="true" scope="col">Consumers</th>
+            <th data-field="messages" data-sortable="true" scope="col">Messages</th>
+            <th data-field="errors" data-sortable="true" scope="col">Errors</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+
+    </main>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="jquery-3.3.1.min.js"></script>
+    <script src="popper.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="bootstrap-table.min.js"></script>
+ 
+    <script type="text/javascript">
+      function rowAttributes(row, index) {
+        console.log(row);
+        return {
+          'data-toggle': 'popover',
+          'data-placement': 'bottom',
+          'data-trigger': 'hover',
+          'data-content': row['description']
+        }
+      }
+
+      function responseHandler(data) {
+        $('[data-toggle="popover"]').popover('dispose');
+        var rows = [];
+        $.each(data, function(model, versions) {
+          $.each(versions, function(version, info) {
+            if (info['messages'] == undefined) {
+              info['messages'] = {
+                error: undefined,
+                queues: {
+                  topic: undefined
+                }
+              };
+            }
+            rows.push({
+              name: model,
+              version: version,
+              consumers: Object.keys(info['extractors']).length,
+              errors: info['messages']['error'],
+              messages: info['messages']['queues']['topic'],
+              description: info['extractor_info']['description']
+            });
+          });
+        });
+        return rows;
+      }
+
+      $(function() {
+        $('#monitor').on('post-body.bs.table', function (e) {
+          $('[data-toggle="popover"]').popover();
+        })
+      })
+    </script>
+  </body>
+</html>
