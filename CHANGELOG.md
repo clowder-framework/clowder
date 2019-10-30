@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed bug where social accounts would not properly be added to a space after accepting an email invite to join it.
 - docker-compose uses new extractors monitor image from scripts folder to monitor queues.
 - Bug where extractors monitor will not print error, but just return 0 if queue is not found.
+- Pagination controls are now vertically aligned.
   
 ## 1.7.4 - 2019-10-21
 
