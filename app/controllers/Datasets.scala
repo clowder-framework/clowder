@@ -404,7 +404,7 @@ class Datasets @Inject() (
    * of status/public view flags, etc. To generalize for sorting of other lists, the permission checks will need to be in 
    * the dataset query (as in the list method).
    */
-  def sortedListInSpace(space: String, offset: Integer, limit: Integer, showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
+  def sortedListInSpace(space: String, offset: Int, size: Int, showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
     val sortOrder: String =
       request.cookies.get("sort-order") match {
@@ -426,20 +426,14 @@ class Datasets @Inject() (
       if (!Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", datasetSpace.get.name, "space"))
       } else {
-
         val dList = datasets.listSpaceAccess(0, Set[Permission](Permission.ViewDataset), space, user, false, showPublic);
-        
-
         val len = dList.length
-
         Logger.debug("User selections" + user)
         val userSelections: List[String] =
           if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
-
-        val datasetList = SortingUtils.sortDatasets(dList, sortOrder).drop(offset).take(limit)
-
+        val datasetList = SortingUtils.sortDatasets(dList, sortOrder).drop(offset).take(size)
         val commentMap = datasetList.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
           dataset.files.map { file =>
@@ -462,23 +456,26 @@ class Datasets @Inject() (
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
         //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
         val viewMode: Option[String] =
-
           request.cookies.get("view-mode") match {
             case Some(cookie) => Some(cookie.value)
             case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
           }
+
         val prev: String = if (offset != 0) {
           offset.toString()
         } else {
           ""
         }
-        val next: String = if (len > (offset + limit)) {
-          (offset + limit).toString()
+
+        val next: String = if (len > (offset + size)) {
+          (offset + size).toString()
         } else {
           ""
         }
+
         val date = ""
-        Ok(views.html.datasetList(decodedDatasetList.toList, prev, next, limit, viewMode, Some(space), spaceName, None, title, None, None, "a", date, userSelections))
+
+        Ok(views.html.datasetList(decodedDatasetList.toList, prev, next, size, viewMode, Some(space), spaceName, None, title, None, None, "a", date, userSelections))
       }
     }
   }

@@ -219,22 +219,22 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-                @if(play.Play.application().configuration().getBoolean("sortInMemory")&&space.isDefined) {
-                    @if(next != "") {
-                        $('#nextlink').attr('href', "@(routes.Datasets.sortedListInSpace(space.getOrElse(""), next.toInt, limit))");
-                    }
-                    @if(prev != "") {
-                        $('#prevlink').attr('href', "@(routes.Datasets.sortedListInSpace(space.getOrElse(""), prev.toInt-limit, limit))");
-                    }
-                    } else {
-                    if (status == "publicAll") {
-                        $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space, Some("publicAll"), "", owner))");
-                        $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space, Some("publicAll"), "", owner))");
-                    } else {
-                        $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space, None, "", owner))");
-                        $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space, None, "", owner))");
-                    }
+@if(play.Play.application().configuration().getBoolean("sortInMemory")&&space.isDefined) {
+                @if(next != "") {
+                    $('#nextlink').attr('href', "@Html(routes.Datasets.sortedListInSpace(space.getOrElse(""), next.toInt, limit).url)");
                 }
+                @if(prev != "") {
+                    $('#prevlink').attr('href', "@Html(routes.Datasets.sortedListInSpace(space.getOrElse(""), prev.toInt-limit, limit).url)");
+                }
+} else {
+                if (status == "publicAll") {
+                    $('#nextlink').attr('href', "@Html(routes.Datasets.list("a", next, limit, space, Some("publicAll"), "", owner).url)");
+                    $('#prevlink').attr('href', "@Html(routes.Datasets.list("b", prev, limit, space, Some("publicAll"), "", owner).url)");
+                } else {
+                    $('#nextlink').attr('href', "@Html(routes.Datasets.list("a", next, limit, space, None, "", owner).url)");
+                    $('#prevlink').attr('href', "@Html(routes.Datasets.list("b", prev, limit, space, None, "", owner).url)");
+                }
+}
                 doSummarizeAbstracts();
 			}
         </script>
