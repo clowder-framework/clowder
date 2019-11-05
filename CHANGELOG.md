@@ -39,12 +39,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - New utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list.
 
 ### Fixed
-- Fixed bug where downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
+- Downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
   to the client as they are generated instead of being generated on the server and sent at the end.
-- Fixed bug where social accounts would not properly be added to a space after accepting an email invite to join it.
+- Social accounts would not properly be added to a space after accepting an email invite to join it.
 - docker-compose uses new extractors monitor image from scripts folder to monitor queues.
-- Bug where extractors monitor will not print error, but just return 0 if queue is not found.
+- Fixed bug where extractors monitor will not print error, but just return 0 if queue is not found.
 - Pagination controls are now vertically aligned.
+- Pagination next and previous links now use unescaped ampersands.
+- Changing the page size on dataset, collection, space listings would not properly update elements visible on the page.
+  [CATS-1030](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1030)
   
 ## 1.7.4 - 2019-10-21
 
