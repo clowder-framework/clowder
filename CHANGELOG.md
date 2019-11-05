@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Clowder is now capable of using MongoDB 3.6 and below. This required the removal of aggregators which can result in
   operations taking a little longer. This is needed to support Clowder as a Kubernetes Helm chart.
   [CATS-806](https://opensource.ncsa.illinois.edu/jira/browse/CATS-806)
+- Removed mini icons for resource types on tiles.
+  [CATS-1031](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1031)
 
 ### Added
 - Ability to pass runtime parameters to an extractor, with a UI form dynamically generated UI from extractor_info.json.

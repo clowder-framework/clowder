@@ -2,13 +2,6 @@
 @import api.Permission
 
 <div class = "panel panel-default dataset-panel" id="@dataset.id-listitem">
-@if(!dataset.thumbnail_id.isEmpty){
-    <div class="row">
-        <div class="pull-left col-xs-12">
-            <span class="glyphicon glyphicon-briefcase"></span>
-        </div>
-    </div>
-}
     <div class="panel-body">
         @if(user.isDefined) {
             @if(selected) {
