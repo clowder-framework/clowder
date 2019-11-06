@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.8.0 - 2019-10-24
+**_Warning:_ This update adds a new permission for archiving files and adds it to the Admin role. Please make sure
+to run Clowder with the `MONGOUPDATE` flag set to update the database.**
 
 ### Changed
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID. This endpoint has three
@@ -14,16 +16,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `/api/search` endpoint now returns JSON objects describing each result rather than just the ID.
 - Clean up docker build. Use new buildkit to speed up builds. Store version/branch/git as environment variables in 
   docker image so that they can be inspected at runtime with Docker.
-- Extractors are now in their own docker-compose file. Use Traefik for proxy. Run monitor. Use env file for options.
+- Extractors are now in their own docker-compose file. Use Traefik for proxy. Use env file for setting options.
 - Utilize bulk get methods for resources widely across the application, including checking permissions for many resources
   at once. Several instances where checks for resource existence were being done multiple times (e.g. in a method and then
   in another method the first one calls) to reduce MongoDB query load. These bulk requests will also report any missing
   IDs in the requested list so developers can handle those appropriately if needed.
-- Clowder is now capable of using MongoDB 3.6 and below. This required the removal of aggregators which can result in
-  operations taking a little longer. This is needed to support Clowder as a Kubernetes Helm chart.
-  [CATS-806](https://opensource.ncsa.illinois.edu/jira/browse/CATS-806)
 - Removed mini icons for resource types on tiles.
   [CATS-1031](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1031)
+- Cleaned up pages to list and enable extractors. Added description of what the page does. Added links to extraction info 
+  pages. Removed authors from table. 
 
 ### Added
 - Ability to pass runtime parameters to an extractor, with a UI form dynamically generated UI from extractor_info.json.
@@ -34,24 +35,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Queuing system that allows services such as Elasticsearch and RabbitMQ to store requested actions in MongoDB
   for handling asynchronously, allowing API calls to return as soon as the action is queued rather than waiting for
   the action to complete.
-- Monitor docker container now has a UI that shows selected information about the extractors
+- New extractors monitor docker image to monitor extraction queues. Monitor app includes UI that shows selected 
+  information about the extractors
 - New `/api/thumbnails/:id` endpoint to download a thumbnail image from ID found in search results.
 - New utility methods in services to retrieve multiple MongoDB resources in one query instead of iterating over a list.
+- Support for MongoDB 3.6 and below. This required the removal of aggregators which can result in
+  operations taking a little longer. This is needed to support Clowder as a Kubernetes Helm chart.
+  [CATS-806](https://opensource.ncsa.illinois.edu/jira/browse/CATS-806)
 
 ### Fixed
 - Downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed
   to the client as they are generated instead of being generated on the server and sent at the end.
 - Social accounts would not properly be added to a space after accepting an email invite to join it.
-- docker-compose uses new extractors monitor image from scripts folder to monitor queues.
 - Fixed bug where extractors monitor will not print error, but just return 0 if queue is not found.
-- Pagination controls are now vertically aligned.
-- Pagination next and previous links now use unescaped ampersands.
+- Pagination controls are now vertically aligned and use unescaped ampersands.
 - Changing the page size on dataset, collection, space listings would not properly update elements visible on the page.
   [CATS-1030](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1030)
-- Added a max of 100 status messages on the  page listing all extractions. Before trying to list all extractions in the 
-  system was causing the JVM to run out of memory. The link to the page in the admin menu was remove, but the page is 
-  still there for future improvements.
+- Added a max of 100 status messages on the  page listing all extractions. Before this trying to list all extractions in 
+  the system was causing the JVM to run out of memory.
   [CATS-1032](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1032)
+- Added padding to the top of the footer so that the superadmin notification does not cover buttons and the buttons
+  at the end of forms are not too close to the footer and difficult to see.
   
 ## 1.7.4 - 2019-10-21
 
