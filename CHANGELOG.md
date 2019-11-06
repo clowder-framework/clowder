@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Pagination next and previous links now use unescaped ampersands.
 - Changing the page size on dataset, collection, space listings would not properly update elements visible on the page.
   [CATS-1030](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1030)
+- Added a max of 100 status messages on the  page listing all extractions. Before trying to list all extractions in the 
+  system was causing the JVM to run out of memory. The link to the page in the admin menu was remove, but the page is 
+  still there for future improvements.
+  [CATS-1032](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1032)
   
 ## 1.7.4 - 2019-10-21
 
