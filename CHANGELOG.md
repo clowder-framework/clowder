@@ -42,6 +42,8 @@ to run Clowder with the `MONGOUPDATE` flag set to update the database.**
 - Support for MongoDB 3.6 and below. This required the removal of aggregators which can result in
   operations taking a little longer. This is needed to support Clowder as a Kubernetes Helm chart.
   [CATS-806](https://opensource.ncsa.illinois.edu/jira/browse/CATS-806)
+- New Tree view as a tab in home page to navigate resources as a hiearchical tree (spaces, collections, datasets, 
+  folders and files). The tree is lazily loaded using a new endpoint `api/tree/getChildrenOfNode`.
 
 ### Fixed
 - Downloading metrics reports would fail due to timeout on large databases. Report CSVs are now streamed

@@ -877,5 +877,8 @@ GET         /extractors                                                         
 POST        /extractors                                                                     @controllers.Extractors.updateExtractors()
 
 
+# ----------------------------------------------------------------------
+# TREE API
+# ----------------------------------------------------------------------
 
-
+GET         /api/tree/getChildrenOfNode                                                     @api.Tree.getChildrenOfNode(nodeType : String ?= "root", nodeId : Option[String] ?= None, mine : Boolean ?= false)
