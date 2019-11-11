@@ -27,8 +27,8 @@ class MongoDBExtractionService extends ExtractionService {
     return extractorsArray.values.exists(statusString => !(statusString == "DONE" || statusString.contains("StatusMessage.error")))
   }
 
-  def findAll(): List[Extraction] = {
-    Extraction.findAll().toList
+  def findAll(max: Int): List[Extraction] = {
+    Extraction.findAll().limit(max).toList
   }
 
   def findById(resource: ResourceRef): List[Extraction] = {

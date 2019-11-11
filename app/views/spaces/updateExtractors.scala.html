@@ -14,27 +14,31 @@
 	<div class="page-header">
         <h1> No extractors running</h1>
   </div>
- } else {     
+ } else {
      <div class="page-header">
-        <h1> Update Extractors </h1>
-    </div>
-
+		 <h1>Extractors</h1>
+     </div>
+	 <div class="row top-padding">
+		 <div class="col-xs-12">
+			 <p>List of all extractors currently registered with the system and available to this space. By enabling/disabling them the extractor will automatically
+				execute on a resource within this space when the process trigger is matched.</p>
+	 	</div>
+	 </div>
+	 <div class="row top-padding">
+		 <div class="col-xs-12">
 	@form(action = routes.Spaces.updateExtractors(space), 'id->"formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal"  ){
 	   	<!--  Pass the space id to the controller -->                        
   		<input type="hidden" name="space_id" value="@space">
-
 		<table class="table">
 			<thead>
 				<tr>
 					<th>Enabled</th>
 					<th>Name</th>
 					<th>Description</th>
-					<th>Author</th>
 					<th>Process Triggers</th>
 				</tr>
 			</thead>
 			<tbody>
-
 			<!-- Display all running extractors. If extractor already in this space, check the box. -->
 			@runningExtractors.map { extractor =>
 				<tr>
@@ -42,9 +46,8 @@
 						@if(globalSelections.contains(extractor.name)) {disabled="disabled"}
 						@if(globalSelections.contains(extractor.name) ||
 								selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
-					<td>@extractor.name</td>
+					<td><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
 					<td>@extractor.description</td>
-					<td>@extractor.author</td>
 					<td>
 						<!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
 						<p @if(extractor.process.dataset.isEmpty) {hidden}>
@@ -87,5 +90,7 @@
 	 	<p>
 	 	@updateButton()
 	}<!-- end of form -->
+		 </div>
+	 </div>
  }  
 }    

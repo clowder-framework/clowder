@@ -7,11 +7,16 @@
 @import _root_.util.Formatters
 
 @main(displayedName) {
+    <head>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("javascripts/jstree/themes/default/style.min.css")">
+    </head>
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/stickytabs/jquery.stickytabs.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jstree/jstree.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jstree/jstree.min.js")" type="text/javascript"></script>
 
     <div class="row">
         <h2>@profile.fullName</h2>
@@ -33,6 +38,7 @@
             <li role="presentation"><a href="#datasets" aria-controls="datasets" role="tab" data-toggle="tab"><b>@play.api.i18n.Messages("home.title", play.api.i18n.Messages("datasets.title"))</b></a></li>
             <li role="presentation"><a href="#collections" aria-controls="collections" role="tab" data-toggle="tab"><b>@play.api.i18n.Messages("home.title", play.api.i18n.Messages("collections.title"))</b></a></li>
             <li role="presentation"><a href="#followers" aria-controls="followers" role="tab" data-toggle="tab"><b>Followers</b></a></li>
+            <li role="presentation"><a href="#treeview" aria-controls="treeview" role="tab" data-toggle="tab"><b>Tree View</b></a></li>
         </ul>
         <!-- Tab panes -->
         <div class="tab-content">
@@ -484,6 +490,50 @@
                 </div>
 
             </div>
+            <div role="tabpanel" class="tab-pane" id="treeview">
+                <div class="row top-padding">
+                    <div class="col-xs-12">
+                        <p>Space, Collections, Datasets, Folders, and Files, in hierarchical tree</p>
+                    </div>
+                </div>
+                <script>
+                        $(function() {
+                            $('#treeview_div').jstree();
+                        });
+                </script>
+                <div class="well" id="tree_view_div"></div>
+                <script>
+                    $(function() {
+                        $('#tree_view_div').jstree({
+                           core: {
+                               data: {
+                                   url: function(node) {
+                                       console.log(node);
+                                       return node.id === "#" ?
+                                       "api/tree/getChildrenOfNode?nodeType=root" :
+                                       "api/tree/getChildrenOfNode?nodeId="+node.id+"&nodeType="+node.data.type+"&role="+node.role+"";
+                                   },
+                                   type: 'GET'
+                               }
+                           }
+                        });
+                        $("#tree_view_div").on("select_node.jstree", function (e, data) {
+                            if (data.node.data.type == "space"){
+                                window.location.href="spaces/"+data.node.id;
+                            } else if (data.node.data.type == "collection") {
+                                window.location.href="collection/"+data.node.id;
+                            } else if (data.node.data.type == "dataset") {
+                                window.location.href="datasets/"+data.node.id;
+                            } else if (data.node.data.type == "folder") {
+                                window.location.href="datasets/"+data.node.data.parentDataset+'#folderId='+data.node.id;
+                            } else if (data.node.data.type == "file") {
+                                console.log("a file");
+                                window.location.href="files/"+data.node.id;
+                            }
+                        });
+
+                    })
+                </script>
         </div>
     </div>
 
@@ -540,6 +590,7 @@
     </script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
+
     @*******
     *if(user.isDefined) {
     *    @carousel(files)

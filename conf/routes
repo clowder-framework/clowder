@@ -113,7 +113,7 @@ POST           /files/:fileId/links                                             
 # DATASETS
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, status: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true, showOnlyShared : Boolean ?= false, showTrash : Boolean ?= false)
-GET            /datasets/sorted                                                         @controllers.Datasets.sortedListInSpace(space: String,offset: Integer, limit:Integer, showPublic: Boolean ?= true)
+GET            /datasets/sorted                                                         @controllers.Datasets.sortedListInSpace(space: String, offset: Int ?= 0, size: Int ?= 12, showPublic: Boolean ?= true)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -229,6 +229,7 @@ GET            /signup                                                          
 POST           /signup                                                                  securesocial.controllers.Registration.handleStartSignUp
 GET            /signup/:token                                                           securesocial.controllers.Registration.signUp(token)
 POST           /signup/:token                                                           @controllers.Registration.handleSignUp(token)
+GET            /signupInvite/:token                                                     @controllers.Registration.signUp(token)
 GET            /reset                                                                   securesocial.controllers.Registration.startResetPassword
 POST           /reset                                                                   securesocial.controllers.Registration.handleStartResetPassword
 GET            /reset/:token                                                            securesocial.controllers.Registration.resetPassword(token)
@@ -876,5 +877,8 @@ GET         /extractors                                                         
 POST        /extractors                                                                     @controllers.Extractors.updateExtractors()
 
 
+# ----------------------------------------------------------------------
+# TREE API
+# ----------------------------------------------------------------------
 
-
+GET         /api/tree/getChildrenOfNode                                                     @api.Tree.getChildrenOfNode(nodeType : String ?= "root", nodeId : Option[String] ?= None, mine : Boolean ?= false)

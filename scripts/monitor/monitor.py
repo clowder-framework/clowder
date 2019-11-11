@@ -12,35 +12,50 @@ import urllib.parse
 import pika
 import requests
 
+# parameters to connect to RabbitMQ
 rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost/%2F')
 rabbitmq_mgmt_port = os.getenv('RABBITMQ_MGMT_PORT', '15672')
-rabbitmq_mgmt_path = os.getenv('RABBITMQ_MGMT_PATH', '')
+rabbitmq_mgmt_path = os.getenv('RABBITMQ_MGMT_PATH', '/')
 rabbitmq_mgmt_url = os.getenv('RABBITMQ_MGMT_URL', '')
 rabbitmq_username = None
 rabbitmq_password = None
 
+# list of all extractors.
 extractors = {}
 
+# frequency with which the counts of the queue is updated in seconds
 update_frequency = 10
+
+# number of seconds before a consumer is removed
 extractor_remove = 10 * 60 # needs to be twice or more than heartbeat
-
-hostName = ""
-hostPort = 9999
-
 
 # ----------------------------------------------------------------------
 # WEB SERVER
 # ----------------------------------------------------------------------
-class MyServer(http.server.BaseHTTPRequestHandler):
+class MyServer(http.server.SimpleHTTPRequestHandler):
+    """
+    Handles the responses from the web server. Only response that is
+    handled is a GET that will return all known extractors.
+    """
     def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(extractors).encode())
+        self.path = os.path.basename(self.path)
+        if self.path == '':
+            self.path = '/'
 
+        if self.path.startswith('extractors.json'):
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(bytes(json.dumps(extractors), 'utf-8'))
+        else:
+            super().do_GET()
 
-def http_server():
-    server = http.server.HTTPServer((hostName, hostPort), MyServer)
+def http_server(host_port=9999):
+    """
+    Start a webserver to return all extractors that registered since this
+    application started.
+    """
+    server = http.server.HTTPServer(("", host_port), MyServer)
     try:
         server.serve_forever()
     finally:
@@ -51,7 +66,7 @@ def http_server():
 # MESSAGES IN QUEUES
 # ----------------------------------------------------------------------
 def get_mgmt_queue_messages(queue):
-    global rabbitmq_username, rabbitmq_password
+    global rabbitmq_username, rabbitmq_password, rabbitmq_mgmt_url
     try:
         response = requests.get(rabbitmq_mgmt_url + queue, auth=(rabbitmq_username, rabbitmq_password), timeout=5)
         if response.status_code == 404:
@@ -103,6 +118,9 @@ def update_counts():
 # EXTRACTOR HEARTBEATS
 # ----------------------------------------------------------------------
 def callback(ch, method, properties, body):
+    """
+    A heartbeat of an extractor is received.
+    """
     global extractors
 
     data = json.loads(body.decode('utf-8'))
@@ -136,7 +154,12 @@ def callback(ch, method, properties, body):
         extractor['queue'] = data['queue']
 
 
-def extractors_monitor():
+def rabbitmq_monitor():
+    """
+    Create a connection with RabbitMQ and wait for heartbeats. This
+    will run continuously. This will run as the main thread. If this
+    is stopped the appliation will stop.
+    """
     global rabbitmq_mgmt_url, rabbitmq_mgmt_port, rabbitmq_mgmt_path, rabbitmq_username, rabbitmq_password
 
     params = pika.URLParameters(rabbitmq_uri)
@@ -145,11 +168,12 @@ def extractors_monitor():
     # create management url
     if not rabbitmq_mgmt_url:
         if params.ssl_options:
-            protocol = 'https://'
+            rabbitmq_mgmt_protocol = 'https://'
         else:
-            protocol = 'http://'
-        rabbitmq_mgmt_url = "%s%s:%s%s/api/queues/%s/" % (protocol, params.host, rabbitmq_mgmt_port, rabbitmq_mgmt_path,
-                                                          urllib.parse.quote_plus(params.virtual_host))
+            rabbitmq_mgmt_protocol = 'http://'
+        rabbitmq_mgmt_url = "%s%s:%s%sapi/queues/%s/" % (rabbitmq_mgmt_protocol, params.host, rabbitmq_mgmt_port,
+                                                         rabbitmq_mgmt_path,
+                                                         urllib.parse.quote_plus(params.virtual_host))
         rabbitmq_username = params.credentials.username
         rabbitmq_password = params.credentials.password
 
@@ -160,11 +184,11 @@ def extractors_monitor():
     channel.exchange_declare(exchange='extractors', exchange_type='fanout', durable=True)
 
     # create anonymous queue
-    result = channel.queue_declare(exclusive=True)
+    result = channel.queue_declare('', exclusive=True)
     channel.queue_bind(exchange='extractors', queue=result.method.queue)
 
     # listen for messages
-    channel.basic_consume(callback, queue=result.method.queue, no_ack=True)
+    channel.basic_consume(on_message_callback=callback, queue=result.method.queue, auto_ack=True)
 
     channel.start_consuming()
 
@@ -186,4 +210,4 @@ if __name__ == "__main__":
     thread.setDaemon(True)
     thread.start()
 
-    extractors_monitor()
+    rabbitmq_monitor()

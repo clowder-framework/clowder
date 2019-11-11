@@ -17,7 +17,7 @@ window.onload = function(){
 function getValue(){
   var pageItems = $("#numPageItems").val();
   var url = window.location.href;
-  window.location.href = updateQueryStringParameter(url, "size",pageItems);
+  window.location.href = updateQueryStringParameter(url, "size", pageItems);
 };
 
 function updateQueryStringParameter(uri, key, value) {

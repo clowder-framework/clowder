@@ -9,7 +9,7 @@ body {
 
 /* Wrapper for page content to push down footer */
 #wrap {
-	min-height: calc(100% - 30px);
+	min-height: calc(100% - 80px);
 }
 
 .break-word {
@@ -45,7 +45,12 @@ body {
 		margin-right: -20px;
 		padding-left: 20px;
 		padding-right: 20px;
+		padding-top: 20px;
 	}
+}
+
+#footer {
+	padding-top: 50px;
 }
 
 #superadmin {
@@ -640,11 +645,15 @@ table#sensorsListTable>thead>tr>th.headerSortDown {
 	height: 25px;
 }
 
-#number-displayed-dropdown{
+.pagination-toolbar {
+	display: flex;
+	align-items: center;
+    padding-bottom: 3px;
+}
+
+#number-displayed-dropdown {
 	display:inline;
 	float:left;
-	margin-top:3px;
-	margin-right:5px;
 }
 
 .bottom-padding {

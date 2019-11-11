@@ -12,8 +12,12 @@ import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models._
 import org.bson.types.ObjectId
 import play.api.Logger
+import play.api.i18n.Messages
 import play.{Logger => log}
 import play.api.Play._
+import securesocial.controllers.Registration
+import securesocial.controllers.Registration._
+import securesocial.core.providers.utils.RoutesHelper
 import services._
 import MongoContext.context
 import models.Collection
@@ -637,6 +641,23 @@ class MongoDBSpaceService @Inject() (
 
   def getInvitationByEmail(email: String): List[SpaceInvite] = {
     SpaceInviteDAO.find(MongoDBObject("email" -> email)).toList
+  }
+
+  def processInvitation(email: String) = {
+    getInvitationByEmail(email).map { invite =>
+      users.findByEmail(invite.email) match {
+        case Some(user) => {
+          users.findRole(invite.role) match {
+            case Some(role) => {
+              addUser(user.id, role, invite.space)
+              removeInvitationFromSpace(UUID(invite.invite_id), invite.space)
+            }
+            case None => Logger.error(email+" could not be added to space (missing role "+invite.role+")")
+          }
+        }
+        case None => Logger.error("No user found with email "+email)
+      }
+    }
   }
 
   /**

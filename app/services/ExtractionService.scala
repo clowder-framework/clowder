@@ -14,7 +14,7 @@ trait ExtractionService {
 
   def findIfBeingProcessed(fileId: UUID): Boolean
 
-  def findAll(): List[Extraction]
+  def findAll(max: Int = 100): List[Extraction]
 
   def findById(resource: ResourceRef): List[Extraction]
 
