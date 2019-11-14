@@ -38,10 +38,6 @@ POST           /ldap/authenticate                                               
 # ----------------------------------------------------------------------
 # PROFILE
 # ----------------------------------------------------------------------
-# deprecated use profile/:uuid
-GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
-# deprecated use profile/:uuid
-GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 POST           /profile/submitChanges                                                   @controllers.Profile.submitChanges
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
@@ -97,8 +93,6 @@ POST           /uploadSelectQuery                                               
 POST           /uploaddnd/:id                                                           @controllers.Files.uploaddnd(id: UUID)
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
-# deprecrated use thumbnails
-GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
 
@@ -198,7 +192,6 @@ GET            /tags/list/weighted                                              
 # ----------------------------------------------------------------------
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
 GET            /multimediasearch                                                        @controllers.Search.multimediasearch
-#GET           /multimediaserach1                                                       @controllers.Search.multimediasearch1(f, id: UUID)
 GET            /advanced                                                                @controllers.Search.advanced
 GET            /SearchByText                                                            @controllers.Search.SearchByText(query: String ?= "")
 POST           /uploadquery                                                             @controllers.Search.uploadquery
@@ -372,9 +365,6 @@ POST           /api/files/sendJob/:fileId/:fileType                             
 GET            /api/files/getRDFURLsForFile/:id                                         @api.Files.getRDFURLsForFile(id: UUID)
 GET            /api/files/rdfUserMetadata/:id                                           @api.Files.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
 GET            /api/files/:id/blob                                                      @api.Files.download(id: UUID, tracking: Boolean ?= true)
-
-# deprecrated use DELETE
-POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
@@ -391,8 +381,6 @@ POST           /api/files/:id/comment                                           
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/tags                                                      @api.Files.getTags(id: UUID)
 POST           /api/files/:id/tags                                                      @api.Files.addTags(id: UUID)
-# deprecrated use DELETE
-POST           /api/files/:id/tags/remove                                               @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/tags/remove_all                                           @api.Files.removeAllTags(id: UUID)
 DELETE         /api/files/:id/tags                                                      @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
@@ -631,8 +619,6 @@ POST           /api/sections/:id/description                                    
 POST           /api/sections/:id/thumbnails/:thumbnail_id                               @api.Sections.attachThumbnail(id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
-# Deprecated for delete
-POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
