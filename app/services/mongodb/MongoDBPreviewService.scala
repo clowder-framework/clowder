@@ -108,52 +108,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     }
   }
 
-  /**
-   * Add annotation to 3D model preview.
-   */
-  def annotation(id: UUID, annotation: ThreeDAnnotation) {
-    PreviewDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
-  }
-
-  def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
-      case Some(preview) => {
-        for (annotation <- preview.annotations) {
-          if (annotation.x_coord.equals(x_coord) && annotation.y_coord.equals(y_coord) && annotation.z_coord.equals(z_coord))
-            return Option(annotation)
-        }
-        return None
-      }
-      case None => return None
-    }
-  }
-
-  def updateAnnotation(preview_id: UUID, annotation_id: UUID, description: String) {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
-      case Some(preview) => {
-        //var newAnnotations = List.empty[ThreeDAnnotation]
-        for (annotation <- preview.annotations) {
-          if (annotation.id.toString.equals(annotation_id.toString)) {
-            PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id.stringify), "annotations._id" -> new ObjectId(annotation.id.stringify)), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
-            return
-          }
-        }
-        return
-      }
-      case None => return
-    }
-  }
-
-
-  def listAnnotations(preview_id: UUID): List[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
-      case Some(preview) => {
-        return preview.annotations
-      }
-      case None => return List.empty
-    }
-  }
-
   def remove(id: UUID): Unit = {
     get(id).foreach{ x=>
       ByteStorageService.delete(x.loader, x.loader_id, PreviewDAO.COLLECTION)

@@ -42,7 +42,6 @@ class Files @Inject() (
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   previews: PreviewService,
-  threeD: ThreeDService,
   sparql: RdfSPARQLService,
   users: UserService,
   events: EventService,

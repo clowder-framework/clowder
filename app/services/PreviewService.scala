@@ -45,18 +45,6 @@ trait PreviewService {
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
 
-  /**
-   * Add annotation to 3D model preview.
-   */
-  def annotation(id: UUID, annotation: ThreeDAnnotation)
-
-  def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation]
-
-  def updateAnnotation(preview_id: UUID, annotation_id: UUID, description: String)
-
-
-  def listAnnotations(preview_id: UUID): List[ThreeDAnnotation]
-
   def removePreview(p: Preview)
 
   def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue)

@@ -1659,16 +1659,8 @@ class  Datasets @Inject()(
   }
 
   def jsonPreview(pvId: String, pId: String, pPath: String, pMain: String, pvRoute: String, pvContentType: String, pvLength: Long): JsValue = {
-    if (pId.equals("X3d"))
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId,
-        "p_path" -> controllers.routes.Assets.at(pPath).toString,
-        "p_main" -> pMain, "pv_route" -> pvRoute,
-        "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
-        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(UUID(pvId)).toString,
-        "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(UUID(pvId)).toString,
-        "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(UUID(pvId)).toString))
-    else
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
+    toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+      "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
 
   def getPreviews(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>

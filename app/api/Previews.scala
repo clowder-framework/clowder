@@ -260,60 +260,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     }
 
   /**
-   * Add annotation to 3D model preview.
-   */
-  def attachAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
-        val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
-        val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
-        val z_coord = (request.body \ "z_coord").asOpt[String].getOrElse("0.0")
-        val description = (request.body \ "description").asOpt[String].getOrElse("")
-
-        previews.get(preview_id) match {
-          case Some(preview) => {
-            val annotation = ThreeDAnnotation(x_coord, y_coord, z_coord, description)
-            previews.annotation(preview_id, annotation)
-            Ok(toJson(Map("status" -> "success")))
-          }
-          case None => BadRequest(toJson("Preview not found " + preview_id))
-        }
-    }
-
-  def editAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
-        Logger.debug("thereq: " + request.body.toString)
-        val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
-        val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
-        val z_coord = (request.body \ "z_coord").asOpt[String].getOrElse("0.0")
-        val description = (request.body \ "description").asOpt[String].getOrElse("")
-
-        previews.get(preview_id) match {
-          case Some(preview) => {
-            previews.findAnnotation(preview_id, x_coord, y_coord, z_coord) match {
-              case Some(annotation) => {
-                previews.updateAnnotation(preview_id, annotation.id, description)
-                Ok(toJson(Map("status" -> "success")))
-              }
-              case None => Ok(toJson(Map("status" -> "success"))) //What the user sees locally must not change if an annotation is deleted after the user loads the dataset
-              //but before attempting to modify the selected annotation's description.
-              //BadRequest(toJson("Annotation for preview " + preview_id + " not found: " + x_coord + "," + y_coord + "," + z_coord))
-            }
-          }
-          case None => BadRequest(toJson("Preview not found " + preview_id))
-        }
-    }
-
-  def listAnnotations(preview_id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, preview_id))) { implicit request =>
-        previews.get(preview_id) match {
-          case Some(preview) => {
-            val annotationsOfPreview = previews.listAnnotations(preview_id)
-            val list = for (annotation <- annotationsOfPreview) yield jsonAnnotation(annotation)
-            Logger.debug("thelist: " + toJson(list))
-            Ok(toJson(list))
-          }
-          case None => BadRequest(toJson("Preview not found " + preview_id))
-        }
-    }
-
-  /**
     * Update the title field of a preview to change what is displayed on preview tab
     * @param preview_id UUID of preview to change
     */

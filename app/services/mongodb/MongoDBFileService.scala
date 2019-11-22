@@ -54,7 +54,6 @@ class MongoDBFileService @Inject() (
   comments: CommentService,
   previews: PreviewService,
   thumbnails: ThumbnailService,
-  threeD: ThreeDService,
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
   userService: UserService,
@@ -841,9 +840,6 @@ class MongoDBFileService @Inject() (
           }
           for(comment <- comments.findCommentsByFileId(id)){
             comments.removeComment(comment)
-          }
-          for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
           for (follower <- file.followers) {
             userService.unfollowFile(follower, id)

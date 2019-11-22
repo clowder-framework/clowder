@@ -337,8 +337,6 @@ DELETE         /api/logos/:path/:name                                           
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
 # ----------------------------------------------------------------------
-POST           /api/files/:three_d_file_id/geometries/:geometry_id                      @api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)
-POST           /api/files/:three_d_file_id/3dTextures/:texture_id                       @api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)
 POST           /api/files/:file_id/thumbnails/:thumbnail_id                             @api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
 POST           /api/queries/:file_id/thumbnails/:thumbnail_id                           @api.Files.attachQueryThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET            /api/files                                                               @api.Files.list
@@ -417,7 +415,6 @@ POST           /api/files/:id/previews/:p_id                                    
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
 GET            /api/files/:id/isBeingProcessed                                          @api.Files.isBeingProcessed(id: UUID)
-GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
 GET            /api/queries/:id                                                         @api.Files.downloadquery(id: UUID)
 # TODO please use /api/files/:id/blob to get the actual data see MMDB-1685
 GET            /api/files/:id                                                           @api.Files.download(id: UUID, tracking: Boolean ?= true)
@@ -429,12 +426,6 @@ GET            /api/files/:id                                                   
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
 POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
 POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
-
-#----------------------------------------------------------------------
-# 3D FILES
-#----------------------------------------------------------------------
-
-GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
 
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
@@ -574,9 +565,6 @@ GET            /api/previews/:dzi_id_dir/:level/:filename                       
 POST           /api/previews/:dzi_id/tiles/:tile_id/:level                              @api.Previews.attachTile(dzi_id: UUID, tile_id: UUID, level)
 POST           /api/previews/:id/metadata                                               @api.Previews.uploadMetadata(id: UUID)
 GET            /api/previews/:id/metadata                                               @api.Previews.getMetadata(id: UUID)
-POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
-POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
-GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
 POST           /api/previews/:id/title                                                  @api.Previews.setTitle(id: UUID)
 GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
@@ -700,8 +688,6 @@ GET            /api/reports/metrics/users                                       
 # MISC./OTHER ENDPOINTS
 # ----------------------------------------------------------------------
 POST           /api/tiles                                                               @api.ZoomIt.uploadTile
-POST           /api/geometries                                                          @api.Geometry.uploadGeometry
-POST           /api/3dTextures                                                          @api.ThreeDTexture.uploadTexture
 POST           /api/sparqlquery                                                         @api.Search.querySPARQL
 POST           /api/projects/addproject                                                 @api.Projects.addproject(project: String)
 POST           /api/institutions/addinstitution                                         @api.Institutions.addinstitution(institution: String)
