@@ -272,7 +272,7 @@ class Extractions @Inject()(
         }
       }
       case None => {
-        case None => Future(BadRequest(toJson(Map("request" -> "Not authorized."))))
+         Future(BadRequest(toJson(Map("request" -> "Not authorized."))))
       }
     }
   }
