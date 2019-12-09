@@ -13,13 +13,14 @@ import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.AMQP.Queue
 import com.rabbitmq.client._
+import javax.inject.Inject
 import models._
 import org.bson.types.ObjectId
 import play.api.http.MimeTypes
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
-import play.api.{Application, Logger, Plugin}
+import play.api.{Application, Configuration, Logger, Plugin}
 import play.libs.Akka
 import securesocial.core.IdentityId
 
@@ -75,17 +76,101 @@ object Entity {
   implicit val implicitEntityWrites = Json.format[Entity]
 }
 
+trait RabbitmqService {
+
+  var rabbitmquri: String = ""
+  var exchange: String = ""
+
+  def onStart()
+
+  def onStop()
+
+  def close()
+
+  def connect(): Boolean
+
+  def extractWorkQueue(message: ExtractorMessage)
+
+  def contentTypeToRoutingKey(contentType: String)
+
+  def getRegisteredExtractors(dataset: Dataset): List[String]
+
+  def containsOperation(operations: List[String], operation: String): Boolean
+
+  def getGlobalExtractorsByOperation(operation: String): List[String]
+
+  def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String]
+
+  def getQueuesFromBindings(routingKey: String): List[String]
+
+  def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String]
+
+  def postSubmissionEven(file_id: UUID, extractor_id: String): UUID
+
+  def getApiKey(requestAPIKey: Option[String], user: Option[User]): String
+
+  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String])
+
+  def fileCreated(file: TempFile, host: String, requestAPIKey: Option[String])
+
+  def fileAddedToDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String])
+
+  def fileSetAddedToDataset(dataset: Dataset, filelist: List[File], host: String, requestAPIKey: Option[String])
+
+  def fileRemovedFromDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String])
+
+  def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
+                         datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User])
+
+  def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String,
+                            requestAPIKey: Option[String], user: Option[User])
+
+  def metadataAddedToResource(metadataId: UUID, resourceRef: ResourceRef, extraInfo: Map[String, Any], host: String,
+                              requestAPIKey: Option[String], user: Option[User])
+
+  def metadataRemovedFromResource(metadataId: UUID, resourceRef: ResourceRef, host: String, requestAPIKey: Option[String], user: Option[User])
+
+  def multimediaQuery(tempFileId: UUID, contentType: String, length: String, host: String, requestAPIKey: Option[String])
+
+  def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String, requestAPIKey: Option[String])
+
+  def getRestEndPoint(path: String): Future[Response]
+
+  def getExchanges : Future[Response]
+
+  def getQueuesNamesForAnExchange(exchange: String): Future[Response]
+
+  def getBindings: Future[Response]
+
+  def getChannelsList: Future[Response]
+
+  def getQueueDetails(qname: String): Future[Response]
+
+  def getQueueBindings(qname: String): Future[Response]
+
+  def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID)
+
+  def getEmailNotificationEmailList(requestAPIKey: Option[String]): List[String]
+
+  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long)
+
+
+
+
+
+}
 
 
 /**
   * Rabbitmq service.
   */
-class RabbitmqPlugin(application: Application) extends Plugin {
-  val files: FileService = DI.injector.getInstance(classOf[FileService])
-  val spacesService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
-  val extractorsService: ExtractorService = DI.injector.getInstance(classOf[ExtractorService])
-  val datasetService: DatasetService = DI.injector.getInstance(classOf[DatasetService])
-  val userService: UserService = DI.injector.getInstance(classOf[UserService])
+class RabbitmqService @Inject() (application: Application,
+                                 files: FileService,
+                                 spacesService: SpaceService,
+                                 extractorsService: ExtractorService,
+                                 datasetService: DatasetService,
+                                 userService: UserService,
+                                 configuration: Configuration) extends RabbitmqService {
 
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
@@ -105,8 +190,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-  var rabbitmquri: String = ""
-  var exchange: String = ""
+  override var rabbitmquri: String = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+  override var exchange: String = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
   var mgmtPort: String = ""
 
   var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
@@ -140,7 +225,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /** Check if play plugin is enabled **/
-  override lazy val enabled = {
+  lazy val enabled = {
     !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
   }
 
@@ -296,7 +381,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * class.
     * @param message a model representing the JSON message to send to the queue
     */
-  private def extractWorkQueue(message: ExtractorMessage) = {
+  def extractWorkQueue(message: ExtractorMessage) = {
     Logger.debug(s"Publishing $message directly to queue ${message.queue}")
     connect
     extractQueue match {
@@ -310,7 +395,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param contentType original content type in standar form, for example text/csv
     * @return escaped routing key
     */
-  private def contentTypeToRoutingKey(contentType: String) =
+  def contentTypeToRoutingKey(contentType: String) =
     contentType.replace(".", "_").replace("/", ".")
 
   /**
@@ -318,7 +403,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param dataset
     * @return list of active extractors
     */
-  private def getRegisteredExtractors(dataset: Dataset): List[String] = {
+  def getRegisteredExtractors(dataset: Dataset): List[String] = {
     dataset.spaces.flatMap(s => spacesService.getAllExtractors(s))
   }
 
@@ -332,7 +417,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param operation dataset operation like "file.added" or mimetype of files, like "image/bmp"
     * @return true if matches any existing recorder. otherwise, false.
     */
-  private def containsOperation(operations: List[String], operation: String): Boolean = {
+  def containsOperation(operations: List[String], operation: String): Boolean = {
     val optypes: Array[String] = operation.split("[/.]")
     (optypes.length == 2) && {
       val opmaintype: String = optypes(0)
@@ -349,7 +434,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   /**
     * Query list of global extractors for those enabled and filter by operation.
     */
-  private def getGlobalExtractorsByOperation(operation: String): List[String] = {
+  def getGlobalExtractorsByOperation(operation: String): List[String] = {
     extractorsService.getEnabledExtractors().flatMap(exId =>
       extractorsService.getExtractorInfo(exId)).filter(exInfo =>
       containsOperation(exInfo.process.dataset, operation) ||
@@ -364,7 +449,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param operation The dataset operation requested.
     * @return A list of extractors IDs.
     */
-  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
+  def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
     dataset.spaces.flatMap(s =>
       spacesService.getAllExtractors(s).flatMap(exId =>
         extractorsService.getExtractorInfo(exId)).filter(exInfo =>
@@ -384,7 +469,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param routingKey The binding routing key.
     * @return The list of queue matching the routing key.
     */
-  private def getQueuesFromBindings(routingKey: String): List[String] = {
+  def getQueuesFromBindings(routingKey: String): List[String] = {
     // While the routing key includes the instance name the rabbitmq bindings has a *.
     // TODO this code could be improved by having less options in how routes and keys are represented
     val fragments = routingKey.split('.')
@@ -404,7 +489,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param contentType the content type of the file in the case of a file
     * @return a set of unique rabbitmq queues
     */
-  private def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
+  def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
     // drop the first fragment from the routing key and replace characters to create operation id
     val fragments = routingKey.split('.')
     val operation =
@@ -946,12 +1031,14 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   * @param connection                     the connection to the rabbitmq
   * @param cancellationDownloadQueueName  the queue name of the cancellation downloaded queue
   */
-class PendingRequestCancellationActor(exchange: String, connection: Option[Connection], cancellationDownloadQueueName: String, cancellationSearchTimeout: Long) extends Actor {
+class PendingRequestCancellationActor @Inject() (exchange: String, connection: Option[Connection], cancellationDownloadQueueName: String, cancellationSearchTimeout: Long) extends Actor {
   val configuration = play.api.Play.configuration
   val CancellationSearchNumLimits: Integer = configuration.getString("submission.cancellation.search.numlimits").getOrElse("100").toInt
   def receive = {
     case CancellationMessage(id, queueName, msg_id) => {
       val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+      val rabbitmqService: RabbitmqService = DI.injector.getInstance(classOf[RabbitmqService])
+
       val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
       var startDate = Some(new java.util.Date())
       extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Requested", startDate, None))
@@ -1039,10 +1126,7 @@ class PendingRequestCancellationActor(exchange: String, connection: Option[Conne
       //3. resubmit pending requests from cancellation download queue to the target queue.
       val cancellationQueueConsumer: QueueingConsumer = new QueueingConsumer(channel)
       val cancellationQueueConsumerTag: String = channel.basicConsume(cancellationDownloadQueueName, false, cancellationQueueConsumer)
-      current.plugin[RabbitmqPlugin] match {
-        case Some(p) => p.resubmitPendingRequests(cancellationQueueConsumer, channel, cancellationSearchTimeout)
-        case None => Logger.error(s"[CANCELLATION] RabbitmqPlugin not enabled")
-      }
+      rabbitmqService.resubmitPendingRequests(cancellationQueueConsumer, channel, cancellationSearchTimeout)
 
       try {
         channel.basicCancel(cancellationQueueConsumerTag)
@@ -1065,10 +1149,13 @@ class PendingRequestCancellationActor(exchange: String, connection: Option[Conne
   * Send message on specified channel directly to a queue and tells receiver to reply
   * on specified queue.
   */
-class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor {
+class PublishDirectActor @Inject() (channel: Channel, replyQueueName: String) extends Actor {
   val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
   val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
   val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
+
+  val rabbitmqService: RabbitmqService = DI.injector.getInstance(classOf[RabbitmqService])
+
 
   def receive = {
     case ExtractorMessage(msgid, fileid, notifies, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
@@ -1130,8 +1217,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
       } catch {
         case e: Exception => {
           Logger.error("Error connecting to rabbitmq broker", e)
-          current.plugin[RabbitmqPlugin].foreach {
-            _.close()
+          rabbitmqService.close()
           }
         }
       }
