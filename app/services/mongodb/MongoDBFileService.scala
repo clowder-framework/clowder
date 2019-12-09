@@ -62,6 +62,7 @@ class MongoDBFileService @Inject() (
   metadatas: MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
+  rabbitmqService: RabbitmqService,
   esqueue: ElasticsearchQueue) extends FileService {
 
   object MustBreak extends Exception {}
@@ -189,15 +190,10 @@ class MongoDBFileService @Inject() (
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    val plugins = current.plugin[RabbitmqPlugin]
-    plugins.foreach { p =>
-      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
-        datasetId, newFlags, apiKey, user)
-      Logger.info("Sent archive request for file " + id)
-    }
-    if (plugins.isEmpty) {
-      Logger.warn("RabbitMQ plugin not detected: archival may be disabled")
-    }
+
+    rabbitmqService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+      datasetId, newFlags, apiKey, user)
+    Logger.info("Sent archive request for file " + id)
   }
 
   /**

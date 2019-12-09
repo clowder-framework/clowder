@@ -51,6 +51,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  rabbitmqService: RabbitmqService,
   appConfig: AppConfigurationService) extends SecuredController {
 
   /**
@@ -434,10 +435,7 @@ class Files @Inject() (
                   }
                 }
                 // submit for extraction
-                current.plugin[RabbitmqPlugin].foreach {
-                  // FIXME dataset not available?
-                  _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
-                }
+                rabbitmqService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
 
                 /** *** Inserting DTS Requests   **/
                 val clientIP = request.remoteAddress
@@ -577,10 +575,7 @@ class Files @Inject() (
               val extra = Map("filename" -> f.filename)
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
               /****************************/
-	            current.plugin[RabbitmqPlugin].foreach{
-                // FIXME dataset not available?
-                _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
-              }
+              rabbitmqService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -957,9 +952,7 @@ class Files @Inject() (
               _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
             }
 
-            current.plugin[RabbitmqPlugin].foreach {
-              _.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
-            }
+            rabbitmqService.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1054,9 +1047,7 @@ class Files @Inject() (
             val id = f.id
             val extra = Map("filename" -> f.filename, "action" -> "upload")
 
-            current.plugin[RabbitmqPlugin].foreach {
-              _.fileCreated(f, host, request.apiKey)
-            }
+            rabbitmqService.fileCreated(f, host, request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1192,10 +1183,8 @@ class Files @Inject() (
                     }
 
                     // notify extractors that a file has been uploaded and added to a dataset
-                    current.plugin[RabbitmqPlugin].foreach { rabbitMQ =>
-                      rabbitMQ.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
-                      rabbitMQ.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
-                    }
+                    rabbitmqService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
+                    rabbitmqService.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
 
                     // add file to RDF triple store if triple store is used
                     if (fileType.equals("application/xml") || fileType.equals("text/xml")) {

@@ -78,8 +78,8 @@ object Entity {
 
 trait RabbitmqService {
 
-  var rabbitmquri: String = ""
-  var exchange: String = ""
+  var rabbitmquri: String
+  var exchange: String
 
   def onStart()
 
@@ -164,7 +164,7 @@ trait RabbitmqService {
 /**
   * Rabbitmq service.
   */
-class RabbitmqService @Inject() (application: Application,
+class RabbitmqServiceImpl @Inject() (application: Application,
                                  files: FileService,
                                  spacesService: SpaceService,
                                  extractorsService: ExtractorService,
@@ -190,8 +190,8 @@ class RabbitmqService @Inject() (application: Application,
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-  override var rabbitmquri: String = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-  override var exchange: String = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
+  var rabbitmquri: String = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+  var exchange: String = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
   var mgmtPort: String = ""
 
   var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
@@ -1218,7 +1218,6 @@ class PublishDirectActor @Inject() (channel: Channel, replyQueueName: String) ex
         case e: Exception => {
           Logger.error("Error connecting to rabbitmq broker", e)
           rabbitmqService.close()
-          }
         }
       }
     }

@@ -49,7 +49,8 @@ class  Datasets @Inject()(
   userService: UserService,
   thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  rabbitmqService: RabbitmqService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -600,9 +601,7 @@ class  Datasets @Inject()(
         val mdMap = metadata.getExtractionSummary
 
         //send RabbitMQ message
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-        }
+        rabbitmqService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -661,9 +660,7 @@ class  Datasets @Inject()(
                     val mdMap = metadata.getExtractionSummary
 
                     //send RabbitMQ message
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                    }
+                    rabbitmqService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
                     events.addObjectEvent(request.user, id, x.name,EventType.ADD_METADATA_DATASET.toString)
 
@@ -748,10 +745,8 @@ class  Datasets @Inject()(
         }
 
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          rabbitmqService.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
         }
 
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
