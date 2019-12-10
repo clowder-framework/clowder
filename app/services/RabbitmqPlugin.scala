@@ -164,7 +164,7 @@ trait RabbitmqService {
 /**
   * Rabbitmq service.
   */
-class RabbitmqService @Inject() (application: Application,
+class RabbitmqServiceImpl @Inject() (application: Application,
                                  files: FileService,
                                  spacesService: SpaceService,
                                  extractorsService: ExtractorService,
