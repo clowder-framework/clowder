@@ -24,7 +24,7 @@ class Folders @Inject() (
   datasets: DatasetService,
   files: FileService,
   events: EventService,
-  rabbitmqService: RabbitmqService) extends ApiController {
+  extractionBusService: ExtractionBusService) extends ApiController {
 
   def createFolder(parentDatasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
     Logger.debug("--- API Creating new folder ---- ")
@@ -160,7 +160,7 @@ class Folders @Inject() (
           // notify rabbitmq
           Logger.debug(s"[subfilesDeletionRabbitmqNotification] rabbitmq delete event of fileid ${file.id} under folderid $folderId")
           datasets.findByFileIdAllContain(file.id).foreach { ds =>
-            rabbitmqService.fileRemovedFromDataset(file, ds, host, requestAPIKey)
+            extractionBusService.fileRemovedFromDataset(file, ds, host, requestAPIKey)
           }
         })
         folder.folders.map {

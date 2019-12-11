@@ -53,7 +53,7 @@ class Files @Inject()(
   userService: UserService,
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue,
-  rabbitmqService: RabbitmqService) extends ApiController {
+  extractionBusService: ExtractionBusService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -288,7 +288,7 @@ class Files @Inject()(
           val mdMap = metadata.getExtractionSummary
 
           //send RabbitMQ message
-          rabbitmqService.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
+          extractionBusService.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
             request.apiKey, request.user)
 
           // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
@@ -354,7 +354,7 @@ class Files @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                rabbitmqService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
+                extractionBusService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
                 events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
 
@@ -427,7 +427,7 @@ class Files @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                rabbitmqService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                extractionBusService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
                   request.apiKey, request.user)
 
                 files.index(f.id)
@@ -500,7 +500,7 @@ class Files @Inject()(
         }
         // send extractor message after attached to resource
         metadataIds.foreach { mId =>
-          rabbitmqService.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
+          extractionBusService.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
             request.apiKey, request.user)
         }
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
@@ -628,7 +628,7 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        rabbitmqService.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
+        extractionBusService.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
 
         Ok(toJson(Map("id" -> id.stringify)))
 
@@ -1657,7 +1657,7 @@ class Files @Inject()(
         events.addObjectEvent(request.user, file.id, file.filename, EventType.DELETE_FILE.toString)
         // notify rabbitmq
         datasets.findByFileIdAllContain(file.id).foreach { ds =>
-          rabbitmqService.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
+          extractionBusService.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
         }
 
         //this stmt has to be before files.removeFile
@@ -1979,7 +1979,7 @@ class Files @Inject()(
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    rabbitmqService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+    extractionBusService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
       datasetId, newFlags, apiKey, user)
     Logger.info("Sent archive request for file " + id)
   }

@@ -40,7 +40,7 @@ class Metadata @Inject() (
   vocabs: StandardVocabularyService,
   events: EventService,
   spaceService: SpaceService,
-  rabbitmqService: RabbitmqService) extends ApiController {
+  extractionBusService: ExtractionBusService) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -508,7 +508,7 @@ class Metadata @Inject() (
                             events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
                           }
                         }
-                        rabbitmqService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
+                        extractionBusService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                       }
                       case ResourceRef.file => {
                         files.index(resource.id)
@@ -518,7 +518,7 @@ class Metadata @Inject() (
                             events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
                           }
                         }
-                        rabbitmqService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
+                        extractionBusService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                       }
                       case _ =>
                         Logger.error("File resource type not recognized")
@@ -563,7 +563,7 @@ class Metadata @Inject() (
                     p.delete(m.attachedTo.id.stringify)
                     files.index(m.attachedTo.id)
                   }
-                  rabbitmqService.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
+                  extractionBusService.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
                     request.apiKey, request.user)
                 }
                 case ResourceRef.dataset => {
@@ -572,7 +572,7 @@ class Metadata @Inject() (
                     p.delete(m.attachedTo.id.stringify)
                     datasets.index(m.attachedTo.id)
                   }
-                  rabbitmqService.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
+                  extractionBusService.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
                 }
                 case _ => {
                   Logger.error("Unknown attached resource type for metadata")

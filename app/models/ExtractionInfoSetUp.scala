@@ -1,15 +1,14 @@
 package models
 
 import play.api.Play.current
-import services.RabbitmqService
+import services.{DI, ExtractionBusService, ExtractionRequestsService, ExtractorService}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsObject
 import play.api.Logger
-import services.ExtractorService
-import services.DI
+
 import scala.concurrent.Future
-import services.ExtractionRequestsService
 import java.net.InetAddress
+
 import play.api.libs.ws.Response
 
 /**
@@ -18,7 +17,7 @@ import play.api.libs.ws.Response
 
 object ExtractionInfoSetUp {
 val extractors: ExtractorService =  DI.injector.getInstance(classOf[ExtractorService])
-val rabbitmqService: RabbitmqService =  DI.injector.getInstance(classOf[RabbitmqService])
+val extractionBusService: ExtractionBusService =  DI.injector.getInstance(classOf[ExtractionBusService])
 val dtsrequests:ExtractionRequestsService=DI.injector.getInstance(classOf[ExtractionRequestsService])
 
 /*
@@ -43,7 +42,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     val exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
     if (exchange != "") {
       Logger.debug("Exchange is not an empty string: " + exchange)
-      updateAndGetStatus(rabbitmqService, exchange)
+      updateAndGetStatus(extractionBusService, exchange)
     } else {
       Future(Future("DONE"))
     }
@@ -53,19 +52,19 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    * Obtains the queues' details attached to an exchange
    * updates the currently running extractors list, ips of the extractors, supported input types, number of extractors instances running
    */
-  def updateAndGetStatus(plugin: services.RabbitmqService, exchange: String) = {
-    var qDetailsFuture = getQDetailsFutures(plugin, exchange) /* Obtains queues's details as Futures of the List of responses*/
+  def updateAndGetStatus(extractionBus: services.ExtractionBusService, exchange: String) = {
+    var qDetailsFuture = getQDetailsFutures(extractionBus, exchange) /* Obtains queues's details as Futures of the List of responses*/
     extractors.dropAllExtractorStatusCollection()
     var status = for {
       qDetailsFutureResponses <- qDetailsFuture
       qDetailsResponses <- qDetailsFutureResponses
     } yield {
       var exDetails = List[ExtractorDetail]()
-      var finalQList = updateInfoAndGetQueuesList(plugin, qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
+      var finalQList = updateInfoAndGetQueuesList(extractionBus, qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
       Logger.debug("finalQueue List : " + finalQList)
       extractors.insertExtractorNames(finalQList)
       var ListOfFuturesRoutingKeys = finalQList.map {
-        qn => getAllRoutingKeysForQueue(plugin, qn, exchange)
+        qn => getAllRoutingKeysForQueue(extractionBus, qn, exchange)
       } //end of qlist map
       var updateInputTypeStatus = for {
         routingKeysLists <- scala.concurrent.Future.sequence(ListOfFuturesRoutingKeys)
@@ -89,9 +88,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   /**
    *  Obtains the queues' names attached to an exchange where source is the exchange and destination is the queue
    */ 
-  def getQDetailsFutures(plugin: services.RabbitmqService, exchange: String) = {
+  def getQDetailsFutures(extractionBus: services.ExtractionBusService, exchange: String) = {
     for {
-      qNamesResponse <- plugin.getQueuesNamesForAnExchange(exchange)
+      qNamesResponse <- extractionBus.getQueuesNamesForAnExchange(exchange)
     } yield {
       var qNameRKList = List[(String, String)]()
       Logger.trace("qNamesResponse: " + qNamesResponse.json)
@@ -107,7 +106,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       var qdetailsListFuture = for {
         (qname, rk) <- qNameRKList
       } yield {
-        plugin.getQueueDetails(qname) // get the complete queue details and its consumer details
+        extractionBus.getQueueDetails(qname) // get the complete queue details and its consumer details
       }
       var qdetailsFutureList = scala.concurrent.Future.sequence(qdetailsListFuture)
       qdetailsFutureList
@@ -119,7 +118,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    *           currently running extractors list
    *           servers IPs where extractors are running
    */
-  def updateInfoAndGetQueuesList(plugin: services.RabbitmqService, qDetailsResponses: List[Response]) = {
+  def updateInfoAndGetQueuesList(plugin: services.ExtractionBusService, qDetailsResponses: List[Response]) = {
     var exDetails = List[ExtractorDetail]()
     var qlistResult = List[String]()
     var ipsList = List[String]()
@@ -173,7 +172,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   /**
    * Gets all routing keys for a given queue
    */
-  def getAllRoutingKeysForQueue(plugin: services.RabbitmqService, qname: String, exchange: String) = {
+  def getAllRoutingKeysForQueue(plugin: services.ExtractionBusService, qname: String, exchange: String) = {
     for {
       qbindingResponse <- plugin.getQueueBindings(qname)
     } yield {
@@ -194,9 +193,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    * Get all exchanges for a given virtual host 
    * TODO : It will be used for multiple exchanges attached to a virtual host in Future
    */
- def getExchangesFutureList(plugin: services.RabbitmqService): Future[List[String]] = {
+ def getExchangesFutureList(extractionBus: services.ExtractionBusService): Future[List[String]] = {
     for {
-      exResponse <- plugin.getExchanges
+      exResponse <- extractionBus.getExchanges
     } yield {
       val exjsonlist = exResponse.json.as[List[JsObject]]
       var exlist = List[String]()

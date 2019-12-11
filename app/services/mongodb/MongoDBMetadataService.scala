@@ -13,7 +13,7 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, FileService, FolderService, MetadataService, RabbitmqService}
+import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, FileService, FolderService, MetadataService, ExtractionBusService}
 import api.{Permission, UserRequest}
 import controllers.Utils
 
@@ -22,7 +22,7 @@ import controllers.Utils
  */
 @Singleton
 class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService,
-  folders: FolderService, curations: CurationService, rabbitmqService: RabbitmqService) extends MetadataService {
+  folders: FolderService, curations: CurationService, extractionBusService: ExtractionBusService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -144,7 +144,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     // send extractor message after attached to resource
     metadataDocs.foreach { m =>
-      rabbitmqService.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
+      extractionBusService.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
     }
     metadataDocs.map(m => m.id)
   }
@@ -168,7 +168,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     // send extractor message after attached to resource
     metadataDocs.foreach { m =>
-      rabbitmqService.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
+      extractionBusService.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
     }
 
     metadataDocs.map(m => m.id)

@@ -35,7 +35,7 @@ class Extractions @Inject()(
   previews: PreviewService,
   sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService,
-  rabbitmqService: RabbitmqService,
+  extractionBusService: ExtractionBusService,
   appConfig: AppConfigurationService) extends ApiController {
 
   /**
@@ -93,7 +93,7 @@ class Extractions @Inject()(
                     appConfig.incrementCount('files, 1)
                     appConfig.incrementCount('bytes, f.length)
                     // notify extractors
-                    rabbitmqService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
+                    extractionBusService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
 
                     /*--- Insert DTS Requests  ---*/
                     val clientIP = request.remoteAddress
@@ -139,7 +139,7 @@ class Extractions @Inject()(
     if (UUID.isValid(id.stringify)) {
       files.get(id) match {
         case Some(file) => {
-          rabbitmqService.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+          extractionBusService.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
           Ok("Sent for Extraction. check the status")
         }
         case None =>
@@ -166,7 +166,7 @@ class Extractions @Inject()(
             (elist._1, elist._2)
         }
         //Get the bindings
-        var blist = rabbitmqService.getBindings
+        var blist = extractionBusService.getBindings
         for {
           rkeyResponse <- blist
         } yield {
@@ -201,7 +201,7 @@ class Extractions @Inject()(
             elist => (elist._1, elist._2)
           }
 
-          var blist = rabbitmqService.getBindings
+          var blist = extractionBusService.getBindings
 
           for {
             rkeyResponse <- blist
@@ -248,7 +248,7 @@ class Extractions @Inject()(
               //Get the list of extractors processing the file
               val l = extractions.getExtractorList(file.id)
               //Get the bindings
-              val blist = rabbitmqService.getBindings
+              val blist = extractionBusService.getBindings
               val fstatus = for {
                 rkeyResponse <- blist
               } yield {
@@ -485,10 +485,10 @@ class Extractions @Inject()(
           // if extractor_id is not specified default to execution of all extractors matching mime type
           val key = (request.body \ "extractor").asOpt[String] match {
             case Some(extractorId) =>
-              rabbitmqService.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
+              extractionBusService.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
             case None =>
-              rabbitmqService.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+              extractionBusService.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
           }
           Ok(Json.obj("status" -> "OK"))
         } else {
@@ -521,7 +521,7 @@ class Extractions @Inject()(
           "parameters" -> parameters.toString,
           "action" -> "manual-submission")
 
-        rabbitmqService.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
+        extractionBusService.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
         Ok(Json.obj("status" -> "OK"))
       }
       case None =>
@@ -544,7 +544,7 @@ class Extractions @Inject()(
         if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
           (request.body \ "extractor").asOpt[String] match {
             case Some(extractorId) =>
-              rabbitmqService.cancelPendingSubmission(file_id, extractorId, msg_id)
+              extractionBusService.cancelPendingSubmission(file_id, extractorId, msg_id)
               Ok(Json.obj("status" -> "OK"))
             case None =>
               BadRequest(toJson(Map("request" -> "extractor field not found")))
@@ -566,7 +566,7 @@ class Extractions @Inject()(
       case Some(ds) => {
         (request.body \ "extractor").asOpt[String] match {
           case Some(extractorId) =>
-            rabbitmqService.cancelPendingSubmission(ds_id, extractorId, msg_id)
+            extractionBusService.cancelPendingSubmission(ds_id, extractorId, msg_id)
             Ok(Json.obj("status" -> "OK"))
           case None => BadRequest(toJson(Map("request" -> "extractor field not found")))
         }
@@ -588,7 +588,7 @@ class Extractions @Inject()(
         if (missingfile)
           BadRequest(toJson("Not all files found"))
         else
-          rabbitmqService.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request), request.apiKey)
+          extractionBusService.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request), request.apiKey)
       }
       case None => BadRequest(toJson("Dataset "+datasetid+" not found"))
     }

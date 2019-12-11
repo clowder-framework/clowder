@@ -14,7 +14,7 @@ import services.{ExtractorMessage, _}
  * Index data.
  */
 @Inject
-class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: PreviewService, rabbitmqService: RabbitmqService) extends Controller with ApiController {
+class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: PreviewService, extractionBusService: ExtractionBusService) extends Controller with ApiController {
 
   /**
    * Submit section, preview, file for indexing.
@@ -24,7 +24,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
-                rabbitmqService.submitSectionPreviewManually(p, new UUID(section_id), Utils.baseUrl(request), request.apiKey)
+                extractionBusService.submitSectionPreviewManually(p, new UUID(section_id), Utils.baseUrl(request), request.apiKey)
                 val fileType = p.contentType
                 current.plugin[VersusPlugin].foreach{
                   _.indexPreview(p.id,fileType)

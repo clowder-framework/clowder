@@ -51,7 +51,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
-  rabbitmqService: RabbitmqService,
+  extractionBusService: ExtractionBusService,
   appConfig: AppConfigurationService) extends SecuredController {
 
   /**
@@ -435,7 +435,7 @@ class Files @Inject() (
                   }
                 }
                 // submit for extraction
-                rabbitmqService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
+                extractionBusService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
 
                 /** *** Inserting DTS Requests   **/
                 val clientIP = request.remoteAddress
@@ -575,7 +575,7 @@ class Files @Inject() (
               val extra = Map("filename" -> f.filename)
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
               /****************************/
-              rabbitmqService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
+              extractionBusService.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -952,7 +952,7 @@ class Files @Inject() (
               _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
             }
 
-            rabbitmqService.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
+            extractionBusService.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1047,7 +1047,7 @@ class Files @Inject() (
             val id = f.id
             val extra = Map("filename" -> f.filename, "action" -> "upload")
 
-            rabbitmqService.fileCreated(f, host, request.apiKey)
+            extractionBusService.fileCreated(f, host, request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1183,8 +1183,8 @@ class Files @Inject() (
                     }
 
                     // notify extractors that a file has been uploaded and added to a dataset
-                    rabbitmqService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
-                    rabbitmqService.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
+                    extractionBusService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
+                    extractionBusService.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
 
                     // add file to RDF triple store if triple store is used
                     if (fileType.equals("application/xml") || fileType.equals("text/xml")) {

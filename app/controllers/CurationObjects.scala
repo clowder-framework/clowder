@@ -39,7 +39,7 @@ class CurationObjects @Inject() (
   events: EventService,
   userService: UserService,
   metadatas: MetadataService,
-  rabbitmqService: RabbitmqService,
+  extractionBusService: ExtractionBusService,
   contextService: ContextLDService) extends SecuredController {
 
   /**
@@ -164,7 +164,7 @@ class CurationObjects @Inject() (
                   val mdMap = m.getExtractionSummary
 
                   //send RabbitMQ message
-                  rabbitmqService.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request),
+                  extractionBusService.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request),
                     request.apiKey, request.user)
                 })
               })
@@ -198,7 +198,7 @@ class CurationObjects @Inject() (
                       ResourceRef(ResourceRef.curationObject, newCuration.id)))
                     val mdMap = m.getExtractionSummary
                     //send RabbitMQ message
-                    rabbitmqService.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.dataset, dataset.id), mdMap,
+                    extractionBusService.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.dataset, dataset.id), mdMap,
                       Utils.baseUrl(request), request.apiKey, request.user)
                   }
                 })
@@ -239,7 +239,7 @@ class CurationObjects @Inject() (
               val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
               val mdMap = m.getExtractionSummary
               //send RabbitMQ message
-              rabbitmqService.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost, apiKey, user)
+              extractionBusService.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost, apiKey, user)
             })
         })
 

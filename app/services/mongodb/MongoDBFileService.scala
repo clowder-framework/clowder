@@ -62,7 +62,7 @@ class MongoDBFileService @Inject() (
   metadatas: MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
-  rabbitmqService: RabbitmqService,
+  extractionBusService: ExtractionBusService,
   esqueue: ElasticsearchQueue) extends FileService {
 
   object MustBreak extends Exception {}
@@ -191,7 +191,7 @@ class MongoDBFileService @Inject() (
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
 
-    rabbitmqService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+    extractionBusService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
       datasetId, newFlags, apiKey, user)
     Logger.info("Sent archive request for file " + id)
   }

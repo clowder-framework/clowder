@@ -39,7 +39,7 @@ object FileUtils {
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
-  lazy val rabbitmqService : RabbitmqService = DI.injector.getInstance(classOf[RabbitmqService])
+  lazy val extractionBusService : ExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -536,7 +536,7 @@ object FileUtils {
       val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
-      rabbitmqService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
+      extractionBusService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
     }
   }
 
@@ -760,7 +760,7 @@ object FileUtils {
 
     // send file to rabbitmq for processing
     if (runExtractors) {
-      rabbitmqService.fileCreated(file, dataset, clowderurl, apiKey)
+      extractionBusService.fileCreated(file, dataset, clowderurl, apiKey)
     }
 
     // index the file
@@ -784,7 +784,7 @@ object FileUtils {
     dataset.foreach{ds =>
 
       if (runExtractors) {
-        rabbitmqService.fileAddedToDataset(file, ds, clowderurl, apiKey)
+        extractionBusService.fileAddedToDataset(file, ds, clowderurl, apiKey)
       }
 
       // index dataset
