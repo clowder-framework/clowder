@@ -953,7 +953,7 @@ class PendingRequestCancellationActor @Inject() (exchange: String, connection: O
   def receive = {
     case CancellationMessage(id, queueName, msg_id) => {
       val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
-      val rabbitmqService: RabbitmqExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
+      val rabbitmqService: ExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
 
       val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
       var startDate = Some(new java.util.Date())
