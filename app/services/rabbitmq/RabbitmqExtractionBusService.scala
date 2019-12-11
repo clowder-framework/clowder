@@ -32,13 +32,12 @@ import scala.util.Try
 /**
   * Rabbitmq service.
   */
-class RabbitmqExtractionBusService @Inject() (application: Application,
+class RabbitmqExtractionBusService @Inject() (
                                  files: FileService,
                                  spacesService: SpaceService,
                                  extractorsService: ExtractorService,
                                  datasetService: DatasetService,
-                                 userService: UserService,
-                                 configuration: Configuration) extends ExtractionBusService {
+                                 userService: UserService) extends ExtractionBusService {
 
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
@@ -58,8 +57,8 @@ class RabbitmqExtractionBusService @Inject() (application: Application,
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-  var rabbitmquri: String = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-  var exchange: String = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
+  var rabbitmquri: String =  play.api.Play.configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+  var exchange: String =  play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
   var mgmtPort: String = ""
 
   var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
@@ -94,7 +93,8 @@ class RabbitmqExtractionBusService @Inject() (application: Application,
 
   /** Check if play plugin is enabled **/
   lazy val enabled = {
-    !application.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
+    "enabled"
+    // !play.Appliconfiguration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
   }
 
   /** Close connection to broker. **/
