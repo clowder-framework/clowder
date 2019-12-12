@@ -262,8 +262,9 @@ class RabbitmqExtractionBusService @Inject() (
     * @param contentType original content type in standar form, for example text/csv
     * @return escaped routing key
     */
-  def contentTypeToRoutingKey(contentType: String) =
+  def contentTypeToRoutingKey(contentType: String): String = {
     contentType.replace(".", "_").replace("/", ".")
+  }
 
   /**
     * Given a dataset, return the union of all extractors registered for each space the dataset is in.

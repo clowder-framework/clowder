@@ -89,7 +89,7 @@ trait ExtractionBusService {
 
   def extractWorkQueue(message: ExtractorMessage)
 
-  def contentTypeToRoutingKey(contentType: String)
+  def contentTypeToRoutingKey(contentType: String) : String
 
   def getRegisteredExtractors(dataset: Dataset): List[String]
 
