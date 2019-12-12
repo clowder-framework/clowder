@@ -59,7 +59,7 @@ class RabbitmqExtractionBusService @Inject() (
   var password: String = ""
   var rabbitmquri: String =  play.api.Play.configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
   var exchange: String =  play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
-  var mgmtPort: String = ""
+  var mgmtPort: String = play.api.Play.configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
 
   var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
 
