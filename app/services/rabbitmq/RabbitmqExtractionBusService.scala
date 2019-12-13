@@ -432,7 +432,7 @@ class RabbitmqExtractionBusService @Inject() (
 
           val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-          val id = postSubmissionEven(file.id, queue)
+          val id = postSubmissionEvent(file.id, queue)
 
           val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString,
             d.id, "", apiKey, routingKey, source, "created", None)
