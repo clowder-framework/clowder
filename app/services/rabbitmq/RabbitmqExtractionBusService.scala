@@ -383,7 +383,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param file_id the UUID of file
     * @param extractor_id the extractor queue name to be submitted
     */
-  def postSubmissionEven(file_id: UUID, extractor_id: String): UUID = {
+  def postSubmissionEvent(file_id: UUID, extractor_id: String): UUID = {
     val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
 
     import java.text.SimpleDateFormat

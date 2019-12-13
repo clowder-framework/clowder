@@ -103,7 +103,7 @@ trait ExtractionBusService {
 
   def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String]
 
-  def postSubmissionEven(file_id: UUID, extractor_id: String): UUID
+  def postSubmissionEvent(file_id: UUID, extractor_id: String): UUID
 
   def getApiKey(requestAPIKey: Option[String], user: Option[User]): String
 
