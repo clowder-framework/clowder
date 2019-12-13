@@ -482,7 +482,7 @@ class RabbitmqExtractionBusService @Inject() (
 
       val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-      val id = postSubmissionEven(file.id, extractorId)
+      val id = postSubmissionEvent(file.id, extractorId)
 
       val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
@@ -509,7 +509,7 @@ class RabbitmqExtractionBusService @Inject() (
 
       val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-      val id = postSubmissionEven(dataset.id, extractorId)
+      val id = postSubmissionEvent(dataset.id, extractorId)
 
       var totalsize: Long = 0
       filelist.map(f => totalsize += f.length)
@@ -536,7 +536,7 @@ class RabbitmqExtractionBusService @Inject() (
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
 
       val notifies = getEmailNotificationEmailList(requestAPIKey)
-      val id = postSubmissionEven(file.id, extractorId)
+      val id = postSubmissionEvent(file.id, extractorId)
       val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "removed", Some(target))
       extractWorkQueue(msg)
@@ -561,7 +561,7 @@ class RabbitmqExtractionBusService @Inject() (
     val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
 
     val notifies = getEmailNotificationEmailList(requestAPIKey)
-    val id = postSubmissionEven(file.id, queue)
+    val id = postSubmissionEvent(file.id, queue)
     val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
@@ -583,7 +583,7 @@ class RabbitmqExtractionBusService @Inject() (
 
     val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-    val id = postSubmissionEven(datasetId, queue)
+    val id = postSubmissionEvent(datasetId, queue)
     val msg = ExtractorMessage(id, datasetId, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
@@ -614,7 +614,7 @@ class RabbitmqExtractionBusService @Inject() (
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-              val id = postSubmissionEven(resourceRef.id, extractorId)
+              val id = postSubmissionEvent(resourceRef.id, extractorId)
               val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "added", Some(target))
               extractWorkQueue(msg)
@@ -631,7 +631,7 @@ class RabbitmqExtractionBusService @Inject() (
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-            val id = postSubmissionEven(resourceRef.id, extractorId)
+            val id = postSubmissionEvent(resourceRef.id, extractorId)
             val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "added", Some(target))
             extractWorkQueue(msg)
@@ -666,7 +666,7 @@ class RabbitmqExtractionBusService @Inject() (
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-              val id = postSubmissionEven(resourceRef.id, extractorId)
+              val id = postSubmissionEvent(resourceRef.id, extractorId)
               val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "removed", Some(target))
               extractWorkQueue(msg)
@@ -683,7 +683,7 @@ class RabbitmqExtractionBusService @Inject() (
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-            val id = postSubmissionEven(resourceRef.id, extractorId)
+            val id = postSubmissionEvent(resourceRef.id, extractorId)
             val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "removed", Some(target))
             extractWorkQueue(msg)
@@ -711,7 +711,7 @@ class RabbitmqExtractionBusService @Inject() (
     val notifies = getEmailNotificationEmailList(requestAPIKey)
     val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
 
-    val id = postSubmissionEven(tempFileId, routingKey)
+    val id = postSubmissionEvent(tempFileId, routingKey)
     val msg = ExtractorMessage(id, tempFileId, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
@@ -731,7 +731,7 @@ class RabbitmqExtractionBusService @Inject() (
     val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
     val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-    val id = postSubmissionEven(sectionId, routingKey)
+    val id = postSubmissionEvent(sectionId, routingKey)
     val msg = ExtractorMessage(id, sectionId, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
       "", apiKey, routingKey, source, "added", Some(target))
     extractWorkQueue(msg)
