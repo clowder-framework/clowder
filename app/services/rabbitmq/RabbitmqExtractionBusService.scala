@@ -457,7 +457,7 @@ class RabbitmqExtractionBusService @Inject() (
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
     val notifies = getEmailNotificationEmailList(requestAPIKey)
-    val id = postSubmissionEven(file.id, routingKey)
+    val id = postSubmissionEvent(file.id, routingKey)
     val msg = ExtractorMessage(id, file.id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
