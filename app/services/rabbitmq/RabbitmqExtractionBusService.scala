@@ -4,6 +4,8 @@ import java.io.IOException
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
+import javax.inject.Singleton
+
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 
@@ -32,6 +34,7 @@ import scala.util.Try
 /**
   * Rabbitmq service.
   */
+@Singleton
 class RabbitmqExtractionBusService @Inject() (
                                  files: FileService,
                                  spacesService: SpaceService,
@@ -62,6 +65,17 @@ class RabbitmqExtractionBusService @Inject() (
   var mgmtPort: String = play.api.Play.configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
 
   var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+
+  try {
+    val uri = new URI(rabbitmquri)
+    factory = Some(new ConnectionFactory())
+    factory.get.setUri(uri)
+  } catch {
+    case t: Throwable => {
+      factory = None
+      Logger.error("Invalid URI for RabbitMQ", t)
+    }
+  }
 
   /** On start connect to broker. */
   override def onStart() {
