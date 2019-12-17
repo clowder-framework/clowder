@@ -40,8 +40,7 @@ class RabbitmqExtractionBusService @Inject() (
                                  spacesService: SpaceService,
                                  extractorsService: ExtractorService,
                                  datasetService: DatasetService,
-                                 userService: UserService,
-                                 application: Application) extends ExtractionBusService {
+                                 userService: UserService) extends ExtractionBusService {
 
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
@@ -107,9 +106,9 @@ class RabbitmqExtractionBusService @Inject() (
   }
 
   /** Check if play plugin is enabled **/
-  lazy val enabled = {
-    play.api.Play.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
-  }
+//  lazy val enabled = {
+//    play.api.Play.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
+//  }
 
   /** Close connection to broker. **/
   def close() {
