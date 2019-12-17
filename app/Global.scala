@@ -8,7 +8,7 @@ import play.api.Logger
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
 import securesocial.core.SecureSocial
-import services.{AppConfiguration, AppConfigurationService, CollectionService, DI, DatasetService, FileService, SpaceService, UserService}
+import services.{AppConfiguration, AppConfigurationService, CollectionService, DI, DatasetService, ExtractionBusService, FileService, SpaceService, UserService}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -118,8 +118,11 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   override def onStop(app: Application) {
+    val extractionBusService: ExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
+
     extractorTimer.cancel()
     jobTimer.cancel()
+    extractionBusService.onStop()
     Logger.info("Application shutdown")
   }
 

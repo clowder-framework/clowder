@@ -22,7 +22,7 @@ import play.api.http.MimeTypes
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
-import play.api.{Application, Configuration, Logger, Plugin}
+import play.api.{Application, Configuration, Logger}
 import play.libs.Akka
 import securesocial.core.IdentityId
 import services.{CancellationMessage, DI, DatasetService, Entity, ExtractionBusService, ExtractionService, ExtractorMessage, ExtractorService, FileService, SpaceService, UserService}
@@ -40,7 +40,8 @@ class RabbitmqExtractionBusService @Inject() (
                                  spacesService: SpaceService,
                                  extractorsService: ExtractorService,
                                  datasetService: DatasetService,
-                                 userService: UserService) extends ExtractionBusService {
+                                 userService: UserService,
+                                 application: Application) extends ExtractionBusService {
 
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
