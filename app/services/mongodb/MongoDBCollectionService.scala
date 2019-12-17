@@ -42,7 +42,8 @@ class MongoDBCollectionService @Inject() (
   events:EventService,
   spaces:SpaceService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue)  extends CollectionService {
+  esqueue: ElasticsearchQueue,
+  searches: SearchService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -840,9 +841,7 @@ class MongoDBCollectionService @Inject() (
 
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
         appConfig.incrementCount('collections, -1)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(collection.id.stringify)
-        }
+        searches.delete(collection.id.stringify)
 
         Success
       }

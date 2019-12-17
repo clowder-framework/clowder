@@ -39,7 +39,8 @@ class Metadata @Inject() (
   curations: CurationService,
   vocabs: StandardVocabularyService,
   events: EventService,
-  spaceService: SpaceService) extends ApiController {
+  spaceService: SpaceService,
+  searches: SearchService) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -70,20 +71,17 @@ class Metadata @Inject() (
     }
 
     // Next get Elasticsearch metadata fields if plugin available
-    current.plugin[ElasticsearchPlugin] match {
-      case Some(plugin) => {
-        val mdTerms = plugin.getAutocompleteMetadataFields(query)
-        for (term <- mdTerms) {
-          // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terra.plantcv.angle",
-          //      "metadata.Jane Doe.Alternative Title"
-          if (!(listOfTerms contains term))
-            listOfTerms.append(term)
-        }
-        Ok(toJson(listOfTerms.distinct))
+    if (searches.isEnabled()) {
+      val mdTerms = searches.getAutocompleteMetadataFields(query)
+      for (term <- mdTerms) {
+        // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terra.plantcv.angle",
+        //      "metadata.Jane Doe.Alternative Title"
+        if (!(listOfTerms contains term))
+          listOfTerms.append(term)
       }
-      case None => {
-        BadRequest("Elasticsearch plugin is not enabled")
-      }
+      Ok(toJson(listOfTerms.distinct))
+    } else {
+      BadRequest("Elasticsearch plugin is not enabled")
     }
   }
 
@@ -561,22 +559,18 @@ class Metadata @Inject() (
 
               m.attachedTo.resourceType match {
                 case ResourceRef.file => {
-                  current.plugin[ElasticsearchPlugin].foreach { p =>
-                    // Delete existing index entry and re-index
-                    p.delete(m.attachedTo.id.stringify)
-                    files.index(m.attachedTo.id)
-                  }
+                  searches.delete(m.attachedTo.id.stringify)
+                  files.index(m.attachedTo.id)
                   current.plugin[RabbitmqPlugin].foreach { p =>
                     p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
                       request.apiKey, request.user)
                   }
                 }
                 case ResourceRef.dataset => {
-                  current.plugin[ElasticsearchPlugin].foreach { p =>
-                    // Delete existing index entry and re-index
-                    p.delete(m.attachedTo.id.stringify)
-                    datasets.index(m.attachedTo.id)
-                  }
+                  // Delete existing index entry and re-index
+                  searches.delete(m.attachedTo.id.stringify)
+                  datasets.index(m.attachedTo.id)
+
                   current.plugin[RabbitmqPlugin].foreach { p =>
                     p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
                   }

@@ -62,7 +62,8 @@ class MongoDBFileService @Inject() (
   metadatas: MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends FileService {
+  esqueue: ElasticsearchQueue,
+  searches: SearchService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -864,9 +865,7 @@ class MongoDBFileService @Inject() (
         FileDAO.removeById(file.id)
         appConfig.incrementCount('files, -1)
         appConfig.incrementCount('bytes, -file.length)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
-        }
+        searches.delete(id.stringify)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)

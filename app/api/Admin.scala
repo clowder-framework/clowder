@@ -5,7 +5,6 @@ import java.util.Date
 import javax.inject.Inject
 import models._
 import org.apache.commons.lang3.StringEscapeUtils
-import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
@@ -15,8 +14,6 @@ import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 import util.Mail
 
-import scala.concurrent.duration._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsString, JsUndefined, JsValue}
 
 /**
@@ -27,14 +24,15 @@ class Admin @Inject() (userService: UserService,
     collections: CollectionService,
     files: FileService,
     events: EventService,
-    esqueue: ElasticsearchQueue) extends Controller with ApiController {
+    esqueue: ElasticsearchQueue,
+    searches: SearchService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
    */
   def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
     current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
-    current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+    searches.deleteAll
 
     Ok(toJson("done"))
   }

@@ -203,7 +203,7 @@
                 </ul>
 
                 <ul class="nav navbar-nav navbar-right">
-                    @if(play.api.Play.current.plugin[services.ElasticsearchPlugin].isDefined) {
+                    @if(services.DI.injector.getInstance(classOf[services.SearchService]).isEnabled) {
                         <li>
                             <form class="navbar-form" role="search" action="@routes.Search.search("")">
                                 <div class="input-group">

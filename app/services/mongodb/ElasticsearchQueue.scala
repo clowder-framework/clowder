@@ -17,13 +17,14 @@ class ElasticsearchQueue @Inject() (
   files: FileService,
   datasets: DatasetService,
   collections: CollectionService,
-  sections: SectionService) extends MongoDBQueueService {
+  sections: SectionService,
+  searches: SearchService) extends MongoDBQueueService {
 
   override val consumer = "elasticsearch"
 
   // check whether necessary conditions are met (e.g. the plugin is enabled)
   override def enabled(): Boolean = {
-    return current.plugin[ElasticsearchPlugin].exists(es => es.isEnabled())
+    searches.isEnabled()
   }
 
   // process the next entry in the queue
@@ -35,19 +36,19 @@ class ElasticsearchQueue @Inject() (
         action.action match {
           case "index_file" => {
             val target = files.get(targ.id) match {
-              case Some(f) => current.plugin[ElasticsearchPlugin].foreach(p => p.index(f))
+              case Some(f) => searches.index(f)
               case None => throw new NullPointerException(s"File ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_dataset" => {
             val target = datasets.get(targ.id) match {
-              case Some(ds) => current.plugin[ElasticsearchPlugin].foreach(p => p.index(ds, recursive))
+              case Some(ds) => searches.index(ds, recursive)
               case None => throw new NullPointerException(s"Dataset ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_collection" => {
             val target = collections.get(targ.id) match {
-              case Some(c) => current.plugin[ElasticsearchPlugin].foreach(p => p.index(c, recursive))
+              case Some(c) => searches.index(c, recursive)
               case None => throw new NullPointerException(s"Collection ${targ.id.stringify} no longer found for indexing")
             }
           }
@@ -69,14 +70,13 @@ class ElasticsearchQueue @Inject() (
 
   def _indexAll() = {
     // Add all individual entries to the queue and delete this action
-    current.plugin[ElasticsearchPlugin].foreach(p => {
-      // delete & recreate index
-      p.deleteAll
-      p.createIndex()
-      // queue everything for each resource type
-      collections.indexAll()
-      datasets.indexAll()
-      files.indexAll()
-    })
+    // delete & recreate index
+    searches.deleteAll
+    searches.createIndex()
+    // queue everything for each resource type
+    collections.indexAll()
+    datasets.indexAll()
+    files.indexAll()
+
   }
 }

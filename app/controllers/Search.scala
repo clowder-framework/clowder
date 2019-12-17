@@ -26,19 +26,17 @@ class Search @Inject() (
   files: FileService,
   collections: CollectionService,
   queries: MultimediaQueryService,
-  previews: PreviewService) extends SecuredController {
+  previews: PreviewService,
+  searches: SearchService) extends SecuredController {
 
   /** Search using a simple text string */
   def search(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
-    current.plugin[ElasticsearchPlugin] match {
-      case Some(plugin) => {
-        Ok(views.html.searchResults(query))
-      }
-      case None => {
-        Logger.debug("Search plugin not enabled")
-        Ok(views.html.pluginNotEnabled("Text search"))
-      }
+    if (searches.isEnabled) {
+      Ok(views.html.searchResults(query))
+    } else {
+      Logger.debug("Search plugin not enabled")
+      Ok(views.html.pluginNotEnabled("Text search"))
     }
   }
 

@@ -49,7 +49,8 @@ class  Datasets @Inject()(
   userService: UserService,
   thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  searches: SearchService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -223,13 +224,9 @@ class  Datasets @Inject()(
                   if (!file.xmlMetadata.isEmpty) {
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index(SearchUtils.getElasticsearchObject(d))
-                    }
+                    searches.index(SearchUtils.getElasticsearchObject(d))
                   } else {
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index(SearchUtils.getElasticsearchObject(d))
-                    }
+                    searches.index(SearchUtils.getElasticsearchObject(d))
                   }
 
                   current.plugin[AdminsNotifierPlugin].foreach {

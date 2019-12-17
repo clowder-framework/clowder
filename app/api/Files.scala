@@ -52,7 +52,8 @@ class Files @Inject()(
   spaces: SpaceService,
   userService: UserService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  searches: SearchService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -1682,9 +1683,8 @@ class Files @Inject()(
         appConfig.incrementCount('files, -1)
         appConfig.incrementCount('bytes, -file.length)
 
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete("data", "file", id.stringify)
-        }
+        searches.delete(id.stringify, "file")
+
         //remove file from RDF triple store if triple store is used
         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
           case "yes" => {
@@ -1774,9 +1774,7 @@ class Files @Inject()(
   def index(id: UUID) {
     files.get(id) match {
       case Some(file) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(SearchUtils.getElasticsearchObject(file))
-        }
+        searches.index(SearchUtils.getElasticsearchObject(file))
       }
       case None => Logger.error("File not found: " + id)
     }

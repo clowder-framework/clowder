@@ -1,11 +1,10 @@
-package services
+package services.elasticsearch
 
 import api.Permission
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
-import play.api.libs.json.Json._
 import scala.util.Try
 import scala.collection.mutable.{MutableList, ListBuffer}
 import scala.collection.immutable.List
@@ -15,6 +14,7 @@ import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import java.net.InetAddress
 import java.util.regex.Pattern
+import javax.inject.{Inject, Singleton}
 
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
@@ -26,19 +26,22 @@ import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section, El
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
+import services.{CommentService, FileService, FolderService, DatasetService, CollectionService, ElasticsearchQueue, SearchService}
 
 
 /**
- * Elasticsearch plugin.
+ * Elasticsearch service.
  *
  */
-class ElasticsearchPlugin(application: Application) extends Plugin {
-  val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
-  val files: FileService = DI.injector.getInstance(classOf[FileService])
-  val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
-  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
-  val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-  val queue: ElasticsearchQueue = DI.injector.getInstance(classOf[ElasticsearchQueue])
+@Singleton
+class ElasticsearchSearchService @Inject() (
+                                    comments: CommentService,
+                                    files: FileService,
+                                    folders: FolderService,
+                                    datasets: DatasetService,
+                                    collections: CollectionService,
+                                    queue: ElasticsearchQueue
+                                    ) extends SearchService {
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
@@ -115,6 +118,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
+  def getInformation(): JsObject = {
+    Json.obj("server" -> serverAddress,
+      "clustername" -> nameOfCluster,
+      "queue" -> queue.status(),
+      "status" -> "connected")
+  }
+
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
   def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int], user: Option[User]): ElasticsearchResult = {
     /** Each item in query list has properties:
@@ -131,8 +141,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /** Search using a simple text string, appending parameters from API to string if provided */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
-             from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User],
-             index: String = nameOfIndex): ElasticsearchResult = {
+             from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User]): ElasticsearchResult = {
 
     var expanded_query = query
 
@@ -181,12 +190,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
-  def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int,
-                           index: String = nameOfIndex): ElasticsearchResult = {
+  def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int): ElasticsearchResult = {
     var total_results = ListBuffer.empty[ResourceRef]
 
     // Fetch initial page & filter by permissions
-    val (results, total_size) = _search(queryObj, index, Some(from), Some(size))
+    val (results, total_size) = _search(queryObj, Some(from), Some(size))
     Logger.debug(s"Found ${results.length} results with ${total_size} total")
     val filtered = checkResultPermissions(results, user)
     Logger.debug(s"Permission to see ${filtered.length} results")
@@ -198,7 +206,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var exhausted = false
     while (total_results.length < size && !exhausted) {
       Logger.debug(s"Only have ${total_results.length} total results; searching for ${size*2} more from ${new_from}")
-      val (results, total_size)  = _search(queryObj, index, Some(new_from), Some(size*2))
+      val (results, total_size)  = _search(queryObj, Some(new_from), Some(size*2))
       Logger.debug(s"Found ${results.length} results with ${total_size} total")
       if (results.length == 0 || new_from+results.length == total_size) exhausted = true // No more results to find
       val filtered = checkResultPermissions(results, user)
@@ -261,13 +269,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /*** Execute query and return list of results and total result count as tuple */
-  def _search(queryObj: XContentBuilder, index: String = nameOfIndex,
-              from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
+  def _search(queryObj: XContentBuilder, from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
     connect()
     val response = client match {
       case Some(x) => {
         Logger.info("Searching Elasticsearch: "+queryObj.string())
-        var responsePrep = x.prepareSearch(index)
+        var responsePrep = x.prepareSearch(nameOfIndex)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
 
@@ -291,7 +298,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
 
   /** Create a new index with preconfigured mappgin */
-  def createIndex(index: String = nameOfIndex): Unit = {
+  def createIndex(): Unit = {
     val indexSettings = Settings.settingsBuilder().loadFromSource(jsonBuilder()
       .startObject()
         .startObject("analysis")
@@ -310,9 +317,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     client match {
       case Some(x) => {
-        Logger.debug("Index \""+index+"\" does not exist; creating now ---")
+        Logger.debug("Index \""+nameOfIndex+"\" does not exist; creating now ---")
         try {
-          x.admin().indices().prepareCreate(index)
+          x.admin().indices().prepareCreate(nameOfIndex)
             .setSettings(indexSettings)
             .addMapping("clowder_object", getElasticsearchObjectMappings())
             .execute().actionGet()
@@ -349,12 +356,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Delete an index */
-  def delete(id: String, docType: String = "clowder_object", index: String = nameOfIndex) {
+  def delete(id: String, docType: String = "clowder_object") {
     connect()
     client match {
       case Some(x) => {
         try {
-          val response = x.prepareDelete(index, docType, id).execute().actionGet()
+          val response = x.prepareDelete(nameOfIndex, docType, id).execute().actionGet()
           Logger.debug("Deleting document: " + response.getId)
         } catch {
           case e: ElasticsearchException => {
@@ -370,15 +377,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Traverse metadata field mappings to get unique list for autocomplete */
-  def getAutocompleteMetadataFields(query: String, index: String = nameOfIndex): List[String] = {
+  def getAutocompleteMetadataFields(query: String): List[String] = {
     connect()
 
     var listOfTerms = ListBuffer.empty[String]
     client match {
       case Some(x) => {
         if (query != "") {
-          val response = x.admin.indices.getMappings(new GetMappingsRequest().indices(index)).get()
-          val maps = response.getMappings().get(index).get("clowder_object")
+          val response = x.admin.indices.getMappings(new GetMappingsRequest().indices(nameOfIndex)).get()
+          val maps = response.getMappings().get(nameOfIndex).get("clowder_object")
           val resultList = convertJsMappingToFields(Json.parse(maps.source().toString).as[JsObject], None, Some("metadata"))
 
           resultList.foreach(term => {
@@ -446,7 +453,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Index document using an arbitrary map of fields. */
-  def index(esObj: Option[models.ElasticsearchObject], index: String = nameOfIndex) {
+  def index(esObj: Option[models.ElasticsearchObject]) {
     esObj match {
       case Some(eso) => {
         connect()
@@ -509,7 +516,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             builder.endObject()
               .endObject()
 
-            val response = x.prepareIndex(index, "clowder_object", eso.resource.id.toString)
+            val response = x.prepareIndex(nameOfIndex, "clowder_object", eso.resource.id.toString)
               .setSource(builder).execute().actionGet()
           }
           case None => Logger.error("Could not index because Elasticsearch is not connected.")
@@ -520,13 +527,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Return map of distinct value/count for tags **/
-  def listTags(resourceType: String = "", index: String = nameOfIndex): Map[String, Long] = {
+  def listTags(resourceType: String = ""): Map[String, Long] = {
     val results = scala.collection.mutable.Map[String, Long]()
 
     connect()
     client match {
       case Some(x) => {
-        val searcher = x.prepareSearch(index)
+        val searcher = x.prepareSearch(nameOfIndex)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
             .addAggregation(AggregationBuilders.terms("by_tag").field("tags").size(10000))
             // Don't return actual documents; we only care about aggregation here

@@ -2,7 +2,7 @@ package api
 
 import api.Permission._
 import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, SpaceService,
-MultimediaQueryService, ElasticsearchPlugin}
+MultimediaQueryService, SearchService}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
 import util.{SearchUtils, SearchResult}
@@ -21,45 +21,43 @@ class Search @Inject() (
    previews: PreviewService,
    queries: MultimediaQueryService,
    spaces: SpaceService,
-   sparql: RdfSPARQLService)  extends ApiController {
+   sparql: RdfSPARQLService,
+   searches: SearchService)  extends ApiController {
 
   /** Search using a simple text string with filters */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
              from: Option[Int], size: Option[Int], page: Option[Int]) = PermissionAction(Permission.ViewDataset) { implicit request =>
-    current.plugin[ElasticsearchPlugin] match {
-      case Some(plugin) => {
-        // If from is specified, use it. Otherwise use page * size of page if possible, otherwise use 0.
-        val from_index = from match {
-          case Some(f) => from
-          case None => page match {
-            case Some(p) => Some(size.getOrElse(0) * p)
-            case None => None
-          }
+    if (searches.isEnabled) {
+      // If from is specified, use it. Otherwise use page * size of page if possible, otherwise use 0.
+      val from_index = from match {
+        case Some(f) => from
+        case None => page match {
+          case Some(p) => Some(size.getOrElse(0) * p)
+          case None => None
         }
-
-        // TODO: Better way to build a URL?
-        val source_url = s"/api/search?query=$query" +
-          (resource_type match {case Some(x) => s"&resource_type=$x" case None => ""}) +
-          (datasetid match {case Some(x) => s"&datasetid=$x" case None => ""}) +
-          (collectionid match {case Some(x) => s"&collectionid=$x" case None => ""}) +
-          (spaceid match {case Some(x) => s"&spaceid=$x" case None => ""}) +
-          (folderid match {case Some(x) => s"&folderid=$x" case None => ""}) +
-          (field match {case Some(x) => s"&field=$x" case None => ""}) +
-          (tag match {case Some(x) => s"&tag=$x" case None => ""})
-
-        // Add space filter to search here as a simple permissions check
-        val permitted = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
-
-        val response = plugin.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
-
-        val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
-        Ok(toJson(result))
       }
-      case None => {
-        Logger.debug("Search plugin not enabled")
-        Ok(views.html.pluginNotEnabled("Text search"))
-      }
+
+      // TODO: Better way to build a URL?
+      val source_url = s"/api/search?query=$query" +
+        (resource_type match {case Some(x) => s"&resource_type=$x" case None => ""}) +
+        (datasetid match {case Some(x) => s"&datasetid=$x" case None => ""}) +
+        (collectionid match {case Some(x) => s"&collectionid=$x" case None => ""}) +
+        (spaceid match {case Some(x) => s"&spaceid=$x" case None => ""}) +
+        (folderid match {case Some(x) => s"&folderid=$x" case None => ""}) +
+        (field match {case Some(x) => s"&field=$x" case None => ""}) +
+        (tag match {case Some(x) => s"&tag=$x" case None => ""})
+
+      // Add space filter to search here as a simple permissions check
+      val permitted = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
+
+      val response = searches.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
+
+      val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
+      Ok(toJson(result))
+    } else {
+      Logger.debug("Search plugin not enabled")
+      Ok(views.html.pluginNotEnabled("Text search"))
     }
   }
 
@@ -68,21 +66,19 @@ class Search @Inject() (
     implicit request =>
       implicit val user = request.user
 
-      current.plugin[ElasticsearchPlugin] match {
-        case Some(plugin) => {
-          val queryList = Json.parse(query).as[List[JsValue]]
-          val response = plugin.search(queryList, grouping, from, size, user)
+      if (searches.isEnabled) {
+        val queryList = Json.parse(query).as[List[JsValue]]
+        val response = searches.search(queryList, grouping, from, size, user)
 
-          // TODO: Better way to build a URL?
-          val source_url = s"/api/search?query=$query&grouping=$grouping"
+        // TODO: Better way to build a URL?
+        val source_url = s"/api/search?query=$query&grouping=$grouping"
 
-          val result = SearchUtils.prepareSearchResponse(response, source_url, user)
-          Ok(toJson(result))
-        }
-        case None => {
-          BadRequest("Elasticsearch plugin could not be reached")
-        }
+        val result = SearchUtils.prepareSearchResponse(response, source_url, user)
+        Ok(toJson(result))
+      } else {
+        BadRequest("Elasticsearch plugin could not be reached")
       }
+
   }
 
   def querySPARQL() = PermissionAction(Permission.ViewMetadata) { implicit request =>
