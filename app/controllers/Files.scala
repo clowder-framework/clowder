@@ -20,7 +20,6 @@ import services._
 import java.text.SimpleDateFormat
 
 import views.html.defaultpages.badRequest
-import util.SearchUtils
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
@@ -455,12 +454,8 @@ class Files @Inject() (
                 if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                   val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
                   files.addXMLMetadata(f.id, xmlToJSON)
-
-                  searches.index(SearchUtils.getElasticsearchObject(f))
                 }
-                else {
-                  searches.index(SearchUtils.getElasticsearchObject(f))
-                }
+                searches.index(f)
                 current.plugin[VersusPlugin].foreach {
                   _.index(f.id.toString, fileType)
                 }
@@ -583,12 +578,8 @@ class Files @Inject() (
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              files.addXMLMetadata(f.id, xmlToJSON)
-	              
-	              searches.index(SearchUtils.getElasticsearchObject(f))
 	            }
-	            else{
-		            searches.index(SearchUtils.getElasticsearchObject(f))
-	            }
+              searches.index(f)
 
               current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
 
@@ -1055,12 +1046,9 @@ class Files @Inject() (
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
+            }
+            searches.index(f)
 
-              searches.index(SearchUtils.getElasticsearchObject(f))
-            }
-            else {
-              searches.index(SearchUtils.getElasticsearchObject(f))
-            }
             //add file to RDF triple store if triple store is used
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
@@ -1172,10 +1160,9 @@ class Files @Inject() (
                     // FIXME create a service instead of calling salat directly
                     datasets.addFile(dataset.id, files.get(f.id).get)
 
-                    // index dataset
-                    datasets.index(dataset_id)
-                    // index file
-                    searches.index(SearchUtils.getElasticsearchObject(f))
+                    // index dataset and file
+                    searches.index(dataset, true)
+                    searches.index(f)
 
                     // notify extractors that a file has been uploaded and added to a dataset
                     current.plugin[RabbitmqPlugin].foreach { rabbitMQ =>

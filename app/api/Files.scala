@@ -6,7 +6,7 @@ import java.net.{URL, URLEncoder}
 
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils, SearchUtils}
+import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
 import com.mongodb.casbah.Imports._
 import controllers.Previewers
 import jsonutils.JsonUtil
@@ -1773,9 +1773,7 @@ class Files @Inject()(
 
   def index(id: UUID) {
     files.get(id) match {
-      case Some(file) => {
-        searches.index(SearchUtils.getElasticsearchObject(file))
-      }
+      case Some(file) => searches.index(file)
       case None => Logger.error("File not found: " + id)
     }
   }

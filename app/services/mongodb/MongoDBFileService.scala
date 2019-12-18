@@ -6,7 +6,7 @@ import models._
 import com.mongodb.casbah.commons.{Imports, MongoDBObject}
 import java.text.SimpleDateFormat
 
-import _root_.util.{License, Parsers, SearchUtils}
+import _root_.util.{License, Parsers}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion

@@ -15,7 +15,7 @@ import java.util.Date
 
 import org.bson.types.ObjectId
 import play.api.Logger
-import util.{Formatters, SearchUtils}
+import util.{Formatters}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try

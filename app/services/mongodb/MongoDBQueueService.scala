@@ -26,11 +26,6 @@ trait MongoDBQueueService {
   var disabledNotified: Boolean = false
   var queueTimer: Cancellable = null
 
-  // check whether necessary conditions are met (e.g. the plugin is enabled)
-  def enabled(): Boolean = {
-    return false
-  }
-
   def status(): JsObject = {
     if (enabled) {
       Json.obj("enabled" -> true, "queued" -> Queue.count())
@@ -69,6 +64,15 @@ trait MongoDBQueueService {
   // get next entry from queue
   def getNextQueuedAction(): Option[QueuedAction] = {
     return Queue.findOne(new MongoDBObject)
+  }
+
+
+
+
+
+  // check whether necessary conditions are met (e.g. the plugin is enabled)
+  def enabled(): Boolean = {
+    return false
   }
 
   // start pool to being processing queue actions

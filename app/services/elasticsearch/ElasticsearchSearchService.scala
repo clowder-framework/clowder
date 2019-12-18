@@ -5,28 +5,30 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
+
 import scala.util.Try
-import scala.collection.mutable.{MutableList, ListBuffer}
+import scala.collection.mutable.{ListBuffer, MutableList}
 import scala.collection.immutable.List
-import play.api.{Plugin, Logger, Application}
+import play.api.{Application, Logger, Plugin}
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import java.net.InetAddress
 import java.util.regex.Pattern
+
 import javax.inject.{Inject, Singleton}
+import java.util.Date
 
 import org.elasticsearch.common.xcontent.XContentFactory._
-import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchType, SearchResponse}
+import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchResponse, SearchType}
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.ElasticsearchException
 import org.elasticsearch.indices.IndexAlreadyExistsException
-
-import models.{Collection, Dataset, File, Folder, UUID, ResourceRef, Section, ElasticsearchResult, User}
+import models.{Collection, Dataset, File, ResourceRef, Section, TempFile, UUID, User, Tag, SearchResult}
 import play.api.Play.current
 import play.api.libs.json._
-import _root_.util.SearchUtils
-import services.{CommentService, FileService, FolderService, DatasetService, CollectionService, ElasticsearchQueue, SearchService}
+import play.api.libs.json.Json.toJson
+import services.{CollectionService, CommentService, DatasetService, ElasticsearchQueue, FileService, FolderService, MetadataService, SearchService}
 
 
 /**
@@ -40,8 +42,8 @@ class ElasticsearchSearchService @Inject() (
                                     folders: FolderService,
                                     datasets: DatasetService,
                                     collections: CollectionService,
-                                    queue: ElasticsearchQueue
-                                    ) extends SearchService {
+                                    queue: ElasticsearchQueue,
+                                    metadatas: MetadataService) extends SearchService {
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
@@ -52,12 +54,6 @@ class ElasticsearchSearchService @Inject() (
   val mustOperators = List("==", "<", ">", ":")
   val mustNotOperators = List("!=")
 
-
-  override def onStart() {
-    Logger.debug("ElasticsearchPlugin started but not yet connected")
-    connect()
-    queue.listen()
-  }
 
   def connect(force:Boolean = false): Boolean = {
     if (!force && isEnabled()) {
@@ -126,7 +122,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
-  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int], user: Option[User]): ElasticsearchResult = {
+  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int], user: Option[User]): SearchResult = {
     /** Each item in query list has properties:
       *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
       *   "operator":       type of query for this term, e.g. '=='
@@ -134,14 +130,18 @@ class ElasticsearchSearchService @Inject() (
       *   "extractor_key":  name of extractor component only, e.g. 'extractors.wordCount'
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
+    // TODO: Better way to build a URL?
+    val source_url = s"/api/search?query=$query&grouping=$grouping"
+
     val queryObj = prepareElasticJsonQuery(query, grouping)
-    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
+    val result = _accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
+    result.asInstanceOf[SearchResult]
   }
 
   /** Search using a simple text string, appending parameters from API to string if provided */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
-             from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User]): ElasticsearchResult = {
+             from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User]): SearchResult = {
 
     var expanded_query = query
 
@@ -185,18 +185,29 @@ class ElasticsearchSearchService @Inject() (
       case None => {}
     }
 
+    // TODO: Better way to build a URL?
+    val source_url = s"/api/search?query=$query" +
+      (resource_type match {case Some(x) => s"&resource_type=$x" case None => ""}) +
+      (datasetid match {case Some(x) => s"&datasetid=$x" case None => ""}) +
+      (collectionid match {case Some(x) => s"&collectionid=$x" case None => ""}) +
+      (spaceid match {case Some(x) => s"&spaceid=$x" case None => ""}) +
+      (folderid match {case Some(x) => s"&folderid=$x" case None => ""}) +
+      (field match {case Some(x) => s"&field=$x" case None => ""}) +
+      (tag match {case Some(x) => s"&tag=$x" case None => ""})
+
     val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted)
-    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
+    val result = _accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
+    result.asInstanceOf[SearchResult]
   }
 
   /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
-  def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int): ElasticsearchResult = {
+  private def _accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int, source_url: String): Map[String, JsValue] = {
     var total_results = ListBuffer.empty[ResourceRef]
 
     // Fetch initial page & filter by permissions
     val (results, total_size) = _search(queryObj, Some(from), Some(size))
     Logger.debug(s"Found ${results.length} results with ${total_size} total")
-    val filtered = checkResultPermissions(results, user)
+    val filtered = _checkResultPermissions(results, user)
     Logger.debug(s"Permission to see ${filtered.length} results")
     var scanned_records = size
     var new_from = from + size
@@ -209,7 +220,7 @@ class ElasticsearchSearchService @Inject() (
       val (results, total_size)  = _search(queryObj, Some(new_from), Some(size*2))
       Logger.debug(s"Found ${results.length} results with ${total_size} total")
       if (results.length == 0 || new_from+results.length == total_size) exhausted = true // No more results to find
-      val filtered = checkResultPermissions(results, user)
+      val filtered = _checkResultPermissions(results, user)
       Logger.debug(s"Permission to see ${filtered.length} results")
       var still_scanning = true
       results.foreach(r => {
@@ -227,15 +238,17 @@ class ElasticsearchSearchService @Inject() (
       })
     }
 
-    new ElasticsearchResult(total_results.toList,
+    val unpreppedResponse = ElasticsearchResult(total_results.toList,
       from,
       total_results.length,
       scanned_records,
       total_size)
+
+    _prepareSearchResponse(unpreppedResponse, source_url, user)
   }
 
   /** Return a filtered list of resources that user can actually access */
-  def checkResultPermissions(results: List[ResourceRef], user: Option[User]): List[ResourceRef] = {
+  private def _checkResultPermissions(results: List[ResourceRef], user: Option[User]): List[ResourceRef] = {
     var filteredResults = ListBuffer.empty[ResourceRef]
 
     var filesFound = ListBuffer.empty[UUID]
@@ -269,7 +282,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /*** Execute query and return list of results and total result count as tuple */
-  def _search(queryObj: XContentBuilder, from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
+  private def _search(queryObj: XContentBuilder, from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
     connect()
     val response = client match {
       case Some(x) => {
@@ -296,6 +309,67 @@ class ElasticsearchSearchService @Inject() (
     }).toList, response.getHits().getTotalHits())
   }
 
+  /** Format a simple search result */
+  private def _prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
+    var results = ListBuffer.empty[JsValue]
+
+    // Use bulk Mongo queries to get many resources at once
+    val filesList = files.get(Permission.checkPermissions(user, Permission.ViewFile,
+      response.results.filter(_.resourceType == 'file)).approved.map(_.id)).found
+    val datasetsList = datasets.get(Permission.checkPermissions(user, Permission.ViewDataset,
+      response.results.filter(_.resourceType == 'dataset)).approved.map(_.id)).found
+    val collectionsList = collections.get(Permission.checkPermissions(user, Permission.ViewCollection,
+      response.results.filter(_.resourceType == 'collection)).approved.map(_.id)).found
+
+    // Now reorganize the separate lists back into Elasticsearch score order
+    for (resource <- response.results) {
+      resource.resourceType match {
+        case ResourceRef.file => filesList.filter(_.id == resource.id).foreach(f => results += toJson(f))
+        case ResourceRef.dataset => datasetsList.filter(_.id == resource.id).foreach(d => results += toJson(d))
+        case ResourceRef.collection => collectionsList.filter(_.id == resource.id).foreach(c => results += toJson(c))
+      }
+    }
+
+    // TODO: add views etc. other properties for the handlebars template
+
+    val result = Map[String, JsValue](
+      "results" -> toJson(results.distinct),
+      "count" -> toJson(response.results.length),
+      "size" -> toJson(response.size),
+      "scanned_size" -> toJson(response.scanned_size),
+      "from" -> toJson(response.from),
+      "total_size" -> toJson(response.total_size)
+    )
+
+    _addPageURLs(result, source_url, response)
+  }
+
+  /** Provide URLs referring to first/last/next/previous pages of current result set if possible */
+  private def _addPageURLs(result: Map[String, JsValue], url_root: String, response: ElasticsearchResult): Map[String, JsValue] = {
+    var paged_result = result
+
+    val lead = if (url_root.contains('?')) "&" else "?"
+
+    // Add pagination fields if necessary
+    if (response.from > 0) {
+      val prev = List(response.from - response.size, 0).max
+      paged_result += ("first" -> toJson(url_root + lead + s"from=0&size=${response.size}"))
+      paged_result += ("prev"  -> toJson(url_root + lead + s"from=$prev&size=${response.size}"))
+    }
+
+    if (response.from + response.scanned_size < response.total_size) {
+      val next = List[Long](response.from + response.scanned_size, response.total_size).min
+      var last = next
+      while (last < response.total_size - response.size) {
+        last += response.size
+      }
+      val last_size = response.total_size - last
+      paged_result += ("last" -> toJson(url_root + lead + s"from=$last&size=${last_size}"))
+      paged_result += ("next"  -> toJson(url_root + lead + s"from=$next&size=${response.size}"))
+    }
+
+    paged_result
+  }
 
   /** Create a new index with preconfigured mappgin */
   def createIndex(): Unit = {
@@ -413,7 +487,7 @@ class ElasticsearchSearchService @Inject() (
         index(dataset, recursive)
       }
     }
-    index(SearchUtils.getElasticsearchObject(collection))
+    _index(getElasticsearchObject(collection))
   }
 
   /**
@@ -434,7 +508,7 @@ class ElasticsearchSearchService @Inject() (
         }
       }
     }
-    index(SearchUtils.getElasticsearchObject(dataset))
+    _index(getElasticsearchObject(dataset))
   }
 
   /** Reindex the given file. */
@@ -444,16 +518,21 @@ class ElasticsearchSearchService @Inject() (
     for (section <- file.sections) {
       index(section)
     }
-    index(SearchUtils.getElasticsearchObject(file))
+    _index(getElasticsearchObject(file))
+  }
+
+  def index(file: TempFile): Unit = {
+    connect()
+    _index(getElasticsearchObject(file))
   }
 
   def index(section: Section) {
     connect()
-    index(SearchUtils.getElasticsearchObject(section))
+    _index(getElasticsearchObject(section))
   }
 
   /** Index document using an arbitrary map of fields. */
-  def index(esObj: Option[models.ElasticsearchObject]) {
+  private def _index(esObj: Option[ElasticsearchObject]) {
     esObj match {
       case Some(eso) => {
         connect()
@@ -959,10 +1038,325 @@ class ElasticsearchSearchService @Inject() (
     return beg + value.stripPrefix("^").stripSuffix("$") + end
   }
 
-  override def onStop() {
-    client.map(_.close())
-    client = None
-    Logger.info("ElasticsearchPlugin has stopped")
+  /**Convert File to ElasticsearchObject and return, fetching metadata as necessary**/
+  def getElasticsearchObject(f: File): Option[ElasticsearchObject] = {
+    val id = f.id
+
+    // Get child_of relationships for File
+    var child_of: ListBuffer[String] = ListBuffer()
+    datasets.findByFileIdDirectlyContain(id).map(ds => {
+      child_of += ds.id.toString
+      ds.spaces.map(spid => child_of += spid.toString)
+      ds.collections.map(collid => child_of += collid.toString)
+    })
+    val folderlist = folders.findByFileId(id).map(fld => {
+      child_of += fld.id.toString
+      child_of += fld.parentDatasetId.toString
+      fld.id
+    })
+    datasets.get(folderlist).found.foreach(ds => {
+      child_of += ds.id.toString
+      ds.spaces.map(spid => child_of += spid.toString)
+      ds.collections.map(collid => child_of += collid.toString)
+    })
+    val child_of_distinct = child_of.toList.distinct
+
+    // Get tags for file and its sections
+    var ftags: ListBuffer[String] = ListBuffer()
+    f.tags.foreach(t =>
+      ftags += t.name
+    )
+    f.sections.foreach(sect => {
+      sect.tags.foreach(sect_tag =>
+        ftags += sect_tag.name
+      )
+    })
+
+    // Get comments for file
+    val fcomments = for (c <- comments.findCommentsByFileId(id)) yield {
+      c.text
+    }
+
+    // Get metadata for File
+    var metadata = Map[String, JsValue]()
+    for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))) {
+      val creator = md.creator.displayName
+
+      // If USER metadata, ignore the name and set the Metadata Definition field to the creator
+      if (md.creator.typeOfAgent=="cat:user") {
+        val subjson = md.content.as[JsObject]
+        subjson.keys.foreach(subkey => {
+          // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+          if (metadata.keySet.exists(_ == subkey)) {
+            metadata += (subkey -> metadata(subkey).as[JsArray].append((subjson \ subkey)))
+          }
+          else {
+            metadata += (subkey -> Json.arr((subjson \ subkey)))
+          }
+        })
+      } else if (md.creator.typeOfAgent=="user") {
+        // Override the creator if this is non-UI user-submitted metadata and group the objects together
+        val creator = "user-submitted"
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+      else {
+        // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+    }
+
+    Some(new ElasticsearchObject(
+      ResourceRef(ResourceRef.file, id),
+      f.filename,
+      f.author.id.toString,
+      f.uploadDate,
+      f.originalname,
+      List.empty,
+      child_of_distinct,
+      f.description,
+      ftags.toList,
+      fcomments,
+      metadata
+    ))
+  }
+
+  /**Convert Dataset to ElasticsearchObject and return, fetching metadata as necessary**/
+  def getElasticsearchObject(ds: Dataset): Option[ElasticsearchObject] = {
+    val id = ds.id
+
+    // Get parent collections and spaces
+    var child_of: ListBuffer[String] = ListBuffer()
+    ds.collections.map(collId => child_of += collId.toString)
+    ds.spaces.map(spid => child_of += spid.toString)
+    val child_of_distinct = child_of.toList.distinct
+
+    // Get child files & folders
+    var parent_of: ListBuffer[String] = ListBuffer()
+    ds.files.map(fileId => parent_of += fileId.toString)
+    ds.folders.map(folderId => parent_of += folderId.toString)
+    val parent_of_distinct = parent_of.toList.distinct
+
+    // Get comments for dataset
+    val dscomments = for (c <- comments.findCommentsByDatasetId(id)) yield {
+      c.text
+    }
+
+    // Get metadata for Dataset
+    var metadata = Map[String, JsValue]()
+    for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))) {
+
+      val creator = md.creator.displayName
+
+      // If USER metadata, ignore the name and set the Metadata Definition field to the creator
+      if (md.creator.typeOfAgent=="cat:user") {
+        val subjson = md.content.as[JsObject]
+        subjson.keys.foreach(subkey => {
+          // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+          if (metadata.keySet.exists(_ == subkey)) {
+            metadata += (subkey -> metadata(subkey).as[JsArray].append((subjson \ subkey)))
+          }
+          else {
+            metadata += (subkey -> Json.arr((subjson \ subkey)))
+          }
+        })
+      } else {
+        // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+        if (metadata.keySet.exists(_ == creator))
+        // Merge must check for JsObject or JsArray separately - they cannot be merged or converted to JsValue directly
+          try {
+            metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+          } catch {
+            case _ => {
+              metadata += (creator -> (metadata(creator).as[JsArray] ++ (md.content.as[JsArray])))
+            }
+          }
+        else
+        // However for first entry JsValue is OK - will be converted to Object or Array for later merge if needed
+          metadata += (creator -> md.content.as[JsValue])
+      }
+    }
+
+    Some(new ElasticsearchObject(
+      ResourceRef(ResourceRef.dataset, id),
+      ds.name,
+      ds.author.id.toString,
+      ds.created,
+      "",
+      parent_of_distinct,
+      child_of_distinct,
+      ds.description,
+      ds.tags.map( (t:Tag) => t.name ),
+      dscomments,
+      metadata
+    ))
+  }
+
+  /**Convert Collection to ElasticsearchObject and return, fetching metadata as necessary**/
+  def getElasticsearchObject(c: Collection): Option[ElasticsearchObject] = {
+    // Get parent_of relationships for Collection
+    // TODO: Re-enable after listCollection implements Iterator; crashes on large databases otherwise
+    //var parent_of = datasets.listCollection(c.id.toString).map( ds => ds.id.toString )
+    var parent_of = c.child_collection_ids.map( cc_id => cc_id.toString)
+
+    // Get child relationships
+    var child_of: ListBuffer[String] = ListBuffer()
+    c.parent_collection_ids.map( pc_id => child_of += pc_id.toString)
+    c.spaces.map( spid => child_of += spid.toString)
+    val child_of_distinct = child_of.toList.distinct
+
+    Some(new ElasticsearchObject(
+      ResourceRef(ResourceRef.collection, c.id),
+      c.name,
+      c.author.id.toString,
+      c.created,
+      "",
+      parent_of,
+      child_of_distinct,
+      c.description,
+      List.empty,
+      List.empty,
+      Map()
+    ))
+  }
+
+  /**Convert Section to ElasticsearchObject and return**/
+  def getElasticsearchObject(s: Section): Option[ElasticsearchObject] = {
+    val id = s.id
+
+    // For Section, child_of will be a one-item list containing parent file ID
+    val child_of = List(s.id.toString)
+
+    // Get metadata for Section
+    var metadata = Map[String, JsValue]()
+    for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.section, id))) {
+      val creator = md.creator.displayName
+
+      // If USER metadata, ignore the name and set the Metadata Definition field to the creator
+      if (md.creator.typeOfAgent=="cat:user") {
+        val subjson = md.content.as[JsObject]
+        subjson.keys.foreach(subkey => {
+          // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+          if (metadata.keySet.exists(_ == subkey)) {
+            metadata += (subkey -> metadata(subkey).as[JsArray].append((subjson \ subkey)))
+          }
+          else {
+            metadata += (subkey -> Json.arr((subjson \ subkey)))
+          }
+        })
+      } else if (md.creator.typeOfAgent=="user") {
+        // Override the creator if this is non-UI user-submitted metadata and group the objects together
+        val creator = "user-submitted"
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+      else {
+        // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+    }
+
+    Some(new ElasticsearchObject(
+      ResourceRef(ResourceRef.section, id),
+      "section-"+id.toString,
+      "",
+      new Date,
+      "",
+      List.empty,
+      child_of,
+      s.description.getOrElse(""),
+      s.tags.map( (t:Tag) => t.name ),
+      List.empty,
+      metadata
+    ))
+  }
+
+  /**Convert TempFile to ElasticsearchObject and return, fetching metadata as necessary**/
+  def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
+    Some(new ElasticsearchObject(
+      ResourceRef(ResourceRef.file, file.id),
+      file.filename,
+      "",
+      file.uploadDate,
+      "",
+      List.empty,
+      List.empty,
+      "",
+      List.empty,
+      List.empty,
+      Map()
+    ))
   }
 
 }
+
+// Object that is indexed in Elasticsearch, converted from a resource object
+case class ElasticsearchObject (resource: ResourceRef,
+                                name: String,
+                                creator: String,
+                                created: Date,
+                                created_as: String = "",
+                                parent_of: List[String] = List.empty,
+                                child_of: List[String] = List.empty,
+                                description: String,
+                                tags: List[String] = List.empty,
+                                comments: List[String] = List.empty,
+                                metadata: Map[String, JsValue] = Map())
+
+object ElasticsearchObject {
+  /**
+   * Serializer for ElasticsearchObject
+   */
+  implicit object ElasticsearchWrites extends Writes[ElasticsearchObject] {
+    def writes(eso: ElasticsearchObject): JsValue = Json.obj(
+      "resource" -> JsString(eso.resource.toString),
+      "name" -> JsString(eso.name),
+      "creator" -> JsString(eso.creator),
+      "created" -> JsString(eso.created.toString),
+      "created_as" -> JsString(eso.created_as.toString),
+      "parent_of" -> JsArray(eso.parent_of.toSeq.map( (p:String) => Json.toJson(p)): Seq[JsValue]),
+      "child_of" -> JsArray(eso.child_of.toSeq.map( (c:String) => Json.toJson(c)): Seq[JsValue]),
+      "description" -> JsString(eso.description),
+      "tags" -> JsArray(eso.tags.toSeq.map( (t:String) => Json.toJson(t)): Seq[JsValue]),
+      "comments" -> JsArray(eso.comments.toSeq.map( (c:String) => Json.toJson(c)): Seq[JsValue]),
+      "metadata" -> JsArray(eso.metadata.toSeq.map(
+        (m:(String,JsValue)) => new JsObject(Seq(m._1 -> m._2)) )
+      )
+    )
+  }
+
+  /**
+   * Deserializer for ElasticsearchObject
+   */
+  implicit object ElasticsearchReads extends Reads[ElasticsearchObject] {
+    def reads(json: JsValue): JsResult[ElasticsearchObject] = JsSuccess(new ElasticsearchObject(
+      (json \ "resource").as[ResourceRef],
+      (json \ "name").as[String],
+      (json \ "creator").as[String],
+      (json \ "created").as[Date],
+      (json \ "created_as").as[String],
+      (json \ "parent_of").as[List[String]],
+      (json \ "child_of").as[List[String]],
+      (json \ "description").as[String],
+      (json \ "tags").as[List[String]],
+      (json \ "comments").as[List[String]],
+      (json \ "metadata").as[Map[String, JsValue]]
+    ))
+  }
+}
+
+case class ElasticsearchResult (results: List[ResourceRef],
+                                from: Int = 0,           // Starting index of results
+                                size: Int = 240,         // Requested page size of query
+                                scanned_size: Int = 240, // Number of records scanned to fill 'size' results after permission check
+                                total_size: Long = 0)    // Number of records across all pages

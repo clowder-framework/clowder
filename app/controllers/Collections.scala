@@ -3,7 +3,7 @@ package controllers
 import api.Permission._
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import util.{ Formatters, RequiredFieldsConfig, SortingUtils, SearchUtils }
+import util.{ Formatters, RequiredFieldsConfig, SortingUtils }
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{ Inject, Singleton }
@@ -449,7 +449,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           }
 
           //index collection
-          search.index(SearchUtils.getElasticsearchObject(collection))
+          search.index(collection, true)
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)

@@ -12,7 +12,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import services._
-import util.{DistancePriorityQueue, SearchResult, SearchUtils}
+import util.{DistancePriorityQueue, SearchResult}
 
 import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.mutable.{HashMap, ListBuffer}

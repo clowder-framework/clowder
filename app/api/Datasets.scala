@@ -224,10 +224,9 @@ class  Datasets @Inject()(
                   if (!file.xmlMetadata.isEmpty) {
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                    searches.index(SearchUtils.getElasticsearchObject(d))
-                  } else {
-                    searches.index(SearchUtils.getElasticsearchObject(d))
                   }
+                  searches.index(d, true)
+
 
                   current.plugin[AdminsNotifierPlugin].foreach {
                     _.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)

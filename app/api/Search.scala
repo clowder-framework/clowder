@@ -5,7 +5,7 @@ import services.{RdfSPARQLService, DatasetService, FileService, CollectionServic
 MultimediaQueryService, SearchService}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
-import util.{SearchUtils, SearchResult}
+import util.SearchResult
 import play.api.libs.json.{JsObject, Json, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{Inject, Singleton}
@@ -38,22 +38,11 @@ class Search @Inject() (
         }
       }
 
-      // TODO: Better way to build a URL?
-      val source_url = s"/api/search?query=$query" +
-        (resource_type match {case Some(x) => s"&resource_type=$x" case None => ""}) +
-        (datasetid match {case Some(x) => s"&datasetid=$x" case None => ""}) +
-        (collectionid match {case Some(x) => s"&collectionid=$x" case None => ""}) +
-        (spaceid match {case Some(x) => s"&spaceid=$x" case None => ""}) +
-        (folderid match {case Some(x) => s"&folderid=$x" case None => ""}) +
-        (field match {case Some(x) => s"&field=$x" case None => ""}) +
-        (tag match {case Some(x) => s"&tag=$x" case None => ""})
-
       // Add space filter to search here as a simple permissions check
       val permitted = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
 
-      val response = searches.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
+      val result = searches.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
 
-      val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
       Ok(toJson(result))
     } else {
       Logger.debug("Search plugin not enabled")
@@ -68,12 +57,7 @@ class Search @Inject() (
 
       if (searches.isEnabled) {
         val queryList = Json.parse(query).as[List[JsValue]]
-        val response = searches.search(queryList, grouping, from, size, user)
-
-        // TODO: Better way to build a URL?
-        val source_url = s"/api/search?query=$query&grouping=$grouping"
-
-        val result = SearchUtils.prepareSearchResponse(response, source_url, user)
+        val result = searches.search(queryList, grouping, from, size, user)
         Ok(toJson(result))
       } else {
         BadRequest("Elasticsearch plugin could not be reached")
