@@ -643,6 +643,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               if (umd.keySet().size() > 0) {
                 val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
                 val user = User.anonymous
+                // FIXME: hardcoded URL
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
@@ -656,6 +657,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             case Some(tmd) => {
               if (tmd.keySet().size() > 0) {
                 val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                // FIXME: hardcoded URL
                 val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                 val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
                 metadataService.addMetadata(metadataTech)
@@ -682,6 +684,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               if (umd.keySet().size() > 0) {
                 val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
                 val user = User.anonymous
+                // FIXME: hardcoded URL
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
@@ -697,12 +700,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               val tmdlist = tmd.asInstanceOf[BasicDBList]
               tmdlist.foreach { x =>
                 val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
+                // FIXME: hardcoded URL
                 val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                 val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
                 metadataService.addMetadata(metadataTech)
               }
             } else {
               val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+              // FIXME: hardcoded URL
               val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
               val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
               metadataService.addMetadata(metadataTech)

@@ -35,6 +35,7 @@ class Events @Inject() (events: EventService,
       " branch:" + sys.props.getOrElse("build.branch", default = "unknown") +" sha1:" + sys.props.getOrElse("build.gitsha1", default = "unknown") + "</p>\n" +
       "<p>Request: " + re + "</p>\n" +
       "<p>Error: " + ex + "</p>")
+    // FIXME: hardcoded email
     val recipient: String = "opensource+clowder@ncsa.illinois.edu"
     Mail.sendEmail(subject, request.user, recipient, body)
     Ok(toJson("Send Email success"))

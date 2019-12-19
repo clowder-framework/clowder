@@ -96,6 +96,7 @@ object Mail {
   }
 
   private def emailAddress(user: Option[User]): String = {
+    // FIXME: hardcoded email
     val from = current.configuration.getString("smtp.from").getOrElse("devnull@ncsa.illinois.edu")
     val name = current.configuration.getString("smtp.fromName").getOrElse("Clowder")
     user match {
