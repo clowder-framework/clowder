@@ -42,7 +42,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
         BadRequest(toJson("Missing parameter [section_id]"))
       }
   }
-  
+
   /**
    * Add feature to index.
    */

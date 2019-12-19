@@ -32,7 +32,7 @@ class MongoDBSchedulerService extends SchedulerService {
     var checkJob = false
     var jobList = getJob(name)
     for (job <- jobList){
-      checkJob = true 
+      checkJob = true
     }
     return checkJob
   }
@@ -69,7 +69,7 @@ class MongoDBSchedulerService extends SchedulerService {
 
     Jobs.dao.update(MongoDBObject("name" -> name), $set("frequency" -> freq))
   }
-  
+
 
   def updateEmailJob(id: UUID, name: String, setting: String) = {
     if (jobExists(name) == false) {

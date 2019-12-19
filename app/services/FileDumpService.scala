@@ -22,14 +22,14 @@ class FileDumpService(application: Application) extends Plugin {
       if (!fileDumpDir.endsWith(fileSep))
         fileDumpDir = fileDumpDir + fileSep
       this.fileDumpDir = Some(fileDumpDir)
-    
+
     var fileDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
     if(!fileDumpMoveDir.equals("")){
       if(!fileDumpMoveDir.endsWith(fileSep))
         fileDumpMoveDir = fileDumpMoveDir + fileSep
       this.fileDumpMoveDir = Some(fileDumpMoveDir)
     }
-  }	
+  }
   }
 
   override def onStop() {
@@ -49,13 +49,13 @@ class FileDumpService(application: Application) extends Plugin {
         val fileDumpingDir = dumpDir + filePathInDirs
         val copiedFile = new File(fileDumpingDir)
         FileUtils.copyFile(fileDump.fileToDump, copiedFile)
-        
+
         fileDumpMoveDir match {
           case Some(dumpMoveDir) => {
             val fileDumpingMoveDir = dumpMoveDir + filePathInDirs
             val movedFile = new File(fileDumpingMoveDir)
             movedFile.getParentFile().mkdirs()
-            
+
             if(copiedFile.renameTo(movedFile)){
               Logger.debug("File dumped and moved to staging directory successfully.")
             }else{
@@ -63,7 +63,7 @@ class FileDumpService(application: Application) extends Plugin {
           }
           }
           case None => Logger.warn("Could not move dumped file to staging directory. No staging directory set.")
-        }        
+        }
       }
       case None => Logger.warn("Could not dump file. No file dumping directory set.")
     }

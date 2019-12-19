@@ -19,7 +19,7 @@ object Sensors extends Controller with ApiController {
       }
     }
   }
-  
+
   def get(id: String) = PermissionAction(Permission.ViewGeoStream)(parse.json) { implicit request =>
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
@@ -30,7 +30,7 @@ object Sensors extends Controller with ApiController {
       }
     }
   }
-  
+
   def list() = PermissionAction(Permission.ViewGeoStream)(parse.json) { implicit request =>
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
@@ -42,7 +42,7 @@ object Sensors extends Controller with ApiController {
       }
     }
   }
-  
+
   def search() = PermissionAction(Permission.ViewGeoStream)(parse.json) { implicit request =>
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
@@ -53,7 +53,7 @@ object Sensors extends Controller with ApiController {
       }
     }
   }
-  
+
   def delete(id: String) = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {

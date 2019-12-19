@@ -13,7 +13,6 @@ object UserStatus extends Enumeration {
     type UserStatus = Value
     val Inactive, Active, Admin = Value
   }
-
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
@@ -127,7 +126,7 @@ case class ClowderUser(
 
   // should user be active
   status: UserStatus.Value = UserStatus.Inactive,
-  
+
   // has the user escalated privileges, this is never saved to the database
   @transient superAdminMode: Boolean = false,
 
@@ -152,7 +151,7 @@ case class ClowderUser(
   termsOfServices: Option[UserTermsOfServices] = None,
 
   lastLogin: Option[Date] = None
-  
+
 ) extends User
 
 case class Profile(

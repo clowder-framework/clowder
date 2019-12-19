@@ -71,9 +71,9 @@ object Agent {
     val userService: UserService = DI.injector.getInstance(classOf[UserService])
 
     def reads(json: JsValue) = {
-      //creator(agent) may be User or Extractor depending on the json 
+      //creator(agent) may be User or Extractor depending on the json
       var creator: Option[models.Agent] = None
-      
+
       //parse json input for type of agent
       val typeOfAgent = (json \ "agent" \ "@type").as[String]
 
@@ -128,7 +128,7 @@ object Metadata {
         "extractor_id" -> extractor_id_string)
     }
   }
- 
+
   implicit object UserAgentWrites extends Writes[UserAgent] {
     def writes(user: UserAgent): JsObject = {
       val user_id_string = user.userId.map(_.toString).getOrElse("")
@@ -138,7 +138,7 @@ object Metadata {
         "user_id" -> user_id_string)
     }
   }
-  
+
   implicit object MetadataWrites extends Writes[Metadata] {
     def writes(metadata: Metadata) = Json.obj(
         "created_at" -> metadata.createdAt.toString,
@@ -158,7 +158,7 @@ object RDFModel {
     def reads(json: JsValue) = {
       var model: Option[models.RDFModel] = None
       var in: java.io.InputStream = new java.io.ByteArrayInputStream( Json.stringify(json).getBytes )
-      
+
       // Parse JSON-LD
       var m: Model = ModelFactory.createDefaultModel()
       var error: String = null
@@ -175,6 +175,6 @@ object RDFModel {
           case None => JsError(ValidationError("Parse succeeded, but JSON-LD RDF model was empty. Try setting a default @vocab in your @context node."))
         }
     }
-    
+
   }
 }

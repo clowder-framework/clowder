@@ -10,13 +10,13 @@ import play.api.mvc.MultipartFormData
  * MetadataService for add and query metadata
  */
 trait MetadataService {
-  
+
   /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
   def addMetadata(metadata: Metadata) : UUID
-  
+
   /** Get Metadata By Id*/
   def getMetadataById(id : UUID) : Option[Metadata]
-  
+
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata]
 
@@ -35,7 +35,7 @@ trait MetadataService {
   /** Remove metadata by attachTo from a specific extractor */
   def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String, host: String,
     apiKey: Option[String], user: Option[User]): List[UUID]
-  
+
   /** Get metadata context if available */
   def getMetadataContext(metadataId: UUID): Option[JsValue]
 

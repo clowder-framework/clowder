@@ -194,7 +194,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           if (user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
-        
+
         val rs = play.api.Play.current.plugin[services.StagingAreaPlugin] match {
           case Some(plugin) => Publications.getPublications(s.id.toString, spaces)
           case None => List.empty

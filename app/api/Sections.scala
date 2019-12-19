@@ -170,7 +170,7 @@ class Sections @Inject()(
         case None => BadRequest
       }
   }
-  
+
   def description(id: UUID) = PermissionAction(Permission.EditSection, Some(ResourceRef(ResourceRef.section, id)))(parse.json)  { implicit request =>
     request.user match {
       case Some(identity) => {
@@ -199,7 +199,7 @@ class Sections @Inject()(
         case Some(section) => {
           thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
-              sections.updateThumbnail(section_id, thumbnail_id)              
+              sections.updateThumbnail(section_id, thumbnail_id)
               Ok(toJson(Map("status" -> "success")))
             }
             case None => BadRequest(toJson("Thumbnail not found"))
@@ -208,5 +208,5 @@ class Sections @Inject()(
         case None => BadRequest(toJson("Section not found " + section_id))
       }
   }
-  
+
 }

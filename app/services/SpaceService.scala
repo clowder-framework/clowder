@@ -276,7 +276,7 @@ trait SpaceService {
    * Otherwise will create and add a new document to the collection, with spaceId and extractor given.
    */
   def addExtractor(spaceId: UUID, extractor:String)
-  
+
   /**
    * Get all extractors for this space id.
    */

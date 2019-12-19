@@ -38,9 +38,9 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
   val onHandleStartSignUpGoTo = securesocial.controllers.Registration.onHandleStartSignUpGoTo
   val Success = securesocial.controllers.Registration.Success
   val ThankYouCheckEmail = securesocial.core.providers.utils.Mailer.SignUpEmailSubject
-  
+
   val SignUpEmailSubject = "mails.sendSignUpEmail.subject"
-  
+
   val Email = "email"
   val startForm = Form (
     Email -> email.verifying(Constraint[String] {

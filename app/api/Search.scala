@@ -127,7 +127,7 @@ class Search @Inject() (
         queues map {
           case (key, queue) =>
             val list = new ListBuffer[SearchResult]
-            for (element <- queue) {              
+            for (element <- queue) {
               val previewsBySection = previews.findBySectionId(element.target_section)
               if (previewsBySection.size == 1) {
                 Logger.trace("Appended search result " + key + " " + element.target_section + " " + element.distance + " " + previewsBySection(0).id.toString)
@@ -141,7 +141,7 @@ class Search @Inject() (
 
         val jsonResults = toJson(items.toMap)
         Ok(jsonResults)
-                
+
       }
       case None => InternalServerError("feature not found")
     }

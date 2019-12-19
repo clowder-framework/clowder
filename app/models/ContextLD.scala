@@ -12,9 +12,5 @@ import play.api.libs.json.JsString
 case class ContextLD(
   id: UUID = UUID.generate,
   contextName: JsString, //e.g. ncsa.cv.face.jsonld or some user id .jsonld
-  context: JsValue) 
-
-
-
-
-
+  context: JsValue
+)

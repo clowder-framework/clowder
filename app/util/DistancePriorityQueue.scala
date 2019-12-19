@@ -18,7 +18,7 @@ object SearchResult {
 }
 
 class DistancePriorityQueue(maxSize: Int) extends PriorityQueue[SearchResult](maxSize: Int) {
-    
+
     override def lessThan(a: SearchResult, b: SearchResult): Boolean = {
       if (a.distance > b.distance) {
             return true;

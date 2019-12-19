@@ -38,11 +38,11 @@ class MongoDBExtractionService extends ExtractionService {
   def insert(extraction: Extraction): Option[ObjectId] = {
     Extraction.insert(extraction)
   }
-  
+
   /**
    * Returns list of extractors and their corresponding status for a specified file
    */
-  
+
   def getExtractorList(fileId:UUID):collection.mutable.Map[String,String] = {
     val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
   var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
@@ -65,14 +65,14 @@ class MongoDBExtractionService extends ExtractionService {
     WebPageResource.insert(webpr,WriteConcern.Safe)
     webpr.id
   }
-  
+
   def getWebPageResource(id: UUID): Map[String,String]={
     val wpr=WebPageResource.findOne(MongoDBObject("_id"->new ObjectId(id.stringify)))
     var wprlist= wpr.map{
       e=>Logger.debug("resource id:" + id.toString)
          e.URLs
     }.getOrElse(Map.empty)
-    wprlist         
+    wprlist
   }
 
   // Return a mapping of ExtractorName -> (FirstMsgTime, LatestMsgTime, LatestMsg, ListOfAllMessages)

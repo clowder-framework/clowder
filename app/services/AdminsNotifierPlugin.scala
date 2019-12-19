@@ -19,7 +19,7 @@ class AdminsNotifierPlugin @Inject()(userService: UserService) (application:Appl
   override lazy val enabled = {
     !application.configuration.getString("adminnotifierservice").filter(_ == "disabled").isDefined
   }
-  
+
   def sendAdminsNotification(baseURL: String, resourceType: String = "Dataset", eventType: String = "added",
                              resourceId: String, resourceName: String) = {
 
@@ -31,7 +31,7 @@ class AdminsNotifierPlugin @Inject()(userService: UserService) (application:Appl
     } else if(resourceType.equals("Collection")){
       baseURL + controllers.routes.Collections.collection(UUID(resourceId))
     }
-    
+
     resourceUrl match{
       case "" => {
         Logger.error("Unknown resource type.")
@@ -50,7 +50,7 @@ class AdminsNotifierPlugin @Inject()(userService: UserService) (application:Appl
           case _=> {
             Mail.sendEmailAdmins(mailSubject, None, Html(mailHTML))
           }
-        }	
+        }
       }
     }
   }

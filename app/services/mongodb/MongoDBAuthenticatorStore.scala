@@ -61,18 +61,18 @@ object AuthenticatorDAO extends ModelCompanion[LocalAuthenticator, ObjectId] {
 
 }
 class MongoDBAuthenticatorStore(app: Application) extends AuthenticatorStore(app) {
-  
+
   def save(authenticator: Authenticator): Either[Error, Unit] = {
     Logger.trace("Saving Authenticator " + authenticator)
     AuthenticatorDAO.save(authenticator)
     Right(())
   }
-  
+
   def find(id: String): Either[Error, Option[Authenticator]] = {
     Logger.trace("Searching Authenticator " + id)
     Right(AuthenticatorDAO.find(id))
   }
-  
+
   def delete(id: String): Either[Error, Unit] = {
     Logger.trace("Deleting id from Authenticator" + id)
     AuthenticatorDAO.delete(id)

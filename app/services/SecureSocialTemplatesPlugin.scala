@@ -77,7 +77,7 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
   def getSignUpEmail(token: String)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
     (None, Some(views.html.ss.mails.signUpEmail(token)))
   }
-  
+
   /**
    * Returns the email sent when the user is already registered
    *
@@ -137,11 +137,11 @@ class SecureSocialTemplatesPlugin(application: play.Application) extends Templat
   def getPasswordChangedNoticeEmail(user: Identity)(implicit request: RequestHeader): (Option[Txt], Option[Html]) = {
     (None, Some(views.html.ss.mails.passwordChangedNotice(user)))
   }
-  
+
   def getNotAuthorizedPage[A](implicit request: Request[A]): Html = {
     securesocial.views.html.notAuthorized()
   }
-  
+
   def getPasswordChangePage[A](implicit request: SecuredRequest[A], form: Form[ChangeInfo]):Html = {
     securesocial.views.html.passwordChange(form)
   }

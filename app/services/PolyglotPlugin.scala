@@ -63,15 +63,15 @@ class PolyglotPlugin(application: Application) extends Plugin {
       if ( !polyglotUser.isDefined || !polyglotPassword.isDefined) {
         throw new RuntimeException("Polyglot credentials not defined.")
       }
-      
+
       if (triesLeft == 0) Future.failed(throw new RuntimeException("Converted file not found."))
-      
+
       else  WS.url(url).withAuth(polyglotUser.get,  polyglotPassword.get, AuthScheme.BASIC).get flatMap { res =>
         if (res.status == 200) {
           //this is the callback, runs after file exists is TRUE
           Logger.debug("File exists on polyglot. Will download now.")
           //file exists on Polyglot, begin download using iteratee
-          //following example in https://www.playframework.com/documentation/2.2.x/ScalaWS  Processing large responses           
+          //following example in https://www.playframework.com/documentation/2.2.x/ScalaWS  Processing large responses
           val result = WS.url(url)
             .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
             .get { xx => fromStream(outputStream) }
@@ -85,7 +85,7 @@ class PolyglotPlugin(application: Application) extends Plugin {
       }
     }
 
-  /** 
+  /**
    *  Uploads to Polyglot the file to be converted. Returns url of the converted file.
    */
   def getConvertedFileURL(filename: String, inputStream: java.io.InputStream, outputFormat: String): Future[String] = {
@@ -96,8 +96,8 @@ class PolyglotPlugin(application: Application) extends Plugin {
 
     //post a multipart form data to Polyglot.
     //based on the code from https://github.com/playframework/playframework/issues/902
-    //comment dated Dec 5, 2014                   
-    // Build up the Multiparts - consists of just one file part               
+    //comment dated Dec 5, 2014
+    // Build up the Multiparts - consists of just one file part
     val filePart: FilePart = new FilePart(filename, new ByteArrayPartSource(filename, IOUtils.toByteArray(inputStream)))
     val parts = Array[Part](filePart)
     val reqEntity = new MultipartRequestEntity(parts, new FluentCaseInsensitiveStringsMap)
@@ -106,19 +106,19 @@ class PolyglotPlugin(application: Application) extends Plugin {
     val bytes = baos.toByteArray
     val reqContentType = reqEntity.getContentType
 
-    // Now just send the data to the WS API                
+    // Now just send the data to the WS API
     val response = WS.url(polyglotConvertURL.get + outputFormat)
       .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
       .post(bytes)(Writeable.wBytes, ContentTypeOf(Some(reqContentType)))
 
-    //get the url for the converted file on Polyglot  
+    //get the url for the converted file on Polyglot
     val fileURLFut = response.map {
       res =>
         if (res.status != 200) {
           Logger.debug("Could not get url of converted file - status = " + res.status + "  " + res.statusText)
           throw new RuntimeException("Could not connect to Polyglot. " + res.statusText)
         }
-        //TODO: Find an easier way to get rid of html markup 
+        //TODO: Find an easier way to get rid of html markup
         //result is an html link
         //<a href=http://the_url_string>http://the_url_string</a>
         val fileURL = res.body.substring(res.body.indexOf("http"), res.body.indexOf(">"))
@@ -127,9 +127,9 @@ class PolyglotPlugin(application: Application) extends Plugin {
     fileURLFut.map { url => Logger.debug("Converted file url =  " + url) }
     fileURLFut
   }
-  
+
   /**
-   * Gets all output formats for the given input format. 
+   * Gets all output formats for the given input format.
    * If outputs are stored in memory, returns them. Otherwise, calls another method to fetch outputs from Polyglot.
    */
   def getOutputFormats(inputType: String): Future[Option[List[String]]] = {
@@ -143,14 +143,14 @@ class PolyglotPlugin(application: Application) extends Plugin {
       getOutputFormatsPolyglot(inputType)
     }
   }
-  
+
   /**
    * Goes to Polyglot and fetches all output formats for the input format given.
    */
-  def getOutputFormatsPolyglot(inputType: String): Future[Option[List[String]]] = {   
+  def getOutputFormatsPolyglot(inputType: String): Future[Option[List[String]]] = {
     //proceed only if received all the config params
     if (polyglotInputsURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
-      //call polyglot server with authentication          
+      //call polyglot server with authentication
       WS.url(polyglotInputsURL.get + inputType)
         .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
         .get

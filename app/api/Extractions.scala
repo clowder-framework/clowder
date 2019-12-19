@@ -155,11 +155,11 @@ class Extractions @Inject()(
         else {
           BadRequest("Not valid id")
         }
-      } //case plugin  
+      } //case plugin
       case None => {
         BadRequest("No Service")
       }
-    } //plugin match         
+    } //plugin match
   }
 
   /**
@@ -174,7 +174,7 @@ class Extractions @Inject()(
         case Some(plugin) => {
           files.get(id) match {
             case Some(file) => {
-              //Get the list of extractors processing the file 
+              //Get the list of extractors processing the file
               val l = extractions.getExtractorList(file.id) map {
                 elist =>
                   (elist._1, elist._2)
@@ -387,7 +387,7 @@ class Extractions @Inject()(
     val listNamesJson = toJson(listNames)
     Ok(toJson(Map("Extractors" -> listNamesJson)))
    }
- 
+
   /**
    * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
    */

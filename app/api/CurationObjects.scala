@@ -48,7 +48,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               case Some(f) => f.length
               case None => 0
             }
-  
+
             var tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson("urn:uuid:"+file.id),

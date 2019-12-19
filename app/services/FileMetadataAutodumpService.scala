@@ -12,16 +12,16 @@ import play.api.libs.concurrent.Execution.Implicits._
 class FileMetadataAutodumpService (application: Application) extends Plugin {
 
   val files: FileService = DI.injector.getInstance(classOf[FileService])
-  
+
   override def onStart() {
     Logger.debug("Starting file metadata autodumper Plugin")
     //Dump metadata of all files periodically
-    val timeInterval = play.Play.application().configuration().getInt("filemetadatadump.dumpEvery") 
+    val timeInterval = play.Play.application().configuration().getInt("filemetadatadump.dumpEvery")
   Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
         dumpAllFileMetadata
-  }    
   }
-  
+  }
+
   override def onStop() {
     Logger.debug("Shutting down file metadata autodumper Plugin")
   }
@@ -29,7 +29,7 @@ class FileMetadataAutodumpService (application: Application) extends Plugin {
   override lazy val enabled = {
     !application.configuration.getString("filemetadatadumpservice").filter(_ == "disabled").isDefined
   }
-  
+
   def dumpAllFileMetadata() = {
     val unsuccessfulDumps = files.dumpAllFileMetadata
     if(unsuccessfulDumps.size == 0)
@@ -41,7 +41,7 @@ class FileMetadataAutodumpService (application: Application) extends Plugin {
       }
       unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
       Logger.debug(unsuccessfulMessage)
-    } 
-    
-  }  
+    }
+
+  }
 }

@@ -10,9 +10,9 @@ import com.novus.salat.dao.SalatMongoCursor
  * Service definition to interact with Events database.
  *
  */
- 
+
 trait EventService {
-     
+
      /**
      * Lists all the events
      */

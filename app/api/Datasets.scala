@@ -1110,8 +1110,8 @@ class  Datasets @Inject()(
       BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
     }
   }
-  //End, Update Dataset Information code  
-    
+  //End, Update Dataset Information code
+
   def removeCreator(id: UUID, creator: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
@@ -1132,12 +1132,12 @@ class  Datasets @Inject()(
       BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
     }
   }
-  //End, removeCreator  
-    
+  //End, removeCreator
+
   def moveCreator(id: UUID, creator: String, newPos: Int) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     if (UUID.isValid(id.stringify)) {
-      
+
       Logger.debug(s"Move Creator for dataset with id  $id. :  $creator  to $newPos")
       datasets.moveCreator(id, creator, newPos)
       datasets.get(id) match {
@@ -1154,8 +1154,8 @@ class  Datasets @Inject()(
     }
   }
   //End, move Creator
-  
-  
+
+
   //Update License code
   /**
     * REST endpoint: POST: update the license data associated with a specific Dataset

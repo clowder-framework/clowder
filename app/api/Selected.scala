@@ -59,7 +59,7 @@ class Selected @Inject()(selections: SelectionService,
       }
     }
   }
-  
+
   def remove() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.remove" + request.body)
     request.body.\("dataset").asOpt[String] match {

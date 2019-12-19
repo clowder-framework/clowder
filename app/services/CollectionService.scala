@@ -104,12 +104,12 @@ trait CollectionService {
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, exact: Boolean): List[Collection]
 
-  
+
   /**
    * Return a list of collections the user has access to starting at a specific date with matching title.
    */
   def listSpaceAccess(limit: Integer, space: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
-  
+
   /**
     * List All Collections (Including childs) a user can view.
     */

@@ -455,7 +455,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       (name, base + "#detail/location/" + name + "/")
     }
   }
-  
+
   def getSensorStreams(id: String): Option[String] = {
     var data = ""
     val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
@@ -476,7 +476,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
-  
+
   def getSensorStats(id: String): Option[String] = {
     val query = "WITH stream_info AS (" +
           "SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
@@ -702,8 +702,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     st.execute()
     st.close
     true
-  }  
- 
+  }
+
   def dropAll(): Boolean = {
     val deleteSensors = "DELETE from sensors"
     val st = conn.prepareStatement(deleteSensors)
@@ -719,7 +719,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     st3.close()
     true
   }
-  
+
   def counts(): (Int, Int, Int) = {
     var counts = (0, 0, 0)
     val countQuery = "SELECT (SELECT COUNT(DISTINCT gid) FROM sensors) AS sensors,(SELECT COUNT(DISTINCT gid) FROM streams) AS streams,(SELECT COUNT(DISTINCT gid) FROM datapoints) AS datapoints"
@@ -986,7 +986,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
     }
   }
-  
+
   def filterProperties(obj: JsObject, attributes: List[String]) = {
     var props = JsObject(Seq.empty)
     (obj \ "properties").asOpt[JsObject] match {
@@ -1001,7 +1001,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     case None => obj
     }
   }
-  
+
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +

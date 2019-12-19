@@ -422,13 +422,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // Change repository in extractors.info collection into a list
     updateMongo("update-repository-type-in-extractors-info", updateRepositoryType)
 
-    // Change existing 'In Curation' curation objects/pub requests to 'In Prepaparation' 
+    // Change existing 'In Curation' curation objects/pub requests to 'In Prepaparation'
     updateMongo("change-in-curation-status-to-in-preparation", updateInCurationStatus)
 
-    // Change from User active and serverAdmin flags to single status 
+    // Change from User active and serverAdmin flags to single status
     updateMongo("change-to-user-status", updateToUserStatus)
-    
-    // Capture original filename from FRBR metadata supplied by SEAD Migrator 
+
+    // Capture original filename from FRBR metadata supplied by SEAD Migrator
     updateMongo("populate-original-filename", updateOriginalFilename)
 
     // Removes the private key from extraction logs
@@ -1614,7 +1614,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                                   collection("uploads").update(MongoDBObject("_id" -> new ObjectId(ref.get("_id").toString())),
                   MongoDBObject("$set" -> MongoDBObject(
                     "originalname" -> path.substring(path.lastIndexOf("/")+1))), false, false, WriteConcern.Safe)
-                  
+
                   }
                   case _ => Logger.info("Nope")
                 }

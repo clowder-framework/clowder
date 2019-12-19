@@ -51,9 +51,9 @@ import services.DI
  *
  * addMetadata_dataset => "user added metadata to dataset: object_name"
  * addMetadata_file => "user added metadata to file: object_name"
- * 
+ *
  * update_dataset_information => "user updated dataset information for object_name"
- * 
+ *
  * (when working with comments object_name holds comment text, object_id has UUID of comment)
  * comment_file => "user commented object_name on file: source_name"
  * add_comment_dataset => "user commented object_name on dataset: source_name"

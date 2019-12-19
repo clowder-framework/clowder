@@ -528,7 +528,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.FileLinks.createLink,
         controllers.routes.javascript.Search.search
       )
-    ).as(JSON) 
+    ).as(JSON)
   }
 
 }

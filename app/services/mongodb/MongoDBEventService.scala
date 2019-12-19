@@ -47,7 +47,7 @@ class MongoDBEventService @Inject() (
     if (object_name.toString() != "undefined"){
       user match {
         case Some(modeluser) => {
-          Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
+          Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date()))
         }
         case None => Logger.error("No user provided")
       }
@@ -57,7 +57,7 @@ class MongoDBEventService @Inject() (
   def addSourceEvent(user: Option[User], object_id: UUID, object_name: String, source_id: UUID, source_name: String, action_type: String) = {
     user match {
       case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
+        Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date()))
       }
       case None => Logger.error("No user provided")
     }

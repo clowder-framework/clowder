@@ -9,12 +9,12 @@ import play.api.Logger
 object FileOP {
   /**
    * Returns extracted lists of tags for a file
-   * 
+   *
    */
-  
+
   val previews: PreviewService=DI.injector.getInstance(classOf[PreviewService])
   val files:FileService=DI.injector.getInstance(classOf[FileService])
-  
+
   def extractTags(file: models.File) = {
     val tags = file.tags
     // Transform the tag list into a list of ["extractor_id" or "userId", "values"] items,
@@ -42,11 +42,11 @@ object FileOP {
     val jtags = jtagsE ++ jtagsU
     jtags
   }
-  
-  
+
+
   /**
    * Returns Previews extracted so far for a file
-   * 
+   *
    */
   def extractPreviews(id: UUID) = {
     val previews1 =previews.findByFileId(id);
@@ -54,7 +54,7 @@ object FileOP {
     // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
     var previewRes = Map[String, MutableList[JsValue]]()
     previews1.filter(_.extractor_id.isDefined).foreach(p => {
-      
+
       val ename = p.extractor_id.get
       val jitem = Json.obj("preview_id" -> p.id.stringify,
         "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id).toString)
@@ -67,5 +67,4 @@ object FileOP {
     val jpreviews = previewRes.map { case (k, v) => Json.obj("extractor_id" -> k, "values" -> Json.toJson(v)) }
     jpreviews
   }
-  
- }
+}

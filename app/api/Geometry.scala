@@ -12,7 +12,7 @@ class Geometry @Inject()(threeD: ThreeDService) extends Controller with ApiContr
 
   /**
    * Upload a 3D binary geometry file.
-   */  
+   */
   def uploadGeometry() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
       request.body.file("File").map { f =>
         Logger.debug("Uploading binary geometry file " + f.filename)

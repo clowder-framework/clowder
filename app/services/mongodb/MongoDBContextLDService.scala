@@ -20,7 +20,7 @@ import services.MetadataService
 import play.api.libs.json.JsString
 /**
  * MongoDB implementation of ContextLD service
- * 
+ *
  */
 
 @Singleton

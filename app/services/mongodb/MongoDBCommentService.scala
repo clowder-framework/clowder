@@ -72,21 +72,21 @@ class MongoDBCommentService extends CommentService {
 
   /**
    * Implementation of the editComment method defined in the services/CommentService.scala trait.
-   * 
+   *
    * This implementation edits the comment by updating the "text" field in for the identified comment.
    */
-  def editComment(id: UUID, commentText: String) {      
-      val result = Comment.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-          $set("text" -> commentText), 
-          false, false, WriteConcern.Safe);      
+  def editComment(id: UUID, commentText: String) {
+      val result = Comment.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+          $set("text" -> commentText),
+          false, false, WriteConcern.Safe);
   }
-  
+
   /**
    * Implementation of the removeComment method defined in the services/CommentService.scala trait.
-   * 
+   *
    * This implementation removes the file by getting it by its identifier originally.
    */
-  def removeComment(id: UUID) {      
+  def removeComment(id: UUID) {
       val theComment = get(id)
       removeComment(theComment.get)
   }

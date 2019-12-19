@@ -289,10 +289,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
           $set("title" -> title),
           upsert=false, multi=false, WriteConcern.Safe)
   }
-  
+
   /**
-   * Get metadata from the mongo db as a map. 
-   * 
+   * Get metadata from the mongo db as a map.
+   *
    */
    def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any] = {
     PreviewDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
@@ -303,12 +303,12 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       }
     }
   }
-  
-    def getExtractorId(id: UUID):String = {     
-      val extractor_id = getMetadata(id)("extractor_id").toString    
+
+    def getExtractorId(id: UUID):String = {
+      val extractor_id = getMetadata(id)("extractor_id").toString
       extractor_id
    }
-    
+
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {

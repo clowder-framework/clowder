@@ -9,13 +9,12 @@ import play.api.mvc.Controller
 import services.ThreeDService
 
 class ThreeDTexture @Inject()(threeD: ThreeDService) extends Controller with ApiController {
-  
   /**
    * Upload a 3D texture file.
-   */  
+   */
   def uploadTexture() =
     PermissionAction(Permission.CreatePreview)(parse.multipartFormData) { implicit request =>
-      request.body.file("File").map { f =>        
+      request.body.file("File").map { f =>
         Logger.debug("Uploading 3D texture file " + f.filename)
         // store file
         try {

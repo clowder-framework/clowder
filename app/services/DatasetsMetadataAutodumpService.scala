@@ -12,16 +12,16 @@ import play.api.libs.concurrent.Execution.Implicits._
 class DatasetsMetadataAutodumpService (application: Application) extends Plugin {
 
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
-  
+
   override def onStart() {
     Logger.debug("Starting dataset metadata autodumper Plugin")
     //Dump metadata of all datasets periodically
-    val timeInterval = play.Play.application().configuration().getInt("datasetmetadatadump.dumpEvery") 
+    val timeInterval = play.Play.application().configuration().getInt("datasetmetadatadump.dumpEvery")
       Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
         dumpAllDatasetMetadata
       }
   }
-  
+
   override def onStop() {
     Logger.debug("Shutting down dataset metadata autodumper Plugin")
   }
@@ -29,7 +29,7 @@ class DatasetsMetadataAutodumpService (application: Application) extends Plugin 
   override lazy val enabled = {
     !application.configuration.getString("datasetmetadatadumpservice").filter(_ == "disabled").isDefined
   }
-  
+
   def dumpAllDatasetMetadata() = {
     val unsuccessfulDumps = datasets.dumpAllDatasetMetadata
     if(unsuccessfulDumps.size == 0)
@@ -41,7 +41,7 @@ class DatasetsMetadataAutodumpService (application: Application) extends Plugin 
       }
       unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
       Logger.debug(unsuccessfulMessage)
-    } 
-    
+    }
+
   }
 }

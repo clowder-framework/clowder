@@ -17,6 +17,4 @@ case class ExtractionRequests(
     extractors:Option[List[String]],
     startTime:Option[Date],
     endTime:Option[Date]
-    )
-    
- 
+)

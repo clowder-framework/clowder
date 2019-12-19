@@ -656,7 +656,7 @@ class MongoDBFileService @Inject() (
   def incrementMetadataCount(id: UUID, count: Long) = {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
   }
-  
+
   /**
    *  Add versus descriptors to the Versus.descriptors collection associated to a file
    *
@@ -667,7 +667,7 @@ class MongoDBFileService @Inject() (
        VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
        Logger.debug("--Added versus descriptors in json format received from versus to the metadata field --")
   }
- 
+
 /**
  * Get Versus descriptors as Json Array for a file
  */
@@ -680,7 +680,7 @@ class MongoDBFileService @Inject() (
       Logger.debug("array=" + vdArray.toString)
     }
     Some(vdArray)
-  } 
+  }
    /*convert list of JsObject to JsArray*/
   def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
@@ -727,7 +727,7 @@ class MongoDBFileService @Inject() (
   def findIntermediates(): List[File] = {
     FileDAO.find(MongoDBObject("isIntermediate" -> true)).toList
   }
-  
+
   /**
    * Implementation of updateLicenseing defined in services/FileService.scala.
    */
@@ -735,9 +735,9 @@ class MongoDBFileService @Inject() (
     allowDownload: String) {
       val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder,
         m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
-      val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-          $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
-          false, false, WriteConcern.Safe);      
+      val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+          $set("licenseData" -> LicenseData.toDBObject(licenseData)),
+          false, false, WriteConcern.Safe);
   }
 
   // ---------- Tags related code starts ------------------
@@ -773,7 +773,7 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)),
       false, false, WriteConcern.Safe)
   }
-  
+
   def setIntermediate(id: UUID){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false,
       WriteConcern.Safe)
@@ -784,13 +784,13 @@ class MongoDBFileService @Inject() (
         get(id) match{
       case Some(file) => {
         if(file.originalname.length >0) {
-      
+
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
       WriteConcern.Safe)
         } else {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName, "originalname" -> file.filename ), false, false,
       WriteConcern.Safe)
-          
+
         }
       }
     }
@@ -817,8 +817,8 @@ class MongoDBFileService @Inject() (
               datasets.index(fileDataset.id)
             }
 
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
-              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
+            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
+              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
                 datasets.newThumbnail(fileDataset.id)
                 collections.get(fileDataset.collections).found.foreach(collection => {
                   if(!collection.thumbnail_id.isEmpty){
@@ -829,7 +829,7 @@ class MongoDBFileService @Inject() (
                 })
               }
             }
-                     
+
           }
 
           val fileFolders = folders.findByFileId(file.id)
@@ -948,10 +948,10 @@ class MongoDBFileService @Inject() (
 
           if(reqValue.isInstanceOf[String]){
             val currValue = reqValue.asInstanceOf[String]
-                        
+
             if(keyTrimmed.endsWith("__not")){
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
                   realValue = "^"+realValue+"$";
                 }
@@ -966,7 +966,7 @@ class MongoDBFileService @Inject() (
             }
             else{
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
                   realValue = "^"+realValue+"$";
                 }
@@ -1001,7 +1001,7 @@ class MongoDBFileService @Inject() (
               val currValue = reqValue.asInstanceOf[String]
               if(keyTrimmed.endsWith("__not")){
                 if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                   if(!currValue.contains(" ANYWHERE")){
                     realValue = "^"+realValue+"$";
                   }
@@ -1016,7 +1016,7 @@ class MongoDBFileService @Inject() (
               }
               else{
                 if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                   if(!currValue.contains(" ANYWHERE")){
                     realValue = "^"+realValue+"$";
                   }
