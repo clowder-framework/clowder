@@ -50,8 +50,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
             }
 
             var tempMap =  Map(
-              "Identifier" -> Json.toJson("urn:uuid:"+file.id),
-              "@id" -> Json.toJson("urn:uuid:"+file.id),
+              "Identifier" -> Json.toJson("urn:uuid:" + file.id),
+              "@id" -> Json.toJson("urn:uuid:" + file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
@@ -75,16 +75,16 @@ class CurationObjects @Inject()(datasets: DatasetService,
           }
           val foldersJson = curations.getCurationFolders(curations.getAllCurationFolderIds(c.id)).map { folder =>
 
-              val hasPart = folder.files.map(file=>"urn:uuid:"+file) ++ folder.folders.map(fd => "urn:uuid:"+fd)
+              val hasPart = folder.files.map(file=>"urn:uuid:" + file) ++ folder.folders.map(fd => "urn:uuid:" + fd)
               val tempMap = Map(
                 "Creation Date" -> Json.toJson(format.format(folder.created)),
                 "Rights" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
-                "Identifier" -> Json.toJson("urn:uuid:"+folder.id),
+                "Identifier" -> Json.toJson("urn:uuid:" + folder.id),
                 "License" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
                 "Label" -> Json.toJson(folder.name),
                 "Title" -> Json.toJson(folder.displayName),
                 "Uploaded By" -> Json.toJson(folder.author.fullName + ": " +  api.routes.Users.findById(folder.author.id).absoluteURL(https)),
-                "@id" -> Json.toJson("urn:uuid:"+folder.id),
+                "@id" -> Json.toJson("urn:uuid:" + folder.id),
                 "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2016/Folder")),
                 "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https) +"#folderId=" +folder.folderId),
                 "Has Part" -> Json.toJson(hasPart)
@@ -92,7 +92,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               tempMap
 
           }
-          val hasPart = c.files.map(file => "urn:uuid:"+file) ++ c.folders.map(folder => "urn:uuid:"+folder)
+          val hasPart = c.files.map(file => "urn:uuid:" + file) ++ c.folders.map(folder => "urn:uuid:" + folder)
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
           curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map {
             file =>
@@ -106,7 +106,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             Json.toJson(Map(
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
-              "Identifier" -> Json.toJson("urn:uuid:"+comm.id),
+              "Identifier" -> Json.toJson("urn:uuid:" + comm.id),
               "comment_author" -> Json.toJson(userService.findById(comm.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
             ))
           }

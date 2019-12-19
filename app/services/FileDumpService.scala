@@ -45,7 +45,7 @@ class FileDumpService(application: Application) extends Plugin {
     fileDumpDir match {
       case Some(dumpDir) => {
         val fileSep = System.getProperty("file.separator")
-        val filePathInDirs = fileDump.fileId.charAt(fileDump.fileId.length()-3)+ fileSep + fileDump.fileId.charAt(fileDump.fileId.length()-2)+fileDump.fileId.charAt(fileDump.fileId.length()-1)+ fileSep + fileDump.fileId + fileSep + fileDump.fileName
+        val filePathInDirs = fileDump.fileId.charAt(fileDump.fileId.length() - 3) + fileSep + fileDump.fileId.charAt(fileDump.fileId.length() - 2) + fileDump.fileId.charAt(fileDump.fileId.length() - 1) + fileSep + fileDump.fileId + fileSep + fileDump.fileName
         val fileDumpingDir = dumpDir + filePathInDirs
         val copiedFile = new File(fileDumpingDir)
         FileUtils.copyFile(fileDump.fileToDump, copiedFile)

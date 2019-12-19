@@ -2139,8 +2139,8 @@ class  Datasets @Inject()(
     var is: Option[InputStream] = addDatasetInfoToZip(dataFolder,dataset,zip)
     //digest input stream
     val md5 = MessageDigest.getInstance("MD5")
-    md5Files.put(dataFolder+"_info.json",md5)
-    is = Some(new DigestInputStream(is.get,md5))
+    md5Files.put(dataFolder + "_info.json", md5)
+    is = Some(new DigestInputStream(is.get, md5))
     file_type = 1 //next is metadata
 
 
@@ -2163,7 +2163,7 @@ class  Datasets @Inject()(
                 case (0,0) => {
                   is = addDatasetInfoToZip(dataFolder,dataset,zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put("_info.json",md5)
+                  md5Files.put("_info.json", md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   file_type = file_type + 1
                 }
@@ -2171,7 +2171,7 @@ class  Datasets @Inject()(
                 case (0,1) => {
                   is = addDatasetMetadataToZip(dataFolder,dataset,zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put("_metadata.json",md5)
+                  md5Files.put("_metadata.json", md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   level = 1
                   file_type = 0
@@ -2180,10 +2180,10 @@ class  Datasets @Inject()(
                 case (1,0) =>{
                   is = addFileInfoToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(filenameMap(inputFiles(count).id)+"_info.json",md5)
+                  md5Files.put(filenameMap(inputFiles(count).id) + "_info.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
-                  if (count+1 < inputFiles.size ){
-                    count +=1
+                  if (count + 1 < inputFiles.size){
+                    count += 1
                   } else {
                     count = 0
                     file_type = 1
@@ -2193,10 +2193,10 @@ class  Datasets @Inject()(
                 case (1,1) =>{
                   is = addFileMetadataToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(filenameMap(inputFiles(count).id)+"_metadata.json",md5)
+                  md5Files.put(filenameMap(inputFiles(count).id) + "_metadata.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
-                  if (count+1 < inputFiles.size ){
-                    count +=1
+                  if (count + 1 < inputFiles.size){
+                    count += 1
                   } else {
                     count = 0
                     file_type = 2
@@ -2208,8 +2208,8 @@ class  Datasets @Inject()(
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(filenameMap(inputFiles(count).id),md5)
                   is = Some(new DigestInputStream(is.get, md5))
-                  if (count+1 < inputFiles.size ){
-                    count +=1
+                  if (count + 1 < inputFiles.size ){
+                    count += 1
                   } else {
                     if (bagit){
                       count = 0
@@ -2227,7 +2227,7 @@ class  Datasets @Inject()(
                 case (2,0) => {
                   is = addBagItTextToZip(totalBytes,filenameMap.size,zip,dataset,user)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("bagit.txt",md5)
+                  md5Bag.put("bagit.txt", md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   file_type = 1
                 }
@@ -2235,7 +2235,7 @@ class  Datasets @Inject()(
                 case (2,1) => {
                   is = addBagInfoToZip(zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("bag-info.txt",md5)
+                  md5Bag.put("bag-info.txt", md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   file_type = 2
                 }
@@ -2243,7 +2243,7 @@ class  Datasets @Inject()(
                 case (2,2) => {
                   is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest],zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("manifest-md5.txt",md5)
+                  md5Bag.put("manifest-md5.txt", md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   file_type = 3
                 }
@@ -2251,7 +2251,7 @@ class  Datasets @Inject()(
                 case (2,3) => {
                   is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest],zip)
                   val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("tagmanifest-md5.txt",md5)
+                  md5Bag.put("tagmanifest-md5.txt", md5)
                   is = Some(new DigestInputStream(is.get, md5))
                   level = -1
                   file_type = -1
@@ -2371,18 +2371,18 @@ class  Datasets @Inject()(
   private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[models.User]) = {
     zip.putNextEntry(new ZipEntry("bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
-    val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
+    val baggingDate = "Bagging-Date: " + (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime) + "\n"
     val baggingSize = "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
-    val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
-    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
-    val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
+    val payLoadOxum = "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
+    val senderIdentifier="Internal-Sender-Identifier: " + dataset.id + "\n"
+    val senderDescription = "Internal-Sender-Description: " + dataset.description + "\n"
     var s:String = ""
     if (user.isDefined) {
       val contactName = "Contact-Name: " + user.get.fullName + "\n"
       val contactEmail = "Contact-Email: " + user.get.email.getOrElse("") + "\n"
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
+      s = softwareLine + baggingDate + baggingSize + payLoadOxum + contactName + contactEmail + senderIdentifier + senderDescription
     } else {
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+senderIdentifier+senderDescription
+      s = softwareLine + baggingDate + baggingSize + payLoadOxum + senderIdentifier + senderDescription
     }
 
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -2390,7 +2390,7 @@ class  Datasets @Inject()(
 
   private def addBagInfoToZip(zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("bag-info.txt"))
-    val s : String = "BagIt-Version: 0.97\n"+"Tag-File-Character-Encoding: UTF-8\n"
+    val s : String = "BagIt-Version: 0.97\n" + "Tag-File-Character-Encoding: UTF-8\n"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -2399,7 +2399,7 @@ class  Datasets @Inject()(
     var s : String = ""
     md5map.foreach{
       case (filePath,md) => {
-        val current = Hex.encodeHexString(md.digest())+" "+filePath+"\n"
+        val current = Hex.encodeHexString(md.digest()) + " " + filePath + "\n"
         s = s + current
       }
     }
@@ -2411,7 +2411,7 @@ class  Datasets @Inject()(
     var s : String = ""
     md5map.foreach{
       case (filePath,md) => {
-        val current = Hex.encodeHexString(md.digest())+" "+filePath+"\n"
+        val current = Hex.encodeHexString(md.digest()) + " " + filePath + "\n"
         s = s + current
       }
     }
@@ -2432,7 +2432,7 @@ class  Datasets @Inject()(
         // Use a 1MB in memory byte array
         Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(
           CONTENT_TYPE -> "application/zip",
-          CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
+          CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name + ".zip", request.headers.get("user-agent").getOrElse("")))
         )
       }
       // If the dataset wasn't found by ID
@@ -2520,13 +2520,13 @@ class  Datasets @Inject()(
                     case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
                   }
                 }
-                case None => BadRequest(s"No space found with id: + $spaceId.")
+                case None => BadRequest(s"No space found with id: $spaceId.")
               }
             } else {
               BadRequest("You don't have permission to copy the dataset.")
             }
           }
-          case None => BadRequest(s"No dataset  found with id: $datasetId")
+          case None => BadRequest(s"No dataset found with id: $datasetId")
         }
       }
       case None => BadRequest("You need to be logged in to copy a dataset to a space.")

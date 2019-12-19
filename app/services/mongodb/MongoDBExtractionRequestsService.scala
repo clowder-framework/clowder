@@ -52,7 +52,7 @@ class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)
   def updateRequest(file_id:UUID,extractor_id:String) = {
     val requests = getRequests(file_id)
     Logger.debug("-----Updating Extraction Request----------")
-    Logger.debug( "Number of Requests to be updated : "+requests.length);
+    Logger.debug( "Number of Requests to be updated : " + requests.length);
     for (r <- requests) {
 
       var req = Json.parse(com.mongodb.util.JSON.serialize(r))
@@ -70,7 +70,7 @@ class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)
       var ex = extractions.getExtractorList(file_id)
 
       val elist = ex.keySet.toList
-      Logger.debug("----extractorlist:----"+ elist);
+      Logger.debug("----extractorlist:----" + elist);
       if (len != 0) {
         var update = $set("extractors" -> elist, "startTime" -> sortedTime(0), "endTime" -> sortedTime(len - 1))
         var result = ExtractionRequests.dao.collection.update(r, update)
@@ -82,12 +82,12 @@ class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)
 
 
   def getRequests(file_id:UUID) = {
-    Logger.debug("GET Requests---- fileID"+ file_id.toString)
+    Logger.debug("GET Requests---- fileID" + file_id.toString)
     //val query = MongoDBObject("endTime" -> None)
     val id=file_id.toString
     val query = MongoDBObject("fileid"->new ObjectId(file_id.stringify))
     var requests1=ExtractionRequests.find(query)
-    Logger.debug("REQUEST Length: "+ requests1.length)
+    Logger.debug("REQUEST Length: " + requests1.length)
 
     var requests = ExtractionRequests.dao.collection.find(query)
     requests

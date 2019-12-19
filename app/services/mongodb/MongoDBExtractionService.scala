@@ -107,7 +107,7 @@ class MongoDBExtractionService extends ExtractionService {
         e.end match {
           case Some(n) => {
             if (grp_end == "N/A" || n.after(grp_end)) {
-              Logger.info("updating latest msg: "+e.status)
+              Logger.info("updating latest msg: " + e.status)
               grp_end = n
               grp_endmsg = e.status
             }

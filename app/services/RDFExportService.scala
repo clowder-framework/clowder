@@ -69,7 +69,7 @@ class RDFExportService (application: Application) extends Plugin {
 
                   if(!theJSON.replaceAll(" ","").equals("{}")){
                       val xmlFile = jsonToXML(theJSON)
-                      new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+                      new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
                       xmlFile.delete()
                   }
                   else{
@@ -128,7 +128,7 @@ class RDFExportService (application: Application) extends Plugin {
 
                   if(!theJSON.replaceAll(" ","").equals("{}")){
                       val xmlFile = jsonToXML(theJSON)
-                      new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+                      new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
                       xmlFile.delete()
                   }
                   else{
@@ -191,14 +191,14 @@ class RDFExportService (application: Application) extends Plugin {
     var currEnd = -1
     var xmlNoSpaces = ""
     while(currStart != -1){
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
-      currEnd = xml.indexOf(">", currStart+1)
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
-      currStart = xml.indexOf("<", currEnd+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd + 1,currStart)
+      currEnd = xml.indexOf(">", currStart + 1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd + 1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd + 1)
     }
-    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd + 1)
 
-    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val xmlFile = java.io.File.createTempFile("xml", ".xml")
     val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
     fileWriter.write(xmlNoSpaces)
     fileWriter.close()

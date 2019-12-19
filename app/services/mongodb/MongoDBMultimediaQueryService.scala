@@ -56,7 +56,7 @@ class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces:
 
       case Some(query) => {
         //Logger.debug(query.toString())
-        Logger.debug("get: file name: "+query.filename +" Query id ="+ query.id.toString())
+        Logger.debug("get: file name: " + query.filename + " Query id =" + query.id.toString())
         Some(query.inputStream,
           query.getAs[String]("filename").getOrElse("unknown-name"),
           query.getAs[String]("contentType").getOrElse("unknown"),
@@ -98,7 +98,7 @@ def getFile(id: UUID): Option[TempFile] = {
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get ///getting object id
     //mongoFile._id
-    Logger.debug("StoreMD id="+ oid)
+    Logger.debug("StoreMD id=" + oid)
      Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
 
   }

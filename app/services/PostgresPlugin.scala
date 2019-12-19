@@ -160,14 +160,14 @@ class PostgresPlugin(application: Application) extends Plugin {
       val data = Json.stringify(f._4)
       val geojson = f._5
 
-      ps.setTimestamp(index+1, new Timestamp(start.getTime))
+      ps.setTimestamp(index + 1, new Timestamp(start.getTime))
       if (end.isDefined)
-        ps.setTimestamp(index+2, new Timestamp(end.get.getTime))
+        ps.setTimestamp(index + 2, new Timestamp(end.get.getTime))
       else
-        ps.setDate(index+2, null)
-      ps.setInt(index+3, stream_id.toInt)
-      ps.setString(index+4, data)
-      ps.setString(index+5, Json.stringify(geojson))
+        ps.setDate(index + 2, null)
+      ps.setInt(index + 3, stream_id.toInt)
+      ps.setString(index + 4, data)
+      ps.setString(index + 5, Json.stringify(geojson))
       index += 5
     })
 
@@ -240,7 +240,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       if (sensor_name.isDefined) st.setString(i + 4, sensor_name.getOrElse(""))
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
-        st.setDouble(i + 1, parts(i+1).toDouble)
+        st.setDouble(i + 1, parts(i + 1).toDouble)
         st.setDouble(i + 2, parts(i).toDouble)
         i += 2
       }
@@ -567,7 +567,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
-        st.setDouble(i + 1, parts(i+1).toDouble)
+        st.setDouble(i + 1, parts(i + 1).toDouble)
         st.setDouble(i + 2, parts(i).toDouble)
         i += 2
       }
@@ -808,7 +808,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       var j = 0
       while (j < parts.length) {
-        st.setDouble(i + 1, parts(j+1).toDouble)
+        st.setDouble(i + 1, parts(j + 1).toDouble)
         st.setDouble(i + 2, parts(j).toDouble)
         i += 2
         j += 2

@@ -29,7 +29,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         var updateQuery = "<http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port") +"/api/files/" + fileId
         updateQuery = updateQuery + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <" + graphName + "_file" + "> ."
 
-        Logger.debug("the query: "+updateQuery)
+        Logger.debug("the query: " + updateQuery)
       urlParameters.add(new BasicNameValuePair("data", updateQuery))
       urlParameters.add(new BasicNameValuePair("graph", graphName + "_file_" + fileId))
       urlParameters.add(new BasicNameValuePair("mime-type", "application/x-turtle"))
@@ -41,7 +41,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
 
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
         return null
   }
@@ -57,7 +57,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         var updateQuery = "<http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port") +"/api/datasets/" + datasetId
         updateQuery = updateQuery + "> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <" + graphName + "_dataset" + "> ."
 
-        Logger.debug("the query: "+updateQuery)
+        Logger.debug("the query: " + updateQuery)
       urlParameters.add(new BasicNameValuePair("data", updateQuery))
       urlParameters.add(new BasicNameValuePair("graph", graphName + "_dataset_" + datasetId))
       urlParameters.add(new BasicNameValuePair("mime-type", "application/x-turtle"))
@@ -69,7 +69,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
 
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
     return null
   }
@@ -84,9 +84,9 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val urlParameters = new ArrayList[NameValuePair]()
         val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
         var updateQuery = "<http://" + hostIp +"/api/datasets/" + datasetId
-        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> ."
+        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://" + hostIp + "/api/files/" + fileId + "> ."
 
-        Logger.debug("the query: "+updateQuery)
+        Logger.debug("the query: " + updateQuery)
       urlParameters.add(new BasicNameValuePair("data", updateQuery))
       urlParameters.add(new BasicNameValuePair("graph", graphName + "_file_" + fileId))
       urlParameters.add(new BasicNameValuePair("mime-type", "application/x-turtle"))
@@ -98,7 +98,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
 
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
     return null
   }
@@ -115,7 +115,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         Logger.debug(queryResponse.getStatusLine().toString())
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
     return null
 
@@ -133,7 +133,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         Logger.debug(queryResponse.getStatusLine().toString())
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
     return null
 
@@ -149,13 +149,13 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val urlParameters = new ArrayList[NameValuePair]()
         val hostIp = play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
         var updateQuery = "DELETE { <http://" + hostIp +"/api/datasets/" + datasetId
-        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> }"
+        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://" + hostIp + "/api/files/" + fileId + "> }"
         updateQuery = updateQuery + "WHERE { <http://" + hostIp +"/api/datasets/" + datasetId
-        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://"+ hostIp +"/api/files/" + fileId + "> }"
+        updateQuery = updateQuery + "> <http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#P148_has_component> <http://" + hostIp + "/api/files/" + fileId + "> }"
         if(!graphName.equals("")){
           updateQuery = "WITH <" + graphName + "_file_" + fileId + "> " + updateQuery
         }
-        Logger.debug("the query: "+updateQuery)
+        Logger.debug("the query: " + updateQuery)
       urlParameters.add(new BasicNameValuePair("update", updateQuery))
 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
@@ -165,7 +165,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
 
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
     return null
 
@@ -202,7 +202,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
 
       val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/sparql/"
         val httpclient = new DefaultHttpClient()
-      Logger.debug("query text: "+ queryText)
+      Logger.debug("query text: " + queryText)
         val httpPost = new HttpPost(queryUrl)
 
         val urlParameters = new ArrayList[NameValuePair]()
@@ -235,7 +235,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         var updateQuery = new String(data, "UTF-8")
 
       urlParameters.add(new BasicNameValuePair("data", updateQuery))
-      urlParameters.add(new BasicNameValuePair("graph", graphName + "_"+ fileOrDataset + "_" + id))
+      urlParameters.add(new BasicNameValuePair("graph", graphName + "_" + fileOrDataset + "_" + id))
 
         httpPost.setEntity(new UrlEncodedFormEntity(urlParameters))
         val queryResponse = httpclient.execute(httpPost)
@@ -244,7 +244,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
         val resultsEntity = queryResponse.getEntity()
         val resultsString = EntityUtils.toString(resultsEntity)
 
-        Logger.debug("the results: "+resultsString)
+        Logger.debug("the results: " + resultsString)
 
     return null
   }

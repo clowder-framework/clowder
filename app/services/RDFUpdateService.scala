@@ -84,7 +84,7 @@ class RDFUpdateService(application: Application) extends Plugin {
 
                   if(!theJSON.replaceAll(" ","").equals("{}")){
                       val xmlFile = jsonToXML(theJSON)
-                      new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+                      new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
                       xmlFile.delete()
                   }
                   else{
@@ -140,9 +140,9 @@ class RDFUpdateService(application: Application) extends Plugin {
                             }
 
                             if(isInRootNodes){
-                                val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"")+1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"")+1))
+                                val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"") + 1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"") + 1))
                                 val theHost = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-                                var connection = "<rdf:Description rdf:about=\"" + theHost +"/api/files/"+ id
+                                var connection = "<rdf:Description rdf:about=\"" + theHost + "/api/files/" + id
                                 connection = connection	+ "\"><P129_is_about xmlns=\"http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#\" rdf:resource=\"" + theResource
                                 connection = connection	+ "\"/></rdf:Description>"
                                 fileWriter.write(connection)
@@ -183,7 +183,7 @@ class RDFUpdateService(application: Application) extends Plugin {
 
                   if(!theJSON.replaceAll(" ","").equals("{}")){
                       val xmlFile = jsonToXML(theJSON)
-                      new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+                      new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
                       xmlFile.delete()
                   }
                   else{
@@ -239,9 +239,9 @@ class RDFUpdateService(application: Application) extends Plugin {
                             }
 
                             if(isInRootNodes){
-                                val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"")+1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"")+1))
+                                val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"") + 1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"") + 1))
                                 val theHost = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-                                var connection = "<rdf:Description rdf:about=\"" + theHost +"/api/datasets/"+ id
+                                var connection = "<rdf:Description rdf:about=\"" + theHost + "/api/datasets/" + id
                                 connection = connection	+ "\"><P129_is_about xmlns=\"http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#\" rdf:resource=\"" + theResource
                                 connection = connection	+ "\"/></rdf:Description>"
                                 fileWriter.write(connection)

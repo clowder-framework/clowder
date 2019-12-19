@@ -376,7 +376,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
         // view the list of collection in a space that you should not access
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
-        BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle+ ".", s, "space"))
+        BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", s, "space"))
       }
       case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, spaceName, title, owner, ownerName, when, date, showTrash))
     }
@@ -581,7 +581,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case Some(collection) => {
 
         val datasetsInside = datasets.listCollection(id.stringify, user)
-        val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
+        val datasetIdsToUse = datasetsInside.slice(index*limit, (index + 1) * limit)
         val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
         for (aDataset <- datasetIdsToUse) {
           val dDataset = Utils.decodeDatasetElements(aDataset)
@@ -589,7 +589,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         }
 
         val prev = index-1
-        val next = if(datasetsInside.length > (index+1) * limit) {
+        val next = if(datasetsInside.length > (index + 1) * limit) {
           index + 1
         } else {
           -1
@@ -604,7 +604,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
 
       }
-      case None => Logger.error("Error getting "+ Messages("collection.title") + " " + id); BadRequest(Messages("collection.title") + " not found")
+      case None => Logger.error("Error getting " + Messages("collection.title") + " " + id); BadRequest(Messages("collection.title") + " not found")
     }
   }
 
@@ -613,12 +613,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(id) match {
       case Some(collection) => {
         val dCollection = Utils.decodeCollectionElements(collection)
-        val child_ids = dCollection.child_collection_ids.slice(index*limit, (index+1)*limit)
+        val child_ids = dCollection.child_collection_ids.slice(index * limit, (index + 1) * limit)
         val decodedChildCollections = collections.get(child_ids).found.map(Utils.decodeCollectionElements(_))
 
         val prev = index-1
-        val next = if (dCollection.child_collection_ids.length > (index+1)*limit)
-          index+1
+        val next = if (dCollection.child_collection_ids.length > (index + 1) * limit)
+          index + 1
         else
           -1
 

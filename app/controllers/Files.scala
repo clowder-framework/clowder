@@ -511,9 +511,9 @@ class Files @Inject() (
               val thirdSeparatorIndex = nameOfFile.indexOf("__")
                 if(thirdSeparatorIndex >= 0){
                   val firstSeparatorIndex = nameOfFile.indexOf("_")
-                  val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-                flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-                nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+                  val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                  flags = flags + "+numberofIterations_" +  nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
                 }
             }
           Logger.debug("Uploading file " + nameOfFile)

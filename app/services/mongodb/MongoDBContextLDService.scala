@@ -34,7 +34,7 @@ class MongoDBContextLDService extends ContextLDService{
 
   /** Get context  **/
   def getContextById(id: UUID): Option[JsValue] = {
-    Logger.debug("mongo context id: "+ id)
+    Logger.debug("mongo context id: " + id)
     val contextld = ContextLDDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
     contextld.map(_.context)
   }

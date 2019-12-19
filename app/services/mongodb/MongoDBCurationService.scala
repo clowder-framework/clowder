@@ -290,7 +290,7 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
         maxValue = depth
       }
     }
-    return maxValue +1
+    return maxValue + 1
   }
 
   private def maxFolderDepth(folderId: UUID): Int = {

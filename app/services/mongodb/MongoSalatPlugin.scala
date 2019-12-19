@@ -1608,12 +1608,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             val path = content.getAsOrElse[String]("Upload Path", "")
             if (path.length > 0) {
               if (path.lastIndexOf("/") >= 0) {
-                Logger.info("Assigning name/: " + path.substring(path.lastIndexOf("/")+1) + " from path " + path)
+                Logger.info("Assigning name/: " + path.substring(path.lastIndexOf("/") + 1) + " from path " + path)
                 md.getAs[DBObject]("attachedTo") match {
                   case Some(ref) => {
                                   collection("uploads").update(MongoDBObject("_id" -> new ObjectId(ref.get("_id").toString())),
                   MongoDBObject("$set" -> MongoDBObject(
-                    "originalname" -> path.substring(path.lastIndexOf("/")+1))), false, false, WriteConcern.Safe)
+                    "originalname" -> path.substring(path.lastIndexOf("/") + 1))), false, false, WriteConcern.Safe)
 
                   }
                   case _ => Logger.info("Nope")

@@ -56,15 +56,15 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
   }
 
   private def addCollectionInfoToZip(folderName: String, collection: models.Collection, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+collection.name+"_info.json"
-    zip.putNextEntry(new ZipEntry(folderName + "/"+collection.name+"_info.json"))
+    val path = folderName + "/" + collection.name + "_info.json"
+    zip.putNextEntry(new ZipEntry(folderName + "/" + collection.name + "_info.json"))
     val infoListMap = Json.prettyPrint(jsonCollection(collection))
     Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
   }
 
   private def addCollectionMetadataToZip(folderName : String , collection : models.Collection, zip : ZipOutputStream) : Option[InputStream] = {
-    val path = folderName+"/"+collection.name+"_metadata.json"
-    zip.putNextEntry(new ZipEntry(folderName+"/"+collection.name+"_metadata.json"))
+    val path = folderName + "/" + collection.name + "_metadata.json"
+    zip.putNextEntry(new ZipEntry(folderName + "/" + collection.name + "_metadata.json"))
     val collectionMetadata = getCollectionInfoAsJson(collection)
     val metadataMap = Json.prettyPrint(collectionMetadata)
     Some(new ByteArrayInputStream(metadataMap.getBytes("UTF-8")))
@@ -74,14 +74,14 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
     if (file_type < 2){
       true
     }
-    else if (file_type ==2){
+    else if (file_type == 2){
       if (datasetIterator.hasNext()){
         true
       } else if (numChildCollections > 0){
 
-        currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(childCollectionCount).name, child_collections(childCollectionCount),zip,md5Files,user,collections,datasets,files,
-          folders,metadataService,spaces))
-        file_type +=1
+        currentCollectionIterator = Some(new CollectionIterator(pathToFolder + "/" + child_collections(childCollectionCount).name, child_collections(childCollectionCount), zip, md5Files, user, collections, datasets, files,
+          folders, metadataService, spaces))
+        file_type += 1
         true
       } else {
         false
@@ -91,14 +91,14 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
         case Some(collectionIterator) => {
           if (collectionIterator.hasNext()){
             true
-          } else if (childCollectionCount < numChildCollections -2){
-            childCollectionCount+=1
-            currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(childCollectionCount).name, child_collections(childCollectionCount),zip,md5Files,user,
-              collections,datasets,files,
-              folders,metadataService,spaces))
+          } else if (childCollectionCount < numChildCollections - 2){
+            childCollectionCount += 1
+            currentCollectionIterator = Some(new CollectionIterator(pathToFolder + "/" + child_collections(childCollectionCount).name, child_collections(childCollectionCount), zip, md5Files, user,
+              collections, datasets, files,
+              folders, metadataService, spaces))
             true
           } else {
-            file_type+=1
+            file_type += 1
             false
           }
         }
@@ -114,17 +114,17 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
       //collection info
       case 0 => {
         val md5 = MessageDigest.getInstance("MD5")
-        md5Files.put(pathToFolder+"_info.json",md5)
-        val is = addCollectionInfoToZip(pathToFolder, parent_collection,zip)
-        file_type+=1
+        md5Files.put(pathToFolder + "_info.json", md5)
+        val is = addCollectionInfoToZip(pathToFolder, parent_collection, zip)
+        file_type += 1
         Some(new DigestInputStream(is.get, md5))
       }
       //collection metadata
       case 1 => {
         val md5 = MessageDigest.getInstance("MD5")
-        md5Files.put(pathToFolder+"_metadata.json",md5)
-        val is = addCollectionMetadataToZip(pathToFolder, parent_collection,zip)
-        file_type+=1
+        md5Files.put(pathToFolder + "_metadata.json", md5)
+        val is = addCollectionMetadataToZip(pathToFolder, parent_collection, zip)
+        file_type += 1
         Some(new DigestInputStream(is.get, md5))
       }
       //datasets in this collection

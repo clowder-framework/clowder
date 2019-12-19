@@ -773,7 +773,7 @@ class Collections @Inject() (datasets: DatasetService,
         // Use a 1MB in memory byte array
         Ok.chunked(enumeratorFromCollection(collection,1024*1024, compression,bagit,user)).withHeaders(
           "Content-Type" -> "application/zip",
-          "Content-Disposition" -> ("attachment; filename=\"" + collection.name+ ".zip\"")
+          "Content-Disposition" -> ("attachment; filename=\"" + collection.name + ".zip\"")
         )
       }
       // If the dataset wasn't found by ID

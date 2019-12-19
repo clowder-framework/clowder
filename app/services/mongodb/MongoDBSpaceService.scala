@@ -652,10 +652,10 @@ class MongoDBSpaceService @Inject() (
               addUser(user.id, role, invite.space)
               removeInvitationFromSpace(UUID(invite.invite_id), invite.space)
             }
-            case None => Logger.error(email+" could not be added to space (missing role "+invite.role+")")
+            case None => Logger.error(email + " could not be added to space (missing role " + invite.role + ")")
           }
         }
-        case None => Logger.error("No user found with email "+email)
+        case None => Logger.error("No user found with email " + email)
       }
     }
   }

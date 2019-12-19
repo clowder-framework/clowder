@@ -646,7 +646,7 @@ class Extractions @Inject()(
             _.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request), request.apiKey)
           }
       }
-      case None => BadRequest(toJson("Dataset "+datasetid+" not found"))
+      case None => BadRequest(toJson("Dataset " + datasetid + " not found"))
     }
 
     Ok(toJson("added new event"))

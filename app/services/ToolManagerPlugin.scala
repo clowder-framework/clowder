@@ -114,7 +114,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     */
   def refreshLaunchableToolsFromServer(): Unit = {
     val apipath = play.Play.application().configuration().getString("toolmanagerURI")
-    val statusRequest: Future[Response] = url(apipath+"/tools").get()
+    val statusRequest: Future[Response] = url(apipath + "/tools").get()
 
     statusRequest.map( response => {
       val jsonObj = Json.parse(response.body)
@@ -133,7 +133,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     */
   def refreshActiveInstanceListFromServer(): Unit = {
     val apipath = play.Play.application().configuration().getString("toolmanagerURI")
-    val statusRequest: Future[Response] = url(apipath+"/instances").get()
+    val statusRequest: Future[Response] = url(apipath + "/instances").get()
 
     statusRequest.map( response => {
       val jsonObj = Json.parse(response.body)
@@ -156,24 +156,24 @@ class ToolManagerPlugin(application: Application) extends Plugin {
               instance.externalId = externalID
 
               // TODO: how to get JsValue without the wrapping quotes?
-              instance.setName((j \ externalID \ "name").toString.replace("\"",""))
-              instance.setURL((j \ externalID \ "url").toString.replace("\"",""))
+              instance.setName((j \ externalID \ "name").toString.replace("\"", ""))
+              instance.setURL((j \ externalID \ "url").toString.replace("\"", ""))
               instance.setOwner(new UUID((j \ externalID \ "ownerId").toString.replace("\"","")))
               instance.setToolInfo(
-                (j \ externalID \ "toolPath").toString.replace("\"",""),
-                (j \ externalID \ "toolName").toString.replace("\"",""))
+                (j \ externalID \ "toolPath").toString.replace("\"", ""),
+                (j \ externalID \ "toolName").toString.replace("\"", ""))
 
               // TODO: normalize time zone - server time is currently shown as-received
-              val t = (j \ externalID \ "created").toString.replace("\"","")
+              val t = (j \ externalID \ "created").toString.replace("\"", "")
               instance.setTimes(t, t)
 
               val histList = (j \ externalID \ "uploadHistory").as[List[JsObject]]
               for (histEntry <- histList) {
-                val entryTime = (histEntry \ "time").toString.replace("\"","")
-                val entryUrl = (histEntry \ "url").toString.replace("\"","")
-                val entryOwner = (histEntry \ "uploaderId").toString.replace("\"","")
-                val entryId = (histEntry \ "datasetId").toString.replace("\"","")
-                val entryName = (histEntry \ "datasetName").toString.replace("\"","")
+                val entryTime = (histEntry \ "time").toString.replace("\"", "")
+                val entryUrl = (histEntry \ "url").toString.replace("\"", "")
+                val entryOwner = (histEntry \ "uploaderId").toString.replace("\"", "")
+                val entryId = (histEntry \ "datasetId").toString.replace("\"", "")
+                val entryName = (histEntry \ "datasetName").toString.replace("\"", "")
                 instance.uploadHistory(new UUID(entryId)) = (entryName, entryTime, entryOwner)
               }
 
@@ -211,10 +211,10 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
     // Send request to API to launch Tool
     // TODO: Figure out something better than the key here
-    val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetId).url
+    val dsURL = hostURL + controllers.routes.Datasets.dataset(datasetId).url
     val apipath = play.Play.application().configuration().getString("toolmanagerURI") + "/instances/" + toolPath
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
-      "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
+      "dataset" -> (dsURL.replace("/datasets", "/api/datasets") + "/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
       "name" -> instanceName,
       "ownerId" -> oId,
@@ -240,7 +240,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
         case _: JsUndefined => {}
         case _ => {
           val matched = instanceMap(instance.id)
-          matched.setID(externalID.toString.replace("\"",""))
+          matched.setID(externalID.toString.replace("\"", ""))
           instanceMap(instance.id) = matched
         }
       }
@@ -300,7 +300,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * Upload dataset files to an existing instance.
     */
   def uploadDatasetToInstance(hostURL: String, instanceID: UUID, datasetId: UUID, datasetName: String, userId: Option[UUID]): Unit = {
-    val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetId).url
+    val dsURL = hostURL + controllers.routes.Datasets.dataset(datasetId).url
     var oId = ""
     userId.map(i => oId = i.toString)
 
@@ -310,7 +310,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       val apipath = play.Play.application().configuration().getString("toolmanagerURI") + "/instances/" + instance.toolPath
 
       val statusRequest: Future[Response] = url(apipath).put(Json.obj(
-        "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
+        "dataset" -> (dsURL.replace("/datasets", "/api/datasets") + ß"/download"),
         "key" -> play.Play.application().configuration().getString("commKey"),
         "id" -> instance.externalId.toString,
         "uploaderId" -> oId,
@@ -333,7 +333,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
     instanceMap.get(instanceID).map( ts => {
       val instanceApiID = ts.externalId // External identifier on NDS api
-      val statusRequest: Future[Response] = url(apipath+"?id="+instanceApiID.toString()).delete()
+      val statusRequest: Future[Response] = url(apipath + "?id=" + instanceApiID.toString()).delete()
     })
 
     instanceMap = instanceMap - instanceID

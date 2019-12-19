@@ -76,9 +76,9 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
       case Some(clowderUser) => {
         var followedUsers: List[(models.UUID, String, String, String)] = List.empty
         val userIds = clowderUser.followedEntities.filter(_.objectType == "user")
-        val userIdsToUse = userIds.slice(index*limit, (index+1)*limit)
-        val prev = index -1
-        val next = if(userIds.length > (index+1) * limit) {
+        val userIdsToUse = userIds.slice(index*limit, (index + 1) * limit)
+        val prev = index - 1
+        val next = if(userIds.length > (index + 1) * limit) {
           index + 1
         } else {
           -1
@@ -152,9 +152,9 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
     user match {
       case Some(clowderUser) => {
         var followers: List[(models.UUID, String, String, String)] = List.empty
-        val followersToUse = clowderUser.followers.slice(index*limit, (index+1)*limit)
-        val prev = index-1
-        val next = if(clowderUser.followers.length > (index+1) * limit) {
+        val followersToUse = clowderUser.followers.slice(index*limit, (index + 1) * limit)
+        val prev = index - 1
+        val next = if(clowderUser.followers.length > (index + 1) * limit) {
           index + 1
         } else {
           -1
@@ -190,6 +190,6 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
 
   def sendEmail(subject: String, from: String, recipient: String, body: String) = AuthenticatedAction { implicit request =>
     util.Mail.sendEmail(subject, from, List(recipient), Html(body))
-    Ok("Successfully emailed "+recipient)
+    Ok("Successfully emailed " + recipient)
   }
 }

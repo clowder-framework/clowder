@@ -1336,7 +1336,7 @@ object Geostreams extends ApiController {
         var index = 0
         while (index < points.length - 1) {
           val lat = Parsers.parseDouble(points(index))
-          val lon = Parsers.parseDouble(points(index+1))
+          val lon = Parsers.parseDouble(points(index + 1))
           if (lat.isDefined && lon.isDefined) {
             coordinates += Json.toJson(Array(lon.get, lat.get))
           }

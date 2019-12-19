@@ -1088,7 +1088,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
-    Logger.debug("updating views for collection "+id.toString)
+    Logger.debug("updating views for collection " + id.toString)
     val viewdate = new Date
 
     val updated = Collection.dao.collection.findAndModify(
@@ -1098,7 +1098,7 @@ class MongoDBCollectionService @Inject() (
 
     user match {
       case Some(u) => {
-        Logger.debug("updating views for user "+u.toString)
+        Logger.debug("updating views for user " + u.toString)
         CollectionStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "collection"),
           $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
       }

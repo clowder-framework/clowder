@@ -560,7 +560,7 @@ class MongoDBDatasetService @Inject() (
 
         if(!theJSON.replaceAll(" ","").equals("{}")){
           val xmlFile = jsonToXML(theJSON)
-          new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
+          new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_" + mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)
           xmlFile.delete()
         }
         else{
@@ -616,9 +616,9 @@ class MongoDBDatasetService @Inject() (
             }
 
             if(isInRootNodes){
-              val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"")+1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"")+1))
+              val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"") + 1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"") + 1))
               val theHost = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-              var connection = "<rdf:Description rdf:about=\"" + theHost +"/api/datasets/"+ id
+              var connection = "<rdf:Description rdf:about=\"" + theHost + "/api/datasets/" + id
               connection = connection	+ "\"><P129_is_about xmlns=\"http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#\" rdf:resource=\"" + theResource
               connection = connection	+ "\"/></rdf:Description>"
               fileWriter.write(connection)
@@ -650,14 +650,14 @@ class MongoDBDatasetService @Inject() (
     var currEnd = -1
     var xmlNoSpaces = ""
     while(currStart != -1){
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1,currStart)
-      currEnd = xml.indexOf(">", currStart+1)
-      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart,currEnd+1).replaceAll(" ", "_")
-      currStart = xml.indexOf("<", currEnd+1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd + 1, currStart)
+      currEnd = xml.indexOf(">", currStart + 1)
+      xmlNoSpaces = xmlNoSpaces + xml.substring(currStart, currEnd + 1).replaceAll(" ", "_")
+      currStart = xml.indexOf("<", currEnd + 1)
     }
-    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd+1)
+    xmlNoSpaces = xmlNoSpaces + xml.substring(currEnd + 1)
 
-    val xmlFile = java.io.File.createTempFile("xml",".xml")
+    val xmlFile = java.io.File.createTempFile("xml", ".xml")
     val fileWriter =  new BufferedWriter(new FileWriter(xmlFile))
     fileWriter.write(xmlNoSpaces)
     fileWriter.close()
@@ -1138,25 +1138,25 @@ class MongoDBDatasetService @Inject() (
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
                 var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
-                  realValue = "^"+realValue+"$";
+                  realValue = "^" + realValue + "$";
                 }
                 if(currValue.contains(" IGNORE CASE")){
-                  realValue = "(?i)"+realValue;
+                  realValue = "(?i)" + realValue;
                 }
-                builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  realValue.r))
+                builder += MongoDBObject(actualKey -> MongoDBObject("$not" -> realValue.r))
               }
               else{
-                builder += MongoDBObject(actualKey -> MongoDBObject("$ne" ->  currValue))
+                builder += MongoDBObject(actualKey -> MongoDBObject("$ne" -> currValue))
               }
             }
             else {
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
                 var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
-                  realValue = "^"+realValue+"$";
+                  realValue = "^" + realValue + "$";
                 }
                 if(currValue.contains(" IGNORE CASE")){
-                  realValue = "(?i)"+realValue;
+                  realValue = "(?i)" + realValue;
                 }
                 builder += MongoDBObject(actualKey -> realValue.r)
               }
@@ -1189,10 +1189,10 @@ class MongoDBDatasetService @Inject() (
                   if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
                   var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                   if(!currValue.contains(" ANYWHERE")){
-                    realValue = "^"+realValue+"$";
+                    realValue = "^" + realValue + "$";
                   }
                   if(currValue.contains(" IGNORE CASE")){
-                    realValue = "(?i)"+realValue;
+                    realValue = "(?i)" + realValue;
                   }
                   objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
                   }
@@ -1204,10 +1204,10 @@ class MongoDBDatasetService @Inject() (
                   if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
                   var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                   if(!currValue.contains(" ANYWHERE")){
-                    realValue = "^"+realValue+"$";
+                    realValue = "^" + realValue + "$";
                   }
                   if(currValue.contains(" IGNORE CASE")){
-                    realValue = "(?i)"+realValue;
+                    realValue = "(?i)" + realValue;
                   }
                   objectForEach += MongoDBObject(tempActualKey -> realValue.r)
                   }
@@ -1482,8 +1482,8 @@ class MongoDBDatasetService @Inject() (
           val dsXMLMetadata = getXMLMetadataJSON(dataset.id)
           if(dsTechnicalMetadata != "{}" || dsUserMetadata != "{}" || dsXMLMetadata != "{}"){
 
-            val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
-            val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + "__metadata.txt"
+            val datasetnameNoSpaces = dataset.name.replaceAll("\\s+", "_")
+            val filePathInDirs = dsId.charAt(dsId.length() - 3) + fileSep + dsId.charAt(dsId.length() - 2) + dsId.charAt(dsId.length() - 1) + fileSep + dsId + fileSep + datasetnameNoSpaces + "__metadata.txt"
             val mdFile = new java.io.File(dsMdDumpDir + filePathInDirs)
             mdFile.getParentFile().mkdirs()
 
@@ -1504,7 +1504,7 @@ class MongoDBDatasetService @Inject() (
               }
             }catch {case ex:Exception =>{
               val badDatasetId = dataset.id.toString
-              Logger.error("Unable to stage dumped metadata of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+              Logger.error("Unable to stage dumped metadata of dataset with id " + badDatasetId + ": " + ex.printStackTrace())
               unsuccessfulDumps += badDatasetId
             }}
           }
@@ -1512,7 +1512,7 @@ class MongoDBDatasetService @Inject() (
           }
         }catch {case ex:Exception =>{
           val badDatasetId = dataset.id.toString
-          Logger.error("Unable to dump metadata of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+          Logger.error("Unable to dump metadata of dataset with id " + badDatasetId + ": " + ex.printStackTrace())
           unsuccessfulDumps += badDatasetId
         }}
       }
@@ -1543,15 +1543,15 @@ class MongoDBDatasetService @Inject() (
       for(dataset <- Dataset.findAll){
         try{
           val dsId = dataset.id.toString
-          val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
-          val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + ".txt"
+          val datasetnameNoSpaces = dataset.name.replaceAll("\\s+", "_")
+          val filePathInDirs = dsId.charAt(dsId.length() - 3) + fileSep + dsId.charAt(dsId.length() - 2) + dsId.charAt(dsId.length() - 1) + fileSep + dsId + fileSep + datasetnameNoSpaces + ".txt"
 
           val groupingFile = new java.io.File(datasetsDumpDir + filePathInDirs)
           groupingFile.getParentFile().mkdirs()
 
           val filePrintStream =  new PrintStream(groupingFile)
           files.get(dataset.files).found.foreach(file => {
-            filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
+            filePrintStream.println("id:" + file.id.toString + " " + "filename:" + file.filename)
           })
           filePrintStream.close()
 
@@ -1568,13 +1568,13 @@ class MongoDBDatasetService @Inject() (
               }
             }catch {case ex:Exception =>{
               val badDatasetId = dataset.id.toString
-              Logger.error("Unable to stage file grouping of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+              Logger.error("Unable to stage file grouping of dataset with id " + badDatasetId + ": " + ex.printStackTrace())
               unsuccessfulDumps += badDatasetId
             }}
           }
         }catch {case ex:Exception =>{
           val badDatasetId = dataset.id.toString
-          Logger.error("Unable to dump file grouping of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+          Logger.error("Unable to dump file grouping of dataset with id " + badDatasetId + ": " + ex.printStackTrace())
           unsuccessfulDumps += badDatasetId
         }}
       }
@@ -1593,7 +1593,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
-    Logger.debug("updating views for dataset "+id.toString)
+    Logger.debug("updating views for dataset " + id.toString)
     val viewdate = new Date
 
     val updated = Dataset.dao.collection.findAndModify(
@@ -1603,7 +1603,7 @@ class MongoDBDatasetService @Inject() (
 
     user match {
       case Some(u) => {
-        Logger.debug("updating views for user "+u.toString)
+        Logger.debug("updating views for user " + u.toString)
         DatasetStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "dataset"),
           $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
       }
@@ -1618,13 +1618,13 @@ class MongoDBDatasetService @Inject() (
   }
 
   def incrementDownloads(id: UUID, user: Option[User]) = {
-    Logger.debug("updating downloads for dataset "+id.toString)
+    Logger.debug("updating downloads for dataset " + id.toString)
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
 
     user match {
       case Some(u) => {
-        Logger.debug("updating downloads for user "+u.toString)
+        Logger.debug("updating downloads for user " + u.toString)
         DatasetStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "dataset"),
           $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
       }
