@@ -2370,7 +2370,7 @@ class  Datasets @Inject()(
 
   private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[models.User]) = {
     zip.putNextEntry(new ZipEntry("bagit.txt"))
-    val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
+    val softwareLine = "Bag-Software-Agent: clowder\n"
     val baggingDate = "Bagging-Date: " + (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime) + "\n"
     val baggingSize = "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
     val payLoadOxum = "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"

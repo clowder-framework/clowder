@@ -20,7 +20,7 @@ class BagItIterator(pathToFolder : String, collection : Option[models.Collection
 
   private def addBagItTextToZip(pathToFolder : String, totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, collection: models.Collection, user: Option[models.User]) = {
     zip.putNextEntry(new ZipEntry(pathToFolder + "/bagit.txt"))
-    val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
+    val softwareLine = "Bag-Software-Agent: clowder\n"
     val baggingDate = "Bagging-Date: " + (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime) + "\n"
     val baggingSize = "Bag-Size: " + totalbytes + "\n"
     val payLoadOxum = "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
@@ -41,7 +41,7 @@ class BagItIterator(pathToFolder : String, collection : Option[models.Collection
   // If no collection provided, assume this is for Selected download
   private def addBagItTextToZip(pathToFolder : String, totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, user: Option[models.User]) = {
     zip.putNextEntry(new ZipEntry(pathToFolder + "/bagit.txt"))
-    val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
+    val softwareLine = "Bag-Software-Agent: clowder\n"
     val baggingDate = "Bagging-Date: " + (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime) + "\n"
     val baggingSize = "Bag-Size: " + totalbytes + "\n"
     val payLoadOxum = "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
