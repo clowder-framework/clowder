@@ -17,9 +17,9 @@ class DatasetsMetadataAutodumpService (application: Application) extends Plugin 
     Logger.debug("Starting dataset metadata autodumper Plugin")
     //Dump metadata of all datasets periodically
     val timeInterval = play.Play.application().configuration().getInt("datasetmetadatadump.dumpEvery") 
-	    Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
-	      dumpAllDatasetMetadata
-	    }
+      Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
+        dumpAllDatasetMetadata
+      }
   }
   
   override def onStop() {
@@ -44,5 +44,4 @@ class DatasetsMetadataAutodumpService (application: Application) extends Plugin 
     } 
     
   }
-  
 }

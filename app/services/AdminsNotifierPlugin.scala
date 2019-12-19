@@ -45,7 +45,7 @@ class AdminsNotifierPlugin @Inject()(userService: UserService) (application:Appl
 
         mailHTML match {
           case "" => {
-        	  Logger.error("Unknown event type.")
+            Logger.error("Unknown event type.")
           }
           case _=> {
             Mail.sendEmailAdmins(mailSubject, None, Html(mailHTML))

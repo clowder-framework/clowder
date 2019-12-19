@@ -138,16 +138,16 @@ object Metadata {
         "user_id" -> user_id_string)
     }
   }
-	
+  
   implicit object MetadataWrites extends Writes[Metadata] {
-		def writes(metadata: Metadata) = Json.obj(		    
-				"created_at" -> metadata.createdAt.toString,
-				//if (i == 1) x else y
-				//switch based on type of creator/agent and call appropriate class' implicit writes
-				"agent"-> (if (metadata.creator.isInstanceOf[UserAgent]) metadata.creator.asInstanceOf[UserAgent] else metadata.creator.asInstanceOf[ExtractorAgent]) ,
-				"content" -> metadata.content
-				)
-	}
+    def writes(metadata: Metadata) = Json.obj(
+        "created_at" -> metadata.createdAt.toString,
+        //if (i == 1) x else y
+        //switch based on type of creator/agent and call appropriate class' implicit writes
+        "agent"-> (if (metadata.creator.isInstanceOf[UserAgent]) metadata.creator.asInstanceOf[UserAgent] else metadata.creator.asInstanceOf[ExtractorAgent]) ,
+        "content" -> metadata.content
+      )
+  }
 
 }
 

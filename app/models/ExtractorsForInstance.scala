@@ -5,5 +5,4 @@ package models
  */
 case class ExtractorsForInstance(
     extractors: List[String]
- )
- 
+)

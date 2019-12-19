@@ -229,34 +229,34 @@ object Geostreams extends ApiController {
   def updateStatisticsSensor(id: String) = PermissionAction(Permission.AddGeoStream) { implicit request =>
     Logger.debug("update sensor statistics for " + id)
     current.plugin[PostgresPlugin] match {
-	    case Some(plugin) if plugin.isEnabled => {
-	      plugin.updateSensorStats(Some(id))
-	      jsonp("""{"status":"updated"}""", request)
-	    }
+      case Some(plugin) if plugin.isEnabled => {
+        plugin.updateSensorStats(Some(id))
+        jsonp("""{"status":"updated"}""", request)
+      }
       case _ => pluginNotEnabled
-	  }
+    }
   }
 
   def updateStatisticsStream(id: String) = PermissionAction(Permission.AddGeoStream) { implicit request =>
     Logger.debug("update stream statistics for " + id)
-	  current.plugin[PostgresPlugin] match {
-	    case Some(plugin) if plugin.isEnabled => {
-	      plugin.updateStreamStats(Some(id))
-	      jsonp("""{"status":"updated"}""", request)
-	    }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) if plugin.isEnabled => {
+        plugin.updateStreamStats(Some(id))
+        jsonp("""{"status":"updated"}""", request)
+      }
       case _ => pluginNotEnabled
-	  }
+    }
   }
 
   def updateStatisticsStreamSensor() = PermissionAction(Permission.AddGeoStream) { implicit request =>
     Logger.debug("update all sensor/stream statistics")
-	  current.plugin[PostgresPlugin] match {
-	    case Some(plugin) if plugin.isEnabled => {
-	      plugin.updateSensorStats(None)
-	      jsonp("""{"status":"updated"}""", request)
-	    }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) if plugin.isEnabled => {
+        plugin.updateSensorStats(None)
+        jsonp("""{"status":"updated"}""", request)
+      }
       case _ => pluginNotEnabled
-	  }
+    }
   }
 
   def getSensorStatistics(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
@@ -402,8 +402,8 @@ object Geostreams extends ApiController {
       current.plugin[PostgresPlugin] match {
         case Some(plugin) if plugin.isEnabled => {
           plugin.counts() match {
-          	case (sensors, streams, datapoints) => jsonp(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints), request)
-          	case _ => jsonp("""{"status":"error"}""", request)
+            case (sensors, streams, datapoints) => jsonp(Json.obj("sensors"->sensors,"streams"->streams,"datapoints"->datapoints), request)
+            case _ => jsonp("""{"status":"error"}""", request)
           }
         }
         case _ => pluginNotEnabled
@@ -676,7 +676,7 @@ object Geostreams extends ApiController {
         var counter = new DateTime((startTime.getYear / 10) * 10, 1, 1, 0, 0, 0)
         while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
           val year = counter.getYear
-          val date = new DateTime(year+5,7,1,12,0,0)
+          val date = new DateTime(year + 5,7,1,12,0,0)
           result.put(year.toString, Json.obj("year" -> year, "date" -> iso.print(date)))
           counter = counter.plusYears(10)
         }
@@ -685,7 +685,7 @@ object Geostreams extends ApiController {
         var counter = new DateTime((startTime.getYear / 5) * 5, 1, 1, 0, 0, 0)
         while (counter.isBefore(endTime) || counter.isEqual(endTime)) {
           val year = counter.getYear
-          val date = new DateTime(year+2,7,1,12,0,0)
+          val date = new DateTime(year + 2,7,1,12,0,0)
           result.put(year.toString, Json.obj("year" -> year, "date" -> iso.print(date)))
           counter = counter.plusYears(5)
         }
@@ -731,9 +731,9 @@ object Geostreams extends ApiController {
             result.put(year + " fall", Json.obj("year" -> year,
               "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
           } else {
-	          result.put(year + " winter", Json.obj("year" -> year,
+            result.put(year + " winter", Json.obj("year" -> year,
               "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
-	  }
+    }
           counter = counter.plusMonths(3)
         }
       }

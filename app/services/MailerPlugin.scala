@@ -48,18 +48,18 @@ class MailerPlugin (application: Application) extends Plugin {
   }
   
   def sendMail(subscriberMail : String, html: String, subject: String): Boolean = {
-		  
-	  Logger.debug("Sending mail to " + subscriberMail)
+      
+    Logger.debug("Sending mail to " + subscriberMail)
           
       //Authenticate if needed
       var session = Session.getDefaultInstance(properties)     
       if(!user.equals("")){
         session = Session.getInstance(properties,
-			  new javax.mail.Authenticator() {
-				override def getPasswordAuthentication(): PasswordAuthentication = {
-					return new PasswordAuthentication(user, play.api.Play.configuration.getString("smtp.password").getOrElse(""))
-				}
-			  })
+        new javax.mail.Authenticator() {
+        override def getPasswordAuthentication(): PasswordAuthentication = {
+          return new PasswordAuthentication(user, play.api.Play.configuration.getString("smtp.password").getOrElse(""))
+        }
+        })
       }
       
       try{
@@ -74,8 +74,8 @@ class MailerPlugin (application: Application) extends Plugin {
         Logger.debug("Sent message successfully.")
       }catch {
         case msgex: MessagingException =>{
-        	Logger.error(msgex.toString())
-        	return false
+          Logger.error(msgex.toString())
+          return false
         }  
       }
       return true

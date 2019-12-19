@@ -10,9 +10,9 @@ import securesocial.core._
 import services.AppConfiguration
 
 object UserStatus extends Enumeration {
-	  type UserStatus = Value
-	  val Inactive, Active, Admin = Value
-	}
+    type UserStatus = Value
+    val Inactive, Active, Admin = Value
+  }
 
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial

@@ -452,7 +452,7 @@ class MongoDBCollectionService @Inject() (
       case None => MongoDBObject()
     }
     if (date == "") {
-    	Collection.find(filter).sort(order).limit(limit).toList
+      Collection.find(filter).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.debug("After " + sinceDate)
@@ -470,7 +470,7 @@ class MongoDBCollectionService @Inject() (
       case None => MongoDBObject()
     }
     if (date == "") {
-    	Collection.find(filter).sort(order).limit(limit).toList
+      Collection.find(filter).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
@@ -771,7 +771,7 @@ class MongoDBCollectionService @Inject() (
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Logger.debug(s"Removing dataset $datasetId from collection $collectionId")
-	  Collection.findOneById(new ObjectId(collectionId.stringify)) match{
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
@@ -784,10 +784,10 @@ class MongoDBCollectionService @Inject() (
               index(collection.id)
 
               if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
-	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-	        		  createThumbnail(collection.id)
-	        	  }
-	          }
+              if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+                createThumbnail(collection.id)
+              }
+            }
 
               Logger.debug("Removing dataset from collection completed")
             }
@@ -811,7 +811,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def delete(collectionId: UUID) = Try {
-	  Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         for(dataset <- datasets.listCollection(collectionId.stringify)) {
           //remove collection from dataset
@@ -875,7 +875,7 @@ class MongoDBCollectionService @Inject() (
 
   def createThumbnail(collectionId:UUID){
     get(collectionId) match{
-	    case Some(collection) => {
+      case Some(collection) => {
         val selecteddatasets = datasets.listCollection(collectionId.stringify)
         for(dataset <- selecteddatasets){
           if(dataset.isInstanceOf[models.Dataset]){
@@ -888,7 +888,7 @@ class MongoDBCollectionService @Inject() (
         }
         Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
       }
-	    case None =>
+      case None =>
     }
   }
 

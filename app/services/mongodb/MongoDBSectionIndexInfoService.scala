@@ -13,14 +13,14 @@ import models.{SectionIndexInfo, UUID}
  */
 class MongoDBSectionIndexInfoService extends SectionIndexInfoService {  
   
-	/**
+  /**
    * Check if index with this id is already in mongo collection. If it is - update type. If it is not -
    * add a new entry with index id and index type.
    */
   def insertType (indexId: UUID, indexType: String) {
-	  val query = MongoDBObject("indexId" -> indexId.stringify)
-	  //set "true" for upsert
-	  SectionIndexInfoDAO.update(query,  $set("indexType" -> indexType), true, false, WriteConcern.Safe)	  
+    val query = MongoDBObject("indexId" -> indexId.stringify)
+    //set "true" for upsert
+    SectionIndexInfoDAO.update(query,  $set("indexType" -> indexType), true, false, WriteConcern.Safe)	  
   }
   
   /**
@@ -35,7 +35,7 @@ class MongoDBSectionIndexInfoService extends SectionIndexInfoService {
   def insertName (indexId: UUID, indexName: String) {
     val query = MongoDBObject("indexId" -> indexId.stringify)
     //set boolean parameter to "true" for upsert, i.e. update/insert
-	  SectionIndexInfoDAO.update(query,  $set("indexName" -> indexName), true, false, WriteConcern.Safe)  
+    SectionIndexInfoDAO.update(query,  $set("indexName" -> indexName), true, false, WriteConcern.Safe)  
   }
    
   /**
@@ -58,7 +58,7 @@ class MongoDBSectionIndexInfoService extends SectionIndexInfoService {
    */
   def getDistinctTypes(): List[String] = {
       SectionIndexInfoDAO.find(MongoDBObject()).flatMap(_.indexType).toList.distinct
-	}
+  }
   
  /**
   * Returns true is entry with this indexId is found.

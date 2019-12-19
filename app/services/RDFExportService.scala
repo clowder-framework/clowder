@@ -38,7 +38,7 @@ class RDFExportService (application: Application) extends Plugin {
     //Clean temporary RDF files
     var timeInterval = play.Play.application().configuration().getInt("rdfTempCleanup.checkEvery")
     Akka.system().scheduler.schedule(0.minutes, timeInterval.intValue().minutes){
-    	files.removeTemporaries()
+        files.removeTemporaries()
     }
   }
   
@@ -54,131 +54,131 @@ class RDFExportService (application: Application) extends Plugin {
     
     val uuId = UUID(id)    
     files.get(uuId) match { 
-	            case Some(file) => {
-	              val theJSON = files.getUserMetadataJSON(uuId)
-	              val fileSep = System.getProperty("file.separator")
-	              
-	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
-	              var extraChar = ""
-	              val OS = System.getProperty("os.name").toLowerCase()
-	              if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
-	                extraChar = "\\"
-	              
-		          var resultDir = resultsDir + new ObjectId().toString
-		          new java.io.File(resultDir).mkdirs()
-	              
-	              if(!theJSON.replaceAll(" ","").equals("{}")){
-		              val xmlFile = jsonToXML(theJSON)
-		              new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
-		              xmlFile.delete()
-	              }
-	              else{
-	                new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
-	              }
-	              val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
-	              Some(resultFile)	              
-	            }
-	            case None => None
-	    }    
+                case Some(file) => {
+                  val theJSON = files.getUserMetadataJSON(uuId)
+                  val fileSep = System.getProperty("file.separator")
+                  
+                  //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
+                  var extraChar = ""
+                  val OS = System.getProperty("os.name").toLowerCase()
+                  if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
+                    extraChar = "\\"
+                  
+                  var resultDir = resultsDir + new ObjectId().toString
+                  new java.io.File(resultDir).mkdirs()
+                  
+                  if(!theJSON.replaceAll(" ","").equals("{}")){
+                      val xmlFile = jsonToXML(theJSON)
+                      new LidoToCidocConvertion(play.api.Play.configuration.getString("filesxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+                      xmlFile.delete()
+                  }
+                  else{
+                    new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
+                  }
+                  val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
+                  Some(resultFile)	              
+                }
+                case None => None
+        }    
   }
   
   def getRDFURLsForFile(id: String): Option[JsValue] = {
     val uuId = UUID(id)   
     files.get(uuId)  match {
-	      case Some(file) => {
-	        
-	        //RDF from XML of the file itself (for XML metadata-only files)
-	        val previewsList = previews.findByFileId(uuId)
-	        var rdfPreviewList = List.empty[models.Preview]
-	        for(currPreview <- previewsList){
-	          if(currPreview.contentType.equals("application/rdf+xml")){
-	            rdfPreviewList = rdfPreviewList :+ currPreview
-	          }
-	        }        
-	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
-	        
-	        //RDF from export of file community-generated metadata to RDF 
-	        for(i <- 1 to filesMappingsQuantity){
-	          var currHostString = hostUrl + api.routes.Files.getRDFUserMetadata(uuId,i.toString)
-	          list = list :+ Json.toJson(currHostString)
-	        }
-	
-	        val listJson = Json.toJson(list.toList)
-	        Some(listJson)
-	      }
-	      case None => None
-	    }
+          case Some(file) => {
+            
+            //RDF from XML of the file itself (for XML metadata-only files)
+            val previewsList = previews.findByFileId(uuId)
+            var rdfPreviewList = List.empty[models.Preview]
+            for(currPreview <- previewsList){
+              if(currPreview.contentType.equals("application/rdf+xml")){
+                rdfPreviewList = rdfPreviewList :+ currPreview
+              }
+            }        
+            var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
+            
+            //RDF from export of file community-generated metadata to RDF 
+            for(i <- 1 to filesMappingsQuantity){
+              var currHostString = hostUrl + api.routes.Files.getRDFUserMetadata(uuId,i.toString)
+              list = list :+ Json.toJson(currHostString)
+            }
+    
+            val listJson = Json.toJson(list.toList)
+            Some(listJson)
+          }
+          case None => None
+        }
   }
   
   def getRDFUserMetadataDataset(id: String, mappingNumber: String="1"): Option[java.io.File] = {
     val uuId = UUID(id) 
     datasets.get(uuId) match { 
-	            case Some(dataset) => {
-	              val theJSON = datasets.getUserMetadataJSON(uuId)
-	              val fileSep = System.getProperty("file.separator")
-	              
-	              //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
-	              var extraChar = ""
-	              val OS = System.getProperty("os.name").toLowerCase()
-	              if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
-	                extraChar = "\\"
-	              
-		          var resultDir = resultsDir + new ObjectId().toString
-		          new java.io.File(resultDir).mkdirs()
-	              
-	              if(!theJSON.replaceAll(" ","").equals("{}")){
-		              val xmlFile = jsonToXML(theJSON)
-		              new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
-		              xmlFile.delete()
-	              }
-	              else{
-	                new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
-	              }
-	              val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
-	              Some(resultFile)	              
-	            }
-	            case None => None
-	    }    
+                case Some(dataset) => {
+                  val theJSON = datasets.getUserMetadataJSON(uuId)
+                  val fileSep = System.getProperty("file.separator")
+                  
+                  //for Unix we need an extra \ in the directory path of the LidoToCidocConvertion output file due to Windows-based behavior of LidoToCidocConvertion  
+                  var extraChar = ""
+                  val OS = System.getProperty("os.name").toLowerCase()
+                  if(OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") >= 0)
+                    extraChar = "\\"
+                  
+                  var resultDir = resultsDir + new ObjectId().toString
+                  new java.io.File(resultDir).mkdirs()
+                  
+                  if(!theJSON.replaceAll(" ","").equals("{}")){
+                      val xmlFile = jsonToXML(theJSON)
+                      new LidoToCidocConvertion(play.api.Play.configuration.getString("datasetsxmltordfmapping.dir_"+mappingNumber).getOrElse(""), xmlFile.getAbsolutePath(), resultDir)	                            
+                      xmlFile.delete()
+                  }
+                  else{
+                    new java.io.File(resultDir + fileSep + extraChar + "Results.rdf").createNewFile()
+                  }
+                  val resultFile = new java.io.File(resultDir + fileSep + extraChar + "Results.rdf")
+                  Some(resultFile)	              
+                }
+                case None => None
+        }    
   }
   
   def getRDFURLsForDataset(id: String): Option[JsValue] = {
     val uuId = UUID(id) 
     datasets.get(uuId)  match {
-	      case Some(dataset) => {
-	        
-	        //RDF from XML files in the dataset itself (for XML metadata-only files)
-	        val previewsList = previews.findByDatasetId(uuId)
-	        var rdfPreviewList = List.empty[models.Preview]
-	        for(currPreview <- previewsList){
-	          if(currPreview.contentType.equals("application/rdf+xml")){
-	            rdfPreviewList = rdfPreviewList :+ currPreview
-	          }
-	        }        
-	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
-	        
-	        for(file <- dataset.files){
-	           val filePreviewsList = previews.findByFileId(file)
-	           var fileRdfPreviewList = List.empty[models.Preview]
-	           for(currPreview <- filePreviewsList){
-		           if(currPreview.contentType.equals("application/rdf+xml")){
-		        	   fileRdfPreviewList = fileRdfPreviewList :+ currPreview
-		           }
-	           }
-	           val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
-	           list = list ++ filesList
-	        }
-	        
-	        //RDF from export of file community-generated metadata to RDF 
-	        for(i <- 1 to filesMappingsQuantity){
-	          var currHostString = hostUrl + api.routes.Datasets.getRDFUserMetadata(uuId,i.toString)
-	          list = list :+ Json.toJson(currHostString)
-	        }
-	
-	        val listJson = Json.toJson(list.toList)
-	        Some(listJson)
-	      }
-	      case None => None
-	    }
+          case Some(dataset) => {
+            
+            //RDF from XML files in the dataset itself (for XML metadata-only files)
+            val previewsList = previews.findByDatasetId(uuId)
+            var rdfPreviewList = List.empty[models.Preview]
+            for(currPreview <- previewsList){
+              if(currPreview.contentType.equals("application/rdf+xml")){
+                rdfPreviewList = rdfPreviewList :+ currPreview
+              }
+            }        
+            var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
+            
+            for(file <- dataset.files){
+               val filePreviewsList = previews.findByFileId(file)
+               var fileRdfPreviewList = List.empty[models.Preview]
+               for(currPreview <- filePreviewsList){
+                   if(currPreview.contentType.equals("application/rdf+xml")){
+                       fileRdfPreviewList = fileRdfPreviewList :+ currPreview
+                   }
+               }
+               val filesList = for (currPreview <- fileRdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
+               list = list ++ filesList
+            }
+            
+            //RDF from export of file community-generated metadata to RDF 
+            for(i <- 1 to filesMappingsQuantity){
+              var currHostString = hostUrl + api.routes.Datasets.getRDFUserMetadata(uuId,i.toString)
+              list = list :+ Json.toJson(currHostString)
+            }
+    
+            val listJson = Json.toJson(list.toList)
+            Some(listJson)
+          }
+          case None => None
+        }
   }
   
   def jsonToXML(theJSON: String): java.io.File = {

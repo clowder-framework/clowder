@@ -54,7 +54,7 @@ object FileOP {
     // where "values" are the preview properties, such as "preview_id", "url", and "contentType".
     var previewRes = Map[String, MutableList[JsValue]]()
     previews1.filter(_.extractor_id.isDefined).foreach(p => {
-    	
+      
       val ename = p.extractor_id.get
       val jitem = Json.obj("preview_id" -> p.id.stringify,
         "contentType" -> p.contentType, "url" -> api.routes.Previews.download(p.id).toString)

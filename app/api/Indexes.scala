@@ -21,9 +21,9 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
    */
   def index() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
-      	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
+          (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
-      	      case Some(p) =>
+              case Some(p) =>
                 current.plugin[RabbitmqPlugin].foreach{
                   _.submitSectionPreviewManually(p, new UUID(section_id), Utils.baseUrl(request), request.apiKey)
                 }
@@ -32,12 +32,12 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
                   _.indexPreview(p.id,fileType)
                 }
                 Ok(toJson("success"))
-      	      case None =>
+              case None =>
                 BadRequest(toJson("Missing parameter [preview_id]"))
             }
-      	  }.getOrElse {
-      		BadRequest(toJson("Missing parameter [preview_id]"))
-      	  }
+          }.getOrElse {
+          BadRequest(toJson("Missing parameter [preview_id]"))
+          }
       }.getOrElse {
         BadRequest(toJson("Missing parameter [section_id]"))
       }
@@ -59,7 +59,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
           case None => {
             val jsFeatures = (request.body \ "features").as[List[JsObject]]
             val features = jsFeatures.map {f =>
-            	Feature((f \ "representation").as[String], (f \ "descriptor").as[List[Double]])
+              Feature((f \ "representation").as[String], (f \ "descriptor").as[List[Double]])
             }
             val doc = MultimediaFeatures(section_id = Some(sectionUUID), features = features)
             multimediaSearch.insert(doc)

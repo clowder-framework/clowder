@@ -17,9 +17,9 @@ class FileMetadataAutodumpService (application: Application) extends Plugin {
     Logger.debug("Starting file metadata autodumper Plugin")
     //Dump metadata of all files periodically
     val timeInterval = play.Play.application().configuration().getInt("filemetadatadump.dumpEvery") 
-	Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
-	      dumpAllFileMetadata
-	}    
+  Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
+        dumpAllFileMetadata
+  }    
   }
   
   override def onStop() {
@@ -43,6 +43,5 @@ class FileMetadataAutodumpService (application: Application) extends Plugin {
       Logger.debug(unsuccessfulMessage)
     } 
     
-  }
-  
+  }  
 }

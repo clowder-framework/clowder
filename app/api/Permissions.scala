@@ -13,8 +13,8 @@ import services._
 object Permission extends Enumeration {
   type Permission = Value
 
-	// spaces
-	val ViewSpace,
+  // spaces
+  val ViewSpace,
     CreateSpace,
     DeleteSpace,
     EditSpace,
@@ -77,10 +77,10 @@ object Permission extends Enumeration {
     CreateSensor,
     ViewSensor,
     DeleteSensor,
-	  AddGeoStream,
-	  ViewGeoStream,
-	  DeleteGeoStream,
-	  AddDatapoints,
+    AddGeoStream,
+    ViewGeoStream,
+    DeleteGeoStream,
+    AddDatapoints,
 
     // relations
     CreateRelation,
@@ -139,9 +139,9 @@ object Permission extends Enumeration {
   lazy val vocabularyterms: VocabularyTermService = DI.injector.getInstance(classOf[VocabularyTermService])
 
   /** Returns true if the user is listed as a server admin */
-	def checkServerAdmin(user: Option[User]): Boolean = {
-		user.exists(u => u.status==UserStatus.Admin)
-	}
+  def checkServerAdmin(user: Option[User]): Boolean = {
+    user.exists(u => u.status==UserStatus.Admin)
+  }
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: Option[User], resourceRef: ResourceRef): Boolean = {

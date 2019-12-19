@@ -19,28 +19,28 @@ case class VersusIndex(
 object VersusIndex {   
   /**
    * Serializer for VersusIndex type.
-   	*/
-	implicit object VersusIndexWrites extends Writes[VersusIndex] {
-		def writes(index: VersusIndex) = Json.obj(
-				"id" -> index.id,
-				"mimetype" -> index.MIMEtype,
-				"extr"->index.extractorID,
-				"measure"->index.measureID,
-				"typeOfIndexer"->index.indexerType
-				)
-	}
+       */
+    implicit object VersusIndexWrites extends Writes[VersusIndex] {
+        def writes(index: VersusIndex) = Json.obj(
+                "id" -> index.id,
+                "mimetype" -> index.MIMEtype,
+                "extr"->index.extractorID,
+                "measure"->index.measureID,
+                "typeOfIndexer"->index.indexerType
+                )
+    }
              
-	/**
-	 * Deserializer for VersusIndex type.
-	 */
-	implicit object VersusIndexReads extends Reads[VersusIndex] {    
-			def reads(json: JsValue) ={  
-				val maybeID:String = (json \"indexID").as[String]
-				val maybeMimeType:String=(json\"MIMEtype").as[String]
-				val exType:String=(json\"Extractor").as[String]
-				val meType:String=(json\"Measure").as[String]
-				val indxrType:String=(json\"Indexer").as[String]
-				JsSuccess(VersusIndex(maybeID,maybeMimeType,exType,meType,indxrType))     
-			}
-	}
+    /**
+     * Deserializer for VersusIndex type.
+     */
+    implicit object VersusIndexReads extends Reads[VersusIndex] {    
+            def reads(json: JsValue) ={  
+                val maybeID:String = (json \"indexID").as[String]
+                val maybeMimeType:String=(json\"MIMEtype").as[String]
+                val exType:String=(json\"Extractor").as[String]
+                val meType:String=(json\"Measure").as[String]
+                val indxrType:String=(json\"Indexer").as[String]
+                JsSuccess(VersusIndex(maybeID,maybeMimeType,exType,meType,indxrType))     
+            }
+    }
 }

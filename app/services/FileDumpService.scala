@@ -18,18 +18,18 @@ class FileDumpService(application: Application) extends Plugin {
     Logger.debug("Starting file dumper Plugin")
     val fileSep = System.getProperty("file.separator")
     var fileDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
-	if(!fileDumpDir.equals("")){
-	    if (!fileDumpDir.endsWith(fileSep))
-	      fileDumpDir = fileDumpDir + fileSep
-	    this.fileDumpDir = Some(fileDumpDir)
-		
-		var fileDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
-		if(!fileDumpMoveDir.equals("")){
-			if(!fileDumpMoveDir.endsWith(fileSep))
-				fileDumpMoveDir = fileDumpMoveDir + fileSep
-			this.fileDumpMoveDir = Some(fileDumpMoveDir)
-		}
-	}	
+  if(!fileDumpDir.equals("")){
+      if (!fileDumpDir.endsWith(fileSep))
+        fileDumpDir = fileDumpDir + fileSep
+      this.fileDumpDir = Some(fileDumpDir)
+    
+    var fileDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
+    if(!fileDumpMoveDir.equals("")){
+      if(!fileDumpMoveDir.endsWith(fileSep))
+        fileDumpMoveDir = fileDumpMoveDir + fileSep
+      this.fileDumpMoveDir = Some(fileDumpMoveDir)
+    }
+  }	
   }
 
   override def onStop() {
@@ -57,10 +57,10 @@ class FileDumpService(application: Application) extends Plugin {
             movedFile.getParentFile().mkdirs()
             
             if(copiedFile.renameTo(movedFile)){
-            	Logger.debug("File dumped and moved to staging directory successfully.")
+              Logger.debug("File dumped and moved to staging directory successfully.")
             }else{
-            	Logger.warn("Could not move dumped file to staging directory.")
-    	    }
+              Logger.warn("Could not move dumped file to staging directory.")
+          }
           }
           case None => Logger.warn("Could not move dumped file to staging directory. No staging directory set.")
         }        

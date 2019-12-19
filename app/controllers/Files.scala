@@ -347,8 +347,8 @@ class Files @Inject() (
     }.toMap
 
     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
     val viewMode: Option[String] =
       if (mode == null || mode == "") {
         request.cookies.get("view-mode") match {
@@ -488,7 +488,7 @@ class Files @Inject() (
     }
   }
   /*def extraction(id: String) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) { implicit request =>
- 
+
 
 }*/
 
@@ -504,27 +504,27 @@ class Files @Inject() (
     Logger.debug("--------- in upload ------------ ")
     user match {
       case Some(identity) => {
-        request.body.file("files[]").map { f =>                     
-	          var nameOfFile = f.filename
-	          var flags = ""	          
-	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
-		          val thirdSeparatorIndex = nameOfFile.indexOf("__")
-	              if(thirdSeparatorIndex >= 0){
-	                val firstSeparatorIndex = nameOfFile.indexOf("_")
-	                val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-	              }
-	          }	       
-	        Logger.debug("Uploading file " + nameOfFile)
+        request.body.file("files[]").map { f =>
+            var nameOfFile = f.filename
+            var flags = ""
+            if(nameOfFile.toLowerCase().endsWith(".ptm")){
+              val thirdSeparatorIndex = nameOfFile.indexOf("__")
+                if(thirdSeparatorIndex >= 0){
+                  val firstSeparatorIndex = nameOfFile.indexOf("_")
+                  val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+                flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
+                nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
+                }
+            }
+          Logger.debug("Uploading file " + nameOfFile)
 
-	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+          val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
-	        // store file       
-	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-	        val uploadedFile = f
-	        file match {
-	          case Some(f) => {
+          // store file
+          val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+          val uploadedFile = f
+          file match {
+            case Some(f) => {
               // Add new file & byte count to appConfig
               appConfig.incrementCount('files, 1)
               appConfig.incrementCount('bytes, f.length)
@@ -577,25 +577,25 @@ class Files @Inject() (
               val extra = Map("filename" -> f.filename)
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
               /****************************/
-	            current.plugin[RabbitmqPlugin].foreach{
+              current.plugin[RabbitmqPlugin].foreach{
                 // FIXME dataset not available?
                 _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
               }
-	            
-	            //for metadata files
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(f.id, xmlToJSON)
-	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index(SearchUtils.getElasticsearchObject(f))
+
+              //for metadata files
+              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
+                val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                files.addXMLMetadata(f.id, xmlToJSON)
+
+                current.plugin[ElasticsearchPlugin].foreach{
+                  _.index(SearchUtils.getElasticsearchObject(f))
                 }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index(SearchUtils.getElasticsearchObject(f))
+              }
+              else{
+                current.plugin[ElasticsearchPlugin].foreach{
+                  _.index(SearchUtils.getElasticsearchObject(f))
                 }
-	            }
+              }
 
               current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
 
@@ -610,7 +610,7 @@ class Files @Inject() (
               current.plugin[AdminsNotifierPlugin].foreach {
                 _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
 
-              //Correctly set the updated URLs and data that is needed for the interface to correctly 
+              //Correctly set the updated URLs and data that is needed for the interface to correctly
               //update the display after a successful upload.
               val https = controllers.Utils.https(request)
               val retMap = Map("files" ->
@@ -621,11 +621,11 @@ class Files @Inject() (
                       "size" -> toJson(uploadedFile.ref.file.length()),
                       "url" -> toJson(routes.Files.file(f.id).absoluteURL(https)),
                       "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(https)),
-	                            "deleteType" -> toJson("POST")
-	                        )
-	                    )
-	                )
-	            )
+                              "deleteType" -> toJson("POST")
+                          )
+                      )
+                  )
+              )
               Ok(toJson(retMap))
             }
             case None => {
@@ -675,7 +675,7 @@ class Files @Inject() (
     implicit val user = request.user
 
     if (UUID.isValid(id.stringify)) {
-      //Check the license type before doing anything. 
+      //Check the license type before doing anything.
       files.get(id) match {
         case Some(file) => {
           if (file.licenseData.isDownloadAllowed(request.user)) {
@@ -777,7 +777,7 @@ class Files @Inject() (
                   //prepare encoded file name for converted file
                   val lastSeparatorIndex = file.filename.replace("_", ".").lastIndexOf(".")
                   val outputFileName = file.filename.substring(0, lastSeparatorIndex) + "." + outputFormat
-                  
+
                   //create local temp file to save polyglot output
                   val tempFileName = "temp_converted_file." + outputFormat
                   val tempFile: java.io.File = new java.io.File(tempFileName)
@@ -851,7 +851,7 @@ class Files @Inject() (
               case x if x.length == 1 => (x.head.toLong, contentLength - 1)
               case x => (x(0).toLong, x(1).toLong)
             }
-	            range match { case (start,end) =>
+              range match { case (start,end) =>
 
 
                 inputStream.skip(start)
@@ -863,11 +863,11 @@ class Files @Inject() (
                       ACCEPT_RANGES -> "bytes",
                       CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
                       CONTENT_LENGTH -> (end - start + 1).toString,
-	                    CONTENT_TYPE -> contentType
-	                  )
-	                ),
-	                body = Enumerator.fromStream(inputStream)
-	              )
+                      CONTENT_TYPE -> contentType
+                    )
+                  ),
+                  body = Enumerator.fromStream(inputStream)
+                )
             }
           }
           case None => {
@@ -904,7 +904,7 @@ class Files @Inject() (
     if (typeToSearch.equals("sectionsSome") && dataParts.contains("sections")) {
       sections = dataParts("sections").toList
     }
-    //END OF: processing searching within files or sections of files or both    
+    //END OF: processing searching within files or sections of files or both
     request.body.file("File").map { f =>
       try {
         var nameOfFile = f.filename
@@ -921,7 +921,7 @@ class Files @Inject() (
           }
         }
         Logger.debug("Controllers/Files Uploading file " + nameOfFile)
-        
+
         // store file
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
@@ -1269,11 +1269,11 @@ class Files @Inject() (
   //            Logger.debug("Part: " + partName + " filename: " + filename + " contentType: " + contentType);
   //            // TODO RK handle exception for instance if we switch to other DB
   //        Logger.debug("myPartHandler")
-  //			val files = current.plugin[MongoSalatPlugin] match {
-  //			  case None    => throw new RuntimeException("No MongoSalatPlugin");
-  //			  case Some(x) =>  x.gridFS("uploads")
-  //			}
-  //            
+  //        val files = current.plugin[MongoSalatPlugin] match {
+  //              case None    => throw new RuntimeException("No MongoSalatPlugin");
+  //              case Some(x) =>  x.gridFS("uploads")
+  //            }
+  //
   //            //Set up the PipedOutputStream here, give the input stream to a worker thread
   //            val pos:PipedOutputStream = new PipedOutputStream();
   //            val pis:PipedInputStream  = new PipedInputStream(pos);
@@ -1289,8 +1289,8 @@ class Files @Inject() (
   ////            mongoFile.save
   ////            val id = mongoFile.getAs[ObjectId]("_id").get.toString
   ////            Ok(views.html.file(mongoFile.asDBObject, id))
-  //            
-  //            
+  //
+  //
   //            //Read content to the POS
   //            Iteratee.fold[Array[Byte], PipedOutputStream](pos) { (os, data) =>
   //              os.write(data)
@@ -1301,26 +1301,26 @@ class Files @Inject() (
   //            }
   //        }
   //   }
-  //  
+  //
   //  /**
   //   * Ajax upload. How do we pass in the file name?(parse.temporaryFile)
   //   */
-  //  
-  //  
+  //
+  //
   //  def uploadAjax = Action(parse.temporaryFile) { implicit request =>
   //
   //    val f = request.body.file
   //    val filename=f.getName()
-  //    
+  //
   //    // store file
   //    // TODO is this still used? if so replace null with user.
   //        Logger.debug("uploadAjax")
   //    val file = files.save(new FileInputStream(f.getAbsoluteFile()), filename, None, null)
-  //    
+  //
   //    file match {
   //      case Some(f) => {
   //         var fileType = f.contentType
-  //        
+  //
   //        // TODO RK need to replace unknown with the server name
   //        val key = "unknown." + "file."+ f.contentType.replace(".", "_").replace("/", ".")
   //        // TODO RK : need figure out if we can use https
@@ -1331,7 +1331,7 @@ class Files @Inject() (
   //          _.index("files", "file", id, List(("filename",f.filename), ("contentType", f.contentType)))
   //        }
   //        // redirect to file page
-  //        Redirect(routes.Files.file(f.id.toString))  
+  //        Redirect(routes.Files.file(f.id.toString))
   //      }
   //      case None => {
   //        Logger.error("Could not retrieve file that was just saved.")
@@ -1352,14 +1352,14 @@ class Files @Inject() (
    *
    * TODO Finish implementing. Right now it doesn't write to anything.
    */
-  // case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty, 
+  // case class SomeIteratee(state: Symbol = 'Cont, input: Input[Array[Byte]] = Empty,
   //     received: Int = 0) extends Iteratee[Array[Byte], Either[Result, Int]] {
   //   Logger.debug(state + " " + input + " " + received)
   //
   ////   val files = current.plugin[MongoSalatPlugin] match {
-  ////			  case None    => throw new RuntimeException("No MongoSalatPlugin");
-  ////			  case Some(x) =>  x.gridFS("uploads")
-  ////			}
+  ////            case None    => throw new RuntimeException("No MongoSalatPlugin");
+  ////            case Some(x) =>  x.gridFS("uploads")
+  ////          }
   ////
   ////   val pos:PipedOutputStream = new PipedOutputStream();
   ////   val pis:PipedInputStream  = new PipedInputStream(pos);
@@ -1367,27 +1367,27 @@ class Files @Inject() (
   ////     fh.filename = "test-file.txt"
   ////     fh.contentType = "text/plain"
   ////   }
-  //			
-  //   
+  //
+  //
   //   def fold[B](
   //     done: (Either[Result, Int], Input[Array[Byte]]) => Promise[B],
   //     cont: (Input[Array[Byte]] => Iteratee[Array[Byte], Either[Result, Int]]) => Promise[B],
   //     error: (String, Input[Array[Byte]]) => Promise[B]
   //   ): Promise[B] = state match {
-  //     case 'Done => { 
+  //     case 'Done => {
   //       Logger.debug("Done with upload")
   ////       pos.close()
-  //       done(Right(received), Input.Empty) 
+  //       done(Right(received), Input.Empty)
   //     }
   //     case 'Cont => cont(in => in match {
   //       case in: El[Array[Byte]] => {
   //         Logger.debug("Getting ready to write " +  in.e.length)
-  //    	 try {
+  //         try {
   ////         pos.write(in.e)
-  //    	 } catch {
-  //    	   case error => Logger.error("Error writing to gridfs" + error.toString())
-  //    	 }
-  //    	 Logger.debug("Calling recursive function")
+  //         } catch {
+  //           case error => Logger.error("Error writing to gridfs" + error.toString())
+  //         }
+  //         Logger.debug("Calling recursive function")
   //         copy(input = in, received = received + in.e.length)
   //       }
   //       case Empty => {

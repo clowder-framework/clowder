@@ -98,7 +98,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def index = UserAction(needActive = false) { implicit request =>
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
-  	implicit val user = request.user
+    implicit val user = request.user
 
     var newsfeedEvents = List.empty[Event]
     if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {

@@ -25,8 +25,8 @@ class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces:
    */
   def updateThumbnail(queryId: UUID, thumbnailId: UUID) {
     TempFileDAO.update(MongoDBObject("_id" -> new ObjectId(queryId.stringify)),
-    	//because of a bug in Salat have to explicitely cast to ObjectId
-    	$set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+      //because of a bug in Salat have to explicitely cast to ObjectId
+      $set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
   }
 
 

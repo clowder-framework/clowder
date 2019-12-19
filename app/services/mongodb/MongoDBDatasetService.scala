@@ -1187,32 +1187,32 @@ class MongoDBDatasetService @Inject() (
                 val currValue = reqValue.asInstanceOf[String]
                 if (keyTrimmed.endsWith("__not")) {
                   if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
-	                if(!currValue.contains(" ANYWHERE")){
-	                  realValue = "^"+realValue+"$";
-	                }
-	                if(currValue.contains(" IGNORE CASE")){
-	                  realValue = "(?i)"+realValue;
-	                }
-	                objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
+                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
+                  if(!currValue.contains(" ANYWHERE")){
+                    realValue = "^"+realValue+"$";
+                  }
+                  if(currValue.contains(" IGNORE CASE")){
+                    realValue = "(?i)"+realValue;
+                  }
+                  objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
                   }
                   else{
-                	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
+                  objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
                   }
                 }
                 else {
                   if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
-	                if(!currValue.contains(" ANYWHERE")){
-	                  realValue = "^"+realValue+"$";
-	                }
-	                if(currValue.contains(" IGNORE CASE")){
-	                  realValue = "(?i)"+realValue;
-	                }
-	                objectForEach += MongoDBObject(tempActualKey -> realValue.r)
+                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
+                  if(!currValue.contains(" ANYWHERE")){
+                    realValue = "^"+realValue+"$";
+                  }
+                  if(currValue.contains(" IGNORE CASE")){
+                    realValue = "(?i)"+realValue;
+                  }
+                  objectForEach += MongoDBObject(tempActualKey -> realValue.r)
                   }
                   else{
-                	objectForEach += MongoDBObject(tempActualKey -> currValue)
+                  objectForEach += MongoDBObject(tempActualKey -> currValue)
                   }
                 }
               } else {
@@ -1455,132 +1455,132 @@ class MongoDBDatasetService @Inject() (
 
 
   def dumpAllDatasetMetadata(): List[String] = {
-		    Logger.debug("Dumping metadata of all datasets.")
+        Logger.debug("Dumping metadata of all datasets.")
 
-		    val fileSep = System.getProperty("file.separator")
-		    val lineSep = System.getProperty("line.separator")
-		    var dsMdDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
-			if(!dsMdDumpDir.endsWith(fileSep))
-				dsMdDumpDir = dsMdDumpDir + fileSep
-			var dsMdDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
-			if(dsMdDumpMoveDir.equals("")){
-				Logger.warn("Will not move dumped datasets metadata to staging directory. No staging directory set.")
-			}
-			else{
-			    if(!dsMdDumpMoveDir.endsWith(fileSep))
-				  dsMdDumpMoveDir = dsMdDumpMoveDir + fileSep
-			}
+        val fileSep = System.getProperty("file.separator")
+        val lineSep = System.getProperty("line.separator")
+        var dsMdDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
+      if(!dsMdDumpDir.endsWith(fileSep))
+        dsMdDumpDir = dsMdDumpDir + fileSep
+      var dsMdDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
+      if(dsMdDumpMoveDir.equals("")){
+        Logger.warn("Will not move dumped datasets metadata to staging directory. No staging directory set.")
+      }
+      else{
+          if(!dsMdDumpMoveDir.endsWith(fileSep))
+          dsMdDumpMoveDir = dsMdDumpMoveDir + fileSep
+      }
 
-			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
+      var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
 
-			for(dataset <- Dataset.findAll){
-			  try{
-				  val dsId = dataset.id.toString
+      for(dataset <- Dataset.findAll){
+        try{
+          val dsId = dataset.id.toString
 
-				  val dsTechnicalMetadata = getTechnicalMetadataJSON(dataset.id)
-				  val dsUserMetadata = getUserMetadataJSON(dataset.id)
-				  val dsXMLMetadata = getXMLMetadataJSON(dataset.id)
-				  if(dsTechnicalMetadata != "{}" || dsUserMetadata != "{}" || dsXMLMetadata != "{}"){
+          val dsTechnicalMetadata = getTechnicalMetadataJSON(dataset.id)
+          val dsUserMetadata = getUserMetadataJSON(dataset.id)
+          val dsXMLMetadata = getXMLMetadataJSON(dataset.id)
+          if(dsTechnicalMetadata != "{}" || dsUserMetadata != "{}" || dsXMLMetadata != "{}"){
 
-				    val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
-				    val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + "__metadata.txt"
-				    val mdFile = new java.io.File(dsMdDumpDir + filePathInDirs)
-				    mdFile.getParentFile().mkdirs()
+            val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
+            val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + "__metadata.txt"
+            val mdFile = new java.io.File(dsMdDumpDir + filePathInDirs)
+            mdFile.getParentFile().mkdirs()
 
-				    val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
-					fileWriter.write(dsTechnicalMetadata + lineSep + lineSep + dsUserMetadata + lineSep + lineSep + dsXMLMetadata)
-					fileWriter.close()
+            val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
+          fileWriter.write(dsTechnicalMetadata + lineSep + lineSep + dsUserMetadata + lineSep + lineSep + dsXMLMetadata)
+          fileWriter.close()
 
-					if(!dsMdDumpMoveDir.equals("")){
-					  try{
-						  val mdMoveFile = new java.io.File(dsMdDumpMoveDir + filePathInDirs)
-					      mdMoveFile.getParentFile().mkdirs()
+          if(!dsMdDumpMoveDir.equals("")){
+            try{
+              val mdMoveFile = new java.io.File(dsMdDumpMoveDir + filePathInDirs)
+                mdMoveFile.getParentFile().mkdirs()
 
-						  if(mdFile.renameTo(mdMoveFile)){
-			            	Logger.debug("Dataset metadata dumped and moved to staging directory successfully.")
-						  }else{
-			            	Logger.warn("Could not move dumped dataset metadata to staging directory.")
-			            	throw new Exception("Could not move dumped dataset metadata to staging directory.")
-						  }
-					  }catch {case ex:Exception =>{
-						  val badDatasetId = dataset.id.toString
-						  Logger.error("Unable to stage dumped metadata of dataset with id "+badDatasetId+": "+ex.printStackTrace())
-						  unsuccessfulDumps += badDatasetId
-					  }}
-					}
+              if(mdFile.renameTo(mdMoveFile)){
+                    Logger.debug("Dataset metadata dumped and moved to staging directory successfully.")
+              }else{
+                    Logger.warn("Could not move dumped dataset metadata to staging directory.")
+                    throw new Exception("Could not move dumped dataset metadata to staging directory.")
+              }
+            }catch {case ex:Exception =>{
+              val badDatasetId = dataset.id.toString
+              Logger.error("Unable to stage dumped metadata of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+              unsuccessfulDumps += badDatasetId
+            }}
+          }
 
-				  }
-			  }catch {case ex:Exception =>{
-			    val badDatasetId = dataset.id.toString
-			    Logger.error("Unable to dump metadata of dataset with id "+badDatasetId+": "+ex.printStackTrace())
-			    unsuccessfulDumps += badDatasetId
-			  }}
-			}
+          }
+        }catch {case ex:Exception =>{
+          val badDatasetId = dataset.id.toString
+          Logger.error("Unable to dump metadata of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+          unsuccessfulDumps += badDatasetId
+        }}
+      }
 
-		    return unsuccessfulDumps.toList
-	}
+        return unsuccessfulDumps.toList
+  }
 
   def dumpAllDatasetGroupings(): List[String] = {
 
-		    Logger.debug("Dumping dataset groupings of all datasets.")
+        Logger.debug("Dumping dataset groupings of all datasets.")
 
-		    val fileSep = System.getProperty("file.separator")
-		    val lineSep = System.getProperty("line.separator")
-		    var datasetsDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
-			if(!datasetsDumpDir.endsWith(fileSep))
-				datasetsDumpDir = datasetsDumpDir + fileSep
-			var dsDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
-			if(dsDumpMoveDir.equals("")){
-				Logger.warn("Will not move dumped dataset groupings to staging directory. No staging directory set.")
-			}
-			else{
-			    if(!dsDumpMoveDir.endsWith(fileSep))
-				  dsDumpMoveDir = dsDumpMoveDir + fileSep
-			}
+        val fileSep = System.getProperty("file.separator")
+        val lineSep = System.getProperty("line.separator")
+        var datasetsDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
+      if(!datasetsDumpDir.endsWith(fileSep))
+        datasetsDumpDir = datasetsDumpDir + fileSep
+      var dsDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
+      if(dsDumpMoveDir.equals("")){
+        Logger.warn("Will not move dumped dataset groupings to staging directory. No staging directory set.")
+      }
+      else{
+          if(!dsDumpMoveDir.endsWith(fileSep))
+          dsDumpMoveDir = dsDumpMoveDir + fileSep
+      }
 
-			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
+      var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
 
-			for(dataset <- Dataset.findAll){
-			  try{
-				  val dsId = dataset.id.toString
-				  val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
-				  val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + ".txt"
+      for(dataset <- Dataset.findAll){
+        try{
+          val dsId = dataset.id.toString
+          val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
+          val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + ".txt"
 
-				  val groupingFile = new java.io.File(datasetsDumpDir + filePathInDirs)
-				  groupingFile.getParentFile().mkdirs()
+          val groupingFile = new java.io.File(datasetsDumpDir + filePathInDirs)
+          groupingFile.getParentFile().mkdirs()
 
-				  val filePrintStream =  new PrintStream(groupingFile)
+          val filePrintStream =  new PrintStream(groupingFile)
           files.get(dataset.files).found.foreach(file => {
             filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
           })
-				  filePrintStream.close()
+          filePrintStream.close()
 
-				  if(!dsDumpMoveDir.equals("")){
-					  try{
-						  val groupingMoveFile = new java.io.File(dsDumpMoveDir + filePathInDirs)
-					      groupingMoveFile.getParentFile().mkdirs()
+          if(!dsDumpMoveDir.equals("")){
+            try{
+              val groupingMoveFile = new java.io.File(dsDumpMoveDir + filePathInDirs)
+                groupingMoveFile.getParentFile().mkdirs()
 
-						  if(groupingFile.renameTo(groupingMoveFile)){
-			            	Logger.debug("Dataset file grouping dumped and moved to staging directory successfully.")
-						  }else{
-			            	Logger.warn("Could not move dumped dataset file grouping to staging directory.")
-			            	throw new Exception("Could not move dumped dataset file grouping to staging directory.")
-						  }
-					  }catch {case ex:Exception =>{
-						  val badDatasetId = dataset.id.toString
-						  Logger.error("Unable to stage file grouping of dataset with id "+badDatasetId+": "+ex.printStackTrace())
-						  unsuccessfulDumps += badDatasetId
-					  }}
-					}
-			  }catch {case ex:Exception =>{
-			    val badDatasetId = dataset.id.toString
-			    Logger.error("Unable to dump file grouping of dataset with id "+badDatasetId+": "+ex.printStackTrace())
-			    unsuccessfulDumps += badDatasetId
-			  }}
-			}
+              if(groupingFile.renameTo(groupingMoveFile)){
+                    Logger.debug("Dataset file grouping dumped and moved to staging directory successfully.")
+              }else{
+                    Logger.warn("Could not move dumped dataset file grouping to staging directory.")
+                    throw new Exception("Could not move dumped dataset file grouping to staging directory.")
+              }
+            }catch {case ex:Exception =>{
+              val badDatasetId = dataset.id.toString
+              Logger.error("Unable to stage file grouping of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+              unsuccessfulDumps += badDatasetId
+            }}
+          }
+        }catch {case ex:Exception =>{
+          val badDatasetId = dataset.id.toString
+          Logger.error("Unable to dump file grouping of dataset with id "+badDatasetId+": "+ex.printStackTrace())
+          unsuccessfulDumps += badDatasetId
+        }}
+      }
 
-		    return unsuccessfulDumps.toList
-	}
+        return unsuccessfulDumps.toList
+  }
 
   def addFollower(id: UUID, userId: UUID) {
     Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),

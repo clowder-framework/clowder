@@ -5,64 +5,63 @@ import play.api.Play.current
 import services.PostgresPlugin
 
 /**
- * Metadata about sensors registered with the system. Datastreams can be associalted with sensors.
+ * Metadata about sensors registered with the system. Datastreams can be associated with sensors.
  */
 object Sensors extends Controller with ApiController {
 
   def add() = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          Ok("")
-        }
-        case None => {
-          Ok("")
-         }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        Ok("")
       }
+      case None => {
+        Ok("")
+      }
+    }
   }
   
   def get(id: String) = PermissionAction(Permission.ViewGeoStream)(parse.json) { implicit request =>
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          Ok("")
-        }
-        case None => {
-          Ok("")
-         }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        Ok("")
       }
+      case None => {
+        Ok("")
+      }
+    }
   }
   
   def list() = PermissionAction(Permission.ViewGeoStream)(parse.json) { implicit request =>
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          val sensors = plugin.listSensors()
-          Ok("")
-        }
-        case None => {
-          Ok("")
-         }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        val sensors = plugin.listSensors()
+        Ok("")
       }
+      case None => {
+        Ok("")
+      }
+    }
   }
   
   def search() = PermissionAction(Permission.ViewGeoStream)(parse.json) { implicit request =>
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          Ok("")
-        }
-        case None => {
-          Ok("")
-         }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        Ok("")
       }
+      case None => {
+        Ok("")
+      }
+    }
   }
   
   def delete(id: String) = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
-      current.plugin[PostgresPlugin] match {
-        case Some(plugin) => {
-          Ok("")
-        }
-        case None => {
-          Ok("")
-         }
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        Ok("")
       }
+      case None => {
+        Ok("")
+      }
+    }
   }
-  
 }

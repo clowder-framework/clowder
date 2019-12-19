@@ -401,7 +401,7 @@ object FileUtils {
 
     // craete the file object
     val path = url.getPath
-    val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+    val filename = path.slice(path.lastIndexOfSlice("/") + 1, path.length)
     val file = File(UUID.generate(), path, filename, filename, user, new Date(),
       FileUtils.getContentType(filename, None), -1, "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
@@ -459,7 +459,7 @@ object FileUtils {
       Logger.debug(path + " is whitelisted for upload")
 
       // craete the file object
-      val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+      val filename = path.slice(path.lastIndexOfSlice("/") + 1, path.length)
       val length = new java.io.File(path).length()
       val loader = classOf[services.filesystem.DiskByteStorageService].getName
       val file = File(UUID.generate(), path, filename, filename, user, new Date(),
@@ -497,7 +497,7 @@ object FileUtils {
 
       Some(file)
     } else {
-      Logger.debug(path +" is not a whitelisted upload location")
+      Logger.debug(path + " is not a whitelisted upload location")
       None
     }
   }

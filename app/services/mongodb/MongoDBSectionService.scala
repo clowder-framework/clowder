@@ -116,7 +116,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   }
 
   def setDescription(id: UUID, descr: String) {
-	    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)
+      SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)
   }
 
   /**

@@ -24,9 +24,5 @@ object VersusExtraction {
       JsSuccess(VersusExtraction(ex_id,a_name,ex_name,des))
          
     }
-
-    }
-  
-  
-
+  }
 }

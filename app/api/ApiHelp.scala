@@ -20,15 +20,15 @@ object ApiHelp extends Controller {
    */
   def getResources() = Action {
     Ok(toJson("""
-		    {
-			  apiVersion: "0.1",
-			  swaggerVersion: "1.1",
-			  basePath: "http://localhost:9000/api",
-			  apis: [
-			    {
-			      path: "/datasets.json",
-			      description: "Datasets are basic containers of data"
-			    },
+        {
+        apiVersion: "0.1",
+        swaggerVersion: "1.1",
+        basePath: "http://localhost:9000/api",
+        apis: [
+          {
+            path: "/datasets.json",
+            description: "Datasets are basic containers of data"
+          },
           {
             path: "/files.json",
             description: "Files include raw bytes and metadata"
@@ -37,8 +37,8 @@ object ApiHelp extends Controller {
             path: "/collections.json",
             description: "Collections are groupings of datasets"
           }
-			  ]
-			}
+        ]
+      }
     """))
   }
   

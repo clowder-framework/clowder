@@ -78,5 +78,4 @@ class MongoDBAuthenticatorStore(app: Application) extends AuthenticatorStore(app
     AuthenticatorDAO.delete(id)
     Right(())
   }
-
 }

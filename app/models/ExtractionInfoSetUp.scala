@@ -208,7 +208,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       var exlist = List[String]()
       exjsonlist.map {
         ex =>
-          Logger.trace("internal: " +(ex \"internal")+"  name:"+(ex \"name").as[String])
+          Logger.trace("internal: " + (ex \"internal") + "  name:" + (ex \"name").as[String])
           if ((ex \ "internal").as[Boolean] == false) {
             var name = (ex \ "name").as[String]
             exlist = name :: exlist

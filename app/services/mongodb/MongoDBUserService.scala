@@ -295,7 +295,7 @@ class MongoDBUserService @Inject() (
   def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {
       Logger.debug("remove user from space")
       UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
-    		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
+          $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
   }
 
   /**

@@ -479,11 +479,11 @@ class PostgresPlugin(application: Application) extends Plugin {
   
   def getSensorStats(id: String): Option[String] = {
     val query = "WITH stream_info AS (" +
-    			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
-    			") " +
-    			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_end_time, array_agg(distinct param) AS parameters FROM stream_info" +
-    			") As t;"
+          "SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
+          ") " +
+          "SELECT row_to_json(t, true) AS my_sensor FROM (" +
+          "SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_end_time, array_agg(distinct param) AS parameters FROM stream_info" +
+          ") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Get streams by sensor statement: " + st)
@@ -665,7 +665,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def deleteStream(id: Integer): Boolean = {
-	val deleteStream = "DELETE from streams where gid = ?"
+  val deleteStream = "DELETE from streams where gid = ?"
     val st = conn.prepareStatement(deleteStream)
     st.setInt(1, id)
     st.execute()
@@ -990,15 +990,15 @@ class PostgresPlugin(application: Application) extends Plugin {
   def filterProperties(obj: JsObject, attributes: List[String]) = {
     var props = JsObject(Seq.empty)
     (obj \ "properties").asOpt[JsObject] match {
-	  case Some(x) => {
-	    for (f <- x.fieldSet) {
-	      if (("source" == f._1) || attributes.contains(f._1)) {
-	        props = props + f
-	      }
-	    }
-	    (obj - ("properties") + ("properties", props))
-	  }
-	  case None => obj
+    case Some(x) => {
+      for (f <- x.fieldSet) {
+        if (("source" == f._1) || attributes.contains(f._1)) {
+          props = props + f
+        }
+      }
+      (obj - ("properties") + ("properties", props))
+    }
+    case None => obj
     }
   }
   

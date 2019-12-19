@@ -44,7 +44,7 @@ class Selected @Inject()(selections: SelectionService,
   def add() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.add" + request.body)
     request.body.\("dataset").asOpt[String] match {
-	    case Some(dataset) => {
+      case Some(dataset) => {
         request.user match {
           case Some(user) => {
             selections.add(UUID(dataset), user.email.get)
@@ -52,18 +52,18 @@ class Selected @Inject()(selections: SelectionService,
           }
           case None => Ok(toJson(Map("success"->"false", "msg"->"User not logged in")))
         }
-	    }
-	    case None => {
-	    	Logger.error("no dataset specified")
-	    	BadRequest
-	    }
+      }
+      case None => {
+        Logger.error("no dataset specified")
+        BadRequest
+      }
     }
   }
   
   def remove() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.remove" + request.body)
     request.body.\("dataset").asOpt[String] match {
-	    case Some(dataset) => {
+      case Some(dataset) => {
         request.user match {
           case Some(user) => {
             selections.remove(UUID(dataset), user.email.get)
@@ -71,11 +71,11 @@ class Selected @Inject()(selections: SelectionService,
           }
           case None => Ok(toJson(Map("success"->"false", "msg"->"User not logged in")))
         }
-	    }
-	    case None => {
-	    	Logger.error("no dataset specified")
-	    	BadRequest
-	    }
+      }
+      case None => {
+        Logger.error("no dataset specified")
+        BadRequest
+      }
     }
   }
 

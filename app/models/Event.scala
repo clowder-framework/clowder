@@ -15,14 +15,14 @@ import services.DI
  */
 
  case class Event(
- 	user: MiniUser,
+   user: MiniUser,
   targetuser : Option[MiniUser] = None,
- 	object_id: Option[UUID] = None,
- 	object_name: Option[String] = None,
- 	source_id: Option[UUID] = None,
- 	source_name: Option[String] = None,
- 	event_type: String,
- 	created: Date = new Date()
+   object_id: Option[UUID] = None,
+   object_name: Option[String] = None,
+   source_id: Option[UUID] = None,
+   source_name: Option[String] = None,
+   event_type: String,
+   created: Date = new Date()
  )
 
 
@@ -52,7 +52,7 @@ import services.DI
  * addMetadata_dataset => "user added metadata to dataset: object_name"
  * addMetadata_file => "user added metadata to file: object_name"
  * 
- * update_dataset_information => "user updated dataset infomration for object_name"
+ * update_dataset_information => "user updated dataset information for object_name"
  * 
  * (when working with comments object_name holds comment text, object_id has UUID of comment)
  * comment_file => "user commented object_name on file: source_name"
@@ -61,7 +61,7 @@ import services.DI
  *
  * set_note_file => "user set the note on object_name"
  *
- * download_file => "user downladed object_name" (not working)
+ * download_file => "user downloaded object_name" (not working)
  *
  * tos_update => "Terms of Service were updated"
  *
@@ -76,8 +76,8 @@ import services.DI
  */
 
 object Events {
-	val scheduler: SchedulerService =  DI.injector.getInstance(classOf[SchedulerService])
-	val users: UserService =  DI.injector.getInstance(classOf[UserService])
+  val scheduler: SchedulerService =  DI.injector.getInstance(classOf[SchedulerService])
+  val users: UserService =  DI.injector.getInstance(classOf[UserService])
   val events: EventService =  DI.injector.getInstance(classOf[EventService])
 
  /**

@@ -59,7 +59,7 @@ class PolyglotPlugin(application: Application) extends Plugin {
    */
   def checkForFileAndDownload(triesLeft: Int, url: String, outputStream: OutputStream): Future[Unit] =
     {
-	  //check that credentials are set in config file
+    //check that credentials are set in config file
       if ( !polyglotUser.isDefined || !polyglotPassword.isDefined) {
         throw new RuntimeException("Polyglot credentials not defined.")
       }
@@ -75,7 +75,7 @@ class PolyglotPlugin(application: Application) extends Plugin {
           val result = WS.url(url)
             .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
             .get { xx => fromStream(outputStream) }
-           	.flatMap(_.run)
+             .flatMap(_.run)
           //Returning result. When it is mapped in the controller, the successful future is AFTER file has been downloaded on the Clowder server.
           result
         } else {
@@ -156,7 +156,7 @@ class PolyglotPlugin(application: Application) extends Plugin {
         .get
         .map {
           case response =>
-            //If reponse was successful, get a list of output formats. Otherwise return None.
+            //If response was successful, get a list of output formats. Otherwise return None.
             val outputFormats = {
               if (response.status == 200) {
                 Logger.debug("success getting response from Polyglot")

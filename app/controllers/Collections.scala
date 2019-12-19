@@ -479,8 +479,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           } else {
             Redirect(routes.Collections.collection(collection.id))
           }
-	      }
-	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
+        }
+        case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
   }
 

@@ -16,9 +16,9 @@ class DatasetsAutodumpService (application: Application) extends Plugin {
     Logger.debug("Starting dataset file groupings autodumper Plugin")
     //Dump dataset file groupings periodically
     val timeInterval = play.Play.application().configuration().getInt("datasetdump.dumpEvery") 
-	    Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
-	      dumpDatasetGroupings
-	}
+      Akka.system().scheduler.schedule(0.days, timeInterval.intValue().days){
+        dumpDatasetGroupings
+  }
   }
   
   override def onStop() {
@@ -42,6 +42,5 @@ class DatasetsAutodumpService (application: Application) extends Plugin {
       unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
       Logger.debug(unsuccessfulMessage)
     }      
-  }
-  
+  }  
 }

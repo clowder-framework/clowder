@@ -277,7 +277,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
             $set("file_id" -> new ObjectId(file_id)),
             false, false, WriteConcern.Safe)
         }
-	      Logger.debug("Updating previews.files " + previewId + " with " + metadata)
+        Logger.debug("Updating previews.files " + previewId + " with " + metadata)
       }
       case _ => Logger.error("Expected a JSObject")
     }

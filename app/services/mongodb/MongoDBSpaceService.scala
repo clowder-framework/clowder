@@ -422,7 +422,7 @@ class MongoDBSpaceService @Inject() (
           case None => {
               //Should this do something else other than log an error?
               log.error("Problem retrieving the space by ID in isTimeToLiveENabled")
-        	  return false
+            return false
           }
       }
   }
@@ -441,7 +441,7 @@ class MongoDBSpaceService @Inject() (
           case None => {
               //Should this do something else other than log and return -1?
               log.error("Problem retrieving the space by ID in getTimeToLive")
-        	  return -1
+            return -1
           }
       }
   }
@@ -461,12 +461,12 @@ class MongoDBSpaceService @Inject() (
       val currentTime = System.currentTimeMillis()
 
       for (aDataset <- datasetsList) {
-    	  val datasetTime = aDataset.lastModifiedDate.getTime()
-    	  val difference = currentTime - datasetTime
-    	  if (difference > timeToLive) {
-    	       //It was last modified longer than the time to live, so remove it.
-    	       datasets.removeDataset(aDataset.id, host, apiKey, user)
-    	  }
+        val datasetTime = aDataset.lastModifiedDate.getTime()
+        val difference = currentTime - datasetTime
+        if (difference > timeToLive) {
+             //It was last modified longer than the time to live, so remove it.
+             datasets.removeDataset(aDataset.id, host, apiKey, user)
+        }
       }
 
       for (aCollection <- collectionsList) {
@@ -676,9 +676,9 @@ class MongoDBSpaceService @Inject() (
    * Otherwise, creates a new entry with spaceId and extractor.
    */
   def addExtractor (spaceId: UUID, extractor: String) {
-	  //will add extractor to the list of extractors for this space, only if it's not there.
-	  val query = MongoDBObject("spaceId" -> spaceId.stringify)
-	  ExtractorsForSpaceDAO.update(query, $addToSet("extractors" -> extractor), true, false, WriteConcern.Safe)
+    //will add extractor to the list of extractors for this space, only if it's not there.
+    val query = MongoDBObject("spaceId" -> spaceId.stringify)
+    ExtractorsForSpaceDAO.update(query, $addToSet("extractors" -> extractor), true, false, WriteConcern.Safe)
   }
 
   /**
