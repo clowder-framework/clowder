@@ -31,7 +31,7 @@ $(function () {
         });
     	                        	                        
         request.done(function (response, textStatus, jqXHR){	                            
-            //Sucessful call, so authenticated. Need to simply ensure that we have a user. It always should be there in
+            //Successful call, so authenticated. Need to simply ensure that we have a user. It always should be there in
         	//this case, but log the odd corner case.
             var responseText = jqXHR.responseText;           
             authInProcess = false;
@@ -50,7 +50,7 @@ $(function () {
 
 
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("addCallback - fileUploader - The following error occured: " + textStatus, errorThrown);
+            console.error("addCallback - fileUploader - The following error occurred: " + textStatus, errorThrown);
             authInProcess = false;
             var errMsg = "You must be logged in to upload new files.";                                
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {            	
@@ -112,7 +112,7 @@ $(function () {
       });
   	                        	                        
       request.done(function (response, textStatus, jqXHR){	                            
-          //Sucessful call, so authenticated. Need to simply ensure that we have a user. It always should be there in
+        //Successful call, so authenticated. Need to simply ensure that we have a user. It always should be there in
       	//this case, but log the odd corner case.
           var responseText = jqXHR.responseText;       
           authInProcess = false;
@@ -132,7 +132,7 @@ $(function () {
 
 
       request.fail(function (jqXHR, textStatus, errorThrown){
-          console.error("submitCallback - fileUploader - The following error occured: " + textStatus, errorThrown);
+          console.error("submitCallback - fileUploader - The following error occurred: " + textStatus, errorThrown);
           authInProcess = false;
           var errMsg = "You must be logged in to upload new files.";                                
           if (!checkErrorAndRedirect(jqXHR, errMsg)) {            	

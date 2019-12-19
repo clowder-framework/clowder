@@ -29,13 +29,13 @@ function editComment(commentId, commentText, senderName, senderEmail, commentLin
                 })
             })
         });
-        //Sucessful update of the DB - update the interface
+        //Successful update of the DB - update the interface
     	$("#comment-body_" + commentId).html(theText.replace(/\n/g, "<br>"));
     });
 
      
      request.fail(function (jqXHR, textStatus, errorThrown){
-    	 console.error("The following error occured: " + textStatus, errorThrown);
+    	 console.error("The following error occurred: " + textStatus, errorThrown);
          var errMsg = "You must be logged in to edit a comment.";                                
          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
          	notify("The comment was not edited due to : " + errorThrown, "error");

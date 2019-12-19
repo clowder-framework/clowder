@@ -87,7 +87,7 @@ class Selected @Inject()(selections: SelectionService,
         selections.get(user.email.get).map(d => {
           selections.remove(d.id, user.email.get)
         })
-        Ok(toJson(Map("sucess"->"true")))
+        Ok(toJson(Map("success"->"true")))
       }
     }
   }
@@ -100,7 +100,7 @@ class Selected @Inject()(selections: SelectionService,
           datasets.removeDataset(d.id, Utils.baseUrl(request), request.apiKey, request.user)
           selections.remove(d.id, user.email.get)
         })
-        Ok(toJson(Map("sucess"->"true")))
+        Ok(toJson(Map("success"->"true")))
       }
     }
   }
@@ -189,7 +189,7 @@ class Selected @Inject()(selections: SelectionService,
           events.addObjectEvent(request.user, d.id, d.name, EventType.ADD_TAGS_DATASET.toString)
           datasets.index(d.id)
         })
-        Ok(toJson(Map("sucess"->"true")))
+        Ok(toJson(Map("success"->"true")))
       }
     }
   }

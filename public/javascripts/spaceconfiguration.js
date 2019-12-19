@@ -42,7 +42,7 @@ function updateSpaceConfig(spaceId) {
 
 	request.done(function (response, textStatus, jqXHR){
 		console.log("Response " + response);
-		//Sucessful update of the DB - update the interface
+		//Successful update of the DB - update the interface
 	
 		$("#spacedescdisplay").text(htmlDecode(encDescription));
 		$("#spacenamedisplay").text(htmlDecode(encName));
@@ -58,7 +58,7 @@ function updateSpaceConfig(spaceId) {
 	});
 
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 		var errMsg = "You must be logged in to update the information about a space.";
 		if (!checkErrorAndRedirect(jqXHR, errMsg)) {
 			alert("The space information was not updated due to : " + errorThrown);

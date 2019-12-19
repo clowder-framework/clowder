@@ -176,7 +176,7 @@ function updateData(id, imageBase, sourceObject, authorName) {
 
 	request.done(function (response, textStatus, jqXHR){
 		//console.log("Response " + response);
-		//Sucessful update of the DB
+		//Successful update of the DB
 		updateInterface(licenseType, rightsHolder, licenseText, licenseUrl, allowDownload, imageBase, authorName);
 
 		$("#editlicense").addClass('collapsed');
@@ -185,7 +185,7 @@ function updateData(id, imageBase, sourceObject, authorName) {
 
 
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: " + textStatus, errorThrown);
+		console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to edit license information.";                                
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
         	notify("The license information was not modified due to : " + errorThrown, "error");
