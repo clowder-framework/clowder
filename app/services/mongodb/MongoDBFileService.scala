@@ -62,7 +62,6 @@ class MongoDBFileService @Inject() (
   metadatas: MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue,
   searches: SearchService) extends FileService {
 
   object MustBreak extends Exception {}
@@ -332,12 +331,7 @@ class MongoDBFileService @Inject() (
   }
 
   def index(id: UUID) {
-    try
-      esqueue.queue("index_file", new ResourceRef('file, id))
-    catch {
-      case except: Throwable => Logger.error(s"Error queuing file ${id.stringify}: ${except}")
-      case _ => Logger.error(s"Error queuing file ${id.stringify}")
-    }
+    searches.index(new ResourceRef('file, id))
   }
 
   /**

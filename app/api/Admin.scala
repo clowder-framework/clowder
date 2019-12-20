@@ -24,7 +24,6 @@ class Admin @Inject() (userService: UserService,
     collections: CollectionService,
     files: FileService,
     events: EventService,
-    esqueue: ElasticsearchQueue,
     searches: SearchService) extends Controller with ApiController {
 
   /**
@@ -172,8 +171,7 @@ class Admin @Inject() (userService: UserService,
   }
 
   def reindex = ServerAdminAction { implicit request =>
-    val success = esqueue.queue("index_all")
-    if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
-    else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
+    val msg = searches.indexAll()
+    Ok(toJson(Map("status" -> msg)))
   }
 }

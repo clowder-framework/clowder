@@ -42,7 +42,6 @@ class MongoDBCollectionService @Inject() (
   events:EventService,
   spaces:SpaceService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue,
   searches: SearchService)  extends CollectionService {
   /**
    * Count all collections
@@ -899,12 +898,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def index(id: UUID) {
-    try
-      esqueue.queue("index_collection", new ResourceRef('collection, id))
-    catch {
-      case except: Throwable => Logger.error(s"Error queuing collection ${id.stringify}: ${except}")
-      case _ => Logger.error(s"Error queuing collection ${id.stringify}")
-    }
+    searches.index(new ResourceRef('collection, id))
   }
 
   def addToSpace(collectionId: UUID, spaceId: UUID): Unit = {

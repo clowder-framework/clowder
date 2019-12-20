@@ -50,7 +50,6 @@ class MongoDBDatasetService @Inject() (
   metadatas:MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue,
   searches: SearchService) extends DatasetService {
 
   object MustBreak extends Exception {}
@@ -251,7 +250,6 @@ class MongoDBDatasetService @Inject() (
     list(None, false, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, None, showAll, Some(owner), false, false, true)
   }
 
-
   /**
    * Return a list of datasets the user has created starting at a specific date.
    */
@@ -321,7 +319,6 @@ class MongoDBDatasetService @Inject() (
     val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, None, showAll, owner, true, false, false, exactMatch)
     Dataset.count(filter)
   }
-
 
   /**
    * return list based on input
@@ -1086,8 +1083,6 @@ class MongoDBDatasetService @Inject() (
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
   }
 
-  // ---------- Tags related code ends ------------------
-
   /**
    * Check recursively whether a dataset's user-input metadata match a requested search tree.
    */
@@ -1251,7 +1246,6 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-
   /**
    * Check recursively whether a (sub)tree of a dataset's metadata matches a requested search subtree.
    */
@@ -1414,12 +1408,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def index(id: UUID) {
-    try
-      esqueue.queue("index_dataset", new ResourceRef('dataset, id))
-    catch {
-      case except: Throwable => Logger.error(s"Error queuing dataset ${id.stringify}: ${except}")
-      case _ => Logger.error(s"Error queuing dataset ${id.stringify}")
-    }
+    searches.index(new ResourceRef('dataset, id))
   }
 
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {
@@ -1451,7 +1440,6 @@ class MongoDBDatasetService @Inject() (
       }
     }
   }
-
 
   def dumpAllDatasetMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all datasets.")

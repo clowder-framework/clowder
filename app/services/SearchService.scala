@@ -36,6 +36,11 @@ trait SearchService {
   def getAutocompleteMetadataFields(query: String): List[String]
 
   /**
+   * Reindex using a resource reference and route to correct handler
+   */
+  def index(resource: ResourceRef, recursive: Boolean = true)
+
+  /**
    * Reindex the given collection, if recursive is set to true it will
    * also reindex all datasets and files.
    */
@@ -53,6 +58,8 @@ trait SearchService {
   def index(file: TempFile)
 
   def index(section: Section)
+
+  def indexAll(): String
 
   /** Return map of distinct value/count for tags **/
   def listTags(resourceType: String = ""): Map[String, Long]

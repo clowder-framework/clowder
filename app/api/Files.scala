@@ -52,7 +52,6 @@ class Files @Inject()(
   spaces: SpaceService,
   userService: UserService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue,
   searches: SearchService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
@@ -594,9 +593,8 @@ class Files @Inject()(
   def reindex(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        val success = esqueue.queue("index_file", new ResourceRef('file, id))
-        if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
-        else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
+        files.index(id)
+        Ok(toJson(s"File $id reindexed"))
       }
       case None => {
         Logger.error("Error getting file" + id)

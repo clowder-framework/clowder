@@ -28,7 +28,7 @@ import models.{Collection, Dataset, File, ResourceRef, Section, TempFile, UUID, 
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
-import services.{CollectionService, CommentService, DatasetService, ElasticsearchQueue, FileService, FolderService, MetadataService, SearchService}
+import services.{CollectionService, CommentService, DatasetService, FileService, FolderService, MetadataService, SearchService}
 
 
 /**
@@ -42,7 +42,6 @@ class ElasticsearchSearchService @Inject() (
                                     folders: FolderService,
                                     datasets: DatasetService,
                                     collections: CollectionService,
-                                    queue: ElasticsearchQueue,
                                     metadatas: MetadataService) extends SearchService {
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
@@ -117,7 +116,7 @@ class ElasticsearchSearchService @Inject() (
   def getInformation(): JsObject = {
     Json.obj("server" -> serverAddress,
       "clustername" -> nameOfCluster,
-      "queue" -> queue.status(),
+      "queue" -> Json.obj("enabled" -> false),
       "status" -> "connected")
   }
 
@@ -134,7 +133,7 @@ class ElasticsearchSearchService @Inject() (
     val source_url = s"/api/search?query=$query&grouping=$grouping"
 
     val queryObj = prepareElasticJsonQuery(query, grouping)
-    val result = _accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
+    val result = accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
     result.asInstanceOf[SearchResult]
   }
 
@@ -196,18 +195,18 @@ class ElasticsearchSearchService @Inject() (
       (tag match {case Some(x) => s"&tag=$x" case None => ""})
 
     val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted)
-    val result = _accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
+    val result = accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
     result.asInstanceOf[SearchResult]
   }
 
   /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
-  private def _accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int, source_url: String): Map[String, JsValue] = {
+  private def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int, source_url: String): Map[String, JsValue] = {
     var total_results = ListBuffer.empty[ResourceRef]
 
     // Fetch initial page & filter by permissions
     val (results, total_size) = _search(queryObj, Some(from), Some(size))
     Logger.debug(s"Found ${results.length} results with ${total_size} total")
-    val filtered = _checkResultPermissions(results, user)
+    val filtered = checkResultPermissions(results, user)
     Logger.debug(s"Permission to see ${filtered.length} results")
     var scanned_records = size
     var new_from = from + size
@@ -220,7 +219,7 @@ class ElasticsearchSearchService @Inject() (
       val (results, total_size)  = _search(queryObj, Some(new_from), Some(size*2))
       Logger.debug(s"Found ${results.length} results with ${total_size} total")
       if (results.length == 0 || new_from+results.length == total_size) exhausted = true // No more results to find
-      val filtered = _checkResultPermissions(results, user)
+      val filtered = checkResultPermissions(results, user)
       Logger.debug(s"Permission to see ${filtered.length} results")
       var still_scanning = true
       results.foreach(r => {
@@ -244,11 +243,11 @@ class ElasticsearchSearchService @Inject() (
       scanned_records,
       total_size)
 
-    _prepareSearchResponse(unpreppedResponse, source_url, user)
+    prepareSearchResponse(unpreppedResponse, source_url, user)
   }
 
   /** Return a filtered list of resources that user can actually access */
-  private def _checkResultPermissions(results: List[ResourceRef], user: Option[User]): List[ResourceRef] = {
+  private def checkResultPermissions(results: List[ResourceRef], user: Option[User]): List[ResourceRef] = {
     var filteredResults = ListBuffer.empty[ResourceRef]
 
     var filesFound = ListBuffer.empty[UUID]
@@ -310,7 +309,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Format a simple search result */
-  private def _prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
+  private def prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
     var results = ListBuffer.empty[JsValue]
 
     // Use bulk Mongo queries to get many resources at once
@@ -341,11 +340,11 @@ class ElasticsearchSearchService @Inject() (
       "total_size" -> toJson(response.total_size)
     )
 
-    _addPageURLs(result, source_url, response)
+    addPageURLs(result, source_url, response)
   }
 
   /** Provide URLs referring to first/last/next/previous pages of current result set if possible */
-  private def _addPageURLs(result: Map[String, JsValue], url_root: String, response: ElasticsearchResult): Map[String, JsValue] = {
+  private def addPageURLs(result: Map[String, JsValue], url_root: String, response: ElasticsearchResult): Map[String, JsValue] = {
     var paged_result = result
 
     val lead = if (url_root.contains('?')) "&" else "?"
@@ -476,6 +475,32 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**
+   * Reindex using a resource reference and route to correct handler
+   */
+  def index(resource: ResourceRef, recursive: Boolean = true) = {
+    resource.resourceType match {
+      case 'file => {
+        files.get(resource.id) match {
+          case Some(f) => index(f)
+          case None => Logger.error(s"File ID not found: ${resource.id.stringify}")
+        }
+      }
+      case 'dataset => {
+        datasets.get(resource.id) match {
+          case Some(ds) => index(ds, recursive)
+          case None => Logger.error(s"Dataset ID not found: ${resource.id.stringify}")
+        }
+      }
+      case 'collection => {
+        collections.get(resource.id) match {
+          case Some(c) => index(c, recursive)
+          case None => Logger.error(s"Collection ID not found: ${resource.id.stringify}")
+        }
+      }
+    }
+  }
+
+  /**
    * Reindex the given collection, if recursive is set to true it will
    * also reindex all datasets and files.
    */
@@ -529,6 +554,18 @@ class ElasticsearchSearchService @Inject() (
   def index(section: Section) {
     connect()
     _index(getElasticsearchObject(section))
+  }
+
+  def indexAll(): String = {
+    // Add all individual entries to the queue and delete this action
+    // delete & recreate index
+    deleteAll()
+    createIndex()
+    // queue everything for each resource type
+    collections.indexAll()
+    datasets.indexAll()
+    files.indexAll()
+    "Reindexing successfully completed."
   }
 
   /** Index document using an arbitrary map of fields. */
@@ -646,9 +683,8 @@ class ElasticsearchSearchService @Inject() (
     }
   }
 
-
   /** Take a JsObject and parse into an XContentBuilder JSON object for indexing into Elasticsearch */
-  def convertJsObjectToBuilder(builder: XContentBuilder, json: JsObject): XContentBuilder = {
+  private def convertJsObjectToBuilder(builder: XContentBuilder, json: JsObject): XContentBuilder = {
     json.keys.map(k => {
       // Iterate across keys of the JsObject to parse each value as appropriate
       (json \ k) match {
@@ -697,7 +733,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Take a JsObject and list all unique fields under targetObject field, except those in ignoredFields */
-  def convertJsMappingToFields(json: JsObject, parentKey: Option[String] = None,
+  private def convertJsMappingToFields(json: JsObject, parentKey: Option[String] = None,
                                targetObject: Option[String] = None, foundTarget: Boolean = false): List[String] = {
 
     var fields = ListBuffer.empty[String]
@@ -772,7 +808,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Return string-encoded JSON object describing field types */
-  def getElasticsearchObjectMappings(): String = {
+  private def getElasticsearchObjectMappings(): String = {
     """dynamic_templates": [{
        "nonindexer": {
           "match": "*",
@@ -803,12 +839,12 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Attempt to cast String into Double, returning None if not possible**/
-  def parseDouble(s: String): Option[Double] = {
+  private def parseDouble(s: String): Option[Double] = {
     Try { s.toDouble }.toOption
   }
 
   /** Create appropriate search object based on operator */
-  def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+  private def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
     // TODO: Suppert lte, gte (<=, >=)
     operator match {
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
@@ -826,7 +862,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Create appropriate search object based on operator */
-  def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+  private def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
     operator match {
       case "!=" => builder.startObject().startObject("match").field(key, value).endObject().endObject()
       case _ => {}
@@ -835,7 +871,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
+  private def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
     /** OPERATORS
       *  :   contains (partial match)
       *  ==  equals (exact match)
@@ -910,7 +946,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert search string into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: String, permitted: List[UUID]): XContentBuilder = {
+  private def prepareElasticJsonQuery(query: String, permitted: List[UUID]): XContentBuilder = {
     /** OPERATORS
       *  ==  equals (exact match)
       *  !=  not equals (partial matches OK)
@@ -1016,7 +1052,7 @@ class ElasticsearchSearchService @Inject() (
     builder
   }
 
-  def wrapRegex(value: String, query_string: Boolean = false): String = {
+  private def wrapRegex(value: String, query_string: Boolean = false): String = {
     /**
       * Given a search string, prepare it to get substring results from regex.
       *
@@ -1039,7 +1075,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert File to ElasticsearchObject and return, fetching metadata as necessary**/
-  def getElasticsearchObject(f: File): Option[ElasticsearchObject] = {
+  private def getElasticsearchObject(f: File): Option[ElasticsearchObject] = {
     val id = f.id
 
     // Get child_of relationships for File
@@ -1127,7 +1163,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert Dataset to ElasticsearchObject and return, fetching metadata as necessary**/
-  def getElasticsearchObject(ds: Dataset): Option[ElasticsearchObject] = {
+  private def getElasticsearchObject(ds: Dataset): Option[ElasticsearchObject] = {
     val id = ds.id
 
     // Get parent collections and spaces
@@ -1198,7 +1234,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert Collection to ElasticsearchObject and return, fetching metadata as necessary**/
-  def getElasticsearchObject(c: Collection): Option[ElasticsearchObject] = {
+  private def getElasticsearchObject(c: Collection): Option[ElasticsearchObject] = {
     // Get parent_of relationships for Collection
     // TODO: Re-enable after listCollection implements Iterator; crashes on large databases otherwise
     //var parent_of = datasets.listCollection(c.id.toString).map( ds => ds.id.toString )
@@ -1226,7 +1262,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert Section to ElasticsearchObject and return**/
-  def getElasticsearchObject(s: Section): Option[ElasticsearchObject] = {
+  private def getElasticsearchObject(s: Section): Option[ElasticsearchObject] = {
     val id = s.id
 
     // For Section, child_of will be a one-item list containing parent file ID
@@ -1282,7 +1318,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert TempFile to ElasticsearchObject and return, fetching metadata as necessary**/
-  def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
+  private def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
     Some(new ElasticsearchObject(
       ResourceRef(ResourceRef.file, file.id),
       file.filename,

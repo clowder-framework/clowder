@@ -21,7 +21,6 @@ class Status @Inject()(spaces: SpaceService,
                        users: UserService,
                        appConfig: AppConfigurationService,
                        extractors: ExtractorService,
-                       elasticqueue: ElasticsearchQueue,
                        searches: SearchService) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)

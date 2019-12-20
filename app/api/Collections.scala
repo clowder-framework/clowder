@@ -42,8 +42,7 @@ class Collections @Inject() (datasets: DatasetService,
                              appConfig: AppConfigurationService,
                              folders : FolderService,
                              files: FileService,
-                             metadataService : MetadataService,
-                             esqueue: ElasticsearchQueue) extends ApiController {
+                             metadataService : MetadataService) extends ApiController {
 
   def createCollection() = PermissionAction(Permission.CreateCollection) (parse.json) { implicit request =>
     Logger.debug("Creating new collection")
@@ -115,9 +114,8 @@ class Collections @Inject() (datasets: DatasetService,
   def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, id))) {  implicit request =>
       collections.get(id) match {
         case Some(coll) => {
-          val success = esqueue.queue("index_collection", new ResourceRef('collection, id), new ElasticsearchParameters(recursive=recursive))
-          if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
-          else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
+          collections.index(id)
+          Ok(toJson(s"Collection $id reindexed"))
         }
         case None => {
           Logger.error("Error getting collection" + id)
