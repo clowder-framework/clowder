@@ -4,8 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 2.0 Refactoring - Unreleased
-- RabbitmqPlugin replaced with ExtractionBusService, implemented by RabbitmqExtractionBusService. 
+## 2.0.0-alpha
+
+### Changed
+- Rabbitmq Plugin replaced with ExtractionBusService, implemented by RabbitmqExtractionBusService
 
 ## 1.8.0 - 2019-11-06
 **_Warning:_ This update adds a new permission for archiving files and adds it to the Admin role. Please make sure
