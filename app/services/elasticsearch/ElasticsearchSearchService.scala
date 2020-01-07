@@ -133,8 +133,7 @@ class ElasticsearchSearchService @Inject() (
     val source_url = s"/api/search?query=$query&grouping=$grouping"
 
     val queryObj = prepareElasticJsonQuery(query, grouping)
-    val result = accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
-    result.asInstanceOf[SearchResult]
+    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
   }
 
   /** Search using a simple text string, appending parameters from API to string if provided */
@@ -195,12 +194,11 @@ class ElasticsearchSearchService @Inject() (
       (tag match {case Some(x) => s"&tag=$x" case None => ""})
 
     val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted)
-    val result = accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
-    result.asInstanceOf[SearchResult]
+    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
   }
 
   /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
-  private def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int, source_url: String): Map[String, JsValue] = {
+  private def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int, source_url: String): SearchResult = {
     var total_results = ListBuffer.empty[ResourceRef]
 
     // Fetch initial page & filter by permissions
@@ -309,7 +307,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Format a simple search result */
-  private def prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
+  private def prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): SearchResult = {
     var results = ListBuffer.empty[JsValue]
 
     // Use bulk Mongo queries to get many resources at once
@@ -331,43 +329,39 @@ class ElasticsearchSearchService @Inject() (
 
     // TODO: add views etc. other properties for the handlebars template
 
-    val result = Map[String, JsValue](
-      "results" -> toJson(results.distinct),
-      "count" -> toJson(response.results.length),
-      "size" -> toJson(response.size),
-      "scanned_size" -> toJson(response.scanned_size),
-      "from" -> toJson(response.from),
-      "total_size" -> toJson(response.total_size)
-    )
-
-    addPageURLs(result, source_url, response)
+    addPageURLs(results.distinct.toList, response, source_url)
   }
 
   /** Provide URLs referring to first/last/next/previous pages of current result set if possible */
-  private def addPageURLs(result: Map[String, JsValue], url_root: String, response: ElasticsearchResult): Map[String, JsValue] = {
-    var paged_result = result
-
+  private def addPageURLs(results: List[JsValue], response: ElasticsearchResult, url_root: String): SearchResult = {
     val lead = if (url_root.contains('?')) "&" else "?"
+
+    var first: Option[String] = None
+    var last: Option[String] = None
+    var prev: Option[String] = None
+    var next: Option[String] = None
 
     // Add pagination fields if necessary
     if (response.from > 0) {
-      val prev = List(response.from - response.size, 0).max
-      paged_result += ("first" -> toJson(url_root + lead + s"from=0&size=${response.size}"))
-      paged_result += ("prev"  -> toJson(url_root + lead + s"from=$prev&size=${response.size}"))
+      val prev_idx = List(response.from - response.size, 0).max
+      first = Some(url_root + lead + s"from=0&size=${response.size}")
+      prev = Some(url_root + lead + s"from=$prev_idx&size=${response.size}")
     }
 
     if (response.from + response.scanned_size < response.total_size) {
-      val next = List[Long](response.from + response.scanned_size, response.total_size).min
-      var last = next
-      while (last < response.total_size - response.size) {
-        last += response.size
+      val next_idx = List[Long](response.from + response.scanned_size, response.total_size).min
+      var last_idx = next_idx
+      while (last_idx < response.total_size - response.size) {
+        last_idx += response.size
       }
-      val last_size = response.total_size - last
-      paged_result += ("last" -> toJson(url_root + lead + s"from=$last&size=${last_size}"))
-      paged_result += ("next"  -> toJson(url_root + lead + s"from=$next&size=${response.size}"))
+      val last_size = response.total_size - last_idx
+      last = Some(url_root + lead + s"from=$last_idx&size=${last_size}")
+      next = Some(url_root + lead + s"from=$next_idx&size=${response.size}")
     }
 
-    paged_result
+    new SearchResult(
+      results, response.from, response.results.length, response.size, response.scanned_size, response.total_size,
+      first, last, prev, next)
   }
 
   /** Create a new index with preconfigured mappgin */
