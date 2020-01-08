@@ -1,34 +1,37 @@
 package services.elasticsearch
 
-import api.Permission
+import scala.util.Try
+import scala.collection.mutable.{ListBuffer, MutableList}
+import scala.collection.immutable.List
+import scala.concurrent.duration._
+import play.api.{Application, Logger, Plugin}
+import play.api.Play.current
+import play.api.libs.json._
+import play.libs.Akka
+import play.api.libs.concurrent.Execution.Implicits._
+import akka.actor.Cancellable
+import java.net.InetAddress
+import java.util.regex.Pattern
+import javax.inject.{Inject, Singleton}
+import java.util.Date
+
+import org.elasticsearch.common.settings.Settings
+import org.elasticsearch.client.transport.TransportClient
+import org.elasticsearch.common.transport.InetSocketTransportAddress
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
-
-import scala.util.Try
-import scala.collection.mutable.{ListBuffer, MutableList}
-import scala.collection.immutable.List
-import play.api.{Application, Logger, Plugin}
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.transport.InetSocketTransportAddress
-import java.net.InetAddress
-import java.util.regex.Pattern
-
-import javax.inject.{Inject, Singleton}
-import java.util.Date
-
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchResponse, SearchType}
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.ElasticsearchException
 import org.elasticsearch.indices.IndexAlreadyExistsException
-import models.{Collection, Dataset, File, ResourceRef, Section, TempFile, UUID, User, Tag, SearchResult}
-import play.api.Play.current
-import play.api.libs.json._
-import play.api.libs.json.Json.toJson
-import services.{CollectionService, CommentService, DatasetService, FileService, FolderService, MetadataService, SearchService}
+
+import api.Permission
+import models.{Collection, Dataset, File, ResourceRef, Section, TempFile, UUID, User, Tag, SearchResult, QueuedAction}
+import services.{CollectionService, CommentService, DatasetService, FileService, FolderService,
+  MetadataService, SearchService, QueueService}
 
 
 /**
@@ -42,7 +45,8 @@ class ElasticsearchSearchService @Inject() (
                                     folders: FolderService,
                                     datasets: DatasetService,
                                     collections: CollectionService,
-                                    metadatas: MetadataService) extends SearchService {
+                                    metadatas: MetadataService,
+                                    queue: QueueService) extends SearchService {
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
@@ -53,12 +57,18 @@ class ElasticsearchSearchService @Inject() (
   val mustOperators = List("==", "<", ">", ":")
   val mustNotOperators = List("!=")
 
+  // Queue stuff
+  val useQueue = play.api.Play.configuration.getBoolean("elasticsearchSettings.useQueue").getOrElse(true)
+  val queueName = "elasticsearch"
+  var queueTimer: Cancellable = null
 
-  def connect(force:Boolean = false): Boolean = {
+
+  private def connect(force:Boolean = false): Boolean = {
     if (!force && isEnabled()) {
-      //Logger.debug("Already connected to Elasticsearch")
+      listen()
       return true
     }
+
     try {
       val settings = if (nameOfCluster != "") {
         Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
@@ -73,6 +83,7 @@ class ElasticsearchSearchService @Inject() (
           val indexExists = x.admin().indices().prepareExists(nameOfIndex).execute().actionGet().isExists()
           if (!indexExists) createIndex()
           Logger.info("Connected to Elasticsearch")
+          listen()
           true
         }
         case None => {
@@ -116,7 +127,12 @@ class ElasticsearchSearchService @Inject() (
   def getInformation(): JsObject = {
     Json.obj("server" -> serverAddress,
       "clustername" -> nameOfCluster,
-      "queue" -> Json.obj("enabled" -> false),
+      "queue" -> {
+        if (useQueue)
+          queue.status(queueName)
+        else
+          Json.obj("enabled" -> false)
+      },
       "status" -> "connected")
   }
 
@@ -321,9 +337,9 @@ class ElasticsearchSearchService @Inject() (
     // Now reorganize the separate lists back into Elasticsearch score order
     for (resource <- response.results) {
       resource.resourceType match {
-        case ResourceRef.file => filesList.filter(_.id == resource.id).foreach(f => results += toJson(f))
-        case ResourceRef.dataset => datasetsList.filter(_.id == resource.id).foreach(d => results += toJson(d))
-        case ResourceRef.collection => collectionsList.filter(_.id == resource.id).foreach(c => results += toJson(c))
+        case ResourceRef.file => filesList.filter(_.id == resource.id).foreach(f => results += Json.toJson(f))
+        case ResourceRef.dataset => datasetsList.filter(_.id == resource.id).foreach(d => results += Json.toJson(d))
+        case ResourceRef.collection => collectionsList.filter(_.id == resource.id).foreach(c => results += Json.toJson(c))
       }
     }
 
@@ -469,25 +485,40 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**
-   * Reindex using a resource reference and route to correct handler
+   * Reindex using a resource reference - will send to queue if enabled
    */
   def index(resource: ResourceRef, recursive: Boolean = true) = {
     resource.resourceType match {
       case 'file => {
         files.get(resource.id) match {
-          case Some(f) => index(f)
+          case Some(f) => {
+            if (useQueue)
+              queue.queue("index_file", resource, queueName)
+            else
+              index(f)
+          }
           case None => Logger.error(s"File ID not found: ${resource.id.stringify}")
         }
       }
       case 'dataset => {
         datasets.get(resource.id) match {
-          case Some(ds) => index(ds, recursive)
+          case Some(ds) => {
+            if (useQueue)
+              queue.queue("index_dataset", resource, queueName)
+            else
+              index(ds, recursive)
+          }
           case None => Logger.error(s"Dataset ID not found: ${resource.id.stringify}")
         }
       }
       case 'collection => {
         collections.get(resource.id) match {
-          case Some(c) => index(c, recursive)
+          case Some(c) => {
+            if (useQueue)
+              queue.queue("index_collection", resource, queueName)
+            else
+              index(c, recursive)
+          }
           case None => Logger.error(s"Collection ID not found: ${resource.id.stringify}")
         }
       }
@@ -1328,6 +1359,74 @@ class ElasticsearchSearchService @Inject() (
       List.empty,
       Map()
     ))
+  }
+
+  // start pool to being processing queue actions
+  private def listen() = {
+    if (queueTimer == null) {
+      Logger.info("Now listening for queued actions in ElasticearchSearchService.")
+      // TODO: Need to make these in a separate pool
+      queueTimer = Akka.system().scheduler.schedule(0 seconds, 5 millis) {
+        queue.getNextQueuedAction(queueName) match {
+          case Some(qa) => {
+            try {
+              Logger.info("Handling queued action!")
+              handleQueuedAction(qa)
+              queue.removeQueuedAction(qa, queueName)
+            }
+            catch {
+              case except: Throwable => {
+                Logger.error(s"Error handling ${qa.action}: ${except}")
+                queue.removeQueuedAction(qa, queueName)
+              }
+            }
+
+          }
+          case None => {}
+        }
+      }
+    }
+  }
+
+  // process the next entry in the queue
+  private def handleQueuedAction(action: QueuedAction) = {
+    val recursive = action.elastic_parameters.fold(false)(_.recursive)
+
+    action.target match {
+      case Some(targ) => {
+        action.action match {
+          case "index_file" => {
+            val target = files.get(targ.id) match {
+              case Some(f) => index(f)
+              case None => throw new NullPointerException(s"File ${targ.id.stringify} no longer found for indexing")
+            }
+          }
+          case "index_dataset" => {
+            val target = datasets.get(targ.id) match {
+              case Some(ds) => index(ds, recursive)
+              case None => throw new NullPointerException(s"Dataset ${targ.id.stringify} no longer found for indexing")
+            }
+          }
+          case "index_collection" => {
+            val target = collections.get(targ.id) match {
+              case Some(c) => index(c, recursive)
+              case None => throw new NullPointerException(s"Collection ${targ.id.stringify} no longer found for indexing")
+            }
+          }
+          case "index_all" => indexAll()
+          case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
+        }
+      }
+      case None => {
+        action.action match {
+          case "index_file" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
+          case "index_dataset" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
+          case "index_collection" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
+          case "index_all" => indexAll()
+          case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
+        }
+      }
+    }
   }
 
 }
