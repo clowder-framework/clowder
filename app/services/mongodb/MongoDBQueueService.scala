@@ -1,4 +1,4 @@
-package services
+package services.mongodb
 
 import java.util.Date
 
@@ -18,6 +18,9 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
+
+import services.QueueService
+
 
 /**
  *  Queue service that keeps queues in persistent Mongo collection.
