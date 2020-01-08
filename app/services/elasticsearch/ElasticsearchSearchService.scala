@@ -1005,6 +1005,8 @@ class ElasticsearchSearchService @Inject() (
       }
     })
 
+    // TODO: How to handle datasets that aren't in any space?
+
     // Include special OR condition for restricting to permitted spaces
     if (permitted.length > 0) {
       // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch

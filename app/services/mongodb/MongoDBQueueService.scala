@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 
 /**
- * Generic queue service.
+ *  Queue service that keeps queues in persistent Mongo collection.
  *
  */
 class MongoDBQueueService extends QueueService {
@@ -39,7 +39,7 @@ class MongoDBQueueService extends QueueService {
 
   // add action to the queue/
   def queue(action: String, queueName: String): Boolean =
-_queue(new QueuedAction(action=action), queueName)
+    _queue(new QueuedAction(action=action), queueName)
 
   // add action to the queue with handler parameters
   def queue(action: String, parameters: ElasticsearchParameters, queueName: String): Boolean =
