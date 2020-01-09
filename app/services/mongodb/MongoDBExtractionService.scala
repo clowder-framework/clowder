@@ -38,26 +38,26 @@ class MongoDBExtractionService extends ExtractionService {
   def insert(extraction: Extraction): Option[ObjectId] = {
     Extraction.insert(extraction)
   }
-  
+
   /**
    * Returns list of extractors and their corresponding status for a specified file
    */
-  
+
   def getExtractorList(fileId:UUID):collection.mutable.Map[String,String] = {
     val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
-	var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
-	for(currentExtraction <- allOfFile){
-	  extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
-	}
+  var extractorsArray:collection.mutable.Map[String,String] = collection.mutable.Map()
+  for(currentExtraction <- allOfFile){
+    extractorsArray(currentExtraction.extractor_id) = currentExtraction.status
+  }
     return extractorsArray
   }
 
   def getExtractionTime(fileId:UUID):List[Date] ={
   val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
-	var extractorsTimeArray=List[Date]()
-	for(currentExtraction <- allOfFile){
-	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
-	}
+  var extractorsTimeArray=List[Date]()
+  for(currentExtraction <- allOfFile){
+      extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
+  }
   return extractorsTimeArray
 }
 
@@ -65,14 +65,14 @@ class MongoDBExtractionService extends ExtractionService {
     WebPageResource.insert(webpr,WriteConcern.Safe)
     webpr.id
   }
-  
+
   def getWebPageResource(id: UUID): Map[String,String]={
     val wpr=WebPageResource.findOne(MongoDBObject("_id"->new ObjectId(id.stringify)))
     var wprlist= wpr.map{
       e=>Logger.debug("resource id:" + id.toString)
          e.URLs
     }.getOrElse(Map.empty)
-    wprlist         
+    wprlist
   }
 
   // Return a mapping of ExtractorName -> (FirstMsgTime, LatestMsgTime, LatestMsg, ListOfAllMessages)
@@ -107,7 +107,7 @@ class MongoDBExtractionService extends ExtractionService {
         e.end match {
           case Some(n) => {
             if (grp_end == "N/A" || n.after(grp_end)) {
-              Logger.info("updating latest msg: "+e.status)
+              Logger.info("updating latest msg: " + e.status)
               grp_end = n
               grp_endmsg = e.status
             }

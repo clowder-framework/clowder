@@ -160,13 +160,13 @@ class Reporting @Inject()(selections: SelectionService,
       }
 
       contents += "\"space\","
-      contents += "\""+sp.id.toString+"\","
-      contents += "\""+sp.name.replace("\"", "\"\"")+"\","
-      contents += "\""+sp.description.replace("\"", "\"\"")+"\","
-      contents += "\""+creator_id+"\","
-      contents += dateFormat.format(sp.created)+","
-      contents += sp.datasetCount.toString+","
-      contents += sp.collectionCount.toString+","
+      contents += "\"" + sp.id.toString + "\","
+      contents += "\"" + sp.name.replace("\"", "\"\"") + "\","
+      contents += "\"" + sp.description.replace("\"", "\"\"") + "\","
+      contents += "\"" + creator_id + "\","
+      contents += dateFormat.format(sp.created) + ","
+      contents += sp.datasetCount.toString + ","
+      contents += sp.collectionCount.toString + ","
       contents += sp.userCount.toString
       contents += "\n"
     })
@@ -197,22 +197,22 @@ class Reporting @Inject()(selections: SelectionService,
       })
 
       contents += "\"user\","
-      contents += "\""+u.id.toString+"\","
-      contents += "\""+u.getMiniUser.fullName+"\","
-      contents += "\""+u.email.getOrElse("")+"\","
-      contents += "\""+u.identityId.providerId+"\","
+      contents += "\"" + u.id.toString + "\","
+      contents += "\"" + u.getMiniUser.fullName + "\","
+      contents += "\"" + u.email.getOrElse("") + "\","
+      contents += "\"" + u.identityId.providerId + "\","
       u.lastLogin match {
         case Some(lastdate) => {
-          contents += dateFormat.format(lastdate)+","
+          contents += dateFormat.format(lastdate) + ","
           val currdate = new Date
           val difference =  (currdate.getTime()-currdate.getTime())/86400000
-          contents += Math.abs(difference).toString+","
+          contents += Math.abs(difference).toString + ","
         }
         case None => contents += ",,"
       }
-      contents += (if (u.status==UserStatus.Inactive) "false" else "true")+","
-      contents += (if (u.status==UserStatus.Admin) "true" else "false")+","
-      contents += admin_spaces.toString+","
+      contents += (if (u.status==UserStatus.Inactive) "false" else "true") + ","
+      contents += (if (u.status==UserStatus.Admin) "true" else "false") + ","
+      contents += admin_spaces.toString + ","
       contents += member_spaces.toString
       contents += "\n"
     })
@@ -268,20 +268,20 @@ class Reporting @Inject()(selections: SelectionService,
     }
 
     contents += "\"file\","
-    contents += "\""+f.id.toString+"\","
-    contents += "\""+f.filename+"\","
-    contents += "\""+f.author.fullName+"\","
-    contents += "\""+f.author.id+"\","
-    contents += (f.length/1000).toInt.toString+","
-    contents += dateFormat.format(f.uploadDate)+","
-    contents += vwcount+","
-    contents += dlcount+","
-    contents += lvstr+","
-    contents += ldstr+","
-    contents += "\""+f.loader_id+"\","
-    contents += "\""+ds_list+"\","
-    contents += "\""+coll_list+"\","
-    contents += "\""+space_list+"\""
+    contents += "\"" + f.id.toString + "\","
+    contents += "\"" + f.filename + "\","
+    contents += "\"" + f.author.fullName + "\","
+    contents += "\"" + f.author.id + "\","
+    contents += (f.length/1000).toInt.toString + ","
+    contents += dateFormat.format(f.uploadDate) + ","
+    contents += vwcount + ","
+    contents += dlcount + ","
+    contents += lvstr + ","
+    contents += ldstr + ","
+    contents += "\"" + f.loader_id + "\","
+    contents += "\"" + ds_list + "\","
+    contents += "\"" + coll_list + "\","
+    contents += "\"" + space_list + "\""
     contents += "\n"
 
     return contents
@@ -322,20 +322,20 @@ class Reporting @Inject()(selections: SelectionService,
     }
 
     contents += "\"dataset\","
-    contents += "\""+ds.id.toString+"\","
-    contents += "\""+ds.name.replace("\"", "\"\"")+"\","
-    contents += "\""+ds.author.fullName+"\","
-    contents += "\""+ds.author.id+"\","
+    contents += "\"" + ds.id.toString + "\","
+    contents += "\"" + ds.name.replace("\"", "\"\"") + "\","
+    contents += "\"" + ds.author.fullName + "\","
+    contents += "\"" + ds.author.id + "\","
     if (returnAllColums) contents += "," // datasets do not have size
-    contents += dateFormat.format(ds.created)+","
-    contents += vwcount+","
-    contents += dlcount+","
-    contents += lvstr+","
-    contents += ldstr+","
+    contents += dateFormat.format(ds.created) + ","
+    contents += vwcount + ","
+    contents += dlcount + ","
+    contents += lvstr + ","
+    contents += ldstr + ","
     if (returnAllColums) contents += "," // datasets do not have location
     if (returnAllColums) contents += "," // datasets do not have parent_datasets
-    contents += "\""+coll_list+"\","
-    contents += "\""+space_list+"\""
+    contents += "\"" + coll_list + "\","
+    contents += "\"" + space_list + "\""
     contents += "\n"
 
     return contents
@@ -370,20 +370,20 @@ class Reporting @Inject()(selections: SelectionService,
     }
 
     contents += "\"collection\","
-    contents += "\""+coll.id.toString+"\","
-    contents += "\""+coll.name.replace("\"", "\"\"")+"\","
-    contents += "\""+coll.author.fullName+"\","
-    contents += "\""+coll.author.id+"\","
+    contents += "\"" + coll.id.toString + "\","
+    contents += "\"" + coll.name.replace("\"", "\"\"") + "\","
+    contents += "\"" + coll.author.fullName + "\","
+    contents += "\"" + coll.author.id + "\","
     if (returnAllColums) contents += "," // collections do not have size
-    contents += dateFormat.format(coll.created)+","
-    contents += vwcount+","
+    contents += dateFormat.format(coll.created) + ","
+    contents += vwcount + ","
     if (returnAllColums) contents += "," // collections do not have downloads
-    contents += lvstr+","
+    contents += lvstr + ","
     if (returnAllColums) contents += "," // collections do not have last_downloaded
     if (returnAllColums) contents += "," // collections do not have location
     if (returnAllColums) contents += "," // collections do not have parent_datasets
-    contents += "\""+coll_list+"\","
-    contents += "\""+space_list+"\""
+    contents += "\"" + coll_list + "\","
+    contents += "\"" + space_list + "\""
     contents += "\n"
 
     return contents

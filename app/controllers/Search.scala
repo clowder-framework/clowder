@@ -71,7 +71,7 @@ class Search @Inject() (
   }
 
   /*
-   * GET the query file from a URL and compare within the database and show the result   
+   * GET the query file from a URL and compare within the database and show the result
    * */
   def searchbyURL(queryURL: String) = PermissionAction(Permission.ViewDataset).async { implicit request =>
       implicit val user = request.user
@@ -89,7 +89,7 @@ class Search @Inject() (
             }
             //convert list of futures into a Future[list]
             scala.concurrent.Future.sequence(resultListOfFutures)
-          } //End yield- outer for    	           
+          } //End yield- outer for
           for {
             futureListResults <- futureFutureListResults
             listOfResults <- futureListResults
@@ -133,7 +133,7 @@ class Search @Inject() (
 
                 //convert list of futures into a Future[list]
                 scala.concurrent.Future.sequence(resultListOfFutures)
-              } //End yield    		
+              } //End yield
 
               for {
                 futureListResults <- futureFutureListResults
@@ -144,12 +144,12 @@ class Search @Inject() (
                 val thumb_id: String = queries.getFile(fileID).flatMap(_.thumbnail_id).map(_.stringify).getOrElse("")
                 Ok(views.html.multimediaSearchResults(filename, Some(fileID), Some(thumb_id), listOfResults))
               }
-            } //end of case Some(plugin)   
+            } //end of case Some(plugin)
 
             case None => {
               Future(Ok("No Versus Service"))
             }
-          } //current.plugin[VersusPlugin] match  
+          } //current.plugin[VersusPlugin] match
         } //case Some((inputStream...
 
         case None => {
@@ -181,7 +181,7 @@ class Search @Inject() (
                 }
                 //convert list of futures into a Future[list]
                 scala.concurrent.Future.sequence(resultListOfFutures)
-              } //End yield- outer for    	
+              } //End yield- outer for
 
               for {
                 futureListResults <- futureFutureListResults
@@ -191,12 +191,12 @@ class Search @Inject() (
                 val thumb_id = files.get(inputFileId).flatMap(_.thumbnail_id).getOrElse("")
                 Ok(views.html.multimediaSearchResults(filename, Some(inputFileId), Some(thumb_id), listOfResults))
               }
-            } //end of case Some(plugin)                   
+            } //end of case Some(plugin)
 
             case None => {
               Future(Ok("No Versus Service"))
             }
-          } //current.plugin[VersusPlugin] match  
+          } //current.plugin[VersusPlugin] match
         } //case Some((inputStream...
 
         case None => {
@@ -211,7 +211,7 @@ class Search @Inject() (
    * Returns
    * 	boolean: true if errors are present
    * 	String: error message
-   * 	List[Double] : weights
+   *  List[Double]: weights
    */
   def validateInput(input: Map[String, Seq[String]]): (Boolean, String, List[Double]) = {
     var inputErrors = false
@@ -221,7 +221,7 @@ class Search @Inject() (
       inputErrors = true
       return (inputErrors, "Not all fields are present", List(0.0))
     }
-    //now deal with weights	 		  
+    //now deal with weights
     try {
       weightsList = input("Weight").map(w => w.toDouble).toList
     } catch {
@@ -235,7 +235,7 @@ class Search @Inject() (
     }
     if (sum != 1) return (true, "sum of weights must be 1", List(0.0))
 
-    //no errors, return list of weights 
+    //no errors, return list of weights
     (false, "", weightsList)
   }
 
@@ -258,7 +258,7 @@ class Search @Inject() (
     val nonzeroWeights = nonzeroWeightsBuf.toList
     val nonzeroMaps = nonzeroMapsBuf.toList
 
-    //If after removing zero-weight maps we have just one map left - nothing to merge, return the map. 
+    //If after removing zero-weight maps we have just one map left - nothing to merge, return the map.
     //Otherwise, merge maps.
     if (nonzeroMaps.length == 1) {
       nonzeroMaps(0)
@@ -274,7 +274,7 @@ class Search @Inject() (
   }
   /**
    * For two maps and two corresponding weights, will find linear combinations of corresponding values,
-   * 	using the weights provided
+   * using the weights provided
    */
   def mergeTwoMaps(mapOne: collection.immutable.HashMap[String, Double],
     mapTwo: collection.immutable.HashMap[String, Double],
@@ -305,7 +305,7 @@ class Search @Inject() (
                   val filename = fileInfo._2
                   current.plugin[VersusPlugin] match {
                     case Some(plugin) => {
-                      //get file and a list of indexes from request, query this file against each of these indexes 
+                      //get file and a list of indexes from request, query this file against each of these indexes
                       val queryResults = indexIDs.map(indId => plugin.queryIndexSorted(fileId.stringify, indId.stringify))
                       //change a list of futures into a future list
                       val futureListResults = scala.concurrent.Future.sequence(queryResults)
@@ -334,19 +334,19 @@ class Search @Inject() (
                         //get an option of thumbnail id for this image and pass on to view
                         val thumb_id = queries.getFile(fileId).flatMap(_.thumbnail_id)
                         Ok(views.html.multimediaSearchResultsCombined(filename, thumb_id, sortedMergedResults))
-                      } //end of yield   					
-                    } //end of case Some(plugin)   
+                      } //end of yield
+                    } //end of case Some(plugin)
                     case None => {
                       Future(Ok("No Versus Service"))
                     }
-                  } //current.plugin[VersusPlugin] match  
+                  } //current.plugin[VersusPlugin] match
                 } //case Some((inputStream...
 
                 case None => {
                   Logger.debug("File with id " + fileId + " not found")
                   Future(Ok("File with id " + fileId + " not found"))
                 }
-              } //end of queries.get(imageID) match 
+              } //end of queries.get(imageID) match
             } //end of if no validation errors
             else { Future(Ok("Form validation errors: " + errorMessage)) }
       }

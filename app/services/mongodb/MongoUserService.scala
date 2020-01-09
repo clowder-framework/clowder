@@ -39,7 +39,7 @@ object TokenDAO extends ModelCompanion[MongoToken, ObjectId] {
   def findByUUID(uuid: String): Option[MongoToken] = {
     dao.findOne(MongoDBObject("uuid" -> uuid))
   }
-  
+
   def removeByUUID(uuid: String) {
     dao.remove(MongoDBObject("uuid" -> uuid), WriteConcern.Normal)
   }
@@ -66,7 +66,7 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
    * @param email - the user email
    * @param providerId - the provider id
    * @return
-   */  
+   */
   def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
     Logger.trace("Searching for user " + email + " " + providerId)
     SocialUserDAO.findOne(MongoDBObject("email"->email, "identityId.providerId"->providerId))
@@ -141,5 +141,5 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
   def deleteExpiredTokens() {
     Logger.debug("----Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
-  }  
+  }
 }

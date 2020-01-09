@@ -44,7 +44,7 @@ function addCollectionToSpace(id,spaceTitle) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to add a collection";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not added due to the following : " + errorThrown, "error");
@@ -68,7 +68,7 @@ function removeCollectionFromSpace(spaceId, id, event){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not removed due to : " + errorThrown, "error");
@@ -101,7 +101,7 @@ function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, u
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not removed due to : " + errorThrown, "error");
@@ -149,7 +149,7 @@ function addDatasetToSpace(id, spaceTitle) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to add a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not added due to the following : " + errorThrown, "error");
@@ -191,7 +191,7 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed due to : " + errorThrown, "error");
@@ -229,7 +229,7 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed due to : " + errorThrown, "error");
@@ -309,7 +309,7 @@ function acceptSpaceRequest(spaceId, userId, userName){
         console.log("Successful accept request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("Accept request failed due to : " + errorThrown, "error");
@@ -330,7 +330,7 @@ function rejectSpaceRequest(id, user){
         console.log("Successful reject request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to reject request.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("Reject request failed due to : " + errorThrown, "error");

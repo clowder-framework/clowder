@@ -118,7 +118,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     rabbitmquri = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
     exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
     mgmtPort = configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
-    Logger.debug("uri= "+ rabbitmquri)
+    Logger.debug("uri= " + rabbitmquri)
 
     try {
       val uri = new URI(rabbitmquri)
@@ -203,7 +203,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       connection = Some(factory.get.newConnection())
       channel = Some(connection.get.createChannel())
 
-      Logger.debug("vhost: "+ vhost)
+      Logger.debug("vhost: " + vhost)
 
       // setup exchange if provided
       if (exchange != "") {
@@ -220,7 +220,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       queueBindingsFuture map { x =>
         implicit val bindingsReader = Json.reads[Binding]
         bindings = x.json.as[List[Binding]]
-        Logger.debug("Bindings successufully retrieved")
+        Logger.debug("Bindings successfully retrieved")
       }
       Await.result(queueBindingsFuture, 5000 millis)
 
@@ -388,10 +388,10 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     // While the routing key includes the instance name the rabbitmq bindings has a *.
     // TODO this code could be improved by having less options in how routes and keys are represented
     val fragments = routingKey.split('.')
-    val key1 = "*."+fragments.slice(1,fragments.size).mkString(".")
-    val key2 = "*."+fragments.slice(1,fragments.size - 1).mkString(".") + ".#"
-    val key3 = "*."+fragments(1)+".#"
-    val key4 = "*."+fragments.slice(1,fragments.size).mkString(".") + ".#"
+    val key1 = "*." + fragments.slice(1,fragments.size).mkString(".")
+    val key2 = "*." + fragments.slice(1,fragments.size - 1).mkString(".") + ".#"
+    val key3 = "*." + fragments(1) + ".#"
+    val key4 = "*." + fragments.slice(1,fragments.size).mkString(".") + ".#"
     bindings.filter(x => Set(key1, key2, key3, key4).contains(x.routing_key)).map(_.destination)
   }
 
@@ -771,7 +771,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param host
     */
   def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String, requestAPIKey: Option[String]): Unit = {
-    val routingKey = exchange + ".index."+ contentTypeToRoutingKey(preview.contentType)
+    val routingKey = exchange + ".index." + contentTypeToRoutingKey(preview.contentType)
     val apiKey = requestAPIKey.getOrElse(globalAPIKey)
     val extraInfo = Map("section_id"->sectionId)
     val source = Entity(ResourceRef(ResourceRef.preview, preview.id), None, JsObject(Seq.empty))
@@ -794,7 +794,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     restURL match {
       case Some(x) => {
         val url = x + path
-        Logger.trace("RESTURL: "+ url)
+        Logger.trace("RESTURL: " + url)
         WS.url(url).withHeaders("Accept" -> MimeTypes.JSON).withAuth(username, password, AuthScheme.BASIC).get()
       }
       case None => {
@@ -817,7 +817,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     */
   def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
     connect
-    getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
+    getRestEndPoint("/api/exchanges/" + vhost + "/" + exchange + "/bindings/source")
   }
 
   /**

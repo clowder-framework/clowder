@@ -106,12 +106,12 @@ object Utils {
   /**
    * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.
-   * 
+   *
    * Currently, the following collection elements are encoded:
-   * 
+   *
    * name
    * description
-   *  
+   *
    */
   def decodeCollectionElements(collection: Collection) : Collection  = {
       val updatedName = updateEncodedTextNewlines(collection.name)

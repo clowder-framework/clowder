@@ -19,13 +19,13 @@ trait ExtractionService {
   def findById(resource: ResourceRef): List[Extraction]
 
   def insert(extraction: Extraction): Option[ObjectId]
-  
+
   def getExtractorList(fileId:UUID): collection.mutable.Map[String,String]
-  
+
   def getExtractionTime(fileId:UUID): List[Date]
-  
+
   def save(webpr: WebPageResource): UUID
-  
+
   def getWebPageResource(id: UUID): Map[String,String]
 
   def groupByType(extraction_list: List[Extraction]): Map[String, ExtractionGroup]

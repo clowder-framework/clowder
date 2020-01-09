@@ -29,7 +29,7 @@
             }
 
             @if( provider.authMethod == UserPassword ) {
-                <form action = "@securesocial.core.providers.utils.RoutesHelper.authenticateByPost("userpass").absoluteURL(IdentityProvider.sslEnabled)"
+                <form action = "@securesocial.core.providers.utils.RoutesHelper.authenticateByPost(userpass).absoluteURL(IdentityProvider.sslEnabled)"
                       class="form-horizontal" autocomplete="off" method="POST">
                     <fieldset>                                                    
                         @if( UsernamePasswordProvider.withUserNameSupport ) {

@@ -26,5 +26,4 @@ trait ContextLDService {
 
   /** Update context **/
   def updateContext(context: ContextLD)
-
 }

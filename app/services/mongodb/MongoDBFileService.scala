@@ -656,7 +656,7 @@ class MongoDBFileService @Inject() (
   def incrementMetadataCount(id: UUID, count: Long) = {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
   }
-  
+
   /**
    *  Add versus descriptors to the Versus.descriptors collection associated to a file
    *
@@ -667,7 +667,7 @@ class MongoDBFileService @Inject() (
        VersusDAO.insert(new Versus(id,doc),WriteConcern.Safe)
        Logger.debug("--Added versus descriptors in json format received from versus to the metadata field --")
   }
- 
+
 /**
  * Get Versus descriptors as Json Array for a file
  */
@@ -680,7 +680,7 @@ class MongoDBFileService @Inject() (
       Logger.debug("array=" + vdArray.toString)
     }
     Some(vdArray)
-  } 
+  }
    /*convert list of JsObject to JsArray*/
   def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
@@ -727,7 +727,7 @@ class MongoDBFileService @Inject() (
   def findIntermediates(): List[File] = {
     FileDAO.find(MongoDBObject("isIntermediate" -> true)).toList
   }
-  
+
   /**
    * Implementation of updateLicenseing defined in services/FileService.scala.
    */
@@ -735,9 +735,9 @@ class MongoDBFileService @Inject() (
     allowDownload: String) {
       val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder,
         m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
-      val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
-          $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
-          false, false, WriteConcern.Safe);      
+      val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+          $set("licenseData" -> LicenseData.toDBObject(licenseData)),
+          false, false, WriteConcern.Safe);
   }
 
   // ---------- Tags related code starts ------------------
@@ -773,7 +773,7 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)),
       false, false, WriteConcern.Safe)
   }
-  
+
   def setIntermediate(id: UUID){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false,
       WriteConcern.Safe)
@@ -784,13 +784,13 @@ class MongoDBFileService @Inject() (
         get(id) match{
       case Some(file) => {
         if(file.originalname.length >0) {
-      
+
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
       WriteConcern.Safe)
         } else {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName, "originalname" -> file.filename ), false, false,
       WriteConcern.Safe)
-          
+
         }
       }
     }
@@ -817,8 +817,8 @@ class MongoDBFileService @Inject() (
               datasets.index(fileDataset.id)
             }
 
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
-              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
+            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
+              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
                 datasets.newThumbnail(fileDataset.id)
                 collections.get(fileDataset.collections).found.foreach(collection => {
                   if(!collection.thumbnail_id.isEmpty){
@@ -827,9 +827,9 @@ class MongoDBFileService @Inject() (
                     }
                   }
                 })
-		          }
+              }
             }
-                     
+
           }
 
           val fileFolders = folders.findByFileId(file.id)
@@ -909,21 +909,21 @@ class MongoDBFileService @Inject() (
   }
 
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
-    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    Logger.debug("top: " + requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
     var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "all")
-    Logger.debug("thequery: "+theQuery.toString)
+    Logger.debug("thequery: " + theQuery.toString)
     FileDAO.find(theQuery).toList
   }
 
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
-    Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
+    Logger.debug("top: " + requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
     var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
-    Logger.debug("thequery: "+theQuery.toString)
+    Logger.debug("thequery: " + theQuery.toString)
     FileDAO.find(theQuery).toList
   }
 
   def searchMetadataFormulateQuery(requestedMap: java.util.LinkedHashMap[String,Any], root: String): MongoDBObject = {
-    Logger.debug("req: "+ requestedMap)
+    Logger.debug("req: " + requestedMap)
     var queryMap = MongoDBList()
     var builder = MongoDBList()
     var orFound = false
@@ -948,15 +948,15 @@ class MongoDBFileService @Inject() (
 
           if(reqValue.isInstanceOf[String]){
             val currValue = reqValue.asInstanceOf[String]
-                        
+
             if(keyTrimmed.endsWith("__not")){
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
-                  realValue = "^"+realValue+"$";
+                  realValue = "^" + realValue + "$";
                 }
                 if(currValue.contains(" IGNORE CASE")){
-                  realValue = "(?i)"+realValue;
+                  realValue = "(?i)" + realValue;
                 }
                 builder += MongoDBObject(actualKey -> MongoDBObject("$not" ->  realValue.r))
               }
@@ -966,12 +966,12 @@ class MongoDBFileService @Inject() (
             }
             else{
               if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
+                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
                 if(!currValue.contains(" ANYWHERE")){
-                  realValue = "^"+realValue+"$";
+                  realValue = "^" + realValue + "$";
                 }
                 if(currValue.contains(" IGNORE CASE")){
-                  realValue = "(?i)"+realValue;
+                  realValue = "(?i)" + realValue;
                 }
                 builder += MongoDBObject(actualKey -> realValue.r)
               }
@@ -1001,32 +1001,32 @@ class MongoDBFileService @Inject() (
               val currValue = reqValue.asInstanceOf[String]
               if(keyTrimmed.endsWith("__not")){
                 if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
-	                if(!currValue.contains(" ANYWHERE")){
-	                  realValue = "^"+realValue+"$";
-	                }
-	                if(currValue.contains(" IGNORE CASE")){
-	                  realValue = "(?i)"+realValue;
-	                }
-	                objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
+                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
+                  if(!currValue.contains(" ANYWHERE")){
+                    realValue = "^" + realValue + "$";
+                  }
+                  if(currValue.contains(" IGNORE CASE")){
+                    realValue = "(?i)" + realValue;
+                  }
+                  objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$not" ->  realValue.r))
                 }
                 else{
-                	objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
+                  objectForEach += MongoDBObject(tempActualKey -> MongoDBObject("$ne" ->  currValue))
                 }
               }
               else{
                 if(currValue.contains(" IGNORE CASE") || currValue.contains(" ANYWHERE")){
-	                var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");                
-	                if(!currValue.contains(" ANYWHERE")){
-	                  realValue = "^"+realValue+"$";
-	                }
-	                if(currValue.contains(" IGNORE CASE")){
-	                  realValue = "(?i)"+realValue;
-	                }
-	                objectForEach += MongoDBObject(tempActualKey -> realValue.r)
+                  var realValue = currValue.replace(" IGNORE CASE", "").replace(" ANYWHERE", "");
+                  if(!currValue.contains(" ANYWHERE")){
+                    realValue = "^" + realValue + "$";
+                  }
+                  if(currValue.contains(" IGNORE CASE")){
+                    realValue = "(?i)" + realValue;
+                  }
+                  objectForEach += MongoDBObject(tempActualKey -> realValue.r)
                 }
                 else{
-                	objectForEach += MongoDBObject(tempActualKey -> currValue)
+                  objectForEach += MongoDBObject(tempActualKey -> currValue)
                 }
               }
             }else{
@@ -1083,70 +1083,70 @@ class MongoDBFileService @Inject() (
   }
 
   def dumpAllFileMetadata(): List[String] = {
-		    Logger.debug("Dumping metadata of all files.")
+        Logger.debug("Dumping metadata of all files.")
 
-		    val fileSep = System.getProperty("file.separator")
-		    val lineSep = System.getProperty("line.separator")
-		    var fileMdDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
-			if(!fileMdDumpDir.endsWith(fileSep))
-				fileMdDumpDir = fileMdDumpDir + fileSep
-			var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
-			if(fileMdDumpMoveDir.equals("")){
-				Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")
-			}
-			else{
-			    if(!fileMdDumpMoveDir.endsWith(fileSep))
-				  fileMdDumpMoveDir = fileMdDumpMoveDir + fileSep
-			}
+        val fileSep = System.getProperty("file.separator")
+        val lineSep = System.getProperty("line.separator")
+        var fileMdDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
+      if(!fileMdDumpDir.endsWith(fileSep))
+        fileMdDumpDir = fileMdDumpDir + fileSep
+      var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
+      if(fileMdDumpMoveDir.equals("")){
+        Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")
+      }
+      else{
+          if(!fileMdDumpMoveDir.endsWith(fileSep))
+          fileMdDumpMoveDir = fileMdDumpMoveDir + fileSep
+      }
 
-			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
+      var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
 
-			for(file <- FileDAO.findAll){
-			  try{
-				  val fileId = file.id.toString
+      for(file <- FileDAO.findAll){
+        try{
+          val fileId = file.id.toString
 
-				  val fileTechnicalMetadata = getTechnicalMetadataJSON(file.id)
-				  val fileUserMetadata = getUserMetadataJSON(file.id)
-				  if(fileTechnicalMetadata != "{}" || fileUserMetadata != "{}"){
+          val fileTechnicalMetadata = getTechnicalMetadataJSON(file.id)
+          val fileUserMetadata = getUserMetadataJSON(file.id)
+          if(fileTechnicalMetadata != "{}" || fileUserMetadata != "{}"){
 
-				    val filenameNoExtension = file.filename.substring(0, file.filename.lastIndexOf("."))
-				    val filePathInDirs = fileId.charAt(fileId.length()-3)+ fileSep + fileId.charAt(fileId.length()-2)+fileId.charAt(fileId.length()-1)+ fileSep + fileId + fileSep + filenameNoExtension + "__metadata.txt"
-				    val mdFile = new java.io.File(fileMdDumpDir + filePathInDirs)
-				    mdFile.getParentFile().mkdirs()
+            val filenameNoExtension = file.filename.substring(0, file.filename.lastIndexOf("."))
+            val filePathInDirs = fileId.charAt(fileId.length() - 3) + fileSep + fileId.charAt(fileId.length() - 2) + fileId.charAt(fileId.length() - 1) + fileSep + fileId + fileSep + filenameNoExtension + "__metadata.txt"
+            val mdFile = new java.io.File(fileMdDumpDir + filePathInDirs)
+            mdFile.getParentFile().mkdirs()
 
-				    val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
-					fileWriter.write(fileTechnicalMetadata + lineSep + lineSep + fileUserMetadata)
-					fileWriter.close()
+            val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
+          fileWriter.write(fileTechnicalMetadata + lineSep + lineSep + fileUserMetadata)
+          fileWriter.close()
 
-					if(!fileMdDumpMoveDir.equals("")){
-					  try{
-						  val mdMoveFile = new java.io.File(fileMdDumpMoveDir + filePathInDirs)
-					      mdMoveFile.getParentFile().mkdirs()
+          if(!fileMdDumpMoveDir.equals("")){
+            try{
+              val mdMoveFile = new java.io.File(fileMdDumpMoveDir + filePathInDirs)
+                mdMoveFile.getParentFile().mkdirs()
 
-						  if(mdFile.renameTo(mdMoveFile)){
-			            	Logger.debug("File metadata dumped and moved to staging directory successfully.")
-						  }else{
-			            	Logger.warn("Could not move dumped file metadata to staging directory.")
-			            	throw new Exception("Could not move dumped file metadata to staging directory.")
-						  }
-					  }catch {case ex:Exception =>{
-						  val badFileId = file.id.toString
-						  Logger.error("Unable to stage dumped metadata of file with id "+badFileId+": "+ex.printStackTrace())
-						  unsuccessfulDumps += badFileId
-					  }}
-					}
-				  }
+              if(mdFile.renameTo(mdMoveFile)){
+                    Logger.debug("File metadata dumped and moved to staging directory successfully.")
+              }else{
+                    Logger.warn("Could not move dumped file metadata to staging directory.")
+                    throw new Exception("Could not move dumped file metadata to staging directory.")
+              }
+            }catch {case ex:Exception =>{
+              val badFileId = file.id.toString
+              Logger.error("Unable to stage dumped metadata of file with id " + badFileId + ": " + ex.printStackTrace())
+              unsuccessfulDumps += badFileId
+            }}
+          }
+          }
 
-			  }catch {case ex:Exception =>{
-			    val badFileId = file.id.toString
-			    Logger.error("Unable to dump metadata of file with id "+badFileId+": "+ex.printStackTrace())
-			    unsuccessfulDumps += badFileId
-			  }}
-			}
+        }catch {case ex:Exception =>{
+          val badFileId = file.id.toString
+          Logger.error("Unable to dump metadata of file with id " + badFileId + ": " + ex.printStackTrace())
+          unsuccessfulDumps += badFileId
+        }}
+      }
 
-		    return unsuccessfulDumps.toList
+        return unsuccessfulDumps.toList
 
-	}
+  }
 
   def addFollower(id: UUID, userId: UUID) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
@@ -1171,7 +1171,7 @@ class MongoDBFileService @Inject() (
   }
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
-    Logger.debug("updating views for file "+id.toString)
+    Logger.debug("updating views for file " + id.toString)
     val viewdate = new Date
 
     val updated = FileDAO.dao.collection.findAndModify(
@@ -1181,7 +1181,7 @@ class MongoDBFileService @Inject() (
 
     user match {
       case Some(u) => {
-        Logger.debug("updating views for user "+u.toString)
+        Logger.debug("updating views for user " + u.toString)
         FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
           $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
       }
@@ -1196,13 +1196,13 @@ class MongoDBFileService @Inject() (
   }
 
   def incrementDownloads(id: UUID, user: Option[User]) = {
-    Logger.debug("updating downloads for file "+id.toString)
+    Logger.debug("updating downloads for file " + id.toString)
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
 
     user match {
       case Some(u) => {
-        Logger.debug("updating downloads for user "+u.toString)
+        Logger.debug("updating downloads for user " + u.toString)
         FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
           $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
       }

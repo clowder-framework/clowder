@@ -11,7 +11,7 @@ import models.User
 trait SectionService {
 
   def listSections(): List[Section]
-  
+
   def get(id: UUID): Option[Section]
 
   def get(ids: List[UUID]): DBResult[Section]

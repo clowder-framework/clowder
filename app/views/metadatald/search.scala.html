@@ -164,7 +164,7 @@
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
                 var errMsg = "You must be logged in to retrieve metadata definitions";
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                     notify("Unable to fetch Metadata definitions : " + errorThrown, "error");
@@ -494,7 +494,7 @@
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
                 searching = false;
             });
         }

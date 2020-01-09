@@ -116,10 +116,10 @@ class MongoDBExtractorService extends ExtractorService {
   //------------------------Temporary fix--------------------------------
   /**
    *
-   * This is a temporary fix for keeping track of extractor servers IPs, names and the extractors' counts 
-   * This will be omitted in future version 
+   * This is a temporary fix for keeping track of extractor servers IPs, names and the extractors' counts
+   * This will be omitted in future version
    *
-   * * 
+   * *
    */
   def insertExtractorDetail(exDetails: List[ExtractorDetail]) = {
     for (qn <- exDetails) {
@@ -140,7 +140,7 @@ class MongoDBExtractorService extends ExtractorService {
     Some(edArray)
   }
 
-  //------------------------------------------End of Temporary fix-------------  
+  //------------------------------------------End of Temporary fix-------------
 
   def getExtractorInputTypes() = {
     var list_inputs = List[String]()

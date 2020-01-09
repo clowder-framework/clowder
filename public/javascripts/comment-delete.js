@@ -15,13 +15,13 @@ function deleteComment(commentId, reloadPage){
     });
     
     request.done(function (response, textStatus, jqXHR){
-        //Sucessful update of the DB - update the interface             	
+        //Successful update of the DB - update the interface             	
         deleteCommentCallback(commentId);
     });
 
      
      request.fail(function (jqXHR, textStatus, errorThrown){
-    	 console.error("The following error occured: " + textStatus, errorThrown);
+    	 console.error("The following error occurred: " + textStatus, errorThrown);
          var errMsg = "You must be logged in to delete a comment.";                                
          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
          	notify("The comment was not deleted due to : " + errorThrown, "error");

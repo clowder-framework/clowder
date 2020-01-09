@@ -190,7 +190,7 @@ class MongoDBCollectionService @Inject() (
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, exact: Boolean): List[Collection] = {
     list(Some(date), nextPage, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), exactMatch=exact)
   }
-  
+
   def listSpaceAccess(limit: Integer, space: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean) = {
     list(None, false, 0, None, Option(space), permissions, user, showAll, None, showPublic)
   }
@@ -452,7 +452,7 @@ class MongoDBCollectionService @Inject() (
       case None => MongoDBObject()
     }
     if (date == "") {
-    	Collection.find(filter).sort(order).limit(limit).toList
+      Collection.find(filter).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.debug("After " + sinceDate)
@@ -470,7 +470,7 @@ class MongoDBCollectionService @Inject() (
       case None => MongoDBObject()
     }
     if (date == "") {
-    	Collection.find(filter).sort(order).limit(limit).toList
+      Collection.find(filter).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
@@ -771,7 +771,7 @@ class MongoDBCollectionService @Inject() (
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Logger.debug(s"Removing dataset $datasetId from collection $collectionId")
-	  Collection.findOneById(new ObjectId(collectionId.stringify)) match{
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
@@ -784,10 +784,10 @@ class MongoDBCollectionService @Inject() (
               index(collection.id)
 
               if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
-	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-	        		  createThumbnail(collection.id)
-	        	  }
-	          }
+              if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+                createThumbnail(collection.id)
+              }
+            }
 
               Logger.debug("Removing dataset from collection completed")
             }
@@ -811,7 +811,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def delete(collectionId: UUID) = Try {
-	  Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         for(dataset <- datasets.listCollection(collectionId.stringify)) {
           //remove collection from dataset
@@ -875,7 +875,7 @@ class MongoDBCollectionService @Inject() (
 
   def createThumbnail(collectionId:UUID){
     get(collectionId) match{
-	    case Some(collection) => {
+      case Some(collection) => {
         val selecteddatasets = datasets.listCollection(collectionId.stringify)
         for(dataset <- selecteddatasets){
           if(dataset.isInstanceOf[models.Dataset]){
@@ -888,7 +888,7 @@ class MongoDBCollectionService @Inject() (
         }
         Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
       }
-	    case None =>
+      case None =>
     }
   }
 
@@ -1088,7 +1088,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date) = {
-    Logger.debug("updating views for collection "+id.toString)
+    Logger.debug("updating views for collection " + id.toString)
     val viewdate = new Date
 
     val updated = Collection.dao.collection.findAndModify(
@@ -1098,7 +1098,7 @@ class MongoDBCollectionService @Inject() (
 
     user match {
       case Some(u) => {
-        Logger.debug("updating views for user "+u.toString)
+        Logger.debug("updating views for user " + u.toString)
         CollectionStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "collection"),
           $inc("views" -> 1) ++ $set("last_viewed" -> viewdate), true, false, WriteConcern.Safe)
       }

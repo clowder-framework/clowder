@@ -63,7 +63,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   /** Get Extractor metadata by attachTo, from a specific extractor if given */
   def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: String): List[Metadata] = {
-    val regex = ".*extractors/"+extractor
+    val regex = ".*extractors/" + extractor
 
     val order = MongoDBObject("createdAt" -> -1)
     MetadataDAO.find(MongoDBObject(
@@ -121,7 +121,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
           }
         }
       }
-      case None => Logger.debug("No metadata found to remove with UUID "+id.toString)
+      case None => Logger.debug("No metadata found to remove with UUID " + id.toString)
     }
   }
 
@@ -155,7 +155,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   /** Remove metadata by attached ID and extractor name **/
   def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String, host: String,
     apiKey: Option[String], user: Option[User]): List[UUID] = {
-    val regex = ".*extractors/"+(extractorName.trim)
+    val regex = ".*extractors/" + (extractorName.trim)
     val metadataDocs = MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify), "creator.extractorId" -> (regex.r))).toList
     metadataDocs.foreach(m => MetadataDAO.remove(m))

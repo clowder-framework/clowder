@@ -19,7 +19,7 @@ function removeDataset(datasetId, isreload, url){
 		}
     });
 	request.fail(function (jqXHR, textStatus, errorThrown) {
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed due to : " + errorThrown, "error");
@@ -40,7 +40,7 @@ function restoreDataset(id,isreload,newurl){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: "+textStatus, errorThrown);
+        console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a collection from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not restored due to : " + errorThrown, "error");
@@ -61,7 +61,7 @@ function removeDatasetAndRedirect(datasetId, url){
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a dataset from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not deleted from the system due to : " + errorThrown, "error");
@@ -83,7 +83,7 @@ function detachAndRemoveDatasetAndRedirect(datasetId, url){
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to detach files and then delete a dataset from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not deleted from the system due to : " + errorThrown, "error");

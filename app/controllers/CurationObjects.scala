@@ -914,6 +914,6 @@ class CurationObjects @Inject() (
 
   }
 
- 
+
 }
 

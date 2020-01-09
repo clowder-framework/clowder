@@ -16,8 +16,6 @@ import services.SpaceService
  *
  */
 object Publications {
-      
-      
     def getPublications(space: String, spaces: SpaceService) = {
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val endpoint = play.Play.application().configuration().getString("publishData.list.uri").replaceAll("/$", "")
@@ -28,10 +26,10 @@ object Publications {
     val spaceSet: Set[String] = space match {
       case s: String if (s.isEmpty) => Set()
       case sp: String => spaces.get(UUID(sp)) match {
-        case Some(s) => ( s.name ::  s.affiliatedSpaces).toSet 
+        case Some(s) => ( s.name ::  s.affiliatedSpaces).toSet
         case None => Set()
       }
-      
+
     }
     val result = futureResponse.map {
       case response =>

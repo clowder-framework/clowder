@@ -95,7 +95,7 @@
         });
 
         request.fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "You must be logged in to remove a tag from a dataset.";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                 notify("The tag was not removed from the dataset due to : " + errorThrown, "error");
@@ -150,7 +150,7 @@
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: "+textStatus, errorThrown);
+                    console.error("The following error occurred: "+textStatus, errorThrown);
                     var errMsg = "You must be logged in to add a tag to a dataset.";
                     if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                         notify("The tag was not added to the dataset due to : " + errorThrown, "error");

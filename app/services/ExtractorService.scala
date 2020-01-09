@@ -8,7 +8,7 @@ import play.api.libs.json.JsValue
  */
 
 trait ExtractorService {
-  
+
   def getExtractorServerIPList(): List[String]
 
   def disableAllExtractors(): Boolean
@@ -18,21 +18,21 @@ trait ExtractorService {
   def enableExtractor(extractor: String)
 
   def getExtractorNames(categories: List[String]): List[String]
-  
+
   def getExtractorInputTypes(): List[String]
-  
+
   def insertServerIPs(l: List[String])
-  
+
   def insertExtractorNames(names: List[String])
-  
+
   def insertInputTypes(inputTypes: List[String])
-  
+
   //---Temporary fix for BD-289
   def insertExtractorDetail(extractorTuple: List[ExtractorDetail])
-  
+
   def getExtractorDetail(): Option[JsValue]
  //--End of Temporary fix BD-289
-  
+
   def dropAllExtractorStatusCollection()
 
   def listExtractorsInfo(categories: List[String]): List[ExtractorInfo]

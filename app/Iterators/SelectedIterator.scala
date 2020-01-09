@@ -21,8 +21,8 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
 
   var datasetCount = 0
   var currDs = selected(datasetCount)
-  var datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name, currDs, zip, md5Files, folders, files,
-    metadataService,datasets,spaces)
+  var datasetIterator = new DatasetIterator(pathToFolder + "/" + currDs.name, currDs, zip, md5Files, folders, files,
+    metadataService, datasets, spaces)
   var file_type = 0
 
 
@@ -48,17 +48,17 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
   }
 
   def hasNext() = {
-    if (file_type ==0){
+    if (file_type == 0){
       if (datasetIterator.hasNext()){
         true
-      } else if (selected.length > datasetCount+1){
+      } else if (selected.length > datasetCount + 1){
         datasetCount += 1
         currDs = selected(datasetCount)
-        datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name,currDs,zip,md5Files,folders,files,
-          metadataService,datasets,spaces)
+        datasetIterator = new DatasetIterator(pathToFolder + "/" + currDs.name, currDs, zip, md5Files, folders, files,
+          metadataService, datasets, spaces)
         true
       } else if (bagit) {
-        bagItIterator = Some(new BagItIterator(pathToFolder,None ,zip,md5Bag,md5Files,bytesSoFar ,user))
+        bagItIterator = Some(new BagItIterator(pathToFolder, None, zip, md5Bag, md5Files, bytesSoFar, user))
         file_type = 1
         true
       } else {
@@ -70,7 +70,7 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
           if (bagIterator.hasNext()){
             true
           } else {
-            file_type +=1
+            file_type += 1
             false
           }
         }
@@ -101,6 +101,5 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
         None
       }
     }
-
   }
 }

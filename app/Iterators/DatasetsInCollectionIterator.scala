@@ -37,8 +37,8 @@ class DatasetsInCollectionIterator(pathToFolder : String, collection : models.Co
 
   var currentDatasetIterator : Option[DatasetIterator]  = if (numDatasets > 0){
 
-    Some(new DatasetIterator(pathToFolder+"/"+currentDataset.get.name,currentDataset.get, zip, md5Files,
-    folders, files,metadataService,datasets,spaces))
+    Some(new DatasetIterator(pathToFolder + "/" + currentDataset.get.name, currentDataset.get, zip, md5Files,
+    folders, files, metadataService, datasets, spaces))
   } else {
     None
   }
@@ -51,13 +51,13 @@ class DatasetsInCollectionIterator(pathToFolder : String, collection : models.Co
         if (datasetIterator.hasNext()){
           true
         } else {
-          if (datasetCount < numDatasets -1){
-            datasetCount +=1
+          if (datasetCount < numDatasets - 1){
+            datasetCount += 1
             currentDataset = Some(datasetsInCollection(datasetCount))
             currentDataset match {
               case Some(cd) => {
-                currentDatasetIterator = Some(new DatasetIterator(pathToFolder+"/"+cd.name,cd, zip, md5Files,
-                  folders, files,metadataService,datasets,spaces))
+                currentDatasetIterator = Some(new DatasetIterator(pathToFolder + "/" + cd.name, cd, zip, md5Files,
+                  folders, files, metadataService, datasets, spaces))
                 true
               }
               case None => false

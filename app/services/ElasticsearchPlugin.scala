@@ -138,41 +138,41 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // whether to restrict to a particular metadata field, or search all fields (including tags, name, etc.)
     val mdfield = field match {
-      case Some(k) => expanded_query = " "+k+":\""+expanded_query+"\""
+      case Some(k) => expanded_query = " " + k + ":\"" + expanded_query + "\""
       case None => {}
     }
 
     // Restrict to a particular tag - currently requires exact match
     tag match {
-      case Some(t) => expanded_query += " tag:"+t
+      case Some(t) => expanded_query += " tag:" + t
       case None => {}
     }
 
     // Restrict to particular resource_type if requested
     resource_type match {
-      case Some(restype) => expanded_query += " resource_type:"+restype
+      case Some(restype) => expanded_query += " resource_type:" + restype
       case None => {}
     }
 
     // Restrict to particular dataset ID (only return files)
     datasetid match {
-      case Some(dsid) => expanded_query += " in:"+dsid+" resource_type:file"
+      case Some(dsid) => expanded_query += " in:" + dsid + " resource_type:file"
       case None => {}
     }
 
     // Restrict to particular collection ID
     collectionid match {
-      case Some(cid) => expanded_query += " in:"+cid
+      case Some(cid) => expanded_query += " in:" + cid
       case None => {}
     }
 
     spaceid match {
-      case Some(spid) => expanded_query += " in:"+spid
+      case Some(spid) => expanded_query += " in:" + spid
       case None => {}
     }
 
     folderid match {
-      case Some(fid) => expanded_query += " in:"+fid
+      case Some(fid) => expanded_query += " in:" + fid
       case None => {}
     }
 
@@ -200,7 +200,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       Logger.debug(s"Only have ${total_results.length} total results; searching for ${size*2} more from ${new_from}")
       val (results, total_size)  = _search(queryObj, index, Some(new_from), Some(size*2))
       Logger.debug(s"Found ${results.length} results with ${total_size} total")
-      if (results.length == 0 || new_from+results.length == total_size) exhausted = true // No more results to find
+      if (results.length == 0 || new_from + results.length == total_size) exhausted = true // No more results to find
       val filtered = checkResultPermissions(results, user)
       Logger.debug(s"Permission to see ${filtered.length} results")
       var still_scanning = true
@@ -266,7 +266,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect()
     val response = client match {
       case Some(x) => {
-        Logger.info("Searching Elasticsearch: "+queryObj.string())
+        Logger.info("Searching Elasticsearch: " + queryObj.string())
         var responsePrep = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
@@ -290,7 +290,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
 
-  /** Create a new index with preconfigured mappgin */
+  /** Create a new index with pre-configured mapping */
   def createIndex(index: String = nameOfIndex): Unit = {
     val indexSettings = Settings.settingsBuilder().loadFromSource(jsonBuilder()
       .startObject()
@@ -310,7 +310,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     client match {
       case Some(x) => {
-        Logger.debug("Index \""+index+"\" does not exist; creating now ---")
+        Logger.debug("Index \"" + index + "\" does not exist; creating now ---")
         try {
           x.admin().indices().prepareCreate(index)
             .setSettings(indexSettings)
@@ -533,7 +533,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             .setSize(0)
         // Filter to tags on a particular type of resource if given
         if (resourceType != "")
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty))
+          searcher.setQuery(prepareElasticJsonQuery("resource_type:" + resourceType + "", List.empty))
         else {
           // Exclude Section tags to avoid double-counting since those are duplicated in File document
           searcher.setQuery(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty))
@@ -641,7 +641,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       var longKey = (parentKey match {
         case Some(pk) => {
           if (pk contains "metadata")
-            pk+'.'+k
+            pk + '.' + k
           else k
         }
         case None => k
@@ -649,10 +649,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
       // Remove ignored fields
       ignoredFields.foreach(ig => {
-          if (longKey.indexOf("."+ig+".") > -1)
-            longKey = longKey.replace("."+ig+".", ".")
-          if (longKey.endsWith("."+ig))
-            longKey = longKey.stripSuffix("."+ig)
+          if (longKey.indexOf("." + ig + ".") > -1)
+            longKey = longKey.replace("." + ig + ".", ".")
+          if (longKey.endsWith("." + ig))
+            longKey = longKey.stripSuffix("." + ig)
         }
       )
 
@@ -847,7 +847,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var currterm = ""
     matches.foreach(mt => {
       // Determine if the string was a key or value
-      if (query.contains(mt+":") || query.contains("\""+mt+"\":")) {
+      if (query.contains(mt + ":") || query.contains("\"" + mt + "\":")) {
         // Do some user-friendly replacement
         if (mt == "tag")
           currterm += "tags:"
@@ -856,15 +856,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else if (mt == "contains")
           currterm += "parent_of:"
         else if (!official_terms.contains(mt))
-          currterm += "metadata."+mt+":"
+          currterm += "metadata." + mt + ":"
         else
-          currterm += mt+":"
-      } else if (query.contains(":"+mt) || query.contains(":\""+mt+"\"")) {
+          currterm += mt + ":"
+      } else if (query.contains(":" + mt) || query.contains(":\"" + mt + "\"")) {
         currterm += mt.toLowerCase()
         terms += currterm
         currterm = ""
       } else {
-        terms += "_all:"+mt.toLowerCase()
+        terms += "_all:" + mt.toLowerCase()
       }
     })
 
@@ -876,7 +876,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       for (operator <- mustOperators) {
         if (term.contains(operator)) {
           val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator)+1, term.length)
+          val value = term.substring(term.indexOf(operator) + 1, term.length)
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustOperators.contains(operator) && !populatedMust) {

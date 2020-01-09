@@ -79,7 +79,7 @@
                         }).done(function() {
                             nextFunction();
                         }).fail(function(jqXHR) {
-                            console.error("The following error occured: " + jqXHR.responseText);
+                            console.error("The following error occurred: " + jqXHR.responseText);
                             notify("The logo for @path/@name was not updated", "error");
                         });
                     }
@@ -101,7 +101,7 @@
                 }).done(function(response, textStatus, jqXHR) {
                     nextFunction();
                 }).fail(function(jqXHR) {
-                    console.error("The following error occured: " + jqXHR.responseText);
+                    console.error("The following error occurred: " + jqXHR.responseText);
                     notify("The logo for @path/@name was not updated", "error");
                 });
                 break;
@@ -125,7 +125,7 @@
                     }).done(function() {
                         nextFunction();
                     }).fail(function(jqXHR) {
-                        console.error("The following error occured: " + jqXHR.responseText);
+                        console.error("The following error occurred: " + jqXHR.responseText);
                         notify("The logo for @path/@name was not updated", "error");
                     });
                 } else {

@@ -15,8 +15,8 @@ class Selected @Inject()(selections: SelectionService, files: FileService) exten
     request.user match {
       case Some(identity) => {
         implicit val user = request.user
-	      val datasets = selections.get(request.user.get.email.get) // TODO handle edge cases
-	      Ok(views.html.selected(datasets.to[scala.collection.mutable.ListBuffer]))
+        val datasets = selections.get(request.user.get.email.get) // TODO handle edge cases
+        Ok(views.html.selected(datasets.to[scala.collection.mutable.ListBuffer]))
       }
       case None => Logger.error("Error get user from request"); InternalServerError
     }

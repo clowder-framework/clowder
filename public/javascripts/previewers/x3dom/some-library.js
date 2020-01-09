@@ -169,7 +169,7 @@ function clearConfigTabAnnotations(prNum){
   		 
   		  request.fail(function (jqXHR, textStatus, errorThrown){
   			console.error(
-  	 		"The following error occured: "+
+  	 		"The following error occurred: "+
   	 		textStatus, errorThrown		            
   				);
   			notify("ERROR: " + errorThrown +". Annotation edit not submitted.", "error");
@@ -301,7 +301,7 @@ function clearConfigTabAnnotations(prNum){
   		 
   		  request.fail(function (jqXHR, textStatus, errorThrown){
      		console.error(
-         		"The following error occured: "+
+         		"The following error occurred: "+
          		textStatus, errorThrown		            
      			);
      		notify("ERROR: " + errorThrown +". Annotation not submitted.", "error");

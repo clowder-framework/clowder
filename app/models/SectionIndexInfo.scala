@@ -6,7 +6,7 @@ package models
  *
  */
 case class SectionIndexInfo(
-    indexId:String, 
+    indexId:String,
     indexName:Option[String] = None,
     indexType: Option[String] = None
  )

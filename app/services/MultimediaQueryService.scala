@@ -13,34 +13,34 @@ import play.api.libs.json.JsObject
  * Generic file service to store blobs of files and metadata about them.
  */
 abstract class MultimediaQueryService {
-  
+
   /**
    * Update thumbnail used to represent this query.
    */
-  def updateThumbnail(queryId: UUID, thumbnailId: UUID)  
-  
+  def updateThumbnail(queryId: UUID, thumbnailId: UUID)
+
   /**
    * Save a file from an input stream.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile]
-  
+
   /**
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
   def get(id: UUID): Option[(InputStream, String, String, Long)]
-  
+
   /**
    * List all files in the system.
    */
   def listFiles(): List[TempFile]
-  
-  
+
+
   /**
    * Get file metadata.
    */
   def getFile(id: UUID): Option[TempFile]
-  
+
   /**
    * Store file metadata.
    */

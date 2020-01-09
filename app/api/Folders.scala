@@ -333,7 +333,7 @@ class Folders @Inject() (
             }
 
           }
-          case None => BadRequest("Failed to copy the file. The destination folder doesn't exist. New folder Id: "+ newFolderId)
+          case None => BadRequest("Failed to copy the file. The destination folder doesn't exist. New folder Id: " + newFolderId)
         }
 
       }

@@ -50,7 +50,7 @@
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
                 var errMsg = "You must be logged in to remove a tag from a file.";
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                     notify("The tag was not removed from the file due to : " + errorThrown, "error");

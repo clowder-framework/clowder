@@ -15,7 +15,7 @@ function removeRole(roleId, url)
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in and be an administrator to remove a role from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The role was not deleted from the system due to : " + errorThrown, "error");

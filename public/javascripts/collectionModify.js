@@ -42,7 +42,7 @@ function addCollectionToParentCollection(id) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to add a collection to a space.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not added to the space due to the following : " + errorThrown, "error");
@@ -86,7 +86,7 @@ function addDatasetToCollection(id) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to add a dataset to a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not added to the collection due to the following : " + errorThrown, "error");

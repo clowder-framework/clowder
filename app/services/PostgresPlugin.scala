@@ -160,14 +160,14 @@ class PostgresPlugin(application: Application) extends Plugin {
       val data = Json.stringify(f._4)
       val geojson = f._5
 
-      ps.setTimestamp(index+1, new Timestamp(start.getTime))
+      ps.setTimestamp(index + 1, new Timestamp(start.getTime))
       if (end.isDefined)
-        ps.setTimestamp(index+2, new Timestamp(end.get.getTime))
+        ps.setTimestamp(index + 2, new Timestamp(end.get.getTime))
       else
-        ps.setDate(index+2, null)
-      ps.setInt(index+3, stream_id.toInt)
-      ps.setString(index+4, data)
-      ps.setString(index+5, Json.stringify(geojson))
+        ps.setDate(index + 2, null)
+      ps.setInt(index + 3, stream_id.toInt)
+      ps.setString(index + 4, data)
+      ps.setString(index + 5, Json.stringify(geojson))
       index += 5
     })
 
@@ -240,7 +240,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       if (sensor_name.isDefined) st.setString(i + 4, sensor_name.getOrElse(""))
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
-        st.setDouble(i + 1, parts(i+1).toDouble)
+        st.setDouble(i + 1, parts(i + 1).toDouble)
         st.setDouble(i + 2, parts(i).toDouble)
         i += 2
       }
@@ -455,7 +455,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       (name, base + "#detail/location/" + name + "/")
     }
   }
-  
+
   def getSensorStreams(id: String): Option[String] = {
     var data = ""
     val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
@@ -476,14 +476,14 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
-  
+
   def getSensorStats(id: String): Option[String] = {
     val query = "WITH stream_info AS (" +
-    			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
-    			") " +
-    			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_end_time, array_agg(distinct param) AS parameters FROM stream_info" +
-    			") As t;"
+          "SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
+          ") " +
+          "SELECT row_to_json(t, true) AS my_sensor FROM (" +
+          "SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_end_time, array_agg(distinct param) AS parameters FROM stream_info" +
+          ") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Get streams by sensor statement: " + st)
@@ -567,7 +567,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
-        st.setDouble(i + 1, parts(i+1).toDouble)
+        st.setDouble(i + 1, parts(i + 1).toDouble)
         st.setDouble(i + 2, parts(i).toDouble)
         i += 2
       }
@@ -665,7 +665,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def deleteStream(id: Integer): Boolean = {
-	val deleteStream = "DELETE from streams where gid = ?"
+  val deleteStream = "DELETE from streams where gid = ?"
     val st = conn.prepareStatement(deleteStream)
     st.setInt(1, id)
     st.execute()
@@ -702,8 +702,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     st.execute()
     st.close
     true
-  }  
- 
+  }
+
   def dropAll(): Boolean = {
     val deleteSensors = "DELETE from sensors"
     val st = conn.prepareStatement(deleteSensors)
@@ -719,7 +719,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     st3.close()
     true
   }
-  
+
   def counts(): (Int, Int, Int) = {
     var counts = (0, 0, 0)
     val countQuery = "SELECT (SELECT COUNT(DISTINCT gid) FROM sensors) AS sensors,(SELECT COUNT(DISTINCT gid) FROM streams) AS streams,(SELECT COUNT(DISTINCT gid) FROM datapoints) AS datapoints"
@@ -808,7 +808,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       var j = 0
       while (j < parts.length) {
-        st.setDouble(i + 1, parts(j+1).toDouble)
+        st.setDouble(i + 1, parts(j + 1).toDouble)
         st.setDouble(i + 2, parts(j).toDouble)
         i += 2
         j += 2
@@ -986,22 +986,22 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
     }
   }
-  
+
   def filterProperties(obj: JsObject, attributes: List[String]) = {
     var props = JsObject(Seq.empty)
     (obj \ "properties").asOpt[JsObject] match {
-	  case Some(x) => {
-	    for (f <- x.fieldSet) {
-	      if (("source" == f._1) || attributes.contains(f._1)) {
-	        props = props + f
-	      }
-	    }
-	    (obj - ("properties") + ("properties", props))
-	  }
-	  case None => obj
+    case Some(x) => {
+      for (f <- x.fieldSet) {
+        if (("source" == f._1) || attributes.contains(f._1)) {
+          props = props + f
+        }
+      }
+      (obj - ("properties") + ("properties", props))
+    }
+    case None => obj
     }
   }
-  
+
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +

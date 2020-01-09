@@ -275,7 +275,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       case None => {
         Future(Ok("No Versus Service"))
       }
-		}
+    }
   }
 
   /**
@@ -340,8 +340,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   }
 
   def viewDumpers() = ServerAdminAction { implicit request =>
-  	implicit val user = request.user
-	  Ok(views.html.viewDumpers())
+    implicit val user = request.user
+    Ok(views.html.viewDumpers())
   }
 
   def submitCreateRole() = ServerAdminAction { implicit request =>

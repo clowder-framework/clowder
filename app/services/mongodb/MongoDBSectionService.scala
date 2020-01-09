@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 @Singleton
 class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService, files: FileService, datasets: DatasetService, folders: FolderService) extends SectionService {
-  
+
   def listSections(): List[Section] = {
     SectionDAO.findAll.toList
   }
@@ -116,7 +116,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   }
 
   def setDescription(id: UUID, descr: String) {
-	    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)
+      SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)
   }
 
   /**
@@ -191,9 +191,9 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
         return ArrayBuffer.empty
       }
     }
-    
+
   }
-  
+
 }
 
 object SectionDAO extends ModelCompanion[Section, ObjectId] {

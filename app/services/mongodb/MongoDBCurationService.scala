@@ -267,7 +267,7 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       case Some(c) if name != c.name => {
         events.updateObjectName(id, name)
       }
-      case _ => 
+      case _ =>
     }
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
@@ -290,7 +290,7 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
         maxValue = depth
       }
     }
-    return maxValue +1
+    return maxValue + 1
   }
 
   private def maxFolderDepth(folderId: UUID): Int = {

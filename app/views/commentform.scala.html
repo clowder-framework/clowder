@@ -182,7 +182,7 @@ function postComment(id, resourceType) {
     });
 
     request.fail(function(jqXHR, textStatus, errorThrown) {
-      console.error("The following error occured: " + textStatus, errorThrown);
+      console.error("The following error occurred: " + textStatus, errorThrown);
       var errMsg = "You must be logged in to post a comment.";
       if (!checkErrorAndRedirect(jqXHR, errMsg)) {
         notify("Error posting comment : " + errorThrown, "error");

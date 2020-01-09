@@ -11,7 +11,7 @@ function associateWithSensor(resource_type, item_id, dashboard_url) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
     });
 
     return false;
@@ -64,7 +64,7 @@ function associateItemWithSensor(resource_type, item_id, sensor_id, sensor_name,
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
     });
 
     return false;

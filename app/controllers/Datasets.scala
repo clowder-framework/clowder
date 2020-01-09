@@ -399,9 +399,9 @@ class Datasets @Inject() (
 
   /**
    * Sorted List of datasets within a space
-   * Since this only works within a space right now, it just checks to see if the user has permission to view the space 
-   * (which takes into account the public settings) and, if so, calls the method to list all datasets in the space, regardless 
-   * of status/public view flags, etc. To generalize for sorting of other lists, the permission checks will need to be in 
+   * Since this only works within a space right now, it just checks to see if the user has permission to view the space
+   * (which takes into account the public settings) and, if so, calls the method to list all datasets in the space, regardless
+   * of status/public view flags, etc. To generalize for sorting of other lists, the permission checks will need to be in
    * the dataset query (as in the list method).
    */
   def sortedListInSpace(space: String, offset: Int, size: Int, showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
@@ -415,7 +415,7 @@ class Datasets @Inject() (
     val spaceName = datasetSpace match {
       case Some(s) => Some(s.name)
       case None => None
-    }  
+    }
 
     var title: Option[String] = Some(Messages("resource.in.title", Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
 
@@ -645,8 +645,8 @@ class Datasets @Inject() (
                     (SortingUtils.sortFolders(folder.folders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
                      SortingUtils.sortFiles(files.get(folder.files).found, sortOrder).slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length))
                   } else {
-                    (folder.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).flatMap(f => folders.get(f)),
-                     folder.files.reverse.slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate+1) - folder.folders.length).flatMap(f => files.get(f)))
+                    (folder.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).flatMap(f => folders.get(f)),
+                     folder.files.reverse.slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length).flatMap(f => files.get(f)))
                   }
                 var folderHierarchy = new ListBuffer[Folder]()
                 folderHierarchy += folder
@@ -680,8 +680,8 @@ class Datasets @Inject() (
               (SortingUtils.sortFolders(dataset.folders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
                SortingUtils.sortFiles(files.get(dataset.files).found, sortOrder).slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length))
             } else {
-              (dataset.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).flatMap(f => folders.get(f)),
-               dataset.files.reverse.slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate+1) - dataset.folders.length).flatMap(f => files.get(f)))
+              (dataset.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).flatMap(f => folders.get(f)),
+               dataset.files.reverse.slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length).flatMap(f => files.get(f)))
             }
 
             val fileComments = limitFileList.map { file =>
@@ -765,7 +765,7 @@ class Datasets @Inject() (
               Map(
                 "name" -> toJson("Missing " + Messages("dataset.title") + "  ID."),
                 "size" -> toJson(0),
-                "error" -> toJson("No "+ Messages("dataset.title")+"id found. Please try again.")
+                "error" -> toJson("No " + Messages("dataset.title") + "id found. Please try again.")
               )
             )
           )

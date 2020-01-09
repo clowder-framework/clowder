@@ -21,7 +21,7 @@ class MongoDBTempFileService extends TempFileService {
   def get(query_id: UUID): Option[TempFile] = {
     TempFileDAO.findOneById(new ObjectId(query_id.stringify))
   }
-  
+
   /**
    * Update thumbnail used to represent this query.
    */
@@ -29,8 +29,8 @@ class MongoDBTempFileService extends TempFileService {
     TempFileDAO.update(MongoDBObject("_id" -> new ObjectId(queryId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-  
-  
+
+
 }
 
 object TempFileDAO extends ModelCompanion[TempFile, ObjectId] {

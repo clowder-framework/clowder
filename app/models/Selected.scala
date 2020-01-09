@@ -18,5 +18,4 @@ case class Selected (
     id: ObjectId = new ObjectId,
     user: String,
     datasets: List[String] = List.empty
-    )
-    
+)

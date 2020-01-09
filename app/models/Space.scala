@@ -62,7 +62,7 @@ case class SpaceInvite(
     role: String,
     creationTime: java.util.Date,
     expirationTime: java.util.Date)
-   
+
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
   created: Date,

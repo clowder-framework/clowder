@@ -21,7 +21,7 @@ function removeFile(fileId, isreload, url){
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a file from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The file was not deleted from the system due to : " + errorThrown, "error");
@@ -42,7 +42,7 @@ function removeFileAndRedirect(fileId, url){
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a file from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The file was not deleted from the system due to : " + errorThrown, "error");

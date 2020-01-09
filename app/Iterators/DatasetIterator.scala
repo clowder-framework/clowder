@@ -44,15 +44,15 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
   }
 
   def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+dataset.name+"_info.json"
-    zip.putNextEntry(new ZipEntry(folderName + "/"+dataset.name+"_info.json"))
+    val path = folderName + "/" + dataset.name + "_info.json"
+    zip.putNextEntry(new ZipEntry(folderName + "/" + dataset.name + "_info.json"))
     val infoListMap = Json.prettyPrint(getDatasetInfoAsJson(dataset))
     Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
   }
 
   def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+dataset.name+"_dataset_metadata.json"
-    zip.putNextEntry(new ZipEntry(folderName + "/"+dataset.name+"_metadata.json"))
+    val path = folderName + "/" + dataset.name + "_dataset_metadata.json"
+    zip.putNextEntry(new ZipEntry(folderName + "/" + dataset.name + "_metadata.json"))
     val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
       .map(JSONLD.jsonMetadataWithContext(_))
     val s : String = Json.prettyPrint(Json.toJson(datasetMetadata))
@@ -85,7 +85,7 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
       while(f1.parentType == "folder") {
         folders.get(f1.parentId) match {
           case Some(fparent) => {
-            name = fparent.displayName + "/"+ name
+            name = fparent.displayName + "/" + name
             f1 = fparent
           }
           case None =>
@@ -125,7 +125,7 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
           if (fileIterator.hasNext()){
             true
           } else if (fileCounter < numFiles -1){
-            fileCounter +=1
+            fileCounter += 1
             currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),zip,md5Files,files,folders,metadataService))
             true
           } else {
@@ -146,7 +146,7 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
         is = addDatasetInfoToZip(pathToFolder,dataset,zip)
         val md5 = MessageDigest.getInstance("MD5")
         md5Files.put("_info.json",md5)
-        file_type+=1
+        file_type += 1
         Some(new DigestInputStream(is.get, md5))
       }
       case 1 => {
@@ -154,10 +154,10 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
         val md5 = MessageDigest.getInstance("MD5")
         md5Files.put("_metadata.json",md5)
         if (numFiles > 0){
-          file_type+=1
+          file_type += 1
           currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),zip,md5Files,files,folders,metadataService))
         } else {
-          file_type+=2
+          file_type += 2
         }
 
         Some(new DigestInputStream(is.get, md5))

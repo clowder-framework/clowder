@@ -20,7 +20,7 @@ $(function() {
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: "+ textStatus, errorThrown);
+                console.error("The following error occurred: "+ textStatus, errorThrown);
                 window.location = "../login"; // FIXME hardcoded
             });
 

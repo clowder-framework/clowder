@@ -8,53 +8,53 @@ import com.novus.salat.dao.SalatMongoCursor
  * Service to add a job to scheduler
  *
  */
- 
+
 trait SchedulerService {
-	 
-	 /**
-	 * Lists all the scheduled jobs
-	 */
 
-	def listJobs(): List[TimerJob]
+     /**
+     * Lists all the scheduled jobs
+     */
 
-	 /**
-	 * schedule jobs
-	 */
+    def listJobs(): List[TimerJob]
 
-	def scheduleJob(job: TimerJob)
+     /**
+     * schedule jobs
+     */
 
-	 /**
-	 * find job by name
-	 */
+    def scheduleJob(job: TimerJob)
 
-	def getJob(name: String): SalatMongoCursor[TimerJob]
+     /**
+     * find job by name
+     */
 
-	/**
-	* Remove Job from Jobs Collection
-	*/
+    def getJob(name: String): SalatMongoCursor[TimerJob]
 
-	def deleteJob(name: String)
+    /**
+    * Remove Job from Jobs Collection
+    */
 
-	/**
-	* Add an email digest job
-	*/
+    def deleteJob(name: String)
 
-	def updateEmailJob(id : UUID, name: String, setting: String)
+    /**
+    * Add an email digest job
+    */
 
-	/*
-	* Check if job exists in collection
-	*/
-	def jobExists(name: String): Boolean
+    def updateEmailJob(id : UUID, name: String, setting: String)
 
-	/*
-	* Update the time last job was ran
-	*/
+    /*
+    * Check if job exists in collection
+    */
+    def jobExists(name: String): Boolean
 
-	def updateLastRun(name: String)
+    /*
+    * Update the time last job was ran
+    */
 
-	/**
-	* Get Job by the current time
-	*/
-	def getJobByTime(minute: Integer, hour: Integer, day_of_week: Integer): List[TimerJob]
+    def updateLastRun(name: String)
+
+    /**
+    * Get Job by the current time
+    */
+    def getJobByTime(minute: Integer, hour: Integer, day_of_week: Integer): List[TimerJob]
 
 }

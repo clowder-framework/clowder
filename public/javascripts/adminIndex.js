@@ -61,7 +61,7 @@ function getAllAdapters() {
 	});	
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 	});  	
 }
 
@@ -79,7 +79,7 @@ function getAllExtractors() {
     	}
 	});	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 	});	
 }	
 
@@ -95,7 +95,7 @@ function getAllMeasures() {
 		}
 	});
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 	});  	
 }
 
@@ -114,7 +114,7 @@ function getIndexers() {
 		$("#indexerDropDown").html('<option value="invalid">--Indexer--</option>'+availableIndexers);
 	});		
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 	}); 
 }
 
@@ -135,7 +135,7 @@ function getIndexes() {
     	$("#indexDel").html('<option value="invalid">--Index--</option>'+availableIndexes);
 	});		
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 	});
 }
 
@@ -369,7 +369,7 @@ var createBtn=document.getElementById('create');
 	});	
     request.done(function (data, textStatus, jqXHR){
     	console.log("data:", data);
-        console.log("Sucessfully created");
+        console.log("Successfully created");
         //update list of indexes everywhere on the page
 	    getIndexes();
 		//remove old info messages
@@ -378,7 +378,7 @@ var createBtn=document.getElementById('create');
         $('#createIndexFeedback').text( data);  
 	});	
     request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
         $('#createIndexFeedback').text( "Index could not be created");
 	});	    	
 }	    
@@ -397,7 +397,7 @@ var buildBtn=document.getElementById('build');
     				$('#buildmsg').text(response);
     	});
     	request.fail(function (jqXHR, textStatus, errorThrown){
-    		console.error("The following error occured: "+textStatus, errorThrown);
+    		console.error("The following error occurred: "+textStatus, errorThrown);
             $('#buildmsg').text( "Could not build index");
     	});	
 }	
@@ -438,7 +438,7 @@ var listBtn=document.getElementById('list');
 						}						
    					 });
     				request.fail(function (jqXHR, textStatus, errorThrown){
-    		    		console.error("The following error occured: "+textStatus, errorThrown);
+    		    		console.error("The following error occurred: "+textStatus, errorThrown);
     		    	});
     	    }		
 
@@ -458,7 +458,7 @@ var listBtn=document.getElementById('list');
     					$('#deletemsg').text(response);    			
    					 });
     				request.fail(function (jqXHR, textStatus, errorThrown){
-    		    		console.error("The following error occured: "+textStatus, errorThrown);
+    		    		console.error("The following error occurred: "+textStatus, errorThrown);
     		            $('#deletemsg').text( "Could not delete index");
     		    	});
 }		
@@ -480,7 +480,7 @@ var listBtn=document.getElementById('list');
     			$('#deleteallmsg').text(response);			
            });
     		request.fail(function (jqXHR, textStatus, errorThrown){
-	    		console.error("The following error occured: "+textStatus, errorThrown);
+	    		console.error("The following error occurred: "+textStatus, errorThrown);
 	            $('#deleteallmsg').text( "Could not delete all indexes");
 	    	});
 	}
@@ -499,7 +499,7 @@ reindex.onclick=function(evt){
 		$('#reindexmsg').text(response.status);
 	});
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 		$('#reindexmsg').text( "Could not reindex");
 	});
 }

@@ -84,7 +84,7 @@
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: " + textStatus, errorThrown);
+                    console.error("The following error occurred: " + textStatus, errorThrown);
                     var errMsg = "You must be logged in to add metadata";
                     if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                         notify("Metadata was not removed due to : " + errorThrown, "error");
@@ -131,7 +131,7 @@
 
             request.fail(function (jqXHR, textStatus, errorThrown){
                 $("#panel_@m.id > #"+mid).removeClass("popping");
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
                 var errMsg = "You must be logged in to retrieve metadata definitions";
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                     notify("Metadata context was not shown due to : " + errorThrown, "error");

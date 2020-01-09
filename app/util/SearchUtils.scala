@@ -250,7 +250,7 @@ object SearchUtils {
 
     Some(new ElasticsearchObject(
       ResourceRef(ResourceRef.section, id),
-      "section-"+id.toString,
+      "section-" + id.toString,
       "",
       new Date,
       "",

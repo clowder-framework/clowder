@@ -7,7 +7,7 @@
     <small>
         @if(sender!="") {This message was sent on behalf of <a href="mailto:@sender">@sender</a>.<br/>}
         This message was sent by <a style="text-decoration:none;" href="@routes.Application.index().absoluteURL(controllers.Utils.https(request))" style="text-decoration: none">@AppConfiguration.getDisplayName</a> an
-        instance of <a style="text-decoration:none;" href="http://clowder.ncsa.illinois.edu/">Clowder</a> running
+        instance of <a style="text-decoration:none;" href="https://clowderframework.org">Clowder</a> running
         @sys.props.getOrElse("build.version", default = "0.0.0")#@sys.props.getOrElse("build.bamboo", default = "development")<br/>
         If you have any questions about this email please contact <a style="text-decoration:none;" href="@routes.Application.email().absoluteURL(controllers.Utils.https(request))">the server admins.</a>
     </small>

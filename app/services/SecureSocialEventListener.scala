@@ -24,7 +24,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
             util.Mail.sendEmailAdmins(subject, Some(user), body)
             user.email match {
               case Some(e) => spaceService.processInvitation(e)
-              case None => Logger.debug("No email found for user "+user.id.stringify)
+              case None => Logger.debug("No email found for user " + user.id.stringify)
             }
             userService.updateUserField(user.id, "lastLogin", new Date())
           }
@@ -43,7 +43,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
             }
             user.email match {
               case Some(e) => spaceService.processInvitation(e)
-              case None => Logger.debug("No email found for user "+user.id.stringify)
+              case None => Logger.debug("No email found for user " + user.id.stringify)
             }
             userService.updateUserField(user.id, "lastLogin", new Date())
           }

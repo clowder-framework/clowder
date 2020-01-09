@@ -24,7 +24,7 @@ function removeCollection(id, isreload, newurl, resourceFromType){
 		}
     });
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a collection from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not removed due to : " + errorThrown, "error");
@@ -46,7 +46,7 @@ function removeCollectionAndRedirect(collectionId, url){
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a collection from the system.";        
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not deleted from the system due to : " + errorThrown, "error");
@@ -68,7 +68,7 @@ function removeChildCollectionFromParent(parentId, childId, url) {
 	});
 
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: " + textStatus, errorThrown);
+		console.error("The following error occurred: " + textStatus, errorThrown);
 		var errMsg = "You must be logged in to remove a subcollection from the system.";
 		if (!checkErrorAndRedirect(jqXHR, errMsg)) {
 			notify("The child collection was not removed from the system due to : " + errorThrown, "error");
@@ -86,7 +86,7 @@ function restoreCollection(id,isreload,newurl){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: "+textStatus, errorThrown);
+        console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a collection from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The collection was not restored due to : " + errorThrown, "error");

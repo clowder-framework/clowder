@@ -19,7 +19,7 @@ function removeAdmin(email){
     });
 	request.fail(function (jqXHR, textStatus, errorThrown){
 		console.error(
-    		"The following error occured: "+
+    		"The following error occurred: "+
     		textStatus, errorThrown		            
 			);
 		notify("ERROR: " + errorThrown +". Admin not removed.", error);

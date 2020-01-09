@@ -422,13 +422,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // Change repository in extractors.info collection into a list
     updateMongo("update-repository-type-in-extractors-info", updateRepositoryType)
 
-    // Change existing 'In Curation' curation objects/pub requests to 'In Prepaparation' 
+    // Change existing 'In Curation' curation objects/pub requests to 'In Prepaparation'
     updateMongo("change-in-curation-status-to-in-preparation", updateInCurationStatus)
 
-    // Change from User active and serverAdmin flags to single status 
+    // Change from User active and serverAdmin flags to single status
     updateMongo("change-to-user-status", updateToUserStatus)
-    
-    // Capture original filename from FRBR metadata supplied by SEAD Migrator 
+
+    // Capture original filename from FRBR metadata supplied by SEAD Migrator
     updateMongo("populate-original-filename", updateOriginalFilename)
 
     // Removes the private key from extraction logs
@@ -643,6 +643,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               if (umd.keySet().size() > 0) {
                 val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
                 val user = User.anonymous
+                // FIXME: hardcoded URL
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
@@ -656,6 +657,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             case Some(tmd) => {
               if (tmd.keySet().size() > 0) {
                 val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                // FIXME: hardcoded URL
                 val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                 val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
                 metadataService.addMetadata(metadataTech)
@@ -682,6 +684,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               if (umd.keySet().size() > 0) {
                 val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
                 val user = User.anonymous
+                // FIXME: hardcoded URL
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
@@ -697,12 +700,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               val tmdlist = tmd.asInstanceOf[BasicDBList]
               tmdlist.foreach { x =>
                 val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
+                // FIXME: hardcoded URL
                 val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                 val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
                 metadataService.addMetadata(metadataTech)
               }
             } else {
               val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+              // FIXME: hardcoded URL
               val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
               val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
               metadataService.addMetadata(metadataTech)
@@ -1608,13 +1613,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             val path = content.getAsOrElse[String]("Upload Path", "")
             if (path.length > 0) {
               if (path.lastIndexOf("/") >= 0) {
-                Logger.info("Assigning name/: " + path.substring(path.lastIndexOf("/")+1) + " from path " + path)
+                Logger.info("Assigning name/: " + path.substring(path.lastIndexOf("/") + 1) + " from path " + path)
                 md.getAs[DBObject]("attachedTo") match {
                   case Some(ref) => {
                                   collection("uploads").update(MongoDBObject("_id" -> new ObjectId(ref.get("_id").toString())),
                   MongoDBObject("$set" -> MongoDBObject(
-                    "originalname" -> path.substring(path.lastIndexOf("/")+1))), false, false, WriteConcern.Safe)
-                  
+                    "originalname" -> path.substring(path.lastIndexOf("/") + 1))), false, false, WriteConcern.Safe)
+
                   }
                   case _ => Logger.info("Nope")
                 }

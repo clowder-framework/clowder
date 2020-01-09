@@ -19,7 +19,7 @@
 					$('#sectiondescrEdit_'+id).css("display","inline");					
 				});
 				request.fail(function (jqXHR, textStatus, errorThrown){
-					console.error("The following error occured: "+textStatus, errorThrown);
+					console.error("The following error occurred: "+textStatus, errorThrown);
                     var errMsg = "You must be logged in to submit a section description.";                    
                     if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                         alert("The section description was not posted due to : " + errorThrown);
