@@ -918,7 +918,7 @@ class MongoDBFileService @Inject() (
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
     Logger.debug("top: " + requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
     var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "userMetadata")
-    Logger.debug("thequery: " + ßtheQuery.toString)
+    Logger.debug("thequery: " + theQuery.toString)
     FileDAO.find(theQuery).toList
   }
 

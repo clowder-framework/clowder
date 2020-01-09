@@ -310,7 +310,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       val apipath = play.Play.application().configuration().getString("toolmanagerURI") + "/instances/" + instance.toolPath
 
       val statusRequest: Future[Response] = url(apipath).put(Json.obj(
-        "dataset" -> (dsURL.replace("/datasets", "/api/datasets") + ß"/download"),
+        "dataset" -> (dsURL.replace("/datasets", "/api/datasets") + "/download"),
         "key" -> play.Play.application().configuration().getString("commKey"),
         "id" -> instance.externalId.toString,
         "uploaderId" -> oId,
