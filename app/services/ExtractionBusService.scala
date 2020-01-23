@@ -87,22 +87,6 @@ trait ExtractionBusService {
 
   def connect(): Boolean
 
-  def extractWorkQueue(message: ExtractorMessage)
-
-  def contentTypeToRoutingKey(contentType: String) : String
-
-  def getRegisteredExtractors(dataset: Dataset): List[String]
-
-  def containsOperation(operations: List[String], operation: String): Boolean
-
-  def getGlobalExtractorsByOperation(operation: String): List[String]
-
-  def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String]
-
-  def getQueuesFromBindings(routingKey: String): List[String]
-
-  def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String]
-
   def postSubmissionEvent(file_id: UUID, extractor_id: String): UUID
 
   def getApiKey(requestAPIKey: Option[String], user: Option[User]): String

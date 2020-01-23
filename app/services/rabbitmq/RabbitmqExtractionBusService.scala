@@ -262,7 +262,7 @@ class RabbitmqExtractionBusService @Inject() (
    * class.
    * @param message a model representing the JSON message to send to the queue
    */
-  override def extractWorkQueue(message: services.ExtractorMessage): Unit = {
+  private def extractWorkQueue(message: services.ExtractorMessage): Unit = {
     Logger.debug(s"Publishing $message directly to queue ${message.queue}")
     connect
     extractQueue match {
@@ -276,7 +276,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param contentType original content type in standar form, for example text/csv
     * @return escaped routing key
     */
-  def contentTypeToRoutingKey(contentType: String): String = {
+  private def contentTypeToRoutingKey(contentType: String): String = {
     contentType.replace(".", "_").replace("/", ".")
   }
 
@@ -285,7 +285,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param dataset
     * @return list of active extractors
     */
-  def getRegisteredExtractors(dataset: Dataset): List[String] = {
+  private def getRegisteredExtractors(dataset: Dataset): List[String] = {
     dataset.spaces.flatMap(s => spacesService.getAllExtractors(s))
   }
 
@@ -299,7 +299,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param operation dataset operation like "file.added" or mimetype of files, like "image/bmp"
     * @return true if matches any existing recorder. otherwise, false.
     */
-  def containsOperation(operations: List[String], operation: String): Boolean = {
+  private def containsOperation(operations: List[String], operation: String): Boolean = {
     val optypes: Array[String] = operation.split("[/.]")
     (optypes.length == 2) && {
       val opmaintype: String = optypes(0)
@@ -316,7 +316,7 @@ class RabbitmqExtractionBusService @Inject() (
   /**
     * Query list of global extractors for those enabled and filter by operation.
     */
-  def getGlobalExtractorsByOperation(operation: String): List[String] = {
+  private def getGlobalExtractorsByOperation(operation: String): List[String] = {
     extractorsService.getEnabledExtractors().flatMap(exId =>
       extractorsService.getExtractorInfo(exId)).filter(exInfo =>
       containsOperation(exInfo.process.dataset, operation) ||
@@ -331,7 +331,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param operation The dataset operation requested.
     * @return A list of extractors IDs.
     */
-  def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
     dataset.spaces.flatMap(s =>
       spacesService.getAllExtractors(s).flatMap(exId =>
         extractorsService.getExtractorInfo(exId)).filter(exInfo =>
@@ -351,7 +351,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param routingKey The binding routing key.
     * @return The list of queue matching the routing key.
     */
-  def getQueuesFromBindings(routingKey: String): List[String] = {
+  private def getQueuesFromBindings(routingKey: String): List[String] = {
     // While the routing key includes the instance name the rabbitmq bindings has a *.
     // TODO this code could be improved by having less options in how routes and keys are represented
     val fragments = routingKey.split('.')
@@ -371,7 +371,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param contentType the content type of the file in the case of a file
     * @return a set of unique rabbitmq queues
     */
-  def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
+  private def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
     // drop the first fragment from the routing key and replace characters to create operation id
     val fragments = routingKey.split('.')
     val operation =
