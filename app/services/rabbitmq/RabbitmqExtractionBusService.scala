@@ -262,12 +262,18 @@ class RabbitmqExtractionBusService @Inject() (
    * class.
    * @param message a model representing the JSON message to send to the queue
    */
-  private def extractWorkQueue(message: services.ExtractorMessage): Unit = {
+  private def extractWorkQueue(message: services.ExtractorMessage): Boolean = {
     Logger.debug(s"Publishing $message directly to queue ${message.queue}")
     connect
     extractQueue match {
-      case Some(x) => x ! message
-      case None => Logger.warn("Could not send message over RabbitMQ")
+      case Some(x) => {
+        x ! message
+        true
+      }
+      case None => {
+        Logger.warn("Could not send message over RabbitMQ")
+        false
+      }
     }
   }
 
