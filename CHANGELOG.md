@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Include collection prefix in path when saving to S3.
+- Upgraded sbt from 0.13.0 to 0.13.6 to fix build failures.
+  [CATS-1038](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1038)
 
 ## 1.8.0 - 2019-11-06
 **_Warning:_ This update adds a new permission for archiving files and adds it to the Admin role. Please make sure
