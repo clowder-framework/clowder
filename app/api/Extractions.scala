@@ -511,6 +511,9 @@ class Extractions @Inject()(
   def submitDatasetToExtractor(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
     ds_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting dataset for extraction with body $request.body")
+
+    var submitSuccess : Boolean = true
+
     // send file to rabbitmq for processing
     datasets.get(ds_id) match {
       case Some(ds) => {
@@ -518,7 +521,7 @@ class Extractions @Inject()(
         val host = Utils.baseUrl(request)
 
         // if extractor_id is not specified default to execution of all extractors matching mime type
-        (request.body \ "extractor").asOpt[String] match {
+        val key = (request.body \ "extractor").asOpt[String] match {
           case Some(extractorId) => extractorId
           case None => "unknown." + "dataset"
         }
@@ -529,11 +532,13 @@ class Extractions @Inject()(
           "parameters" -> parameters.toString,
           "action" -> "manual-submission")
 
-        var submitSuccess : Boolean = extractionBusService.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
-        if (submitSuccess){
-          Ok(Json.obj("status" -> "OK"))
+
+        submitSuccess = extractionBusService.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
+        if (submitSuccess) {
+          Ok(Json.obj("status"->"OK"))
+
         } else {
-          Ok(Json.obj("status" -> "error"))
+          Ok(Json.obj("status"->"error"))
         }
       }
       case None =>
