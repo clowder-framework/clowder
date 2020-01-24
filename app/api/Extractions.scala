@@ -485,14 +485,20 @@ class Extractions @Inject()(
             datasetId = datasetslists.head.id
           }
           // if extractor_id is not specified default to execution of all extractors matching mime type
-          val key = (request.body \ "extractor").asOpt[String] match {
+          (request.body \ "extractor").asOpt[String] match {
             case Some(extractorId) =>
               submitWorks = extractionBusService.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
-            case None =>
+              if (!submitWorks){
+                Ok(toJson(Map("status" -> "error", "msg" -> "Could not submit to message bus.")))
+              } else {
+                Ok(Json.obj("status" -> "OK"))
+              }
+            case None => {
               extractionBusService.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+              Ok(Json.obj("status" -> "OK"))
+            }
           }
-          Ok(Json.obj("status" -> "OK"))
         } else {
           Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
         }
