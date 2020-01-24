@@ -529,8 +529,12 @@ class Extractions @Inject()(
           "parameters" -> parameters.toString,
           "action" -> "manual-submission")
 
-        extractionBusService.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
-        Ok(Json.obj("status" -> "OK"))
+        var submitSuccess : Boolean = extractionBusService.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
+        if (submitSuccess){
+          Ok(Json.obj("status" -> "OK"))
+        } else {
+          Ok(Json.obj("status" -> "error"))
+        }
       }
       case None =>
         BadRequest(toJson(Map("request" -> "Dataset not found")))

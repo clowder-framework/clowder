@@ -86,7 +86,12 @@
             });
 
             request.done(function (response, textStatus, jqXHR){
-                notify("Submitted successfully", "success");
+                if (response.status == 'OK'){
+                    notify("Submitted successfully", "success");
+
+                } else {
+                    notify("Submission failed", "error");
+                }
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
