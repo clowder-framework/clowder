@@ -518,7 +518,7 @@ class Extractions @Inject()(
         val host = Utils.baseUrl(request)
 
         // if extractor_id is not specified default to execution of all extractors matching mime type
-        val key = (request.body \ "extractor").asOpt[String] match {
+        (request.body \ "extractor").asOpt[String] match {
           case Some(extractorId) => extractorId
           case None => "unknown." + "dataset"
         }
