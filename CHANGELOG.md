@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Rabbitmq Plugin replaced with ExtractionBusService, implemented by RabbitmqExtractionBusService
 
+## Unreleased
+
+### Changed
+- Include collection prefix in path when saving to S3.
+
 ## 1.8.0 - 2019-11-06
 **_Warning:_ This update adds a new permission for archiving files and adds it to the Admin role. Please make sure
 to run Clowder with the `MONGOUPDATE` flag set to update the database.**

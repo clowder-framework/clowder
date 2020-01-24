@@ -1,7 +1,7 @@
 package services.s3
 
 import java.io.{File, FileOutputStream, IOException, InputStream}
-import java.util.UUID
+import models.UUID
 
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.client.builder.AwsClientBuilder
@@ -90,20 +90,35 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     * Store bytes to the specified path within the configured S3 bucket.
     *
     * @param inputStream stream of bytes to save to the bucket
-    * @param ignored     unused parameter in this context
+    * @param prefix  collection name prefix to prepend to path
     * @return
     */
-  def save(inputStream: InputStream, ignored: String): Option[(String, Long)] = {
+  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
-      case None => Logger.error("Failed deleting bytes: failed to find configured S3 bucketName.")
+      case None => Logger.error("Failed saving bytes: failed to find configured S3 bucketName.")
       case Some(bucketName) => {
-        val xferManager = TransferManagerBuilder.standard().withS3Client(this.s3Bucket).build
+        val s3 = this.s3Bucket
+        val xferManager = TransferManagerBuilder.standard().withS3Client(s3).build
         try {
-          Logger.debug("Saving file to: /" + bucketName)
+          Logger.debug("Saving file to: /" + bucketName + "/" + prefix)
 
-          // TODO: How to build up a unique path based on the file/uploader?
-          val targetPath = UUID.randomUUID().toString
-          val length = inputStream.available()
+          val id = UUID.generate.stringify
+          val length = inputStream.available
+          val separator = java.io.File.separatorChar
+
+          var targetPath = prefix
+          var folders = id
+          var depth = Play.current.configuration.getInt("clowder.s3.depth").getOrElse(3)
+
+          // id seems to be same at the start but more variable at the end
+          while (depth > 0 && folders.length > 4) {
+            depth -= 1
+            targetPath += separator + folders.takeRight(2)
+            folders = folders.dropRight(2)
+          }
+
+          // use full id again as the filename
+          targetPath += separator + id
 
           // TODO: What can this be used for?
           val metadata = new ObjectMetadata()
@@ -115,7 +130,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
           xfer.waitForCompletion()
           xferManager.shutdownNow()
 
-          Logger.debug("File saved to: /" + bucketName + "/" + targetPath)
+          Logger.debug("File saved to: /" + bucketName + "/" + prefix + "/" + targetPath)
 
           return Option((targetPath, length))
 
@@ -137,7 +152,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     * Given a path, retrieve the bytes located at that path inside the configured S3 bucket.
     *
     * @param path    the path of the file to load from the bucket
-    * @param ignored unused parameter in this context
+    * @param ignored collection name prefix (ignored in this context)
     * @return
     */
   def load(path: String, ignored: String): Option[InputStream] = {
@@ -147,6 +162,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
         Logger.debug("Loading file from: /" + bucketName + "/" + path)
         try {
           // Download object from S3 bucket
+          // NOTE: path should already contains the prefix
           val rangeObjectRequest = new GetObjectRequest(bucketName, path)
           val objectPortion = this.s3Bucket.getObject(rangeObjectRequest)
 
@@ -168,18 +184,18 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     * Given a path, delete the file located at the path within the configured S3 bucket.
     *
     * @param path    the path of the file inside the bucket
-    * @param ignored unused parameter in this context
+    * @param prefix  collection name prefix to prepend to path
     * @return
     */
-  def delete(path: String, ignored: String): Boolean = {
+  def delete(path: String, prefix: String): Boolean = {
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
       case None => Logger.error("Failed deleting bytes: failed to find configured S3 bucketName.")
       case Some(bucketName) => {
         // delete the bytes
-        Logger.debug("Removing file at: /" + bucketName + "/" + path)
+        Logger.debug("Removing file at: /" + bucketName + "/" + prefix + "/" + path)
         try {
           // Delete object from S3 bucket
-          this.s3Bucket.deleteObject(bucketName, path)
+          this.s3Bucket.deleteObject(bucketName, prefix + "/" + path)
 
           // TODO: Perform an additional GET to verify deletion?
 
