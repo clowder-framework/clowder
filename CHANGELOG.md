@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Scripts to migrate files on disk AWS S3.
+  [CATS-1034](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1034)
+
 ### Changed
 - Include collection prefix in path when saving to S3.
 - Upgraded sbt from 0.13.0 to 0.13.6 to fix build failures.
