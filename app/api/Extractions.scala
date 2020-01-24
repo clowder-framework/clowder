@@ -441,6 +441,8 @@ class Extractions @Inject()(
     file_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting file for extraction with body $request.body")
 
+    var submitWorks : Boolean = false
+
     files.get(file_id) match {
       case Some(file) => {
         val id = file.id
@@ -485,7 +487,7 @@ class Extractions @Inject()(
           // if extractor_id is not specified default to execution of all extractors matching mime type
           val key = (request.body \ "extractor").asOpt[String] match {
             case Some(extractorId) =>
-              extractionBusService.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
+              submitWorks = extractionBusService.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
             case None =>
               extractionBusService.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)

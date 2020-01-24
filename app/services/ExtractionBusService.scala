@@ -102,10 +102,10 @@ trait ExtractionBusService {
   def fileRemovedFromDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String])
 
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
-                         datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User])
+                         datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]) : Boolean
 
   def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String,
-                            requestAPIKey: Option[String], user: Option[User])
+                            requestAPIKey: Option[String], user: Option[User]) : Boolean
 
   def metadataAddedToResource(metadataId: UUID, resourceRef: ResourceRef, extraInfo: Map[String, Any], host: String,
                               requestAPIKey: Option[String], user: Option[User])

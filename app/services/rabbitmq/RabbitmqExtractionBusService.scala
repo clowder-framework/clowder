@@ -507,8 +507,8 @@ class RabbitmqExtractionBusService @Inject() (
       val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
       extractWorkQueue(msg)
+      }
     }
-  }
 
   /**
     * Send message when a group of files is added to a dataset via UI.
@@ -536,8 +536,8 @@ class RabbitmqExtractionBusService @Inject() (
       val msg = ExtractorMessage(id, dataset.id, notifies, dataset.id, host, extractorId, msgExtra, totalsize.toString, dataset.id,
         "", apiKey, routingKey, source, "added", None)
       extractWorkQueue(msg)
+      }
     }
-  }
 
   /**
     * Send message when file is removed from a dataset and deleted.
@@ -574,7 +574,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param newFlags
     */
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
-    datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): Unit = {
+    datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): Boolean = {
     Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
@@ -596,7 +596,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param newFlags
     */
   def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String,
-    requestAPIKey: Option[String], user: Option[User]): Unit = {
+    requestAPIKey: Option[String], user: Option[User]): Boolean = {
     Logger.debug(s"Sending message $queue from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
     val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
