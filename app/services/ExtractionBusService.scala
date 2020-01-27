@@ -87,10 +87,6 @@ trait ExtractionBusService {
 
   def connect(): Boolean
 
-  def postSubmissionEvent(file_id: UUID, extractor_id: String): UUID
-
-  def getApiKey(requestAPIKey: Option[String], user: Option[User]): String
-
   def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String])
 
   def fileCreated(file: TempFile, host: String, requestAPIKey: Option[String])
@@ -116,8 +112,6 @@ trait ExtractionBusService {
 
   def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String, requestAPIKey: Option[String])
 
-  def getRestEndPoint(path: String): Future[Response]
-
   def getExchanges : Future[Response]
 
   def getQueuesNamesForAnExchange(exchange: String): Future[Response]
@@ -131,10 +125,6 @@ trait ExtractionBusService {
   def getQueueBindings(qname: String): Future[Response]
 
   def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID)
-
-  def getEmailNotificationEmailList(requestAPIKey: Option[String]): List[String]
-
-  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long)
-
+  
 }
 
