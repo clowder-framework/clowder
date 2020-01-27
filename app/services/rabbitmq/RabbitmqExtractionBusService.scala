@@ -862,7 +862,7 @@ class RabbitmqExtractionBusService @Inject() (
     * @param channel                    the channel connecting to the rabbitmq
     * @param cancellationSearchTimeout  the timeout of downloading the requests from the rabbitmq
     */
-  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long) = {
+  private def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long) = {
     var loop = true
     while( loop ) {
       val delivery: QueueingConsumer.Delivery = cancellationQueueConsumer.nextDelivery(cancellationSearchTimeout)
