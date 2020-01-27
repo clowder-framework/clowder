@@ -125,6 +125,8 @@ trait ExtractionBusService {
   def getQueueBindings(qname: String): Future[Response]
 
   def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID)
-  
+
+  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long)
+
 }
 
