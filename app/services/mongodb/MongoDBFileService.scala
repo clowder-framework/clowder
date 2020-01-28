@@ -865,7 +865,7 @@ class MongoDBFileService @Inject() (
         appConfig.incrementCount('files, -1)
         appConfig.incrementCount('bytes, -file.length)
         current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
+          _.delete("data", "file", id.stringify)
         }
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match

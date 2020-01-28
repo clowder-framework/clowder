@@ -1679,12 +1679,7 @@ class Files @Inject()(
         }
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
-        appConfig.incrementCount('files, -1)
-        appConfig.incrementCount('bytes, -file.length)
 
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete("data", "file", id.stringify)
-        }
         //remove file from RDF triple store if triple store is used
         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
           case "yes" => {
