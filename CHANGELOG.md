@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.0.0-alpha
+
+### Removed
+- Removed unused RDF libraries. This was probably used by the rdf/xml functionality that was removed a while back but 
+the dependencies were never removed.
+- Removed Jena validation of JSON-LD metadata. It was creating a blank graph and clients couldn't upload metadata when 
+Clowder runs in a location that doesn't not have access to https://clowderframework.org/contexts/metadata.jsonld. 
+
 ## Unreleased
 
 ### Added
