@@ -6,16 +6,13 @@ import models.UUID
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.regions.Regions
-import com.amazonaws.services.s3.model.{GetObjectRequest, ObjectMetadata, PutObjectRequest}
+import com.amazonaws.services.s3.model.{GetObjectRequest, ObjectMetadata}
 import com.amazonaws.services.s3.{AmazonS3, AmazonS3ClientBuilder}
-import com.amazonaws.{AmazonClientException, AmazonServiceException, ClientConfiguration}
+import com.amazonaws.{AmazonClientException, ClientConfiguration}
 import com.google.inject.Inject
-import org.apache.commons.io.IOUtils
 import play.Logger
 import play.api.Play
 import services.ByteStorageService
-
-
 import com.amazonaws.AmazonServiceException
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
@@ -90,15 +87,15 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     * Store bytes to the specified path within the configured S3 bucket.
     *
     * @param inputStream stream of bytes to save to the bucket
-    * @param prefix  collection name prefix to prepend to path
+    * @param prefix      collection name prefix to prepend to path
+    * @param length      length (in bytes) of the stream
     * @return
     */
-  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
+  def save(inputStream: InputStream, prefix: String, length: Long): Option[(String, Long)] = {
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
       case None => Logger.error("Failed saving bytes: failed to find configured S3 bucketName.")
       case Some(bucketName) => {
-        val s3 = this.s3Bucket
-        val xferManager = TransferManagerBuilder.standard().withS3Client(s3).build
+        val xferManager: TransferManager = TransferManagerBuilder.standard().withS3Client(this.s3Bucket).build
         try {
           Logger.debug("Saving file to: /" + bucketName + "/" + prefix)
 
@@ -120,10 +117,13 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
           // use full id again as the filename
           targetPath += separator + id
 
-          // TODO: What can this be used for?
+          // Set Content-Length header before uploading to save memory
+          // NOTE: If not, entire stream buffers in-memory and can cause OOM
           val metadata = new ObjectMetadata()
+          metadata.setContentLength(length)
 
-          val xfer = xferManager.upload(bucketName, targetPath, inputStream, metadata)
+          // Build up a unique path based on the file/uploader?
+          val xfer: Upload = xferManager.upload(bucketName, targetPath, inputStream, metadata)
           // loop with Transfer.isDone()
           //XferMgrProgress.showTransferProgress(xfer)
           //  or block with Transfer.waitForCompletion()
@@ -162,7 +162,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
         Logger.debug("Loading file from: /" + bucketName + "/" + path)
         try {
           // Download object from S3 bucket
-          // NOTE: path should already contains the prefix
+          // NOTE: path should already contain the prefix
           val rangeObjectRequest = new GetObjectRequest(bucketName, path)
           val objectPortion = this.s3Bucket.getObject(rangeObjectRequest)
 
@@ -184,21 +184,19 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     * Given a path, delete the file located at the path within the configured S3 bucket.
     *
     * @param path    the path of the file inside the bucket
-    * @param prefix  collection name prefix to prepend to path
+    * @param ignored collection name prefix (ignored in this context)
     * @return
     */
-  def delete(path: String, prefix: String): Boolean = {
+  def delete(path: String, ignored: String): Boolean = {
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
       case None => Logger.error("Failed deleting bytes: failed to find configured S3 bucketName.")
       case Some(bucketName) => {
         // delete the bytes
-        Logger.debug("Removing file at: /" + bucketName + "/" + prefix + "/" + path)
+        Logger.debug("Removing file at: /" + bucketName + "/" + path)
         try {
           // Delete object from S3 bucket
-          this.s3Bucket.deleteObject(bucketName, prefix + "/" + path)
-
-          // TODO: Perform an additional GET to verify deletion?
-
+          // NOTE: path should already contain the prefix
+          this.s3Bucket.deleteObject(bucketName, path)
           return true
         } catch {
           case ase: AmazonServiceException => handleASE(ase)

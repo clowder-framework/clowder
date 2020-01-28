@@ -19,7 +19,7 @@ class ThreeDTexture @Inject()(threeD: ThreeDService) extends Controller with Api
         Logger.debug("Uploading 3D texture file " + f.filename)
         // store file
         try {
-          val id = threeD.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+          val id = threeD.save(new FileInputStream(f.ref.file), f.filename, f.ref.file.length, f.contentType)
           Ok(toJson(Map("id" -> id)))
         } finally {
           f.ref.clean()

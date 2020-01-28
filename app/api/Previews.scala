@@ -110,7 +110,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             if (f.contentType.getOrElse("application/octet-stream").equals("application/xml"))
               realContentType = Some("application/dzi")
 
-            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, realContentType))
+            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, f.ref.file.length, realContentType))
             Logger.debug("ctp: " + realContentType)
             // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
             if (f.filename.endsWith(".imageurl")) {

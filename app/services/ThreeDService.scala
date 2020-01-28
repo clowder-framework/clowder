@@ -19,7 +19,7 @@ trait ThreeDService {
 
   def updateGeometry(fileId: UUID, geometryId: UUID, fields: Seq[(String, JsValue)])
 
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String
 
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
 
@@ -27,7 +27,7 @@ trait ThreeDService {
 
   def getGeometry(id: UUID): Option[ThreeDGeometry]
 
-  def saveGeometry(inputStream: InputStream, filename: String, contentType: Option[String]): String
+  def saveGeometry(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String
 
   def getGeometryBlob(id: UUID): Option[(InputStream, String, String, Long)]
 }

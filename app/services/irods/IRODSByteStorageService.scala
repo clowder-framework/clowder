@@ -18,9 +18,9 @@ import services.ByteStorageService
  */
 class IRODSByteStorageService extends ByteStorageService {
   /**
-   * Save the bytes to IRODS
-   */
-  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
+    * Save the bytes to IRODS
+    */
+  def save(inputStream: InputStream, prefix: String, length: Long): Option[(String, Long)] = {
     current.plugin[IRODSPlugin] match {
       case None => {
         Logger.error("No IRODSPlugin")
@@ -64,8 +64,10 @@ class IRODSByteStorageService extends ByteStorageService {
           val cis = new CountingInputStream(inputStream)
           val fos = ipg.getFileFactory().instanceIRODSFileOutputStream(file)
           val buffer = new Array[Byte](16384)
-          var count: Int  = -1
-          while({count = cis.read(buffer); count > 0}) {
+          var count: Int = -1
+          while ( {
+            count = cis.read(buffer); count > 0
+          }) {
             fos.write(buffer, 0, count)
           }
           fos.close()

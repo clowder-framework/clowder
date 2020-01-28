@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Include collection prefix in path when saving to S3.
+- Include length of file in `FileService` when saving the bytes to any backend service. This helps optimize S3 implementation.
 - Upgraded sbt from 0.13.0 to 0.13.6 to fix build failures.
   [CATS-1038](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1038)
 
