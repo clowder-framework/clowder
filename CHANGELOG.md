@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.8.1 - 2020-01-29
 
+### Removed
+- Removed unused RDF libraries. This was probably used by the rdf/xml functionality that was removed a while back but 
+the dependencies were never removed.
+- Removed Jena validation of JSON-LD metadata. It was creating a blank graph and clients couldn't upload metadata when 
+Clowder runs in a location that doesn't not have access to https://clowderframework.org/contexts/metadata.jsonld. 
+
 ### Added
 - Scripts to migrate files on disk AWS S3.
   [CATS-1034](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1034)

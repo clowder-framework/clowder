@@ -622,66 +622,51 @@ class  Datasets @Inject()(
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
-            // parse request for JSON-LD model
-            var model: RDFModel = null
-            json.validate[RDFModel] match {
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatForm(e))
-                BadRequest(JsError.toFlatJson(e))
-              }
-              case s: JsSuccess[RDFModel] => {
-                model = s.get
+            //parse request for agent/creator info
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                val creator = s.get
 
-                //parse request for agent/creator info
-                //creator can be UserAgent or ExtractorAgent
-                var creator: models.Agent = null
-                json.validate[Agent] match {
-                  case s: JsSuccess[Agent] => {
-                    creator = s.get
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
 
-                    // check if the context is a URL to external endpoint
-                    val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
 
-                    // check if context is a JSON-LD document
-                    val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                      .map(contextService.addContext(new JsString("context name"), _))
+                // when the new metadata is added
+                val createdAt = new Date()
 
-                    // when the new metadata is added
-                    val createdAt = new Date()
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
-                    //parse the rest of the request to create a new models.Metadata object
-                    val attachedTo = ResourceRef(ResourceRef.dataset, id)
-                    val content = (json \ "content")
-                    val version = None
-                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                      content, version)
+                //add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
-                    //add metadata to mongo
-                    val metadataId = metadataService.addMetadata(metadata)
-                    val mdMap = metadata.getExtractionSummary
-
-                    //send RabbitMQ message
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                    }
-
-                    events.addObjectEvent(request.user, id, x.name,EventType.ADD_METADATA_DATASET.toString)
-
-                    datasets.index(id)
-                    Ok(toJson("Metadata successfully added to db"))
-
-                  }
-                  case e: JsError => {
-                    Logger.error("Error getting creator");
-                    BadRequest(toJson(s"Creator data is missing or incorrect."))
-                  }
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                 }
+
+                events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
+
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator");
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
               }
             }
           }
           case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
-      }
+     }
 
 
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
