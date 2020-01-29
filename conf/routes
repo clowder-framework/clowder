@@ -59,7 +59,6 @@ GET            /error/notAuthorized                                             
 # DTS INFORMATION
 # ----------------------------------------------------------------------
 GET            /extractions/requests                                                    @controllers.ExtractionInfo.getDTSRequests()
-GET            /extractions/servers_ips                                                 @controllers.ExtractionInfo.getExtractorServersIP()
 GET            /extractions/extractors_names                                            @controllers.ExtractionInfo.getExtractorNames()
 GET            /extractions/supported_input_types                                       @controllers.ExtractionInfo.getExtractorInputTypes()
 
@@ -399,11 +398,8 @@ POST           /api/files/:file_id/extractions                                  
 POST           /api/datasets/:ds_id/extractions                                         @api.Extractions.submitDatasetToExtractor(ds_id: UUID)
 
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
-GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames(categories: List[String] ?= List.empty)
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
-#API for temporary fix for BD-289
-GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
 POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL(extract: Boolean ?= true)
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
 POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel", extract: Boolean ?= true)
