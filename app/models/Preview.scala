@@ -19,7 +19,6 @@ case class Preview(
   contentType: String,
   preview_type: Option[String] = None,
   title: Option[String] = None,
-  annotations: List[ThreeDAnnotation] = List.empty,
   length: Long,
   extractor_id: Option[String] = None,
   iipURL: Option[String] = None,
