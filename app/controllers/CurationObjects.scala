@@ -338,12 +338,11 @@ class CurationObjects @Inject() (
             }
             // metadata of curation files are getting from getUpdatedFilesAndFolders
             val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-            val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
             val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
             if (c.status != "In Preparation") {
               Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit, s.name))
             } else {
-              Ok(views.html.spaces.curationObject(c, m, isRDFExportEnabled, limit))
+              Ok(views.html.spaces.curationObject(c, m, limit))
             }
           }
           case None => BadRequest(views.html.notFound("Space does not exist."))

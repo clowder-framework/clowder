@@ -43,7 +43,6 @@ class Files @Inject()(
   dtsrequests:ExtractionRequestsService,
   previews: PreviewService,
   threeD: ThreeDService,
-  sqarql: RdfSPARQLService,
   metadataService: MetadataService,
   contextService: ContextLDService,
   thumbnails: ThumbnailService,
@@ -661,42 +660,6 @@ class Files @Inject()(
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
-    }
-  }
-
-  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match {
-      case true => {
-        current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match {
-          case Some(resultFile) => {
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-              .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-              .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
-          }
-          case None => BadRequest(toJson("File not found " + id))
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
-    }
-  }
-
-  def getRDFURLsForFile(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match {
-      case true => {
-        current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify) match {
-          case Some(listJson) => {
-            Ok(listJson)
-          }
-          case None => {
-            Logger.error("Error getting file" + id); InternalServerError
-          }
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
     }
   }
 
@@ -1658,16 +1621,6 @@ class Files @Inject()(
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "file", id.stringify)
-        }
-        //remove file from RDF triple store if triple store is used
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => {
-            if (file.filename.endsWith(".xml")) {
-              sqarql.removeFileFromGraphs(id, "rdfXMLGraphName")
-            }
-            sqarql.removeFileFromGraphs(id, "rdfCommunityGraphName")
-          }
-          case _ => {}
         }
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)

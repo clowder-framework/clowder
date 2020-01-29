@@ -11,7 +11,6 @@ import services.ExtractorService
 import services.ExtractionService
 import services.ExtractionRequestsService
 import services.PreviewService
-import services.RdfSPARQLService
 import services.ThumbnailService
 import services.FileService
 import services.DatasetService
@@ -57,7 +56,6 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
   val mockDTS = mock[ExtractionRequestsService]
   val mockExtractors = mock[ExtractorService]
   val mockPreviews = mock[PreviewService]
-  val mockRdf = mock[RdfSPARQLService]
   val mockthumbnails = mock[ThumbnailService]
   val mockAppConfig = mock[AppConfigurationService]
 

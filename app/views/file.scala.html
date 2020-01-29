@@ -3,7 +3,6 @@
 		previews : Map[models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
 		mds: List[models.Metadata],
-		rdfExported: Boolean,
 		extractionsStatus: Map[String, ExtractionGroup], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
 		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
 		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)

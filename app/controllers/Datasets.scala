@@ -24,7 +24,6 @@ class Datasets @Inject() (
     sections: SectionService,
     extractions: ExtractionService,
     dtsrequests: ExtractionRequestsService,
-    sparql: RdfSPARQLService,
     users: UserService,
     previewService: PreviewService,
     spaceService: SpaceService,
