@@ -52,9 +52,8 @@ class Files @Inject()(
   userService: UserService,
   appConfig: AppConfigurationService,
   adminsNotifierService: AdminsNotifierService,
+  extractionBusService: ExtractionBusService,
   esqueue: ElasticsearchQueue) extends ApiController {
-  esqueue: ElasticsearchQueue,
-  extractionBusService: ExtractionBusService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)

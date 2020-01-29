@@ -200,7 +200,6 @@ class Files @Inject() (
         }
 
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
-        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val extractionsByFile = extractions.findById(new ResourceRef('file, id))
         val extractionGroups = extractions.groupByType(extractionsByFile)
@@ -239,7 +238,7 @@ class Files @Inject() (
             plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+                mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
           }
           case None =>
             Logger.debug("Polyglot plugin not found")
@@ -250,7 +249,7 @@ class Files @Inject() (
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
         }
       }
 
@@ -594,16 +593,7 @@ class Files @Inject() (
 
               current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
 
-              //add file to RDF triple store if triple store is used
-              if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                  case "yes" => sparql.addFileToGraph(f.id)
-                  case _ => {}
-                }
-              }
-
-              current.plugin[AdminsNotifierPlugin].foreach {
-                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
+              adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)
 
               //Correctly set the updated URLs and data that is needed for the interface to correctly 
               //update the display after a successful upload.
@@ -1040,9 +1030,7 @@ class Files @Inject() (
             val id = f.id
             val extra = Map("filename" -> f.filename, "action" -> "upload")
 
-            current.plugin[RabbitmqPlugin].foreach {
-              _.fileCreated(f, host, request.apiKey)
-            }
+            extractionBusService.fileCreated(f, host, request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
