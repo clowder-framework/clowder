@@ -52,15 +52,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok("Reindexing")
   }
 
-  def sensors = ServerAdminAction { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle,
-      AppConfiguration.getSensorTitle,
-      AppConfiguration.getParametersTitle,
-      AppConfiguration.getParameterTitle
-    ))
-  }
-
   /**
    * Gets the available Adapters from Versus
    */

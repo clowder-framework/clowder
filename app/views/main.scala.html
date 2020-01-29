@@ -116,13 +116,6 @@
                             @if(user.isDefined){
                                 <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
                             }
-                            @play.api.Play.current.plugin[services.PostgresPlugin] match {
-                                case Some(db) if db.isEnabled => {
-                                    <li><a href="@routes.Geostreams.list"><span class="glyphicon glyphicon-globe"> </span> @(AppConfiguration.getSensorsTitle) List</a></li>
-                                    <li><a href="@routes.Geostreams.map"><span class="glyphicon glyphicon-globe"> </span> @(AppConfiguration.getSensorsTitle) Map</a></li>
-                                }
-                                case _ => {}
-                            }
                             <li><a href="@routes.Tags.tagListOrdered"> <span class="glyphicon glyphicon-tags"> </span>  Ordered Tags</a></li>
                             <li><a href="@routes.Tags.tagListWeighted"><span class="glyphicon glyphicon-tags"> </span>  Weighted Tags</a></li>
                             <li><a href="@routes.Metadata.search"> <span class="glyphicon glyphicon-search"> </span> Metadata Search</a></li>
@@ -141,15 +134,6 @@
                                 @Messages("datasets.title")</a></li>
                             <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-large"> </span>
                                 @Messages("collections.title")</a></li>
-                            @play.api.Play.current.plugin[services.PostgresPlugin] match {
-                                case Some(db) if db.isEnabled => {
-                                    <li><a href="@routes.Geostreams.newSensor"><span class="glyphicon glyphicon-globe"> </span>
-                                        @(AppConfiguration.getSensorsTitle)</a></li>
-                                }
-                                case _ => {}
-                            }
-
-
                         </ul>
                     </li>
 
@@ -238,12 +222,6 @@
                                         <li><a href="@routes.Admin.adminIndex">Indexes</a></li>
                                         <li><a href="@routes.Admin.viewDumpers">Dumps</a></li>
                                         <li><a href="@routes.Admin.getMetadataDefinitions">Metadata Definitions</a></li>
-                                        @play.api.Play.current.plugin[services.PostgresPlugin] match {
-                                            case Some(db) if db.isEnabled => {
-                                                <li><a href="@routes.Admin.sensors">@(AppConfiguration.getSensorsTitle)</a></li>
-                                            }
-                                            case _ => {}
-                                        }
                                         @if(user.exists(_.superAdminMode)) {
                                             <li><a href="javascript:toggelServerAdmin();">Drop SuperAdmin</a></li>
                                         } else {

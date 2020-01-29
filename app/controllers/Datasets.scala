@@ -512,24 +512,6 @@ class Datasets @Inject() (
           decodedCommentsByDataset += dComment
         }
 
-        // sensors
-        val sensors: List[(String, String, String)] = current.plugin[PostgresPlugin] match {
-          case Some(db) if db.isEnabled => {
-            // findRelationships will return a "Relation" model with all information about the relationship
-            val relationships = relations.findRelationships(id.stringify, ResourceType.dataset, ResourceType.sensor)
-
-            // we want to get the name of the sensor and its location on Geodashboard
-            // the "target.id" in a relationship is the Sensor's ID from the geostreaming API (like 117)
-            // we will lookup the name and url using the sensor ID, then return each sensor in a list of tuples:
-            // [(relationship_ID, sensor_name, geodashboard_url), ...]
-            relationships.map { r =>
-              val nameToURLTuple = db.getDashboardSensorURLs(List(r.target.id)).head
-              (r.id.stringify, nameToURLTuple._1, nameToURLTuple._2)
-            }
-          }
-          case _ => List.empty[(String, String, String)]
-        }
-
         // spaces
         var datasetSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
         var decodedSpaces_canRemove: Map[ProjectSpace, Boolean] = Map.empty
@@ -614,7 +596,7 @@ class Datasets @Inject() (
 
         // view_data is passed as tuple in dataset case only, because template is at limit of 22 parameters
         Ok(views.html.dataset(dataset, commentsByDataset, filteredPreviewers.toList, m,
-          decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
+          decodedCollectionsInside.toList, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
           currentSpace, limit, showDownload, accessData, canAddDatasetToCollection,
           stagingAreaDefined, view_data, extractionGroups))
       }

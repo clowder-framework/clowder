@@ -3,7 +3,6 @@
   previewers : List[Previewer],
   m: List[models.Metadata],
   collectionsInside: List[models.Collection],
-  relatedSensors: List[(String,String,String)],
   datasetSpaces_canRemove : Option[Map[ProjectSpace,Boolean]],
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
@@ -335,9 +334,6 @@
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }
-            @if(current.plugin[services.PostgresPlugin].isDefined) {
-                @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
-            }
             <div id="toolListContainer"></div>
 		</div>
 	</div>
@@ -451,16 +447,6 @@
 
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
-
-            @play.api.Play.current.plugin[services.ToolManagerPlugin] match {
-                case Some(p) => {
-                    @if(p.enabled && dataset.files.nonEmpty && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        refreshToolSidebar()
-                    }
-                }
-                case None => { }
-
-            }
 
             $("input[value='@dataset.status']").attr("checked", true);
             setOriginAccess();

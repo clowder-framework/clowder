@@ -745,8 +745,10 @@ class  Datasets @Inject()(
         }
 
         // send extractor message after attached to resource
-        metadataIds.foreach { mId =>
-          extractionBusService.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          metadataIds.foreach { mId =>
+            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
+          }
         }
 
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))

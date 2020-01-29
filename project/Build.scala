@@ -87,37 +87,15 @@ object ApplicationBuild extends Build {
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.mongodb" %% "casbah" % "2.6.3",
 
-    // geostreams
-    "org.postgresql" % "postgresql" % "42.1.1",
-
     // Find listing of previewers/stylesheets at runtime
     //  servlet is needed here since it is not specified in org.reflections.
     "javax.servlet" % "servlet-api" % "2.5",
     "org.reflections" % "reflections" % "0.9.10",
 
-    // RDF
-    "org.openrdf.sesame" % "sesame-rio-api" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-model" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-n3" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-ntriples" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-rdfxml" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-trig" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-trix" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8",
-    "info.aduna.commons" % "aduna-commons-io" % "2.8.0",
-    "info.aduna.commons" % "aduna-commons-lang" % "2.9.0",
-    "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
-    "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
-    "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
-    "org.apache.jena" % "apache-jena-libs" % "3.1.1",
-
     // ??
     "commons-lang" % "commons-lang" % "2.6",
     "commons-io" % "commons-io" % "2.4",
     "commons-logging" % "commons-logging" % "1.1.3",
-
-    // RDF
-    "gr.forth.ics" % "flexigraph" % "1.0",
 
     // Guice dependency injection
     "com.google.inject" % "guice" % "3.0",
