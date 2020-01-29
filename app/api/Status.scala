@@ -85,23 +85,6 @@ class Status @Inject()(spaces: SpaceService,
         })
       }
 
-      // geostream
-      case p: PostgresPlugin => {
-        val status = if (p.conn != null) {
-          "connected"
-        } else {
-          "disconnected"
-        }
-        result.put("postgres", if (Permission.checkServerAdmin(user)) {
-          Json.obj("catalog" -> p.conn.getCatalog,
-            "schema" -> p.conn.getSchema,
-            "updates" -> appConfig.getProperty[List[String]]("postgres.updates", List.empty[String]),
-            "status" -> status)
-        } else {
-          Json.obj("status" -> status)
-        })
-      }
-
       // versus
       case p: VersusPlugin => {
         result.put("versus", if (Permission.checkServerAdmin(user)) {

@@ -87,9 +87,6 @@ object ApplicationBuild extends Build {
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.mongodb" %% "casbah" % "2.6.3",
 
-    // geostreams
-    "org.postgresql" % "postgresql" % "42.1.1",
-
     // Find listing of previewers/stylesheets at runtime
     //  servlet is needed here since it is not specified in org.reflections.
     "javax.servlet" % "servlet-api" % "2.5",

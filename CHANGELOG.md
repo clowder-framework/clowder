@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 2.0.0-alpha
 
 ### Removed
+- Removed geostreams api endpoints, controllers and views
+- Removed postgres plugin
 - ToolManagerPlugin removed. 
 - Removed unused RDF libraries. This was probably used by the rdf/xml functionality that was removed a while back but 
 the dependencies were never removed.
