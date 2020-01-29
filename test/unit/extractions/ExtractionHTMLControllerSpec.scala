@@ -9,6 +9,7 @@ import org.scalatest.mock.MockitoSugar._
 import org.mockito.Mockito.doNothing
 import services.ExtractorService
 import services.ExtractionService
+import services.ExtractionBusService
 import services.ExtractionRequestsService
 import services.PreviewService
 import services.RdfSPARQLService
