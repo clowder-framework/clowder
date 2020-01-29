@@ -33,7 +33,6 @@ class Extractions @Inject()(
   dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
   previews: PreviewService,
-  sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService,
   extractionBusService: ExtractionBusService,
   appConfig: AppConfigurationService) extends ApiController {

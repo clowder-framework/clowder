@@ -43,7 +43,6 @@ class Files @Inject() (
   dtsrequests: ExtractionRequestsService,
   previews: PreviewService,
   threeD: ThreeDService,
-  sparql: RdfSPARQLService,
   users: UserService,
   events: EventService,
   thumbnails: ThumbnailService,
@@ -51,6 +50,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  adminsNotifierService: AdminsNotifierService,
   extractionBusService: ExtractionBusService,
   appConfig: AppConfigurationService) extends SecuredController {
 
@@ -960,13 +960,6 @@ class Files @Inject() (
               files.addXMLMetadata(f.id, xmlToJSON)
             }
 
-            //add file to RDF triple store if triple store is used
-            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-              play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                case "yes" => sparql.addFileToGraph(f.id)
-                case _ => {}
-              }
-            }
             // redirect to file page
             Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
           }
@@ -1047,7 +1040,9 @@ class Files @Inject() (
             val id = f.id
             val extra = Map("filename" -> f.filename, "action" -> "upload")
 
-            extractionBusService.fileCreated(f, host, request.apiKey)
+            current.plugin[RabbitmqPlugin].foreach {
+              _.fileCreated(f, host, request.apiKey)
+            }
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1061,13 +1056,6 @@ class Files @Inject() (
             else {
               current.plugin[ElasticsearchPlugin].foreach {
                 _.index(SearchUtils.getElasticsearchObject(f))
-              }
-            }
-            //add file to RDF triple store if triple store is used
-            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-              play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                case "yes" => sparql.addFileToGraph(f.id)
-                case _ => {}
               }
             }
             Ok(f.id.toString)
@@ -1185,17 +1173,6 @@ class Files @Inject() (
                     // notify extractors that a file has been uploaded and added to a dataset
                     extractionBusService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
                     extractionBusService.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
-
-                    // add file to RDF triple store if triple store is used
-                    if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                        case "yes" => {
-                          sparql.addFileToGraph(f.id)
-                          sparql.linkFileToDataset(f.id, dataset_id)
-                        }
-                        case _ => {}
-                      }
-                    }
 
                     Logger.debug("Uploading Completed")
                     // redirect to dataset page

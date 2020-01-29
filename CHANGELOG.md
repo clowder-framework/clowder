@@ -21,6 +21,9 @@ the dependencies were never removed.
 Clowder runs in a location that doesn't not have access to https://clowderframework.org/contexts/metadata.jsonld. 
 - Removed polling of Rabbitmq to collect client information. Extractors now communicate information directly over Rabbitmq.
 
+### Changed
+- SpaceSharingPlugin, SpaceCopyPlugin, StagingAreaPlugin replaced with value in application.conf.
+- AdminNotifierPlugin replaced with AdminNotifierService
 
 ## Unreleased
 

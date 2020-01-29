@@ -69,15 +69,15 @@
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with @Messages("spaces.title"):</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <select name="space" id="spaceid" class = "form-control chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple} style="width: 342px;">
-                    @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                <select name="space" id="spaceid" class = "form-control chosen-select" @if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)){multiple} style="width: 342px;">
+                    @if(!play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
                         <option value="">Select a @Messages("space.title") to share the collection with (Optional)</option>
                     }
                     @spaceList.map { space =>
                         <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                 </select>
-                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                @if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
                     <p class="help-block">@Messages("create.share.multiple.message", Messages("collection.title").toLowerCase, Messages("spaces.title"))</p>
                 } else {
                     <p class="help-block">@Messages("create.share.one.message", Messages("collection.title").toLowerCase, Messages("space.title"))</p>

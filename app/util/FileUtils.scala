@@ -31,7 +31,6 @@ object FileUtils {
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val dtsrequests:ExtractionRequestsService = DI.injector.getInstance(classOf[ExtractionRequestsService])
-  lazy val sqarql: RdfSPARQLService = DI.injector.getInstance(classOf[RdfSPARQLService])
   lazy val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
   lazy val contextService: ContextLDService = DI.injector.getInstance(classOf[ContextLDService])
   lazy val events: EventService = DI.injector.getInstance(classOf[EventService])
@@ -40,6 +39,7 @@ object FileUtils {
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
   lazy val extractionBusService : ExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
+  lazy val adminsNotifier: AdminsNotifierService = DI.injector.getInstance(classOf[AdminsNotifierService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -699,12 +699,6 @@ object FileUtils {
         // add xml as xml metadata
         // TODO is this still valid?
         files.addXMLMetadata(file.id, xmlToJSON)
-
-        //add file to RDF triple store if triple store is used
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => sqarql.addFileToGraph(file.id)
-          case _ => {}
-        }
       }
     }
   }
@@ -771,10 +765,8 @@ object FileUtils {
     }
 
     // notify admins a new file was added
-    current.plugin[AdminsNotifierPlugin].foreach {
-      // TODO replace with Mail.sendAdmins and use template
-      _.sendAdminsNotification(clowderurl, "File", "added", file.id.stringify, file.filename)
-    }
+    // TODO replace with Mail.sendAdmins and use template
+    adminsNotifier.sendAdminsNotification(clowderurl, "File", "added", file.id.stringify, file.filename)
   }
 
   /** dataset processing */
@@ -790,14 +782,6 @@ object FileUtils {
       // index dataset
       if (index) {
         datasets.index(ds.id)
-      }
-
-      //add file to RDF triple store if triple store is used
-      if (file.contentType.equals("application/xml") || file.contentType.equals("text/xml")) {
-        if (configuration.getString("userdfSPARQLStore").getOrElse("no") == "yes") {
-          sqarql.addFileToGraph(file.id)
-          sqarql.linkFileToDataset(file.id, ds.id)
-        }
       }
     }
   }

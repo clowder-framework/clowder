@@ -28,6 +28,7 @@ class Spaces @Inject()(spaces: SpaceService,
                        collectionService: CollectionService,
                        events: EventService,
                        datasets: DatasetService,
+                       adminsNotifierService: AdminsNotifierService,
                        appConfig: AppConfigurationService) extends ApiController {
 
   /**
@@ -68,9 +69,7 @@ class Spaces @Inject()(spaces: SpaceService,
         spaces.delete(spaceId, Utils.baseUrl(request), request.apiKey, request.user)
         appConfig.incrementCount('spaces, -1)
         events.addObjectEvent(request.user , space.id, space.name, "delete_space")
-        current.plugin[AdminsNotifierPlugin].foreach {
-          _.sendAdminsNotification(Utils.baseUrl(request), "Space", "removed", space.id.stringify, space.name)
-        }
+        adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Space", "removed", space.id.stringify, space.name)
       }
     }
     //Success anyway, as if space is not found it is most probably deleted already
