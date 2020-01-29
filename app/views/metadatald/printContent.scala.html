@@ -154,7 +154,7 @@
     @printPerson(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID) = {
         @content match {
             case s: JsString => {
-                @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                @if(play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)) {
                     <span class='person'>@s.value</span>
                 } else {
                     @if(s.value.startsWith("http")) {

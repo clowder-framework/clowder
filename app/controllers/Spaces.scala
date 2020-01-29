@@ -195,7 +195,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
         
-        val rs = play.api.Play.current.plugin[services.StagingAreaPlugin] match {
+        val rs = play.api.Play.current.configuration.getBoolean("stagingArea") match {
           case Some(plugin) => Publications.getPublications(s.id.toString, spaces)
           case None => List.empty
         }

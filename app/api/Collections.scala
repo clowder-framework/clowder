@@ -249,7 +249,7 @@ class Collections @Inject() (datasets: DatasetService,
     implicit val user = request.user
     var listAll = false
     var collectionList: List[Collection] = List.empty
-    if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+    if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
       listAll = true
     } else {
       datasets.get(datasetId) match {
@@ -280,7 +280,7 @@ class Collections @Inject() (datasets: DatasetService,
     val allCollections = listCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false,
       request.user, request.user.fold(false)(_.superAdminMode), exact)
     val possibleNewParents = allCollections.filter(c =>
-      if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+      if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
         (!selfAndAncestors.contains(c) && !descendants.contains(c))
       } else {
         collections.get(UUID(currentCollectionId)) match {

@@ -585,7 +585,7 @@ class Datasets @Inject() (
         }
 
         // staging area
-        val stagingAreaDefined = play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined
+        val stagingAreaDefined = play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)
 
         // extraction logs
         val extractionsByDataset = extractions.findById(new ResourceRef('dataset, id))

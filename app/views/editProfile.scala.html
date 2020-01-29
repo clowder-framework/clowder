@@ -44,7 +44,7 @@
           <p>An e-mail digest of activities that involve your followed objects.</p>
 
         </fieldset>
-        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+        @if(play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)) {
           <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
         }
         <div class="form-actions" style="margin-top: 16px;">

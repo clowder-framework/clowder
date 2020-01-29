@@ -59,12 +59,12 @@
                     @if(user.isDefined) {
                         <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
                         <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined){
+                        @if(play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)){
                             <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
                         }
                     } else {
                     	<li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                        @if(play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)) {
                             <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
                         }
                     }

@@ -620,7 +620,7 @@ class Metadata @Inject() (
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val endpoint = (play.Play.application().configuration().getString("people.uri"))
-    if (play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && endpoint != null) {
+    if (play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false) && endpoint != null) {
 
       val futureResponse = WS.url(endpoint).get()
       var jsonResponse: play.api.libs.json.JsValue = new JsArray()
