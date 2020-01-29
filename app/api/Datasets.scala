@@ -621,22 +621,10 @@ class  Datasets @Inject()(
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
-            // parse request for JSON-LD model
-            var model: RDFModel = null
-            json.validate[RDFModel] match {
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatForm(e))
-                BadRequest(JsError.toFlatJson(e))
-              }
-              case s: JsSuccess[RDFModel] => {
-                model = s.get
-
                 //parse request for agent/creator info
-                //creator can be UserAgent or ExtractorAgent
-                var creator: models.Agent = null
                 json.validate[Agent] match {
                   case s: JsSuccess[Agent] => {
-                    creator = s.get
+                  val creator = s.get
 
                     // check if the context is a URL to external endpoint
                     val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
@@ -666,7 +654,6 @@ class  Datasets @Inject()(
 
                     datasets.index(id)
                     Ok(toJson("Metadata successfully added to db"))
-
                   }
                   case e: JsError => {
                     Logger.error("Error getting creator");
@@ -674,8 +661,6 @@ class  Datasets @Inject()(
                   }
                 }
               }
-            }
-          }
           case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
       }
