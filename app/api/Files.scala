@@ -51,6 +51,7 @@ class Files @Inject()(
   spaces: SpaceService,
   userService: UserService,
   appConfig: AppConfigurationService,
+  adminsNotifierService: AdminsNotifierService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
@@ -1622,9 +1623,9 @@ class Files @Inject()(
         current.plugin[ElasticsearchPlugin].foreach {
           _.delete("data", "file", id.stringify)
         }
-        current.plugin[AdminsNotifierPlugin].foreach {
-          _.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
-        }
+
+        adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
+
         Ok(toJson(Map("status" -> "success")))
       }
       case None => Ok(toJson(Map("status" -> "success")))

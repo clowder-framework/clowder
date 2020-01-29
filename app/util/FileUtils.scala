@@ -38,6 +38,7 @@ object FileUtils {
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
+  lazy val adminsNotifier: AdminsNotifierService = DI.injector.getInstance(classOf[AdminsNotifierService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -767,10 +768,8 @@ object FileUtils {
     }
 
     // notify admins a new file was added
-    current.plugin[AdminsNotifierPlugin].foreach {
-      // TODO replace with Mail.sendAdmins and use template
-      _.sendAdminsNotification(clowderurl, "File", "added", file.id.stringify, file.filename)
-    }
+    // TODO replace with Mail.sendAdmins and use template
+    adminsNotifier.sendAdminsNotification(clowderurl, "File", "added", file.id.stringify, file.filename)
   }
 
   /** dataset processing */

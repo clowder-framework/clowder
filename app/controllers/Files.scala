@@ -50,6 +50,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  adminsNotifierService: AdminsNotifierService,
   appConfig: AppConfigurationService) extends SecuredController {
 
   /**
@@ -597,10 +598,9 @@ class Files @Inject() (
 
               current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
 
-              current.plugin[AdminsNotifierPlugin].foreach {
-                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
+              adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)
 
-              //Correctly set the updated URLs and data that is needed for the interface to correctly 
+              //Correctly set the updated URLs and data that is needed for the interface to correctly
               //update the display after a successful upload.
               val https = controllers.Utils.https(request)
               val retMap = Map("files" ->

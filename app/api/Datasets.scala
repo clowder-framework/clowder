@@ -48,6 +48,7 @@ class  Datasets @Inject()(
   userService: UserService,
   thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
+  adminsNotifierService: AdminsNotifierService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -231,10 +232,7 @@ class  Datasets @Inject()(
                     }
                   }
 
-                  current.plugin[AdminsNotifierPlugin].foreach {
-                    _.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
-                  }
-
+                  adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
 
                   Ok(toJson(Map("id" -> id)))
                 }
@@ -1716,7 +1714,7 @@ class  Datasets @Inject()(
         events.addObjectEvent(request.user, dataset.id, dataset.name, EventType.DELETE_DATASET.toString)
         datasets.removeDataset(id, Utils.baseUrl(request), request.apiKey, request.user)
 
-        current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
+        adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status" -> "success")))

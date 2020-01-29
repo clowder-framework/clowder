@@ -23,7 +23,6 @@
 #10051:services.CILogonProvider
 #10052:services.LdapProvider
 #10090:services.MailerPlugin
-#10091:services.AdminsNotifierPlugin
 #10100:services.TempFilesPlugin
 #10101:services.FileDumpService
 #10102:services.FileMetadataAutodumpService
