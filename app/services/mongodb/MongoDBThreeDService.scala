@@ -52,8 +52,8 @@ class MongoDBThreeDService extends ThreeDService {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    ByteStorageService.save(inputStream, ThreeDTextureDAO.COLLECTION) match {
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String = {
+    ByteStorageService.save(inputStream, ThreeDTextureDAO.COLLECTION, contentLength) match {
       case Some(x) => {
         val text = ThreeDTexture(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), x._3)
         ThreeDTextureDAO.save(text)
@@ -84,8 +84,8 @@ class MongoDBThreeDService extends ThreeDService {
   /**
    * Save blob.
    */
-  def saveGeometry(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    ByteStorageService.save(inputStream, GeometryDAO.COLLECTION) match {
+  def saveGeometry(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String = {
+    ByteStorageService.save(inputStream, GeometryDAO.COLLECTION, contentLength) match {
       case Some(x) => {
         val geom = ThreeDGeometry(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), None, x._3)
         GeometryDAO.save(geom)

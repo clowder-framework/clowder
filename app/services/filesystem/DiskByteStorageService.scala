@@ -17,9 +17,9 @@ import services.ByteStorageService
  */
 class DiskByteStorageService extends ByteStorageService {
   /**
-   * Save the bytes to disk, returns (path, length)
-   */
-  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
+    * Save the bytes to disk, returns (path, length)
+    */
+  def save(inputStream: InputStream, prefix: String, length: Long): Option[(String, Long)] = {
     Play.current.configuration.getString("clowder.diskStorage.path") match {
       case Some(root) => {
         var depth = Play.current.configuration.getInt("clowder.diskStorage.depth").getOrElse(3)
@@ -61,7 +61,7 @@ class DiskByteStorageService extends ByteStorageService {
         val length = cis.getByteCount
 
         // store metadata to mongo
-        Some((filePath, length))
+        return Some((filePath, length))
       }
       case None => None
     }

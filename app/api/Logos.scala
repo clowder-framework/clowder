@@ -78,7 +78,8 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
           request.body.file("image") match {
             case Some(f) => {
               val ct = util.FileUtils.getContentType(f.filename, f.contentType)
-              logos.save(new FileInputStream(f.ref.file), p, name, showText, Some(ct), user) match {
+              logos.save(new FileInputStream(f.ref.file), p, name, showText,
+                f.ref.file.length, Some(ct), user) match {
                 case Some(logo) => {
                   // delete old images
                   logos.list(Some(p), Some(name)).foreach { l =>

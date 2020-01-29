@@ -1678,8 +1678,6 @@ class Files @Inject()(
         }
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
-        appConfig.incrementCount('files, -1)
-        appConfig.incrementCount('bytes, -file.length)
 
         searches.delete(id.stringify, "file")
 

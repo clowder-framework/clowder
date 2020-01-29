@@ -1,6 +1,6 @@
 package services.mongodb
 
-import java.io.InputStream
+import java.io.{File, FileInputStream, InputStream}
 import java.security.{DigestInputStream, MessageDigest}
 
 import com.mongodb.gridfs.GridFS
@@ -17,10 +17,10 @@ import services.ByteStorageService
  */
 class MongoDBByteStorage extends ByteStorageService {
   /**
-   * Save the bytes to mongo, the prefix is used for the collection and id is
-   * ignored.
-   */
-  def save(inputStream: InputStream, collection: String): Option[(String, Long)] = {
+    * Save the bytes to mongo, the prefix is used for the collection and id is
+    * ignored.
+    */
+  def save(inputStream: InputStream, collection: String, length: Long): Option[(String, Long)] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
         Logger.error("No MongoSalatPlugin")

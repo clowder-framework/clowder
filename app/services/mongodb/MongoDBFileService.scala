@@ -302,8 +302,8 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
-    ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
+    ByteStorageService.save(inputStream, FileDAO.COLLECTION, contentLength) match {
       case Some(x) => {
         val file = File(UUID.generate(), x._1, filename, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType),
           x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig(), stats = new Statistics())
@@ -859,6 +859,7 @@ class MongoDBFileService @Inject() (
         FileDAO.removeById(file.id)
         appConfig.incrementCount('files, -1)
         appConfig.incrementCount('bytes, -file.length)
+
         searches.delete(id.stringify)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match

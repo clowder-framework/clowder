@@ -17,7 +17,7 @@ trait TileService {
 
   def findByPreviewId(previewId: UUID): List[Tile]
 
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String
 
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
 

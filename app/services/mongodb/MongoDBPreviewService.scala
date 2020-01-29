@@ -88,8 +88,8 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    ByteStorageService.save(inputStream, PreviewDAO.COLLECTION) match {
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String = {
+    ByteStorageService.save(inputStream, PreviewDAO.COLLECTION, contentLength) match {
       case Some(x) => {
         val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._3)
         PreviewDAO.save(preview)
