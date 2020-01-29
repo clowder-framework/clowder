@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 2.0.0-alpha
 
 ### Removed
+- ToolManagerPlugin removed. 
 - Removed unused RDF libraries. This was probably used by the rdf/xml functionality that was removed a while back but 
 the dependencies were never removed.
 - Removed Jena validation of JSON-LD metadata. It was creating a blank graph and clients couldn't upload metadata when 

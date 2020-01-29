@@ -453,16 +453,6 @@
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
-            @play.api.Play.current.plugin[services.ToolManagerPlugin] match {
-                case Some(p) => {
-                    @if(p.enabled && dataset.files.nonEmpty && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        refreshToolSidebar()
-                    }
-                }
-                case None => { }
-
-            }
-
             $("input[value='@dataset.status']").attr("checked", true);
             setOriginAccess();
         });
