@@ -7,7 +7,15 @@ import play.api.test.Helpers._
 import org.mockito.Mockito.when
 import org.scalatest.mock.MockitoSugar._
 import org.mockito.Mockito.doNothing
-import services.{AppConfigurationService, DatasetService, ExtractionBusService, ExtractionRequestsService, ExtractionService, ExtractorService, FileService, PreviewService, RdfSPARQLService, ThumbnailService}
+import services.ExtractorService
+import services.ExtractionService
+import services.ExtractionRequestsService
+import services.PreviewService
+import services.RdfSPARQLService
+import services.ThumbnailService
+import services.FileService
+import services.DatasetService
+import services.AppConfigurationService
 import play.api.GlobalSettings
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
@@ -55,36 +63,5 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
   val mockExtractionBusService = mock[ExtractionBusService]
 
   when(mockExtractors.getExtractorNames(List.empty)).thenReturn(List("ncsa.cv.face", "ncsa.ocr"))
-  when(mockExtractors.getExtractorServerIPList).thenReturn(List("dts1.ncsa.illinois.edu", "141.142.220.244"))
   when(mockExtractors.getExtractorInputTypes).thenReturn(List("image", "text"))
-  doNothing().when(mockExtractors).insertExtractorNames(List("ncsa.cv.face", "ncsa.ocr"))
-  doNothing().when(mockExtractors).insertServerIPs(List("dts1.ncsa.illinois.edu", "141.142.220.244"))
-  doNothing().when(mockExtractors).insertInputTypes(List("image", "text"))
-
-  "The OneAppPerSuite trait for Extraction API Controller get actions" must {
-     "return List of Extractors Names" in {
-      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockExtractionBusService, mockAppConfig)
-      val resultExNames = extractions_apicontroller.getExtractorNames(List.empty).apply(FakeRequest())
-      contentType(resultExNames) mustEqual Some("application/json")
-      contentAsString(resultExNames) must include ("Extractors")
-      info("Extractors names "+contentAsString(resultExNames))
-     }
-
-    "return List of Extractors' Servers IPs/hostname" in {
-      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockExtractionBusService, mockAppConfig)
-      val resultExIPs = extractions_apicontroller.getExtractorServersIP.apply(FakeRequest())
-      contentType(resultExIPs) mustEqual Some("application/json")
-      contentAsString(resultExIPs) must include ("Servers")
-      info("Extractors Servers IPs: "+ contentAsString(resultExIPs))
-      }
-
-    "return List of Extractors supported Input Types" in {
-      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockExtractionBusService, mockAppConfig)
-      val resultExInputTypes = extractions_apicontroller.getExtractorInputTypes.apply(FakeRequest())
-      contentType(resultExInputTypes) mustEqual Some("application/json")
-      contentAsString(resultExInputTypes) must include ("InputTypes")
-      info("Extractors Supported Input Types: "+ contentAsString(resultExInputTypes))
-     }
-   }
-
 }

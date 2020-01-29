@@ -84,10 +84,10 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     } //end of outer yield qDetails Future
     status
   }//end of updateAndGetStatus method
-   
+
   /**
    *  Obtains the queues' names attached to an exchange where source is the exchange and destination is the queue
-   */ 
+   */
   def getQDetailsFutures(extractionBus: services.ExtractionBusService, exchange: String) = {
     for {
       qNamesResponse <- extractionBus.getQueuesNamesForAnExchange(exchange)
@@ -112,9 +112,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       qdetailsFutureList
     } //end of yield qNamesResponse
   }
- 
+
   /**
-   * updates : extractors details 
+   * updates : extractors details
    *           currently running extractors list
    *           servers IPs where extractors are running
    */
@@ -163,7 +163,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       else {
         ""
       }
-    } //end of for  
+    } //end of for
     extractors.insertServerIPs(ipsList)
     extractors.insertExtractorDetail(exDetails)
     qlistResult
@@ -188,9 +188,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       routingKeysList
     }
   }
-  
+
   /**
-   * Get all exchanges for a given virtual host 
+   * Get all exchanges for a given virtual host
    * TODO : It will be used for multiple exchanges attached to a virtual host in Future
    */
  def getExchangesFutureList(extractionBus: services.ExtractionBusService): Future[List[String]] = {

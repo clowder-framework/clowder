@@ -82,12 +82,6 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
       }
     }
 
-    if (extractorTimer == null) {
-      extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
-        ExtractionInfoSetUp.updateExtractorsInfo()
-      }
-    }
-
     if (jobTimer == null) {
       jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
         JobsScheduler.runScheduledJobs()
