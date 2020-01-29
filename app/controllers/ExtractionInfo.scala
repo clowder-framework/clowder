@@ -13,31 +13,6 @@ import services.{ExtractionRequestsService, ExtractorService}
 
 class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: ExtractionRequestsService) extends SecuredController {
 
-  /**
-   * Directs currently running extractor's server IPs to the webpage
-   */
-
-  def getExtractorServersIP() = AuthenticatedAction.async(parse.json) { implicit request =>
-      for {
-        x <- ExtractionInfoSetUp.updateExtractorsInfo()
-        status <- x
-      } yield {
-
-        Logger.debug("Update Status:" + status)
-        val list_servers = extractors.getExtractorServerIPList()
-        var jarr = new JsArray()
-        var list_servers1=List[String]()
-        list_servers.map {
-          ls =>
-            Logger.debug("Server Name:  " + ls.substring(1, ls.size-1))
-            jarr = jarr :+ (Json.parse(ls))
-            list_servers1=ls.substring(1, ls.size-1)::list_servers1
-            }
-        Logger.debug("Json array for list of extractors server ips----" + jarr.toString)
-        Ok(views.html.extractorsServersIP(list_servers1,list_servers1.size))
-      }
-    }
-
 /**
  * Directs currently running extractors information to the webpage 
  */
@@ -52,15 +27,14 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
  * Directs input type supported by currently running extractors information to the webpage
  */
   def getExtractorInputTypes() = AuthenticatedAction { implicit request =>
-
     val list_inputtypes = extractors.getExtractorInputTypes()
     var jarr = new JsArray()
-    var list_inputtypes1=List[String]()
+    var list_inputtypes1 = List[String]()
     list_inputtypes.map {
       ls =>
-        Logger.debug("Extractor Input Type:  " + ls)
-        jarr = jarr :+ (Json.parse(ls))
-        list_inputtypes1=ls.substring(1, ls.size-1)::list_inputtypes1
+        Logger.info("Extractor Input Type:  " + ls)
+        jarr = jarr :+ JsString(ls)
+        list_inputtypes1 = ls :: list_inputtypes1
 
     }
     Logger.debug("Json array for list of input types supported by extractors----" + jarr.toString)
