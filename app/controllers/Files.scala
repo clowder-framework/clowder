@@ -42,7 +42,6 @@ class Files @Inject() (
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   previews: PreviewService,
-  sparql: RdfSPARQLService,
   users: UserService,
   events: EventService,
   thumbnails: ThumbnailService,
@@ -50,6 +49,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  adminsNotifierService: AdminsNotifierService,
   appConfig: AppConfigurationService) extends SecuredController {
 
   /**
@@ -198,7 +198,6 @@ class Files @Inject() (
         }
 
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
-        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val extractionsByFile = extractions.findById(new ResourceRef('file, id))
         val extractionGroups = extractions.groupByType(extractionsByFile)
@@ -237,7 +236,7 @@ class Files @Inject() (
             plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+                mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
           }
           case None =>
             Logger.debug("Polyglot plugin not found")
@@ -248,7 +247,7 @@ class Files @Inject() (
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
         }
       }
 
@@ -598,18 +597,9 @@ class Files @Inject() (
 
               current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
 
-              //add file to RDF triple store if triple store is used
-              if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                  case "yes" => sparql.addFileToGraph(f.id)
-                  case _ => {}
-                }
-              }
+              adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)
 
-              current.plugin[AdminsNotifierPlugin].foreach {
-                _.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)}
-
-              //Correctly set the updated URLs and data that is needed for the interface to correctly 
+              //Correctly set the updated URLs and data that is needed for the interface to correctly
               //update the display after a successful upload.
               val https = controllers.Utils.https(request)
               val retMap = Map("files" ->
@@ -966,13 +956,6 @@ class Files @Inject() (
               files.addXMLMetadata(f.id, xmlToJSON)
             }
 
-            //add file to RDF triple store if triple store is used
-            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-              play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                case "yes" => sparql.addFileToGraph(f.id)
-                case _ => {}
-              }
-            }
             // redirect to file page
             Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
           }
@@ -1069,13 +1052,6 @@ class Files @Inject() (
             else {
               current.plugin[ElasticsearchPlugin].foreach {
                 _.index(SearchUtils.getElasticsearchObject(f))
-              }
-            }
-            //add file to RDF triple store if triple store is used
-            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-              play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                case "yes" => sparql.addFileToGraph(f.id)
-                case _ => {}
               }
             }
             Ok(f.id.toString)
@@ -1194,17 +1170,6 @@ class Files @Inject() (
                     current.plugin[RabbitmqPlugin].foreach { rabbitMQ =>
                       rabbitMQ.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
                       rabbitMQ.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
-                    }
-
-                    // add file to RDF triple store if triple store is used
-                    if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-                      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                        case "yes" => {
-                          sparql.addFileToGraph(f.id)
-                          sparql.linkFileToDataset(f.id, dataset_id)
-                        }
-                        case _ => {}
-                      }
                     }
 
                     Logger.debug("Uploading Completed")

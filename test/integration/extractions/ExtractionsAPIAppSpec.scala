@@ -96,16 +96,6 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       info("content"+contentAsString(result))
     }
 
-    "respond to the getExtractorServerIPsAction" in {
-      val Some(result) = route(FakeRequest(GET, "/api/extractions/servers_ips?key=" + secretKey))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      contentAsString(result) must include ("Servers")
-      info("content"+contentAsString(result))
-    }
-
     "respond to the getExtractorSupportedInputTypesAction" in {
       val Some(result) = route(FakeRequest(GET, "/api/extractions/supported_input_types?key=" + secretKey))
       info("Status="+status(result))

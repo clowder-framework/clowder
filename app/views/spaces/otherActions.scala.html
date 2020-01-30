@@ -30,7 +30,7 @@
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
             </a></li>
         }
-        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
+        @if(play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false) && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
             <li><a class = "btn btn-xs btn-link btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-book"></span> Staging Area</a></li>
         }
         <li>@spaces.follow(space)</li>

@@ -41,7 +41,6 @@ class  Datasets @Inject()(
   extractions: ExtractionService,
   metadataService: MetadataService,
   contextService: ContextLDService,
-  rdfsparql: RdfSPARQLService,
   events: EventService,
   spaces: SpaceService,
   folders: FolderService,
@@ -49,6 +48,7 @@ class  Datasets @Inject()(
   userService: UserService,
   thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
+  adminsNotifierService: AdminsNotifierService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -232,10 +232,7 @@ class  Datasets @Inject()(
                     }
                   }
 
-                  current.plugin[AdminsNotifierPlugin].foreach {
-                    _.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
-                  }
-
+                  adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
 
                   Ok(toJson(Map("id" -> id)))
                 }
@@ -431,13 +428,6 @@ class  Datasets @Inject()(
         })
       }
 
-      //add file to RDF triple store if triple store is used
-      if (file.filename.endsWith(".xml")) {
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-          case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-        }
-      }
       Logger.debug("----- Adding file to dataset completed")
     } else {
         Logger.debug("File was already in dataset.")
@@ -512,14 +502,6 @@ class  Datasets @Inject()(
                   }
                 }
               })
-            }
-          }
-
-          //remove link between dataset and file from RDF triple store if triple store is used
-          if (file.filename.endsWith(".xml")) {
-            configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-              case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
-              case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
             }
           }
         }
@@ -622,66 +604,51 @@ class  Datasets @Inject()(
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
-            // parse request for JSON-LD model
-            var model: RDFModel = null
-            json.validate[RDFModel] match {
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatForm(e))
-                BadRequest(JsError.toFlatJson(e))
-              }
-              case s: JsSuccess[RDFModel] => {
-                model = s.get
+            //parse request for agent/creator info
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                val creator = s.get
 
-                //parse request for agent/creator info
-                //creator can be UserAgent or ExtractorAgent
-                var creator: models.Agent = null
-                json.validate[Agent] match {
-                  case s: JsSuccess[Agent] => {
-                    creator = s.get
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
 
-                    // check if the context is a URL to external endpoint
-                    val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
 
-                    // check if context is a JSON-LD document
-                    val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                      .map(contextService.addContext(new JsString("context name"), _))
+                // when the new metadata is added
+                val createdAt = new Date()
 
-                    // when the new metadata is added
-                    val createdAt = new Date()
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
-                    //parse the rest of the request to create a new models.Metadata object
-                    val attachedTo = ResourceRef(ResourceRef.dataset, id)
-                    val content = (json \ "content")
-                    val version = None
-                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                      content, version)
+                //add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
-                    //add metadata to mongo
-                    val metadataId = metadataService.addMetadata(metadata)
-                    val mdMap = metadata.getExtractionSummary
-
-                    //send RabbitMQ message
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                    }
-
-                    events.addObjectEvent(request.user, id, x.name,EventType.ADD_METADATA_DATASET.toString)
-
-                    datasets.index(id)
-                    Ok(toJson("Metadata successfully added to db"))
-
-                  }
-                  case e: JsError => {
-                    Logger.error("Error getting creator");
-                    BadRequest(toJson(s"Creator data is missing or incorrect."))
-                  }
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                 }
+
+                events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
+
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator");
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
               }
             }
           }
           case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
-      }
+     }
 
 
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -775,10 +742,6 @@ class  Datasets @Inject()(
     }
 
     datasets.index(id)
-    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-      case "yes" => datasets.setUserMetadataWasModified(id, true)
-      case _ => Logger.debug("userdfSPARQLStore not enabled")
-    }
     Ok(toJson(Map("status" -> "success")))
   }
 
@@ -1740,15 +1703,10 @@ class  Datasets @Inject()(
   def deleteDatasetHelper(id: UUID, request: UserRequest[AnyContent]) = {
     datasets.get(id) match {
       case Some(dataset) => {
-        //remove dataset from RDF triple store if triple store is used
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => rdfsparql.removeDatasetFromGraphs(id)
-          case _ => Logger.debug("userdfSPARQLStore not enabled")
-        }
         events.addObjectEvent(request.user, dataset.id, dataset.name, EventType.DELETE_DATASET.toString)
         datasets.removeDataset(id, Utils.baseUrl(request), request.apiKey, request.user)
 
-        current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
+        adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)
         Ok(toJson(Map("status"->"success")))
       }
       case None => Ok(toJson(Map("status" -> "success")))
@@ -1831,22 +1789,6 @@ class  Datasets @Inject()(
 
   }
 
-  def getRDFUserMetadata(id: UUID, mappingNumber: String="1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match{
-      case true => {
-        current.plugin[RDFExportService].get.getRDFUserMetadataDataset(id.toString, mappingNumber) match{
-          case Some(resultFile) =>{
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-              .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-              .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
-          }
-          case None => BadRequest(toJson("Dataset not found " + id))
-        }
-      }
-      case _ => Ok("RDF export plugin not enabled")
-    }
-  }
-
   def jsonToXML(theJSON: String): java.io.File = {
 
     val jsonObject = new JSONObject(theJSON)
@@ -1874,21 +1816,6 @@ class  Datasets @Inject()(
     return xmlFile
   }
 
-  def getRDFURLsForDataset(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match{
-      case true =>{
-        current.plugin[RDFExportService].get.getRDFURLsForDataset(id.toString)  match {
-          case Some(listJson) => {
-            Ok(listJson)
-          }
-          case None => Logger.error(s"Error getting dataset $id"); InternalServerError
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
-    }
-  }
 
   def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {

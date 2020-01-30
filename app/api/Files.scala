@@ -42,7 +42,6 @@ class Files @Inject()(
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
   previews: PreviewService,
-  sqarql: RdfSPARQLService,
   metadataService: MetadataService,
   contextService: ContextLDService,
   thumbnails: ThumbnailService,
@@ -51,6 +50,7 @@ class Files @Inject()(
   spaces: SpaceService,
   userService: UserService,
   appConfig: AppConfigurationService,
+  adminsNotifierService: AdminsNotifierService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
@@ -308,66 +308,53 @@ class Files @Inject()(
     files.get(id) match {
       case Some(x) => {
         val json = request.body
+        //parse request for agent/creator info
+        //creator can be UserAgent or ExtractorAgent
+        var creator: models.Agent = null
+        json.validate[Agent] match {
+          case s: JsSuccess[Agent] => {
+            creator = s.get
+            //if creator is found, continue processing
+            val context: JsValue = (json \ "@context")
 
-        // parse request for JSON-LD model
-        var model: RDFModel = null
-        json.validate[RDFModel] match {
-          case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + json.toString())
-            BadRequest(JsError.toFlatJson(e))
-          }
-          case s: JsSuccess[RDFModel] => {
-            model = s.get
+            // check if the context is a URL to external endpoint
+            val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
 
-            //parse request for agent/creator info
-            //creator can be UserAgent or ExtractorAgent
-            var creator: models.Agent = null
-            json.validate[Agent] match {
-              case s: JsSuccess[Agent] => {
-                creator = s.get
-                //if creator is found, continue processing
-                val context: JsValue = (json \ "@context")
+            // check if context is a JSON-LD document
+            val contextID: Option[UUID] =
+              if (context.isInstanceOf[JsObject]) {
+                context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+              } else if (context.isInstanceOf[JsArray]) {
+                context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+              } else None
 
-                // check if the context is a URL to external endpoint
-                val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+            // when the new metadata is added
+            val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
 
-                // check if context is a JSON-LD document
-                val contextID: Option[UUID] =
-                  if (context.isInstanceOf[JsObject]) {
-                    context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
-                  } else if (context.isInstanceOf[JsArray]) {
-                    context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
-                  } else None
+            //parse the rest of the request to create a new models.Metadata object
+            val attachedTo = ResourceRef(ResourceRef.file, id)
+            val content = (json \ "content")
+            val version = None
+            val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+              content, version)
 
-                // when the new metadata is added
-                val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
+            //add metadata to mongo
+            val metadataId = metadataService.addMetadata(metadata)
+            val mdMap = metadata.getExtractionSummary
 
-                //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef(ResourceRef.file, id)
-                val content = (json \ "content")
-                val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
-
-                //add metadata to mongo
-                val metadataId = metadataService.addMetadata(metadata)
-                val mdMap = metadata.getExtractionSummary
-
-                //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                }
-
-                events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
-
-                files.index(id)
-                Ok(toJson("Metadata successfully added to db"))
-              }
-              case e: JsError => {
-                Logger.error("Error getting creator")
-                BadRequest(toJson(s"Creator data is missing or incorrect."))
-              }
+            //send RabbitMQ message
+            current.plugin[RabbitmqPlugin].foreach { p =>
+              p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
             }
+
+            events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
+
+            files.index(id)
+            Ok(toJson("Metadata successfully added to db"))
+          }
+          case e: JsError => {
+            Logger.error("Error getting creator")
+            BadRequest(toJson(s"Creator data is missing or incorrect."))
           }
         }
       }
@@ -381,17 +368,6 @@ class Files @Inject()(
     try {
       val fileList: JsValue = (json \ "files")
       val metadata: JsValue = (json \ "metadata")
-
-      // parse request for JSON-LD model
-      var model: RDFModel = null
-      metadata.validate[RDFModel] match {
-        case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + metadata.toString())
-          BadRequest(JsError.toFlatJson(e))
-        }
-        case s: JsSuccess[RDFModel] => {
-          model = s.get
-
           //parse request for agent/creator info
           //creator can be UserAgent or ExtractorAgent
           var creator: models.Agent = null
@@ -443,8 +419,6 @@ class Files @Inject()(
               Logger.error("Error getting creator")
               BadRequest(toJson(s"Creator data is missing or incorrect."))
             }
-          }
-        }
       }
     } catch {
       case e: ClassCastException => {
@@ -672,42 +646,6 @@ class Files @Inject()(
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
-    }
-  }
-
-  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match {
-      case true => {
-        current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match {
-          case Some(resultFile) => {
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-              .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-              .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
-          }
-          case None => BadRequest(toJson("File not found " + id))
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
-    }
-  }
-
-  def getRDFURLsForFile(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match {
-      case true => {
-        current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify) match {
-          case Some(listJson) => {
-            Ok(listJson)
-          }
-          case None => {
-            Logger.error("Error getting file" + id); InternalServerError
-          }
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
     }
   }
 
@@ -1505,19 +1443,12 @@ class Files @Inject()(
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
 
-        //remove file from RDF triple store if triple store is used
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => {
-            if (file.filename.endsWith(".xml")) {
-              sqarql.removeFileFromGraphs(id, "rdfXMLGraphName")
-            }
-            sqarql.removeFileFromGraphs(id, "rdfCommunityGraphName")
-          }
-          case _ => {}
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete(id.stringify, "file")
         }
-        current.plugin[AdminsNotifierPlugin].foreach {
-          _.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
-        }
+
+        adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
+
         Ok(toJson(Map("status" -> "success")))
       }
       case None => Ok(toJson(Map("status" -> "success")))

@@ -200,13 +200,9 @@ trait DatasetService {
    */
   def getTags(user: Option[User]): Map[String, Long]
 
-  def modifyRDFOfMetadataChangedDatasets()
-
   def dumpAllDatasetGroupings(): List[String]
   
   def dumpAllDatasetMetadata(): List[String]
-
-  def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
 
   def addMetadata(id: UUID, json: String)
 
