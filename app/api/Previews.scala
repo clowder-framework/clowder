@@ -110,7 +110,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             if (f.contentType.getOrElse("application/octet-stream").equals("application/xml"))
               realContentType = Some("application/dzi")
 
-            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, realContentType))
+            val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, f.ref.file.length, realContentType))
             Logger.debug("ctp: " + realContentType)
 
             // Check whether a title for the preview was sent

@@ -408,7 +408,7 @@ class Files @Inject() (
             var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
               // store file
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
               val uploadedFile = f
               file match {
                 case Some(f) => {
@@ -520,7 +520,7 @@ class Files @Inject() (
 	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
 	        // store file       
-	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -1115,7 +1115,7 @@ class Files @Inject() (
                 Logger.debug("Uploading file " + nameOfFile)
                 val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
                 // save file bytes
-                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
                 val uploadedFile = f
 
                 // submit file for extraction

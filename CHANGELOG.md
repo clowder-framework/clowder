@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Scripts to migrate files on disk AWS S3.
+  [CATS-1034](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1034)
+
+### Changed
+- Include collection prefix in path when saving to S3.
+- Include length of file in `FileService` when saving the bytes to any backend service. This helps optimize S3 implementation.
+- Upgraded sbt from 0.13.0 to 0.13.6 to fix build failures.
+  [CATS-1038](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1038)
+
+### Fixed
+- Calling api/Files.removeFile should no longer decrement related counters twice.
+  [CATS-929](https://opensource.ncsa.illinois.edu/jira/browse/CATS-929)
+
 ## 1.8.0 - 2019-11-06
 **_Warning:_ This update adds a new permission for archiving files and adds it to the Admin role. Please make sure
 to run Clowder with the `MONGOUPDATE` flag set to update the database.**
