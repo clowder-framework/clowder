@@ -12,26 +12,28 @@ import play.api.libs.concurrent.Execution.Implicits._
 import akka.actor.Cancellable
 import java.net.InetAddress
 import java.util.regex.Pattern
+
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 
 import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.transport.InetSocketTransportAddress
+import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
-import org.elasticsearch.common.xcontent.XContentBuilder
+import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchResponse, SearchType}
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
-import org.elasticsearch.common.xcontent.XContentFactory._
-import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchResponse, SearchType}
-import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.ElasticsearchException
-import org.elasticsearch.indices.IndexAlreadyExistsException
+
+import org.elasticsearch.client.{RestClient, RestHighLevelClient, RequestOptions}
+import org.elasticsearch.client.indices.GetIndexRequest
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest
+import org.apache.http.HttpHost
+
 
 import api.Permission
-import models.{Collection, Dataset, File, ResourceRef, Section, TempFile, UUID, User, Tag, SearchResult, QueuedAction}
-import services.{CollectionService, CommentService, DatasetService, FileService, FolderService,
-  MetadataService, SearchService, QueueService}
+import models.{Collection, Dataset, File, QueuedAction, ResourceRef, SearchResult, Section, Tag, TempFile, UUID, User}
+import org.elasticsearch.node.Node
+import services.{CollectionService, CommentService, DatasetService, FileService, FolderService, MetadataService, QueueService, SearchService}
 
 
 /**
@@ -47,7 +49,7 @@ class ElasticsearchSearchService @Inject() (
                                     collections: CollectionService,
                                     metadatas: MetadataService,
                                     queue: QueueService) extends SearchService {
-  var client: Option[TransportClient] = None
+  var client: Option[RestHighLevelClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
   val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
@@ -71,17 +73,18 @@ class ElasticsearchSearchService @Inject() (
 
     try {
       val settings = if (nameOfCluster != "") {
-        Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+        Settings.builder().put("cluster.name", nameOfCluster).build()
       } else {
-        Settings.settingsBuilder().build()
+        Settings.builder().build()
       }
-      client = Some(TransportClient.builder().settings(settings).build()
-        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(serverAddress), serverPort)))
+
+      client = Some(new RestHighLevelClient(RestClient.builder(new HttpHost(serverAddress, serverPort))))
+
       Logger.debug("--- Elasticsearch Client is being created----")
       client match {
-        case Some(x) => {
-          val indexExists = x.admin().indices().prepareExists(nameOfIndex).execute().actionGet().isExists()
-          if (!indexExists) createIndex()
+        case Some(c) => {
+          if (!c.indices().exists(new GetIndexRequest(nameOfIndex), RequestOptions.DEFAULT))
+            createIndex()
           Logger.info("Connected to Elasticsearch")
           listen()
           true
@@ -111,7 +114,8 @@ class ElasticsearchSearchService @Inject() (
   def isEnabled(): Boolean = {
     client match {
       case Some(c) => {
-        if (c.connectedNodes().size() > 0) true
+        if (c.cluster().health(new ClusterHealthRequest(nameOfCluster), RequestOptions.DEFAULT).getNumberOfNodes > 0)
+          true
         else {
           Logger.debug("Elasticsearch node count is zero; attempting to reconnect")
           connect(true)
@@ -299,10 +303,10 @@ class ElasticsearchSearchService @Inject() (
     connect()
     val response = client match {
       case Some(x) => {
-        Logger.info("Searching Elasticsearch: "+queryObj.string())
+        Logger.info("Searching Elasticsearch: "+queryObj)
         var responsePrep = x.prepareSearch(nameOfIndex)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(queryObj)
+          .setQuery(  queryObj)
 
         responsePrep = responsePrep.setFrom(from.getOrElse(0))
         responsePrep = responsePrep.setSize(size.getOrElse(maxResults))
@@ -407,7 +411,7 @@ class ElasticsearchSearchService @Inject() (
             .addMapping("clowder_object", getElasticsearchObjectMappings())
             .execute().actionGet()
         } catch {
-          case e: IndexAlreadyExistsException => {
+          case e: ElasticsearchException => {
             Logger.debug("Index already exists; skipping creation.")
           }
         }
