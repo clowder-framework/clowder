@@ -65,10 +65,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     return DBResult(found, notFound)
   }
 
-  def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String) {
-    PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
-  }
-
   def findByFileId(id: UUID): List[Preview] = {
     PreviewDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).toList
   }
@@ -120,23 +116,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     for (tile <- tiles.get(p.id)) {
       tiles.remove(tile.id)
     }
-    // for IIP server references, also delete the files being referenced on the IIP server they reside
-    if (!p.iipURL.isEmpty) {
-      val httpclient = new DefaultHttpClient()
-      val httpPost = new HttpPost(p.iipURL.get + "/deleteFile.php")
-      val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE)
-      entity.addPart("key", new StringBody(p.iipKey.get, "text/plain",
-        Charset.forName("UTF-8")))
-      entity.addPart("file", new StringBody(p.iipImage.get, "text/plain",
-        Charset.forName("UTF-8")))
-      httpPost.setEntity(entity)
-      val imageUploadResponse = httpclient.execute(httpPost)
-      Logger.debug(imageUploadResponse.getStatusLine().toString())
-
-      val dirEntity = imageUploadResponse.getEntity()
-      Logger.debug("IIP server: " + EntityUtils.toString(dirEntity))
-    }
-
     if (!p.filename.isEmpty)
     // for oni previews, read the ONI frame references from the preview file and remove them
       if (p.filename.get.endsWith(".oniv")) {

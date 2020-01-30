@@ -99,7 +99,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Upload a preview.
    */
-  def upload(iipKey: String = "") =
+  def upload() =
     PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
         request.body.file("File").map { f =>
           try {
@@ -112,24 +112,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
             val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, realContentType))
             Logger.debug("ctp: " + realContentType)
-            // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
-            if (f.filename.endsWith(".imageurl")) {
-              val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
-
-              val serverLine = iipRefReader.readLine()
-              var urlEnd = serverLine.indexOf("/", serverLine.indexOf("://") + 3)
-              if (urlEnd == -1) {
-                urlEnd = serverLine.length()
-              }
-              val iipURL = serverLine.substring(8, urlEnd)
-
-              val imageLine = iipRefReader.readLine()
-              val iipImage = imageLine.substring(imageLine.lastIndexOf("/") + 1)
-
-              iipRefReader.close()
-
-              previews.setIIPReferences(id, iipURL, iipImage, iipKey)
-            }
 
             // Check whether a title for the preview was sent
             request.body.dataParts.get("title") match {

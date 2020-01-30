@@ -25,8 +25,6 @@ trait PreviewService {
 
   def get(previewIds: List[UUID]): DBResult[Preview]
 
-  def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String)
-
   def findByFileId(id: UUID): List[Preview]
 
   def findBySectionId(id: UUID): List[Preview]
