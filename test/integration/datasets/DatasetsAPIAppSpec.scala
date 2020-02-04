@@ -203,35 +203,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
       contentType(result_get) mustEqual Some("application/json")
       info("content"+contentAsString(result_get))
     }
-
-    "respond to the removeTags(id: UUID) function routed by POST /api/datasets/:id/tags/remove" in {
-      info("Working Directory: " + workingDir)
-      val file1 = new java.io.File(workingDir + "/test/data/datasets/dataset-test-tags-remove.json")
-      if (file1.isFile && file1.exists) {
-        Logger.debug("File1 is File:True")
-      }
-      info("File Pathing " + file1.toString)
-      val json_data_from_file_source = Source.fromFile(file1.toString)
-      val json_data_from_file_lines = json_data_from_file_source.mkString
-      json_data_from_file_source.close()
-
-      // Place file string into a JSON object
-      val json_tags: JsValue = Json.parse(json_data_from_file_lines)
-      val readableString_tags: String = Json.prettyPrint(json_tags)
-      info("Pretty JSON format")
-      info(readableString_tags)
-
-      //link up json file here before fake request.
-      val Some(result_get) = route(FakeRequest(POST, "/api/datasets/" + datasetId + "/tags/remove?key=" + secretKey).withJsonBody(json_tags))
-
-      status(result_get) mustEqual OK
-      info("Status_Get="+status(result_get))
-      info("contentType_Get="+contentType(result_get))
-      contentType(result_get) mustEqual Some("application/json")
-      info("content"+contentAsString(result_get))
-    }
-
-
+   
     "respond to the getTags(id:UUID) function routed by GET /api/datasets/:id/tags  " in {
       val Some(result_get) = route(FakeRequest(GET, "/api/datasets/" + datasetId + "/tags?key=" + secretKey))
       info("Status_Get="+status(result_get))
