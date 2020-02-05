@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.8.1 - 2020-01-29
+## 1.8.1 - 2020-02-05
 
 ### Removed
 - Removed unused RDF libraries. This was probably used by the rdf/xml functionality that was removed a while back but 
