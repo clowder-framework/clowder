@@ -48,6 +48,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  versusService: VersusService,
   adminsNotifierService: AdminsNotifierService,
   appConfig: AppConfigurationService,
   searches: SearchService) extends SecuredController {
@@ -453,10 +454,10 @@ class Files @Inject() (
                   val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
                   files.addXMLMetadata(f.id, xmlToJSON)
                 }
+
                 searches.index(f)
-                current.plugin[VersusPlugin].foreach {
-                  _.index(f.id.toString, fileType)
-                }
+
+                versusService.index(f.id.toString, fileType)
 
                 // redirect to extract page
                 Ok(views.html.extract(f.id))
@@ -579,7 +580,7 @@ class Files @Inject() (
 	            }
               searches.index(f)
 
-              current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
+              versusService.indexFile(f.id, fileType)
 
               adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)
 

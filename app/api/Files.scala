@@ -51,6 +51,7 @@ class Files @Inject()(
   userService: UserService,
   appConfig: AppConfigurationService,
   adminsNotifierService: AdminsNotifierService,
+  versusService: VersusService,
   searches: SearchService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
@@ -1436,9 +1437,7 @@ class Files @Inject()(
 
         //this stmt has to be before files.removeFile
         Logger.debug("Deleting file from indexes " + file.filename)
-        current.plugin[VersusPlugin].foreach {
-          _.removeFromIndexes(id)
-        }
+        versusService.removeFromIndexes(id)
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
 

@@ -27,6 +27,7 @@ class Search @Inject() (
   collections: CollectionService,
   queries: MultimediaQueryService,
   previews: PreviewService,
+  versusService: VersusService,
   searches: SearchService) extends SecuredController {
 
   /** Search using a simple text string */
@@ -73,36 +74,28 @@ class Search @Inject() (
    * */
   def searchbyURL(queryURL: String) = PermissionAction(Permission.ViewDataset).async { implicit request =>
       implicit val user = request.user
-      current.plugin[VersusPlugin] match {
-        case Some(plugin) => {
-          val futureFutureListResults = for {
-            indexList <- plugin.getIndexesAsFutureList()
-          } yield {
-            val resultListOfFutures = indexList.map {
-              index =>
-                plugin.queryIndexForURL(queryURL, index.id).map {
-                  queryResult =>
-                    (index, queryResult)
-                }
+      val futureFutureListResults = for {
+        indexList <- versusService.getIndexesAsFutureList()
+      } yield {
+        val resultListOfFutures = indexList.map {
+          index =>
+            versusService.queryIndexForURL(queryURL, index.id).map {
+              queryResult =>
+                (index, queryResult)
             }
-            //convert list of futures into a Future[list]
-            scala.concurrent.Future.sequence(resultListOfFutures)
-          } //End yield- outer for    	           
-          for {
-            futureListResults <- futureFutureListResults
-            listOfResults <- futureListResults
-          } yield {
-            //get the last part of the image url, send it to the view
-            val lastSlash = queryURL.lastIndexOf("/")
-            val fileName = queryURL.substring(lastSlash + 1)
-            Ok(views.html.multimediaSearchResults(fileName, None, None, listOfResults))
-          }
-        } //case some
-
-        case None => {
-          Future(Ok("No Versus Service"))
         }
-      } //match
+        //convert list of futures into a Future[list]
+        scala.concurrent.Future.sequence(resultListOfFutures)
+      } //End yield- outer for
+      for {
+        futureListResults <- futureFutureListResults
+        listOfResults <- futureListResults
+      } yield {
+        //get the last part of the image url, send it to the view
+        val lastSlash = queryURL.lastIndexOf("/")
+        val fileName = queryURL.substring(lastSlash + 1)
+        Ok(views.html.multimediaSearchResults(fileName, None, None, listOfResults))
+      }
   }
 
   /**
@@ -115,44 +108,31 @@ class Search @Inject() (
       //in controllers/Files -> uploadSelectQuery
       queries.get(fileID) match {
         case Some((inputStream, filename, contentType, length)) => {
-          current.plugin[VersusPlugin] match {
-            case Some(plugin) => {
-              val indexesToSearchFuture = for {
-                indexesForContent <- plugin.getIndexesForContentTypeAsFutureList(contentType)
-                indexesForType <- plugin.getIndexesForType(typeToSearch, sectionsSelected)
-              } yield indexesForContent.intersect(indexesForType)
+          val indexesToSearchFuture = for {
+            indexesForContent <- versusService.getIndexesForContentTypeAsFutureList(contentType)
+            indexesForType <- versusService.getIndexesForType(typeToSearch, sectionsSelected)
+          } yield indexesForContent.intersect(indexesForType)
 
-              val futureFutureListResults = for {
-                indexesToSearch <- indexesToSearchFuture
-              } yield {
-                val resultListOfFutures = indexesToSearch.map(
-                    index => plugin.queryIndexForNewFile(fileID, index.id).map(queryResult => (index, queryResult))
-                )
+          val futureFutureListResults = for {
+            indexesToSearch <- indexesToSearchFuture
+          } yield {
+            val resultListOfFutures = indexesToSearch.map(
+              index => versusService.queryIndexForNewFile(fileID, index.id).map(queryResult => (index, queryResult))
+            )
 
-                //convert list of futures into a Future[list]
-                scala.concurrent.Future.sequence(resultListOfFutures)
-              } //End yield    		
+            //convert list of futures into a Future[list]
+            scala.concurrent.Future.sequence(resultListOfFutures)
+          } //End yield
 
-              for {
-                futureListResults <- futureFutureListResults
-                listOfResults <- futureListResults
-              } yield {
-                // string thumbnail
-                // will change to UUID once models.File.thumbnail_id is changed to UUID
-                val thumb_id: String = queries.getFile(fileID).flatMap(_.thumbnail_id).map(_.stringify).getOrElse("")
-                Ok(views.html.multimediaSearchResults(filename, Some(fileID), Some(thumb_id), listOfResults))
-              }
-            } //end of case Some(plugin)   
-
-            case None => {
-              Future(Ok("No Versus Service"))
-            }
-          } //current.plugin[VersusPlugin] match  
-        } //case Some((inputStream...
-
-        case None => {
-          Logger.debug("File with id " + fileID + " not found")
-          Future(Ok("File with id " + fileID + " not found"))
+          for {
+            futureListResults <- futureFutureListResults
+            listOfResults <- futureListResults
+          } yield {
+            // string thumbnail
+            // will change to UUID once models.File.thumbnail_id is changed to UUID
+            val thumb_id: String = queries.getFile(fileID).flatMap(_.thumbnail_id).map(_.stringify).getOrElse("")
+            Ok(views.html.multimediaSearchResults(filename, Some(fileID), Some(thumb_id), listOfResults))
+          }
         }
       } //end of queries.get(imageID) match
   }
@@ -166,34 +146,26 @@ class Search @Inject() (
       //file will be stored in FileService
       files.getBytes(inputFileId) match {
         case Some((inputStream, filename, contentType, length)) => {
-          current.plugin[VersusPlugin] match {
-            case Some(plugin) => {
-              val futureFutureListResults = for {
-                indexList <- plugin.getIndexesForContentTypeAsFutureList(contentType)
-              } yield {
-                val resultListOfFutures = indexList.map {
-                  index =>
-                    plugin.queryIndexForExistingFile(inputFileId, index.id).map {
-                      queryResult => (index, queryResult)
-                    }
-                }
-                //convert list of futures into a Future[list]
-                scala.concurrent.Future.sequence(resultListOfFutures)
-              } //End yield- outer for    	
+          val futureFutureListResults = for {
+          indexList <- versusService.getIndexesForContentTypeAsFutureList(contentType)
+          } yield {
+          val resultListOfFutures = indexList.map {
+          index =>
+          versusService.queryIndexForExistingFile(inputFileId, index.id).map {
+          queryResult => (index, queryResult)
+          }
+          }
+            //convert list of futures into a Future[list]
+          scala.concurrent.Future.sequence(resultListOfFutures)
+          } //End yield- outer for
 
-              for {
-                futureListResults <- futureFutureListResults
-                listOfResults <- futureListResults
-              } yield {
-                //get  string thumbnail id for this file and pass on to view
-                val thumb_id = files.get(inputFileId).flatMap(_.thumbnail_id).getOrElse("")
-                Ok(views.html.multimediaSearchResults(filename, Some(inputFileId), Some(thumb_id), listOfResults))
-              }
-            } //end of case Some(plugin)                   
-
-            case None => {
-              Future(Ok("No Versus Service"))
-            }
+          for {
+          futureListResults <- futureFutureListResults
+          listOfResults <- futureListResults
+          } yield {
+            //get  string thumbnail id for this file and pass on to view
+          val thumb_id = files.get(inputFileId).flatMap(_.thumbnail_id).getOrElse("")
+          Ok(views.html.multimediaSearchResults(filename, Some(inputFileId), Some(thumb_id), listOfResults))
           } //current.plugin[VersusPlugin] match  
         } //case Some((inputStream...
 
@@ -301,45 +273,38 @@ class Search @Inject() (
               queries.get(fileId) match {
                 case Some(fileInfo) => {
                   val filename = fileInfo._2
-                  current.plugin[VersusPlugin] match {
-                    case Some(plugin) => {
-                      //get file and a list of indexes from request, query this file against each of these indexes 
-                      val queryResults = indexIDs.map(indId => plugin.queryIndexSorted(fileId.stringify, indId.stringify))
-                      //change a list of futures into a future list
-                      val futureListResults = scala.concurrent.Future.sequence(queryResults)
+                  val queryResults = indexIDs.map(indId => versusService.queryIndexSorted(fileId.stringify, indId.stringify))
+                  //change a list of futures into a future list
+                  val futureListResults = scala.concurrent.Future.sequence(queryResults)
 
-                      for {
-                        maps <- futureListResults
-                      } yield {
-                        //Calling helper method to merge all the maps. The magic happens here.
-                        val mergedMaps = mergeMaps(maps, weights)
+                  for {
+                    maps <- futureListResults
+                  } yield {
+                    //Calling helper method to merge all the maps. The magic happens here.
+                    val mergedMaps = mergeMaps(maps, weights)
 
-                        val mergedResult = for {
-                          (fileURL, prox) <- mergedMaps
-                        } yield {
-                          //fileURL = http://localhost:9000/api/files/54bebcb919aff1ea8c8145ac/blob?key=r1ek3rs
-                          //get id of the result
-                          val result_id = UUID(plugin.getIdFromVersusURL(fileURL))
+                    val mergedResult = for {
+                      (fileURL, prox) <- mergedMaps
+                    } yield {
+                      //fileURL = http://localhost:9000/api/files/54bebcb919aff1ea8c8145ac/blob?key=r1ek3rs
+                      //get id of the result
+                      val result_id = UUID(versusService.getIdFromVersusURL(fileURL))
 
-                          //find file name and thumbnail id for the result
-                          //TODO: add processing in case results are not whole files but _sections_ of files
-                          val oneFileName = files.get(result_id).map(_.filename).getOrElse("")
-                          val oneThumbnlId = files.get(result_id).flatMap(_.thumbnail_id).getOrElse("")
-                          (result_id, oneFileName, oneThumbnlId, prox)
-                        }
-                        //sort by combined proximity values
-                        val sortedMergedResults = mergedResult.toList sortBy { _._4 }
-                        //get an option of thumbnail id for this image and pass on to view
-                        val thumb_id = queries.getFile(fileId).flatMap(_.thumbnail_id)
-                        Ok(views.html.multimediaSearchResultsCombined(filename, thumb_id, sortedMergedResults))
-                      } //end of yield   					
-                    } //end of case Some(plugin)   
-                    case None => {
-                      Future(Ok("No Versus Service"))
+                      //find file name and thumbnail id for the result
+                      //TODO: add processing in case results are not whole files but _sections_ of files
+                      val oneFileName = files.get(result_id).map(_.filename).getOrElse("")
+                      val oneThumbnlId = files.get(result_id).flatMap(_.thumbnail_id).getOrElse("")
+                      (result_id, oneFileName, oneThumbnlId, prox)
                     }
-                  } //current.plugin[VersusPlugin] match  
-                } //case Some((inputStream...
-
+                    //sort by combined proximity values
+                    val sortedMergedResults = mergedResult.toList sortBy {
+                      _._4
+                    }
+                    //get an option of thumbnail id for this image and pass on to view
+                    val thumb_id = queries.getFile(fileId).flatMap(_.thumbnail_id)
+                    Ok(views.html.multimediaSearchResultsCombined(filename, thumb_id, sortedMergedResults))
+                  } //end of yield
+                }
                 case None => {
                   Logger.debug("File with id " + fileId + " not found")
                   Future(Ok("File with id " + fileId + " not found"))

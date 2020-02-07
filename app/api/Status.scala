@@ -21,6 +21,7 @@ class Status @Inject()(spaces: SpaceService,
                        users: UserService,
                        appConfig: AppConfigurationService,
                        extractors: ExtractorService,
+                       versusService: VersusService,
                        searches: SearchService) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
@@ -76,13 +77,11 @@ class Status @Inject()(spaces: SpaceService,
       }
 
       // versus
-      case p: VersusPlugin => {
-        result.put("versus", if (Permission.checkServerAdmin(user)) {
-          Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
-        } else {
-          jsontrue
-        })
-      }
+      result.put("versus", if (Permission.checkServerAdmin(user)) {
+        Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
+      } else {
+        jsontrue
+      })
 
       case p => {
         val name = p.getClass.getName

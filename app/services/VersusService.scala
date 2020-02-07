@@ -1,33 +1,33 @@
 package services
 
-import models.{ SearchResultFile, SearchResultPreview, PreviewFilesSearchResult, UUID }
-import play.api.mvc.Request
-import play.api.{ Plugin, Logger, Application }
-import play.api.libs.json.{ Json, JsValue }
-import play.api.libs.ws.{ WS, Response }
+import java.text.DecimalFormat
+
+import javax.inject.Inject
+import models.{PreviewFilesSearchResult, SearchResultFile, SearchResultPreview, UUID}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-import scala.concurrent.Future
-import java.text.DecimalFormat
-import scala.collection.mutable.ListBuffer
+import play.api.libs.json.{JsValue, Json}
+import play.api.libs.ws.{Response, WS}
+import play.api.mvc.Request
+import play.api.{ Logger}
+
 import scala.collection.immutable.Map
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.Future
 
 /**
  * Versus Plugin
  *
  */
-class VersusPlugin(application: Application) extends Plugin {
+class VersusService @Inject() (
+                              files: FileService,
+                              previews: PreviewService,
+                              datasets: DatasetService,
+                              sections: SectionService,
+                              queries: MultimediaQueryService,
+                              sectionIndexInfo: SectionIndexInfoService
 
-  val files: FileService = DI.injector.getInstance(classOf[FileService])
-  val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
-  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
-  val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
-  val queries: MultimediaQueryService = DI.injector.getInstance(classOf[MultimediaQueryService])
-  val sectionIndexInfo: SectionIndexInfoService = DI.injector.getInstance(classOf[SectionIndexInfoService])
-
-  override def onStart() {
-    Logger.debug("Starting Versus Plugin")
-  }
+                              ) {
 
   /*
  * This method sends the file's url to Versus for the extraction of descriptors from the file
@@ -709,9 +709,5 @@ class VersusPlugin(application: Application) extends Plugin {
 
       } //END OF : previews.get(preview_id) match        
     }
-
-  override def onStop() {
-    Logger.debug("Shutting down Versus Plugin")
-  }
 
 }
