@@ -53,6 +53,8 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[StandardVocabularyService]).to(get("service.standardvocabulary", "services.mongodb.MongoDBStandardVocabularyService"))
     bind(classOf[SelectionService]).to(get("service.select", "services.mongodb.MongoDBSelectionService"))
     bind(classOf[FileLinkService]).to(get("service.FileLinkService", "services.mongodb.MongoDBFileLinkService"))
+    bind(classOf[SearchService]).to(get("service.SearchService", "services.elasticsearch.ElasticsearchSearchService"))
+    bind(classOf[QueueService]).to(get("service.QueueService", "services.mongodb.MongoDBQueueService"))
   }
 
   protected def get[T](key: String, missing: String) : Class[T] = {

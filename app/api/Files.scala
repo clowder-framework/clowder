@@ -6,7 +6,7 @@ import java.net.{URL, URLEncoder}
 
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils, SearchUtils}
+import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
 import com.mongodb.casbah.Imports._
 import controllers.Previewers
 import jsonutils.JsonUtil
@@ -51,7 +51,7 @@ class Files @Inject()(
   userService: UserService,
   appConfig: AppConfigurationService,
   adminsNotifierService: AdminsNotifierService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  searches: SearchService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -552,9 +552,8 @@ class Files @Inject()(
   def reindex(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        val success = esqueue.queue("index_file", new ResourceRef('file, id))
-        if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
-        else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
+        files.index(id)
+        Ok(toJson(s"File $id reindexed"))
       }
       case None => {
         Logger.error("Error getting file" + id)
@@ -1443,9 +1442,7 @@ class Files @Inject()(
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
 
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify, "file")
-        }
+        searches.delete(id.stringify, "file")
 
         adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
 
@@ -1524,11 +1521,7 @@ class Files @Inject()(
 
   def index(id: UUID) {
     files.get(id) match {
-      case Some(file) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(SearchUtils.getElasticsearchObject(file))
-        }
-      }
+      case Some(file) => searches.index(file)
       case None => Logger.error("File not found: " + id)
     }
   }

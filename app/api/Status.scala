@@ -21,7 +21,7 @@ class Status @Inject()(spaces: SpaceService,
                        users: UserService,
                        appConfig: AppConfigurationService,
                        extractors: ExtractorService,
-                       elasticqueue: ElasticsearchQueue) extends ApiController {
+                       searches: SearchService) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
 
@@ -40,6 +40,14 @@ class Status @Inject()(spaces: SpaceService,
   def getPlugins(user: Option[User]): JsValue = {
     val result = new mutable.HashMap[String, JsValue]()
 
+    if (searches.isEnabled()) {
+      result.put("elasticsearch", if (Permission.checkServerAdmin(user)) {
+        searches.getInformation()
+      } else Json.obj({ "status" -> "connected"}))
+    } else {
+      result.put("elasticsearch", Json.obj("status" -> "disconnected"))
+    }
+
     current.plugins foreach {
       // mongo
       case p: MongoSalatPlugin => {
@@ -49,24 +57,6 @@ class Status @Inject()(spaces: SpaceService,
             } else {
               jsontrue
             })
-      }
-
-      // elasticsearch
-      case p: ElasticsearchPlugin => {
-        val status = if (p.isEnabled()) {
-          "connected"
-        } else {
-          "disconnected"
-        }
-
-        result.put("elasticsearch", if (Permission.checkServerAdmin(user)) {
-          Json.obj("server" -> p.serverAddress,
-            "clustername" -> p.nameOfCluster,
-            "queue" -> elasticqueue.status(),
-            "status" -> status)
-        } else {
-          Json.obj("status" -> status)
-        })
       }
 
       // rabbitmq

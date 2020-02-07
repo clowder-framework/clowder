@@ -39,6 +39,7 @@ object FileUtils {
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
   lazy val adminsNotifier: AdminsNotifierService = DI.injector.getInstance(classOf[AdminsNotifierService])
+  lazy val searches : SearchService = DI.injector.getInstance(classOf[SearchService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -763,9 +764,7 @@ object FileUtils {
 
     // index the file
     if (index) {
-      current.plugin[ElasticsearchPlugin].foreach {
-        _.index(file)
-      }
+      searches.index(file)
     }
 
     // notify admins a new file was added

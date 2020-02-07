@@ -1,4 +1,4 @@
-package services
+package services.mongodb
 
 import java.util.Date
 
@@ -14,97 +14,82 @@ import play.api.libs.json.{Json, JsObject}
 import play.libs.Akka
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoContext.context
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import org.bson.types.ObjectId
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 
+import services.QueueService
+
+
 /**
- * Generic queue service.
+ *  Queue service that keeps queues in persistent Mongo collection.
  *
  */
-trait MongoDBQueueService {
-  val consumer: String
-  var disabledNotified: Boolean = false
-  var queueTimer: Cancellable = null
+class MongoDBQueueService extends QueueService {
+  val defaultQueueName: String = "default_queue"
 
-  // check whether necessary conditions are met (e.g. the plugin is enabled)
-  def enabled(): Boolean = {
-    return false
-  }
-
-  def status(): JsObject = {
-    if (enabled) {
-      Json.obj("enabled" -> true, "queued" -> Queue.count())
-    } else {
-      Json.obj("enabled" -> false)
+  // return object description of Queue Service status
+  def status(queueName: String): JsObject = {
+    current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => {
+        val dao = new SalatDAO[QueuedAction, ObjectId](collection = x.collection(s"queue.${queueName}")) {}
+        Json.obj("enabled" -> true, "queued" -> dao.count())
+      }
     }
   }
 
-  // add action to the queue
-  def queue(action: String): Boolean = _queue(new QueuedAction(action=action))
+  // add action to the queue/
+  def queue(action: String, queueName: String): Boolean =
+    _queue(new QueuedAction(action=action), queueName)
 
   // add action to the queue with handler parameters
-  def queue(action: String, parameters: ElasticsearchParameters): Boolean = _queue(new QueuedAction(action=action, elastic_parameters=Some(parameters)))
+  def queue(action: String, parameters: ElasticsearchParameters, queueName: String): Boolean =
+    _queue(new QueuedAction(action=action, elastic_parameters=Some(parameters)), queueName)
 
   // add action to the queue with target resource
-  def queue(action: String, target: ResourceRef): Boolean = _queue(new QueuedAction(action=action, target=Some(target)))
+  def queue(action: String, target: ResourceRef, queueName: String): Boolean =
+    _queue(new QueuedAction(action=action, target=Some(target)), queueName)
 
   // add action to the queue with target resource and handler parameters
-  def queue(action: String, target: ResourceRef, parameters: ElasticsearchParameters): Boolean = _queue(new QueuedAction(action=action, target=Some(target), elastic_parameters=Some(parameters)))
+  def queue(action: String, target: ResourceRef, parameters: ElasticsearchParameters, queueName: String): Boolean =
+    _queue(new QueuedAction(action=action, target=Some(target), elastic_parameters=Some(parameters)), queueName)
 
-  private def _queue(queueAction: QueuedAction): Boolean = {
-    if (enabled) {
-      Queue.insert(queueAction) match {
-        case Some(id) => true
-        case None => false
-      }
-    } else {
-      if (!disabledNotified) {
-        Logger.debug(s"Queuing for ${consumer} is disabled")
-        disabledNotified = true
-      }
-      false
-    }
-  }
-
-  // get next entry from queue
-  def getNextQueuedAction(): Option[QueuedAction] = {
-    return Queue.findOne(new MongoDBObject)
-  }
-
-  // start pool to being processing queue actions
-  def listen() = {
-    if (queueTimer == null) {
-      // TODO: Need to make these in a separate pool
-      queueTimer = Akka.system().scheduler.schedule(0 seconds, 5 millis) {
-        getNextQueuedAction match {
-          case Some(qa) => handleQueuedAction(qa)
-          case None => {}
+  private def _queue(queueAction: QueuedAction, queueName: String): Boolean = {
+    current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => {
+        val dao = new SalatDAO[QueuedAction, ObjectId](collection = x.collection(s"queue.${queueName}")) {}
+        dao.insert(queueAction) match {
+          case Some(id) => true
+          case None => false
         }
       }
     }
   }
 
-  // wrapper for processing next action in queue
-  def handleQueuedAction(action: QueuedAction) = {
-    try {
-      handler(action)
-      Queue.remove(action)
-    }
-    catch {
-      case except: Throwable => {
-        Logger.error(s"Error handling ${action.action}: ${except}")
-        Queue.remove(action)
+  // get next entry from queue
+  def getNextQueuedAction(queueName: String): Option[QueuedAction] = {
+    current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(x) => {
+        val dao = new SalatDAO[QueuedAction, ObjectId](collection = x.collection(s"queue.${queueName}")) {}
+        dao.findOne(new MongoDBObject)
       }
     }
   }
 
-  // process the next action in the queue
-  def handler(action: QueuedAction)
-
-  object Queue extends ModelCompanion[QueuedAction, ObjectId] {
-    val dao = current.plugin[MongoSalatPlugin] match {
+  // remove entry from queue
+  def removeQueuedAction(action: QueuedAction, queueName: String) = {
+    current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[QueuedAction, ObjectId](collection = x.collection(s"queue.${consumer}")) {}
+      case Some(x) => {
+        val dao = new SalatDAO[QueuedAction, ObjectId](collection = x.collection(s"queue.${queueName}")) {}
+        dao.remove(action)
+      }
     }
   }
 }
+
+

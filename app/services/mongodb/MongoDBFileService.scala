@@ -6,7 +6,7 @@ import models._
 import com.mongodb.casbah.commons.{Imports, MongoDBObject}
 import java.text.SimpleDateFormat
 
-import _root_.util.{License, Parsers, SearchUtils}
+import _root_.util.{License, Parsers}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -60,7 +60,7 @@ class MongoDBFileService @Inject() (
   metadatas: MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends FileService {
+  searches: SearchService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -329,12 +329,7 @@ class MongoDBFileService @Inject() (
   }
 
   def index(id: UUID) {
-    try
-      esqueue.queue("index_file", new ResourceRef('file, id))
-    catch {
-      case except: Throwable => Logger.error(s"Error queuing file ${id.stringify}: ${except}")
-      case _ => Logger.error(s"Error queuing file ${id.stringify}")
-    }
+    searches.index(new ResourceRef('file, id))
   }
 
   /**
@@ -759,9 +754,8 @@ class MongoDBFileService @Inject() (
         FileDAO.removeById(file.id)
         appConfig.incrementCount('files, -1)
         appConfig.incrementCount('bytes, -file.length)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
-        }
+
+        searches.delete(id.stringify)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)

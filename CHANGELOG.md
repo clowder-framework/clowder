@@ -31,6 +31,9 @@ Clowder runs in a location that doesn't not have access to https://clowderframew
 - Include length of file in `FileService` when saving the bytes to any backend service. This helps optimize S3 implementation.
 - Upgraded sbt from 0.13.0 to 0.13.6 to fix build failures.
   [CATS-1038](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1038)
+- Remove Elasticsearch plugin and replace it with a `SearchService` framework and implementation. This separates out the 
+  logic that handles queuing and the logic that handles searching and indexing to be more modular and includes a memory-
+  based queuing service in addition to the MongoDB service.
 
 ### Fixed
 - Calling api/Files.removeFile should no longer decrement related counters twice.
