@@ -48,6 +48,7 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  fileConvertService: FileConvertService,
   versusService: VersusService,
   adminsNotifierService: AdminsNotifierService,
   appConfig: AppConfigurationService,
@@ -219,39 +220,31 @@ class Files @Inject() (
           }
         }
 
-        //call Polyglot to get all possible output formats for this file's content type
-        current.plugin[PolyglotPlugin] match {
-          case Some(plugin) => {
-            Logger.debug("Polyglot plugin found")
 
-            // Increment view count for file
-            val (view_count, view_date) = files.incrementViews(id, user)
+        // Increment view count for file
+        val (view_count, view_date) = files.incrementViews(id, user)
 
-            val fname = file.filename
-            //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
-            val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
-            //drop all elements left of last divider index
-            val contentTypeEnding = fname.drop(lastDividerIndex)
-            Logger.debug("file name ends in " + contentTypeEnding)
-            //get output formats from Polyglot plugin and pass as the last parameter to view
-            plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
-              Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-                extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
-          }
-          case None =>
-            Logger.debug("Polyglot plugin not found")
+        val fname = file.filename
+        //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
+        val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
+        //drop all elements left of last divider index
+        val contentTypeEnding = fname.drop(lastDividerIndex)
+        Logger.debug("file name ends in " + contentTypeEnding)
 
-            // Increment view count for file
-            val (view_count, view_date) = files.incrementViews(id, user)
+        //call FileTransferService to get all possible output formats for this file's content type
 
-            //passing None as the last parameter (list of output formats)
-            Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
+        if (play.Play.application().configuration().getBoolean("fileconvertService")) {
+          //get output formats from Polyglot plugin and pass as the last parameter to view
+          fileConvertService.getOutputFormats(contentTypeEnding).map(outputFormats =>
+            Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+        } else {
+          Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
+            extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
+            mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
         }
       }
-
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
@@ -738,81 +731,73 @@ class Files @Inject() (
    */
   def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {
+      files.get(id) match {
+        case Some(file) => {
+          //get bytes for file to be converted
+          files.getBytes(id) match {
+            case Some((inputStream, filename, contentType, contentLength)) => {
 
-    current.plugin[PolyglotPlugin] match {
-      case Some(plugin) => {
-        if (UUID.isValid(id.stringify)) {
-          files.get(id) match {
-            case Some(file) => {
-              //get bytes for file to be converted
-              files.getBytes(id) match {
-                case Some((inputStream, filename, contentType, contentLength)) => {
+              //prepare encoded file name for converted file
+              val lastSeparatorIndex = file.filename.replace("_", ".").lastIndexOf(".")
+              val outputFileName = file.filename.substring(0, lastSeparatorIndex) + "." + outputFormat
 
-                  //prepare encoded file name for converted file
-                  val lastSeparatorIndex = file.filename.replace("_", ".").lastIndexOf(".")
-                  val outputFileName = file.filename.substring(0, lastSeparatorIndex) + "." + outputFormat
-                  
-                  //create local temp file to save polyglot output
-                  val tempFileName = "temp_converted_file." + outputFormat
-                  val tempFile: java.io.File = new java.io.File(tempFileName)
-                  tempFile.deleteOnExit()
+              //create local temp file to save polyglot output
+              val tempFileName = "temp_converted_file." + outputFormat
+              val tempFile: java.io.File = new java.io.File(tempFileName)
+              tempFile.deleteOnExit()
 
-                  val outputStream: OutputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
+              val outputStream: OutputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
 
-                  val polyglotUser: Option[String] = configuration.getString("polyglot.username")
-                  val polyglotPassword: Option[String] = configuration.getString("polyglot.password")
-                  val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
+              val fileConvertUser: Option[String] = configuration.getString("fileconvert.username")
+              val fileConvertPassword: Option[String] = configuration.getString("fileconvert.password")
+              val fileConvertConvertURL: Option[String] = configuration.getString("fileconvert.convertURL")
 
-                  if (polyglotConvertURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
-                    files.incrementDownloads(id, user)
+              if (fileConvertConvertURL.isDefined && fileConvertUser.isDefined && fileConvertPassword.isDefined) {
+                files.incrementDownloads(id, user)
 
-                    //first call to Polyglot to get url of converted file
-                    plugin.getConvertedFileURL(filename, inputStream, outputFormat)
-                      .flatMap {
-                        convertedFileURL =>
-                          val triesLeft = 30
-                          //Cponverted file is initially empty. Have to wait for Polyglot to finish conversion.
-                          //keep checking until file exists or until too many tries
-                          //returns future success only if file is found and downloaded
-                          plugin.checkForFileAndDownload(triesLeft, convertedFileURL, outputStream)
-                      }.map {
-                        x =>
-                          //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
-                          Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName)))
-                            .withHeaders(CONTENT_TYPE -> "some-content-Type")
-                            .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(outputFileName, request.headers.get("user-agent").getOrElse(""))))
-                      }.recover {
-                        case t =>
-                          Logger.debug("Failed:  " + t.getMessage())
-                          BadRequest("Error: " + t.getMessage())
-                      }
-                  } //end of if defined config params
-                  else {
-                    Logger.error("Could not get configuration parameters.")
-                    Future(BadRequest("Could not get configuration parameters."))
-                  }
-                } //end of case Some
-                case None => {
-                  Logger.error("Error getting file " + id)
-                  Future(BadRequest("File with this id not found"))
+                //first call to Polyglot to get url of converted file
+                fileConvertService.getConvertedFileURL(filename, inputStream, outputFormat)
+                  .flatMap {
+                    convertedFileURL =>
+                      val triesLeft = 30
+                      //Cponverted file is initially empty. Have to wait for Polyglot to finish conversion.
+                      //keep checking until file exists or until too many tries
+                      //returns future success only if file is found and downloaded
+                      fileConvertService.checkForFileAndDownload(triesLeft, convertedFileURL, outputStream)
+                  }.map {
+                  x =>
+                    //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
+                    Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName)))
+                      .withHeaders(CONTENT_TYPE -> "some-content-Type")
+                      .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(outputFileName, request.headers.get("user-agent").getOrElse(""))))
+                }.recover {
+                  case t =>
+                    Logger.debug("Failed:  " + t.getMessage())
+                    BadRequest("Error: " + t.getMessage())
                 }
+              } //end of if defined config params
+              else {
+                Logger.error("Could not get configuration parameters.")
+                Future(BadRequest("Could not get configuration parameters."))
               }
-            }
+            } //end of case Some
             case None => {
-              //File could not be found
-              Logger.error(s"Error getting the file with id $id.")
-              Future(BadRequest("Invalid file ID"))
+              Logger.error("Error getting file " + id)
+              Future(BadRequest("File with this id not found"))
             }
           }
-        } //end of if (UUID.isValid(id.stringify))
-        else {
-          Logger.error(s"The given id $id is not a valid ObjectId.")
-          Future(BadRequest(toJson(s"The given id $id is not a valid ObjectId.")))
         }
-      } //end of case Some(plugin)
-      case None =>
-        Logger.debug("Polyglot plugin not found")
-        Future(Ok("Plugin not found"))
+        case None => {
+          //File could not be found
+          Logger.error(s"Error getting the file with id $id.")
+          Future(BadRequest("Invalid file ID"))
+        }
+      }
+    } //end of if (UUID.isValid(id.stringify))
+    else {
+      Logger.error(s"The given id $id is not a valid ObjectId.")
+      Future(BadRequest(toJson(s"The given id $id is not a valid ObjectId.")))
     }
   }
 
