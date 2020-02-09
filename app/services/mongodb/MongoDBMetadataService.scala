@@ -149,9 +149,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService,
     }
 
     // send extractor message after attached to resource
-    metadataDocs.foreach { m =>
-      extractionBusService.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      metadataDocs.foreach { m =>
+        p.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
+      }
     }
+
     metadataDocs.map(m => m.id)
   }
 
@@ -173,8 +176,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService,
     }
 
     // send extractor message after attached to resource
-    metadataDocs.foreach { m =>
-      extractionBusService.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      metadataDocs.foreach { m =>
+        p.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
+      }
     }
 
     metadataDocs.map(m => m.id)

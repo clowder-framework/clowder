@@ -40,6 +40,7 @@ object FileUtils {
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
   lazy val extractionBusService : ExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
   lazy val adminsNotifier: AdminsNotifierService = DI.injector.getInstance(classOf[AdminsNotifierService])
+  lazy val searches : SearchService = DI.injector.getInstance(classOf[SearchService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -609,7 +610,7 @@ object FileUtils {
     }
 
     // actually save the file
-    ByteStorageService.save(new FileInputStream(path), "uploads") match {
+    ByteStorageService.save(path, "uploads") match {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
@@ -655,7 +656,8 @@ object FileUtils {
   private def saveURL(file: File, url: URL, host: String, apiKey: Option[String], user: Option[User]): Option[File] = {
     // actually save the file
     val conn = url.openConnection()
-    ByteStorageService.save(conn.getInputStream, "uploads") match {
+
+    ByteStorageService.save(conn.getInputStream, "uploads", conn.getContentLength) match {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
@@ -759,9 +761,7 @@ object FileUtils {
 
     // index the file
     if (index) {
-      current.plugin[ElasticsearchPlugin].foreach {
-        _.index(file)
-      }
+      searches.index(file)
     }
 
     // notify admins a new file was added

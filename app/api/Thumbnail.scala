@@ -93,7 +93,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
         case _ => {
           Logger.debug("Uploading thumbnail " + f.filename)
         // store file
-        val id = thumbnails.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+        val id = thumbnails.save(new FileInputStream(f.ref.file), f.filename, f.ref.file.length, f.contentType)
         Ok(toJson(Map("id"->id)))
         }
       }

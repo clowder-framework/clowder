@@ -15,7 +15,7 @@ import java.util.Date
 
 import org.bson.types.ObjectId
 import play.api.Logger
-import util.{Formatters, SearchUtils}
+import util.{Formatters}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
@@ -42,7 +42,7 @@ class MongoDBCollectionService @Inject() (
   events:EventService,
   spaces:SpaceService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue)  extends CollectionService {
+  searches: SearchService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -840,9 +840,7 @@ class MongoDBCollectionService @Inject() (
 
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
         appConfig.incrementCount('collections, -1)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(collection.id.stringify)
-        }
+        searches.delete(collection.id.stringify)
 
         Success
       }
@@ -900,12 +898,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def index(id: UUID) {
-    try
-      esqueue.queue("index_collection", new ResourceRef('collection, id))
-    catch {
-      case except: Throwable => Logger.error(s"Error queuing collection ${id.stringify}: ${except}")
-      case _ => Logger.error(s"Error queuing collection ${id.stringify}")
-    }
+    searches.index(new ResourceRef('collection, id))
   }
 
   def addToSpace(collectionId: UUID, spaceId: UUID): Unit = {

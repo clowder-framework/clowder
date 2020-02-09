@@ -25,8 +25,6 @@ trait PreviewService {
 
   def get(previewIds: List[UUID]): DBResult[Preview]
 
-  def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String)
-
   def findByFileId(id: UUID): List[Preview]
 
   def findBySectionId(id: UUID): List[Preview]
@@ -38,24 +36,12 @@ trait PreviewService {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String
 
   /**
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)]
-
-  /**
-   * Add annotation to 3D model preview.
-   */
-  def annotation(id: UUID, annotation: ThreeDAnnotation)
-
-  def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation]
-
-  def updateAnnotation(preview_id: UUID, annotation_id: UUID, description: String)
-
-
-  def listAnnotations(preview_id: UUID): List[ThreeDAnnotation]
 
   def removePreview(p: Preview)
 

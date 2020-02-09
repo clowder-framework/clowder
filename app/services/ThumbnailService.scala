@@ -29,7 +29,7 @@ trait ThumbnailService {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String
 
   /**
    * Get blob.

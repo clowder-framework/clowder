@@ -508,20 +508,6 @@ class Files @Inject()(
     }
 
   /**
-    * Upload file using multipart form enconding.
-    */
-  @deprecated
-  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = showPreviews, originalZipFile = originalZipFile,
-      flagsFromPrevious = flagsFromPrevious, apiKey = request.apiKey)
-    uploadedFiles.length match {
-      case 0 => BadRequest("No files uploaded")
-      case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
-      case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
-    }
-  }
-
-  /**
     * Upload a file to a specific dataset
     */
   def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>

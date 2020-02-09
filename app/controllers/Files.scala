@@ -572,7 +572,7 @@ class Files @Inject() (
 
               adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)
 
-              //Correctly set the updated URLs and data that is needed for the interface to correctly 
+              //Correctly set the updated URLs and data that is needed for the interface to correctly
               //update the display after a successful upload.
               val https = controllers.Utils.https(request)
               val retMap = Map("files" ->
@@ -1113,9 +1113,13 @@ class Files @Inject() (
                     // FIXME create a service instead of calling salat directly
                     datasets.addFile(dataset.id, files.get(f.id).get)
 
-                    // index dataset and file
-                    searches.index(dataset, true)
-                    searches.index(f)
+                    // index in Elasticsearch
+                    current.plugin[ElasticsearchPlugin].foreach { es =>
+                      // index dataset
+                      datasets.index(dataset_id)
+                      // index file
+                      es.index(SearchUtils.getElasticsearchObject(f))
+                    }
 
                     // notify extractors that a file has been uploaded and added to a dataset
                     extractionBusService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)

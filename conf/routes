@@ -38,10 +38,6 @@ POST           /ldap/authenticate                                               
 # ----------------------------------------------------------------------
 # PROFILE
 # ----------------------------------------------------------------------
-# deprecated use profile/:uuid
-GET            /profile/viewProfile                                                     @controllers.Profile.viewProfile(email: Option[String])
-# deprecated use profile/:uuid
-GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 POST           /profile/submitChanges                                                   @controllers.Profile.submitChanges
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
@@ -88,16 +84,10 @@ GET            /files/following                                                 
 GET            /files/:id                                                               @controllers.Files.file(id: UUID, dataset: Option[String] ?= None, space: Option[String] ?= None, folder: Option[String] ?= None)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
 GET            /files/:id/download/:format                                              @controllers.Files.downloadAsFormat(id: UUID, format: String)
-#GET           /queries/:id/blob				                                        @controllers.Files.downloadquery(id: UUID)
-#GET           /files/:id/similar                                                       @controllers.Files.findSimilar(id: UUID)
 POST           /upload                                                                  @controllers.Files.upload
 POST           /uploadSelectQuery                                                       @controllers.Files.uploadSelectQuery
-#POST          /uploadAjax					                                            @controllers.Files.uploadAjax
 POST           /uploaddnd/:id                                                           @controllers.Files.uploaddnd(id: UUID)
-#POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
-# deprecrated use thumbnails
-GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
 
@@ -182,7 +172,6 @@ GET            /tags/list/weighted                                              
 # ----------------------------------------------------------------------
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
 GET            /multimediasearch                                                        @controllers.Search.multimediasearch
-#GET           /multimediaserach1                                                       @controllers.Search.multimediasearch1(f, id: UUID)
 GET            /advanced                                                                @controllers.Search.advanced
 GET            /SearchByText                                                            @controllers.Search.SearchByText(query: String ?= "")
 POST           /uploadquery                                                             @controllers.Search.uploadquery
@@ -298,13 +287,8 @@ DELETE         /api/files/:id/metadata.jsonld                                   
 POST           /api/files/metadata.jsonld                                               @api.Files.addBatchMetadataJsonLD()
 GET            /api/files/metadata.jsonld                                               @api.Files.getBatchMetadataJsonLD()
 
-
-
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
 DELETE         /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)
-
-#GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
-
 GET            /api/metadata/definition/:id                                             @api.Metadata.getMetadataDefinition(id: UUID)
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/distinctdefinitions                                        @api.Metadata.getDefinitionsDistinctName()
@@ -314,10 +298,8 @@ GET            /api/metadata/url/*in_url                                        
 PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID, spaceId: Option[String] ?= None)
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition()
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
-
 GET            /api/metadata/people		                                        		@api.Metadata.listPeople(term: String, limit:Int)
 GET            /api/metadata/people/:pid 		                                        @api.Metadata.getPerson(pid: String)
-
 GET            /api/metadata/repository/:id 		                                    @api.Metadata.getRepository(id: String)
 # ----------------------------------------------------------------------
 # LOGOS ENDPOINT
@@ -336,13 +318,9 @@ DELETE         /api/logos/:path/:name                                           
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
 # ----------------------------------------------------------------------
-POST           /api/files/:three_d_file_id/geometries/:geometry_id                      @api.Files.attachGeometry(three_d_file_id: UUID,geometry_id: UUID)
-POST           /api/files/:three_d_file_id/3dTextures/:texture_id                       @api.Files.attachTexture(three_d_file_id: UUID,texture_id: UUID)
 POST           /api/files/:file_id/thumbnails/:thumbnail_id                             @api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
 POST           /api/queries/:file_id/thumbnails/:thumbnail_id                           @api.Files.attachQueryThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET            /api/files                                                               @api.Files.list
-POST           /api/files                                                               @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
-POST           /api/files/withFlags/:flags                                              @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/files/searchusermetadata                                            @api.Files.searchFilesUserMetadata
 POST           /api/files/searchmetadata                                                @api.Files.searchFilesGeneralMetadata
 POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String, extract: Boolean ?= true)
@@ -351,9 +329,6 @@ PUT            /api/files/:id/updateDescription                                 
 POST           /api/files/uploadIntermediate/:idAndFlags                                @api.Files.uploadIntermediate(idAndFlags)
 POST           /api/files/sendJob/:fileId/:fileType                                     @api.Files.sendJob(fileId: UUID,fileType)
 GET            /api/files/:id/blob                                                      @api.Files.download(id: UUID, tracking: Boolean ?= true)
-
-# deprecrated use DELETE
-POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
@@ -370,8 +345,6 @@ POST           /api/files/:id/comment                                           
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/tags                                                      @api.Files.getTags(id: UUID)
 POST           /api/files/:id/tags                                                      @api.Files.addTags(id: UUID)
-# deprecrated use DELETE
-POST           /api/files/:id/tags/remove                                               @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/tags/remove_all                                           @api.Files.removeAllTags(id: UUID)
 DELETE         /api/files/:id/tags                                                      @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
@@ -388,13 +361,12 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
+
 GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
-
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
 POST           /api/datasets/:ds_id/extractions                                         @api.Extractions.submitDatasetToExtractor(ds_id: UUID)
-
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames(categories: List[String] ?= List.empty)
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
@@ -404,21 +376,18 @@ POST           /api/extractions/upload_file                                     
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
-
 DELETE         /api/files/:file_id/extractions/:msg_id                                  @api.Extractions.cancelFileExtractionSubmission(file_id:UUID, msg_id: UUID)
-DELETE         /api/datasets/:ds_id/extractions/:msg_id                               @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
-
+DELETE         /api/datasets/:ds_id/extractions/:msg_id                                 @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
 # End of change segment
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
 # ----------------------------------------------------------------------
+
 POST           /api/files/:id/previews/:p_id                                            @api.Files.attachPreview(id: UUID, p_id: UUID)
 GET            /api/files/:id/listpreviews                                              @api.Files.filePreviewsList(id: UUID)
 GET            /api/files/:id/getPreviews                                               @api.Files.getPreviews(id: UUID)
 GET            /api/files/:id/isBeingProcessed                                          @api.Files.isBeingProcessed(id: UUID)
-#GET		   /api/files/:three_d_file_id/:filename			                        @api.Files.getGeometry(three_d_file_id: UUID, filename)
-GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
 GET            /api/queries/:id                                                         @api.Files.downloadquery(id: UUID)
 # TODO please use /api/files/:id/blob to get the actual data see MMDB-1685
 GET            /api/files/:id                                                           @api.Files.download(id: UUID, tracking: Boolean ?= true)
@@ -426,16 +395,10 @@ GET            /api/files/:id                                                   
 # ----------------------------------------------------------------------
 # DANGEROUS ENDPOINTS
 # ----------------------------------------------------------------------
+
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
 POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
 POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
-
-#----------------------------------------------------------------------
-# 3D FILES
-#----------------------------------------------------------------------
-#GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
-GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
-
 
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
@@ -477,26 +440,17 @@ GET            /api/collections/listTrash                                       
 DELETE         /api/collections/emptyTrash                                              @api.Collections.emptyTrash()
 DELETE         /api/collections/clearOldCollectionsTrash                                @api.Collections.clearOldCollectionsTrash(days : Int ?= 30)
 PUT            /api/collections/restore/:collectionId                                   @api.Collections.restoreCollection(collectionId : UUID)
-# deprecrated
-GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID)
 POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID)
 GET            /api/collections/:coll_id/datasets                                       @api.Datasets.listInCollection(coll_id: UUID)
 POST           /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
-# deprecrated use DELETE
-POST           /api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound          @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE         /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
-# deprecrated use DELETE
-POST           /api/collections/:coll_id/remove                                         @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:coll_id/reindex                                        @api.Collections.reindex(coll_id: UUID, recursive: Boolean ?= true)
-# deprecrated use datasets
-GET            /api/collections/:coll_id/getDatasets                                    @api.Datasets.listInCollection(coll_id: UUID)
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
 PUT            /api/collections/:coll_id/title                                          @api.Collections.updateCollectionName(coll_id: UUID)
 PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
-
 POST           /api/collections/:coll_id/removeSubCollection/:sub_coll_id               @api.Collections.removeSubCollection(coll_id: UUID,sub_coll_id:UUID, ignoreNotFound?="True")
 POST           /api/collections/:coll_id/rootFlag/:spaceId                              @api.Collections.setRootSpace(coll_id: UUID, spaceId: UUID)
 POST           /api/collections/:coll_id/unsetRootFlag/:spaceId                         @api.Collections.unsetRootSpace(coll_id: UUID, spaceId: UUID)
@@ -553,8 +507,6 @@ POST           /api/datasets/:id/unfollow                                       
 POST           /api/datasets/:id/removeTag                                              @api.Datasets.removeTag(id: UUID)
 GET            /api/datasets/:id/tags                                                   @api.Datasets.getTags(id: UUID)
 POST           /api/datasets/:id/tags                                                   @api.Datasets.addTags(id: UUID)
-# deprecrated use DELETE
-POST           /api/datasets/:id/tags/remove                                            @api.Datasets.removeTags(id: UUID)
 POST           /api/datasets/:id/tags/remove_all                                        @api.Datasets.removeAllTags(id: UUID)
 DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
 PUT            /api/datasets/:id/title                                                  @api.Datasets.updateName(id:UUID)
@@ -575,7 +527,6 @@ PUT            /api/datasets/:id/access                                         
 POST           /api/datasets/:id/addFileEvent                                           @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
 GET            /api/datasets/:id/users                                                  @api.Datasets.users(id:UUID)
 
-
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
 # ----------------------------------------------------------------------
@@ -585,14 +536,11 @@ GET            /api/previews/:dzi_id_dir/:level/:filename                       
 POST           /api/previews/:dzi_id/tiles/:tile_id/:level                              @api.Previews.attachTile(dzi_id: UUID, tile_id: UUID, level)
 POST           /api/previews/:id/metadata                                               @api.Previews.uploadMetadata(id: UUID)
 GET            /api/previews/:id/metadata                                               @api.Previews.getMetadata(id: UUID)
-POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
-POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
-GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
 POST           /api/previews/:id/title                                                  @api.Previews.setTitle(id: UUID)
 GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
 DELETE         /api/previews/:id                                                        @api.Previews.removePreview(id: UUID)
-POST           /api/previews                                                            @api.Previews.upload(iipKey: String ?= "")
+POST           /api/previews                                                            @api.Previews.upload()
 POST           /api/indexes                                                             @api.Indexes.index
 POST           /api/indexes/features                                                    @api.Indexes.features
 
@@ -605,8 +553,6 @@ POST           /api/sections/:id/description                                    
 POST           /api/sections/:id/thumbnails/:thumbnail_id                               @api.Sections.attachThumbnail(id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
-# Deprecated for delete
-POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
@@ -670,8 +616,6 @@ GET            /api/reports/metrics/users                                       
 # MISC./OTHER ENDPOINTS
 # ----------------------------------------------------------------------
 POST           /api/tiles                                                               @api.ZoomIt.uploadTile
-POST           /api/geometries                                                          @api.Geometry.uploadGeometry
-POST           /api/3dTextures                                                          @api.ThreeDTexture.uploadTexture
 POST           /api/projects/addproject                                                 @api.Projects.addproject(project: String)
 POST           /api/institutions/addinstitution                                         @api.Institutions.addinstitution(institution: String)
 
@@ -739,7 +683,6 @@ GET            /spaces/curations/:id/getMetadataDefinitionsByFile               
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
 GET            /publishedData		                                                    @controllers.CurationObjects.getPublishedData(space: String = "")
 GET            /publishedData/:space	                                                @controllers.CurationObjects.getPublishedData(space: String)
-
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
 
@@ -752,13 +695,10 @@ POST        /api/vocabularies/createVocabularyFromJson                          
 POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
 GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
 GET         /api/vocabularies/getPublic                                                 @api.Vocabularies.getPublicVocabularies()
-
-
 GET         /api/vocabularies/:vocab_id                                                 @api.Vocabularies.get(vocab_id : UUID)
 PUT         /api/editVocabulary/:vocab_id                                               @api.Vocabularies.editVocabulary(vocab_id : UUID)
 GET         /api/vocabularies/:name                                                     @api.Vocabularies.getByName(name : String)
 GET         /api/vocabularies/:name/getByNameAuthor                                     @api.Vocabularies.getByNameAndAuthor(name: String)
-
 POST        /api/vocabularies/:vocab_id/addToSpace/:space_id                            @api.Vocabularies.addToSpace(vocab_id: UUID, space_id : UUID)
 POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id                      @api.Vocabularies.removeFromSpace(vocab_id: UUID, space_id : UUID)
 
@@ -768,7 +708,6 @@ POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id              
 
 GET         /api/vocabterms/list                                                        @api.VocabularyTerms.list()
 GET         /api/vocabterms/:id                                                         @api.VocabularyTerms.get(id : UUID)
-
 
 # ----------------------------------------------------------------------
 # STANDARDVOCABULARY API
@@ -802,10 +741,8 @@ DELETE      /api/proxy/:endpoint_key/*pathSuffix                                
 # EXTRACTOR VIEWS
 # ----------------------------------------------------------------------
 
-
 GET         /extractors                                                                     @controllers.Extractors.selectExtractors()
 POST        /extractors                                                                     @controllers.Extractors.updateExtractors()
-
 
 # ----------------------------------------------------------------------
 # TREE API

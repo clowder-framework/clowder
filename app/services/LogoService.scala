@@ -13,7 +13,7 @@ trait LogoService {
   /**
    * Save a logo from an input stream.
    */
-  def save(inputStream: InputStream, path: String, name: String, showText:Boolean, contentType: Option[String], author: User): Option[Logo]
+  def save(inputStream: InputStream, path: String, name: String, showText:Boolean, contentLength: Long, contentType: Option[String], author: User): Option[Logo]
 
   /**
    * Updates a logo

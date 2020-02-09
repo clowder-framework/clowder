@@ -14,7 +14,7 @@ The play.plugins file is used to enable plugins. You can only enable plugins, yo
 .. code-block:: properties
   :caption: play.plugins
 
-  11002:services.ElasticsearchPlugin
+  9992:services.RabbitmqPlugin
 
 custom.conf
 ===========

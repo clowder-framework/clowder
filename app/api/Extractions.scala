@@ -85,7 +85,9 @@ class Extractions @Inject()(
             val fid = for {response <- futureResponse} yield {
               if (response.status == 200) {
                 val inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
-                val file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
+                val contentLengthStr = response.header("Content-Length").getOrElse("-1")
+                val contentLength = Integer.parseInt(contentLengthStr).toLong
+                val file = files.save(inputStream, filename, contentLength, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
                     // Add new file & byte count to appConfig

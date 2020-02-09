@@ -11,7 +11,7 @@
         <div class="panel-body">
             @if(!file.thumbnail_id.isEmpty){
                 <a href="@(routes.Files.file(file.id))">
-                    <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
+                    <img class="img-responsive fit-in-space" src="@(api.routes.Thumbnails.get(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))).url)" alt="Thumbnail of @(file.filename)">
                 </a>
             }
             <div class="caption break-word">
