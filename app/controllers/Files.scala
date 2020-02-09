@@ -20,7 +20,6 @@ import services._
 import java.text.SimpleDateFormat
 
 import views.html.defaultpages.badRequest
-import util.SearchUtils
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
@@ -42,7 +41,6 @@ class Files @Inject() (
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   previews: PreviewService,
-  threeD: ThreeDService,
   users: UserService,
   events: EventService,
   thumbnails: ThumbnailService,
@@ -50,9 +48,12 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
+  fileConvertService: FileConvertService,
+  versusService: VersusService,
   adminsNotifierService: AdminsNotifierService,
   extractionBusService: ExtractionBusService,
-  appConfig: AppConfigurationService) extends SecuredController {
+  appConfig: AppConfigurationService,
+  searches: SearchService) extends SecuredController {
 
   /**
    * Upload form.
@@ -220,10 +221,6 @@ class Files @Inject() (
           }
         }
 
-        //call Polyglot to get all possible output formats for this file's content type
-        current.plugin[PolyglotPlugin] match {
-          case Some(plugin) => {
-            Logger.debug("Polyglot plugin found")
 
             // Increment view count for file
             val (view_count, view_date) = files.incrementViews(id, user)
@@ -234,25 +231,21 @@ class Files @Inject() (
             //drop all elements left of last divider index
             val contentTypeEnding = fname.drop(lastDividerIndex)
             Logger.debug("file name ends in " + contentTypeEnding)
+
+        //call FileTransferService to get all possible output formats for this file's content type
+
+        if (play.Play.application().configuration().getBoolean("fileconvertService")) {
             //get output formats from Polyglot plugin and pass as the last parameter to view
-            plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
+          fileConvertService.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
                 mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
-          }
-          case None =>
-            Logger.debug("Polyglot plugin not found")
-
-            // Increment view count for file
-            val (view_count, view_date) = files.incrementViews(id, user)
-
-            //passing None as the last parameter (list of output formats)
+        } else {
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
               mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
         }
       }
-
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
@@ -409,7 +402,7 @@ class Files @Inject() (
             var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
               // store file
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
               val uploadedFile = f
               file match {
                 case Some(f) => {
@@ -451,19 +444,11 @@ class Files @Inject() (
                 if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                   val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
                   files.addXMLMetadata(f.id, xmlToJSON)
+                  }
 
-                  current.plugin[ElasticsearchPlugin].foreach {
-                    _.index(SearchUtils.getElasticsearchObject(f))
-                  }
-                }
-                else {
-                  current.plugin[ElasticsearchPlugin].foreach {
-                    _.index(SearchUtils.getElasticsearchObject(f))
-                  }
-                }
-                current.plugin[VersusPlugin].foreach {
-                  _.index(f.id.toString, fileType)
-                }
+                searches.index(f)
+
+                versusService.index(f.id.toString, fileType)
 
                 // redirect to extract page
                 Ok(views.html.extract(f.id))
@@ -518,7 +503,7 @@ class Files @Inject() (
 	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
 	        // store file       
-	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -580,18 +565,10 @@ class Files @Inject() (
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              files.addXMLMetadata(f.id, xmlToJSON)
-	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index(SearchUtils.getElasticsearchObject(f))
                 }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index(SearchUtils.getElasticsearchObject(f))
-                }
-	            }
+              searches.index(f)
 
-              current.plugin[VersusPlugin].foreach { _.indexFile(f.id, fileType) }
+              versusService.indexFile(f.id, fileType)
 
               adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File","added",f.id.stringify, nameOfFile)
 
@@ -749,9 +726,6 @@ class Files @Inject() (
    */
   def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
-
-    current.plugin[PolyglotPlugin] match {
-      case Some(plugin) => {
         if (UUID.isValid(id.stringify)) {
           files.get(id) match {
             case Some(file) => {
@@ -770,22 +744,22 @@ class Files @Inject() (
 
                   val outputStream: OutputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
 
-                  val polyglotUser: Option[String] = configuration.getString("polyglot.username")
-                  val polyglotPassword: Option[String] = configuration.getString("polyglot.password")
-                  val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
+              val fileConvertUser: Option[String] = configuration.getString("fileconvert.username")
+              val fileConvertPassword: Option[String] = configuration.getString("fileconvert.password")
+              val fileConvertConvertURL: Option[String] = configuration.getString("fileconvert.convertURL")
 
-                  if (polyglotConvertURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
+              if (fileConvertConvertURL.isDefined && fileConvertUser.isDefined && fileConvertPassword.isDefined) {
                     files.incrementDownloads(id, user)
 
                     //first call to Polyglot to get url of converted file
-                    plugin.getConvertedFileURL(filename, inputStream, outputFormat)
+                fileConvertService.getConvertedFileURL(filename, inputStream, outputFormat)
                       .flatMap {
                         convertedFileURL =>
                           val triesLeft = 30
                           //Cponverted file is initially empty. Have to wait for Polyglot to finish conversion.
                           //keep checking until file exists or until too many tries
                           //returns future success only if file is found and downloaded
-                          plugin.checkForFileAndDownload(triesLeft, convertedFileURL, outputStream)
+                      fileConvertService.checkForFileAndDownload(triesLeft, convertedFileURL, outputStream)
                       }.map {
                         x =>
                           //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
@@ -820,11 +794,6 @@ class Files @Inject() (
           Logger.error(s"The given id $id is not a valid ObjectId.")
           Future(BadRequest(toJson(s"The given id $id is not a valid ObjectId.")))
         }
-      } //end of case Some(plugin)
-      case None =>
-        Logger.debug("Polyglot plugin not found")
-        Future(Ok("Plugin not found"))
-    }
   }
 
   def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
@@ -1036,16 +1005,10 @@ class Files @Inject() (
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
+            }
 
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index(SearchUtils.getElasticsearchObject(f))
-              }
-            }
-            else {
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index(SearchUtils.getElasticsearchObject(f))
-              }
-            }
+            searches.index(f)
+
             Ok(f.id.toString)
           }
           case None => {
@@ -1083,7 +1046,7 @@ class Files @Inject() (
                 Logger.debug("Uploading file " + nameOfFile)
                 val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
                 // save file bytes
-                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
                 val uploadedFile = f
 
                 // submit file for extraction
@@ -1150,13 +1113,9 @@ class Files @Inject() (
                     // FIXME create a service instead of calling salat directly
                     datasets.addFile(dataset.id, files.get(f.id).get)
 
-                    // index in Elasticsearch
-                    current.plugin[ElasticsearchPlugin].foreach { es =>
-                      // index dataset
-                      datasets.index(dataset_id)
-                      // index file
-                      es.index(SearchUtils.getElasticsearchObject(f))
-                    }
+                    // index dataset and file
+                    searches.index(dataset, true)
+                    searches.index(f)
 
                     // notify extractors that a file has been uploaded and added to a dataset
                     extractionBusService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)

@@ -37,7 +37,6 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[PreviewService]).to(get("service.previews", "services.mongodb.MongoDBPreviewService"))
     bind(classOf[ExtractionService]).to(get("service.extractions", "services.mongodb.MongoDBExtractionService"))
     bind(classOf[TempFileService]).to(get("service.tempFiles", "services.mongodb.MongoDBTempFileService"))
-    bind(classOf[ThreeDService]).to(get("service.3D", "services.mongodb.MongoDBThreeDService"))
     bind(classOf[ThumbnailService]).to(get("service.thumbnails", "services.mongodb.MongoDBThumbnailService"))
     bind(classOf[TileService]).to(get("service.tiles", "services.mongodb.MongoDBTileService"))
     bind(classOf[SectionIndexInfoService]).to(get("service.sectionIndexInfo", "services.mongodb.MongoDBSectionIndexInfoService"))
@@ -54,6 +53,8 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[StandardVocabularyService]).to(get("service.standardvocabulary", "services.mongodb.MongoDBStandardVocabularyService"))
     bind(classOf[SelectionService]).to(get("service.select", "services.mongodb.MongoDBSelectionService"))
     bind(classOf[FileLinkService]).to(get("service.FileLinkService", "services.mongodb.MongoDBFileLinkService"))
+    bind(classOf[SearchService]).to(get("service.SearchService", "services.elasticsearch.ElasticsearchSearchService"))
+    bind(classOf[QueueService]).to(get("service.QueueService", "services.mongodb.MongoDBQueueService"))
     bind(classOf[ExtractionBusService]).to(get("service.ExtractionBusService", "services.rabbitmq.RabbitmqExtractionBusService"))
   }
 

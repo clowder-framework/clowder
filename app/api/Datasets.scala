@@ -48,8 +48,8 @@ class  Datasets @Inject()(
   userService: UserService,
   thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue,
   adminsNotifierService: AdminsNotifierService,
+  searches: SearchService,
   extractionBusService: ExtractionBusService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -224,14 +224,9 @@ class  Datasets @Inject()(
                   if (!file.xmlMetadata.isEmpty) {
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index(SearchUtils.getElasticsearchObject(d))
                     }
-                  } else {
-                    current.plugin[ElasticsearchPlugin].foreach {
-                      _.index(SearchUtils.getElasticsearchObject(d))
-                    }
-                  }
+                  searches.index(d, true)
+
 
                   adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
 
@@ -390,9 +385,8 @@ class  Datasets @Inject()(
   def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(ds) => {
-        val success = esqueue.queue("index_dataset", new ResourceRef('dataset, id), new ElasticsearchParameters(recursive=recursive))
-        if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
-        else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
+        datasets.index(id)
+        Ok(toJson(s"Dataset $id reindexed"))
       }
       case None => {
         Logger.error("Error getting dataset" + id)
@@ -1617,16 +1611,8 @@ class  Datasets @Inject()(
   }
 
   def jsonPreview(pvId: String, pId: String, pPath: String, pMain: String, pvRoute: String, pvContentType: String, pvLength: Long): JsValue = {
-    if (pId.equals("X3d"))
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId,
-        "p_path" -> controllers.routes.Assets.at(pPath).toString,
-        "p_main" -> pMain, "pv_route" -> pvRoute,
-        "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
-        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(UUID(pvId)).toString,
-        "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(UUID(pvId)).toString,
-        "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(UUID(pvId)).toString))
-    else
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
+    toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+      "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
 
   def getPreviews(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>

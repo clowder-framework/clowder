@@ -6,7 +6,7 @@ import models._
 import com.mongodb.casbah.commons.{Imports, MongoDBObject}
 import java.text.SimpleDateFormat
 
-import _root_.util.{License, Parsers, SearchUtils}
+import _root_.util.{License, Parsers}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -54,7 +54,6 @@ class MongoDBFileService @Inject() (
   comments: CommentService,
   previews: PreviewService,
   thumbnails: ThumbnailService,
-  threeD: ThreeDService,
   storage: ByteStorageService,
   userService: UserService,
   folders: FolderService,
@@ -62,7 +61,7 @@ class MongoDBFileService @Inject() (
   events: EventService,
   appConfig: AppConfigurationService,
   extractionBusService: ExtractionBusService,
-  esqueue: ElasticsearchQueue) extends FileService {
+  searches: SearchService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -297,8 +296,8 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
-    ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
+    ByteStorageService.save(inputStream, FileDAO.COLLECTION, contentLength) match {
       case Some(x) => {
         val file = File(UUID.generate(), x._1, filename, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType),
           x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig(), stats = new Statistics())
@@ -326,12 +325,7 @@ class MongoDBFileService @Inject() (
   }
 
   def index(id: UUID) {
-    try
-      esqueue.queue("index_file", new ResourceRef('file, id))
-    catch {
-      case except: Throwable => Logger.error(s"Error queuing file ${id.stringify}: ${except}")
-      case _ => Logger.error(s"Error queuing file ${id.stringify}")
-    }
+    searches.index(new ResourceRef('file, id))
   }
 
   /**
@@ -737,9 +731,6 @@ class MongoDBFileService @Inject() (
           for(comment <- comments.findCommentsByFileId(id)){
             comments.removeComment(comment)
           }
-          for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
-          }
           for (follower <- file.followers) {
             userService.unfollowFile(follower, id)
           }
@@ -759,9 +750,8 @@ class MongoDBFileService @Inject() (
         FileDAO.removeById(file.id)
         appConfig.incrementCount('files, -1)
         appConfig.incrementCount('bytes, -file.length)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
-        }
+
+        searches.delete(id.stringify)
 
         // finally remove metadata - if done before file is deleted, document metadataCounts won't match
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)

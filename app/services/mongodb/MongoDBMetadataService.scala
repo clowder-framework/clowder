@@ -13,7 +13,8 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, FileService, FolderService, MetadataService, ExtractionBusService}
+import services.{ContextLDService, CurationService, DatasetService, SearchService, ExtractorMessage, FileService,
+  FolderService, MetadataService, ExtractionBusService}
 import api.{Permission, UserRequest}
 import controllers.Utils
 
@@ -21,8 +22,13 @@ import controllers.Utils
  * MongoDB Metadata Service Implementation
  */
 @Singleton
-class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService,
-  folders: FolderService, curations: CurationService, extractionBusService: ExtractionBusService) extends MetadataService {
+class MongoDBMetadataService @Inject() (contextService: ContextLDService,
+                                        datasets: DatasetService,
+                                        files: FileService,
+                                        folders: FolderService,
+                                        curations: CurationService,
+                                        searches: SearchService,
+                                        extractionBusService: ExtractionBusService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
