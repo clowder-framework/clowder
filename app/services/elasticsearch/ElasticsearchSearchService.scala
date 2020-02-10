@@ -9,9 +9,10 @@ import play.api.Play.current
 import play.api.libs.json._
 import play.libs.Akka
 import play.api.libs.concurrent.Execution.Implicits._
-import akka.actor.Cancellable
 import java.net.InetAddress
 import java.util.regex.Pattern
+import java.util.HashMap
+import akka.actor.Cancellable
 
 import javax.inject.{Inject, Singleton}
 import java.util.Date
@@ -24,12 +25,19 @@ import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
 import org.elasticsearch.ElasticsearchException
 
-import org.elasticsearch.client.{RestClient, RestHighLevelClient, RequestOptions}
-import org.elasticsearch.client.indices.GetIndexRequest
+import org.elasticsearch.client.{RequestOptions, RestClient, RestHighLevelClient}
+import org.elasticsearch.client.indices.{CreateIndexRequest, GetIndexRequest}
+import org.elasticsearch.index.query.QueryBuilders
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest
+import org.elasticsearch.action.delete.DeleteRequest
+import org.elasticsearch.action.index.IndexRequest
+import org.elasticsearch.action.search.SearchRequest
+import org.elasticsearch.search.builder.SearchSourceBuilder
+import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.common.xcontent.{XContentType, XContentFactory, XContentBuilder}
+
 import org.apache.http.HttpHost
-
-
 import api.Permission
 import models.{Collection, Dataset, File, QueuedAction, ResourceRef, SearchResult, Section, Tag, TempFile, UUID, User}
 import org.elasticsearch.node.Node
@@ -218,7 +226,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
-  private def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int, source_url: String): SearchResult = {
+  private def accumulatePageResult(queryObj: SearchSourceBuilder, user: Option[User], from: Int, size: Int, source_url: String): SearchResult = {
     var total_results = ListBuffer.empty[ResourceRef]
 
     // Fetch initial page & filter by permissions
@@ -299,31 +307,29 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /*** Execute query and return list of results and total result count as tuple */
-  private def _search(queryObj: XContentBuilder, from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
+  private def _search(queryObj: SearchSourceBuilder, from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
     connect()
-    val response = client match {
-      case Some(x) => {
+    client match {
+      case Some(c) => {
         Logger.info("Searching Elasticsearch: "+queryObj)
-        var responsePrep = x.prepareSearch(nameOfIndex)
-          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(  queryObj)
+        var req = new SearchRequest()
+        req = req.indices(nameOfIndex)
+          .searchType(SearchType.DFS_QUERY_THEN_FETCH)
+          .source(queryObj
+            .from(from.getOrElse(0))
+            .size(size.getOrElse(maxResults)))
 
-        responsePrep = responsePrep.setFrom(from.getOrElse(0))
-        responsePrep = responsePrep.setSize(size.getOrElse(maxResults))
-
-        val response = responsePrep.setExplain(true).execute().actionGet()
-        Logger.debug("Search hits: " + response.getHits().getTotalHits())
-        response
+        val response = c.search(req, RequestOptions.DEFAULT)
+        Logger.debug("Search hits: " + response.getHits().getTotalHits().value)
+        (response.getHits().getHits().map(h => {
+          new ResourceRef(Symbol(h.getSourceAsMap().get("resource_type").toString), UUID(h.getId()))
+        }).toList, response.getHits().getTotalHits().value)
       }
       case None => {
         Logger.error("Could not call search because Elasticsearch is not connected.")
-        new SearchResponse()
+        (List.empty, 0)
       }
     }
-
-    (response.getHits().getHits().map(h => {
-      new ResourceRef(Symbol(h.getSource().get("resource_type").toString), UUID(h.getId()))
-    }).toList, response.getHits().getTotalHits())
   }
 
   /** Format a simple search result */
@@ -386,30 +392,17 @@ class ElasticsearchSearchService @Inject() (
 
   /** Create a new index with preconfigured mappgin */
   def createIndex(): Unit = {
-    val indexSettings = Settings.settingsBuilder().loadFromSource(jsonBuilder()
-      .startObject()
-        .startObject("analysis")
-          .startObject("analyzer")
-            .startObject("default")
-              .field("type", "standard")
-            .endObject()
-          .endObject()
-        .endObject()
-        .startObject("index")
-          .startObject("mapping")
-            .field("ignore_malformed", true)
-          .endObject()
-        .endObject()
-      .endObject().string())
-
     client match {
-      case Some(x) => {
+      case Some(c) => {
         Logger.debug("Index \""+nameOfIndex+"\" does not exist; creating now ---")
         try {
-          x.admin().indices().prepareCreate(nameOfIndex)
-            .setSettings(indexSettings)
-            .addMapping("clowder_object", getElasticsearchObjectMappings())
-            .execute().actionGet()
+          val request = new CreateIndexRequest(nameOfIndex)
+            .settings(Settings.builder()
+              .put("analysis.analyzer.default.type", "standard")
+              .put("index.mapping.ignore_malformed", true)
+            )
+            .mapping(getElasticsearchObjectMappings(), XContentType.JSON)
+          c.indices.create(request, RequestOptions.DEFAULT)
         } catch {
           case e: ElasticsearchException => {
             Logger.debug("Index already exists; skipping creation.")
@@ -425,16 +418,16 @@ class ElasticsearchSearchService @Inject() (
   def deleteAll {
     connect()
     client match {
-      case Some(x) => {
+      case Some(c) => {
         try {
-          val response = x.admin().indices().prepareDelete(nameOfIndex).get()
+          val request = new DeleteIndexRequest(nameOfIndex)
+          val response = c.indices.delete(request, RequestOptions.DEFAULT)
           if (!response.isAcknowledged())
             Logger.error("Did not delete all data from elasticsearch.")
         } catch {
           case e: ElasticsearchException => {
             Logger.error("Could not call search.", e)
             client = None
-            new SearchResponse()
           }
         }
       }
@@ -446,15 +439,15 @@ class ElasticsearchSearchService @Inject() (
   def delete(id: String, docType: String = "clowder_object") {
     connect()
     client match {
-      case Some(x) => {
+      case Some(c) => {
         try {
-          val response = x.prepareDelete(nameOfIndex, docType, id).execute().actionGet()
+          val request = new DeleteRequest(nameOfIndex).id(id)
+          val response = c.delete(request, RequestOptions.DEFAULT)
           Logger.debug("Deleting document: " + response.getId)
         } catch {
           case e: ElasticsearchException => {
             Logger.error("Could not call search.", e)
             client = None
-            new SearchResponse()
           }
         }
       }
@@ -469,9 +462,9 @@ class ElasticsearchSearchService @Inject() (
 
     var listOfTerms = ListBuffer.empty[String]
     client match {
-      case Some(x) => {
+      case Some(c) => {
         if (query != "") {
-          val response = x.admin.indices.getMappings(new GetMappingsRequest().indices(nameOfIndex)).get()
+          val response = c.indices().getMapping(new GetMappingsRequest(), RequestOptions.DEFAULT)
           val maps = response.getMappings().get(nameOfIndex).get("clowder_object")
           val resultList = convertJsMappingToFields(Json.parse(maps.source().toString).as[JsObject], None, Some("metadata"))
 
@@ -603,9 +596,8 @@ class ElasticsearchSearchService @Inject() (
       case Some(eso) => {
         connect()
         client match {
-          case Some(x) => {
-            // Construct the JSON document for indexing
-            val builder = jsonBuilder()
+          case Some(c) => {
+            val builder = XContentFactory.jsonBuilder()
               .startObject()
               // BASIC INFO
               .field("creator", eso.creator)
@@ -661,8 +653,8 @@ class ElasticsearchSearchService @Inject() (
             builder.endObject()
               .endObject()
 
-            val response = x.prepareIndex(nameOfIndex, "clowder_object", eso.resource.id.toString)
-              .setSource(builder).execute().actionGet()
+
+            c.index(new IndexRequest(nameOfIndex).id(eso.resource.id.toString).source(builder), RequestOptions.DEFAULT)
           }
           case None => Logger.error("Could not index because Elasticsearch is not connected.")
         }
@@ -678,20 +670,19 @@ class ElasticsearchSearchService @Inject() (
     connect()
     client match {
       case Some(x) => {
-        val searcher = x.prepareSearch(nameOfIndex)
-          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-            .addAggregation(AggregationBuilders.terms("by_tag").field("tags").size(10000))
-            // Don't return actual documents; we only care about aggregation here
-            .setSize(0)
+
+        var bldr = new SearchSourceBuilder()
+        val agg = AggregationBuilders.count("by_tag").field("tags")
+        bldr = bldr.aggregation(agg).size(0)
         // Filter to tags on a particular type of resource if given
         if (resourceType != "")
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty))
+          bldr = bldr.query(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty).query())
         else {
           // Exclude Section tags to avoid double-counting since those are duplicated in File document
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty))
+          bldr = bldr.query(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty).query())
         }
-
-        val response = searcher.execute().actionGet()
+        val req = new SearchRequest(nameOfIndex).source(bldr)
+        val response = x.search(req, RequestOptions.DEFAULT)
 
         // Extract value/counts from Aggregation object
         val aggr = response.getAggregations
@@ -872,35 +863,8 @@ class ElasticsearchSearchService @Inject() (
     Try { s.toDouble }.toOption
   }
 
-  /** Create appropriate search object based on operator */
-  private def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
-    // TODO: Suppert lte, gte (<=, >=)
-    operator match {
-      case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
-      case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
-      case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
-      case ":" => {
-        if (key == "_all")
-          builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
-        else
-          builder.startObject().startObject("query_string").field("default_field", key).field("query", value).endObject().endObject()
-      }
-      case _ => {}
-    }
-    builder
-  }
-
-  /** Create appropriate search object based on operator */
-  private def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
-    operator match {
-      case "!=" => builder.startObject().startObject("match").field(key, value).endObject().endObject()
-      case _ => {}
-    }
-    builder
-  }
-
   /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
-  private def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
+  private def prepareElasticJsonQuery(query: List[JsValue], grouping: String): SearchSourceBuilder = {
     /** OPERATORS
       *  :   contains (partial match)
       *  ==  equals (exact match)
@@ -921,61 +885,53 @@ class ElasticsearchSearchService @Inject() (
     })
 
     // 1) Wrap entire object in BOOL query - everything within must match
-    var builder = jsonBuilder().startObject().startObject("bool")
-
-    // -- Wrap MUST/MUST_NOT subqueries in BOOL+SHOULD query if matching ANY term and != is used
-    if (grouping == "OR" && mustNotList.length > 0)
-      builder.startArray("should").startObject().startObject("bool")
+    var bool_clause = QueryBuilders.boolQuery()
 
     // 2) populate the MUST/SHOULD portion
     if (mustList.length > 0) {
-      grouping match {
-        case "AND" => builder.startArray("must")
-        case "OR" => builder.startArray("should")
-      }
       mustList.foreach(jv => {
         val key = (jv \ "field_key").toString.replace("\"","")
         val operator = (jv \ "operator").toString.replace("\"", "")
         val value = (jv \ "field_value").toString.replace("\"", "")
-        builder = parseMustOperators(builder, key, value, operator)
+
+        val q = operator match {
+          case "==" => QueryBuilders.matchPhraseQuery(key, value)
+          case "<" => QueryBuilders.rangeQuery(key).lt(value)
+          case ">" => QueryBuilders.rangeQuery(key).gt(value)
+          case ":" => {
+            if (key == "all")
+              QueryBuilders.regexpQuery("_all", wrapRegex(value))
+            else
+              QueryBuilders.queryStringQuery(value).field(key)
+          }
+        }
+
+        bool_clause = grouping match {
+          case "AND" => bool_clause.must(q)
+          case "OR" => bool_clause.should(q)
+        }
       })
-      builder.endArray()
     }
 
     // 3) populate the MUST_NOT portion
     if (mustNotList.length > 0) {
-      // -- Again, special handling for mixing OR grouping with != operator so it behaves as user expects
-      if (grouping == "OR")
-        builder.endObject().endObject().startObject().startObject("bool").startArray("should")
-      else
-        builder.startArray("must_not")
-
       mustNotList.foreach(jv => {
-        if (grouping == "OR")
-          builder.startObject().startObject("bool").startArray("must_not")
-
         val key = (jv \ "field_key").toString.replace("\"","")
         val operator = (jv \ "operator").toString.replace("\"", "")
         val value = (jv \ "field_value").toString.replace("\"", "")
-        builder = parseMustNotOperators(builder, key, value, operator)
 
-        if (grouping == "OR")
-          builder.endArray().endObject().endObject()
+        bool_clause = operator match {
+          case "!=" => bool_clause.mustNot(QueryBuilders.matchPhraseQuery(key, value))
+        }
       })
-
-      if (grouping == "OR")
-        builder.endArray().endObject().endObject().endArray()
-      else
-        builder.endArray()
     }
 
     // Close the bool/query objects and return
-    builder.endObject().endObject()
-    builder
+    new SearchSourceBuilder().query(bool_clause)
   }
 
   /**Convert search string into an Elasticsearch-ready JSON query object**/
-  private def prepareElasticJsonQuery(query: String, permitted: List[UUID]): XContentBuilder = {
+  private def prepareElasticJsonQuery(query: String, permitted: List[UUID]): SearchSourceBuilder = {
     /** OPERATORS
       *  ==  equals (exact match)
       *  !=  not equals (partial matches OK)
@@ -1019,68 +975,54 @@ class ElasticsearchSearchService @Inject() (
       }
     })
 
-    var builder = jsonBuilder().startObject().startObject("bool")
+    var bool_clause = QueryBuilders.boolQuery()
 
     // First, populate the MUST portion of Bool query
-    var populatedMust = false
     terms.map(term => {
       for (operator <- mustOperators) {
         if (term.contains(operator)) {
           val key = term.substring(0, term.indexOf(operator))
           val value = term.substring(term.indexOf(operator)+1, term.length)
 
-          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-          if (mustOperators.contains(operator) && !populatedMust) {
-            builder.startArray("must")
-            populatedMust = true
+          bool_clause = operator match {
+            case "==" => bool_clause.must(QueryBuilders.matchPhraseQuery(key, value))
+            case "<"  => bool_clause.must(QueryBuilders.rangeQuery(key).lt(value))
+            case ">"  => bool_clause.must(QueryBuilders.rangeQuery(key).gt(value))
+            case ":" => {
+              if (key == "all")
+                bool_clause.must(QueryBuilders.regexpQuery("_all", wrapRegex(value)))
+              else
+                bool_clause.must(QueryBuilders.queryStringQuery(value).field(key))
+            }
           }
-
-          builder = parseMustOperators(builder, key, value, operator)
         }
       }
     })
 
-    // TODO: How to handle datasets that aren't in any space?
-
     // Include special OR condition for restricting to permitted spaces
     if (permitted.length > 0) {
-      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-      if (!populatedMust) {
-        builder.startArray("must")
-        populatedMust = true
-      }
-      builder.startObject.startObject("bool").startArray("should")
+      // TODO: How to handle datasets that aren't in any space?
       permitted.foreach(ps => {
-        builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
+        bool_clause = bool_clause.should(QueryBuilders.matchQuery("child_of", ps.stringify))
       })
-      builder.endArray().endObject().endObject()
     }
 
-    if (populatedMust) builder.endArray()
-
     // Second, populate the MUST NOT portion of Bool query
-    var populatedMustNot = false
     terms.map(term => {
       for (operator <- mustNotOperators) {
         if (term.contains(operator)) {
           val key = term.substring(0, term.indexOf(operator))
           val value = term.substring(term.indexOf(operator), term.length)
 
-          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-          if (mustNotOperators.contains(operator) && !populatedMustNot) {
-            builder.startArray("must_not")
-            populatedMustNot = true
+          bool_clause = operator match {
+            case "!=" => bool_clause.mustNot(QueryBuilders.matchPhraseQuery(key, value))
           }
-
-          builder = parseMustNotOperators(builder, key, value, operator)
         }
       }
     })
-    if (populatedMustNot) builder.endArray()
 
     // Close the bool/query objects and return
-    builder.endObject().endObject()
-    builder
+    new SearchSourceBuilder().query(bool_clause)
   }
 
   private def wrapRegex(value: String, query_string: Boolean = false): String = {
