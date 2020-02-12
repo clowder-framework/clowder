@@ -71,18 +71,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       }
     }
   }
-  /** @deprecated use viewProfileUUID(uuid) */
-  def viewProfile(email: Option[String]) = AuthenticatedAction { implicit request =>
-    implicit val user = request.user
 
-    users.findByEmail(email.getOrElse("")) match {
-      case Some(user) => Redirect(routes.Profile.viewProfileUUID(user.id))
-      case None => {
-        Logger.error("no user model exists for " + email.getOrElse(""))
-        BadRequest(views.html.notFound("User does not exist in this " + AppConfiguration.getDisplayName +  " instance."))
-      }
-    }
-  }
 
   def submitChanges = AuthenticatedAction { implicit request =>
     implicit val user = request.user

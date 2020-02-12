@@ -75,8 +75,7 @@ trait UserService  {
   def findByIdentity(userId: String, providerId: String): Option[User]
 
   /**
-   * Return a specific user based on the email provided.
-   * @deprecated please find
+   * Return a specific user based on the email provided. Used to process email invitations.
    */
   def findByEmail(email: String): Option[User]
 

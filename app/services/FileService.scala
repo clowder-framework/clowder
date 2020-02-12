@@ -144,10 +144,6 @@ trait FileService {
 
   // TODO return JsValue
   def getXMLMetadataJSON(id: UUID): String
-  
-  def modifyRDFOfMetadataChangedFiles()
-  
-  def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
 
   def dumpAllFileMetadata(): List[String]
 

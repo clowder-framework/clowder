@@ -3,7 +3,6 @@ package models
 import java.net.URL
 import java.util.Date
 
-import org.apache.jena.rdf.model.{Model, ModelFactory}
 import play.api.data.validation.ValidationError
 import play.api.libs.json._
 import services.{DI, UserService}
@@ -42,8 +41,6 @@ trait Agent {
   def typeOfAgent: String
   def typeOfAgent_= (s: String): Unit
 }
-
-case class RDFModel(model: org.apache.jena.rdf.model.Model)
 
 // User through the GUI
 case class UserAgent(id: UUID, var typeOfAgent: String = "cat:user", user: MiniUser, userId: Option[URL]) extends Agent {
@@ -149,32 +146,4 @@ object Metadata {
 				)
 	}
 
-}
-
-object RDFModel {
-
-  implicit object RDFModelReads extends Reads[models.RDFModel] {
-
-    def reads(json: JsValue) = {
-      var model: Option[models.RDFModel] = None
-      var in: java.io.InputStream = new java.io.ByteArrayInputStream( Json.stringify(json).getBytes )
-      
-      // Parse JSON-LD
-      var m: Model = ModelFactory.createDefaultModel()
-      var error: String = null
-      try {
-        m.read(in, "http://example/base", "JSON-LD")
-        if(!m.isEmpty) model = Some(RDFModel(m))
-      } catch {
-        case e: Exception => error = e.getLocalizedMessage
-      }
-      if(error != null) JsError(ValidationError(error))
-      else
-        model match {
-          case Some(c) => JsSuccess(c)
-          case None => JsError(ValidationError("Parse succeeded, but JSON-LD RDF model was empty. Try setting a default @vocab in your @context node."))
-        }
-    }
-    
-  }
 }

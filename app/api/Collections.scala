@@ -42,7 +42,8 @@ class Collections @Inject() (datasets: DatasetService,
                              appConfig: AppConfigurationService,
                              folders : FolderService,
                              files: FileService,
-                             metadataService : MetadataService) extends ApiController {
+                             metadataService : MetadataService,
+                             adminsNotifierService: AdminsNotifierService) extends ApiController {
 
   def createCollection() = PermissionAction(Permission.CreateCollection) (parse.json) { implicit request =>
     Logger.debug("Creating new collection")
@@ -154,9 +155,7 @@ class Collections @Inject() (datasets: DatasetService,
         if (!useTrash || (useTrash && collection.trash)){
           events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collectionId)
-          current.plugin[AdminsNotifierPlugin].foreach {
-            _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
-          }
+          adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
         } else {
           collections.addToTrash(collectionId, Some(new Date()))
           events.addObjectEvent(request.user, collectionId, collection.name, "move_collection_trash")
@@ -200,9 +199,7 @@ class Collections @Inject() (datasets: DatasetService,
         collections.listUserTrash(request.user,0).foreach(collection => {
           events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collection.id)
-          current.plugin[AdminsNotifierPlugin].foreach {
-            _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
-          }
+          adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
         })
       }
       case None =>
@@ -224,9 +221,7 @@ class Collections @Inject() (datasets: DatasetService,
           if (dateInTrash.getTime() < deleteBeforeDateTime) {
             events.addObjectEvent(request.user , c.id, c.name, EventType.DELETE_COLLECTION.toString)
             collections.delete(c.id)
-            current.plugin[AdminsNotifierPlugin].foreach {
-              _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",c.id.stringify, c.name)
-            }
+            adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",c.id.stringify, c.name)
           }
         })
         Ok(toJson("Deleted all collections in trash older than " + days + " days"))
@@ -247,7 +242,7 @@ class Collections @Inject() (datasets: DatasetService,
     implicit val user = request.user
     var listAll = false
     var collectionList: List[Collection] = List.empty
-    if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+    if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
       listAll = true
     } else {
       datasets.get(datasetId) match {
@@ -278,7 +273,7 @@ class Collections @Inject() (datasets: DatasetService,
     val allCollections = listCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false,
       request.user, request.user.fold(false)(_.superAdminMode), exact)
     val possibleNewParents = allCollections.filter(c =>
-      if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+      if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
         (!selfAndAncestors.contains(c) && !descendants.contains(c))
       } else {
         collections.get(UUID(currentCollectionId)) match {

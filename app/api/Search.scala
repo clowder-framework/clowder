@@ -1,8 +1,8 @@
 package api
 
 import api.Permission._
-import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, SpaceService,
-MultimediaQueryService, SearchService}
+import services.{DatasetService, FileService, CollectionService, PreviewService, SpaceService,
+  MultimediaQueryService, SearchService}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
 import util.SearchResult
@@ -21,7 +21,6 @@ class Search @Inject() (
    previews: PreviewService,
    queries: MultimediaQueryService,
    spaces: SpaceService,
-   sparql: RdfSPARQLService,
    searches: SearchService)  extends ApiController {
 
   /** Search using a simple text string with filters */
@@ -52,7 +51,7 @@ class Search @Inject() (
 
   /** Search using string-encoded Json object (e.g. built by Metadata Search form) */
   def searchJson(query: String, grouping: String, from: Option[Int], size: Option[Int]) = PermissionAction(Permission.ViewDataset) {
-    implicit request =>
+    implicit request => {
       implicit val user = request.user
 
       if (searches.isEnabled) {
@@ -62,23 +61,7 @@ class Search @Inject() (
       } else {
         BadRequest("Elasticsearch plugin could not be reached")
       }
-
-  }
-
-  def querySPARQL() = PermissionAction(Permission.ViewMetadata) { implicit request =>
-      configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-        case "yes" => {
-          val queryText = request.body.asFormUrlEncoded.get("query").apply(0)
-          Logger.debug("whole msg: " + request.toString)
-          val resultsString = sparql.sparqlQuery(queryText)
-          Logger.debug("SPARQL query results: " + resultsString)
-          Ok(resultsString)
-        }
-        case _ => {
-          Logger.error("RDF SPARQL store not used.")
-          InternalServerError("Error searching RDF store. RDF SPARQL store not used.")
-        }
-      }
+    }
   }
 
   /**

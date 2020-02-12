@@ -65,10 +65,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     return DBResult(found, notFound)
   }
 
-  def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String) {
-    PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
-  }
-
   def findByFileId(id: UUID): List[Preview] = {
     PreviewDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).toList
   }
@@ -91,7 +87,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String = {
     ByteStorageService.save(inputStream, PreviewDAO.COLLECTION, contentLength) match {
       case Some(x) => {
-        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._3)
+        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, x._3)
         PreviewDAO.save(preview)
         preview.id.stringify
       }
@@ -108,52 +104,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     }
   }
 
-  /**
-   * Add annotation to 3D model preview.
-   */
-  def annotation(id: UUID, annotation: ThreeDAnnotation) {
-    PreviewDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("annotations" -> ThreeDAnnotation.toDBObject(annotation)), false, false, WriteConcern.Safe)
-  }
-
-  def findAnnotation(preview_id: UUID, x_coord: String, y_coord: String, z_coord: String): Option[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
-      case Some(preview) => {
-        for (annotation <- preview.annotations) {
-          if (annotation.x_coord.equals(x_coord) && annotation.y_coord.equals(y_coord) && annotation.z_coord.equals(z_coord))
-            return Option(annotation)
-        }
-        return None
-      }
-      case None => return None
-    }
-  }
-
-  def updateAnnotation(preview_id: UUID, annotation_id: UUID, description: String) {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
-      case Some(preview) => {
-        //var newAnnotations = List.empty[ThreeDAnnotation]
-        for (annotation <- preview.annotations) {
-          if (annotation.id.toString.equals(annotation_id.toString)) {
-            PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id.stringify), "annotations._id" -> new ObjectId(annotation.id.stringify)), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
-            return
-          }
-        }
-        return
-      }
-      case None => return
-    }
-  }
-
-
-  def listAnnotations(preview_id: UUID): List[ThreeDAnnotation] = {
-    PreviewDAO.dao.findOneById(new ObjectId(preview_id.stringify)) match {
-      case Some(preview) => {
-        return preview.annotations
-      }
-      case None => return List.empty
-    }
-  }
-
   def remove(id: UUID): Unit = {
     get(id).foreach{ x=>
       ByteStorageService.delete(x.loader, x.loader_id, PreviewDAO.COLLECTION)
@@ -166,23 +116,6 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     for (tile <- tiles.get(p.id)) {
       tiles.remove(tile.id)
     }
-    // for IIP server references, also delete the files being referenced on the IIP server they reside
-    if (!p.iipURL.isEmpty) {
-      val httpclient = new DefaultHttpClient()
-      val httpPost = new HttpPost(p.iipURL.get + "/deleteFile.php")
-      val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE)
-      entity.addPart("key", new StringBody(p.iipKey.get, "text/plain",
-        Charset.forName("UTF-8")))
-      entity.addPart("file", new StringBody(p.iipImage.get, "text/plain",
-        Charset.forName("UTF-8")))
-      httpPost.setEntity(entity)
-      val imageUploadResponse = httpclient.execute(httpPost)
-      Logger.debug(imageUploadResponse.getStatusLine().toString())
-
-      val dirEntity = imageUploadResponse.getEntity()
-      Logger.debug("IIP server: " + EntityUtils.toString(dirEntity))
-    }
-
     if (!p.filename.isEmpty)
     // for oni previews, read the ONI frame references from the preview file and remove them
       if (p.filename.get.endsWith(".oniv")) {

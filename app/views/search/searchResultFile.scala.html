@@ -7,7 +7,7 @@
             @if(!file.thumbnail_id.isEmpty){
                 <a href="@(routes.Files.file(file.id, None, None, None))">
                     <img class="img-responsive fit-in-space"
-                      src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))"
+                      src="@(api.routes.Thumbnails.get(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))).url)"
                       alt="Thumbnail of @Html(file.filename)">
                 </a>
             } else {

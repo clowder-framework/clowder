@@ -33,7 +33,6 @@ class Extractions @Inject()(
   dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
   previews: PreviewService,
-  sqarql: RdfSPARQLService,
   thumbnails: ThumbnailService,
   appConfig: AppConfigurationService) extends ApiController {
 
@@ -378,26 +377,11 @@ class Extractions @Inject()(
     status
   }
 
-  def getExtractorServersIP() = AuthenticatedAction { implicit request =>
-    val listServersIPs = extractors.getExtractorServerIPList()
-    val listServersIPsJson = toJson(listServersIPs)
-    Ok(Json.obj("Servers" -> listServersIPs))
-  }
-
   def getExtractorNames(categories: List[String]) = AuthenticatedAction { implicit request =>
     val listNames = extractors.getExtractorNames(categories)
     val listNamesJson = toJson(listNames)
     Ok(toJson(Map("Extractors" -> listNamesJson)))
    }
- 
-  /**
-   * Temporary fix for BD-289: Get Details of Extractors' Servers IP, Names and Count
-   */
-  def getExtractorDetails() = AuthenticatedAction { request =>
-    val listNames = extractors.getExtractorDetail()
-    val listNamesJson = toJson(listNames)
-    Ok(listNamesJson)
-  }
 
   def getExtractorInputTypes() = AuthenticatedAction { implicit request =>
     val listInputTypes = extractors.getExtractorInputTypes()

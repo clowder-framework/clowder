@@ -76,21 +76,21 @@
             </div>
             <div class="form-group">
                 <label id="spacelabel" for="space">Share with
-                    @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    @if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
                         @Messages("spaces.title")
                      } else {
                         a @Messages("space.title")
                     }
                 </label>
-                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
-                @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)){multiple}>
+                @if(!play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
                     <option value="">Select a @Messages("space.title") to share the @Messages("dataset.title").toLowerCase with (Optional)</option>
                 }
                 @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
-                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                @if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
                     <p class="help-block">@Messages("create.share.multiple.message", Messages("dataset.title").toLowerCase, Messages("spaces.title"))</p>
                 } else {
                     <p class="help-block">@Messages("create.share.one.message", Messages("dataset.title").toLowerCase, Messages("space.title"))</p>

@@ -40,8 +40,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   }
 
   /**
-   * Returns a single user based on the email specified.
-   * @deprecated use findById
+   * Returns a single user based on the email specified. Used to process email invitations.
    */
   def findByEmail(email: String) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.findByEmail(email) match {
@@ -50,7 +49,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     }
   }
 
-  /** @deprecated use id instead of email */
   def updateName(id: UUID, firstName: String, lastName: String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     implicit val user = request.user
     users.updateUserField(id, "firstName", firstName)

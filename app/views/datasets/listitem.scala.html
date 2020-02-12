@@ -17,7 +17,7 @@
         <div class="row">
             <div class="col-xs-2">
                 @if(!dataset.thumbnail_id.isEmpty){
-                    <img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
+                    <img class="fit-in-space" src="@(api.routes.Thumbnails.get(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))).url)" alt="Thumbnail of @Html(dataset.name)">
                 } else {
                     <a href="@routes.Datasets.dataset(dataset.id)">
                         <span class="bigicon glyphicon glyphicon-briefcase"></span>

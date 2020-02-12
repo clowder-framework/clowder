@@ -21,9 +21,9 @@ import play.api.i18n.Messages
 
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
-                             spaceService: SpaceService, users: UserService, events: EventService,
-                             appConfig: AppConfigurationService, selections: SelectionService,
-                             search: SearchService) extends SecuredController {
+                            spaceService: SpaceService, users: UserService, events: EventService,
+                            appConfig: AppConfigurationService, selections: SelectionService,
+                            adminsNotifierService: AdminsNotifierService, search: SearchService) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc. parsed from conf/messages
@@ -456,7 +456,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           events.addObjectEvent(option_user, collection.id, collection.name, EventType.CREATE_COLLECTION.toString)
 
           // redirect to collection page
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
+          adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)
           if (colParentColId != null && colParentColId.size>0) {
             try {
               collections.get(UUID(colParentColId(0))) match {

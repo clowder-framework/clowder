@@ -21,6 +21,7 @@ class Status @Inject()(spaces: SpaceService,
                        users: UserService,
                        appConfig: AppConfigurationService,
                        extractors: ExtractorService,
+                       versusService: VersusService,
                        searches: SearchService) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
@@ -59,17 +60,16 @@ class Status @Inject()(spaces: SpaceService,
             })
       }
 
-      // geostream
-      case p: PostgresPlugin => {
-        val status = if (p.conn != null) {
+      // rabbitmq
+      case p: RabbitmqPlugin => {
+        val status = if (p.connect) {
           "connected"
         } else {
           "disconnected"
         }
-        result.put("postgres", if (Permission.checkServerAdmin(user)) {
-          Json.obj("catalog" -> p.conn.getCatalog,
-            "schema" -> p.conn.getSchema,
-            "updates" -> appConfig.getProperty[List[String]]("postgres.updates", List.empty[String]),
+        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
+          Json.obj("uri" -> p.rabbitmquri,
+            "exchange" -> p.exchange,
             "status" -> status)
         } else {
           Json.obj("status" -> status)
@@ -77,28 +77,11 @@ class Status @Inject()(spaces: SpaceService,
       }
 
       // versus
-      case p: VersusPlugin => {
-        result.put("versus", if (Permission.checkServerAdmin(user)) {
-          Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
-        } else {
-          jsontrue
-        })
-      }
-
-      case p: ToolManagerPlugin => {
-        val status = if (p.enabled) {
-          "enabled"
-        } else {
-          "disabled"
-        }
-        result.put("toolmanager", if (Permission.checkServerAdmin(user)) {
-          Json.obj("host" -> configuration.getString("toolmanagerURI").getOrElse("").toString,
-            "tools" -> p.getLaunchableTools(),
-            "status" -> status)
-        } else {
-          Json.obj("status" -> status)
-        })
-      }
+      result.put("versus", if (Permission.checkServerAdmin(user)) {
+        Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
+      } else {
+        jsontrue
+      })
 
       case p => {
         val name = p.getClass.getName

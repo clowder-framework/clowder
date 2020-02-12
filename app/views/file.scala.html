@@ -3,7 +3,6 @@
 		previews : Map[models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
 		mds: List[models.Metadata],
-		rdfExported: Boolean,
 		extractionsStatus: Map[String, ExtractionGroup], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
 		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
 		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)
@@ -27,15 +26,6 @@
 		if("@p._2" === "Thumbnail"){
 			Configuration.fileType = "@p._6";
 			Configuration.fileSize = @p._7;
-		}
-		else if("@p._2" === "X3d"){
-			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1))";
-			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
-			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
-			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
-			Configuration.calledFrom = "file";
-		}
-		else if("@p._2" === "Oni"){			
 		}
 		else if("@p._2" === "Video"){
 			Configuration.fileType = "@p._6";
@@ -81,7 +71,6 @@
 			Configuration.authenticated = @user.isDefined;
 			Configuration.ptmAppletPath = "@(routes.Assets.at("plugins") + "/" + "envlib.jar")";
 			Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
-			Configuration.iipZoomPath = "@(routes.Assets.at("plugins") + "/" + "IIPZoom.swf")";
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 			Configuration.imagesPath = "@(routes.Assets.at("images"))";
 			Configuration.appContext = "@play.api.Play.configuration.getString("application.context").getOrElse("")";

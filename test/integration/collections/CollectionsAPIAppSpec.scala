@@ -210,8 +210,8 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       // TODO check make sure dataset2 is added
     }
 
-    "respond to the listInCollection(coll_id: UUID) function routed by GET /api/collections/:coll_id/getDatasets" in {
-      val Some(result_get) = route(FakeRequest(GET, "/api/collections/" + collection1Id + "/getDatasets?key=" + secretKey))
+    "respond to the listInCollection(coll_id: UUID) function routed by GET /api/collections/:coll_id/datasets" in {
+      val Some(result_get) = route(FakeRequest(GET, "/api/collections/" + collection1Id + "/datasets?key=" + secretKey))
       info("Status_Get="+status(result_get))
       status(result_get) mustEqual OK
       info("contentType_Get="+contentType(result_get))
@@ -264,21 +264,6 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       // TODO check make sure dataset is really gone
     }
 
-    "respond to the removeDataset(coll_id:UUID, ds_id:UUID, ignoreNoteFound) function routed by POST /api/collections/:coll_id/datasets/:ds_id/:ignoreNotFound for dataset 2" in {
-      val req = FakeRequest(POST, "/api/collections/" + collection1Id + "/datasetsRemove/" + dataset1Id + "/true?key=" + secretKey)
-      //.withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> file_id)))
-      val result3 = route(req).get
-
-      info("Status=" + status(result3))
-      status(result3) mustEqual OK
-      info("contentType=" + contentType(result3))
-      contentType(result3) mustEqual Some("application/json")
-      //contentAsString(result3) must include("id")
-      info("contentAsString" + contentAsString(result3))
-      // TODO check make sure dataset is really gone
-    }
-
-
    "respond to the deleteDataset(id:UUID) function routed by DELETE /api/datasets/:id for Dataset 1 " in {
      val Some(result_get) = route(FakeRequest(DELETE, "/api/datasets/" + dataset1Id + "?key=" + secretKey))
      info("Status_Get="+status(result_get))
@@ -311,29 +296,6 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentType(result) mustEqual Some("application/json")
       //contentAsString(result) must include ("File")
       info("content"+contentAsString(result))
-    }
-
-  "respond to the listCollections() function routed by GET /api/collections/list" in {
-      val Some(result) = route(FakeRequest(GET, "/api/collections/list?key=" + secretKey))
-      info("Status="+status(result))
-      status(result) mustEqual OK
-      info("contentType="+contentType(result))
-      contentType(result) mustEqual Some("application/json")
-      //contentAsString(result) must include ("File")
-      info("content"+contentAsString(result))
-    }
-
-    "respond to the removeCollection(coll_id:UUID) function routed by POST /api/collections/:coll_id/remove  " in {
-      val Some(result_get) = route(FakeRequest(POST, "/api/collections/" + collection1Id + "/remove?key=" + secretKey))
-      //val Some(result_get) = route(FakeRequest(DELETE, "/api/collections/54ff8b41eb1f14ebbe00e5d2?key=" + secretKey))
-      info("Status_Get="+status(result_get))
-      status(result_get) mustEqual OK
-      info("contentType_Get="+contentType(result_get))
-      contentType(result_get) mustEqual Some("application/json")
-      val json: JsValue = Json.parse(contentAsString(result_get))
-      val readableString: String = Json.prettyPrint(json)
-      info("Pretty JSON format")
-      info(readableString)
     }
 
     "respond to the removeCollection(coll_id:UUID) function routed by DELETE /api/collections/:id  " in {

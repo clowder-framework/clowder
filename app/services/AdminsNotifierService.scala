@@ -1,23 +1,16 @@
 package services
 
 import javax.inject.Inject
-
-import play.api.templates.Html
-import play.api.{ Plugin, Logger, Application }
-import play.api.Play.current
 import models.UUID
+import play.api.templates.Html
+import play.api.{Application, Configuration, Logger}
+import play.api.Play.current
 import util.Mail
 
-class AdminsNotifierPlugin @Inject()(userService: UserService) (application:Application) extends Plugin {
-  override def onStart() {
-    Logger.debug("Starting Admins Notifier Plugin")
-  }
-  override def onStop() {
-    Logger.debug("Shutting down Admins Notifier Plugin")
-  }
+class AdminsNotifierService @Inject()(userService: UserService)() {
 
-  override lazy val enabled = {
-    !application.configuration.getString("adminnotifierservice").filter(_ == "disabled").isDefined
+  val enabled = {
+    !play.api.Play.configuration.getString("adminnotifierservice").filter(_ == "disabled").isDefined
   }
   
   def sendAdminsNotification(baseURL: String, resourceType: String = "Dataset", eventType: String = "added",

@@ -16,27 +16,19 @@ import org.apache.commons.io.IOUtils
 import com.ning.http.client.Realm.AuthScheme
 
 /**
- * Polyglot Plugin
+ * File Convert Service
  *
  */
-class PolyglotPlugin(application: Application) extends Plugin {
+class FileConvertService(application: Application) {
 
-  val polyglotUser: Option[String] = configuration.getString("polyglot.username")
-  val polyglotPassword: Option[String] = configuration.getString("polyglot.password")
-  val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
-  val polyglotInputsURL: Option[String] = configuration.getString("polyglot.inputsURL")
+  val fileConvertUser: Option[String] = configuration.getString("fileconvert.username")
+  val fileConvertPassword: Option[String] = configuration.getString("fileconvert.password")
+  val fileConvertConvertURL: Option[String] = configuration.getString("fileconvert.convertURL")
+  val fileConvertInputsURL: Option[String] = configuration.getString("fileconvert.inputsURL")
 
   //table to store output formats for each input format
   //store them in memory to avoind making a request to Polyglot each time
   val formatsTable = scala.collection.mutable.HashMap.empty[String, List[String]]
-
-  override def onStart() {
-    Logger.debug("Starting Polyglot Plugin")
-  }
-
-  override def onStop() {
-    Logger.debug("Stopping Polyglot Plugin")
-  }
 
   //using code from https://www.playframework.com/documentation/2.2.x/ScalaWS
   //Processing large responses
@@ -60,20 +52,20 @@ class PolyglotPlugin(application: Application) extends Plugin {
   def checkForFileAndDownload(triesLeft: Int, url: String, outputStream: OutputStream): Future[Unit] =
     {
 	  //check that credentials are set in config file
-      if ( !polyglotUser.isDefined || !polyglotPassword.isDefined) {
+      if ( !fileConvertUser.isDefined || !fileConvertPassword.isDefined) {
         throw new RuntimeException("Polyglot credentials not defined.")
       }
       
       if (triesLeft == 0) Future.failed(throw new RuntimeException("Converted file not found."))
       
-      else  WS.url(url).withAuth(polyglotUser.get,  polyglotPassword.get, AuthScheme.BASIC).get flatMap { res =>
+      else  WS.url(url).withAuth(fileConvertUser.get,  fileConvertPassword.get, AuthScheme.BASIC).get flatMap { res =>
         if (res.status == 200) {
           //this is the callback, runs after file exists is TRUE
           Logger.debug("File exists on polyglot. Will download now.")
           //file exists on Polyglot, begin download using iteratee
           //following example in https://www.playframework.com/documentation/2.2.x/ScalaWS  Processing large responses           
           val result = WS.url(url)
-            .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
+            .withAuth(fileConvertUser.get, fileConvertPassword.get, AuthScheme.BASIC)
             .get { xx => fromStream(outputStream) }
            	.flatMap(_.run)
           //Returning result. When it is mapped in the controller, the successful future is AFTER file has been downloaded on the Clowder server.
@@ -90,7 +82,7 @@ class PolyglotPlugin(application: Application) extends Plugin {
    */
   def getConvertedFileURL(filename: String, inputStream: java.io.InputStream, outputFormat: String): Future[String] = {
     //check that Polyglot credentials are defined
-    if (!polyglotConvertURL.isDefined || !polyglotUser.isDefined || !polyglotPassword.isDefined) {
+    if (!fileConvertConvertURL.isDefined || !fileConvertUser.isDefined || !fileConvertPassword.isDefined) {
       throw new RuntimeException("Polyglot credentials not defined.")
     }
 
@@ -107,8 +99,8 @@ class PolyglotPlugin(application: Application) extends Plugin {
     val reqContentType = reqEntity.getContentType
 
     // Now just send the data to the WS API                
-    val response = WS.url(polyglotConvertURL.get + outputFormat)
-      .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
+    val response = WS.url(fileConvertConvertURL.get + outputFormat)
+      .withAuth(fileConvertUser.get, fileConvertPassword.get, AuthScheme.BASIC)
       .post(bytes)(Writeable.wBytes, ContentTypeOf(Some(reqContentType)))
 
     //get the url for the converted file on Polyglot  
@@ -149,10 +141,10 @@ class PolyglotPlugin(application: Application) extends Plugin {
    */
   def getOutputFormatsPolyglot(inputType: String): Future[Option[List[String]]] = {   
     //proceed only if received all the config params
-    if (polyglotInputsURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
+    if (fileConvertInputsURL.isDefined && fileConvertUser.isDefined && fileConvertPassword.isDefined) {
       //call polyglot server with authentication          
-      WS.url(polyglotInputsURL.get + inputType)
-        .withAuth(polyglotUser.get, polyglotPassword.get, AuthScheme.BASIC)
+      WS.url(fileConvertInputsURL.get + inputType)
+        .withAuth(fileConvertUser.get, fileConvertPassword.get, AuthScheme.BASIC)
         .get
         .map {
           case response =>

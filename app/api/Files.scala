@@ -42,8 +42,6 @@ class Files @Inject()(
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
   previews: PreviewService,
-  threeD: ThreeDService,
-  sqarql: RdfSPARQLService,
   metadataService: MetadataService,
   contextService: ContextLDService,
   thumbnails: ThumbnailService,
@@ -52,6 +50,8 @@ class Files @Inject()(
   spaces: SpaceService,
   userService: UserService,
   appConfig: AppConfigurationService,
+  adminsNotifierService: AdminsNotifierService,
+  versusService: VersusService,
   searches: SearchService) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
@@ -309,66 +309,53 @@ class Files @Inject()(
     files.get(id) match {
       case Some(x) => {
         val json = request.body
+        //parse request for agent/creator info
+        //creator can be UserAgent or ExtractorAgent
+        var creator: models.Agent = null
+        json.validate[Agent] match {
+          case s: JsSuccess[Agent] => {
+            creator = s.get
+            //if creator is found, continue processing
+            val context: JsValue = (json \ "@context")
 
-        // parse request for JSON-LD model
-        var model: RDFModel = null
-        json.validate[RDFModel] match {
-          case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + json.toString())
-            BadRequest(JsError.toFlatJson(e))
-          }
-          case s: JsSuccess[RDFModel] => {
-            model = s.get
+            // check if the context is a URL to external endpoint
+            val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
 
-            //parse request for agent/creator info
-            //creator can be UserAgent or ExtractorAgent
-            var creator: models.Agent = null
-            json.validate[Agent] match {
-              case s: JsSuccess[Agent] => {
-                creator = s.get
-                //if creator is found, continue processing
-                val context: JsValue = (json \ "@context")
+            // check if context is a JSON-LD document
+            val contextID: Option[UUID] =
+              if (context.isInstanceOf[JsObject]) {
+                context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+              } else if (context.isInstanceOf[JsArray]) {
+                context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+              } else None
 
-                // check if the context is a URL to external endpoint
-                val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+            // when the new metadata is added
+            val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
 
-                // check if context is a JSON-LD document
-                val contextID: Option[UUID] =
-                  if (context.isInstanceOf[JsObject]) {
-                    context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
-                  } else if (context.isInstanceOf[JsArray]) {
-                    context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
-                  } else None
+            //parse the rest of the request to create a new models.Metadata object
+            val attachedTo = ResourceRef(ResourceRef.file, id)
+            val content = (json \ "content")
+            val version = None
+            val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+              content, version)
 
-                // when the new metadata is added
-                val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
+            //add metadata to mongo
+            val metadataId = metadataService.addMetadata(metadata)
+            val mdMap = metadata.getExtractionSummary
 
-                //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef(ResourceRef.file, id)
-                val content = (json \ "content")
-                val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
-
-                //add metadata to mongo
-                val metadataId = metadataService.addMetadata(metadata)
-                val mdMap = metadata.getExtractionSummary
-
-                //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                }
-
-                events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
-
-                files.index(id)
-                Ok(toJson("Metadata successfully added to db"))
-              }
-              case e: JsError => {
-                Logger.error("Error getting creator")
-                BadRequest(toJson(s"Creator data is missing or incorrect."))
-              }
+            //send RabbitMQ message
+            current.plugin[RabbitmqPlugin].foreach { p =>
+              p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
             }
+
+            events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
+
+            files.index(id)
+            Ok(toJson("Metadata successfully added to db"))
+          }
+          case e: JsError => {
+            Logger.error("Error getting creator")
+            BadRequest(toJson(s"Creator data is missing or incorrect."))
           }
         }
       }
@@ -382,17 +369,6 @@ class Files @Inject()(
     try {
       val fileList: JsValue = (json \ "files")
       val metadata: JsValue = (json \ "metadata")
-
-      // parse request for JSON-LD model
-      var model: RDFModel = null
-      metadata.validate[RDFModel] match {
-        case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatForm(e) + "\n\t" + metadata.toString())
-          BadRequest(JsError.toFlatJson(e))
-        }
-        case s: JsSuccess[RDFModel] => {
-          model = s.get
-
           //parse request for agent/creator info
           //creator can be UserAgent or ExtractorAgent
           var creator: models.Agent = null
@@ -444,8 +420,6 @@ class Files @Inject()(
               Logger.error("Error getting creator")
               BadRequest(toJson(s"Creator data is missing or incorrect."))
             }
-          }
-        }
       }
     } catch {
       case e: ClassCastException => {
@@ -539,20 +513,6 @@ class Files @Inject()(
         }
       }
     }
-
-  /**
-    * Upload file using multipart form enconding.
-    */
-  @deprecated
-  def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = showPreviews, originalZipFile = originalZipFile,
-      flagsFromPrevious = flagsFromPrevious, apiKey = request.apiKey)
-    uploadedFiles.length match {
-      case 0 => BadRequest("No files uploaded")
-      case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
-      case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
-    }
-  }
 
   /**
     * Upload a file to a specific dataset
@@ -689,42 +649,6 @@ class Files @Inject()(
     }
   }
 
-  def getRDFUserMetadata(id: UUID, mappingNumber: String = "1") = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match {
-      case true => {
-        current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match {
-          case Some(resultFile) => {
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
-              .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
-              .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
-          }
-          case None => BadRequest(toJson("File not found " + id))
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
-    }
-  }
-
-  def getRDFURLsForFile(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    current.plugin[RDFExportService].isDefined match {
-      case true => {
-        current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify) match {
-          case Some(listJson) => {
-            Ok(listJson)
-          }
-          case None => {
-            Logger.error("Error getting file" + id); InternalServerError
-          }
-        }
-      }
-      case false => {
-        Ok("RDF export plugin not enabled")
-      }
-    }
-  }
-
   def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
     Logger.debug("Adding user metadata to file " + id)
     val theJSON = Json.stringify(request.body)
@@ -843,52 +767,6 @@ class Files @Inject()(
   }
 
   /**
-    * Add 3D geometry file to file.
-    */
-  def attachGeometry(file_id: UUID, geometry_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
-    request.body match {
-      case JsObject(fields) => {
-        files.get(file_id) match {
-          case Some(file) => {
-            threeD.getGeometry(geometry_id) match {
-              case Some(geometry) =>
-                threeD.updateGeometry(file_id, geometry_id, fields)
-                Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Geometry file not found"))
-            }
-          }
-          case None => BadRequest(toJson("File not found " + file_id))
-        }
-      }
-      case _ => Ok("received something else: " + request.body + '\n')
-    }
-  }
-
-
-  /**
-    * Add 3D texture to file.
-    */
-  def attachTexture(file_id: UUID, texture_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
-    request.body match {
-      case JsObject(fields) => {
-        files.get((file_id)) match {
-          case Some(file) => {
-            threeD.getTexture(texture_id) match {
-              case Some(texture) => {
-                threeD.updateTexture(file_id, texture_id, fields)
-                Ok(toJson(Map("status" -> "success")))
-              }
-              case None => BadRequest(toJson("Texture file not found"))
-            }
-          }
-          case None => BadRequest(toJson("File not found " + file_id))
-        }
-      }
-      case _ => Ok("received something else: " + request.body + '\n')
-    }
-  }
-
-  /**
     * Add thumbnail to file.
     */
   def attachThumbnail(file_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
@@ -939,113 +817,6 @@ class Files @Inject()(
         Logger.error("File not found")
         BadRequest(toJson("Query file not found " + query_id))
       }
-    }
-  }
-
-
-  /**
-    * Find geometry file for given 3D file and geometry filename.
-    */
-  def getGeometry(three_d_file_id: UUID, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, three_d_file_id))) { implicit request =>
-    threeD.findGeometry(three_d_file_id, filename) match {
-      case Some(geometry) => {
-
-        threeD.getGeometryBlob(geometry.id) match {
-
-          case Some((inputStream, filename, contentType, contentLength)) => {
-            request.headers.get(RANGE) match {
-              case Some(value) => {
-                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-                  case x => (x(0).toLong, x(1).toLong)
-                }
-                range match {
-                  case (start, end) =>
-
-                    inputStream.skip(start)
-                    import play.api.mvc.{ResponseHeader, SimpleResult}
-                    SimpleResult(
-                      header = ResponseHeader(PARTIAL_CONTENT,
-                        Map(
-                          CONNECTION -> "keep-alive",
-                          ACCEPT_RANGES -> "bytes",
-                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                          CONTENT_LENGTH -> (end - start + 1).toString,
-                          CONTENT_TYPE -> contentType
-                        )
-                      ),
-                      body = Enumerator.fromStream(inputStream)
-                    )
-                }
-              }
-              case None => {
-                //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!
-                Ok.chunked(Enumerator.fromStream(inputStream))
-                  .withHeaders(CONTENT_TYPE -> contentType)
-                  .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
-
-              }
-            }
-          }
-          case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
-
-        }
-      }
-      case None => Logger.error("Geometry file not found"); InternalServerError
-    }
-  }
-
-
-  /**
-    * Find texture file for given 3D file and texture filename.
-    */
-  def getTexture(three_d_file_id: UUID, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, three_d_file_id))) { implicit request =>
-    threeD.findTexture(three_d_file_id, filename) match {
-      case Some(texture) => {
-
-        threeD.getBlob(texture.id) match {
-
-          case Some((inputStream, filename, contentType, contentLength)) => {
-            request.headers.get(RANGE) match {
-              case Some(value) => {
-                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
-                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
-                  case x => (x(0).toLong, x(1).toLong)
-                }
-                range match {
-                  case (start, end) =>
-
-                    inputStream.skip(start)
-
-                    SimpleResult(
-                      header = ResponseHeader(PARTIAL_CONTENT,
-                        Map(
-                          CONNECTION -> "keep-alive",
-                          ACCEPT_RANGES -> "bytes",
-                          CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                          CONTENT_LENGTH -> (end - start + 1).toString,
-                          CONTENT_TYPE -> contentType
-                        )
-                      ),
-                      body = Enumerator.fromStream(inputStream)
-                    )
-                }
-              }
-              case None => {
-                //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!
-                Ok.chunked(Enumerator.fromStream(inputStream))
-                  .withHeaders(CONTENT_TYPE -> contentType)
-                  //.withHeaders(CONTENT_LENGTH -> contentLength.toString)
-                  .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
-
-              }
-            }
-          }
-          case None => Logger.error("No texture file found: " + texture.id.toString()); InternalServerError("No texture found")
-
-        }
-      }
-      case None => Logger.error("Texture file not found"); InternalServerError
     }
   }
 
@@ -1516,14 +1287,7 @@ class Files @Inject()(
   }
 
   def jsonPreview(pvId: UUID, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
-    if (pId.equals("X3d"))
-      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
-        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
-        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString,
-        "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString,
-        "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString))
-    else
-      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+    toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
         "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
 
@@ -1673,27 +1437,14 @@ class Files @Inject()(
 
         //this stmt has to be before files.removeFile
         Logger.debug("Deleting file from indexes " + file.filename)
-        current.plugin[VersusPlugin].foreach {
-          _.removeFromIndexes(id)
-        }
+        versusService.removeFromIndexes(id)
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
 
         searches.delete(id.stringify, "file")
 
-        //remove file from RDF triple store if triple store is used
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => {
-            if (file.filename.endsWith(".xml")) {
-              sqarql.removeFileFromGraphs(id, "rdfXMLGraphName")
-            }
-            sqarql.removeFileFromGraphs(id, "rdfCommunityGraphName")
-          }
-          case _ => {}
-        }
-        current.plugin[AdminsNotifierPlugin].foreach {
-          _.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
-        }
+        adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "File", "removed", id.stringify, file.filename)
+
         Ok(toJson(Map("status" -> "success")))
       }
       case None => Ok(toJson(Map("status" -> "success")))
