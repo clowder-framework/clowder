@@ -226,6 +226,7 @@ class  Datasets @Inject()(
                   }
                   searches.index(d, true)
 
+
                   adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
 
                   Ok(toJson(Map("id" -> id)))

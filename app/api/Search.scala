@@ -2,7 +2,7 @@ package api
 
 import api.Permission._
 import services.{DatasetService, FileService, CollectionService, PreviewService, SpaceService,
-  MultimediaQueryService, SearchService}
+MultimediaQueryService, SearchService}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
 import util.SearchResult
@@ -61,7 +61,7 @@ class Search @Inject() (
       } else {
         BadRequest("Elasticsearch plugin could not be reached")
       }
-    }
+
   }
 
   /**
