@@ -59,7 +59,7 @@ class ElasticsearchSearchService @Inject() (
                                     queue: QueueService) extends SearchService {
   var client: Option[RestHighLevelClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
-  val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
+  val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("http://localhost")
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
   val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
@@ -390,7 +390,7 @@ class ElasticsearchSearchService @Inject() (
       first, last, prev, next)
   }
 
-  /** Create a new index with preconfigured mappgin */
+  /** Create a new index with preconfigured mapping */
   def createIndex(): Unit = {
     client match {
       case Some(c) => {
@@ -411,7 +411,6 @@ class ElasticsearchSearchService @Inject() (
       }
       case None =>
     }
-
   }
 
   /** Delete all indices */
@@ -829,33 +828,23 @@ class ElasticsearchSearchService @Inject() (
 
   /** Return string-encoded JSON object describing field types */
   private def getElasticsearchObjectMappings(): String = {
-    """dynamic_templates": [{
-       "nonindexer": {
-          "match": "*",
-          "match_mapping_type":"string",
-          "mapping": {
-            "type": "string",
-            "index": "not_analyzed"
-          }
-        }
-      }
-    ],"""
-
-    """{"clowder_object": {
+    // TODO: Ability to include metadata fields in "_all" has been removed - solution?
+    """{
           |"properties": {
-            |"name": {"type": "string"},
-            |"description": {"type": "string"},
-            |"resource_type": {"type": "string", "include_in_all": false},
-            |"child_of": {"type": "string", "include_in_all": false},
-            |"parent_of": {"type": "string", "include_in_all": false},
-            |"creator": {"type": "string", "include_in_all": false},
-            |"created_as": {"type": "string"},
-            |"created": {"type": "date", "format": "dateOptionalTime", "include_in_all": false},
+            |"name": {"type": "text", "copy_to": "_all"},
+            |"description": {"type": "text", "copy_to": "_all"},
+            |"resource_type": {"type": "keyword"},
+            |"child_of": {"type": "keyword"},
+            |"parent_of": {"type": "keyword"},
+            |"creator": {"type": "text"},
+            |"created_as": {"type": "text", "copy_to": "_all"},
+            |"created": {"type": "date", "format": "dateOptionalTime"},
             |"metadata": {"type": "object"},
-            |"comments": {"type": "string", "include_in_all": false},
-            |"tags": {"type": "string"}
+            |"comments": {"type": "text"},
+            |"tags": {"type": "keyword", "copy_to": "_all"},
+            |"_all": {"type": "text"}
           |}
-    |}}""".stripMargin
+    |}""".stripMargin
   }
 
   /**Attempt to cast String into Double, returning None if not possible**/
