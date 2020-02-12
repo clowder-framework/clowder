@@ -61,7 +61,7 @@ class Search @Inject() (
       } else {
         BadRequest("Elasticsearch plugin could not be reached")
       }
-
+    }
   }
 
   /**
