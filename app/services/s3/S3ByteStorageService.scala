@@ -100,7 +100,6 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
           Logger.debug("Saving file to: /" + bucketName + "/" + prefix)
 
           val id = UUID.generate.stringify
-          val length = inputStream.available
           val separator = java.io.File.separatorChar
 
           var targetPath = prefix
