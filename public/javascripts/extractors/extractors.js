@@ -1,32 +1,20 @@
-function removeExtractor(fileId, isreload, url){
+function removeExtractor(extractorId){
 
     console.log('removing extractor');
 
-    var request = jsRoutes.api.Files.removeFile(fileId).ajax({
+    var request = jsRoutes.api.Extractions.deleteExtractor(extractorId).ajax({
         type: 'DELETE'
     });
 
     request.done(function (response, textStatus, jqXHR){
-        if(isreload === "true")
-            window.location.href=url;
-        else {
-            var obj = $('#'+ fileId+'-tile');
-            $('#masonry').masonry( 'remove', obj );
-            $('#masonry').masonry( 'layout' );
-            $('#'+ fileId+'-listitem').remove();
-
-            // After deleting the last file from a folder, display the empty message
-            if($("#tile-view").find("div[id$='-listitem']").length == 0){
-                $('#empty-folder-div').show();
-            }
-        }
+        window.location.href=jsRoutes.controllers.Extractors.listAllExtractions;
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to delete a file from the system.";
+        var errMsg = "Somethingwent wrong.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The file was not deleted from the system due to : " + errorThrown, "error");
+            notify("The extractor was not deleted from the system due to : " + errorThrown, "error");
         }
     });
 }

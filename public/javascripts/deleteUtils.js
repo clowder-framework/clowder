@@ -145,7 +145,7 @@ function DeleteTemplate(resourceType, resourceId, isreload, url, resourceFromTyp
         removeCurationFolder(resourceId, isreload, url);
     } else if(resourceType == "extractor") {
         //redirect to extractors
-        removeExtractor(resourceId, isreload, url)
+        removeExtractor(resourceId)
     }
 }
 
