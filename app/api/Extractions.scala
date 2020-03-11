@@ -450,7 +450,7 @@ class Extractions @Inject()(
 
   def deleteExtractor(extractorName: String) = ServerAdminAction { implicit request =>
     extractors.deleteExtractor(extractorName)
-    Ok("not implemented")
+    Ok(toJson(Map("status" -> "success")))
   }
 
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>

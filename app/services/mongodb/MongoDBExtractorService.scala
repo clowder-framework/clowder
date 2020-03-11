@@ -205,11 +205,10 @@ class MongoDBExtractorService extends ExtractorService {
     }
   }
 
-  def deleteExtractor(extractorName: String) = {
+  def deleteExtractor(extractorName: String) {
     ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName)) match {
       case Some(extractor) => {
-        Logger.info("We are not actually deleting anything yet")
-        // ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
+        ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
       }
       case None => {
 
