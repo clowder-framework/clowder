@@ -448,6 +448,10 @@ class Extractions @Inject()(
     }
   }
 
+  def deleteExtractor(extractorName: String) = ServerAdminAction { implicit request =>
+    Ok("not implemented")
+  }
+
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
 
     // If repository is of type object, change it into an array.

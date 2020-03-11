@@ -204,6 +204,18 @@ class MongoDBExtractorService extends ExtractorService {
       }
     }
   }
+
+  def deleteExtractor(extractorName: String) = {
+    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName)) match {
+      case Some(extractor) => {
+        ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
+      }
+      case None => {
+
+      }
+
+    }
+  }
 }
 
 object ExtractorServer extends ModelCompanion[ExtractorServer, ObjectId] {
