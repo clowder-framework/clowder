@@ -1009,8 +1009,10 @@
 						}
 						@file.tags.map { tag =>
 							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)" id="@tag.name" data-id="@tag.id">@Html(tag.name)</a>
-								<a href='javascript:void(0);'>
-									<span style="display:none;" id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></span></a></li>
+								@if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.file, file.id))) {
+									<a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete"></span></a>
+								}
+							</li>
 						}
 					</div>
 					@{if (file.sections.length>0)
@@ -1018,7 +1020,11 @@
 					}
 					@file.sections.map { section =>
 						@section.tags.map { tag =>
-							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)">@Html(tag.name)</a></li>
+							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)">@Html(tag.name)</a>
+								@if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.file, file.id))) {
+									<a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete"></span></a>
+								}
+							</li>
 						}
 					}
 				</ul>
