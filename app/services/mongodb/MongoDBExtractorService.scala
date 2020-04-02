@@ -211,7 +211,7 @@ class MongoDBExtractorService extends ExtractorService {
         ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
       }
       case None => {
-
+        Logger.info("No extractor found with name: " + extractorName)
       }
 
     }
