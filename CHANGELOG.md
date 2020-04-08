@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.8.3 - 2020-03-12
 ### Fixed
+- Ability to delete tags from sections on file [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1046)
 - Ability to delete tags on file page.
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
 
