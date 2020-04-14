@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Ability to delete tags on file page.
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
+  
+  
 ## 1.8.2 - 2020-02-19
 
+### Changed
+- Elasticsearch indexer will new add new metadata fields as strings to avoid unexpected behavior on date fields.
 ### Fixed
 - Use the passed-in length within S3ByteStorageService.save.
 
