@@ -687,19 +687,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
-    """dynamic_templates": [{
-       "nonindexer": {
-          "match": "*",
-          "match_mapping_type":"string",
-          "mapping": {
-            "type": "string",
-            "index": "not_analyzed"
-          }
-        }
-      }
-    ],"""
-
+    /** The dynamic template will restrict all dynamic metadata fields to be indexed
+     * as strings, regardless of interpreted data type. In the future, this could
+     * be removed, but only once the Search API better supports those data types (e.g. Date).
+     */
     """{"clowder_object": {
+          |"dynamic_templates": [{
+            |"metadata_interpreter": {
+              |"match": "*",
+              |"match_mapping_type": "*",
+              |"mapping": {"type": "string"}
+            |}
+          |}],
           |"properties": {
             |"name": {"type": "string"},
             |"description": {"type": "string"},
