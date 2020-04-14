@@ -1103,7 +1103,7 @@
 							var tagDataId = $(this).attr("data-id");
 							console.log("data-id to remove is " + tagDataId);
 
-							var request = jsRoutes.api.Sections.removeTags('@file.id').ajax({
+							var request = jsRoutes.api.Files.removeTags('@file.id').ajax({
 								data: JSON.stringify({"tags":[tagId]}),
 								type: 'POST',
 								contentType: "application/json"
