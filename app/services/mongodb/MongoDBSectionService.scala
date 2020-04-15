@@ -50,11 +50,12 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in section " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
-    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.id.toString())
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map { tag =>
-      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+      Logger.info(tag)
+      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tag))), false, false, WriteConcern.Safe)
     }
   }
 
