@@ -16,7 +16,7 @@ trait SectionService {
 
   def get(ids: List[UUID]): DBResult[Section]
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag]
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 

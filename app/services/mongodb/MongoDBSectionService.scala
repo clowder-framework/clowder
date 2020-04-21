@@ -1,7 +1,7 @@
 package services.mongodb
 
 import org.bson.types.ObjectId
-import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
+import services.{CommentService, DatasetService, FileService, FolderService, PreviewService, SectionService}
 import models._
 import javax.inject.{Inject, Singleton}
 import java.util.Date
@@ -14,7 +14,7 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsValue, Json}
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * USe MongoDB to store sections
@@ -26,8 +26,11 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.findAll.toList
   }
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag] = {
     Logger.debug("Adding tags to section " + id + " : " + tags)
+
+    var tagsAdded : ListBuffer[Tag] = ListBuffer.empty[Tag]
+
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
@@ -42,19 +45,22 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
       // Only add tags with new values.
       if (!existingTags.contains(shortTag)) {
         val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        tagsAdded += tagObj
         SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
+    tagsAdded.toList
   }
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in section " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
-    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.id.toString())
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map { tag =>
-      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+      Logger.info(tag)
+      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tag))), false, false, WriteConcern.Safe)
     }
   }
 

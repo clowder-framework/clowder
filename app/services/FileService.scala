@@ -185,7 +185,7 @@ trait FileService {
 
   def findIntermediates(): List[File]
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag]
 
   def removeAllTags(id: UUID)
 

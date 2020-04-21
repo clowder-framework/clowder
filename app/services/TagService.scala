@@ -2,13 +2,13 @@ package services
 
 import api.UserRequest
 import play.api.libs.json.JsValue
-import models.UUID
+import models.{Tag, UUID}
 
 /**
  * Service to manipulate tags
  */
 abstract class TagService {
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String)
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String, List[Tag])
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String)
 }
 
