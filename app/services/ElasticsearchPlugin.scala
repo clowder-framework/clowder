@@ -176,7 +176,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case None => {}
     }
 
-    val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted)
+    val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted, user)
     accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
   }
 
@@ -533,10 +533,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             .setSize(0)
         // Filter to tags on a particular type of resource if given
         if (resourceType != "")
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty))
+          searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty, None))
         else {
           // Exclude Section tags to avoid double-counting since those are duplicated in File document
-          searcher.setQuery(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty))
+          searcher.setQuery(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty, None))
         }
 
         val response = searcher.execute().actionGet()
@@ -824,7 +824,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /**Convert search string into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: String, permitted: List[UUID]): XContentBuilder = {
+  def prepareElasticJsonQuery(query: String, permitted: List[UUID], user: Option[User]): XContentBuilder = {
     /** OPERATORS
       *  ==  equals (exact match)
       *  !=  not equals (partial matches OK)
@@ -900,6 +900,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       permitted.foreach(ps => {
         builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
       })
+      user match {
+        case Some(u) => {
+          // Also include anything the user owns
+          builder.startObject().startObject("match").field("creator", u.id.stringify).endObject().endObject()
+        }
+        case None => {}
+      }
       builder.endArray().endObject().endObject()
     }
 
