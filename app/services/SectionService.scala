@@ -3,7 +3,7 @@ package services
 import models.{UUID, Section, Comment, DBResult}
 import play.api.libs.json.JsValue
 import scala.collection.mutable.ArrayBuffer
-import models.User
+import models.{User, Tag}
 
 /**
  * Service to manipulate sections
