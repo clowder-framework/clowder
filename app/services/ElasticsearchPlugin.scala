@@ -889,25 +889,32 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       }
     })
 
-    // Include special OR condition for restricting to permitted spaces
-    if (permitted.length > 0) {
-      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-      if (!populatedMust) {
-        builder.startArray("must")
-        populatedMust = true
-      }
-      builder.startObject.startObject("bool").startArray("should")
-      permitted.foreach(ps => {
-        builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
-      })
-      user match {
-        case Some(u) => {
+    // If user is superadmin or there is no user, no filters applied
+    user match {
+      case Some(u) => {
+        if (!u.superAdminMode) {
+          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+          if (!populatedMust) {
+            builder.startArray("must")
+            populatedMust = true
+          }
+
+          builder.startObject.startObject("bool").startArray("should")
+
+          // Restrict to spaces the user is permitted access to
+          permitted.foreach(ps => {
+            builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
+          })
+
           // Also include anything the user owns
           builder.startObject().startObject("match").field("creator", u.id.stringify).endObject().endObject()
+
+          builder.endArray().endObject().endObject()
         }
-        case None => {}
       }
-      builder.endArray().endObject().endObject()
+      case None => {
+        // Calling this with no user should only happen internally (e.g. listTags) so no filter
+      }
     }
 
     if (populatedMust) builder.endArray()
