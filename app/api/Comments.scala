@@ -38,7 +38,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService, eve
                     datasets.get(parent.dataset_id.get) match {
                       case Some(dataset) => {
                         current.plugin[ElasticsearchPlugin].foreach {
-                          _.index(dataset, false)
+                          _.index(dataset, false, None)
                         }
                       }
                       case None => Logger.error("Dataset not found: " + id)

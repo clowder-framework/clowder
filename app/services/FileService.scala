@@ -123,9 +123,9 @@ trait FileService {
    */
   def first(): Option[File]
 
-  def indexAll()
+  def indexAll(idx: Option[String] = None)
   
-  def index(id: UUID)
+  def index(id: UUID, idx: Option[String] = None)
 
   /**
    * Directly insert file into database, for example if the file path is local.

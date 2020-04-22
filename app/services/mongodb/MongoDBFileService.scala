@@ -323,16 +323,16 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def indexAll() = {
+  def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
     FileDAO.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(f => {
-      index(new UUID(f.get("_id").toString))
+      index(new UUID(f.get("_id").toString), idx)
     })
   }
 
-  def index(id: UUID) {
+  def index(id: UUID, idx: Option[String] = None) {
     try
-      esqueue.queue("index_file", new ResourceRef('file, id))
+      esqueue.queue("index_file", new ResourceRef('file, id), new ElasticsearchParameters(index=idx))
     catch {
       case except: Throwable => Logger.error(s"Error queuing file ${id.stringify}: ${except}")
       case _ => Logger.error(s"Error queuing file ${id.stringify}")
