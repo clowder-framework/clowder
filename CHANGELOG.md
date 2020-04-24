@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.8.3 - 2020-03-12
 
 ### Fixed
+- Ability to delete tags from sections on file [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1046)
+- Ability to delete tags on file page.
+  [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
 - User-owned resources will now appear in search results regardless of space permissions. Updating space ownership
   for datasets and collections will correctly reindex those resources for searches.
 
