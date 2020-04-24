@@ -333,12 +333,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case Some(x) => {
         // Check if swap index exists before swapping
         if (x.admin.indices.exists(new IndicesExistsRequest(idx)).get().isExists()) {
-          Logger.info("Deleting "+nameOfIndex+" index...")
+          Logger.debug("Deleting "+nameOfIndex+" index...")
           deleteAll(nameOfIndex)
-          Logger.info(x.admin.indices.exists(new IndicesExistsRequest(idx)).get().isExists().toString)
-          Logger.info("Replacing with "+idx+"...")
+          createIndex(nameOfIndex)
+          Logger.debug("Replacing with "+idx+"...")
           ReindexAction.INSTANCE.newRequestBuilder(x).source(idx).destination(nameOfIndex).get()
-          Logger.info("Deleting "+idx)
+          Logger.debug("Deleting "+idx+" index...")
           deleteAll(idx)
         }
       }
@@ -711,12 +711,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
     """{"clowder_object": {
-          |"dynamic_templates": [{
-            |"metadata_interpreter": {
-              |"match_mapping_type": "date",
-              |"mapping": {"type": "string"}
-            |}
-          |}],
           |"date_detection": false,
           |"properties": {
             |"name": {"type": "string"},
