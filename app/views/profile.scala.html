@@ -1,4 +1,6 @@
-@(profile: User, keys: List[UserApiKey], ownProfile: Boolean)(implicit user: Option[models.User] = None)
+@(profile: User, keys: List[UserApiKey], spacesList: List[models.ProjectSpace],
+        datasetsList: List[models.Dataset], collectionsList: List[models.Collection],
+        ownProfile: Boolean)(implicit user: Option[models.User] = None)
 @main("Profile") {
     <script src="@routes.Application.javascriptRoutes" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
@@ -143,36 +145,70 @@
             @if(ownProfile && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
             }
-            @if(ownProfile) {
-                <h4 id="userkeys">User API Keys</h4>
-                <span>Create your personal API keys by providing a name for the key and clicking the Add button. Key names have to be unique per user.</span>
-                <div class="row wrapped" id="key-">
-                    <div class="col-md-1"></div>
-                    <div class="col-md-2">Name</div>
-                    <div class="col-md-9">Key</div>
+        </div>
+
+        <div class="col-md-9 col-lg-9 col-sm-7">
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#spaces" aria-controls="spaces" role="tab" data-toggle="tab"><b>Spaces</b></a></li>
+                <li role="presentation"><a href="#datasets" aria-controls="datasets" role="tab" data-toggle="tab"><b>Datasets</b></a></li>
+                <li role="presentation"><a href="#collections" aria-controls="collections" role="tab" data-toggle="tab"><b>Collections</b></a></li>
+
+                @if(ownProfile) {
+                    <li role="presentation"><a href="#apikeys" aria-controls="apikeys" role="tab" data-toggle="tab"><b>
+                        API Keys</b></a></li>
+                }
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <!-- Spaces tab -->
+                <div role="tabpanel" class="tab-pane active" id="spaces">
+                    @views.html.spaces.miniList(profile, spacesList, false, Some(ownProfile), List.empty)
                 </div>
-                @keys.map{key =>
-                    <div class="row wrapped" id="key-@key.name">
-                        <div class="col-md-1">
+
+                <!-- Datasets tab -->
+                <div role="tabpanel" class="tab-pane" id="datasets">
+                    @views.html.datasets.miniList(profile, datasetsList, false, Some(ownProfile), List.empty)
+                </div>
+
+                <!-- Collections tab -->
+                <div role="tabpanel" class="tab-pane" id="collections">
+                    @views.html.collections.miniList(profile, collectionsList, false, Some(ownProfile), List.empty)
+                </div>
+
+                <!-- API Keys tab -->
+                <div role="tabpanel" class="tab-pane" id="apikeys">
+                    <h4 id="userkeys">User API Keys</h4>
+                    <span>Create your personal API keys by providing a name for the key and clicking the Add button. Key names have to be unique per user.</span>
+                    <div class="row wrapped" id="key-">
+                        <div class="col-md-1"></div>
+                        <div class="col-md-2">Name</div>
+                        <div class="col-md-9">Key</div>
+                    </div>
+
+                    @keys.map{key =>
+                        <div class="row wrapped" id="key-@key.name">
+                            <div class="col-md-1">
                             @if(key.name.startsWith("_")) {
                                 <span class="glyphicon glyphicon-trash"
-                                  title="System API keys start with and underscore and connot be deleted from the user interface"></span>
+                                title="System API keys start with and underscore and connot be deleted from the user interface"></span>
                             } else {
                                 <a href='javascript:deleteUserKey("@key.name");' title="Delete this user API key">
                                     <span class="glyphicon glyphicon-trash"></span></a>
                             }
+                            </div>
+                            <div class="col-md-2">@key.name</div>
+                            <div class="col-md-9">@key.key</div>
                         </div>
-                        <div class="col-md-2">@key.name</div>
-                        <div class="col-md-9">@key.key</div>
+                    }
+                    <div class="row wrapped">
+                        <div class="col-md-1"><a href='javascript:addUserKey();'><span class="glyphicon glyphicon-plus"></span> Add</a></div>
+                        <div class="col-md-2"><input type="text" id="userkeyname" class="form-control"></div>
                     </div>
-                }
-                <div class="row wrapped">
-                    <div class="col-md-1"><a href='javascript:addUserKey();'><span class="glyphicon glyphicon-plus"></span> Add</a></div>
-                    <div class="col-md-2"><input type="text" id="userkeyname" class="form-control"></div>
                 </div>
-            }
+            </div>
         </div>
-
     </div>
 
     <script language="javascript">

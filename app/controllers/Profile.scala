@@ -53,17 +53,31 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     val viewerUser = request.user
     val muser = users.findById(uuid)
 
-    muser match {
-      case Some(existingUser) => {
-        val (ownProfile, keys) = viewerUser match {
-          case Some(loggedInUser) if loggedInUser.id == existingUser.id => {
-            (true, users.getUserKeys(loggedInUser.identityId))
+    viewerUser match {
+      case Some(viewer) => {
+        muser match {
+          case Some(existingUser) => {
+            val (ownProfile, keys) = viewerUser match {
+              case Some(loggedInUser) if loggedInUser.id == existingUser.id => {
+                (true, users.getUserKeys(loggedInUser.identityId))
+              }
+              case _ => (false, List.empty[UserApiKey])
+            }
+
+            val showAll = false
+            val limit = 12
+            val spacesList = spaces.listUser(limit, muser, showAll, viewer)
+            val datasetsList = datasets.listUser(limit, muser, showAll, viewer)
+            val collectionsList = collections.listUser(limit, muser, showAll, viewer)
+
+            Ok(views.html.profile(existingUser, keys, spacesList, datasetsList, collectionsList, ownProfile))
+
           }
-          case _ => (false, List.empty[UserApiKey])
+          case None => {
+            Logger.error("no user model exists for " + uuid.stringify)
+            BadRequest(views.html.notFound("User does not exist in this " + AppConfiguration.getDisplayName +  " instance."))
+          }
         }
-
-        Ok(views.html.profile(existingUser, keys, ownProfile))
-
       }
       case None => {
         Logger.error("no user model exists for " + uuid.stringify)

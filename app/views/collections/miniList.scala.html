@@ -1,0 +1,29 @@
+
+@(profile: User, collectionsList: List[Collection], deletePermission: Boolean,
+        ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
+
+
+<div class="row top-padding">
+    <div class="col-xs-12">
+        <p>@Messages("collection.list.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase )</p>
+    </div>
+    <div class="col-xs-6">
+    </div>
+    <div class="col-xs-6">
+        <span class="pull-right">
+            <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a>
+        </span>
+    </div>
+</div>
+<div class="row" id ="masonry-collections">
+@collectionsList.map { collection =>
+    @collections.tile(collection, routes.Application.index(), None, "col-xs-3", false)
+}
+</div>
+@if(collectionsList.size < 1) {
+    <div class="text-center">
+        <div>@Messages("home.empty.message", Messages("collections.title").toLowerCase) </div>
+
+        <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new @Messages("collection.title")">@Messages("create.title", Messages("collection.title"))</a></div>
+    </div>
+}

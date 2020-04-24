@@ -1,0 +1,32 @@
+
+@(profile: User, datasetsList: List[Dataset], deletePermission: Boolean,
+        ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
+
+
+<div class="row top-padding">
+    <div class="col-xs-12">
+        <p>@Messages("dataset.list.message", Messages("datasets.title").toLowerCase, Messages("dataset.title").toLowerCase)  </p>
+    </div>
+    <div class="col-xs-6">
+    </div>
+    <div class="col-xs-6">
+        <span class="pull-right"><a href="@routes.Datasets.list("","",12, None, None, "", Some(profile.id.stringify))">See More</a></span>
+    </div>
+</div>
+<div class="row" id="masonry-datasets">
+@datasetsList.map { dataset =>
+    @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+        @datasets.tile(dataset, None, "col-xs-3", false, false, routes.Application.index(), true)
+    } else {
+        @datasets.tile(dataset, None, "col-xs-3", false, false, routes.Application.index(), false)
+    }
+
+}
+</div>
+@if(datasetsList.size < 1) {
+    <div class="text-center">
+        <div>@Messages("home.empty.message", Messages("datasets.title").toLowerCase) </div>
+        <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new @Messages("dataset.title")">@Messages("create.title", Messages("dataset.title"))</a></div>
+    </div>
+}
+
