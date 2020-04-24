@@ -333,8 +333,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case Some(x) => {
         // Check if swap index exists before swapping
         if (x.admin.indices.exists(new IndicesExistsRequest(idx)).get().isExists()) {
+          Logger.info("Deleting "+nameOfIndex+" index...")
           deleteAll(nameOfIndex)
+          Logger.info(x.admin.indices.exists(new IndicesExistsRequest(idx)).get().isExists().toString)
+          Logger.info("Replacing with "+idx+"...")
           ReindexAction.INSTANCE.newRequestBuilder(x).source(idx).destination(nameOfIndex).get()
+          Logger.info("Deleting "+idx)
           deleteAll(idx)
         }
       }
@@ -703,17 +707,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
     /** The dynamic template will restrict all dynamic metadata fields to be indexed
-     * as strings, regardless of interpreted data type. In the future, this could
+     * as strings for datatypes besides Objects. In the future, this could
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
     """{"clowder_object": {
           |"dynamic_templates": [{
             |"metadata_interpreter": {
-              |"match": "*",
-              |"match_mapping_type": "*",
+              |"match_mapping_type": "date",
               |"mapping": {"type": "string"}
             |}
           |}],
+          |"date_detection": false,
           |"properties": {
             |"name": {"type": "string"},
             |"description": {"type": "string"},
