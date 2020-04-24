@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- User-owned resources will now appear in search results regardless of space permissions. Updating space ownership
+  for datasets and collections will correctly reindex those resources for searches.
+
 ## 1.8.2 - 2020-02-19
 
 ### Fixed
