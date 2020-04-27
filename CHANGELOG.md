@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Ability to delete tags on file page.
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
+- When adding tags to a section of an image, show the new tag without having to refresh the page.
+### Added
+- API add tags endpoint now returns the added tags.
+
 ## 1.8.2 - 2020-02-19
 
 ### Fixed
