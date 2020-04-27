@@ -34,7 +34,7 @@ class Admin @Inject() (userService: UserService,
    */
   def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
     current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
-    current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+    current.plugin[ElasticsearchPlugin].map(_.deleteAll())
 
     Ok(toJson("done"))
   }
