@@ -429,8 +429,10 @@ GET            /api/extractions/:id/status                                      
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
 
+DELETE         /api/extractions/:extractorName/delete                                   @api.Extractions.deleteExtractor(extractorName : String)
+
 DELETE         /api/files/:file_id/extractions/:msg_id                                  @api.Extractions.cancelFileExtractionSubmission(file_id:UUID, msg_id: UUID)
-DELETE         /api/datasets/:ds_id/extractions/:msg_id                               @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
+DELETE         /api/datasets/:ds_id/extractions/:msg_id                                 @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
 
 # End of change segment
 

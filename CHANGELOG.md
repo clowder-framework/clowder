@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+### Added
+- Added aility to delete extractor, both from api and GUI.
+  [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
+
 ### Fixed
 - Ability to delete tags on file page.
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
