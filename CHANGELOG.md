@@ -4,17 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.8.3 - 2020-03-12
+## 1.8.3 - 2020-04-28
 
 ### Changed
-- Elasticsearch indexer will new add new metadata fields as strings to avoid unexpected behavior on date fields.
+- Elasticsearch indexer will now store new metadata fields as strings to avoid unexpected behavior on date fields.
+- When reindexing use a temporary index to reindex while the current one is in use then swap.
 
 ### Fixed
-- Ability to delete tags from sections on file [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1046)
-- Ability to delete tags on file page.
+- Ability to delete tags from sections and files on the file page. 
+  [CATS-1046](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1046)
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
-- User-owned resources will now appear in search results regardless of space permissions. Updating space ownership
-  for datasets and collections will correctly reindex those resources for searches.
+- User-owned resources will now appear in search results regardless of space permissions. 
+- Updating space ownership for datasets and collections will correctly reindex those resources for searches.
 
 ## 1.8.2 - 2020-02-19
 
