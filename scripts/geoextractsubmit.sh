@@ -5,6 +5,10 @@ APIKEY=adminKey
 extractorname=extractorNAME
 CLOWDERHOST=clowderhost
 
+# remove old metadata from database
+mongo $MONGO_URI --eval 'db.metadata.remove({"content.WMS Layer URL": {$regex : ".*simpl-dev.*"}})'
+mongo $MONGO_URI --eval 'db.metadata.remove({"content.WMS Layer URL": {$regex : ".*agri-clowder.*"}})'
+
 echo submit files to $extractorname on $CLOWDERHOST
 
 fileids=$(mongo $MONGO_URI --eval 'db.metadata.distinct("attachedTo._id", {"content.WMS Layer Name": {$exists: true}}, {"attachedTo._id": 1, "_id": 0 }).forEach(function(doc){print(doc.valueOf())})')
