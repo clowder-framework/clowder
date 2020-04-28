@@ -1246,7 +1246,7 @@ class Files @Inject()(
    */
   def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
 
-    val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
+    val (not_found, error_str, tagsAdded) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
       case Some(file) => {
         events.addObjectEvent(request.user, file.id, file.filename, EventType.ADD_TAGS_FILE.toString)

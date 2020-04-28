@@ -1015,6 +1015,7 @@
 							</li>
 						}
 					</div>
+					<div id="tagListSections">
 					@{if (file.sections.length>0)
 						<br/><b>On Sections</b><br/>
 					}
@@ -1022,11 +1023,12 @@
 						@section.tags.map { tag =>
 							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)">@Html(tag.name)</a>
 								@if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.file, file.id))) {
-									<a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete"></span></a>
+										<a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete" onclick="removeTagSection('@section.id', '@tag.id')"></span></a>
 								}
 							</li>
 						}
 					}
+					</div>
 				</ul>
 				@if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.file, file.id))) {
 					<form class="form-inline">
@@ -1060,6 +1062,35 @@
 					</script>
 				}
 				<script language="javascript">
+						function removeTagSection(sectionId, tagId) {
+							console.log("Removing tag " + tagId, "from section" + sectionId);
+							//The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+							//and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+							//
+							//The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
+							//so the ID could be returned there and added into the elements as needed.
+
+							var request = jsRoutes.api.Sections.removeTags(sectionId).ajax({
+								data: JSON.stringify({'tags':[tagId]}),
+								type: 'POST',
+								contentType: "application/json"
+							});
+
+							request.done(function (response, textStatus, jqXHR) {
+								console.log("Response " + textStatus);
+								$("[data-id=" + tagId + "]").parents("li").remove();
+							});
+
+							request.fail(function (jqXHR, textStatus, errorThrown){
+								console.error("The following error occured: " + textStatus, errorThrown);
+								var errMsg = "You must be logged in to remove a tag from a file.";
+								if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+									notify("The tag was not removed from the file due to : " + errorThrown, "error");
+								}
+							});
+
+							return false;
+						}
 						//The removeTag code is almost identical to the code in tags.scala.html. Should be unified.
 						function removeTag() {
 							var tagId = $(this).attr("id");
@@ -1110,7 +1141,7 @@
 											removeIconMouseIn,removeIconMouseOut
 									);
 								});
-							$("#tagList").find(".glyphicon-remove").click(removeTag);
+							$("#tagListFile").find(".glyphicon-remove").click(removeTag);
 
 							$('#tagB').click(function() {
 								var tag = $('#tagField').val();

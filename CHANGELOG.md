@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Added
 - add script to submit files to Clowder geo extraction.
+- Added ability to delete extractor, both from api and GUI.
+  [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
+- API add tags endpoint now returns the added tags.
+  [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+  
 ### Fixed
 - Ability to delete tags on file page.
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
+- When adding tags to a section of an image, show the new tag without having to refresh the page.
+  [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+
 ## 1.8.2 - 2020-02-19
 
 ### Fixed
