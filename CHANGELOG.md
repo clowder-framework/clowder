@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 ### Added
+- add script to test Clowder extraction.
 - add script to submit files to Clowder geo extraction.
 - Added ability to delete extractor, both from api and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
