@@ -1,18 +1,7 @@
-FROM alpine
+FROM ubuntu:16.04
 
-ENV CLOWDER_URL=""\
-    CLOWDER_KEY=""\
-    TARGET_FILE=""\
-    SLACK_TOKEN=""\
-    SLACK_CHANNEL=""\
-    SLACK_USER=""
-
-RUN apk update \
- && apk add jq \
- && apk add --no-cache curl \
- && rm -rf /var/cache/apk/*
-
+RUN apt-get update && apt-get install -y curl jq && apt-get clean && rm -rf /var/lib/apt/lists
 
 COPY tester.sh /
 
-CMD ["tester.sh"]
+CMD ["sh", "/tester.sh"]

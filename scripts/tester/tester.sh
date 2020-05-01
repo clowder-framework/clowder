@@ -6,9 +6,9 @@
 # Clowder URL and key to use as well as file can be defined below.
 # Needs to have 'jq' installed.
 
-CLOWDER_URL=
-CLOWDER_KEY=
-TARGET_FILE=
+CLOWDER_URL=${CLOWDER_URL:-""}
+CLOWDER_KEY=${CLOWDER_KEY:-""}
+TARGET_FILE=${TARGET_FILE:-""}
 
 # Slack token for notifications
 SLACK_TOKEN=${SLACK_TOKEN:-""}
