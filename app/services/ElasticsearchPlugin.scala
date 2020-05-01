@@ -457,6 +457,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               .startObject()
               // BASIC INFO
               .field("creator", eso.creator)
+              .field("creator_name", eso.creator_name)
+              .field("creator_email", eso.creator_email)
               .field("created", eso.created)
               .field("created_as", eso.created_as)
               .field("resource_type", eso.resource.resourceType.name)
@@ -707,6 +709,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             |"child_of": {"type": "string", "include_in_all": false},
             |"parent_of": {"type": "string", "include_in_all": false},
             |"creator": {"type": "string", "include_in_all": false},
+            |"creator_name": {"type": "string"},
+            |"creator_email": {"type": "string"},
             |"created_as": {"type": "string"},
             |"created": {"type": "date", "format": "dateOptionalTime", "include_in_all": false},
             |"metadata": {"type": "object"},
