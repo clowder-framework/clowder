@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.8.3 - 2020-04-28
+**_Warning:_ This update modifies how information is store in Elasticsearch for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through API.**
 
 ### Changed
 - Elasticsearch indexer will now store new metadata fields as strings to avoid unexpected behavior on date fields.
