@@ -79,7 +79,7 @@ jobs:
 
       # this will publish to the actor (person) github packages
       - name: Publish to GitHub
-        if: github.event_name != pull_request
+        if: github.event_name != 'pull_request'
         uses: elgohr/Publish-Docker-Github-Action@2.14
         env:
           BRANCH: ${{ github.ref }}
@@ -98,7 +98,7 @@ jobs:
 
       # this will publish to the clowder dockerhub repo
       - name: Publish to Docker Hub
-        if: github.event_name != pull_request && github.repository == ${{ env.MASTER_REPO }}
+        if: github.event_name != 'pull_request' && github.repository == ${{ env.MASTER_REPO }}
         uses: elgohr/Publish-Docker-Github-Action@2.14
         env:
           BRANCH: ${{ github.ref }}
