@@ -18,6 +18,12 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
   [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
 - User-owned resources will now appear in search results regardless of space permissions. 
 - Updating space ownership for datasets and collections will correctly reindex those resources for searches.
+- Missing index in statistics which would slow down system when inserting download/views.
+
+### Added
+- GitHub Actions to compile and test the code base, create documentation and docker images.
+- Code of Conduct as MD file (will be displayed by GitHub).
+- Templates for Bug, Feature and Pull Request on GitHub.
 
 ## 1.8.2 - 2020-02-19
 
