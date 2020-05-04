@@ -84,7 +84,7 @@ jobs:
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
         with:
-          name: ${{ github.actor }}/clowder/${{ matrix.IMAGE }}
+          name: ${{ github.repository_owner }}/clowder/${{ matrix.IMAGE }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           context: ${{ matrix.FOLDER }}
@@ -95,7 +95,7 @@ jobs:
 
       # this will publish to the clowder dockerhub repo
       - name: Publish to Docker Hub
-        if: github.event_name != 'pull_request' && github.repository == ${{ env.MASTER_REPO }}
+        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
         uses: elgohr/Publish-Docker-Github-Action@2.14
         env:
           BRANCH: ${{ github.ref }}
