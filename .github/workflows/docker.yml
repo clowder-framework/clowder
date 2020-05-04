@@ -84,7 +84,7 @@ jobs:
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
         with:
-          name: ${{ github.actor }}/clowder/${{ matrix.IMAGE }}
+          name: ${{ github.repository_owner }}/clowder/${{ matrix.IMAGE }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           context: ${{ matrix.FOLDER }}
