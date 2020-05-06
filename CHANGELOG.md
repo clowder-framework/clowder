@@ -17,6 +17,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 
+## 1.8.3 - 2020-04-28
+**_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
+
+### Changed
+- Elasticsearch indexer will now store new metadata fields as strings to avoid unexpected behavior on date fields.
+- When reindexing use a temporary index to reindex while the current one is in use then swap.
+
+### Fixed
+- Ability to delete tags from sections and files on the file page. 
+  [CATS-1046](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1046)
+  [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
+- User-owned resources will now appear in search results regardless of space permissions. 
+- Updating space ownership for datasets and collections will correctly reindex those resources for searches.
+- Missing index in statistics which would slow down system when inserting download/views.
+
+### Added
+- GitHub Actions to compile and test the code base, create documentation and docker images.
+- Code of Conduct as MD file (will be displayed by GitHub).
+- Templates for Bug, Feature and Pull Request on GitHub.
+
 ## 1.8.2 - 2020-02-19
 
 ### Fixed

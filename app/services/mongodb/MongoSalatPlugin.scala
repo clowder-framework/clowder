@@ -171,6 +171,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
+    collection("statistics.users").ensureIndex(MongoDBObject("user_id" -> 1, "resource_id" -> 1))
+
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
