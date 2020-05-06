@@ -299,6 +299,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             .startObject("default")
               .field("type", "standard")
             .endObject()
+            .startObject("email_analyzer")
+              .field("type", "custom")
+              .field("tokenizer", "uax_url_email")
+            .endObject()
           .endObject()
         .endObject()
         .startObject("index")
@@ -710,7 +714,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             |"parent_of": {"type": "string", "include_in_all": false},
             |"creator": {"type": "string", "include_in_all": false},
             |"creator_name": {"type": "string"},
-            |"creator_email": {"type": "string"},
+            |"creator_email": {"type": "string", "search_analyzer": "email_analyzer", "analyzer": "email_analyzer"},
             |"created_as": {"type": "string"},
             |"created": {"type": "date", "format": "dateOptionalTime", "include_in_all": false},
             |"metadata": {"type": "object"},
@@ -844,7 +848,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
-    val official_terms = List("name", "creator", "resource_type", "in", "contains", "tag")
+    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag")
 
     // Create list of "key:value" terms for parsing by builder
     val terms = ListBuffer[String]()
@@ -859,6 +863,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           currterm += "child_of:"
         else if (mt == "contains")
           currterm += "parent_of:"
+        else if (mt == "creator")
+          currterm += "creator_name:"
+        else if (mt == "email")
+          currterm += "creator_email:"
         else if (!official_terms.contains(mt))
           currterm += "metadata."+mt+":"
         else
