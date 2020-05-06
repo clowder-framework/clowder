@@ -1,6 +1,6 @@
 
 @(profile: User, collectionsList: List[Collection], deletePermission: Boolean,
-        ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
+        ownProfile: Boolean, userSelections: List[String])(implicit user: Option[User])
 
 
 <div class="row top-padding">
@@ -22,8 +22,11 @@
 </div>
 @if(collectionsList.size < 1) {
     <div class="text-center">
-        <div>@Messages("home.empty.message", Messages("collections.title").toLowerCase) </div>
-
-        <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new @Messages("collection.title")">@Messages("create.title", Messages("collection.title"))</a></div>
+        @if(ownProfile) {
+            <div>@Messages("home.empty.message", Messages("collections.title").toLowerCase) </div>
+            <div><a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new @Messages("collection.title")">@Messages("create.title", Messages("collection.title"))</a></div>
+        } else {
+            <div>@Messages("profile.empty.message", Messages("collections.title").toLowerCase) </div>
+        }
     </div>
 }

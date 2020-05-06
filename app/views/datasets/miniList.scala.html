@@ -1,6 +1,6 @@
 
 @(profile: User, datasetsList: List[Dataset], deletePermission: Boolean,
-        ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
+        ownProfile: Boolean, userSelections: List[String])(implicit user: Option[models.User])
 
 
 <div class="row top-padding">
@@ -25,8 +25,12 @@
 </div>
 @if(datasetsList.size < 1) {
     <div class="text-center">
-        <div>@Messages("home.empty.message", Messages("datasets.title").toLowerCase) </div>
-        <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new @Messages("dataset.title")">@Messages("create.title", Messages("dataset.title"))</a></div>
+        @if(ownProfile) {
+            <div>@Messages("home.empty.message", Messages("datasets.title").toLowerCase)</div>
+            <div><a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new @Messages("dataset.title")">@Messages("create.title", Messages("dataset.title"))</a></div>
+        } else {
+            <div>@Messages("profile.empty.message", Messages("datasets.title").toLowerCase) </div>
+        }
     </div>
 }
 

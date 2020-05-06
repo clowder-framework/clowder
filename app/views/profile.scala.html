@@ -164,17 +164,17 @@
             <div class="tab-content">
                 <!-- Spaces tab -->
                 <div role="tabpanel" class="tab-pane active" id="spaces">
-                    @views.html.spaces.miniList(profile, spacesList, false, Some(ownProfile), List.empty)
+                    @views.html.spaces.miniList(profile, spacesList, false, ownProfile, List.empty)
                 </div>
 
                 <!-- Datasets tab -->
                 <div role="tabpanel" class="tab-pane" id="datasets">
-                    @views.html.datasets.miniList(profile, datasetsList, false, Some(ownProfile), List.empty)
+                    @views.html.datasets.miniList(profile, datasetsList, false, ownProfile, List.empty)
                 </div>
 
                 <!-- Collections tab -->
                 <div role="tabpanel" class="tab-pane" id="collections">
-                    @views.html.collections.miniList(profile, collectionsList, false, Some(ownProfile), List.empty)
+                    @views.html.collections.miniList(profile, collectionsList, false, ownProfile, List.empty)
                 </div>
 
                 <!-- API Keys tab -->
