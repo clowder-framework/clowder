@@ -64,11 +64,11 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
               case _ => (false, List.empty[UserApiKey])
             }
 
-            val showAll = false
+            val showAll = request.user.fold(false)(_.superAdminMode)
             val limit = 12
-            val spacesList = spaces.listUser(limit, muser, showAll, viewer)
-            val datasetsList = datasets.listUser(limit, muser, showAll, viewer)
-            val collectionsList = collections.listUser(limit, muser, showAll, viewer)
+            val spacesList = spaces.listUser(limit, Some(viewer), showAll, existingUser)
+            val datasetsList = datasets.listUser(limit, Some(viewer), showAll, existingUser)
+            val collectionsList = collections.listUser(limit, Some(viewer), showAll, existingUser)
 
             Ok(views.html.profile(existingUser, keys, spacesList, datasetsList, collectionsList, ownProfile))
 
