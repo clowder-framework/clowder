@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.8.2"
+  val version = "1.8.3"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -82,6 +82,7 @@ object ApplicationBuild extends Build {
 
     // indexing
     "org.elasticsearch" % "elasticsearch" % "2.3.5" exclude("io.netty", "netty"),
+    "org.elasticsearch.module" % "reindex" % "2.3.5" exclude("io.netty", "netty"),
 
     // mongo storage
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),

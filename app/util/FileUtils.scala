@@ -770,7 +770,7 @@ object FileUtils {
     // index the file
     if (index) {
       current.plugin[ElasticsearchPlugin].foreach {
-        _.index(file)
+        _.index(file, None)
       }
     }
 

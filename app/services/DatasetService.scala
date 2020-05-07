@@ -248,10 +248,10 @@ trait DatasetService {
   def selectNewThumbnailFromFiles(datasetId: UUID)
 
   /** Queue all datasets to be indexed in Elasticsearch. */
-  def indexAll()
+  def indexAll(idx: Option[String] = None)
 
   /** Queue a dataset to be indexed in Elasticsearch. */
-  def index(id: UUID)
+  def index(id: UUID, idx: Option[String] = None)
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
