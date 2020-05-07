@@ -5,11 +5,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+**_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
+
 ### Added
 - Added ability to delete extractor, both from api and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
 - API add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+- Ability to search by creator name and email address for all resources.
   
 ### Fixed
 - Ability to delete tags on file page.
