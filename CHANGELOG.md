@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
 - API add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+- Index creator's name and email address in elasticsearch for all resources.
   
 ### Fixed
 - Ability to delete tags on file page.
