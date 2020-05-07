@@ -1,0 +1,131 @@
+name: Docker
+
+# This will run when:
+# - a new release is created, to make sure the right tags of the
+#   docker images are pushed (expects tags to be v1.8.4).
+# - when new code is pushed to master/develop to push the tags
+#   latest and develop
+# - when a pull request is created and updated  to make sure the
+#   Dockerfile is still valid.
+# To be able to push to dockerhub, this execpts the following
+# secrets to be set in the project:
+# - DOCKERHUB_USERNAME : username that can push to the org
+# - DOCKERHUB_PASSWORD : password asscoaited with the username
+on:
+  release:
+    types: created
+
+  push:
+    branches:
+      - master
+      - develop
+
+  pull_request:
+
+# Certain actions will only run when this is the master repo.
+env:
+  MASTER_REPO: clowder-framework/clowder
+  DOCKERHUB_ORG: clowder
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        name:
+          - clowder
+          - toolserver
+          - mongo-init
+          - monitor
+          - check
+        include:
+          - name: clowder
+            FOLDER: "."
+            IMAGE: clowder
+            README: README.md
+          - name: toolserver
+            FOLDER: scripts/toollaunchservice
+            IMAGE: toolserver
+            README: ""
+          - name: mongo-init
+            FOLDER: scripts/mongo-init
+            IMAGE: mongo-init
+            README: ""
+          - name: monitor
+            FOLDER: scripts/monitor
+            IMAGE: monitor
+            README: ""
+          - name: check
+            FOLDER: scripts/check
+            IMAGE: check
+            README: ""
+    steps:
+      - uses: actions/checkout@v2
+
+      # build the docker image, this will always run to make sure
+      # the Dockerfile still works.
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg BRANCH=${{ github.ref }} \
+            --build-arg VERSION=${{ github.run_number }} \
+            --build-arg BUILDNUMBER=${{ github.run_number }} \
+            --build-arg GITSHA1=${{ github.sha  }} \
+            --tag image ${{ matrix.FOLDER }}
+
+      # this will publish to the actor (person) github packages
+      - name: Publish to GitHub
+        if: github.event_name != 'pull_request'
+        uses: elgohr/Publish-Docker-Github-Action@2.14
+        env:
+          BRANCH: ${{ github.ref }}
+          VERSION: ${{ github.run_number }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
+        with:
+          name: ${{ github.repository_owner }}/clowder/${{ matrix.IMAGE }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          context: ${{ matrix.FOLDER }}
+          tag_semver: true
+          tag_names: true
+          registry: docker.pkg.github.com
+          buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+
+      # this will publish to the clowder dockerhub repo
+      - name: Publish to Docker Hub
+        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
+        uses: elgohr/Publish-Docker-Github-Action@2.14
+        env:
+          BRANCH: ${{ github.ref }}
+          VERSION: ${{ github.run_number }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
+        with:
+          name: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          context: ${{ matrix.FOLDER }}
+          tag_semver: true
+          tag_names: true
+          buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+
+      # this will update the README of the dockerhub repo
+      - name: check file
+        id: filecheck
+        if: github.event_name == 'release' && github.repository == env.MASTER_REPO
+        run: |
+          if [ "${{ matrix.README }}" != "" -a -e "${{ matrix.README }}" ]; then
+            echo "##[set-output name=exists;]true"
+          else
+            echo "##[set-output name=exists;]false"
+          fi
+      - name: Docker Hub Description
+        if: github.event_name == 'release' && github.repository == env.MASTER_REPO && steps.filecheck.outputs.exists == 'true'
+        uses: peter-evans/dockerhub-description@v2
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          DOCKERHUB_REPOSITORY: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
+          README_FILEPATH: ${{ matrix.README }}
