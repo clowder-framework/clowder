@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- Fixed bug related to impropoer indexing of files in nested subfolders, which could also affect searching by parent dataset.
+
 ## 1.8.3 - 2020-04-28
 **_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
 of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
