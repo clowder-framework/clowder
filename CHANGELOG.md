@@ -14,6 +14,8 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
 - API add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 - Ability to search by creator name and email address for all resources.
+- List Spaces/Datasets/Collections created by each user on their User Profile.
+  [CATS-1056](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1056)
 - S3ByteStorageService should verify bucket existence on startup and create if it does not exist.
   [CATS-1057](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1057)
   
