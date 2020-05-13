@@ -57,6 +57,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
         } catch {
           case sdke @ (_: AmazonClientException | _: AmazonServiceException) => {
             if (sdke.getMessage.contains("Status Code: 404")) {
+              Logger.warn("Configured S3 bucket does not exist, attempting to create it now...")
               try {
                 // Bucket does not exist - create the bucket
                 this.s3Bucket.createBucket(new CreateBucketRequest(bucketName))
