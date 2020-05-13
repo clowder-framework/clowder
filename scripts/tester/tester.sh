@@ -27,15 +27,14 @@ post_message() {
 }
 
 # ------------------------ Create dataset ------------------------
-DATASET_ID=$(curl -X POST -H "Content-Type: application/json" \
+DATASET_ID=$(curl -s -X POST -H "Content-Type: application/json" \
     -d '{"name":"Temporary Test Dataset", "description":"Created automatically by test script."}' \
     $CLOWDER_URL/api/datasets/createempty?key=$CLOWDER_KEY)
 DATASET_ID=$(echo $DATASET_ID  | jq '.id' | sed s/\"//g)
 echo "Dataset ID: $DATASET_ID"
 
 # ------------------------ Upload file ------------------------
-FILE_ID=$(curl -X POST -H "Content-Type: application/json" \
-    -F File=@$TARGET_FILE \
+FILE_ID=$(curl -X POST -F File=@$TARGET_FILE \
     $CLOWDER_URL/api/uploadToDataset/$DATASET_ID?key=$CLOWDER_KEY&extract=0)
 FILE_ID=$(echo $FILE_ID | jq '.id' | sed s/\"//g)
 echo "File ID: $FILE_ID"
