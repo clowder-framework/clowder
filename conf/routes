@@ -126,8 +126,8 @@ GET            /datasets/uploadToTool                                           
 GET            /datasets/getInstances                                                   @controllers.ToolManager.getInstances
 GET            /datasets/removeInstance                                                 @controllers.ToolManager.removeInstance(toolType: String, instanceID: UUID)
 GET            /datasets/launchTool                                                     @controllers.ToolManager.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
-POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space: Option[String] ?= None, limit: Int ?= 20, filter: Option[String] ?= None)
+POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None, filter: Option[String]?=None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
