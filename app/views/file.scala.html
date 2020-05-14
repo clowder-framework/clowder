@@ -6,7 +6,7 @@
 		rdfExported: Boolean,
 		extractionsStatus: Map[String, ExtractionGroup], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
 		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
-		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)
+		view_count: Int, view_date: java.util.Date, pager: Option[models.Pager])(implicit user: Option[models.User], request: RequestHeader)
 
 @import helper._
 @import play.api.Play.current
@@ -587,6 +587,50 @@
 				}
 			}
 
+
+					@** Only enable paging when viewing from a dataset? *@
+					@if(allDatasets.length == 1) {
+						@allDatasets.map { ds =>
+							@pager match {
+								case None => {}
+								case Some(pg) => {
+									<div class="row bottom-padding">
+										<div class="col-sm-12 col-md-12 col-lg-12">
+											@pg.prev match {
+												case None => {}
+												case Some(prev) => {
+													<a class="btn btn-sm btn-link pull-left" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(prev, if(datasets.length > 0) {
+														Some(datasets.head.id.stringify)
+													} else {
+														None
+													}, spaceId, if(folders.length > 0) {
+														Some(folders.head.id.stringify)
+													} else {
+														None
+													})"><i class="glyphicon glyphicon-arrow-left"></i> Prev</a>
+												}
+											}
+											@pg.next match {
+												case None => {}
+												case Some(next) => {
+													<a class="btn btn-sm btn-link pull-right" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(next, if(datasets.length > 0) {
+														Some(datasets.head.id.stringify)
+													} else {
+														None
+													}, spaceId, if(folders.length > 0) {
+														Some(folders.head.id.stringify)
+													} else {
+														None
+													})">Next <i class="glyphicon glyphicon-arrow-right"></i></a>
+												}
+											}
+
+										</div>
+									</div>
+								}
+							}
+						}
+					}
 
 
 			<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
