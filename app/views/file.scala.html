@@ -156,41 +156,91 @@
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
 			<div class="row">
-				<ol class="breadcrumb">
-					@if(spaces.length == 1 ) {
+				<div class="col-md-10 col-sm-10 col-lg-10">
+
+					<ol class="breadcrumb">
+						@if(spaces.length == 1 ) {
 							<li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
 
-					} else {
-						@if(spaces.length > 1) {
-							<li>
-							<span class="dropdown">
-								<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
-								aria-haspopup="true" aria-expanded="true">
-									<span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
-								</button>
-								<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
-									@spaces.map{ s =>
-										<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
-									}
-								</ul>
-
-							</span>
-							</li>
 						} else {
-							<li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></li>
-						}
-					}
-					@if(allDatasets.length == 1 ) {
-						@allDatasets.map { ds =>
-						<li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
-						}
-					}
-					@folderHierarchy.map { fd =>
-						<li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a></li>
-					}
-					<li><span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span></li>
+							@if(spaces.length > 1) {
+								<li>
+									<span class="dropdown">
+										<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+										aria-haspopup="true" aria-expanded="true">
+											<span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
+										</button>
+										<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+										@spaces.map{ s =>
+											<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
+										}
+										</ul>
 
-				</ol>
+									</span>
+								</li>
+							} else {
+								<li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></li>
+							}
+						}
+						@if(allDatasets.length == 1 ) {
+							@allDatasets.map { ds =>
+								<li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
+							}
+						}
+						@folderHierarchy.map { fd =>
+							<li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a></li>
+						}
+						<li><span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span></li>
+
+					</ol>
+				</div>
+				<div class="col-md-2 col-sm-2 col-lg-2">
+					@** Only enable paging when viewing from a dataset? *@
+					@if(allDatasets.length == 1) {
+						@allDatasets.map { ds =>
+							@pager match {
+								case None => {}
+								case Some(pg) => {
+									<div class="row bottom-padding">
+										<div class="col-sm-12 col-md-12 col-lg-12">
+											@pg.prev match {
+												case None => {}
+												case Some(prev) => {
+													<a class="btn btn-sm btn-link" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(prev, if(datasets.length > 0) {
+														Some(datasets.head.id.stringify)
+													} else {
+														None
+													}, spaceId, if(folders.length > 0) {
+														Some(folders.head.id.stringify)
+													} else {
+														None
+													})"><i class="glyphicon glyphicon-chevron-left"></i> Prev</a>
+												}
+											}
+											@pg.next match {
+												case None => {}
+												case Some(next) => {
+													<a class="btn btn-sm btn-link" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(next, if(datasets.length > 0) {
+														Some(datasets.head.id.stringify)
+													} else {
+														None
+													}, spaceId, if(folders.length > 0) {
+														Some(folders.head.id.stringify)
+													} else {
+														None
+													})">Next <i class="glyphicon glyphicon-chevron-right"></i></a>
+												}
+											}
+
+										</div>
+									</div>
+								}
+							}
+						}
+					}
+				</div>
+			</div>
+			<div class="row">
 				<div id="file-name-div" class="file-title-div col-xs-12">
 					<div id="prf-file-name" class="text-left inline">
 						<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
@@ -586,52 +636,6 @@
 					}
 				}
 			}
-
-
-					@** Only enable paging when viewing from a dataset? *@
-					@if(allDatasets.length == 1) {
-						@allDatasets.map { ds =>
-							@pager match {
-								case None => {}
-								case Some(pg) => {
-									<div class="row bottom-padding">
-										<div class="col-sm-12 col-md-12 col-lg-12">
-											@pg.prev match {
-												case None => {}
-												case Some(prev) => {
-													<a class="btn btn-sm btn-link pull-left" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(prev, if(datasets.length > 0) {
-														Some(datasets.head.id.stringify)
-													} else {
-														None
-													}, spaceId, if(folders.length > 0) {
-														Some(folders.head.id.stringify)
-													} else {
-														None
-													})"><i class="glyphicon glyphicon-arrow-left"></i> Prev</a>
-												}
-											}
-											@pg.next match {
-												case None => {}
-												case Some(next) => {
-													<a class="btn btn-sm btn-link pull-right" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(next, if(datasets.length > 0) {
-														Some(datasets.head.id.stringify)
-													} else {
-														None
-													}, spaceId, if(folders.length > 0) {
-														Some(folders.head.id.stringify)
-													} else {
-														None
-													})">Next <i class="glyphicon glyphicon-arrow-right"></i></a>
-												}
-											}
-
-										</div>
-									</div>
-								}
-							}
-						}
-					}
-
 
 			<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
 				<ul class="nav nav-tabs margin-bottom-20" >
