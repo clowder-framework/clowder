@@ -1,16 +1,18 @@
 @(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String], filter: Option[String])(implicit user: Option[models.User])
-<div><h2 id='folderpath'>
+
+<!-- Breadcrumbs -->
 @if(folderHierarchy.length > 0 ) {
-     <a href="javascript:updatePageAndFolder(0, '')"><span class="glyphicon glyphicon-home"></span></a>
+    <div><h2 id='folderpath'>
+        <a href="javascript:updatePageAndFolder(0, '')"><span class="glyphicon glyphicon-home"></span></a>
         @folderHierarchy.map { cFolder =>
-        > <a href="javascript:updatePageAndFolder(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
+            > <a href="javascript:updatePageAndFolder(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
         }
-    
+    </h2></div>
 }
-</h2>
-</div>
-<div>
+
+<!-- Filtering & sorting tools, if enabled -->
 @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+    <div>
     <script type="text/javascript">
     $(document).ready(function() {
       $(".js-sort-single").select2({minimumResultsForSearch: Infinity});
@@ -20,15 +22,13 @@
       }
       $(".js-sort-single").val(order).trigger("change");
       $(".js-sort-single").on('select2:select', function (evt) {
-      $.cookie('sort-order', $(".js-sort-single").val(), { path: '/' });
-      @currentFolder match {
-            case None => { updatePageAndFolder(@filepage,'', $(".js-sort-single").val()); }
-            case Some(s) => { updatePageAndFolder(@filepage,'@s', $(".js-sort-single").val());}
-        }
-        });
+        $.cookie('sort-order', $(".js-sort-single").val(), { path: '/' });
+        updatePageAndFolder(@filepage,'@currentFolder.getOrElse("")', $(".js-sort-single").val());
+      });
     });
     </script>
 
+    <!--label class="sortchoice" for="filename-filter">Filter:-->
     <input class="form-horizontal" id="filename-filter" placeholder="Filter filenames..."
         value="@filter.getOrElse("")"
         onchange="getUpdatedFilesAndFolders()">
@@ -44,25 +44,28 @@
     </select>
 
     </label>
+    </div>
 }
-</div>
 
+<!-- Show message when the folder is empty -->
+<div style="display: none" id="empty-folder-div"><h4>Folder is empty</h4></div>
+@if(foldersList.size == 0 && fileList.size == 0 ){
+    <script>$("#empty-folder-div").show();</script>
+}
+
+<!-- Folders list -->
 <div id="folderListDiv">
-@foldersList.map { folder =>
-    @folders.listitem(folder, dataset.id)
-}
+    </br>
+    @foldersList.map { folder =>
+        @folders.listitem(folder, dataset.id)
+    }
 </div>
-    <div style="display: none" id="empty-folder-div"><h4>Folder is empty</h4></div>
 
-    <!-- Show message when the folder is empty -->
-    @if(foldersList.size == 0 && fileList.size == 0 ){
-        <script>$("#empty-folder-div").show();</script>
-    }
-
-    @currentFolder match {
-        case None => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id), dataset.folders.length > 0) }
-        case Some(s) => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)), dataset.folders.length > 0)}
-    }
+<!-- Files list -->
+@currentFolder match {
+    case None => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id), dataset.folders.length > 0) }
+    case Some(s) => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)), dataset.folders.length > 0)}
+}
 
 <div class="row">
     <div class="col-md-12">
