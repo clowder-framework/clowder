@@ -220,31 +220,28 @@ class Files @Inject() (
           }
         }
 
-
-
-        //val fileList = files.
-        val pager: Option[models.Pager] = dataset match {
-          case None => None
+        val pager: models.Pager = dataset match {
+          case None => Pager(None, None)
           case Some(dsId) => {
             datasets.get(new UUID(dsId)) match {
-              case None => None
+              case None => Pager(None, None)
               case Some(ds) => {
                 val lastIndex = ds.files.length - 1
                 val index = ds.files.indexOf(id)
 
                 // Set prevFile / nextFile, if applicable
                 if (index > 0 && index < lastIndex) {
-                  // Yields UUID of prevFile and nextFile
-                  Some(Pager(Some(ds.files(index - 1)), Some(ds.files(index + 1))))
+                  // Yields UUID of prevFile and nextFile respectively
+                  Pager(Some(ds.files(index + 1)), Some(ds.files(index - 1)))
                 }else if (index == 0 && index < lastIndex) {
                   // This is the first file in the list, but not the last
-                  Some(Pager(None, Some(ds.files(index + 1))))
+                  Pager(Some(ds.files(index + 1)), None)
                 } else if (index > 0 && index == lastIndex) {
                   // This is the last file in the list, but not the first
-                  Some(Pager(Some(ds.files(index - 1)), None))
+                  Pager(None, Some(ds.files(index - 1)))
                 } else {
                   // There is one item on the list, disable paging
-                  None
+                  Pager(None, None)
                 }
               }
             }
