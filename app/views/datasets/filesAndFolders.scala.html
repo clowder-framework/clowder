@@ -27,28 +27,56 @@
       });
     });
     </script>
-
     <!--label class="sortchoice" for="filename-filter">Filter:-->
-    <input class="form-horizontal" id="filename-filter" placeholder="Filter filenames..."
-        value="@filter.getOrElse("")"
-        onchange="getUpdatedFilesAndFolders()">
+        <table width=100%"">
+            <td width="40%">
+                <div class="input-group">
+                    <!-- TODO: Should the filter value reset when folder level changes? -->
+                    <input type="text" class="form-horizontal form-control" id="filename-filter" placeholder="Search folder and file names..."
+                    value="@filter.getOrElse("")"
+                    onchange="getUpdatedFilesAndFolders()">
+                    <div class="input-group-btn">
+                        <button class="btn btn-default" onclick="getUpdatedFilesAndFolders()">
+                            <span class="glyphicon glyphicon-search"></span></button>
+                    </div>
+                </div>
+            </td>
+            <td width="30%">
+                <div id="filter-box-value">
+                    &nbsp;
+                    @if(filter.getOrElse("")!="") {
+                        Filtering by <b>@filter.get</b>
+                    }
+                </div>
+            </td>
+            <td width="30%">
+                <label class="sortchoice" for="js-sort-single">Sort By:
+                    <select class="js-sort-single">
+                        <option value="dateN">Newest</option>
+                        <option value="dateO">Oldest</option>
+                        <option value="titleA">Title (A-Z)</option>
+                        <option value="titleZ">Title (Z-A)</option>
+                        <option value="sizeL">Size (L)</option>
+                        <option value="sizeS">Size (S)</option>
+                    </select>
+            </td>
+        </table>
 
-    <label class="sortchoice" for="js-sort-single">Sort By:
-    <select class="js-sort-single">
-      <option value="dateN">Newest</option>
-      <option value="dateO">Oldest</option>
-      <option value="titleA">Title (A-Z)</option>
-      <option value="titleZ">Title (Z-A)</option>
-      <option value="sizeL">Size (L)</option>
-      <option value="sizeS">Size (S)</option>
-    </select>
+
+
 
     </label>
     </div>
 }
 
 <!-- Show message when the folder is empty -->
-<div style="display: none" id="empty-folder-div"><h4>Folder is empty</h4></div>
+<div style="display: none" id="empty-folder-div"><h4>
+    @if(!filter.isEmpty) {
+        No results found
+    } else {
+        Folder is empty
+    }
+</h4></div>
 @if(foldersList.size == 0 && fileList.size == 0 ){
     <script>$("#empty-folder-div").show();</script>
 }

@@ -661,17 +661,22 @@ class Datasets @Inject() (
           }
 
         val filteredFiles = filter match {
-          case Some(filt) => files.get(childFiles).found.filter(f => f.filename.contains(filt))
+          case Some(filt) => files.get(childFiles).found.filter(f => f.filename.toLowerCase.contains(filt.toLowerCase))
           case None => files.get(childFiles).found
+        }
+
+        val filteredFolders = filter match {
+          case Some(filt) => folders.get(childFolders).found.filter(f => f.name.toLowerCase.contains(filt.toLowerCase))
+          case None => folders.get(childFolders).found
         }
 
         val (foldersList: List[Folder], limitFileList: List[File]) =
           if (play.Play.application().configuration().getBoolean("sortInMemory")) {
-            (SortingUtils.sortFolders(childFolders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
-              SortingUtils.sortFiles(filteredFiles, sortOrder).slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length))
+            (SortingUtils.sortFolders(filteredFolders, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
+              SortingUtils.sortFiles(filteredFiles, sortOrder).slice(limit * filepageUpdate - filteredFolders.length, limit * (filepageUpdate + 1) - filteredFolders.length))
           } else {
-            (childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).flatMap(f => folders.get(f)),
-              childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length).flatMap(f => files.get(f)))
+            (folders.get(childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1))).found,
+              files.get(childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length)).found)
           }
 
         // Get comment counts per file
