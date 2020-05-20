@@ -28,9 +28,7 @@ COPY public /src/public/
 COPY app /src/app/
 RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
     && ./sbt dist \
-    && ls -l target/universal/ \
     && unzip -q target/universal/clowder-*.zip \
-    && ls -l \
     && mv clowder-* clowder \
     && mkdir -p clowder/custom clowder/logs
 
@@ -62,14 +60,13 @@ WORKDIR /home/clowder
 VOLUME /home/clowder/custom /home/clowder/data
 
 # copy the build file, this requires sbt dist to be run (will be owned by root)
-COPY --from=clowder-build /src/clowder /home/clowder/
+COPY --chown=0:0 --from=clowder-build /src/clowder /home/clowder/
 COPY docker/clowder.sh docker/healthcheck.sh /home/clowder/
 COPY docker/custom.conf docker/play.plugins /home/clowder/custom/
 
 # Containers should NOT run as root as a good practice
 # numeric id to be compatible with openshift, will run as random userid:0
 RUN mkdir -p /home/clowder/data && \
-    chgrp -R 0 /home/clowder/ && \
     chmod g+w /home/clowder/logs /home/clowder/data /home/clowder/custom
 USER 10001
 
