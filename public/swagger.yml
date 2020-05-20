@@ -179,16 +179,18 @@ paths:
 
   /files/{id}:
     parameters:
-      - $ref: '#/components/parameters/id'
+      - $ref: '#/components/parameters/fileId'
     get:
       tags:
       - files
       summary: Download file
-      description: Can use Chunked transfer encoding if the HTTP header RANGE is set.
+      description: |
+        Can use Chunked transfer encoding if the HTTP header RANGE is set.
+        This function will be reused to actually download the metadata of
+        the file, please use /files/{id}/blob to get the actual bytes.
       responses:
         200:
           $ref: '#/components/responses/Blob'
-      deprecated: true
     delete:
       tags:
       - files
@@ -208,7 +210,7 @@ paths:
       summary: Download file
       description: Can use Chunked transfer encoding if the HTTP header RANGE is set.
       parameters:
-      - $ref: '#/components/parameters/id'
+      - $ref: '#/components/parameters/fileId'
       responses:
         200:
           $ref: '#/components/responses/Blob'
@@ -224,7 +226,7 @@ paths:
       summary: Delete file
       description: use DELETE /files/{id} instead
       parameters:
-      - $ref: '#/components/parameters/id'
+      - $ref: '#/components/parameters/fileId'
       responses:
         200:
           description: OK
@@ -5513,7 +5515,7 @@ components:
   parameters:
     fileId:
       name: id
-      in: query
+      in: path
       description: ID of file object
       required: true
       schema:
