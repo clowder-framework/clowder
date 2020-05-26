@@ -202,10 +202,10 @@
 								<div class="col-sm-12 col-md-12 col-lg-12">
 									@pager.prev match {
 										case None => {
-											<button class="btn btn-sm btn-link disabled" disabled="true" style="cursor:not-allowed;border-radius:15px;border-color:lightgray;"><i class="glyphicon glyphicon-chevron-left"></i> Prev</button>
+											<button class="btn btn-sm btn-link disabled" title="This is the first file in this dataset"  disabled="true" style="cursor:not-allowed;border-radius:15px;border-color:lightgray;"><i class="glyphicon glyphicon-chevron-left"></i> Prev</button>
 										}
 										case Some(prev) => {
-											<a class="btn btn-sm btn-link" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(prev, if(datasets.length > 0) {
+											<a class="btn btn-sm btn-link" title="Previous file in this dataset" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(prev, if(datasets.length > 0) {
 												Some(datasets.head.id.stringify)
 											} else {
 												None
@@ -218,10 +218,10 @@
 									}
 									@pager.next match {
 										case None => {
-											<button class="btn btn-sm btn-link disabled" disabled="true" style="cursor:not-allowed;border-radius:15px;border-color:lightgray;">Next <i class="glyphicon glyphicon-chevron-right"></i></button>
+											<button class="btn btn-sm btn-link disabled" title="This is the last file in this dataset" disabled="true" style="cursor:not-allowed;border-radius:15px;border-color:lightgray;">Next <i class="glyphicon glyphicon-chevron-right"></i></button>
 										}
 										case Some(next) => {
-											<a class="btn btn-sm btn-link" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(next, if(datasets.length > 0) {
+											<a class="btn btn-sm btn-link" title="Next file in this dataset" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(next, if(datasets.length > 0) {
 												Some(datasets.head.id.stringify)
 											} else {
 												None
