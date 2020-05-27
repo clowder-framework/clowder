@@ -11,6 +11,14 @@ case class ElasticsearchObject (
   resource: ResourceRef,
   name: String,
   creator: String,
+  /*
+  TODO
+    Do we still need the creator_id?
+    Do we need these in separate fields, or just include name & email under creator?
+    Should email addresses be handled in a separate way?
+   */
+  creator_name: String,
+  creator_email: String,
   created: Date,
   created_as: String = "",
   parent_of: List[String] = List.empty,
@@ -39,6 +47,8 @@ object ElasticsearchObject {
       "resource" -> JsString(eso.resource.toString),
       "name" -> JsString(eso.name),
       "creator" -> JsString(eso.creator),
+      "creator_name" -> JsString(eso.creator_name),
+      "creator_email" -> JsString(eso.creator_email),
       "created" -> JsString(eso.created.toString),
       "created_as" -> JsString(eso.created_as.toString),
       "parent_of" -> JsArray(eso.parent_of.toSeq.map( (p:String) => Json.toJson(p)): Seq[JsValue]),
@@ -60,6 +70,8 @@ object ElasticsearchObject {
       (json \ "resource").as[ResourceRef],
       (json \ "name").as[String],
       (json \ "creator").as[String],
+      (json \ "creator_name").as[String],
+      (json \ "creator_email").as[String],
       (json \ "created").as[Date],
       (json \ "created_as").as[String],
       (json \ "parent_of").as[List[String]],

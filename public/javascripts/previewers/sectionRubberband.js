@@ -289,9 +289,45 @@ function rubberbandAddText(tag, comment, sectionid, prNum) {
             })
         });
         request.done(function (response, textStatus, jqXHR) {
-            var url = window.jsRoutes.controllers.Tags.search(tag).url;
-            $('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
+            var tagsAdded = response.tags;
+            if (tagsAdded.length == 1) {
+                var tagAdded = tagsAdded[0];
+
+                var tagName = tagAdded["name"];
+                var tagId = tagAdded["id"];
+                var url = window.jsRoutes.controllers.Search.search("tag:"+tagName).url;
+
+                var newSectionTag = document.createElement('li');
+                newSectionTag.setAttribute('class', 'tag');
+
+                var firstPart =  document.createElement('a');
+                firstPart.setAttribute('href', url);
+
+                firstPart.setAttribute('id', tagName);
+                firstPart.setAttribute('data-id', tagId)
+
+                var text = document.createTextNode(tagName);
+                firstPart.appendChild(text);
+
+                var secondPart = document.createElement('a')
+                secondPart.setAttribute('href','#');
+
+                var deletePart = document.createElement('span')
+                deletePart.setAttribute('id', tagName);
+                deletePart.setAttribute('data-id', tagId);
+                deletePart.setAttribute('class', 'glyphicon glyphicon-remove tag-delete')
+                deletePart.setAttribute('onclick','removeTagSection('+ '"' + sectionid + '"' + ',' + '"' + tagId + '"'+ ')');
+
+                secondPart.appendChild(deletePart);
+                newSectionTag.appendChild(firstPart)
+                newSectionTag.appendChild(secondPart);
+                console.log(newSectionTag)
+
+
+                // $('#tagList').append("<li><a href='" + url + "'>" + tag + "</a></li>");
+                $('#tagListSections').append(newSectionTag);
             $('#tagField').val("");
+            }
         });
         request.fail(function (jqXHR, textStatus, errorThrown) {
             console.log("Could not add tag/comment: " + textStatus, errorThrown);

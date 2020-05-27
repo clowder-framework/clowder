@@ -143,6 +143,9 @@ function DeleteTemplate(resourceType, resourceId, isreload, url, resourceFromTyp
     } else if(resourceType == "curation folder" ) {
         //no redirect provided
         removeCurationFolder(resourceId, isreload, url);
+    } else if(resourceType == "extractor") {
+        //redirect to extractors
+        removeExtractor(resourceId)
     }
 }
 

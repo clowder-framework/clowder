@@ -742,8 +742,10 @@ class MongoDBFileService @Inject() (
 
   // ---------- Tags related code starts ------------------
   // Input validation is done in api.Files, so no need to check again.
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag] = {
     Logger.debug("Adding tags to file " + id + " : " + tags)
+
+    var tagsAdded : ListBuffer[Tag] = ListBuffer.empty[Tag]
     val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
@@ -758,9 +760,11 @@ class MongoDBFileService @Inject() (
       // Only add tags with new values.
       if (!existingTags.contains(shortTag)) {
         val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        tagsAdded += tagObj
         FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
+    tagsAdded.toList
   }
 
   def removeAllTags(id: UUID) {
