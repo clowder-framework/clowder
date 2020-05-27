@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
 
 ### Added
+- add script to test Clowder extraction.
 - Added ability to delete extractor, both from api and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
 - API add tags endpoint now returns the added tags.
