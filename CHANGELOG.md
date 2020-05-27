@@ -16,11 +16,11 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
 - Ability to search by creator name and email address for all resources.
 - List Spaces/Datasets/Collections created by each user on their User Profile.
   [CATS-1056](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1056)
+- Allow user to easily flip through the files in a dataset.
+  [CATS-1058](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1058)
 - Ability to filter the files and folders in a dataset when sorting is enabled.
   
 ### Fixed
-- Ability to delete tags on file page.
-  [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 
