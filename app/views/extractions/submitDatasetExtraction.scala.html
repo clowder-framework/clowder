@@ -1,4 +1,5 @@
 @(extractors: List[ExtractorInfo], ds: Dataset)(implicit user: Option[models.User])
+@import play.api.libs.json._
 
 @main("Extractions") {
     <div class="row">
@@ -8,8 +9,8 @@
     </div>
     <div class="row">
         <div class="col-xs-12">
-            <p>Submit this dataset to a specific extractor below by providing parameters as a JSON document and clicking
-                the submit button. The paramaters field can be left empty.</p>
+            <p>Submit this dataset to a specific extractor below by providing parameters and clicking
+                the submit button. Some parameters may be left empty.</p>
             <p>Dataset name: <a href="@routes.Datasets.dataset(ds.id)">@ds.name</a></p>
         </div>
     </div>
@@ -19,28 +20,65 @@
                 <thead>
                     <tr>
                         <th>Extractor's Name</th>
-                        @*<th>Parameters</th>*@
+                        <th>Description</th>
+                        <th>Parameters</th>
                         <th>Submit</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <script src="https://cdn.jsdelivr.net/npm/jsonform@@2.1.5/deps/underscore.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/jsonform@@2.1.5/lib/jsonform.min.js"></script>
                     @for(e <- extractors) {
                         <tr>
-                            <td>@e.name</td>
-                            @*<td><textarea id="@(e.name.replaceAll("\\.", "_"))_textarea"></textarea></td>*@
-                            <td><button class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_textarea','@ds.id')">Submit</button></td>
+                            <td>
+                                <a href="@routes.Extractors.showExtractorInfo(e.name)">@e.name</a>
+                            </td>
+                            <td>@e.description</td>
+                            <td>
+                                <form id="@(e.name.replaceAll("\\.", "_"))_parameters"></form>
+                            </td>
+                            <td><button id="@e.id" class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_parameters','@ds.id', '@e.id')">Submit</button></td>
                         </tr>
+
+                        <script>
+                                var params = JSON.parse("@Json.stringify(e.parameters)".replace(/&quot;/g, "\""));
+                                var selector = "#@(e.name.replaceAll("\\.", "_"))_parameters";
+                                $(selector).jsonForm(params);
+                        </script>
                     }
                 </tbody>
             </table>
         </div>
     </div>
     <script type="text/javascript">
-        function submit(extractor_name, textbox_id, ds_id) {
-            //TODO: comment out since no extractors use parameters, may enable it in future.
-            //var params = $('#'+textbox_id).val();
-            //if (params === "") params = "{}";
-            var dataBody = {'extractor': extractor_name/*, 'parameters': JSON.parse(params)*/};
+        function disableSubmit(btn) {
+            btn.attr('disabled', true);
+            btn.addClass('disabled');
+            btn.removeClass('btn-primary');
+            btn.addClass('btn-success');
+            btn.html('Submitted');
+        }
+
+        function enableSubmit(btn) {
+            btn.html('Submit');
+            btn.removeClass('disabled');
+            btn.removeClass('btn-success');
+            btn.addClass('btn-primary');
+            btn.attr('disabled', false);
+        }
+
+        function submit(extractor_name, textbox_id, ds_id, submit_id) {
+            var clickedBtn = $('#' + submit_id);
+
+            // Throttle submissions to one every 3 seconds
+            disableSubmit(clickedBtn);
+            setTimeout(function() {
+                enableSubmit(clickedBtn);
+            }, 3000);
+
+            var params = $('#'+textbox_id).jsonFormValue();
+            if (params === "") params = "{}";
+            var dataBody = {'extractor': extractor_name, 'parameters': params};
             var request = jsRoutes.api.Extractions.submitDatasetToExtractor(ds_id).ajax({
                 data: JSON.stringify(dataBody),
                 type: 'POST',

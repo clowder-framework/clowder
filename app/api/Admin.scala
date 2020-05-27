@@ -26,14 +26,15 @@ class Admin @Inject() (userService: UserService,
     datasets: DatasetService,
     collections: CollectionService,
     files: FileService,
-    events: EventService) extends Controller with ApiController {
+    events: EventService,
+    esqueue: ElasticsearchQueue) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
    */
   def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
     current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
-    current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+    current.plugin[ElasticsearchPlugin].map(_.deleteAll())
 
     Ok(toJson("done"))
   }
@@ -103,7 +104,15 @@ class Admin @Inject() (userService: UserService,
     val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
-    val htmlbody = "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+    val htmlbody = if (!current.configuration.getBoolean("smtp.mimicuser").getOrElse(true)) {
+      val sender = request.user match {
+        case Some(u) => u.email.getOrElse("")
+        case None => ""
+      }
+      "<html><body><p>" + body + "</p>" + views.html.emails.footer(sender) + "</body></html>"
+    } else {
+      "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+    }
 
     Mail.sendEmailAdmins(subj, request.user, Html(htmlbody))
     Ok(toJson(Map("status" -> "success")))
@@ -165,25 +174,8 @@ class Admin @Inject() (userService: UserService,
   }
 
   def reindex = ServerAdminAction { implicit request =>
-    Akka.system.scheduler.scheduleOnce(1 seconds) {
-      current.plugin[ElasticsearchPlugin] match {
-        case Some(plugin) => {
-          // Delete & recreate index
-          plugin.deleteAll
-          plugin.createIndex()
-
-          // Reindex everything
-          Logger.debug("Reindexing collections...")
-          collections.index(None)
-          Logger.debug("Reindexing datasets...")
-          datasets.index(None)
-          Logger.debug("Reindexing files...")
-          files.index(None)
-        }
-        case None => { BadRequest(toJson(Map("error" -> "Elasticsearch not connected"))) }
-      }
-    }
-
-    Ok(toJson(Map("status" -> "Success")))
+    val success = esqueue.queue("index_all")
+    if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
+    else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
   }
 }

@@ -1,11 +1,10 @@
 package api
 
-import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, MultimediaQueryService, ElasticsearchPlugin}
+import api.Permission._
+import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, SpaceService,
+MultimediaQueryService, ElasticsearchPlugin}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
-import scala.collection.JavaConversions.mapAsScalaMap
-import edu.illinois.ncsa.isda.lsva.ImageMeasures
-import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
 import util.{SearchUtils, SearchResult}
 import play.api.libs.json.{JsObject, Json, JsValue}
 import play.api.libs.json.Json.toJson
@@ -21,81 +20,41 @@ class Search @Inject() (
    collections: CollectionService,
    previews: PreviewService,
    queries: MultimediaQueryService,
+   spaces: SpaceService,
    sparql: RdfSPARQLService)  extends ApiController {
 
-  /** Search using a simple text string */
-  def search(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
-    current.plugin[ElasticsearchPlugin] match {
-      case Some(plugin) => {
-        var filesFound = ListBuffer.empty[String]
-        var datasetsFound = ListBuffer.empty[String]
-        var collectionsFound = ListBuffer.empty[String]
-
-        val response = plugin.search(query)
-
-        for (resource <- response) {
-          resource.resourceType match {
-            case ResourceRef.file => filesFound += resource.id.stringify
-            case ResourceRef.dataset => datasetsFound += resource.id.stringify
-            case ResourceRef.collection => collectionsFound += resource.id.stringify
-          }
-        }
-
-        Ok(toJson( Map[String,JsValue](
-          "files" -> toJson(filesFound),
-          "datasets" -> toJson(datasetsFound),
-          "collections" -> toJson(collectionsFound)
-        )))
-      }
-     case None => {
-       Logger.debug("Search plugin not enabled")
-          Ok(views.html.pluginNotEnabled("Text search"))
-       }
-    }
-  }
-
   /** Search using a simple text string with filters */
-  def search(query: String, resource_type: Option[String],
-             datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String],
-             field: Option[String], tag: Option[String]) = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
+             spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
+             from: Option[Int], size: Option[Int], page: Option[Int]) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        var filesFound = ListBuffer.empty[String]
-        var datasetsFound = ListBuffer.empty[String]
-        var collectionsFound = ListBuffer.empty[String]
-
-        val response = plugin.searchAdvanced(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag)
-
-        for (resource <- response) {
-          resource.resourceType match {
-            case ResourceRef.file => filesFound += resource.id.stringify
-            case ResourceRef.dataset => datasetsFound += resource.id.stringify
-            case ResourceRef.collection => collectionsFound += resource.id.stringify
+        // If from is specified, use it. Otherwise use page * size of page if possible, otherwise use 0.
+        val from_index = from match {
+          case Some(f) => from
+          case None => page match {
+            case Some(p) => Some(size.getOrElse(0) * p)
+            case None => None
           }
         }
 
-        resource_type match {
-          case Some("file") => Ok(toJson(Map[String, JsValue]("files" -> toJson(filesFound))))
-          case Some("dataset") => Ok(toJson(Map[String, JsValue]("datasets" -> toJson(datasetsFound))))
-          case Some("collection") => Ok(toJson(Map[String, JsValue]("collections" -> toJson(collectionsFound))))
+        // TODO: Better way to build a URL?
+        val source_url = s"/api/search?query=$query" +
+          (resource_type match {case Some(x) => s"&resource_type=$x" case None => ""}) +
+          (datasetid match {case Some(x) => s"&datasetid=$x" case None => ""}) +
+          (collectionid match {case Some(x) => s"&collectionid=$x" case None => ""}) +
+          (spaceid match {case Some(x) => s"&spaceid=$x" case None => ""}) +
+          (folderid match {case Some(x) => s"&folderid=$x" case None => ""}) +
+          (field match {case Some(x) => s"&field=$x" case None => ""}) +
+          (tag match {case Some(x) => s"&tag=$x" case None => ""})
 
-          case _ => {
-            // If datasetid is provided, only files are returned
-            datasetid match {
-              case Some(dsid) => Ok(toJson(Map[String, JsValue](
-                "files" -> toJson(filesFound)
-              )))
-              case None => {
-                // collection and space IDs do not restrict resource type
-                Ok(toJson(Map[String, JsValue](
-                  "files" -> toJson(filesFound),
-                  "datasets" -> toJson(datasetsFound),
-                  "collections" -> toJson(collectionsFound)
-                )))
-              }
-            }
-          }
-        }
+        // Add space filter to search here as a simple permissions check
+        val permitted = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
+
+        val response = plugin.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
+
+        val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
+        Ok(toJson(result))
       }
       case None => {
         Logger.debug("Search plugin not enabled")
@@ -104,7 +63,7 @@ class Search @Inject() (
     }
   }
 
-  /** Search using string-encoded Json object (e.g. built by Advanced Search form) */
+  /** Search using string-encoded Json object (e.g. built by Metadata Search form) */
   def searchJson(query: String, grouping: String, from: Option[Int], size: Option[Int]) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       implicit val user = request.user
@@ -112,25 +71,13 @@ class Search @Inject() (
       current.plugin[ElasticsearchPlugin] match {
         case Some(plugin) => {
           val queryList = Json.parse(query).as[List[JsValue]]
-          val results = plugin.search(queryList, grouping, from, size)
+          val response = plugin.search(queryList, grouping, from, size, user)
 
-          val collectionsResults = results.flatMap { c =>
-            if (c.resourceType == ResourceRef.collection) collections.get(c.id) else None
-          }
-          val datasetsResults = results.flatMap { d =>
-            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-          }
-          val filesResults = results.flatMap { f =>
-            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-          }
+          // TODO: Better way to build a URL?
+          val source_url = s"/api/search?query=$query&grouping=$grouping"
 
-          // Use "distinct" to remove duplicate results.
-          Ok(JsObject(Seq(
-            "datasets" -> toJson(datasetsResults.distinct),
-            "files" -> toJson(filesResults.distinct),
-            "collections" -> toJson(collectionsResults.distinct),
-            "count" -> toJson(results.length)
-          )))
+          val result = SearchUtils.prepareSearchResponse(response, source_url, user)
+          Ok(toJson(result))
         }
         case None => {
           BadRequest("Elasticsearch plugin could not be reached")
@@ -157,8 +104,7 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewSection,
-    Some(ResourceRef(ResourceRef.section, section_id))) {
+  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) {
     implicit request =>
 
     // Finding IDs of spaces that the user has access to

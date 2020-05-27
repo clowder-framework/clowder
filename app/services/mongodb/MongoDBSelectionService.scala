@@ -44,7 +44,7 @@ class MongoDBSelectionService @Inject() (datasets: DatasetService)  extends Sele
 
   def get(user: String): List[Dataset] = {
     SelectedDAO.findOne(MongoDBObject("user"->user)) match {
-      case Some(selected) => selected.datasets.flatMap(x => datasets.get(UUID(x)))
+      case Some(selected) => datasets.get(selected.datasets.map(UUID(_))).found
       case None => List.empty
     }
   }

@@ -2,6 +2,7 @@ package services.mongodb
 
 import java.util.Date
 
+import org.bson.types.ObjectId
 import services.{ByteStorageService, TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
@@ -51,6 +52,19 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     PreviewDAO.findOneById(new ObjectId(previewId.stringify))
   }
 
+  def get(previewIds: List[UUID]): DBResult[Preview] = {
+    val objectIdList = previewIds.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+
+    val found = PreviewDAO.find(query).toList
+    val notFound = previewIds.diff(found.map(_.id))
+    if (notFound.length > 0)
+      Logger.error("Not all file IDs found for bulk get request")
+    return DBResult(found, notFound)
+  }
+
   def setIIPReferences(id: UUID, iipURL: String, iipImage: String, iipKey: String) {
     PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("iipURL" -> Some(iipURL), "iipImage" -> Some(iipImage), "iipKey" -> Some(iipKey)), false, false, WriteConcern.Safe)
   }
@@ -74,8 +88,8 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    ByteStorageService.save(inputStream, PreviewDAO.COLLECTION) match {
+  def save(inputStream: InputStream, filename: String, contentLength: Long, contentType: Option[String]): String = {
+    ByteStorageService.save(inputStream, PreviewDAO.COLLECTION, contentLength) match {
       case Some(x) => {
         val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._3)
         PreviewDAO.save(preview)

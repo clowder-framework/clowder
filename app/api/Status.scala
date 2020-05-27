@@ -20,7 +20,8 @@ class Status @Inject()(spaces: SpaceService,
                        files: FileService,
                        users: UserService,
                        appConfig: AppConfigurationService,
-                       extractors: ExtractorService) extends ApiController {
+                       extractors: ExtractorService,
+                       elasticqueue: ElasticsearchQueue) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
 
@@ -33,7 +34,7 @@ class Status @Inject()(spaces: SpaceService,
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
-      "extractors" -> Json.toJson(extractors.getExtractorNames())))
+      "extractors" -> Json.toJson(extractors.getExtractorNames(List.empty))))
   }
 
   def getPlugins(user: Option[User]): JsValue = {
@@ -57,9 +58,11 @@ class Status @Inject()(spaces: SpaceService,
         } else {
           "disconnected"
         }
+
         result.put("elasticsearch", if (Permission.checkServerAdmin(user)) {
           Json.obj("server" -> p.serverAddress,
             "clustername" -> p.nameOfCluster,
+            "queue" -> elasticqueue.status(),
             "status" -> status)
         } else {
           Json.obj("status" -> status)

@@ -1,6 +1,6 @@
 package services
 
-import java.io.InputStream
+import java.io.{File, FileInputStream, InputStream}
 
 import models.UUID
 import play.api.Logger
@@ -12,10 +12,10 @@ import play.api.Logger
  */
 trait ByteStorageService {
   /**
-   * Save the inputstream, returns a (path, length) to where the bytes are stored. The
-   * path can be later used to load/delete the bytes
-   */
-  def save(inputStream: InputStream, prefix: String): Option[(String, Long)]
+    * Save a stream of bytes, returns a (path, length) to where the bytes are stored. The
+    * path can be later used to load/delete the bytes
+    */
+  def save(inputStream: InputStream, prefix: String, length: Long): Option[(String, Long)]
 
   /**
    * Load the bytes from the backing storage, returns an InputStream. The path
@@ -34,8 +34,20 @@ object ByteStorageService {
   lazy val storage: ByteStorageService = DI.injector.getInstance(classOf[ByteStorageService])
 
   /** returns (loader_id, loader, length) */
-  def save(inputStream: InputStream, prefix: String) = {
-    storage.save(inputStream, prefix).map(x => (x._1, storage.getClass.getName, x._2))
+  def save(inputStream: InputStream, prefix: String, length: Long): Option[(String, String, Long)] = {
+    storage.save(inputStream, prefix, length).map(x => (x._1, storage.getClass.getName, x._2))
+  }
+
+  /** returns (loader_id, loader, length) */
+  def save(file: File, prefix: String): Option[(String, String, Long)] = {
+    val inputStream = new FileInputStream(file)
+    try {
+      return save(inputStream, prefix, file.length)
+    } finally {
+      if (inputStream != null) {
+        inputStream.close
+      }
+    }
   }
 
   /** returns the inputstream */

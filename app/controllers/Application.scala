@@ -163,6 +163,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               case None =>
             }
           } else if (tidObject.objectType == "file") {
+            // TODO: Can use file.get(list[UUID]) here if the for loop is restructured (same for dataset, collection)
             val followedFile = files.get(tidObject.id)
             followedFile match {
               case Some(ffile) => {
@@ -241,12 +242,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
-  def email(subject: String) = UserAction(needActive=false) { implicit request =>
+  def email(subject: String, body: String) = UserAction(needActive=false) { implicit request =>
     if (request.user.isEmpty) {
       Redirect(routes.Application.index())
     } else {
       implicit val user = request.user
-      Ok(views.html.emailAdmin(subject))
+      Ok(views.html.emailAdmin(subject, body))
     }
   }
 
@@ -280,7 +281,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Admin.deleteIndex,
         routes.javascript.Admin.deleteAllIndexes,
         routes.javascript.Admin.getIndexes,
-        routes.javascript.Tags.search,
         routes.javascript.Admin.getAdapters,
         routes.javascript.Admin.getExtractors,
         routes.javascript.Admin.getMeasures,
@@ -347,6 +347,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.restoreDataset,
         api.routes.javascript.Datasets.emptyTrash,
         api.routes.javascript.Files.download,
+        api.routes.javascript.Files.archive,
+        api.routes.javascript.Files.sendArchiveRequest,
+        api.routes.javascript.Files.unarchive,
+        api.routes.javascript.Files.sendUnarchiveRequest,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
         api.routes.javascript.Files.addTags,
@@ -431,6 +435,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.acceptRequest,
         api.routes.javascript.Spaces.rejectRequest,
         api.routes.javascript.Spaces.verifySpace,
+        api.routes.javascript.Tree.getChildrenOfNode,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.findById,
         api.routes.javascript.Users.follow,
@@ -481,12 +486,15 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Extractions.submitDatasetToExtractor,
         api.routes.javascript.Extractions.cancelFileExtractionSubmission,
         api.routes.javascript.Extractions.cancelDatasetExtractionSubmission,
+        api.routes.javascript.Extractions.deleteExtractor,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
         api.routes.javascript.Folders.getAllFoldersByDatasetId,
         api.routes.javascript.Folders.moveFileBetweenFolders,
         api.routes.javascript.Folders.moveFileToDataset,
+        api.routes.javascript.Thumbnails.get,
+        api.routes.javascript.Tree.getChildrenOfNode,
         controllers.routes.javascript.Login.isLoggedIn,
         controllers.routes.javascript.Login.ldapAuthenticate,
         controllers.routes.javascript.Files.file,
@@ -505,6 +513,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Collections.newCollection,
         controllers.routes.javascript.Collections.newCollectionWithParent,
         controllers.routes.javascript.Spaces.stagingArea,
+        controllers.routes.javascript.Extractors.selectExtractors,
         controllers.routes.javascript.CurationObjects.submit,
         controllers.routes.javascript.CurationObjects.getCurationObject,
         controllers.routes.javascript.CurationObjects.getUpdatedFilesAndFolders,
@@ -518,7 +527,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Collections.sortedListInSpace,
         controllers.routes.javascript.Datasets.sortedListInSpace,
         controllers.routes.javascript.Users.sendEmail,
-        controllers.routes.javascript.FileLinks.createLink
+        controllers.routes.javascript.FileLinks.createLink,
+        controllers.routes.javascript.Search.search
       )
     ).as(JSON) 
   }

@@ -1,37 +1,30 @@
 .. index:: Overview
+
+********
 Overview
-============
+********
 
-What is it good for?
---------------------
+Clowder has been build from the ground up to be easily customizable for different research and applications domains. Here
+some of the reasons why you would want to adopt it:
 
-* You want to have your web interface or web API close to the data.
-* You want to customize how you preview, store, curate the data.
-* You have a lot of data but cannot afford cloud storage solutions.
+* You want both an extensive web interface and web service API to be able to easily browse the data in the web browser
+  and also script how you manipulate the data.
+* You want to customize how you preview, store and curate the data.
+* You have code you want to run on a subset of the data as it is ingested into the system.
+* You have a lot of data and prefer hosting the data yourself instead of paying for cloud storage solutions.
 
-What is it bad for?
--------------------
-
-* If you just want to store small files that don't require a lot of curation, a cloud storage solution might be a better
-  fit.
-
-The ugly?
----------
-
-* Documentation is work in progress.
-* Some of the code is a little hard to read.
-
-`Contributions <https://github.com/ncsa/clowder/blob/master/CONTRIBUTING.md>`_ in this area are greatly appreciated!
-* Documentation is work in progress.
-* Some of the code is a little hard to read.
+There is no single Clowder instance. Clowder is open source software that can be installed and maintained by individual
+users, research labs, data centers.
 
 Data Model
-------------
+----------
 
-Clowder is designed to support any data format and multiple research domains and contains three major extension points:
-preprocessing, processing and previewing.
+The basic data model is very generic to support many different cases. This means that specific communities will have to
+adopt and customize how the different resource types are used within a specific use case.
 
 .. container:: imagepadding
 
     .. image:: _static/data-model.png
-        :width: 750px
+        :width: 80%
+        :align: center
+

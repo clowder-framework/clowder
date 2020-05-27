@@ -6,7 +6,7 @@
 		rdfExported: Boolean,
 		extractionsStatus: Map[String, ExtractionGroup], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
 		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset],
-		view_count: Int, view_date: java.util.Date)(implicit user: Option[models.User], request: RequestHeader)
+		view_count: Int, view_date: java.util.Date, pager: models.Pager)(implicit user: Option[models.User], request: RequestHeader)
 
 @import helper._
 @import play.api.Play.current
@@ -156,41 +156,90 @@
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
 			<div class="row">
-				<ol class="breadcrumb">
-					@if(spaces.length == 1 ) {
+				<div class="col-md-10 col-sm-10 col-lg-10">
+
+					<ol class="breadcrumb">
+						@if(spaces.length == 1 ) {
 							<li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
 
-					} else {
-						@if(spaces.length > 1) {
-							<li>
-							<span class="dropdown">
-								<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
-								aria-haspopup="true" aria-expanded="true">
-									<span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
-								</button>
-								<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
-									@spaces.map{ s =>
-										<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
-									}
-								</ul>
-
-							</span>
-							</li>
 						} else {
-							<li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></li>
-						}
-					}
-					@if(allDatasets.length == 1 ) {
-						@allDatasets.map { ds =>
-						<li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
-						}
-					}
-					@folderHierarchy.map { fd =>
-						<li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a></li>
-					}
-					<li><span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span></li>
+							@if(spaces.length > 1) {
+								<li>
+									<span class="dropdown">
+										<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+										aria-haspopup="true" aria-expanded="true">
+											<span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
+										</button>
+										<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+										@spaces.map{ s =>
+											<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
+										}
+										</ul>
 
-				</ol>
+									</span>
+								</li>
+							} else {
+								<li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></li>
+							}
+						}
+						@if(allDatasets.length == 1 ) {
+							@allDatasets.map { ds =>
+								<li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
+							}
+						}
+						@folderHierarchy.map { fd =>
+							<li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a></li>
+						}
+						<li><span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span></li>
+
+					</ol>
+				</div>
+				<div class="col-md-2 col-sm-2 col-lg-2">
+					@** Only enable paging when viewing from a dataset? *@
+					@if(allDatasets.length == 1) {
+						@allDatasets.map { ds =>
+							<div class="row bottom-padding">
+								<div class="col-sm-12 col-md-12 col-lg-12">
+									@pager.prev match {
+										case None => {
+											<button class="btn btn-sm btn-link disabled" title="This is the first file in this dataset"  disabled="true" style="cursor:not-allowed;border-radius:15px;border-color:lightgray;"><i class="glyphicon glyphicon-chevron-left"></i> Prev</button>
+										}
+										case Some(prev) => {
+											<a class="btn btn-sm btn-link" title="Previous file in this dataset" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(prev, if(datasets.length > 0) {
+												Some(datasets.head.id.stringify)
+											} else {
+												None
+											}, spaceId, if(folders.length > 0) {
+												Some(folders.head.id.stringify)
+											} else {
+												None
+											})"><i class="glyphicon glyphicon-chevron-left"></i> Prev</a>
+										}
+									}
+									@pager.next match {
+										case None => {
+											<button class="btn btn-sm btn-link disabled" title="This is the last file in this dataset" disabled="true" style="cursor:not-allowed;border-radius:15px;border-color:lightgray;">Next <i class="glyphicon glyphicon-chevron-right"></i></button>
+										}
+										case Some(next) => {
+											<a class="btn btn-sm btn-link" title="Next file in this dataset" style="border-radius:15px;border-color:lightgray;" href="@routes.Files.file(next, if(datasets.length > 0) {
+												Some(datasets.head.id.stringify)
+											} else {
+												None
+											}, spaceId, if(folders.length > 0) {
+												Some(folders.head.id.stringify)
+											} else {
+												None
+											})">Next <i class="glyphicon glyphicon-chevron-right"></i></a>
+										}
+									}
+
+								</div>
+							</div>
+						}
+					}
+				</div>
+			</div>
+			<div class="row">
 				<div id="file-name-div" class="file-title-div col-xs-12">
 					<div id="prf-file-name" class="text-left inline">
 						<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
@@ -273,6 +322,22 @@
 									<!-- if 'disabled' title is not visible -->
 								<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
 									Download </button>
+							}
+							@if( play.Play.application().configuration().getBoolean("archiveEnabled")) {
+								@if( Permission.checkPermission(Permission.ArchiveFile, ResourceRef(ResourceRef.file, file.id))) {
+									@if( file.status == "PROCESSED") {
+										<button id="archiveButton" type="button" onclick="return archiveFile('@(file.id)');" class="btn btn-link" title="Archive this file.">
+											<span class="glyphicon glyphicon-export"></span>
+											Archive
+										</button>
+									}
+									@if( play.Play.application().configuration().getBoolean("archiveAllowUnarchive") && file.status == "ARCHIVED") {
+										<button id="unarchiveButton" type="button" onclick="return unarchiveFile('@(file.id)');" class="btn btn-link" title="Unarchive this file.">
+											<span class="glyphicon glyphicon-import"></span>
+											Unarchive
+										</button>
+									}
+								}
 							}
 							<!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->
 							@if(!outputFormats.isEmpty){
@@ -398,7 +463,7 @@
 										<td class="galleriaTheThumbnail">
 										@if(s.preview.isDefined || s.thumbnail_id.isDefined) {
 											@if(s.thumbnail_id.isDefined){
-												<img src="@(routes.Files.thumbnail(UUID(s.thumbnail_id.get)))"
+												<img src="@(api.routes.Thumbnails.get(UUID(s.thumbnail_id.get)))"
 											} else {
 												<img src="@api.routes.Previews.download(s.preview.get.id)"
 												}
@@ -571,8 +636,6 @@
 				}
 			}
 
-
-
 			<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
 				<ul class="nav nav-tabs margin-bottom-20" >
 					<li role="presentation" class="active"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
@@ -709,6 +772,17 @@
 										<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
 								}
 							}
+							@if(file.loader == "services.s3.S3ByteStorageService") {
+								<td>
+									S3 Bucket:
+									@if(file.loader_id.length>10) {
+										<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
+									} else {
+										@file.loader_id
+									}
+									<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+								</td>
+							}
 						</tr>
 					}
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
@@ -811,9 +885,68 @@
                 });
 
                 function downloadFile() {
-                    var downloadRoute = "@routes.Files.download(UUID(id))";
-                    window.open(downloadRoute, '_blank');
+					if ("@file.status"=="ARCHIVED") {
+						var emailForm = "@routes.Application.email("Accessing archived file "+file.id, "Please contact me about accessing the archived file.")";
+						window.open(emailForm, "_blank");
+					} else {
+						var downloadRoute = "@routes.Files.download(UUID(id))";
+						window.open(downloadRoute, '_blank');
+					}
                 }
+
+				function archiveFile(fileid) {
+					if ("@file.status"=="ARCHIVED") {
+						notify("The file has been already archived", "success");
+					} else {
+						var dataBody = {'fileid': fileid};
+                        var request = jsRoutes.api.Files.sendArchiveRequest(fileid).ajax({
+							data: JSON.stringify(dataBody),
+                            type: 'POST',
+                            contentType: "application/json"
+                        });
+                        request.done(function (response, textStatus, jqXHR){
+                            console.log("The fileid " + fileid + " has been archived successfully");
+							notify("File is now being archived. The page will automatically reload in a few seconds...", "success");
+							setTimeout(function() {
+								location.reload();
+								$("#hiddenmt").attr("value", false);
+							}, 3000);
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error("The following error occured: " + textStatus, errorThrown);
+							notify("Failed to archive file.", "error");
+                        });
+
+                    }
+				}
+
+				function unarchiveFile(fileid) {
+					if ("@file.status"=="PROCESSED") {
+						notify("The file has been already unarchived", "success");
+					} else {
+						var dataBody = {'fileid': fileid};
+						var request = jsRoutes.api.Files.sendUnarchiveRequest(fileid).ajax({
+							data: JSON.stringify(dataBody),
+							type: 'POST',
+							contentType: "application/json"
+						});
+						request.done(function (response, textStatus, jqXHR){
+							console.log("The fileid " + fileid + " has been unarchived successfully");
+							notify("File is now being unarchived. The page will automatically reload in a few seconds...", "success");
+							setTimeout(function() {
+								location.reload();
+								$("#hiddenmt").attr("value", false);
+							}, 3000);
+						});
+
+						request.fail(function (jqXHR, textStatus, errorThrown){
+							console.error("The following error occured: " + textStatus, errorThrown);
+							notify("Failed to unarchive file.", "error");
+						});
+
+					}
+				}
 
                 function downloadFileAs(downloadRoute) {
                     console.log("downloadFileAs - route = " + downloadRoute);
@@ -834,7 +967,7 @@
 							<div class="col-md-2 col-sm-2 col-lg-2">
 							@if(!dataset.thumbnail_id.isEmpty){
 								<a href="@(routes.Datasets.dataset(dataset.id))">
-									<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
+									<img class="img-responsive fit-in-space" src="@(api.routes.Thumbnails.get(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
 								</a>
 							}
 							</div>
@@ -917,17 +1050,32 @@
 			<div class="row ds-section-sm border-top">
 				<h4>Tags</h4>
 				<ul id="tagList">
-						<!-- Do the tags need to have [File] and [Section] appeneded to them? -->
-					@file.tags.map { tag =>
-						<li class="tag"><a href="@routes.Tags.search(tag.name)" id="@tag.name" data-id="@tag.id">@Html(tag.name) [File]</a>
-							<a href='javascript:void(0);'>
-								<span style="display:none;" id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></span></a></li>
+					<div id="tagListFile">
+						@{if (file.sections.length>0)
+								<b>On File</b><br/>
+						}
+						@file.tags.map { tag =>
+							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)" id="@tag.name" data-id="@tag.id">@Html(tag.name)</a>
+								@if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.file, file.id))) {
+									<a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete"></span></a>
+								}
+							</li>
+						}
+					</div>
+					<div id="tagListSections">
+					@{if (file.sections.length>0)
+						<br/><b>On Sections</b><br/>
 					}
 					@file.sections.map { section =>
 						@section.tags.map { tag =>
-							<li><a href="@routes.Tags.search(tag.name)">@Html(tag.name) [Section]</a></li>
+							<li class="tag"><a href="@routes.Search.search("tag:"+tag.name)">@Html(tag.name)</a>
+								@if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.file, file.id))) {
+										<a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete" onclick="removeTagSection('@section.id', '@tag.id')"></span></a>
+								}
+							</li>
 						}
 					}
+					</div>
 				</ul>
 				@if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.file, file.id))) {
 					<form class="form-inline">
@@ -961,6 +1109,35 @@
 					</script>
 				}
 				<script language="javascript">
+						function removeTagSection(sectionId, tagId) {
+							console.log("Removing tag " + tagId, "from section" + sectionId);
+							//The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+							//and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+							//
+							//The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
+							//so the ID could be returned there and added into the elements as needed.
+
+							var request = jsRoutes.api.Sections.removeTags(sectionId).ajax({
+								data: JSON.stringify({'tags':[tagId]}),
+								type: 'POST',
+								contentType: "application/json"
+							});
+
+							request.done(function (response, textStatus, jqXHR) {
+								console.log("Response " + textStatus);
+								$("[data-id=" + tagId + "]").parents("li").remove();
+							});
+
+							request.fail(function (jqXHR, textStatus, errorThrown){
+								console.error("The following error occured: " + textStatus, errorThrown);
+								var errMsg = "You must be logged in to remove a tag from a file.";
+								if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+									notify("The tag was not removed from the file due to : " + errorThrown, "error");
+								}
+							});
+
+							return false;
+						}
 						//The removeTag code is almost identical to the code in tags.scala.html. Should be unified.
 						function removeTag() {
 							var tagId = $(this).attr("id");
@@ -1011,7 +1188,7 @@
 											removeIconMouseIn,removeIconMouseOut
 									);
 								});
-							$("#tagList").find(".glyphicon-remove").click(removeTag);
+							$("#tagListFile").find(".glyphicon-remove").click(removeTag);
 
 							$('#tagB').click(function() {
 								var tag = $('#tagField').val();
@@ -1038,8 +1215,8 @@
 										for (var i = 0; i < tagList.length; i++) {
 											var aTag= tagList[i].trim();
 											if (aTag != "") {
-												var url = jsRoutes.controllers.Tags.search(aTag).url;
-												$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "'>" + aTag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+												var url = jsRoutes.controllers.Search.search("tag:"+aTag).url;
+												$newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "'>" + aTag + "</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(aTag) + "' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagListFile');
 												$newTag.hover(removeIconMouseIn, removeIconMouseOut);
 												$newTag.find(".glyphicon-remove").click(removeTag);
 												tmpId = tmpId + 1;

@@ -1,39 +1,32 @@
 .. index:: Application Programming Interface
-Using the API
+
+Web Service API
 =============
 
 The RESTful application programming interface is the best way to interact with Clowder programmatically. Much of the web
 frontend and the extractors use this same API to interact with the system. For a full list of available endpoints please
-see the Swagger documentation:
+see the `Swagger documentation <https://clowderframework.org/swagger/?url=https://clowderframework.org/clowder/swagger>`_.
 
-https://clowder.ncsa.illinois.edu/swagger/?url=https://clowder.ncsa.illinois.edu/clowder/swagger
-
-For more information about the endpoints take a look at the source code in ``app/api`` package. All routes are defined
-in ``conf/routes``. For methods that write to the system a key is required. The default key is available in
-``conf/application.conf`` under ``commKey``. Please change this to a very long string of characters when deploying the
-system. The key is passed as a query parameter to the url. For example ``?key=sdjof902j39f09joahsduh0932jnujv09erjfosind``.
+Depending on the privacy settings of a specific Clowder instance, a user API key might be required. Users can create
+API keys through the web UI on their profile page (upper right user icon on any page). API Keys can be provided in the
+HTTP request as URL parameters, for example ``?key=*yourapikey*`` or using the HTTP header ``X-API-Key: *yourapikey*``. The HTTP
+header method is preferred (more secure) but some environments / libraries might make it easer to provide the API key
+as a URL parameter.
 
 You can use ``curl`` to test the service. If you are on Linux or MacOSX you should have it already. Try typing ``curl``
 on the command prompt. If you are on windows, you can download a build at http://curl.haxx.se/.
 If you prefer more of a GUI experience, you can try `Postman <https://www.getpostman.com/>`_.
 
-pyClowder2 API wrapper in Python
---------------------------------
+For example, the following examples request the metadata attached to a dataset.
 
-If you are writing Python scripts or extractors against the Clowder API, the `pyClowder2 library <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/browse>`_ provides some of the
-API functionality with simplified wrapper functions. After using ``python setup.py install`` to install the library,
-you can use it to get and post data to Clowder.
+Here is an example of requesting the metadata attached to a *dataset* and providing the API key as a URL parameter:
 
-**When to use**
+.. code-block:: bash
 
-pyClowder2 provides straight forward submodules for various Clowder API endpoints. Python scripts that interact with
-Clowder can usually be simplified by replacing custom implementations with calls to the appropriate pyClowder2 methods.
+  curl -X GET "https://clowderframework.org/clowder/api/datasets/5cd47b055e0e57385688f788/metadata.jsonld?key=*yourapikey*"
 
-- **files** (e.g. upload/download/get metadata/update/submit for extraction)
-- **datasets** (e.g. create/download/get metadata & contents/submit for extraction)
-- **collections** (e.g. create/get datasets)
-- Additional functionality (such as support for geostreams) in development.
+Here is an example of requesting the metadata attached to a *file* and providing the API key as the HTTP header *X-API-Key*:
 
-For details about pyClowder2 functions and how they can be used, please see the `library documentation <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/browse/docs>`_.
+.. code-block:: bash
 
-pyClowder2 is updated as relevant API endpoints in Clowder are added or changed, so by using this library your code is better insulated from breaking changes as well.
+  curl -X GET -H "X-API-Key: *yourapikey*" "https://clowderframework.org/clowder/api/files/5d07b5fe5e0ec351d75ff064/metadata.jsonld"

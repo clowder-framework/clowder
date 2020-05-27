@@ -52,13 +52,51 @@
     </div>
 
 <div class="row">
-    <div class="btn-toolbar">
-     <!-- pull-right class stacks things to the right - first item to the farthest right -->
-        <div class="btn-group btn-group-sm pull-right">
-                <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
-                <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
-        </div>
-        <div class="btn-group btn-group-sm pull-right" id="number-displayed-dropdown">
+    <div class="btn-toolbar pagination-toolbar pull-right">
+
+        @status match {
+            case Some(st) => {}
+            case None => {
+                @user match {
+                    case Some(u) => {
+                        @(space, owner) match {
+                            case (Some(s), Some(o)) => {
+                                @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, UUID(s)))) {
+                                    @if(o.equalsIgnoreCase(u.id.stringify)) {
+                                        <a id="create-dataset" href="@routes.Datasets.newDataset(Some(s), None)" class="btn btn-primary btn-sm" title="@Messages("create.title", Messages("dataset.title"))">
+                                            <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
+                                    }
+                                }
+                            }
+                            case (Some(s), _) => {
+                                @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, UUID(s)))) {
+                                    <a id="create-dataset" href="@routes.Datasets.newDataset(Some(s), None)" class="btn btn-primary btn-sm" title="@Messages("create.title", Messages("dataset.title"))">
+                                        <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
+                                }
+                            }
+                            case (_, Some(o)) => {
+                                @if(o.equalsIgnoreCase(u.id.stringify)) {
+                                    @if(showTrash){
+                                        <a id="clear-trash" onclick="confirmClearTrash('dataset', '@(routes.Datasets.list("",owner=Some(user.get.id.stringify),showTrash=true))')"
+                                        class="btn btn-primary btn-sm" href="#"> <span class="glyphicon glyphicon-trash"></span>  @Messages("cleartrash.title", Messages("datasets.title"))</a>
+                                    } else {
+                                        <a id="create-dataset" class="btn btn-primary btn-sm" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                                    }
+                                }
+                            }
+
+                            case (_, _) => {
+                                <a id="create-dataset" class="btn btn-primary btn-sm" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))">
+                                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                            }
+                        }
+                    }
+                    case _ => {}
+                }
+            }
+        }
+
+        <div class="btn-group btn-group-sm" id="number-displayed-dropdown">
             <select id="numPageItems" class="form-control" onchange="getValue()">
                 <option value="12">12</option>
                 <option value="24">24</option>
@@ -67,103 +105,66 @@
             </select>
         </div>
 
-  @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
-  @space match {
-    case Some(s) => {
-      <div class="btn-group btn-group-sm pull-right">
-      <label class = "sortchoice" for="js-sort-single">Sort By:
-      <select class="js-sort-single">
-        <option value="dateN">Newest</option>
-        <option value="dateO">Oldest</option>
-        <option value="titleA">Title (A-Z)</option>
-        <option value="titleZ">Title (Z-A)</option>
-        <option value="sizeL">Size (L)</option>
-        <option value="sizeS">Size (S)</option>
-      </select>
-      </label>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+            <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
         </div>
-<script type="text/javascript">
-  $(function() {
-	$(".js-sort-single").select2({minimumResultsForSearch: Infinity});
-  	//Set starting value based on cookie
-  	var order = 'dateN';
-  	if($.cookie('sort-order') != null) {
-  	  //removing quotes from around cookie value
-  	  order = $.cookie('sort-order').replace(/['"]+/g, '');
-  	}
-    $('.js-sort-single').val(order).trigger("change");
 
-    var currentSpace = null;
-    currentSpace = '@s';
+        @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
+          @space match {
+            case Some(s) => {
+              <div class="btn-group btn-group-sm">
+              <label class = "sortchoice" for="js-sort-single">Sort By
+                  <select class="js-sort-single">
+                    <option value="dateN">Newest</option>
+                    <option value="dateO">Oldest</option>
+                    <option value="titleA">Title (A-Z)</option>
+                    <option value="titleZ">Title (Z-A)</option>
+                    <option value="sizeL">Size (L)</option>
+                    <option value="sizeS">Size (S)</option>
+                  </select>
+              </label>
+              </div>
+                <script type="text/javascript">
+                  $(function() {
+                      $(".js-sort-single").select2({minimumResultsForSearch: Infinity});
+                      //Set starting value based on cookie
+                      var order = 'dateN';
+                      if($.cookie('sort-order') != null) {
+                          //removing quotes from around cookie value
+                          order = $.cookie('sort-order').replace(/['"]+/g, '');
+                      }
+                      $('.js-sort-single').val(order).trigger("change");
 
-    $(".js-sort-single").on('select2:select', function (evt) {
-         $(window).trigger("sortchange");
-    });
+                      var currentSpace = null;
+                      currentSpace = '@s';
 
+                      $(".js-sort-single").on('select2:select', function (evt) {
+                          $(window).trigger("sortchange");
+                      });
 
-
-    $(window).on('sortchange', function() {
-      var sort = $(".js-sort-single").val();
-      //Update cookie
-      $.cookie('sort-order', sort, {path: '/'});
-      //Go get the list sorted the new way
-      @if(prev != "") {
-      var request = jsRoutes.controllers.Datasets.sortedListInSpace(currentSpace, @prev.toInt, @limit);
-      } else {
-      var request = jsRoutes.controllers.Datasets.sortedListInSpace(currentSpace, 0, @limit);
-      }
-      window.location = request.url;
-    });
-  });
-</script>
-    }
-    case None => {}
-    }
-}
-
-    @status match {
-        case Some(st) => {}
-        case None => {
-
-        @user match {
-            case Some(u) => {
-                @(space, owner) match {
-                    case (Some(s), Some(o)) => {
-                        @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, UUID(s)))) {
-                            @if(o.equalsIgnoreCase(u.id.stringify)) {
-                                <a id="create-dataset" href="@routes.Datasets.newDataset(Some(s), None)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("dataset.title"))">
-                                    <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
-                            }
-                        }
-                    }
-                    case (Some(s), _) => {
-                        @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, UUID(s)))) {
-                            <a id="create-dataset" href="@routes.Datasets.newDataset(Some(s), None)" class="btn btn-primary btn-sm pull-right" title="@Messages("create.title", Messages("dataset.title"))">
-                                <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
-                        }
-                    }
-                    case (_, Some(o)) => {
-                        @if(o.equalsIgnoreCase(u.id.stringify)) {
-                            @if(showTrash){
-                                <a id="clear-trash" onclick="confirmClearTrash('dataset', '@(routes.Datasets.list("",owner=Some(user.get.id.stringify),showTrash=true))')"
-                                class="btn btn-primary btn-sm pull-right" href="#"> <span class="glyphicon glyphicon-trash"></span>  @Messages("cleartrash.title", Messages("datasets.title"))</a>
-                            } else {
-                                <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
-                            }
-                        }
-                    }
-
-                    case (_, _) => {
-                        <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space, None)" title="@Messages("create.title", Messages("dataset.title"))">
-                            <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
-                    }
-                }
+                      $(window).on('sortchange', function() {
+                          var sort = $(".js-sort-single").val();
+                          //Update cookie
+                          $.cookie('sort-order', sort, {path: '/'});
+                          //Go get the list sorted the new way
+                          @if(prev != "") {
+                          var request = jsRoutes.controllers.Datasets.sortedListInSpace(currentSpace, @prev.toInt, @limit);
+                          } else {
+                          var request = jsRoutes.controllers.Datasets.sortedListInSpace(currentSpace, 0, @limit);
+                          }
+                          window.location = request.url;
+                      });
+                  });
+                </script>
             }
-            case _ => {}
+            case None => {}
+          }
         }
-                }
-    }
-    </div>
+
+
+
+
         <script type="text/javascript" language="javascript">
             var removeIndicator = false;
 	        var viewMode = '@mode.getOrElse("tile")';
@@ -220,23 +221,26 @@
 	        function updatePage() {
 @if(play.Play.application().configuration().getBoolean("sortInMemory")&&space.isDefined) {
                 @if(next != "") {
-                    $('#nextlink').attr('href', "@(routes.Datasets.sortedListInSpace(space.getOrElse(""), next.toInt, limit))");
+                    $('#nextlink').attr('href', "@Html(routes.Datasets.sortedListInSpace(space.getOrElse(""), next.toInt, limit).url)");
                 }
                 @if(prev != "") {
-                    $('#prevlink').attr('href', "@(routes.Datasets.sortedListInSpace(space.getOrElse(""), prev.toInt-limit, limit))");
+                    $('#prevlink').attr('href', "@Html(routes.Datasets.sortedListInSpace(space.getOrElse(""), prev.toInt-limit, limit).url)");
                 }
 } else {
                 if (status == "publicAll") {
-                    $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space, Some("publicAll"), "", owner))");
-                    $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space, Some("publicAll"), "", owner))");
+                    $('#nextlink').attr('href', "@Html(routes.Datasets.list("a", next, limit, space, Some("publicAll"), "", owner).url)");
+                    $('#prevlink').attr('href', "@Html(routes.Datasets.list("b", prev, limit, space, Some("publicAll"), "", owner).url)");
                 } else {
-                    $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space, None, "", owner))");
-                    $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space, None, "", owner))");
+                    $('#nextlink').attr('href', "@Html(routes.Datasets.list("a", next, limit, space, None, "", owner).url)");
+                    $('#prevlink').attr('href', "@Html(routes.Datasets.list("b", prev, limit, space, None, "", owner).url)");
                 }
 }
                 doSummarizeAbstracts();
 			}
         </script>
+      </div>
+</div>
+    <!-- End of pagination controls -->
 
 <div class="row hidden" id="tile-view">
 	<div class="col-md-12">

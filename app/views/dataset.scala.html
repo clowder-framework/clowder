@@ -15,7 +15,8 @@
   stagingAreaDefined: Boolean,
   view: (Int, java.util.Date),
   extractionsStatus: Map[String, ExtractionGroup],
-  relatedDataset: List[NodeDataset]
+  relatedDataset: List[NodeDataset],
+  filter: Option[String]
 )(implicit flash: play.api.mvc.Flash, user: Option[models.User], request: RequestHeader)
 
 @import api.Permission
@@ -613,7 +614,6 @@
 
     $(function() {
             $(window).on('fileDelete hashchange', function() {
-
                 getUpdatedFilesAndFolders();
             });
 
@@ -687,8 +687,14 @@
         if(@currentSpace.isDefined){
            currentSpace = "@currentSpace";
         }
-         var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
-         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex, "@currentSpace").ajax({
+        var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
+        var filtBox = document.getElementById("filename-filter");
+        if (filtBox==null) {
+            var filt = "@filter.getOrElse("")";
+        } else {
+            var filt = filtBox.value;
+        }
+        var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex, "@currentSpace", filt).ajax({
             data: jsonData,
             type: 'POST',
             contentType: "application/json"

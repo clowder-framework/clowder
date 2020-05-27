@@ -69,6 +69,12 @@ case class ExtractorDetail(
  * @param libraries libraries on which the code depends
  * @param bibtex bibtext formatted citation of relevant papers
  * @param process events that should trigger this extractor to process
+ * @param categories list of categories that apply to the extractor
+ * @param parameters JSON schema representing allowed parameters
+  *                    which can contain the following fields (and more):
+  *                     * schema: {} a mapping of property key to type/title/validation data
+  *                     * form: [] ordered form fields keyed by properties defined in the schema
+  * @see See [[https://github.com/jsonform/jsonform/wiki]] for full documentation regarding parameters
  */
 case class ExtractorInfo(
   id: UUID,
@@ -83,8 +89,23 @@ case class ExtractorInfo(
   external_services: List[String],
   libraries: List[String],
   bibtex: List[String],
-  process: ExtractorProcessTriggers = new ExtractorProcessTriggers()
+  process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
+  categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
+  parameters: JsValue = JsObject(Seq())
 )
+
+/** what are the categories of the extractor?
+  * EXTRACT  - traditional extractor, typically adds metadata or derived outputs to the triggering file/dataset; default
+  * CONVERT  - primary function is to convert file(s) from source format to another format, combine files, etc.
+  * ARCHIVE  - eligible for triggering using Archive/Unarchive buttons, should expect one of those two parameters
+  * PUBLISH  - intended to publish files or datasets to external repositories
+  * WORKFLOW - primarily manages workflows, submits external jobs, triggers other extractors, e.g. extractors-rulechecker
+  * SILENT   - if in this category, extractor will not send common status messages (e.g. STARTED)
+  */
+object ExtractorCategory extends Enumeration {
+  type ExtractorCategory = Value
+  val EXTRACT, CONVERT, ARCHIVE, PUBLISH, WORKFLOW, SILENT = Value
+}
 
 object ExtractorInfo {
   implicit val repositoryFormat = Json.format[Repository]
@@ -116,7 +137,9 @@ object ExtractorInfo {
       (JsPath \ "external_services").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
-      (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers()))
+      (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
+      (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
+      (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
     )(ExtractorInfo.apply _)
 }
 

@@ -95,7 +95,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
       spaces.get(id) match {
         case Some(s) => {
           // get list of registered extractors
-          val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo()
+          val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo(List.empty)
           // get list of extractors registered with a specific space
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
           val globalSelections: List[String] = extractors.getEnabledExtractors()

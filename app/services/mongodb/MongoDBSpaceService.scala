@@ -12,8 +12,12 @@ import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models._
 import org.bson.types.ObjectId
 import play.api.Logger
+import play.api.i18n.Messages
 import play.{Logger => log}
 import play.api.Play._
+import securesocial.controllers.Registration
+import securesocial.controllers.Registration._
+import securesocial.core.providers.utils.RoutesHelper
 import services._
 import MongoContext.context
 import models.Collection
@@ -37,6 +41,18 @@ class MongoDBSpaceService @Inject() (
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
+  }
+
+  def get(ids: List[UUID]): DBResult[ProjectSpace] = {
+    val objectIdList = ids.map(id => new ObjectId(id.stringify))
+
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+    val found = ProjectSpaceDAO.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+
+    if (notFound.length > 0)
+      Logger.error("Not all space IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   /** count all spaces */
@@ -342,20 +358,12 @@ class MongoDBSpaceService @Inject() (
           }
         }
 
-        val childCollectionIds = current_collection.child_collection_ids
-        for (childCollectionId <- childCollectionIds){
-          collections.get(childCollectionId) match {
-            case Some(child_collection) => {
-              if (!child_collection.spaces.contains(space)){
-                addCollection(childCollectionId, space, user)
-              }
-              collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
-            }
-            case None => {
-              log.error("No collection found for " + childCollectionId)
-            }
+        collections.get(current_collection.child_collection_ids).found.foreach(child_collection => {
+          if (!child_collection.spaces.contains(space)){
+            addCollection(child_collection.id, space, user)
           }
-        }
+          collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
+        })
       } case None => {
         log.error("No collection found for " + collection)
       }
@@ -633,6 +641,23 @@ class MongoDBSpaceService @Inject() (
 
   def getInvitationByEmail(email: String): List[SpaceInvite] = {
     SpaceInviteDAO.find(MongoDBObject("email" -> email)).toList
+  }
+
+  def processInvitation(email: String) = {
+    getInvitationByEmail(email).map { invite =>
+      users.findByEmail(invite.email) match {
+        case Some(user) => {
+          users.findRole(invite.role) match {
+            case Some(role) => {
+              addUser(user.id, role, invite.space)
+              removeInvitationFromSpace(UUID(invite.invite_id), invite.space)
+            }
+            case None => Logger.error(email+" could not be added to space (missing role "+invite.role+")")
+          }
+        }
+        case None => Logger.error("No user found with email "+email)
+      }
+    }
   }
 
   /**

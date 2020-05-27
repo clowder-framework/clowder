@@ -113,7 +113,7 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String) = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String, List[Tag]) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
     val error_str = tagCheck.error_str
@@ -122,20 +122,26 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
     val extractorOpt = tagCheck.extractorOpt
     val tags = tagCheck.tags
 
+    var tagsAdded : List[Tag] = List.empty[Tag]
+
     // Now the real work: adding the tags.
     if ("" == error_str) {
       // Clean up leading, trailing and multiple contiguous white spaces and drop empty tags
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " ")).filter(!_.isEmpty)
       (obj_type) match {
-        case TagCheck_File => files.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_File =>  {
+          tagsAdded = files.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        }
         case TagCheck_Dataset => {
-          datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
+          tagsAdded = datasets.addTags(id, userOpt, extractorOpt, tagsCleaned)
           datasets.index(id)
         }
-        case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => {
+          tagsAdded = sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
       }
     }
-    (not_found, error_str)
+    }
+    (not_found, error_str, tagsAdded)
   }
 
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String) = {

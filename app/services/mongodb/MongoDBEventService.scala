@@ -39,6 +39,7 @@ class MongoDBEventService @Inject() (
       case Some(modeluser) => {
         Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, None, action_type, new Date()))
       }
+      case None => Logger.error("No user provided")
     }
   }
 
@@ -48,6 +49,7 @@ class MongoDBEventService @Inject() (
         case Some(modeluser) => {
           Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
         }
+        case None => Logger.error("No user provided")
       }
     }
   }
@@ -57,6 +59,7 @@ class MongoDBEventService @Inject() (
       case Some(modeluser) => {
         Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
       }
+      case None => Logger.error("No user provided")
     }
   }
 
@@ -65,6 +68,7 @@ class MongoDBEventService @Inject() (
       case Some(modeluser) => {
         Event.insert(new Event(modeluser.getMiniUser, Option(targetuser.getMiniUser), Option(object_id), Option(object_name), None, None, action_type, new Date()))
       }
+      case None => Logger.error("No user provided")
     }
   }
 

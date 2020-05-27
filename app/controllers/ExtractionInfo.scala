@@ -43,18 +43,8 @@ class ExtractionInfo @Inject() (extractors: ExtractorService, dtsrequests: Extra
  */
   def getExtractorNames() = AuthenticatedAction { implicit request =>
 
-    val list_names = extractors.getExtractorNames()
-    var jarr = new JsArray()
-    var list_names1=List[String]()
-    list_names.map {
-      ls =>
-        Logger.debug("Extractor Name:  " + ls)
-        jarr = jarr :+ (Json.parse(ls))
-        list_names1=ls.substring(1, ls.size-1)::list_names1
-
-    }
-    Logger.debug("Json array for list of extractor names----" + jarr.toString)
-    Ok(views.html.extractors(list_names1,list_names1.size))
+    val list_names = extractors.getExtractorNames(List.empty)
+    Ok(views.html.extractors(list_names, list_names.size))
 
   }
   

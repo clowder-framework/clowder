@@ -1,77 +1,70 @@
 
-.. image:: _static/logo_full.png
-   :alt: Clowder: web data management system, bringing cat-a-logs to the cloud
-   :width: 750px
+##################
+Clowder Framework
+##################
 
-Welcome to Clowder's documentation. Clowder is a web-based data management system that allows users to share, annotate,
-organize and analyze large collections of datasets. It provides support for extensible metadata annotation using JSON-LD
-and a distribute analytics event bus for automatic curation of uploaded data. Clowder is open source software that can
+Welcome to Clowder's documentation. Clowder is a web-based data management system that allows users to share,
+annotate, organize and analyze large collections of datasets. It provides support for extensible metadata annotation
+and distributed analytics for automatic curation of uploaded data. Clowder is open source software that can
 be customized and deployed on your own cloud.
 
-The following pages give an overview of the project. The User's Guide includes is divided in three sections: how to get
-an instance up, and how to interact with existing instances through the API. The guide is still work in progress.
-If interested, please check often for updates.
+.. warning::
+  This documentation is being updated. Please bear with us as we make this a much more useful document. If you want
+  to contribute to the documentation the source is available `here <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/clowder/browse/doc/src/sphinx?at=refs%2Fheads%2FCATS-865-updated-sphinx-documentation>`_. Thank you!
 
-* For a high level overview please visit the `home page <https://clowder.ncsa.illinois.edu/>`_ of the project.
+.. note::
 
-* If you have questions for the Clowder you can chat with the developers on
-  `HipChat <https://hipchat.ncsa.illinois.edu/ggYc5FGDP>`_ or by
-  `mailing list <https://lists.illinois.edu/lists/subscribe/clowder>`_.
+  * For a high level overview of the project please visit `https://clowderframework.org <https://clowderframework.org/>`_.
 
-* Issue tracking, internal documents, continuous build and other information is available on
-  `NCSA Opensource <https://opensource.ncsa.illinois.edu/projects/CATS>`_. The code is also mirrored on
-  `GitHub <https://github.com/ncsa/clowder>`_.
+  * If you have questions for the Clowder you can chat with the developers on
+    `Slack <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM>`_
+    or by sending an email to the mailing list *clowder@lists.illinois.edu*
+    (`sign up <https://lists.illinois.edu/lists/subscribe/clowder>`_).
 
-************
-User's Guide
-************
+  * Issue tracking, internal documents, continuous build and other information is available on
+    `NCSA Opensource <https://opensource.ncsa.illinois.edu/projects/CATS>`_. A copy of the source code can also be found
+    on `GitHub <https://github.com/clowder-framework>`_.
+
+  * We are always looking for `contributions <https://github.com/clowder-framework/clowder/blob/master/CONTRIBUTING.md>`_.
+
+********
+Contents
+********
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
+    :caption: General
 
     overview
-    ug_signingup
-    ug_homepage
-    ug_datasets
-    ug_collections
-    ug_spaces
-    ug_search
-    ug_following
-    interface
-
-
-*********************
-Administrator's Guide
-*********************
-
-.. toctree::
-    :maxdepth: 2
-
-    administration
     changelog
-..    installation
-
-
-*****************
-Developer's Guide
-*****************
+    license
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
+    :caption: Getting Started
 
-    architecture
-    setup_dev
-    extractors
-    previewers
+    userguide/ug_index
     api
 
+.. toctree::
+    :maxdepth: 1
+    :caption: Administration
 
-****************
-Acknowledgements
-****************
+    admin/installing
+    admin/upgrading
+    admin/customizing
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
+    :caption: Development
 
-    license
+    develop/architecture
+    develop/setup_dev
+    develop/extractors
+    develop/previewers
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Acknowledgements
+
     thankyou

@@ -610,7 +610,7 @@ object FileUtils {
     }
 
     // actually save the file
-    ByteStorageService.save(new FileInputStream(path), "uploads") match {
+    ByteStorageService.save(path, "uploads") match {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
@@ -656,7 +656,8 @@ object FileUtils {
   private def saveURL(file: File, url: URL, host: String, apiKey: Option[String], user: Option[User]): Option[File] = {
     // actually save the file
     val conn = url.openConnection()
-    ByteStorageService.save(conn.getInputStream, "uploads") match {
+
+    ByteStorageService.save(conn.getInputStream, "uploads", conn.getContentLength) match {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
@@ -769,7 +770,7 @@ object FileUtils {
     // index the file
     if (index) {
       current.plugin[ElasticsearchPlugin].foreach {
-        _.index(file)
+        _.index(file, None)
       }
     }
 

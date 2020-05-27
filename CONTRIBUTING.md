@@ -1,8 +1,8 @@
 # How to contribute
 
 We would love to get contributions from you! To keep the process manageable we please ask you to follow the workflow 
-below. By participating in this project, you agree to abide by the [code of conduct](https://clowder.ncsa.illinois.edu/docs/Clowder-CoC.pdf).
-Before your code can be accepted, you will have to sign a [CLA](https://clowder.ncsa.illinois.edu/docs/Clowder-CLA.pdf)
+below. By participating in this project, you agree to abide by the [code of conduct](https://clowderframework.org/docs/Clowder-CoC.pdf).
+Before your code can be accepted, you will have to sign a [CLA](https://clowderframework.org/docs/Clowder-CLA.pdf)
 and mail it to lmarini@illinois.edu.
 
 Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `master` and `develop` branches are pushed to 
@@ -72,7 +72,7 @@ Developer documentation is available in [Confluence][confluence]. User documenta
 `/doc/src/sphinx` and [online][userdocs].
 
 [confluence_signup]: https://opensource.ncsa.illinois.edu/confluence/signup.action
-[github]: https://github.com/ncsa/clowder
+[github]: https://github.com/clowder-framework
 [branches]: https://confluence.atlassian.com/bitbucketserver/using-branches-in-bitbucket-server-776639968.html#UsingbranchesinBitbucketServer-Creatingbranches
 [scalatest]: http://www.scalatest.org/
 [slack]: https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTUxYzVhMzZlZDlhMTc0NzNiZTBiNjcyMTEzNjdmMjc5MTA2MTAzMDQwNmUzYTdmNDQyNGMwOWM1Y2YxMzdhNGM
@@ -80,5 +80,5 @@ Developer documentation is available in [Confluence][confluence]. User documenta
 [wiki]: https://opensource.ncsa.illinois.edu/confluence/display/CATS
 [bitbucket]: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS
 [bamboo]: https://opensource.ncsa.illinois.edu/bamboo/browse/CATS
-[userdocs]: https://clowder.ncsa.illinois.edu/docs/
+[userdocs]: https://clowderframework.org/docs/
 [confluence]: https://opensource.ncsa.illinois.edu/confluence/display/CATS/Home

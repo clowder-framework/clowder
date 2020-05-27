@@ -1,0 +1,39 @@
+@(collection: Collection)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+<div class="panel panel-default collection-panel" id="@collection.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2" style="text-align: center">
+            @if(!collection.thumbnail_id.isEmpty){
+                <a href="@(routes.Collections.collection(collection.id))">
+                    <img class="img-responsive fit-in-space"
+                      src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))"
+                      alt="Thumbnail of @Html(collection.name)">
+                </a>
+            } else {
+                <a href="@(routes.Collections.collection(collection.id))">
+                    <span class="searchicon glyphicon glyphicon-th-large collection-background"></span>
+                </a>
+            }
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h4><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h4>
+                <div class="row">
+                    <div class="col-md-12 col-lg-12 col-sm-12">
+                        <p>
+                            <span><a href = "@routes.Profile.viewProfileUUID(collection.author.id)"> @collection.author.fullName</a></span> &#183;
+                            <span>@collection.created.format("MMM dd, yyyy")</span> &#183;
+                            <span>@collection.stats.views views</span> &#183;
+                            <span>@collection.stats.downloads downloads</span> &#183;
+                            <span>@collection.datasetCount datasets</span> &#183;
+                            <span>@collection.childCollectionsCount child collections</span>
+                        </p>
+                        @if(collection.description != "") {
+                            <p class="abstractsummary">@Html(collection.description)</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -43,6 +43,8 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
     val infoListMap = Json.prettyPrint(jsonCollection(collection))
     Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
   }
+
+  // TODO: Repeat from api/Collections
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
       "created" -> collection.created.toString,"author"-> collection.author.email.toString, "root_flag" -> collections.hasRoot(collection).toString,
@@ -69,16 +71,13 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
     Json.obj("metadata"->collectionMetadata)
   }
 
+  // TODO: Repeat from api/Collections
   def getNextGenerationCollections(currentCollections : List[Collection]) : List[Collection] = {
     var nextGenerationCollections : ListBuffer[Collection] = ListBuffer.empty[Collection]
     for (currentCollection <- currentCollections){
-      val child_ids = currentCollection.child_collection_ids
-      for (child_id <- child_ids){
-        collections.get(child_id) match {
-          case Some(child_col) => nextGenerationCollections += child_col
-          case None => None
-        }
-      }
+      collections.get(currentCollection.child_collection_ids).found.foreach(child_col => {
+        nextGenerationCollections += child_col
+      })
     }
     nextGenerationCollections.toList
   }

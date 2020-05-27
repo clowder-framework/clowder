@@ -13,7 +13,7 @@
             } else {
                 @for(weightedTag <- weightedTags.sorted) {
                   <span class="tag-padding">
-                      <a href="@routes.Tags.search(weightedTag._1)" style="font-size: @(weightedTag._2)em">@weightedTag._1</a>
+                      <a href="@routes.Search.search("tag:"+weightedTag._1)" style="font-size: @(weightedTag._2)em">@weightedTag._1</a>
                   </span>
                 }
             }

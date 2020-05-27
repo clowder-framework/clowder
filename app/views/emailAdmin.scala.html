@@ -1,4 +1,4 @@
-@(subject: String)(implicit user: Option[models.User])
+@(subject: String, body: String)(implicit user: Option[models.User])
 @main("Email Admins") {
     <div class="row">
         <div class="col-md-12">
@@ -17,14 +17,14 @@
         <div class="form-group">
             <label for="subject" class="col-xs-12">Subject</label>
             <div class="col-xs-12">
-                <input type="text" class="form-control" id="subject" value="@subject" required paceholder="Subject of the email message">
+                <input type="text" class="form-control" id="subject" value="@subject" required placeholder="Subject of the email message">
             </div>
         </div>
 
         <div class="form-group">
             <label for="subject" class="col-xs-12">Body</label>
             <div class="col-xs-12">
-                <textarea rows=4 id="body" style="resize: none;" class="form-control" placeholder="Body of the email message" required></textarea>
+                <textarea rows=4 id="body" style="resize: none;" class="form-control" placeholder="Body of the email message" required>@body</textarea>
             </div>
         </div>
 

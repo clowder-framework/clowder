@@ -101,12 +101,22 @@ paths:
           type: string
           name: datasetid
           in: query
-          description: Return only files belonging to a specific dataset.
+          description: Return only resources belonging to a specific dataset.
         - required: false
           type: string
           name: collectionid
           in: query
-          description: Return only datasets belonging to a specific collection.
+          description: Return only resources belonging to a specific collection.
+        - required: false
+          type: string
+          name: spaceid
+          in: query
+          description: Return only resources belonging to a specific space.
+        - required: false
+          type: string
+          name: folderid
+          in: query
+          description: Return only resources belonging to a specific folder.
         - required: false
           type: string
           name: field
@@ -117,6 +127,21 @@ paths:
           name: tag
           in: query
           description: Search for resources with a specific tag.
+        - required: false
+          type: integer
+          name: from
+          in: query
+          description: Starting index of first result; useful for pagination.
+        - required: false
+          type: integer
+          name: size
+          in: query
+          description: Number of search results to include; useful for pagination.
+        - required: false
+          type: integer
+          name: page
+          in: query
+          description: An alternative to "from" for pagination. Return the Nth page assuming "size" items per page.
       tags:
         - search
       summary: Perform a basic search
@@ -3816,6 +3841,15 @@ paths:
       summary: Delete thumbnail
       description: Remove thumbnail file from system).
 
+  /thumbnails/{id}/blob:
+    get:
+      responses:
+        200:
+          description: OK
+      parameters: []
+      summary: Download a specific thumbnail image
+      description: Download a thumbnail image associated with a resource.
+
   ##############################################################################
   # Curations                                                                  #
   ##############################################################################
@@ -4791,7 +4825,7 @@ definitions:
       {
         "@context":
         [
-          "https://clowder.ncsa.illinois.edu/contexts/metadata.jsonld",
+          "https://clowderframework.org/contexts/metadata.jsonld",
           {
             "csv_headers": "http://clowder.ncsa.illinois.edu/metadata/ncsa.csvheaders"
           }
@@ -4799,14 +4833,14 @@ definitions:
       "attached_to":
         {
           "resource_type": "cat:file",
-          "url": "https://clowder.ncsa.illinois.edu/clowder/files/5b2a836d5e0e8956ed865b29"
+          "url": "https://clowderframework.org/clowder/files/5b2a836d5e0e8956ed865b29"
         },
       "created_at": "Wed Jun 20 11:40:25 CDT 2018",
       "agent":
         {
           "@type": "cat:extractor",
-          "name": "https://clowder.ncsa.illinois.edu/clowder/extractors/ncsa.csvheaders/1.0",
-          "extractor_id": "https://clowder.ncsa.illinois.edu/clowder/extractors/ncsa.csvheaders/1.0"
+          "name": "https://clowderframework.org/clowder/extractors/ncsa.csvheaders/1.0",
+          "extractor_id": "https://clowderframework.org/clowder/extractors/ncsa.csvheaders/1.0"
         },
       "content":
         {

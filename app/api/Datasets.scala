@@ -48,7 +48,8 @@ class  Datasets @Inject()(
   relations: RelationService,
   userService: UserService,
   thumbnailService : ThumbnailService,
-  appConfig: AppConfigurationService) extends ApiController {
+  appConfig: AppConfigurationService,
+  esqueue: ElasticsearchQueue) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -320,26 +321,25 @@ class  Datasets @Inject()(
             //Items from space model still missing. New API will be needed to update it most likely.
             (request.body \ "existingfiles").asOpt[String].map { fileString =>
               var idArray = fileString.split(",").map(_.trim())
-              for (anId <- idArray) {
-                datasets.get(UUID(id)) match {
-                  case Some(dataset) => {
-                    files.get(UUID(anId)) match {
-                      case Some(file) => {
-                        attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, request.user)
-                        Ok(toJson(Map("status" -> "success")))
-                      }
-                      case None => {
-                        Logger.error("Error getting file" + anId)
-                        BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
-                      }
-                    }
-                  }
-                  case None => {
-                    Logger.error("Error getting dataset" + id)
-                    BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+              datasets.get(UUID(id)) match {
+                case Some(dataset) => {
+                  val fileHits = files.get(idArray.map({fid => UUID(fid)}).toList)
+                  if (fileHits.missing.length > 0)
+                    BadRequest(toJson(Map("status" -> "Not all file IDs were found.",
+                      "missing" -> fileHits.missing.mkString(","))))
+                  else {
+                    fileHits.found.foreach(file => {
+                      attachExistingFileHelper(dataset.id, file.id, dataset, file, request.user)
+                    })
+                    Ok(toJson(Map("status" -> "success")))
                   }
                 }
+                case None => {
+                  Logger.error("Error getting dataset" + id)
+                  BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+                }
               }
+
               Ok(toJson(Map("id" -> id)))
             }.getOrElse(Ok(toJson(Map("id" -> id))))
           }
@@ -359,19 +359,19 @@ class  Datasets @Inject()(
   def attachMultipleFiles() = PermissionAction(Permission.AddResourceToDataset)(parse.json) { implicit request =>
     (request.body \ "datasetid").asOpt[String].map { dsId =>
       (request.body \ "existingfiles").asOpt[String].map { fileString =>
-        var idArray = fileString.split(",").map(_.trim())
-        for (anId <- idArray) {
+        val idArray = fileString.split(",").map(_.trim())
+
           datasets.get(UUID(dsId)) match {
             case Some(dataset) => {
-              files.get(UUID(anId)) match {
-                case Some(file) => {
-                  attachExistingFileHelper(UUID(dsId), UUID(anId), dataset, file, request.user)
-                  Ok(toJson(Map("status" -> "success")))
-                }
-                case None => {
-                  Logger.error("Error getting file" + anId)
-                  BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
-                }
+              val fileHits = files.get(idArray.map(UUID(_)).toList)
+              if (fileHits.missing.length > 0)
+                BadRequest(toJson(Map("status" -> "Not all file IDs were found.",
+                  "missing" -> fileHits.missing.mkString(","))))
+              else {
+                fileHits.found.foreach(file => {
+                  attachExistingFileHelper(dataset.id, file.id, dataset, file, request.user)
+                })
+                Ok(toJson(Map("status" -> "success")))
               }
             }
             case None => {
@@ -379,7 +379,7 @@ class  Datasets @Inject()(
               BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
             }
           }
-        }
+
         Ok(toJson(Map("id" -> dsId)))
       }.getOrElse(BadRequest(toJson("Missing parameter [existingfiles]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [datasetid]")))
@@ -392,10 +392,9 @@ class  Datasets @Inject()(
   def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(ds) => {
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.index(ds, recursive)
-        }
-        Ok(toJson(Map("status" -> "success")))
+        val success = esqueue.queue("index_dataset", new ResourceRef('dataset, id), new ElasticsearchParameters(recursive=recursive))
+        if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
+        else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
       }
       case None => {
         Logger.error("Error getting dataset" + id)
@@ -425,28 +424,24 @@ class  Datasets @Inject()(
       if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
         datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
 
-        for(collectionId <- dataset.collections){
-          collections.get(collectionId) match{
-            case Some(collection) =>{
-              if(collection.thumbnail_id.isEmpty){
-                collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
-              }
-            }
-            case None=>Logger.debug(s"No collection found with id $collectionId")
+        collections.get(dataset.collections).found.foreach(collection => {
+          if(collection.thumbnail_id.isEmpty){
+            collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
           }
+        })
+      }
+
+      //add file to RDF triple store if triple store is used
+      if (file.filename.endsWith(".xml")) {
+        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+          case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
+          case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
         }
       }
-        //add file to RDF triple store if triple store is used
-        if (file.filename.endsWith(".xml")) {
-          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-          }
-        }
-        Logger.debug("----- Adding file to dataset completed")
-      } else {
-          Logger.debug("File was already in dataset.")
-      }
+      Logger.debug("----- Adding file to dataset completed")
+    } else {
+        Logger.debug("File was already in dataset.")
+    }
   }
 
   def attachExistingFile(dsId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dsId))) { implicit request =>
@@ -510,18 +505,13 @@ class  Datasets @Inject()(
             if(dataset.thumbnail_id.get == file.thumbnail_id.get){
               datasets.createThumbnail(dataset.id)
 
-              for(collectionId <- dataset.collections){
-                collections.get(collectionId) match{
-                  case Some(collection) =>{
-                    if(!collection.thumbnail_id.isEmpty){
-                      if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-                        collections.createThumbnail(collection.id)
-                      }
-                    }
+              collections.get(dataset.collections).found.foreach(collection => {
+                if(!collection.thumbnail_id.isEmpty){
+                  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+                    collections.createThumbnail(collection.id)
                   }
-                  case None=>{}
                 }
-              }
+              })
             }
           }
 
@@ -581,7 +571,6 @@ class  Datasets @Inject()(
 
   def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     Logger.debug(s"Adding metadata to dataset $id")
-    //datasets.addMetadata(id, Json.stringify(request.body))
 
     datasets.get(id) match {
       case Some(x) => {
@@ -629,69 +618,55 @@ class  Datasets @Inject()(
     */
   def addMetadataJsonLD(id: UUID) =
      PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
-            // parse request for JSON-LD model
-            var model: RDFModel = null
-            json.validate[RDFModel] match {
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatForm(e))
-                BadRequest(JsError.toFlatJson(e))
-              }
-              case s: JsSuccess[RDFModel] => {
-                model = s.get
+            //parse request for agent/creator info
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                val creator = s.get
 
-                //parse request for agent/creator info
-                //creator can be UserAgent or ExtractorAgent
-                var creator: models.Agent = null
-                json.validate[Agent] match {
-                  case s: JsSuccess[Agent] => {
-                    creator = s.get
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
 
-                    // check if the context is a URL to external endpoint
-                    val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
 
-                    // check if context is a JSON-LD document
-                    val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                      .map(contextService.addContext(new JsString("context name"), _))
+                // when the new metadata is added
+                val createdAt = new Date()
 
-                    // when the new metadata is added
-                    val createdAt = new Date()
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
-                    //parse the rest of the request to create a new models.Metadata object
-                    val attachedTo = ResourceRef(ResourceRef.dataset, id)
-                    val content = (json \ "content")
-                    val version = None
-                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                      content, version)
+                //add metadata to mongo
+                val metadataId = metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
-                    //add metadata to mongo
-                    val metadataId = metadataService.addMetadata(metadata)
-                    val mdMap = metadata.getExtractionSummary
-
-                    //send RabbitMQ message
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                    }
-
-                    events.addObjectEvent(None, id, x.name,EventType.ADD_METADATA_DATASET.toString)
-
-                    datasets.index(id)
-                    Ok(toJson("Metadata successfully added to db"))
-
-                  }
-                  case e: JsError => {
-                    Logger.error("Error getting creator");
-                    BadRequest(toJson(s"Creator data is missing or incorrect."))
-                  }
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                 }
+
+                events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
+
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator");
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
               }
             }
           }
           case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
-      }
+     }
 
 
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -795,18 +770,10 @@ class  Datasets @Inject()(
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
-        for (fileId <- dataset.files) {
-          files.get(fileId) match {
-            case Some(file) => {
-              if (file.filename.equals(filename)) {
-                return Some(file.id.toString)
-              }
-            }
-            case None =>  Logger.error(s"Error getting file $fileId.")
-          }
-
-        }
-        Logger.error(s"File does not exist in dataset $datasetId.")
+        files.get(dataset.files).found.foreach(file => {
+          if (file.filename.equals(filename))
+            return Some(file.id.toString)
+        })
         None
       }
       case None => Logger.error(s"Error getting dataset $datasetId."); None
@@ -819,16 +786,13 @@ class  Datasets @Inject()(
         if (count == true) {
           Ok(toJson(dataset.files.length))
         } else {
-          val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-            case Some(file) => {
-              val serveradmin = request.user match {
-                case Some(u) => (u.status==UserStatus.Admin)
-                case None => false
-              }
-              jsonFile(file, serveradmin)
+          val list: List[JsValue]= files.get(dataset.files).found.map(file => {
+            val serveradmin = request.user match {
+              case Some(u) => (u.status==UserStatus.Admin)
+              case None => false
             }
-            case None => Logger.error(s"Error getting File $fileId")
-          }).asInstanceOf[List[JsValue]]
+            jsonFile(file, serveradmin)
+          })
           Ok(toJson(list))
         }
       }
@@ -853,13 +817,10 @@ class  Datasets @Inject()(
         val listFiles = new ListBuffer[JsValue]()
         var resultCount = 0
 
-        dataset.files.foreach(fileId => {
+        files.get(dataset.files).found.foreach(f => {
           // Only get file from database if below max requested value
           if (max < 0 || resultCount < max) {
-            files.get(fileId) match {
-              case Some(f) => listFiles += jsonFile(f, serveradmin)
-              case None => Logger.error(s"Error getting File $fileId")
-            }
+            listFiles += jsonFile(f, serveradmin)
             resultCount += 1
           }
         })
@@ -915,15 +876,12 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         folders.findByParentDatasetId(id).map { folder =>
-          folder.files.foreach { fileId =>
+          files.get(folder.files).found.foreach(file => {
             if (max < 0 || resultCount < max) {
-              files.get(fileId) match {
-                case Some(file) => output += jsonFile(file, serveradmin)
-                case None => Logger.error(s"Error getting file $fileId")
-              }
+              output += jsonFile(file, serveradmin)
               resultCount += 1
             }
-          }
+          })
         }
       }
       case None => Logger.error(s"Error getting dataset $id")
@@ -1649,12 +1607,10 @@ class  Datasets @Inject()(
   def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
-        val filesInDataset:List[models.File] = dataset.files.map{f => files.get(f).foreach(file => file)}.asInstanceOf[List[models.File]]
-
         var isActivity = "false"
         try {
-          for (f <- filesInDataset) {
-            extractions.findIfBeingProcessed(f.id) match {
+          for (fid <- dataset.files) {
+            extractions.findIfBeingProcessed(fid) match {
               case false =>
               case true => {
                 isActivity = "true"
@@ -1704,7 +1660,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val datasetWithFiles = dataset.copy(files = dataset.files)
-        val datasetFiles: List[models.File] = datasetWithFiles.files.flatMap(f => files.get(f))
+        val datasetFiles = files.get(datasetWithFiles.files).found
         val previewers = Previewers.findDatasetPreviewers()
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewslist = for (f <- datasetFiles; if (f.showPreviews.equals("DatasetLevel"))) yield {
@@ -1784,14 +1740,6 @@ class  Datasets @Inject()(
         }
         events.addObjectEvent(request.user, dataset.id, dataset.name, EventType.DELETE_DATASET.toString)
         datasets.removeDataset(id, Utils.baseUrl(request), request.apiKey, request.user)
-        appConfig.incrementCount('datasets, -1)
-
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete("data", "dataset", id.stringify)
-        }
-
-        for(file <- dataset.files)
-          files.index(file)
 
         current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
         Ok(toJson(Map("status"->"success")))
@@ -1842,10 +1790,6 @@ class  Datasets @Inject()(
         for (ds <- trashDatasets){
           events.addObjectEvent(request.user, ds.id, ds.name, EventType.DELETE_DATASET.toString)
           datasets.removeDataset(ds.id, Utils.baseUrl(request), request.apiKey, request.user)
-          appConfig.incrementCount('datasets, -1)
-          current.plugin[ElasticsearchPlugin].foreach {
-            _.delete("data", "dataset", ds.id.stringify)
-          }
         }
       }
       case None =>
@@ -2076,13 +2020,7 @@ class  Datasets @Inject()(
     */
   def listFilesInFolder(fileids: List[UUID], folderids: List[UUID], parent: String, filenameMap: scala.collection.mutable.Map[UUID, String], inputFiles: scala.collection.mutable.ListBuffer[models.File]): Unit = {
     // get all file objects
-    val fileobjs = fileids.flatMap(x => files.get(x) match {
-      case Some(f) => Some(f)
-      case None => {
-        Logger.error(s"Could not find file with id=${x.uuid}")
-        None
-      }
-    })
+    val fileobjs = files.get(fileids).found
 
     // map fileobj to filename, make sure filename is unique
     // potential improvemnt would be to keep a map -> array of ids
@@ -2159,18 +2097,25 @@ class  Datasets @Inject()(
     /*
      * Explanation for the cases
      *
-     * the level can be 0 (file) 1 (dataset) and 2 (bag).
+     * the level can be:
+     *    0 (file)
+     *    1 (dataset)
+     *    2 (bag)
      *
-     * when the level is file, the file_type can be 0 (info) 1 (metadata) or 2 (the actual files)
+     * when the level is file, the file_type can be:
+     *    0 (info)
+     *    1 (metadata)
+     *    2 (the actual files)
      *
-     * when the level is dataset, the file_type can be 0 (info) or 1 (metadata)
+     * when the level is dataset, the file_type can be:
+     *    0 (info)
+     *    1 (metadata)
      *
-     * when the level is bag, the file_type can be
-     *
-     * 0 - bagit.txt
-     * 1 - bag-info.txt
-     * 2 - manifest-md5.txt
-     * 3 - tagmanifest-md5.txt
+     * when the level is bag, the file_type can be:
+     *    0 - bagit.txt
+     *    1 - bag-info.txt
+     *    2 - manifest-md5.txt
+     *    3 - tagmanifest-md5.txt
      *
      * when the dataset is finished (in either mode) the level = -1 and file_type = -1 and
      * the enumerator is finished
@@ -2540,24 +2485,20 @@ class  Datasets @Inject()(
                         copyFolders(folder, datasetId, "dataset", d.id)
                       }
 
-                      dataset.files.map { fileId =>
-                        files.get(fileId) match {
-                          case Some(file) => {
-                            val original_thumbnail = file.thumbnail_id
-                            val newFile = models.File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
-                              loader = file.loader, showPreviews = file.showPreviews,
-                              description = file.description, licenseData = file.licenseData, stats = file.stats, status = file.status)
-                            files.save(newFile)
-                            FileUtils.copyFileThumbnail(file,newFile)
-                            FileUtils.copyFileMetadata(file,newFile)
-                            FileUtils.copyFilePreviews(file,newFile)
-                            datasets.addFile(UUID(id), newFile)
-                            relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
-                          }
-                          case None => Logger.error("Unable to copy file with id: " + fileId.stringify + " to dataset with id: " + id)
-                        }
-                      }
+                      files.get(dataset.files).found.foreach(file => {
+                        val original_thumbnail = file.thumbnail_id
+                        val newFile = models.File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+                          uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
+                          loader = file.loader, showPreviews = file.showPreviews,
+                          description = file.description, licenseData = file.licenseData, stats = file.stats, status = file.status)
+                        files.save(newFile)
+                        FileUtils.copyFileThumbnail(file,newFile)
+                        FileUtils.copyFileMetadata(file,newFile)
+                        FileUtils.copyFilePreviews(file,newFile)
+                        datasets.addFile(UUID(id), newFile)
+                        relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+                      })
+
                       datasets.createThumbnail(d.id)
                       Ok(toJson(Map("newDatasetId" -> d.id.stringify)))
                     }
@@ -2609,31 +2550,27 @@ class  Datasets @Inject()(
     folders.get(id) match {
       case Some(folder) => {
         val newFiles = ListBuffer[UUID]()
-        for (fileId <- folder.files)   {
-          files.get(fileId) match {
-            case Some(file) => {
-              val original_thumbnail = file.thumbnail_id
-              val newFile = models.File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
-                loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
-                description = file.description, licenseData = file.licenseData, stats = file.stats, status = file.status)
-              files.save(newFile)
-              FileUtils.copyFileMetadata(file,newFile)
-              FileUtils.copyFilePreviews(file,newFile)
-              relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
-              original_thumbnail match {
-                case Some(tnail) => {
-                  files.updateThumbnail(file.id,UUID(tnail))
-                  files.updateThumbnail(newFile.id,UUID(tnail))
-                }
-                case None =>
-              }
-              relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
-              newFiles += newFile.id
+        files.get(folder.files).found.foreach(file => {
+          val original_thumbnail = file.thumbnail_id
+          val newFile = models.File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+            uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
+            loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+            description = file.description, licenseData = file.licenseData, stats = file.stats, status = file.status)
+          files.save(newFile)
+          FileUtils.copyFileMetadata(file,newFile)
+          FileUtils.copyFilePreviews(file,newFile)
+          relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+          original_thumbnail match {
+            case Some(tnail) => {
+              files.updateThumbnail(file.id,UUID(tnail))
+              files.updateThumbnail(newFile.id,UUID(tnail))
             }
             case None =>
           }
-        }
+          relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+          newFiles += newFile.id
+        })
+
         val newFolder = Folder(author = folder.author, created = new Date(), name = folder.name, displayName = folder.displayName,
           files = newFiles.toList, folders = List.empty, parentId = parentId, parentType = parentType.toLowerCase(), parentDatasetId = datasetId)
         folders.insert(newFolder)

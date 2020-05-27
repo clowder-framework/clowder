@@ -7,11 +7,16 @@
 @import _root_.util.Formatters
 
 @main(displayedName) {
+    <head>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("javascripts/jstree/themes/default/style.min.css")">
+    </head>
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/stickytabs/jquery.stickytabs.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jstree/jstree.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jstree/jstree.min.js")" type="text/javascript"></script>
 
     <div class="row">
         <h2>@profile.fullName</h2>
@@ -33,6 +38,7 @@
             <li role="presentation"><a href="#datasets" aria-controls="datasets" role="tab" data-toggle="tab"><b>@play.api.i18n.Messages("home.title", play.api.i18n.Messages("datasets.title"))</b></a></li>
             <li role="presentation"><a href="#collections" aria-controls="collections" role="tab" data-toggle="tab"><b>@play.api.i18n.Messages("home.title", play.api.i18n.Messages("collections.title"))</b></a></li>
             <li role="presentation"><a href="#followers" aria-controls="followers" role="tab" data-toggle="tab"><b>Followers</b></a></li>
+            <li role="presentation"><a href="#treeview" aria-controls="treeview" role="tab" data-toggle="tab"><b>Tree View</b></a></li>
         </ul>
         <!-- Tab panes -->
         <div class="tab-content">
@@ -50,86 +56,15 @@
             </div>
             <div role="tabpanel" class="tab-pane" id="spaces">
                 @* spaces *@
-                <div class="row top-padding">
-                    <div class="col-xs-12">
-                        <p>@Messages("space.list.message", Messages("spaces.title"))</p>
-                    </div>
-                    <div class="col-xs-6">
-                    </div>
-                    <div class="col-xs-6">
-                        <span class="pull-right">
-                            <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a>
-                        </span>
-                    </div>
-                </div>
-                <div class="row" id="masonry-spaces">
-                @spacesList.map { space =>
-                    @spaces.tile(space, "col-xs-3", routes.Application.index(), false)
-                }
-                </div>
-                @if(spacesList.size < 1) {
-                    <div class="text-center">
-                        <div>@Messages("home.empty.message", Messages("spaces.title")) </div>
-
-                        <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new @Messages("space.title")">@Messages("create.title", Messages("space.title"))</a></div>
-                    </div>
-                }
+                @views.html.spaces.miniList(profile, spacesList, deletePermission, ownProfile, userSelections)
             </div>
             <div role="tabpanel" class="tab-pane" id="datasets">
                 @* datasets *@
-                <div class="row top-padding">
-                    <div class="col-xs-12">
-                        <p>@Messages("dataset.list.message", Messages("datasets.title").toLowerCase, Messages("dataset.title").toLowerCase)  </p>
-                    </div>
-                    <div class="col-xs-6">
-                    </div>
-                    <div class="col-xs-6">
-                        <span class="pull-right"><a href="@routes.Datasets.list("","",12, None, None, "", Some(profile.id.stringify))">See More</a></span>
-                    </div>
-                </div>
-                <div class="row" id="masonry-datasets">
-                @datasetsList.map { dataset =>
-                    @if(userSelections.indexOf(dataset.id.toString()) != -1) {
-                        @datasets.tile(dataset, None, "col-xs-3", false, false, routes.Application.index(), true)
-                    } else {
-                        @datasets.tile(dataset, None, "col-xs-3", false, false, routes.Application.index(), false)
-                    }
-
-                }
-                </div>
-                @if(datasetsList.size < 1) {
-                    <div class="text-center">
-                        <div>@Messages("home.empty.message", Messages("datasets.title").toLowerCase) </div>
-                        <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new @Messages("dataset.title")">@Messages("create.title", Messages("dataset.title"))</a></div>
-                    </div>
-                }
+                @views.html.datasets.miniList(profile, datasetsList, deletePermission, ownProfile, userSelections)
             </div>
             <div role="tabpanel" class="tab-pane" id="collections">
                 @* collections *@
-                <div class="row top-padding">
-                    <div class="col-xs-12">
-                        <p>@Messages("collection.list.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase )</p>
-                    </div>
-                    <div class="col-xs-6">
-                    </div>
-                    <div class="col-xs-6">
-                        <span class="pull-right">
-                            <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a>
-                        </span>
-                    </div>
-                </div>
-                <div class="row" id ="masonry-collections">
-                @collectionsList.map { collection =>
-                    @collections.tile(collection, routes.Application.index(), None, "col-xs-3", false)
-                }
-                </div>
-                @if(collectionsList.size < 1) {
-                    <div class="text-center">
-                        <div>@Messages("home.empty.message", Messages("collections.title").toLowerCase) </div>
-
-                        <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new @Messages("collection.title")">@Messages("create.title", Messages("collection.title"))</a></div>
-                    </div>
-                }
+                @views.html.collections.miniList(profile, collectionsList, deletePermission, ownProfile, userSelections)
             </div>
             <div role="tabpanel" class="tab-pane" id="followers">
                 <div class="row top-padding">
@@ -484,62 +419,59 @@
                 </div>
 
             </div>
+            <div role="tabpanel" class="tab-pane" id="treeview">
+                <div class="row top-padding">
+                    <div class="col-xs-12">
+                        <p>Space, Collections, Datasets, Folders, and Files, in hierarchical tree</p>
+                    </div>
+                </div>
+                <script>
+                        $(function() {
+                            $('#treeview_div').jstree();
+                        });
+                </script>
+                <div class="well" id="tree_view_div"></div>
+                <script>
+                    $(function() {
+                        $('#tree_view_div').jstree({
+                           core: {
+                               data: {
+                                   url: function(node) {
+                                       console.log(node);
+                                       return node.id === "#" ?
+                                       "api/tree/getChildrenOfNode?nodeType=root" :
+                                       "api/tree/getChildrenOfNode?nodeId="+node.id+"&nodeType="+node.data.type+"&role="+node.role+"";
+                                   },
+                                   type: 'GET'
+                               }
+                           }
+                        });
+                        $("#tree_view_div").on("select_node.jstree", function (e, data) {
+                            if (data.node.data.type == "space"){
+                                window.location.href="spaces/"+data.node.id;
+                            } else if (data.node.data.type == "collection") {
+                                window.location.href="collection/"+data.node.id;
+                            } else if (data.node.data.type == "dataset") {
+                                window.location.href="datasets/"+data.node.id;
+                            } else if (data.node.data.type == "folder") {
+                                window.location.href="datasets/"+data.node.data.parentDataset+'#folderId='+data.node.id;
+                            } else if (data.node.data.type == "file") {
+                                console.log("a file");
+                                window.location.href="files/"+data.node.id;
+                            }
+                        });
+
+                    })
+                </script>
         </div>
     </div>
 
-    <script src="@routes.Assets.at("javascripts/lib/masonry.pkgd.min.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/lib/imagesloaded.pkgd.min.js")" type="text/javascript"></script>
+    @* Use masonry javascript library to layout the tiles within each tab *@
+    @util.masonryTabbed()
 
-    <script>
-        var removeIndicator=true;
-        function activateOne(id) {
-            // initialize Masonry
-            var $container = $('#'+id).masonry();
-            // layout Masonry again after all images have loaded
-            imagesLoaded( '#masonry', function() {
-                $container.masonry({
-                itemSelector: '.post-box',
-                columnWidth: '.post-box',
-                transitionDuration: 4
-                });
-            });
-        }
-
-        function activate(){
-            activateOne("masonry-datasets");
-            activateOne("masonry-collections");
-            activateOne("masonry-spaces");
-        }
-
-        $(document).ready(function() {
-            activate();
-            $('.nav-tabs').stickyTabs();
-        });
-
-        // fire when showing from tab
-        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            activate();
-        })
-
-        var eventCount = 3;
-        function moreEvents(){
-            var request = jsRoutes.controllers.Events.getEvents(eventCount).ajax({
-                type: 'GET'
-            });
-
-            request.done(function (response, textStatus, jqXHR) {
-                eventCount = eventCount + 1;
-                $("#moreevent").append(response);
-            });
-
-            request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
-                notify("Could not get moe events: " + errorThrown, "error");
-            });
-        }
-    </script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
+
     @*******
     *if(user.isDefined) {
     *    @carousel(files)

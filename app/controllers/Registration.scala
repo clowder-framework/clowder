@@ -30,6 +30,14 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
     }
   }
 
+  def signUp(token: String) = Action { implicit request =>
+    if ( play.Play.application().configuration().getBoolean("enableUsernamePassword") ) {
+      Redirect(securesocial.core.providers.utils.RoutesHelper.signUp(token).absoluteURL(IdentityProvider.sslEnabled))
+    } else {
+      Redirect(securesocial.core.providers.utils.RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+    }
+  }
+
   /**
    * Handles post from the sign up page. Checks if there is an invitation pending for a space. If so,
    * the person is added to the space with the assigned role in the invitation after signing up.
@@ -38,68 +46,47 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
   def handleSignUp(token: String) = Action { implicit request =>
     if(Registration.registrationEnabled) {
       executeForToken(token, { t =>
-          Registration.form.bindFromRequest.fold (
-            errors => {
-              if (Logger.isDebugEnabled) {
-                Logger.debug("[securesocial] errors " + errors)
-              }
-              BadRequest(use[TemplatesPlugin].getSignUpPage(request, errors, t.uuid))
-            },
-            info => {
-              val id = if ( UsernamePasswordProvider.withUserNameSupport ) info.userName.get else t.email
-              val identityId = IdentityId(id, providerId)
-              val user = SocialUser(
-                identityId,
-                info.firstName,
-                info.lastName,
-                "%s %s".format(info.firstName, info.lastName),
-                Some(t.email),
-                GravatarUtils.avatarFor(t.email),
-                AuthenticationMethod.UserPassword,
-                passwordInfo = Some(Registry.hashers.currentHasher.hash(info.password))
-              )
-              val saved = UserService.save(user)
-              UserService.deleteToken(t.uuid)
-              if ( UsernamePasswordProvider.sendWelcomeEmail ) {
-                Mailer.sendWelcomeEmail(saved)
-              }
+        Registration.form.bindFromRequest.fold (
+          errors => {
+            if (Logger.isDebugEnabled) {
+              Logger.debug("[securesocial] errors " + errors)
+            }
+            BadRequest(use[TemplatesPlugin].getSignUpPage(request, errors, t.uuid))
+          },
+          info => {
+            val id = if ( UsernamePasswordProvider.withUserNameSupport ) info.userName.get else t.email
+            val identityId = IdentityId(id, providerId)
+            val user = SocialUser(
+              identityId,
+              info.firstName,
+              info.lastName,
+              "%s %s".format(info.firstName, info.lastName),
+              Some(t.email),
+              GravatarUtils.avatarFor(t.email),
+              AuthenticationMethod.UserPassword,
+              passwordInfo = Some(Registry.hashers.currentHasher.hash(info.password))
+            )
+            val saved = UserService.save(user)
+            UserService.deleteToken(t.uuid)
+            if ( UsernamePasswordProvider.sendWelcomeEmail ) {
+              Mailer.sendWelcomeEmail(saved)
+            }
 
-              //Code from here to the end of the case is the difference between securesocial and this method. It checks
-              // for an invitation pending to the space. If it finds invitation(s), it then adds the person to the space(s).
-              spaces.getInvitationByEmail(t.email).map { invite =>
-                users.findByEmail(invite.email) match {
-                  case Some(user) => {
-                    users.findRole(invite.role) match {
-                      case Some(role) => {
-                        spaces.addUser(user.id, role, invite.space)
-                        spaces.removeInvitationFromSpace(UUID(invite.invite_id), invite.space)
-                      }
-                      case None => {
-                        Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space. The role assigned doesn't exist"))
-                      }
-                    }
-                  }
-                  case None =>
-                }
-              }
-
-              val eventSession = Events.fire(new SignUpEvent(user)).getOrElse(session)
-              if ( UsernamePasswordProvider.signupSkipLogin ) {
-                ProviderController.completeAuthentication(user, eventSession).flashing(Success -> Messages(SignUpDone))
+            val eventSession = Events.fire(new SignUpEvent(user)).getOrElse(session)
+            if ( UsernamePasswordProvider.signupSkipLogin ) {
+              ProviderController.completeAuthentication(user, eventSession).flashing(Success -> Messages(SignUpDone))
+            } else {
+              // if registerThroughAdmins == true, then show the appropriate text
+              if (play.Play.application().configuration().getBoolean("registerThroughAdmins")) {
+                Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(ThankYouCheckEmail)).withSession(eventSession)
               } else {
-                // if registerThroughAdmins == true, then show the appropriate text
-                if (play.Play.application().configuration().getBoolean("registerThroughAdmins")) {
-                  Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(ThankYouCheckEmail)).withSession(eventSession)
-                } else {
-                  Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(SignUpDone)).withSession(eventSession)
-                }
+                Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(SignUpDone)).withSession(eventSession)
               }
             }
-          )
-        })
-      }
-
-    else NotFound(views.html.defaultpages.notFound.render(request, None))
-
+          }
+        )
+      })
     }
+    else NotFound(views.html.defaultpages.notFound.render(request, None))
   }
+}

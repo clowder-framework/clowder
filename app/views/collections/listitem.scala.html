@@ -1,13 +1,6 @@
 @(collection: models.Collection, redirect: Call)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import api.Permission
 <div class="panel panel-default collection-panel" id="@collection.id-listitem">
-    @if(!collection.thumbnail_id.isEmpty) {
-        <div class="row">
-            <div class="pull-left col-xs-12">
-                <span class="glyphicon glyphicon-th-large collection-background"></span>
-            </div>
-        </div>
-    }
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">

@@ -48,14 +48,8 @@ class Datasets @Inject() (
   def newDataset(space: Option[String], collection: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-    for (aSpace <- spacesList) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-      }
-    }
+    val perms = Permission.checkPermissions(Permission.AddResourceToSpace, spacesList.map(s => ResourceRef(ResourceRef.space, s.id))).approved
+    val decodedSpaceList = spacesList.filter(sp => perms.map(_.id).exists(_ == sp.id)).map(Utils.decodeSpaceElements(_))
 
     var hasVerifiedSpace = false
     val (spaceId, spaceName) = space match {
@@ -158,15 +152,7 @@ class Datasets @Inject() (
           -1
         }
 
-        for (tidObject <- datasetIdsToUse) {
-          val followedDataset = datasets.get(tidObject.id)
-          followedDataset match {
-            case Some(fdset) => {
-              datasetList += fdset
-            }
-            case None =>
-          }
-        }
+        datasets.get(datasetIdsToUse.map(_.id)).found.foreach(followedDataset => datasetList += followedDataset)
 
         //Modifications to decode HTML entities that were stored in an encoded fashion as part
         //of the datasets names or descriptions
@@ -418,7 +404,7 @@ class Datasets @Inject() (
    * of status/public view flags, etc. To generalize for sorting of other lists, the permission checks will need to be in 
    * the dataset query (as in the list method).
    */
-  def sortedListInSpace(space: String, offset: Integer, limit: Integer, showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
+  def sortedListInSpace(space: String, offset: Int, size: Int, showPublic: Boolean) = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
     val sortOrder: String =
       request.cookies.get("sort-order") match {
@@ -440,20 +426,14 @@ class Datasets @Inject() (
       if (!Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
         BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", datasetSpace.get.name, "space"))
       } else {
-
         val dList = datasets.listSpaceAccess(0, Set[Permission](Permission.ViewDataset), space, user, false, showPublic);
-        
-
         val len = dList.length
-
         Logger.debug("User selections" + user)
         val userSelections: List[String] =
           if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
-
-        val datasetList = SortingUtils.sortDatasets(dList, sortOrder).drop(offset).take(limit)
-
+        val datasetList = SortingUtils.sortDatasets(dList, sortOrder).drop(offset).take(size)
         val commentMap = datasetList.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
           dataset.files.map { file =>
@@ -476,23 +456,26 @@ class Datasets @Inject() (
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
         //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
         val viewMode: Option[String] =
-
           request.cookies.get("view-mode") match {
             case Some(cookie) => Some(cookie.value)
             case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
           }
+
         val prev: String = if (offset != 0) {
           offset.toString()
         } else {
           ""
         }
-        val next: String = if (len > (offset + limit)) {
-          (offset + limit).toString()
+
+        val next: String = if (len > (offset + size)) {
+          (offset + size).toString()
         } else {
           ""
         }
+
         val date = ""
-        Ok(views.html.datasetList(decodedDatasetList.toList, prev, next, limit, viewMode, Some(space), spaceName, None, title, None, None, "a", date, userSelections))
+
+        Ok(views.html.datasetList(decodedDatasetList.toList, prev, next, size, viewMode, Some(space), spaceName, None, title, None, None, "a", date, userSelections))
       }
     }
   }
@@ -500,8 +483,7 @@ class Datasets @Inject() (
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace: Option[String], limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-
+  def dataset(id: UUID, currentSpace: Option[String], limit: Int, filter: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     Previewers.findDatasetPreviewers().foreach(p => Logger.debug("Previewer found " + p.id))
     datasets.get(id) match {
@@ -564,13 +546,13 @@ class Datasets @Inject() (
             }
         }
         // dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset
-        val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea,
-          ResourceRef(ResourceRef.space, space.id)))
+        val perms = Permission.checkPermissions(Permission.EditStagingArea, datasetSpaces.map(ds => ResourceRef(ResourceRef.space, ds.id))).approved
+        val stagingarea = datasetSpaces.filter(sp => perms.map(_.id).exists(_ == sp.id))
         val toPublish = !stagingarea.isEmpty
-        val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(
-          _.status == 'Published)
-        val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation =>
-          Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
+        val curObjs = curationService.getCurationObjectByDatasetId(dataset.id)
+        val curObjectsPublished = curObjs.filter(_.status == 'Published)
+        val coperms = Permission.checkPermissions(Permission.EditStagingArea, curObjs.map(co => ResourceRef(ResourceRef.curationObject, co.id))).approved
+        val curObjectsPermission = curObjs.filter(co => coperms.map(_.id).exists(_ == co.id))
         val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
         // download button
@@ -615,11 +597,8 @@ class Datasets @Inject() (
         // add to collection permissions
         var canAddDatasetToCollection = Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))
         if (!canAddDatasetToCollection) {
-          datasetSpaces.map(space =>
-            if (Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
-              canAddDatasetToCollection = true
-           }
-          )
+          val parent_space_refs = datasetSpaces.map(space => ResourceRef(ResourceRef.space, space.id))
+          canAddDatasetToCollection = !Permission.checkPermissions(Permission.AddResourceToCollection, parent_space_refs).approved.isEmpty
         }
 
         // staging area
@@ -641,7 +620,7 @@ class Datasets @Inject() (
         Ok(views.html.dataset(dataset, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
           currentSpace, limit, showDownload, accessData, canAddDatasetToCollection,
-          stagingAreaDefined, view_data, extractionGroups, relatedDatasets))
+          stagingAreaDefined, view_data, extractionGroups, relatedDatasets, filter))
       }
       case None => {
         Logger.error("Error getting dataset" + id)
@@ -650,7 +629,7 @@ class Datasets @Inject() (
     }
   }
 
-  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int, space: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId)))(parse.json) { implicit request =>
+  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int, space: Option[String], filter: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId)))(parse.json) { implicit request =>
     implicit val user = request.user
     val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
     val sortOrder: String =
@@ -658,70 +637,66 @@ class Datasets @Inject() (
         case Some(cookie) => cookie.value
         case None => "dateN" //If there is no cookie, and an order was not passed in, the view will choose its default
       }
+
     datasets.get(datasetId) match {
       case Some(dataset) => {
+        val folderHierarchy = new ListBuffer[Folder]()
+
         val folderId = (request.body \ "folderId").asOpt[String]
-        folderId match {
-          case Some(fId) => {
-            folders.get(UUID(fId)) match {
+        val (childFolders: List[UUID], childFiles: List[UUID]) =
+          folderId match {
+            case Some(fId) => folders.get(UUID(fId)) match {
               case Some(folder) => {
-                val (foldersList: List[Folder], limitFileList: List[File]) =
-                  if(play.Play.application().configuration().getBoolean("sortInMemory")) {
-                    (SortingUtils.sortFolders(folder.folders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
-                     SortingUtils.sortFiles(folder.files.flatMap(f => files.get(f)), sortOrder).slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate + 1) - folder.folders.length))
-                  } else {
-                    (folder.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).flatMap(f => folders.get(f)),
-                     folder.files.reverse.slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate+1) - folder.folders.length).flatMap(f => files.get(f)))
-                  }
-                var folderHierarchy = new ListBuffer[Folder]()
                 folderHierarchy += folder
-                var f1: Folder = folder
+                var f1 = folder
                 while (f1.parentType == "folder") {
                   folders.get(f1.parentId) match {
                     case Some(fparent) => {
                       folderHierarchy += fparent
                       f1 = fparent
                     }
-                    case None =>
+                    case None => Logger.error("Parent folder " + f1.parentId.toString + " not found.")
                   }
                 }
-                val fileComments = limitFileList.map { file =>
-                  var allComments = comments.findCommentsByFileId(file.id)
-                  sections.findByFileId(file.id).map { section =>
-                    allComments ++= comments.findCommentsBySectionId(section.id)
-                  }
-                  file.id -> allComments.size
-                }.toMap
-                val next = folder.files.length + folder.folders.length > limit * (filepageUpdate + 1)
-
-                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))
-
+                (folder.folders, folder.files)
               }
-              case None => InternalServerError(s"No folder with id $fId found")
+              case None => Logger.error("Folder " + fId + " not found.")
             }
+            case None => (dataset.folders, dataset.files)
           }
-          case None => {
-            val (foldersList: List[Folder], limitFileList: List[File]) = if(play.Play.application().configuration().getBoolean("sortInMemory")) {
-              (SortingUtils.sortFolders(dataset.folders.flatMap(f => folders.get(f)), sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
-               SortingUtils.sortFiles(dataset.files.flatMap(f => files.get(f)), sortOrder).slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate + 1) - dataset.folders.length))
-            } else {
-              (dataset.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).flatMap(f => folders.get(f)),
-               dataset.files.reverse.slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate+1) - dataset.folders.length).flatMap(f => files.get(f)))
-            }
 
-            val fileComments = limitFileList.map { file =>
-              var allComments = comments.findCommentsByFileId(file.id)
-              sections.findByFileId(file.id).map { section =>
-                allComments ++= comments.findCommentsBySectionId(section.id)
-              }
-              file.id -> allComments.size
-            }.toMap
-
-            val folderHierarchy = new ListBuffer[Folder]()
-            val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate + 1)
-            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))
-          }
+        val filteredFiles = filter match {
+          case Some(filt) => files.get(childFiles).found.filter(f => f.filename.toLowerCase.contains(filt.toLowerCase))
+          case None => files.get(childFiles).found
         }
+
+        val filteredFolders = filter match {
+          case Some(filt) => folders.get(childFolders).found.filter(f => f.name.toLowerCase.contains(filt.toLowerCase))
+          case None => folders.get(childFolders).found
+        }
+
+        val (foldersList: List[Folder], limitFileList: List[File]) =
+          if (play.Play.application().configuration().getBoolean("sortInMemory")) {
+            (SortingUtils.sortFolders(filteredFolders, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
+              SortingUtils.sortFiles(filteredFiles, sortOrder).slice(limit * filepageUpdate - filteredFolders.length, limit * (filepageUpdate + 1) - filteredFolders.length))
+          } else {
+            (folders.get(childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1))).found,
+              files.get(childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length)).found)
+          }
+
+        // Get comment counts per file
+        val fileComments = limitFileList.map { file =>
+          var allComments = comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+          file.id -> allComments.size
+        }.toMap
+
+        // Pagination
+        val next = childFiles.length + childFolders.length > limit * (filepageUpdate + 1)
+
+        Ok(views.html.datasets.filesAndFolders(dataset, folderId, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space, filter)(request.user))
       }
       case None => InternalServerError(s"Dataset with id $datasetId not Found")
     }

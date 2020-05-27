@@ -24,7 +24,7 @@
 		   		  
 	     @if(!queryThumbnailId.isEmpty){ 
 	       <img class='mmd-img media-object' 
-            src='@(routes.Files.thumbnail(UUID(queryThumbnailId.get)))'
+            src='@(api.routes.Thumbnails.get(UUID(queryThumbnailId.get)))'
             title='Thumbnail of query file'>
           </img>
        }
@@ -63,7 +63,7 @@
 							<a class="pull-left" href=@oneResult.searchResultFile.url>							
 							@if(!oneResult.searchResultFile.thumbnailId.isEmpty){
 								<img class='mmd-img media-object' 
-									src='@(routes.Files.thumbnail(UUID(oneResult.searchResultFile.thumbnailId)))'
+									src='@(api.routes.Thumbnails.get(UUID(oneResult.searchResultFile.thumbnailId)))'
 									alt='Thumbnail of @(oneResult.searchResultFile.title)' 
 									title='Distance @oneResult.searchResultFile.distance'>
 								</img>

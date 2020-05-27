@@ -85,7 +85,9 @@ class Extractions @Inject()(
             val fid = for {response <- futureResponse} yield {
               if (response.status == 200) {
                 val inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
-                val file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
+                val contentLengthStr = response.header("Content-Length").getOrElse("-1")
+                val contentLength = Integer.parseInt(contentLengthStr).toLong
+                val file = files.save(inputStream, filename, contentLength, response.header("Content-Type"), user, null)
                 file match {
                   case Some(f) => {
                     // Add new file & byte count to appConfig
@@ -382,8 +384,8 @@ class Extractions @Inject()(
     Ok(Json.obj("Servers" -> listServersIPs))
   }
 
-  def getExtractorNames() = AuthenticatedAction { implicit request =>
-    val listNames = extractors.getExtractorNames()
+  def getExtractorNames(categories: List[String]) = AuthenticatedAction { implicit request =>
+    val listNames = extractors.getExtractorNames(categories)
     val listNamesJson = toJson(listNames)
     Ok(toJson(Map("Extractors" -> listNamesJson)))
    }
@@ -435,8 +437,8 @@ class Extractions @Inject()(
     Ok(jarr)
   }
 
-  def listExtractors() = AuthenticatedAction  { implicit request =>
-    Ok(Json.toJson(extractors.listExtractorsInfo()))
+  def listExtractors(categories: List[String]) = AuthenticatedAction  { implicit request =>
+    Ok(Json.toJson(extractors.listExtractorsInfo(categories)))
   }
 
   def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
@@ -446,16 +448,24 @@ class Extractions @Inject()(
     }
   }
 
+  def deleteExtractor(extractorName: String) = ServerAdminAction { implicit request =>
+    extractors.deleteExtractor(extractorName)
+    Ok(toJson(Map("status" -> "success")))
+  }
+
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
 
     // If repository is of type object, change it into an array.
     // This is for backward compatibility with requests from existing extractors.
-    val requestJson = request.body \ "repository" match {
+    var requestJson = request.body \ "repository" match {
       case rep: JsObject => request.body.as[JsObject] ++ Json.obj("repository" ->  Json.arr(rep))
       case _ => request.body
     }
 
+    // Validate document
     val extractionInfoResult = requestJson.validate[ExtractorInfo]
+
+    // Update database
     extractionInfoResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
@@ -633,12 +643,9 @@ class Extractions @Inject()(
       case Some(ds) => {
         val filelist: ListBuffer[File] = ListBuffer()
         var missingfile = false
-        fileids.map(fid => {
-          files.get(UUID(fid)) match {
-            case Some(f) => filelist += f
-            case None => missingfile = true
-          }
-        })
+        files.get(fileids.map(fid => UUID(fid))).found.foreach(f =>
+          filelist += f
+        )
         if (missingfile)
           BadRequest(toJson("Not all files found"))
         else

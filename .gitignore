@@ -1,9 +1,15 @@
-docker/files
+# ignore customizations to clowder
+docker-compose.override.yml
+.env
 custom
-logs
+
+# ignore build folders
 project/project
 project/target
 target
+
+logs
+docker/files
 tmp
 bin
 /*.sublime-workspace
@@ -22,4 +28,5 @@ dist
 doc/src/sphinx/_build
 /conf/custom.conf
 .DS_Store
+/doc/src/sphinx/_build
 **/.c9/*

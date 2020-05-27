@@ -49,20 +49,15 @@ class CurationObjects @Inject() (
   def newCO(datasetId: UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, creators, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.creators, dataset.spaces
-        .filter(spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
-        .map(id => spaces.get(id)).flatten)
+      case Some(dataset) => {
+        val perms = Permission.checkPermissions(Permission.EditStagingArea, dataset.spaces.map(ResourceRef(ResourceRef.space, _)))
+        (dataset.name, dataset.description, dataset.creators, spaces.get(perms.approved.map(_.id)).found)
+      }
       case None => ("", "", List.empty, List.empty)
     }
     //default space is the space from which user access to the dataset
     val defaultspace = spaceId match {
-      case "" => {
-        if (spaceByDataset.length == 1) {
-          spaceByDataset.lift(0)
-        } else {
-          None
-        }
-      }
+      case "" => if (spaceByDataset.length == 1) spaceByDataset.lift(0) else None
       case _ => spaces.get(UUID(spaceId))
     }
 
@@ -149,35 +144,31 @@ class CurationObjects @Inject() (
               //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
               // metadatas.getMetadataByAttachTo will increase metadataCount
               var newFiles: List[UUID] = List.empty
-              for (fileId <- dataset.files) {
-                files.get(fileId) match {
-                  case Some(f) => {
-                    // Pull sha512 from metadata of file rather than file object itself
-                    var sha512 = ""
-                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map { md =>
-                      val sha = (md.content \\ "sha512")
-                      if (sha.length > 0)
-                        sha512 = sha(0).toString
-                    }
-
-                    val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
-                      contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                      thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
-                    curations.insertFile(cf)
-                    newFiles = cf.id :: newFiles
-                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => {
-                      val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
-                      val mdMap = m.getExtractionSummary
-
-                      //send RabbitMQ message
-                      current.plugin[RabbitmqPlugin].foreach { p =>
-                        p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request),
-                          request.apiKey, request.user)
-                      }
-                    })
-                  }
+              files.get(dataset.files).found.foreach(f => {
+                // Pull sha512 from metadata of file rather than file object itself
+                var sha512 = ""
+                metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map { md =>
+                  val sha = (md.content \\ "sha512")
+                  if (sha.length > 0)
+                    sha512 = sha(0).toString
                 }
-              }
+
+                val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+                  contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
+                  thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
+                curations.insertFile(cf)
+                newFiles = cf.id :: newFiles
+                metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => {
+                  val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
+                  val mdMap = m.getExtractionSummary
+
+                  //send RabbitMQ message
+                  current.plugin[RabbitmqPlugin].foreach { p =>
+                    p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request),
+                      request.apiKey, request.user)
+                  }
+                })
+              })
 
               //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
               val newCuration = CurationObject(
@@ -231,35 +222,31 @@ class CurationObjects @Inject() (
     folders.get(id) match {
       case Some(folder) => {
         var newFiles: List[UUID] = List.empty
-        for (fileId <- folder.files) {
-          files.get(fileId) match {
-            case Some(f) => {
-              // Pull sha512 from metadata of file rather than file object itself
-              var sha512 = ""
-              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map { md =>
-                val sha = (md.content \\ "sha512")
-                if (sha.length > 0)
-                  sha512 = sha(0).toString
-              }
-
-              val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
-                contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
-              curations.insertFile(cf)
-              newFiles = cf.id :: newFiles
-              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
-                .map(m => {
-                  val curationRef = ResourceRef(ResourceRef.curationFile, cf.id)
-                  val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
-                  val mdMap = m.getExtractionSummary
-                  //send RabbitMQ message
-                  current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost, apiKey, user)
-                  }
-                })
-            }
+        files.get(folder.files).found.foreach(f => {
+          // Pull sha512 from metadata of file rather than file object itself
+          var sha512 = ""
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map { md =>
+            val sha = (md.content \\ "sha512")
+            if (sha.length > 0)
+              sha512 = sha(0).toString
           }
-        }
+
+          val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+            contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
+            thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
+          curations.insertFile(cf)
+          newFiles = cf.id :: newFiles
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+            .map(m => {
+              val curationRef = ResourceRef(ResourceRef.curationFile, cf.id)
+              val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
+              val mdMap = m.getExtractionSummary
+              //send RabbitMQ message
+              current.plugin[RabbitmqPlugin].foreach { p =>
+                p.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost, apiKey, user)
+              }
+            })
+        })
 
         val newCurationFolder = CurationFolder(
           folderId = id,
@@ -289,14 +276,13 @@ class CurationObjects @Inject() (
     implicit request =>
       implicit val user = request.user
       curations.get(id) match {
-        case Some(c) =>
-          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces
-            .filter(spaceId => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId)))
-            .map(id => spaces.get(id)).flatten, spaces.get(c.space))
-
-          Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-            true, false, c.creators))
-
+        case Some(c) => {
+          val perms = Permission.checkPermissions(Permission.EditStagingArea,
+            c.datasets.head.spaces.map(ResourceRef(ResourceRef.space, _)))
+          val spaceByDataset = spaces.get(perms.approved.map(_.id)).found
+          Ok(views.html.curations.newCuration(id, c.name, c.description, spaces.get(c.space), spaceByDataset,
+            RequiredFieldsConfig.isNameRequired, true, false, c.creators))
+        }
         case None => BadRequest(views.html.notFound("Publication Request does not exist."))
       }
   }
@@ -309,7 +295,7 @@ class CurationObjects @Inject() (
           val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
           val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
           val COCreators = request.body.asFormUrlEncoded.getOrElse("creators", List.empty)
-          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId, COCreators(0).split(",").toList.map(x => URLDecoder.decode(x, "UTF-8")))
+          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId, COCreators(0).split(",").toList.map(URLDecoder.decode(_, "UTF-8")))
           events.addObjectEvent(user, id, COName(0), "update_curation_information")
 
           Redirect(routes.CurationObjects.getCurationObject(id))
@@ -376,7 +362,7 @@ class CurationObjects @Inject() (
         curationFolderId match {
           // curationFolderId is set to "None" if it is currently on curation page
           case "None" => {
-            val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).map(f => curations.getCurationFolder(f)).flatten
+            val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).map(curations.getCurationFolder(_)).flatten
             val limitFileIds: List[UUID] = c.files.reverse.slice(limit * filepageUpdate - c.folders.length, limit * (filepageUpdate + 1) - c.folders.length)
             val limitFileList: List[CurationFile] = curations.getCurationFiles(limitFileIds).map(cf =>
               files.get(cf.fileId) match {
@@ -393,7 +379,7 @@ class CurationObjects @Inject() (
           case _ => {
             curations.getCurationFolder(UUID(curationFolderId)) match {
               case Some(cf) => {
-                val foldersList = cf.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).map(f => curations.getCurationFolder(f)).flatten
+                val foldersList = cf.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1)).map(curations.getCurationFolder(_)).flatten
                 val limitFileIds: List[UUID] = cf.files.reverse.slice(limit * filepageUpdate - cf.folders.length, limit * (filepageUpdate + 1) - cf.folders.length)
                 val limitFileList: List[CurationFile] = curations.getCurationFiles(limitFileIds).map(cf =>
                   files.get(cf.fileId) match {

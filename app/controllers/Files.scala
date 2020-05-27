@@ -144,7 +144,7 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileIdDirectlyContain(file.id).sortBy(_.name)
-        val allDatasets = (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
+        val allDatasets = datasets.get(folders.findByFileId(id).map(_.parentDatasetId)).found ++ datasetsContainingFile
 
         val access = if (allDatasets == Nil) {
           "Private"
@@ -220,6 +220,34 @@ class Files @Inject() (
           }
         }
 
+        val pager: models.Pager = dataset match {
+          case None => Pager(None, None)
+          case Some(dsId) => {
+            datasets.get(new UUID(dsId)) match {
+              case None => Pager(None, None)
+              case Some(ds) => {
+                val lastIndex = ds.files.length - 1
+                val index = ds.files.indexOf(id)
+
+                // Set prevFile / nextFile, if applicable
+                if (index > 0 && index < lastIndex) {
+                  // Yields UUID of prevFile and nextFile respectively
+                  Pager(Some(ds.files(index + 1)), Some(ds.files(index - 1)))
+                }else if (index == 0 && index < lastIndex) {
+                  // This is the first file in the list, but not the last
+                  Pager(Some(ds.files(index + 1)), None)
+                } else if (index > 0 && index == lastIndex) {
+                  // This is the last file in the list, but not the first
+                  Pager(None, Some(ds.files(index - 1)))
+                } else {
+                  // There is one item on the list, disable paging
+                  Pager(None, None)
+                }
+              }
+            }
+          }
+        }
+
         //call Polyglot to get all possible output formats for this file's content type
         current.plugin[PolyglotPlugin] match {
           case Some(plugin) => {
@@ -238,7 +266,7 @@ class Files @Inject() (
             plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date, pager)))
           }
           case None =>
             Logger.debug("Polyglot plugin not found")
@@ -249,7 +277,7 @@ class Files @Inject() (
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date, pager)))
         }
       }
 
@@ -276,15 +304,7 @@ class Files @Inject() (
           -1
         }
 
-        for (tidObject <- fileIdsToUse) {
-          val followedFile = files.get(tidObject.id)
-          followedFile match {
-            case Some(ffile) => {
-              fileList += ffile
-            }
-            case None =>
-          }
-        }
+        files.get(fileIdsToUse.map(_.id)).found.foreach(ffile => fileList += ffile)
 
         //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
         //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
@@ -417,7 +437,7 @@ class Files @Inject() (
             var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
               // store file
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
               val uploadedFile = f
               file match {
                 case Some(f) => {
@@ -529,7 +549,7 @@ class Files @Inject() (
 	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
 	        // store file       
-	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
@@ -686,7 +706,7 @@ class Files @Inject() (
       //Check the license type before doing anything. 
       files.get(id) match {
         case Some(file) => {
-          if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+          if (file.licenseData.isDownloadAllowed(request.user)) {
             files.getBytes(id) match {
               case Some((inputStream, filename, contentType, contentLength)) => {
                 files.incrementDownloads(id, user)
@@ -1124,7 +1144,7 @@ class Files @Inject() (
                 Logger.debug("Uploading file " + nameOfFile)
                 val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
                 // save file bytes
-                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.ref.file.length, f.contentType, identity, showPreviews)
                 val uploadedFile = f
 
                 // submit file for extraction

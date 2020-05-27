@@ -18,7 +18,7 @@ class Geometry @Inject()(threeD: ThreeDService) extends Controller with ApiContr
         Logger.debug("Uploading binary geometry file " + f.filename)
         // store file
         try {
-          val id = threeD.saveGeometry(new FileInputStream(f.ref.file), f.filename, f.contentType)
+          val id = threeD.saveGeometry(new FileInputStream(f.ref.file), f.filename, f.ref.file.length, f.contentType)
           Ok(toJson(Map("id" -> id)))
         } finally {
           f.ref.clean()

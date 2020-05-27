@@ -1,7 +1,9 @@
 package util
 
+import api.Permission
 import models._
 import play.api.Logger
+import play.api.libs.json.Json._
 import play.api.libs.json._
 import services._
 
@@ -24,26 +26,33 @@ object SearchUtils {
 
     // Get child_of relationships for File
     var child_of: ListBuffer[String] = ListBuffer()
-    datasets.findByFileIdDirectlyContain(id).map(ds => {
+    // ...first, the dataset which contains the file or its folder
+    datasets.findByFileIdAllContain(id).map(ds => {
       child_of += ds.id.toString
       ds.spaces.map(spid => child_of += spid.toString)
       ds.collections.map(collid => child_of += collid.toString)
     })
-    folders.findByFileId(id).map( fld => {
+    // ...second, the immediate parent folder ID (and the folder's parent) itself
+    folders.findByFileId(id).map(fld => {
       child_of += fld.id.toString
       child_of += fld.parentDatasetId.toString
-      datasets.get(fld.parentDatasetId).map(ds => {
-        child_of += ds.id.toString
-        ds.spaces.map(spid => child_of += spid.toString)
-        ds.collections.map(collid => child_of += collid.toString)
-      })
     })
     val child_of_distinct = child_of.toList.distinct
 
+    // Get tags for file and its sections
+    var ftags: ListBuffer[String] = ListBuffer()
+    f.tags.foreach(t =>
+      ftags += t.name
+    )
+    f.sections.foreach(sect => {
+      sect.tags.foreach(sect_tag =>
+        ftags += sect_tag.name
+      )
+    })
 
     // Get comments for file
     val fcomments = for (c <- comments.findCommentsByFileId(id)) yield {
-      Comment.toElasticsearchComment(c)
+      c.text
     }
 
     // Get metadata for File
@@ -84,12 +93,14 @@ object SearchUtils {
       ResourceRef(ResourceRef.file, id),
       f.filename,
       f.author.id.toString,
+      f.author.fullName.toString,
+      f.author.email.getOrElse("").toString,
       f.uploadDate,
       f.originalname,
       List.empty,
       child_of_distinct,
       f.description,
-      f.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      ftags.toList,
       fcomments,
       metadata
     ))
@@ -109,11 +120,11 @@ object SearchUtils {
     var parent_of: ListBuffer[String] = ListBuffer()
     ds.files.map(fileId => parent_of += fileId.toString)
     ds.folders.map(folderId => parent_of += folderId.toString)
-    var parent_of_distinct = parent_of.toList.distinct
+    val parent_of_distinct = parent_of.toList.distinct
 
     // Get comments for dataset
     val dscomments = for (c <- comments.findCommentsByDatasetId(id)) yield {
-      Comment.toElasticsearchComment(c)
+      c.text
     }
 
     // Get metadata for Dataset
@@ -155,12 +166,14 @@ object SearchUtils {
       ResourceRef(ResourceRef.dataset, id),
       ds.name,
       ds.author.id.toString,
+      ds.author.fullName.toString,
+      ds.author.email.getOrElse("").toString,
       ds.created,
       "",
       parent_of_distinct,
       child_of_distinct,
       ds.description,
-      ds.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      ds.tags.map( (t:Tag) => t.name ),
       dscomments,
       metadata
     ))
@@ -183,6 +196,8 @@ object SearchUtils {
       ResourceRef(ResourceRef.collection, c.id),
       c.name,
       c.author.id.toString,
+      c.author.fullName.toString,
+      c.author.email.getOrElse("").toString,
       c.created,
       "",
       parent_of,
@@ -239,12 +254,14 @@ object SearchUtils {
       ResourceRef(ResourceRef.section, id),
       "section-"+id.toString,
       "",
+      "",
+      "",
       new Date,
       "",
       List.empty,
       child_of,
       s.description.getOrElse(""),
-      s.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      s.tags.map( (t:Tag) => t.name ),
       List.empty,
       metadata
     ))
@@ -256,6 +273,8 @@ object SearchUtils {
       ResourceRef(ResourceRef.file, file.id),
       file.filename,
       "",
+      "",
+      "",
       file.uploadDate,
       "",
       List.empty,
@@ -265,5 +284,67 @@ object SearchUtils {
       List.empty,
       Map()
     ))
+  }
+
+  /**Format a simple search result*/
+  def prepareSearchResponse(response: ElasticsearchResult, source_url: String, user: Option[User]): Map[String, JsValue] = {
+    var results = ListBuffer.empty[JsValue]
+
+    // Use bulk Mongo queries to get many resources at once
+    val filesList = files.get(Permission.checkPermissions(user, Permission.ViewFile,
+      response.results.filter(_.resourceType == 'file)).approved.map(_.id)).found
+    val datasetsList = datasets.get(Permission.checkPermissions(user, Permission.ViewDataset,
+      response.results.filter(_.resourceType == 'dataset)).approved.map(_.id)).found
+    val collectionsList = collections.get(Permission.checkPermissions(user, Permission.ViewCollection,
+      response.results.filter(_.resourceType == 'collection)).approved.map(_.id)).found
+
+    // Now reorganize the separate lists back into Elasticsearch score order
+    for (resource <- response.results) {
+      resource.resourceType match {
+        case ResourceRef.file => filesList.filter(_.id == resource.id).foreach(f => results += toJson(f))
+        case ResourceRef.dataset => datasetsList.filter(_.id == resource.id).foreach(d => results += toJson(d))
+        case ResourceRef.collection => collectionsList.filter(_.id == resource.id).foreach(c => results += toJson(c))
+      }
+    }
+
+    // TODO: add views etc. other properties for the handlebars template
+
+    val result = Map[String, JsValue](
+      "results" -> toJson(results.distinct),
+      "count" -> toJson(response.results.length),
+      "size" -> toJson(response.size),
+      "scanned_size" -> toJson(response.scanned_size),
+      "from" -> toJson(response.from),
+      "total_size" -> toJson(response.total_size)
+    )
+
+    addPageURLs(result, source_url, response)
+  }
+
+  /**Provide URLs referring to first/last/next/previous pages of current result set if possible*/
+  def addPageURLs(result: Map[String, JsValue], url_root: String, response: ElasticsearchResult): Map[String, JsValue] = {
+    var paged_result = result
+
+    val lead = if (url_root.contains('?')) "&" else "?"
+
+    // Add pagination fields if necessary
+    if (response.from > 0) {
+      val prev = List(response.from - response.size, 0).max
+      paged_result += ("first" -> toJson(url_root + lead + s"from=0&size=${response.size}"))
+      paged_result += ("prev"  -> toJson(url_root + lead + s"from=$prev&size=${response.size}"))
+    }
+
+    if (response.from + response.scanned_size < response.total_size) {
+      val next = List[Long](response.from + response.scanned_size, response.total_size).min
+      var last = next
+      while (last < response.total_size - response.size) {
+        last += response.size
+      }
+      val last_size = response.total_size - last
+      paged_result += ("last" -> toJson(url_root + lead + s"from=$last&size=${last_size}"))
+      paged_result += ("next"  -> toJson(url_root + lead + s"from=$next&size=${response.size}"))
+    }
+
+    paged_result
   }
 }

@@ -13,14 +13,14 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.x"
+  val version = "1.8.4"
   val jvm = "1.7"
 
   def appVersion: String = {
     if (gitBranchName == "master") {
-      version
+      getVersion
     } else {
-      s"${version}-SNAPSHOT"
+      s"${getVersion}-SNAPSHOT"
     }
   }
 
@@ -37,29 +37,38 @@ object ApplicationBuild extends Build {
     res.toSeq
   }
 
+  def getVersion: String = {
+    sys.env.getOrElse("VERSION", version)
+  }
+
   def gitShortHash: String = {
-    try {
-      val hash = exec("git rev-parse --short HEAD")
-      assert(hash.length == 1)
-      hash(0)
-    } catch {
-      case e: Exception => "N/A"
-    }
+    sys.env.getOrElse("GITSHA1", default = {
+      try {
+        val hash = exec("git rev-parse --short HEAD")
+        assert(hash.length == 1)
+        hash(0)
+      } catch {
+        case e: Exception => "N/A"
+      }
+    })
   }
 
   def gitBranchName: String = {
-    try {
-      val branch = exec("git rev-parse --abbrev-ref HEAD")
-      assert(branch.length == 1)
-      if (branch(0) == "HEAD") return "detached"
-      branch(0)
-    } catch {
-      case e: Exception => "N/A"
-    }
+    val branch = sys.env.getOrElse("BRANCH", default = {
+      try {
+        val branch = exec("git rev-parse --abbrev-ref HEAD")
+        assert(branch.length == 1)
+        branch(0)
+      } catch {
+        case e: Exception => "N/A"
+      }
+    })
+    if (branch == "HEAD")  return "detached"
+    branch
   }
 
   def getBambooBuild: String = {
-    sys.env.getOrElse("bamboo_buildNumber", default = "local")
+    sys.env.getOrElse("BUILDNUMBER", default = "local")
   }
 
   val appDependencies = Seq(
@@ -73,6 +82,7 @@ object ApplicationBuild extends Build {
 
     // indexing
     "org.elasticsearch" % "elasticsearch" % "2.3.5" exclude("io.netty", "netty"),
+    "org.elasticsearch.module" % "reindex" % "2.3.5" exclude("io.netty", "netty"),
 
     // mongo storage
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
@@ -86,29 +96,10 @@ object ApplicationBuild extends Build {
     "javax.servlet" % "servlet-api" % "2.5",
     "org.reflections" % "reflections" % "0.9.10",
 
-    // RDF
-    "org.openrdf.sesame" % "sesame-rio-api" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-model" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-n3" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-ntriples" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-rdfxml" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-trig" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-trix" % "2.7.8",
-    "org.openrdf.sesame" % "sesame-rio-turtle" % "2.7.8",
-    "info.aduna.commons" % "aduna-commons-io" % "2.8.0",
-    "info.aduna.commons" % "aduna-commons-lang" % "2.9.0",
-    "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
-    "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
-    "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
-    "org.apache.jena" % "apache-jena-libs" % "3.1.1",
-
     // ??
     "commons-lang" % "commons-lang" % "2.6",
     "commons-io" % "commons-io" % "2.4",
     "commons-logging" % "commons-logging" % "1.1.3",
-
-    // RDF
-    "gr.forth.ics" % "flexigraph" % "1.0",
 
     // Guice dependency injection
     "com.google.inject" % "guice" % "3.0",
@@ -129,7 +120,12 @@ object ApplicationBuild extends Build {
     "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
 
     // jsonp return from /api
-    "org.julienrf" %% "play-jsonp-filter" % "1.1"
+    "org.julienrf" %% "play-jsonp-filter" % "1.1",
+
+    // Official AWS Java SDK
+    "com.amazonaws" % "aws-java-sdk-bom" % "1.11.106",
+
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory

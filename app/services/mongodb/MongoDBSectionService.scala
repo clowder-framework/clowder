@@ -1,8 +1,8 @@
 package services.mongodb
 
 import org.bson.types.ObjectId
-import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
-import models.{UUID, Tag, Comment, Section, User}
+import services.{CommentService, DatasetService, FileService, FolderService, PreviewService, SectionService}
+import models._
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -14,7 +14,7 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsValue, Json}
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * USe MongoDB to store sections
@@ -26,8 +26,11 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.findAll.toList
   }
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag] = {
     Logger.debug("Adding tags to section " + id + " : " + tags)
+
+    var tagsAdded : ListBuffer[Tag] = ListBuffer.empty[Tag]
+
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
@@ -42,24 +45,40 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
       // Only add tags with new values.
       if (!existingTags.contains(shortTag)) {
         val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        tagsAdded += tagObj
         SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
+    tagsAdded.toList
   }
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in section " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
-    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.id.toString())
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map { tag =>
-      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+      Logger.info(tag)
+      SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tag))), false, false, WriteConcern.Safe)
     }
   }
 
   def get(id: UUID): Option[Section] = {
     SectionDAO.findOneById(new ObjectId(id.stringify))
+  }
+
+  def get(ids: List[UUID]): DBResult[Section] = {
+    val objectIdList = ids.map(id => {
+      new ObjectId(id.stringify)
+    })
+    val query = MongoDBObject("_id" -> MongoDBObject("$in" -> objectIdList))
+
+    val found = SectionDAO.find(query).toList
+    val notFound = ids.diff(found.map(_.id))
+    if (notFound.length > 0)
+      Logger.error("Not all section IDs found for bulk get request")
+    return DBResult(found, notFound)
   }
 
   def findByFileId(id: UUID): List[Section] = {
@@ -110,32 +129,32 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
-      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
-    } else {
-      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
-        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    val filter = MongoDBObject("tags" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+    var tags = scala.collection.mutable.Map[String, Long]()
+    SectionDAO.dao.find(buildTagFilter(user) ++ filter).foreach{ x =>
+      x.tags.foreach{ t =>
+        tags.put(t.name, tags.get(t.name).getOrElse(0L) + 1L)
+      }
     }
-
+    tags.toMap
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    if (user.isDefined && user.get.superAdminMode)
+      return MongoDBObject()
+
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
 
-    user match {
-      case Some(u) => {
-        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
-        //Get all datasets you have access to.
-        val datasetsList = datasets.listUser(u)
-        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
-        val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
-        orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
-      }
-      case None =>
-    }
+    // all sections where user is the author
+    user.foreach{u => orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))}
+
+    // Get all sections in all files in all datasets you have access to.
+    val datasetsList = datasets.listUser(user)
+    val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+    val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+    orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
+
+    // create orlist
     $or(orlist.map(_.asDBObject))
   }
   /**

@@ -16,7 +16,7 @@ GET            /*path/                                                          
 GET            /                                                                        @controllers.Application.index
 GET            /about                                                                   @controllers.Application.about
 GET            /tos                                                                     @controllers.Application.tos(redirect: Option[String] ?= None)
-GET            /email                                                                   @controllers.Application.email(subject: String ?= "")
+GET            /email                                                                   @controllers.Application.email(subject: String ?= "", body: String ?= "")
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
@@ -97,6 +97,7 @@ POST           /uploadSelectQuery                                               
 POST           /uploaddnd/:id                                                           @controllers.Files.uploaddnd(id: UUID)
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
+# deprecrated use thumbnails
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 GET            /files/:file_id/extractions                                              @controllers.Extractors.submitFileExtraction(file_id: UUID)
@@ -112,7 +113,7 @@ POST           /files/:fileId/links                                             
 # DATASETS
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, status: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true, showOnlyShared : Boolean ?= false, showTrash : Boolean ?= false)
-GET            /datasets/sorted                                                         @controllers.Datasets.sortedListInSpace(space: String,offset: Integer, limit:Integer, showPublic: Boolean ?= true)
+GET            /datasets/sorted                                                         @controllers.Datasets.sortedListInSpace(space: String, offset: Int ?= 0, size: Int ?= 12, showPublic: Boolean ?= true)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -125,8 +126,8 @@ GET            /datasets/uploadToTool                                           
 GET            /datasets/getInstances                                                   @controllers.ToolManager.getInstances
 GET            /datasets/removeInstance                                                 @controllers.ToolManager.removeInstance(toolType: String, instanceID: UUID)
 GET            /datasets/launchTool                                                     @controllers.ToolManager.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
-POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space: Option[String] ?= None, limit: Int ?= 20, filter: Option[String] ?= None)
+POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None, filter: Option[String]?=None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
@@ -189,7 +190,6 @@ GET            /metadata/:id                                                    
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
 # Tags
-GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 
@@ -229,6 +229,7 @@ GET            /signup                                                          
 POST           /signup                                                                  securesocial.controllers.Registration.handleStartSignUp
 GET            /signup/:token                                                           securesocial.controllers.Registration.signUp(token)
 POST           /signup/:token                                                           @controllers.Registration.handleSignUp(token)
+GET            /signupInvite/:token                                                     @controllers.Registration.signUp(token)
 GET            /reset                                                                   securesocial.controllers.Registration.startResetPassword
 POST           /reset                                                                   securesocial.controllers.Registration.handleStartResetPassword
 GET            /reset/:token                                                            securesocial.controllers.Registration.resetPassword(token)
@@ -371,6 +372,7 @@ POST           /api/files/sendJob/:fileId/:fileType                             
 GET            /api/files/getRDFURLsForFile/:id                                         @api.Files.getRDFURLsForFile(id: UUID)
 GET            /api/files/rdfUserMetadata/:id                                           @api.Files.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
 GET            /api/files/:id/blob                                                      @api.Files.download(id: UUID, tracking: Boolean ?= true)
+
 # deprecrated use DELETE
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
@@ -399,11 +401,15 @@ PUT            /api/files/:id/filename                                          
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 GET            /api/files/:id/users                                                     @api.Files.users(id: UUID)
 GET            /api/files/:id/paths                                                     @api.Files.paths(id: UUID)
+POST           /api/files/:id/archive                                                   @api.Files.archive(id: UUID)
+POST           /api/files/:id/sendArchiveRequest                                        @api.Files.sendArchiveRequest(id: UUID)
+POST           /api/files/:id/unarchive                                                 @api.Files.unarchive(id: UUID)
+POST           /api/files/:id/sendUnarchiveRequest                                      @api.Files.sendUnarchiveRequest(id: UUID)
 
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/extractors                                                          @api.Extractions.listExtractors()
+GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
@@ -412,7 +418,7 @@ POST           /api/datasets/:ds_id/extractions                                 
 
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
-GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
+GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames(categories: List[String] ?= List.empty)
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
 #API for temporary fix for BD-289
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
@@ -423,8 +429,10 @@ GET            /api/extractions/:id/status                                      
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
 
+DELETE         /api/extractions/:extractorName/delete                                   @api.Extractions.deleteExtractor(extractorName : String)
+
 DELETE         /api/files/:file_id/extractions/:msg_id                                  @api.Extractions.cancelFileExtractionSubmission(file_id:UUID, msg_id: UUID)
-DELETE         /api/datasets/:ds_id/extractions/:msg_id                               @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
+DELETE         /api/datasets/:ds_id/extractions/:msg_id                                 @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
 
 # End of change segment
 
@@ -637,7 +645,7 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND", from: Option[Int], size: Option[Int])
 GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
-GET            /api/search                                                              @api.Search.search(query: String ?= "", resource_type: Option[String], datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String])
+GET            /api/search                                                              @api.Search.search(query: String ?= "", resource_type: Option[String], datasetid: Option[String], collectionid: Option[String], spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String], from: Option[Int], size: Option[Int], page: Option[Int])
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -678,6 +686,7 @@ GET            /api/geostreams/config                                           
 # ----------------------------------------------------------------------
 POST           /api/fileThumbnail                                                       @api.Thumbnails.uploadThumbnail
 GET            /api/thumbnails                                                          @api.Thumbnails.list
+GET            /api/thumbnails/:id/blob                                                 @api.Thumbnails.get(id: UUID)
 DELETE         /api/thumbnails/:id                                                      @api.Thumbnails.removeThumbnail(id: UUID)
 
 # ----------------------------------------------------------------------
@@ -870,5 +879,8 @@ GET         /extractors                                                         
 POST        /extractors                                                                     @controllers.Extractors.updateExtractors()
 
 
+# ----------------------------------------------------------------------
+# TREE API
+# ----------------------------------------------------------------------
 
-
+GET         /api/tree/getChildrenOfNode                                                     @api.Tree.getChildrenOfNode(nodeType : String ?= "root", nodeId : Option[String] ?= None, mine : Boolean ?= false)

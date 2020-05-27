@@ -30,14 +30,19 @@ object Collection {
   implicit val collectionWrites = new Writes[Collection] {
     def writes(collection: Collection): JsValue = {
       val collectionThumbnail = if(collection.thumbnail_id.isEmpty) {
-        "None"
+        null
       } else {
         collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1)
       }
       val collectionAuthor = collection.author.id
 
-      Json.obj("id" -> collection.id.toString, "collectionname" -> collection.name, "description" -> collection.description,
-        "created" -> collection.created.toString, "thumbnail" -> collectionThumbnail, "authorId" -> collectionAuthor)
+      Json.obj("id" -> collection.id.toString,
+        "collectionname" -> collection.name,
+        "description" -> collection.description,
+        "created" -> collection.created.toString,
+        "thumbnail" -> collectionThumbnail,
+        "authorId" -> collectionAuthor,
+        "resource_type" -> "collection")
     }
   }
 }
