@@ -57,7 +57,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             // comment
             line + "\n"
           } else {
-            if (skipit && !line.startsWith(" ")) {
+            if (skipit && !(line.startsWith(" ") || line.startsWith("- "))) {
               skipit = false
             }
             if (skipit) {
@@ -65,22 +65,17 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             } else if (line.startsWith("info:")) {
               skipit = true
               "info:\n" +
-                "  version: \"1\"\n" +
                 "  title: " + AppConfiguration.getDisplayName + "\n" +
                 "  description: " + AppConfiguration.getWelcomeMessage + "\n" +
+                "  version: \"" + sys.props.getOrElse("build.version", default = "0.0.0").toString + "\"\n" +
+                "  termsOfService: " + routes.Application.tos().absoluteURL(https) + "\n" +
                 "  contact: " + "\n" +
                 "    name: " + AppConfiguration.getDisplayName + "\n" +
-                "    url: " + routes.Application.email().absoluteURL(https) + "\n" +
-                "  termsOfService: " + routes.Application.tos().absoluteURL(https) + "\n"
-            } else if (line.startsWith("host:")) {
+                "    url: " + routes.Application.email().absoluteURL(https) + "\n"
+            } else if (line.startsWith("servers:")) {
               skipit = true
-              "host: " + host + "\n"
-            } else if (line.startsWith("basePath")) {
-              skipit = true
-              "basePath: " + clowderurl.getPath + "/api" + "\n"
-            } else if (line.startsWith("schemes:")) {
-              skipit = true
-              "schemes:\n  - " + clowderurl.getProtocol + "\n"
+              "servers:\n" +
+                "- url: " + clowderurl + "/api" + "\n"
             } else {
               line + "\n"
             }

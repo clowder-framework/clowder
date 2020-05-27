@@ -3,7 +3,7 @@ openapi: 3.0.1
 ################################################################################
 # API Information                                                              #
 ################################################################################
-info: 
+info:
   title: Clowder
   description: |
     Clowder is a customizable and scalable data management system to support any
@@ -17,56 +17,56 @@ info:
   license:
     name: The University of Illinois/NCSA Open Source License (NCSA)
     url: https://github.com/clowder-framework/clowder/blob/master/LICENSE
-  
+
 ################################################################################
 # Servers                                                                      #
 ################################################################################
 servers:
-- url: https://clowder.ncsa.illinois.edu/clowder/api
-  description: Demo clowder server, runs latest released version of clowder.
-- url: https://clowder-dev.ncsa.illinois.edu/clowder/api
-  description: Demo clowder server, runs the latest development of clowder.
+  - url: https://clowder.ncsa.illinois.edu/clowder/api
+    description: Demo clowder server, runs latest released version of clowder.
+  - url: https://clowder-dev.ncsa.illinois.edu/clowder/api
+    description: Demo clowder server, runs the latest development of clowder.
 
 ################################################################################
 # Security                                                                     #
 ################################################################################
 security:
-- login: []
-- apikey: []
-- key: []
+  - login: []
+  - apikey: []
+  - key: []
 
 ################################################################################
 # Tags                                                                         #
 ################################################################################
 tags:
-- name: search
-  description: The basic search endpoint allows searching across resources.
-- name: files
-  description: A file is the raw bytes plus metadata.
-- name: folders
-  description: A folder is a container of files and other folders
-- name: datasets
-  description: A dataset is a container for files and metadata
-- name: collections
-  description: Collections are groupings of datasets
-- name: spaces
-  description: Spaces are groupings of collections and datasets.
-- name: extractions
-  description: Extractions for Files.
-- name: thumbnails
-  description: A thumbnail is the raw bytes plus metadata.
-- name: curations
-  description: |
-    A curation object is a request for publication that captures the state of
-    a dataset ready for publication
-- name: logos
-  description: Logos and other data used in Clowder that is customizable
-- name: metadata
-  description: Metadata is the descrption or data of data
-- name: section
-  description: Files section is a select part from image file, with a tag or comment
-- name: admin
-  description: Server admin actions
+  - name: search
+    description: The basic search endpoint allows searching across resources.
+  - name: files
+    description: A file is the raw bytes plus metadata.
+  - name: folders
+    description: A folder is a container of files and other folders
+  - name: datasets
+    description: A dataset is a container for files and metadata
+  - name: collections
+    description: Collections are groupings of datasets
+  - name: spaces
+    description: Spaces are groupings of collections and datasets.
+  - name: extractions
+    description: Extractions for Files.
+  - name: thumbnails
+    description: A thumbnail is the raw bytes plus metadata.
+  - name: curations
+    description: |
+      A curation object is a request for publication that captures the state of
+      a dataset ready for publication
+  - name: logos
+    description: Logos and other data used in Clowder that is customizable
+  - name: metadata
+    description: Metadata is the descrption or data of data
+  - name: section
+    description: Files section is a select part from image file, with a tag or comment
+  - name: admin
+    description: Server admin actions
 
 
 ################################################################################
@@ -85,71 +85,71 @@ paths:
   /search:
     get:
       tags:
-      - search
+        - search
       summary: Perform a basic search
       description: |
         Return files, datasets and/or collections matching query criteria. Search
         can be filtered by a specific resource ID, limited to tags or specific
         metadata fields.
       parameters:
-      - name: query
-        in: query
-        description: String term to search for. Can include regular expressions using
-          Elasticsearch syntax.
-        schema:
-          type: string
-      - name: resource_type
-        in: query
-        description: Restrict search results to "file", "dataset", or "collection".
-        schema:
-          type: string
-      - name: datasetid
-        in: query
-        description: Return only resources belonging to a specific dataset.
-        schema:
-          type: string
-      - name: collectionid
-        in: query
-        description: Return only resources belonging to a specific collection.
-        schema:
-          type: string
-      - name: spaceid
-        in: query
-        description: Return only resources belonging to a specific space.
-        schema:
-          type: string
-      - name: folderid
-        in: query
-        description: Return only resources belonging to a specific folder.
-        schema:
-          type: string
-      - name: field
-        in: query
-        description: Restrict search to a specific metadata field, e.g. "Alternative
-          Title".
-        schema:
-          type: string
-      - name: tag
-        in: query
-        description: Search for resources with a specific tag.
-        schema:
-          type: string
-      - name: from
-        in: query
-        description: Starting index of first result; useful for pagination.
-        schema:
-          type: integer
-      - name: size
-        in: query
-        description: Number of search results to include; useful for pagination.
-        schema:
-          type: integer
-      - name: page
-        in: query
-        description: An alternative to "from" for pagination. Return the Nth page
-          assuming "size" items per page.
-        schema:
-          type: integer
+        - name: query
+          in: query
+          description: String term to search for. Can include regular expressions using
+            Elasticsearch syntax.
+          schema:
+            type: string
+        - name: resource_type
+          in: query
+          description: Restrict search results to "file", "dataset", or "collection".
+          schema:
+            type: string
+        - name: datasetid
+          in: query
+          description: Return only resources belonging to a specific dataset.
+          schema:
+            type: string
+        - name: collectionid
+          in: query
+          description: Return only resources belonging to a specific collection.
+          schema:
+            type: string
+        - name: spaceid
+          in: query
+          description: Return only resources belonging to a specific space.
+          schema:
+            type: string
+        - name: folderid
+          in: query
+          description: Return only resources belonging to a specific folder.
+          schema:
+            type: string
+        - name: field
+          in: query
+          description: Restrict search to a specific metadata field, e.g. "Alternative
+            Title".
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Search for resources with a specific tag.
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: Starting index of first result; useful for pagination.
+          schema:
+            type: integer
+        - name: size
+          in: query
+          description: Number of search results to include; useful for pagination.
+          schema:
+            type: integer
+        - name: page
+          in: query
+          description: An alternative to "from" for pagination. Return the Nth page
+            assuming "size" items per page.
+          schema:
+            type: integer
       responses:
         200:
           description: OK
@@ -162,7 +162,7 @@ paths:
   /files:
     get:
       tags:
-      - files
+        - files
       summary: List all files
       description: Returns list of files and descriptions.
       responses:
@@ -182,7 +182,7 @@ paths:
       - $ref: '#/components/parameters/fileId'
     get:
       tags:
-      - files
+        - files
       summary: Download file
       description: |
         Can use Chunked transfer encoding if the HTTP header RANGE is set.
@@ -191,9 +191,15 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/Blob'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
     delete:
       tags:
-      - files
+        - files
       summary: Delete file
       description: |
         Cascading action (removes file from any datasets containing it and
@@ -202,18 +208,26 @@ paths:
         200:
           description: OK
           content: {}
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/blob:
     get:
       tags:
-      - files
+        - files
       summary: Download file
       description: Can use Chunked transfer encoding if the HTTP header RANGE is set.
       parameters:
-      - $ref: '#/components/parameters/fileId'
+        - $ref: '#/components/parameters/fileId'
       responses:
         200:
           $ref: '#/components/responses/Blob'
+        400:
+          $ref: '#/components/responses/BadRequest'
         401:
           $ref: '#/components/responses/Unauthorized'
         404:
@@ -222,11 +236,11 @@ paths:
   /files/{id}/remove:
     post:
       tags:
-      - files
+        - files
       summary: Delete file
       description: use DELETE /files/{id} instead
       parameters:
-      - $ref: '#/components/parameters/fileId'
+        - $ref: '#/components/parameters/fileId'
       responses:
         200:
           description: OK
@@ -236,17 +250,17 @@ paths:
   /files/{id}/getPreviews:
     get:
       tags:
-      - files
+        - files
       summary: Get file previews
       description: |
         Return the currently existing previews of the selected file (full
         description, including paths to preview files, previewer names etc).
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -255,34 +269,34 @@ paths:
   /files/{id}/metadata:
     get:
       tags:
-      - files
+        - files
       summary: Retrieve physical file object metadata
       description: |
         Get metadata of the file object (not the resource it describes) as JSON.
         For example, size of file, date created, content type, filename.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - files
+        - files
       summary: Add technical metadata to file
       description: |
         Metadata in attached JSON object will describe the file's described
         resource, not the file object itself.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -297,16 +311,16 @@ paths:
   /files/{id}/extractions:
     post:
       tags:
-      - files
-      - extractions
+        - files
+        - extractions
       summary: Submit file for extraction by a specific extractor
       description: Extractions for Files.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -331,8 +345,8 @@ paths:
   /uploadToDataset/{id}:
     post:
       tags:
-      - files
-      - datasets
+        - files
+        - datasets
       summary: Upload a file to a specific dataset
       description: |
         Uploads the file, then links it with the dataset. Returns file id as
@@ -342,37 +356,37 @@ paths:
         parameter extract is set to false, it does not send the file for
         extraction. By default, Boolean parameter extract is set to true.
       parameters:
-      - name: id
-        in: path
-        description: the dataset id
-        required: true
-        schema:
-          type: string
-      - name: showPreviews
-        in: query
-        description: default as "DatasetLevel"
-        schema:
-          type: string
-      - name: originalZipFile
-        in: query
-        description: the UUID string of original zip file
-        schema:
-          type: string
-      - name: flags
-        in: query
-        description: flags for previews
-        schema:
-          type: string
-      - name: extract
-        in: query
-        schema:
-          type: boolean
+        - name: id
+          in: path
+          description: the dataset id
+          required: true
+          schema:
+            type: string
+        - name: showPreviews
+          in: query
+          description: default as "DatasetLevel"
+          schema:
+            type: string
+        - name: originalZipFile
+          in: query
+          description: the UUID string of original zip file
+          schema:
+            type: string
+        - name: flags
+          in: query
+          description: flags for previews
+          schema:
+            type: string
+        - name: extract
+          in: query
+          schema:
+            type: boolean
       requestBody:
         content:
           multipart/form-data:
             schema:
               required:
-              - File
+                - File
               properties:
                 File:
                   type: string
@@ -390,17 +404,17 @@ paths:
   /files/{id}/unfollow:
     post:
       tags:
-      - files
+        - files
       summary: Unfollow file
       description: |
         Remove user from file followers and remove file from user followed
         files.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -409,17 +423,17 @@ paths:
   /files/{id}/listpreviews:
     get:
       tags:
-      - files
+        - files
       summary: List file previews
       description: |
         Return the currently existing previews' basic characteristics (id,
         filename, content type) of the selected file.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -428,7 +442,7 @@ paths:
   /files/withFlags/{flags}:
     post:
       tags:
-      - files
+        - files
       summary: Upload file
       description: |
         Upload the attached file using multipart form enconding. Returns file id
@@ -436,11 +450,11 @@ paths:
         be used to work on the file using the API. Uploaded file can be an XML
         metadata file.
       parameters:
-      - name: flags
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: flags
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -449,17 +463,17 @@ paths:
   /files/{id}/usermetadata:
     post:
       tags:
-      - files
+        - files
       summary: Add user-generated metadata to file
       description: |
         Metadata in attached JSON object will describe the file's described
         resource, not the file object itself.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -475,18 +489,18 @@ paths:
   /files/getRDFURLsForFile/{id}:
     get:
       tags:
-      - files
+        - files
       summary: Get URLs of file's RDF metadata exports.
       description: |
         URLs of metadata files exported from XML (if the file was an XML
         metadata file) as well as the URL used to export the file's
         user-generated metadata as RDF.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -495,20 +509,20 @@ paths:
   /files/{id}/previews/{p_id}:
     post:
       tags:
-      - files
+        - files
       summary: Attach existing preview to file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: p_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: p_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -526,15 +540,15 @@ paths:
   /files/{id}/isBeingProcessed:
     get:
       tags:
-      - files
+        - files
       summary: Is being processed
       description: Return whether a file is currently being processed by a preprocessor.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -543,15 +557,15 @@ paths:
   /files/{id}/reindex:
     post:
       tags:
-      - files
+        - files
       summary: Reindex a file
       description: Reindex the existing file.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -560,17 +574,17 @@ paths:
   /files/{id}/filename:
     put:
       tags:
-      - files
+        - files
       summary: Update a file name
       description: |
         Takes one argument, a UUID of the file. Request body takes a key-value
         pair for the name
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -588,7 +602,7 @@ paths:
   /files/{id}/updateMetadata:
     post:
       tags:
-      - files
+        - files
       summary: Update technical metadata of a file generated by a specific extractor
       description: |
         Metadata in attached JSON object will describe the file's described
@@ -597,15 +611,15 @@ paths:
         extractor (using extractor_id provided as an argument) and if a match is
         found, it will update the corresponding metadata element.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: extractor_id
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: extractor_id
+          in: query
+          schema:
+            type: string
       requestBody:
         description: json body that can be parsed as DBObject
         content:
@@ -622,15 +636,15 @@ paths:
   /files/{id}/follow:
     post:
       tags:
-      - files
+        - files
       summary: Follow file
       description: Add user to file followers and add file to user followed files.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -639,36 +653,36 @@ paths:
   /files/{id}/metadata.jsonld:
     get:
       tags:
-      - files
+        - files
       summary: Retrieve metadata as JSON-LD
       description: Get metadata of the file object as JSON-LD.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: extractor
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: extractor
+          in: query
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - files
+        - files
       summary: Add JSON-LD metadata to the database.
       description: |
         Metadata in attached JSON-LD object will be added to metadata Mongo db
         collection.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -682,19 +696,19 @@ paths:
       x-codegen-request-body-name: matadata.jsonld
     delete:
       tags:
-      - files
+        - files
       summary: Remove JSON-LD metadata, filtered by extractor if necessary
       description: Remove JSON-LD metadata from file object
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: extractor
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: extractor
+          in: query
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -703,23 +717,23 @@ paths:
   /files/metadata.jsonld:
     get:
       tags:
-      - files
+        - files
       summary: Retrieve metadata as JSON-LD for multiple files at once
       description: Use ?id=123&id=456&... to retrieve metadata for multiple files
         at once.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - files
+        - files
       summary: Add JSON-LD metadata to multiple files at once.
       description: |
         JSON object in post should have a list of file IDs under "files" key and metadata under "metadata" key.
@@ -730,8 +744,8 @@ paths:
           application/json:
             schema:
               required:
-              - files
-              - metadata
+                - files
+                - metadata
               type: object
               properties:
                 files:
@@ -751,22 +765,22 @@ paths:
   /files/{id}/tags:
     get:
       tags:
-      - files
+        - files
       summary: Gets tags of a file
       description: Returns a list of strings, List[String].
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - files
+        - files
       summary: Adds tags to a file
       description: |
         Tag's (name, userId, extractor_id) tuple is used as a unique key. In
@@ -777,11 +791,11 @@ paths:
         "extractor_id": "curl"}'
         "http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey"
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -794,7 +808,7 @@ paths:
           content: {}
     delete:
       tags:
-      - files
+        - files
       summary: Removes tags of a file
       description: |
         Tag's (name, userId, extractor_id) tuple is unique key. Same tag names
@@ -802,11 +816,11 @@ paths:
         be removed by the same user or extractor.  The tags are expected as a
         list of strings: List[String].
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -815,17 +829,17 @@ paths:
   /files/{id}/license:
     post:
       tags:
-      - files
+        - files
       summary: Update License information of a file
       description: |
         Takes four arguments, all Strings. licenseType, rightsHolder,
         licenseText, licenseUrl
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -840,15 +854,15 @@ paths:
   /files/{id}/versus_metadata:
     get:
       tags:
-      - files
+        - files
       summary: Get Versus metadata of the resource described by the file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -857,23 +871,23 @@ paths:
   /files/{id}/updateDescription:
     put:
       tags:
-      - files
+        - files
       summary: Update file description
       description: |
         Takes one argument, a UUID of the file. Request body takes key-value
         pair for the description
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - description
+                - description
               type: object
               properties:
                 description:
@@ -888,15 +902,15 @@ paths:
   /files/{id}/technicalmetadatajson:
     get:
       tags:
-      - files
+        - files
       summary: Get technical metadata of the resource described by the file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -905,7 +919,7 @@ paths:
   /files/sendJob/{fileId}/{fileType}:
     post:
       tags:
-      - files
+        - files
       summary: (Re)send preprocessing job for file
       description: |
         Force Clowder to (re)send preprocessing job for selected file,
@@ -913,16 +927,16 @@ paths:
         on success. In the requested file type, replace / with __ (two
         underscores).
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: fileType
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fileType
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -931,17 +945,17 @@ paths:
   /files/{id}/xmlmetadatajson:
     get:
       tags:
-      - files
+        - files
       summary: |
         Get metadata of the resource described by the file that were input as
         XML
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -950,15 +964,15 @@ paths:
   /files/{id}/extracted_metadata:
     get:
       tags:
-      - files
+        - files
       summary: Provides metadata extracted for a file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -967,15 +981,15 @@ paths:
   /files/{id}/comment:
     post:
       tags:
-      - files
+        - files
       summary: Add comment to file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -991,18 +1005,18 @@ paths:
   /files/{id}/tags/remove_all:
     post:
       tags:
-      - files
+        - files
       summary: Removes all tags of a file
       description: |
         This is a big hammer -- it does not check the userId or extractor_id and
         forcefully remove all tags for this file.  It is mainly intended for
         testing.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1011,20 +1025,20 @@ paths:
   /files/{id}/thumbnails/{thumbnail_id}:
     post:
       tags:
-      - files
+        - files
       summary: Add thumbnail to file
       description: Attaches an already-existing thumbnail to a file.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: thumbnail_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: thumbnail_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1033,17 +1047,17 @@ paths:
   /files/{id}/metadataDefinitions:
     get:
       tags:
-      - files
+        - files
       summary: Get metadata definitions available for a file
       description: |
         The metadata definitions come from the spaces that the dataset the file
         is part of. Directly or within a folder
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1052,15 +1066,15 @@ paths:
   /files/rdfUserMetadata/{id}:
     get:
       tags:
-      - files
+        - files
       summary: Get the user-generated metadata of the selected file in an RDF file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1069,15 +1083,15 @@ paths:
   /files/{id}/usermetadatajson:
     get:
       tags:
-      - files
+        - files
       summary: Get community-generated metadata of the resource described by the file
       description: A file is the raw bytes plus metadata.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1086,20 +1100,20 @@ paths:
   /queries/{file_id}/thumbnails/{thumbnail_id}:
     post:
       tags:
-      - files
+        - files
       summary: Add thumbnail to a query image
       description: Attaches an already-existing thumbnail to a query image.
       parameters:
-      - name: file_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: thumbnail_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: thumbnail_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1112,7 +1126,7 @@ paths:
   /standardvocab:
     get:
       tags:
-      - metadata
+        - metadata
       summary: List all Standard Vocabularies
       description: |
         Retrieve all Standard Vocabulary objects.
@@ -1131,7 +1145,7 @@ paths:
           content: {}
     post:
       tags:
-      - metadata
+        - metadata
       summary: Create a new Standard Vocabulary
       description: |
         Requires that the request body contains a List[String] of terms.
@@ -1161,16 +1175,16 @@ paths:
   /standardvocab/{id}:
     get:
       tags:
-      - metadata
+        - metadata
       summary: Get a specific Standard Vocabulary
       description: |
         Lookup and return an existing Standard Vocabulary using its ID.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1186,16 +1200,16 @@ paths:
           content: {}
     put:
       tags:
-      - metadata
+        - metadata
       summary: Update a Standard Vocabulary
       description: |
         Requires that the request body contains a List[String] of terms.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The list of terms to add to this vocabulary.
         content:
@@ -1220,16 +1234,16 @@ paths:
           content: {}
     delete:
       tags:
-      - metadata
+        - metadata
       summary: Delete a Standard Vocabulary
       description: |
         Lookup and remove a Standard Vocabulary using its ID.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1238,17 +1252,17 @@ paths:
   /standardvocab/{id}/terms:
     get:
       tags:
-      - metadata
+        - metadata
       summary: Get the terms list of a specific Standard Vocabulary
       description: |
         Lookup and return the term list of an existing Standard Vocabulary
         using its ID.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1270,17 +1284,17 @@ paths:
   /datasets/{parentDatasetId}/newFolder:
     post:
       tags:
-      - folders
+        - folders
       summary: Create a Folder
       description: |
         New empty folder. Requires the ID of the dataset within the folder will
         be created, and the parent information
       parameters:
-      - name: parentDatasetId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: parentDatasetId
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1294,32 +1308,32 @@ paths:
                 parentType:
                   type: string
                   enum:
-                  - dataset
-                  - folder
+                    - dataset
+                    - folder
         required: true
       responses:
         200:
           description: OK
           content: {}
-      
+
 
   /datasets/{parentDatasetId}/updateName/{folderId}:
     put:
       tags:
-      - folders
+        - folders
       summary: Update folder name
       description: Updates a folder's name
       parameters:
-      - name: parentDatasetId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: folderId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: parentDatasetId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1333,26 +1347,26 @@ paths:
         200:
           description: OK
           content: {}
-      
+
 
   /datasets/{parentDatasetId}/deleteFolder/{folderId}:
     delete:
       tags:
-      - folders
+        - folders
       summary: Delete a folder
       description: Deletes all the files and folder within a folder and then deletes
         itself
       parameters:
-      - name: parentDatasetId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: folderId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: parentDatasetId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1365,47 +1379,47 @@ paths:
   /datasets/{ds_id}/copyDatasetToSpace/{space_id}:
     post:
       tags:
-      - datasets
+        - datasets
       summary: |
         Copy the dataset, as well as the folders and files within the dataset
         into a space, return the new dataset id
       description: Check AddResourceToSpace permission.
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: space_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: space_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
-          
+
 
   /datasets/{ds_id}/files/{file_id}:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Attach existing file to dataset
       description: |
         If the file is an XML metadata file, the metadata are added to the
         dataset.
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: file_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1414,25 +1428,25 @@ paths:
   /datasets/{ds_id}/moveFile/{folder_id}/{file_id}:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Move existing file to a new folder within the same dataset
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: folder_id
-        in: path
-        description: destination folder id
-        required: true
-        schema:
-          type: string
-      - name: file_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: folder_id
+          in: path
+          description: destination folder id
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1451,25 +1465,25 @@ paths:
   /datasets/{ds_id}/moveToDataset/{folder_id}/{file_id}:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Move existing file from the old folder to a new dataset
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: folder_id
-        in: path
-        description: old folder id
-        required: true
-        schema:
-          type: string
-      - name: file_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: folder_id
+          in: path
+          description: old folder id
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1478,25 +1492,25 @@ paths:
   /datasets/{ds_id}/filesRemove/{file_id}/{ignoreNotFound}:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Detach existing file from a dataset
       description: Check CreateDataset permission
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: file_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ignoreNotFound
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ignoreNotFound
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1505,14 +1519,14 @@ paths:
   /datasets/{ds_id}/folders:
     get:
       tags:
-      - datasets
+        - datasets
       summary: list all folders in the dataset
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1521,17 +1535,17 @@ paths:
   /datasets/{id}/tags/remove_all:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Remove all tags of dataset
       description: |
         Forcefully remove all tags for this dataset.  It is mainly intended for
         testing.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1540,15 +1554,15 @@ paths:
   /datasets/{ds_id}/extractions:
     post:
       tags:
-      - extractions
+        - extractions
       summary: Submit dataset for extraction by a specific extractor
       description: Extractions for dataset.
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1573,32 +1587,32 @@ paths:
   /datasets/{id}/tags:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Get the tags associated with this dataset
       description: Returns a JSON object of multiple fields
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - datasets
+        - datasets
       summary: Add tags to dataset
       description: |
         Requires that the request body contains a 'tags' field of List[String]
         type.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1611,17 +1625,17 @@ paths:
           content: {}
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Remove tags of dataset
       description: |
         Requires that the request body contains a 'tags' field of List[String]
         type.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1630,26 +1644,26 @@ paths:
   /datasets/{id}/addFileEvent:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Insert add_file Event
       description: Insert an Event into the Events Collection
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: inFolder
-        in: query
-        description: if the file is add directly to the dataset or add to a folder
-        required: true
-        schema:
-          type: boolean
-      - name: fileCount
-        in: query
-        required: true
-        schema:
-          type: number
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: inFolder
+          in: query
+          description: if the file is add directly to the dataset or add to a folder
+          required: true
+          schema:
+            type: boolean
+        - name: fileCount
+          in: query
+          required: true
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -1658,15 +1672,15 @@ paths:
   /datasets/{id}/isBeingProcessed:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Is being processed
       description: Return whether a dataset is currently being processed by a preprocessor.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1675,7 +1689,7 @@ paths:
   /datasets/createempty:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Create new dataset with no file
       description: |
         New dataset requiring zero files based on values of fields in attached
@@ -1696,23 +1710,23 @@ paths:
   /datasets/{id}/description:
     put:
       tags:
-      - datasets
+        - datasets
       summary: Update dataset description.
       description: |
         Takes one argument, a UUID of the dataset. Request body takes key-value
         pair for description.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - description
+                - description
               type: object
               properties:
                 description:
@@ -1727,15 +1741,15 @@ paths:
   /datasets/{id}/usermetadata:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Add user-generated metadata to dataset
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1751,15 +1765,15 @@ paths:
   /datasets/{id}/technicalmetadatajson:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List extractors generated metadata of a dataset
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1768,15 +1782,15 @@ paths:
   /datasets/{id}/usermetadatajson:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Get community-generated metadata of the resource described by the dataset
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1785,17 +1799,17 @@ paths:
   /datasets/{id}/xmlmetadatajson:
     get:
       tags:
-      - datasets
+        - datasets
       summary: |
         Get metadata of the resource described by the dataset that were input as
         XML
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1804,22 +1818,22 @@ paths:
   /datasets/{ds_id}/{file_id}:
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Detach file from dataset
       description: |
         File is not deleted, only separated from the selected dataset. If the
         file is an XML metadata file, the metadata are removed from the dataset.
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: file_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1828,15 +1842,15 @@ paths:
   /datasets/{id}/comment:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Add comment to dataset
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1852,15 +1866,15 @@ paths:
   /datasets/{id}/user:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List all users in the spaces that contain this dataset in json-ld format
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1869,35 +1883,35 @@ paths:
   /datasets/{id}/metadata:
     get:
       tags:
-      - datasets
+        - datasets
       summary: |
         Retrieve available metadata definitions for a dataset. It is an
         aggregation of the metadata that a space belongs to.
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - datasets
+        - datasets
       summary: Add metadata to dataset
       description: |
         The extractor is set as "http://clowder.ncsa.illinois.edu/extractors/deprecatedapi",
         contextURL and contextID as None.
         Returns success or failure.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1913,18 +1927,18 @@ paths:
   /datasets/getRDFURLsForDataset/{id}:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Get URLs of dataset's RDF metadata exports
       description: |
         URLs of metadata exported as RDF from XML files contained in the
         dataset, as well as the URL used to export the dataset's user-generated
         metadata as RDF.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1933,15 +1947,15 @@ paths:
   /datasets/rdfUserMetadata/{id}:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Get the user-generated metadata of the selected dataset in an RDF file
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1950,17 +1964,17 @@ paths:
   /datasets/{id}/unfollow:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Unfollow dataset.
       description: |
         Remove user from dataset followers and remove dataset from user followed
         datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -1969,17 +1983,17 @@ paths:
   /datasets/{id}/creator:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Add a creator to the Dataset's list of Creators.
       description: |
         Takes one argument, a UUID of the dataset. Request body takes key-value
         pair for creator.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -1998,20 +2012,20 @@ paths:
   /datasets/{id}/creator/remove:
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Remove a creator from the Dataset's list of Creators.
       description: Takes the UUID of the dataset and the entry to delete (a String).
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: creator
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: creator
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2020,27 +2034,27 @@ paths:
   /datasets/{id}/creator/reorder:
     put:
       tags:
-      - datasets
+        - datasets
       summary: Move a creator in a Dataset's list of creators.
       description: |
         Takes the UUID of the dataset, the creator to move (a String) and the
         new position of the creator in the overall list of creators.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: creator
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: newPos
-        in: query
-        required: true
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: creator
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: newPos
+          in: query
+          required: true
+          schema:
+            type: integer
       responses:
         200:
           description: OK
@@ -2049,17 +2063,17 @@ paths:
   /datasets/{id}/detachdelete:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Detach and delete dataset
       description: |
         Detaches all files before proceeding to perform the stanadard delete on
         the dataset.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2068,20 +2082,20 @@ paths:
   /datasets/{id}/access:
     put:
       tags:
-      - datasets
+        - datasets
       summary: change the access of dataset
       description: Downloads all files contained in a dataset.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: access
-        in: query
-        description: default as PRIVATE
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: access
+          in: query
+          description: default as PRIVATE
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2090,7 +2104,7 @@ paths:
   /datasets:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List all datasets the user can view
       description: This will check for Permission.ViewDataset
       responses:
@@ -2099,7 +2113,7 @@ paths:
           content: {}
     post:
       tags:
-      - datasets
+        - datasets
       summary: Create new dataset
       description: |
         New dataset containing one existing file, based on values of fields in
@@ -2109,8 +2123,8 @@ paths:
           application/json:
             schema:
               required:
-              - file_id
-              - name
+                - file_id
+                - name
               type: object
               properties:
                 name:
@@ -2130,32 +2144,32 @@ paths:
   /datasets/{id}:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Get a specific dataset
       description: This will return a sepcific dataset requested
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Delete dataset
       description: |
         Cascading action (deletes all previews and metadata of the dataset and
         all files existing only in the deleted dataset).
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2164,7 +2178,7 @@ paths:
   /datasets/canEdit:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List all datasets the user can edit
       description: |
         This will check for Permission.AddResourceToDataset and
@@ -2177,23 +2191,23 @@ paths:
   /datasets/{id}/title:
     put:
       tags:
-      - datasets
+        - datasets
       summary: Update dataset name
       description: |
         Takes one argument, a UUID of the dataset. Request body takes key-value
         pair for name.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - name
+                - name
               type: object
               properties:
                 name:
@@ -2207,15 +2221,15 @@ paths:
   /collections/{coll_id}/getDatasets:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List all datasets in a collection
       description: Returns list of datasets and descriptions.
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2224,15 +2238,15 @@ paths:
   /datasets/listOutsideCollection/{coll_id}:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List all datasets outside a collection
       description: Returns list of datasets and descriptions.
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2241,24 +2255,24 @@ paths:
   /datasets/{id}/editing:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Update dataset administrative information
       description: |
         Takes one argument, a UUID of the dataset. Request body takes key-value
         pairs for name and description.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - description
-              - name
+                - description
+                - name
               type: object
               properties:
                 name:
@@ -2274,17 +2288,17 @@ paths:
   /datasets/{id}/getPreviews:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Get dataset previews
       description: |
         Return the currently existing previews of the selected dataset (full
         description, including paths to preview files, previewer names etc).
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2293,7 +2307,7 @@ paths:
   /datasets/searchmetadata:
     post:
       tags:
-      - datasets
+        - datasets
       summary: List datasets satisfying a general metadata search tree
       requestBody:
         content:
@@ -2309,7 +2323,7 @@ paths:
   /datasets/searchusermetadata:
     post:
       tags:
-      - datasets
+        - datasets
       summary: List datasets satisfying a user metadata search tree
       requestBody:
         content:
@@ -2325,36 +2339,36 @@ paths:
   /datasets/{id}/metadata.jsonld:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Retrieve metadata as JSON-LD
       description: Get metadata of the dataset object as JSON-LD.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: extractor
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: extractor
+          in: query
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - datasets
+        - datasets
       summary: Add JSON-LD metadata to the database.
       description: |
         Metadata in attached JSON-LD object will be added to metadata Mongo db
         collection.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -2368,19 +2382,19 @@ paths:
       x-codegen-request-body-name: matadata.jsonld
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Remove JSON-LD metadata, filtered by extractor if necessary
       description: Remove JSON-LD metadata from dataset object
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: extractor
-        in: query
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: extractor
+          in: query
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2389,17 +2403,17 @@ paths:
   /datasets/{id}/license:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Update license information of a dataset
       description: |
         Takes four arguments, all Strings. licenseType, rightsHolder,
         licenseText, licenseUrl
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -2414,16 +2428,16 @@ paths:
   /datasets/{id}/follow:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Follow dataset
       description: Add user to dataset followers and add dataset to user followed
         datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2432,7 +2446,7 @@ paths:
   /datasets/attachmultiple:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Attach multiple files to an existing dataset
       description: |
         Add multiple files, by ID, to a dataset that is already in the system.
@@ -2442,8 +2456,8 @@ paths:
           application/json:
             schema:
               required:
-              - datasetid
-              - existingfiles
+                - datasetid
+                - existingfiles
               type: object
               properties:
                 datasetid:
@@ -2460,17 +2474,17 @@ paths:
   /datasets/{id}/reindex:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Reindex a dataset
       description: |
         Reindex the existing dataset, if recursive is set to true if will also
         reindex all files in that dataset.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2479,42 +2493,42 @@ paths:
   /datasets/{id}/files:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List files in dataset, including those within folders
       description: Datasets and descriptions.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: max
-        in: query
-        schema:
-          type: number
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: max
+          in: query
+          schema:
+            type: number
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - datasets
+        - datasets
       summary: Upload files and attach to given dataset
       description: |
         This will take a list of url or path objects that point to files that
         will be ingested and added to this dataset.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           multipart/form-data:
             schema:
               required:
-              - File
+                - File
               properties:
                 File:
                   type: string
@@ -2532,7 +2546,7 @@ paths:
   /datasets/{id}/urls:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Upload files and attach to given dataset
       description: |
         This will take an URL of file object that are added to this dataset,
@@ -2540,11 +2554,11 @@ paths:
         pairs for file url, the key can be fileurl, weburl or url.
         This can also add metadata at the same time.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: the key can be fileurl, weburl or url
         content:
@@ -2560,7 +2574,7 @@ paths:
   /datasets/moveFileToDataset:
     get:
       tags:
-      - datasets
+        - datasets
       summary: |
         List all datasets in the space the user can edit and thus move the file
         to
@@ -2575,15 +2589,15 @@ paths:
   /datasets/{id}/listFiles:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List files in dataset not in any folders
       description: Datasets and descriptions.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2592,14 +2606,14 @@ paths:
   /datasets/{ds_id}/listAllFiles:
     get:
       tags:
-      - datasets
+        - datasets
       summary: List all file within a dataset
       parameters:
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2608,22 +2622,22 @@ paths:
   /datasets/{id}/removeTag:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Remove tag of dataset
       description: A dataset is a container for files and metadata
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the POST request.
         content:
           application/json:
             schema:
               required:
-              - tagId
+                - tagId
               type: object
               properties:
                 tagId:
@@ -2637,27 +2651,27 @@ paths:
   /datasets/{datasetId}/moveBetweenDatasets/{toDataset}/{fileId}:
     post:
       tags:
-      - datasets
+        - datasets
       summary: Attach existing file to a new dataset and delete it from the old one
       description: |
         If the file is an XML metadata file, the metadata are added to the
         dataset.
       parameters:
-      - name: datasetId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: toDataset
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: datasetId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: toDataset
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2666,25 +2680,25 @@ paths:
   /datasets/{id}/download:
     get:
       tags:
-      - datasets
+        - datasets
       summary: Download dataset
       description: Downloads all files contained in a dataset.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: compression
-        in: query
-        description: default as -1
-        schema:
-          type: number
-      - name: tracking
-        in: query
-        description: default as true
-        schema:
-          type: boolean
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: compression
+          in: query
+          description: default as -1
+          schema:
+            type: number
+        - name: tracking
+          in: query
+          description: default as true
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -2693,14 +2707,14 @@ paths:
   /datasets/clearOldDatasetsTrash:
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Deleted all datasets in trash older than days specified
       description: Server admin action.
       parameters:
-      - name: days
-        in: query
-        schema:
-          type: number
+        - name: days
+          in: query
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -2709,7 +2723,7 @@ paths:
   /datasets/emptyTrash:
     delete:
       tags:
-      - datasets
+        - datasets
       summary: Emptying trash datasets
       responses:
         200:
@@ -2719,13 +2733,13 @@ paths:
   /datasets/listTrash:
     get:
       tags:
-      - datasets
+        - datasets
       summary: list trash datasets
       parameters:
-      - name: limit
-        in: query
-        schema:
-          type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -2734,16 +2748,16 @@ paths:
   /datasets/restore/{id}:
     put:
       tags:
-      - datasets
+        - datasets
       summary: restore a trash dataset
       description: |
         This will check for Permission.DeleteDataset
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2752,13 +2766,13 @@ paths:
   /datasets/{id}/tags/remove:
     post:
       tags:
-      - datasets
+        - datasets
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2768,15 +2782,15 @@ paths:
   /collections/{coll_id}/getParentCollections:
     get:
       tags:
-      - collections
+        - collections
       summary: Get parent collections for collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2785,18 +2799,18 @@ paths:
   /collections/allCollections:
     get:
       tags:
-      - collections
+        - collections
       summary: Get all collections
       description: Collections are groupings of datasets
       parameters:
-      - name: limit
-        in: query
-        schema:
-          type: integer
-      - name: showAll
-        in: query
-        schema:
-          type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: showAll
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -2805,23 +2819,23 @@ paths:
   /collections/{coll_id}/title:
     put:
       tags:
-      - collections
+        - collections
       summary: Update a collection name
       description: |
         Takes one argument, a UUID of the collection. Request body takes a
         key-value pair for the name
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - name
+                - name
               type: object
               properties:
                 name:
@@ -2835,7 +2849,7 @@ paths:
   /collections/possibleParents:
     get:
       tags:
-      - collections
+        - collections
       summary: |
         List all collections the user can edit except itself and its parent
         collections
@@ -2843,27 +2857,27 @@ paths:
         This will check for Permission.AddResourceToCollection and
         Permission.EditCollection
       parameters:
-      - name: currentCollectionId
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: title
-        in: query
-        schema:
-          type: string
-      - name: date
-        in: query
-        schema:
-          type: string
-      - name: limit
-        in: query
-        schema:
-          type: number
-      - name: exact
-        in: query
-        schema:
-          type: boolean
+        - name: currentCollectionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -2872,30 +2886,30 @@ paths:
   /collections/{coll_id}:
     get:
       tags:
-      - collections
+        - collections
       summary: Get a specific collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     delete:
       tags:
-      - collections
+        - collections
       summary: Remove collection
       description: Does not delete the individual datasets in the collection.
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2904,17 +2918,17 @@ paths:
   /collections/{id}/unfollow:
     post:
       tags:
-      - collections
+        - collections
       summary: Unfollow collection.
       description: |
         Remove user from collection followers and remove collection from user
         followed collections.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2923,7 +2937,7 @@ paths:
   /collections/topLevelCollections:
     get:
       tags:
-      - collections
+        - collections
       summary: Get all root collections or collections that do not have a parent
       description: Collections are groupings of datasets
       responses:
@@ -2934,7 +2948,7 @@ paths:
   /collections/rootCollections:
     get:
       tags:
-      - collections
+        - collections
       summary: Get all root collections
       description: Collections are groupings of datasets
       responses:
@@ -2945,20 +2959,20 @@ paths:
   /collections/{coll_id}/removeSubCollection/{sub_coll_id}:
     post:
       tags:
-      - collections
+        - collections
       summary: Remove subcollection from collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: sub_coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sub_coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2967,28 +2981,28 @@ paths:
   /collections/canEdit:
     get:
       tags:
-      - collections
+        - collections
       summary: List all collections the user can edit
       description: |
         This will check for Permission.AddResourceToCollection and
         Permission.EditCollection
       parameters:
-      - name: title
-        in: query
-        schema:
-          type: string
-      - name: date
-        in: query
-        schema:
-          type: string
-      - name: limit
-        in: query
-        schema:
-          type: number
-      - name: exact
-        in: query
-        schema:
-          type: boolean
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -2997,14 +3011,14 @@ paths:
   /collections/clearOldCollectionsTrash:
     delete:
       tags:
-      - collections
+        - collections
       summary: Deleted all collections in trash older than days specified
       description: Server admin action.
       parameters:
-      - name: days
-        in: query
-        schema:
-          type: number
+        - name: days
+          in: query
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -3013,7 +3027,7 @@ paths:
   /collections/emptyTrash:
     delete:
       tags:
-      - collections
+        - collections
       summary: Emptying trash collections
       responses:
         200:
@@ -3023,13 +3037,13 @@ paths:
   /collections/listTrash:
     get:
       tags:
-      - collections
+        - collections
       summary: list trash collections
       parameters:
-      - name: limit
-        in: query
-        schema:
-          type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -3038,16 +3052,16 @@ paths:
   /collections/restore/{coll_id}:
     put:
       tags:
-      - collections
+        - collections
       summary: restore a trash collection
       description: |
         This will check for Permission.DeleteCollection
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3056,20 +3070,20 @@ paths:
   /collections/{coll_id}/addSubCollection/{sub_coll_id}:
     post:
       tags:
-      - collections
+        - collections
       summary: Add subcollection to collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: sub_coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sub_coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3078,15 +3092,15 @@ paths:
   /collections/{coll_id}/getChildCollections:
     get:
       tags:
-      - collections
+        - collections
       summary: Get child collections in collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3095,15 +3109,15 @@ paths:
   /collections/{coll_id}/datasets:
     get:
       tags:
-      - collections
+        - collections
       summary: list all datasets in the collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3112,40 +3126,40 @@ paths:
   /collections/{coll_id}/datasetPossibleParents/{ds_id}:
     get:
       tags:
-      - collections
+        - collections
       summary: |
         If dataset is in a space, list all collections can be the parent of
         the dataset in this space, otherwise list all possiable collections
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: title
-        in: query
-        schema:
-          type: string
-      - name: date
-        in: query
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: default as 12
-        schema:
-          type: number
-      - name: exact
-        in: query
-        description: default as false
-        schema:
-          type: boolean
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
+        - name: exact
+          in: query
+          description: default as false
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -3154,45 +3168,45 @@ paths:
   /collections/{coll_id}/datasets/{ds_id}:
     post:
       tags:
-      - collections
+        - collections
       summary: Add dataset to collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     delete:
       tags:
-      - collections
+        - collections
       summary: Detach a dataset from collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ignoreNotFound
-        in: query
-        description: default as True
-        schema:
-          type: boolean
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ignoreNotFound
+          in: query
+          description: default as True
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -3201,20 +3215,20 @@ paths:
   /collections/{c_id}/previews/{p_id}:
     post:
       tags:
-      - collections
+        - collections
       summary: Attach existing preview to collection
       description: Collections are groupings of datasets
       parameters:
-      - name: c_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: p_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: c_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: p_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -3234,17 +3248,17 @@ paths:
   /collections/{id}/follow:
     post:
       tags:
-      - collections
+        - collections
       summary: Follow collection.
       description: |
         Add user to collection followers and add collection to user followed
         collections.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3253,15 +3267,15 @@ paths:
   /collections/{coll_id}/getParentCollectionIds:
     get:
       tags:
-      - collections
+        - collections
       summary: Get parent collection ids of collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3270,17 +3284,17 @@ paths:
   /collections/{coll_id}/reindex:
     post:
       tags:
-      - collections
+        - collections
       summary: Reindex a collection
       description: |
         Reindex the existing collection, if recursive is set to true it will
         also reindex all datasets and files.
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3289,20 +3303,20 @@ paths:
   /collections/{coll_id}/unsetRootFlag/{spaceId}:
     post:
       tags:
-      - collections
+        - collections
       summary: Removes root flag from a collection in  a space
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3311,37 +3325,37 @@ paths:
   /collections:
     get:
       tags:
-      - collections
+        - collections
       summary: Return a list of collections that fit the query standard and user has
         view permission
       description: Collections are groupings of datasets
       parameters:
-      - name: title
-        in: query
-        description: The title/ name of colletions
-        schema:
-          type: string
-      - name: date
-        in: query
-        description: The date collection is created
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: The number of collections returns, default as 12.
-        schema:
-          type: integer
-      - name: exact
-        in: query
-        schema:
-          type: boolean
+        - name: title
+          in: query
+          description: The title/ name of colletions
+          schema:
+            type: string
+        - name: date
+          in: query
+          description: The date collection is created
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The number of collections returns, default as 12.
+          schema:
+            type: integer
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         401:
           description: Not authorized
           content: {}
     post:
       tags:
-      - collections
+        - collections
       summary: Create a collection
       description: Collections are groupings of datasets
       requestBody:
@@ -3360,22 +3374,22 @@ paths:
   /collections/{coll_id}/removeFromSpaceAllowed/{space_id}:
     get:
       tags:
-      - collections
+        - collections
       summary: Checks if we can remove a collection from a space
       description: |
         This will check if the collection has parent collection in this space.
         If not, we can remove the collection from the space
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: space_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: space_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3388,15 +3402,15 @@ paths:
   /collections/{coll_id}/getChildCollectionIds:
     get:
       tags:
-      - collections
+        - collections
       summary: Get child collection ids in collection
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3405,7 +3419,7 @@ paths:
   /collections/newCollectionWithParent:
     post:
       tags:
-      - collections
+        - collections
       summary: Create a collection with parent
       description: Collections are groupings of datasets
       requestBody:
@@ -3414,7 +3428,7 @@ paths:
           application/json:
             schema:
               required:
-              - name
+                - name
               type: object
               properties:
                 name:
@@ -3437,23 +3451,23 @@ paths:
   /collections/{coll_id}/description:
     put:
       tags:
-      - collections
+        - collections
       summary: Update collection description
       description: |
         Takes one argument, a UUID of the collection. Request body takes
         key-value pair for the description
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - description
+                - description
               type: object
               properties:
                 description:
@@ -3471,20 +3485,20 @@ paths:
   /collections/{coll_id}/rootFlag/{spaceId}:
     post:
       tags:
-      - collections
+        - collections
       summary: Add root flags for a collection in space
       description: Collections are groupings of datasets
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3493,20 +3507,20 @@ paths:
   /collections/{id}/download:
     get:
       tags:
-      - collections
+        - collections
       summary: Download collection
       description: Downloads all child collections, datasets and files in a collection.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: compression
-        in: query
-        description: default as -1
-        schema:
-          type: number
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: compression
+          in: query
+          description: default as -1
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -3515,26 +3529,26 @@ paths:
   /collections/list:
     get:
       tags:
-      - collections
+        - collections
       summary: List all collections the user can view
       description: This will check for Permission.ViewCollection
       parameters:
-      - name: title
-        in: query
-        schema:
-          type: string
-      - name: date
-        in: query
-        schema:
-          type: string
-      - name: limit
-        in: query
-        schema:
-          type: number
-      - name: exact
-        in: query
-        schema:
-          type: boolean
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -3544,23 +3558,23 @@ paths:
   /collections/:coll_id/datasetsRemove/{ds_id}/{ignoreNotFound}:
     post:
       tags:
-      - collections
+        - collections
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ds_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ignoreNotFound
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ignoreNotFound
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3570,13 +3584,13 @@ paths:
   /collections/:coll_id/remove:
     post:
       tags:
-      - collections
+        - collections
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3586,13 +3600,13 @@ paths:
   /collections/:coll_id/getDatasets:
     get:
       tags:
-      - collections
+        - collections
       parameters:
-      - name: coll_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3602,30 +3616,30 @@ paths:
   /spaces:
     get:
       tags:
-      - spaces
+        - spaces
       summary: List spaces the user can view
       description: Retrieves information about spaces
       parameters:
-      - name: title
-        in: query
-        schema:
-          type: string
-      - name: date
-        in: query
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: default as 12
-        schema:
-          type: number
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - spaces
+        - spaces
       summary: Create a space
       description: Spaces are groupings of collections and datasets.
       requestBody:
@@ -3642,20 +3656,20 @@ paths:
   /spaces/{spaceId}/removeDataset/{datasetId}:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Remove a dataset from a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: datasetId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: datasetId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3664,20 +3678,20 @@ paths:
   /spaces/{id}/collections:
     get:
       tags:
-      - spaces
+        - spaces
       summary: List UUIDs of all collections in a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: default as 12
-        schema:
-          type: number
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -3686,20 +3700,20 @@ paths:
   /spaces/{id}/datasets:
     get:
       tags:
-      - spaces
+        - spaces
       summary: List UUIDs of all datasets in a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: default as 12
-        schema:
-          type: number
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
       responses:
         200:
           description: OK
@@ -3708,15 +3722,15 @@ paths:
   /spaces/{id}/verify:
     put:
       tags:
-      - spaces
+        - spaces
       summary: Set the space as verified
       description: Server Admin Action
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3725,20 +3739,20 @@ paths:
   /spaces/{spaceId}/addCollectionToSpace/{collectionId}:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Associate a collection to a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: collectionId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3747,17 +3761,17 @@ paths:
   /spaces/{id}/rejectRequest:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Reject Request
       description: |
         Reject user's request to the space, remove the request and send email to
         the request user
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3766,17 +3780,17 @@ paths:
   /spaces/{id}/acceptRequest:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Accept Request
       description: |
         Accept user's request to the space and assign a specific Role, remove
         the request and send email to the request user
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3785,20 +3799,20 @@ paths:
   /spaces/{spaceId}/removeCollection/{collectionId}:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Remove a collection from a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: collectionId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3807,15 +3821,15 @@ paths:
   /spaces/{id}/updateUsers:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Update the user information associated with a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
@@ -3839,7 +3853,7 @@ paths:
   /spaces/canEdit:
     get:
       tags:
-      - spaces
+        - spaces
       summary: List spaces the user can add to
       description: Retrieves a list of spaces that the user has permission to add
         to
@@ -3851,21 +3865,21 @@ paths:
   /spaces/{id}/removeUser:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Remove a user from a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: removeUser
-        in: query
-        description: the UUID of the user
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: removeUser
+          in: query
+          description: the UUID of the user
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3874,25 +3888,25 @@ paths:
   /spaces/{id}/update:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Update the information associated with a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - access
-              - description
-              - enabled
-              - name
-              - timetolive
+                - access
+                - description
+                - enabled
+                - name
+                - timetolive
               type: object
               properties:
                 name:
@@ -3914,17 +3928,17 @@ paths:
   /spaces/{id}/unfollow:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Unfollow space
       description: |
         Remove user from space followers and remove space from user followed
         spaces.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3933,31 +3947,31 @@ paths:
   /spaces/{id}:
     get:
       tags:
-      - spaces
+        - spaces
       summary: Get a space
       description: Retrieves information about a space
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     delete:
       tags:
-      - spaces
+        - spaces
       summary: Remove a space
       description: Does not delete the individual datasets and collections in the
         space.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3966,15 +3980,15 @@ paths:
   /spaces/{id}/follow:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Follow space
       description: Add user to space followers and add space to user followed spaces.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3983,20 +3997,20 @@ paths:
   /spaces/{spaceId}/addDatasetToSpace/{datasetId}:
     post:
       tags:
-      - spaces
+        - spaces
       summary: Associate a dataset to a space
       description: Spaces are groupings of collections and datasets.
       parameters:
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: datasetId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: datasetId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4005,25 +4019,25 @@ paths:
   /spaces/{spaceId}/metadata:
     post:
       tags:
-      - spaces
+        - spaces
       summary: add metadata definition to a space
       description: |
         If uri is not defined, the uri will be set as
         "http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase"
       parameters:
-      - name: spaceId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - description
-              - label
-              - type
+                - description
+                - label
+                - type
               type: object
               properties:
                 label:
@@ -4043,7 +4057,7 @@ paths:
   /extractions/servers_ips:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists servers IPs running the extractors
       description: Extractions for Files.
       responses:
@@ -4054,7 +4068,7 @@ paths:
   /extractions/extractors_names:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists the currenlty running extractors
       description: Extractions for Files.
       responses:
@@ -4065,18 +4079,18 @@ paths:
   /extractions/upload_url:
     post:
       tags:
-      - extractions
+        - extractions
       summary: Uploads a file for extraction using the file's URL
       description: |
         Saves the uploaded file and sends it for extraction. If the optional URL
         parameter extract is set to false, it does not send the file for
         extraction. Does not index the file.
       parameters:
-      - name: extract
-        in: query
-        description: default as true
-        schema:
-          type: boolean
+        - name: extract
+          in: query
+          description: default as true
+          schema:
+            type: boolean
       requestBody:
         content:
           application/json:
@@ -4084,8 +4098,8 @@ paths:
               type: array
               description: can only use fileurl as the key in body
               example:
-              - fileurl: http://browndog.ncsa.illinois.edu/examples/pecan/ameriflux.sipnet.xml
-                dataset: 58d9a0fbe4b03103c1487b72
+                - fileurl: http://browndog.ncsa.illinois.edu/examples/pecan/ameriflux.sipnet.xml
+                  dataset: 58d9a0fbe4b03103c1487b72
               items:
                 type: object
                 properties: {}
@@ -4098,7 +4112,7 @@ paths:
   /extractions/upload_file:
     post:
       tags:
-      - extractions
+        - extractions
       summary: Uploads a file for extraction of metadata and returns file id
       description: |
         Saves the uploaded file and sends it for extraction to Rabbitmq. If the
@@ -4106,22 +4120,22 @@ paths:
         file for extraction. Does not index the file. Same as upload() except
         for upload()
       parameters:
-      - name: extract
-        in: query
-        description: default as true
-        schema:
-          type: boolean
-      - name: showPreviews
-        in: query
-        description: default as DatasetLevel
-        schema:
-          type: string
+        - name: extract
+          in: query
+          description: default as true
+          schema:
+            type: boolean
+        - name: showPreviews
+          in: query
+          description: default as DatasetLevel
+          schema:
+            type: string
       requestBody:
         content:
           multipart/form-data:
             schema:
               required:
-              - File
+                - File
               properties:
                 File:
                   type: string
@@ -4136,7 +4150,7 @@ paths:
   /extractions/supported_input_types:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists the input file format supported by currenlty running extractors
       description: Extractions for Files.
       responses:
@@ -4147,7 +4161,7 @@ paths:
   /extractions/multiple_uploadby_url:
     post:
       tags:
-      - extractions
+        - extractions
       summary: Uploads files for a given list of files' URLs
       description: |
         Saves the uploaded files and sends it for extraction. Does not index the
@@ -4160,15 +4174,15 @@ paths:
   /extractions/{id}/statuses:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Checks for the extraction statuses of all files
       description: Returns a list (file id, status of extractions)
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4177,7 +4191,7 @@ paths:
   /extractions/requests:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists dts extraction requests information
       description: Extractions for Files.
       responses:
@@ -4188,7 +4202,7 @@ paths:
   /extractors:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists information about all known extractors
       description: Extractions for Files.
       responses:
@@ -4197,7 +4211,7 @@ paths:
           content: {}
     post:
       tags:
-      - extractions
+        - extractions
       summary: |
         Register information about an extractor. Used when an extractor starts
         up.
@@ -4231,15 +4245,15 @@ paths:
   /extractions/{id}/metadata:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Provides the metadata extracted from the file
       description: Retruns Status of extractions and metadata extracted so far
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4248,7 +4262,7 @@ paths:
   /extractions/extractors_details:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists the currenlty details running extractors
       description: Extractions for Files.
       responses:
@@ -4259,15 +4273,15 @@ paths:
   /extractors/{name}:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Lists information about a specific extractor
       description: Extractions for Files.
       parameters:
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4276,17 +4290,17 @@ paths:
   /extractions/{id}/status:
     get:
       tags:
-      - extractions
+        - extractions
       summary: Checks for the status of all extractors processing the file with id
       description: |
         A list of status of all extractors responsible for extractions on the
         file and the final status of extraction job
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4295,7 +4309,7 @@ paths:
   /thumbnails:
     get:
       tags:
-      - thumbnails
+        - thumbnails
       summary: List all thumbnail files
       description: Returns list of thumbnail files and descriptions.
       responses:
@@ -4306,15 +4320,15 @@ paths:
   /thumbnails/{id}:
     delete:
       tags:
-      - thumbnails
+        - thumbnails
       summary: Delete thumbnail
       description: Remove thumbnail file from system).
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4325,11 +4339,11 @@ paths:
       summary: Download a specific thumbnail image
       description: Download a thumbnail image associated with a resource.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4338,17 +4352,17 @@ paths:
   /clowder/spaces/curations/{id}/matchmaker:
     post:
       tags:
-      - curations
+        - curations
       summary: Update the user repository preferences and call the matchmaker
       description: |
         A curation object is a request for publication that captures the state
         of a dataset ready for publication
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4357,17 +4371,17 @@ paths:
   /clowder/spaces/curations/retract/{id}:
     delete:
       tags:
-      - curations
+        - curations
       summary: Retract the publication request
       description: |
         A curation object is a request for publication that captures the state
         of a dataset ready for publication
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4376,22 +4390,22 @@ paths:
   /clowder/spaces/curations/{id}/folders/{curationFolderId}:
     delete:
       tags:
-      - curations
+        - curations
       summary: Delete a folder from a publication request
       description: |
         A curation object is a request for publication that captures the state
         of a dataset ready for publication
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: curationFolderId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: curationFolderId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4400,17 +4414,17 @@ paths:
   /clowder/spaces/curations/{id}/curationFile:
     get:
       tags:
-      - curations
+        - curations
       summary: Get files in publication request
       description: |
         A curation object is a request for publication that captures the state
         of a dataset ready for publication
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4419,22 +4433,22 @@ paths:
   /clowder/spaces/curations/{id}/files/{curationFileId}:
     delete:
       tags:
-      - curations
+        - curations
       summary: Delete a file from a publication request
       description: |
         A curation object is a request for publication that captures the state
         of a dataset ready for publication
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: curationFileId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: curationFileId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4443,17 +4457,17 @@ paths:
   /curations/{curationId}/ore:
     get:
       tags:
-      - curations
+        - curations
       summary: Get the ORE map for the proposed publication
       description: |
         A curation object is a request for publication that captures the state
         of a dataset ready for publication
       parameters:
-      - name: curationId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: curationId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4462,7 +4476,7 @@ paths:
   /logos:
     get:
       tags:
-      - logos
+        - logos
       summary: List logos
       description: List logos known to system
       responses:
@@ -4471,7 +4485,7 @@ paths:
           content: {}
     post:
       tags:
-      - logos
+        - logos
       summary: Upload file
       description: |
         Files uploaded to this endpoint will be marked as special files, such as
@@ -4484,45 +4498,45 @@ paths:
   /logos/{id}:
     get:
       tags:
-      - logos
+        - logos
       summary: Get logo
       description: Return logo information
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     put:
       tags:
-      - logos
+        - logos
       summary: Set logo
       description: Updates logo information
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     delete:
       tags:
-      - logos
+        - logos
       summary: Delete file
       description: Delete a static file
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4531,15 +4545,15 @@ paths:
   /logos/{id}/blob:
     get:
       tags:
-      - logos
+        - logos
       summary: Download file
       description: Download a static file, or the alternate file
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4548,60 +4562,60 @@ paths:
   /logos/{path}/{name}:
     get:
       tags:
-      - logos
+        - logos
       summary: Get logo
       description: Return logo information
       parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     put:
       tags:
-      - logos
+        - logos
       summary: Set logo
       description: Updates logo information
       parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     delete:
       tags:
-      - logos
+        - logos
       summary: Delete file
       description: Delete a static file
       parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4610,20 +4624,20 @@ paths:
   /logos/{path}/{name}/blob:
     get:
       tags:
-      - logos
+        - logos
       summary: Download file
       description: Download a static file, or the alternate file
       parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4634,11 +4648,11 @@ paths:
       summary: Proxy a GET request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         401:
           description: Not authorized
@@ -4650,11 +4664,11 @@ paths:
       summary: Proxy a PUT request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the PUT request to proxy.
         content:
@@ -4673,11 +4687,11 @@ paths:
       summary: Proxy a POST request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the POST request to proxy.
         content:
@@ -4696,11 +4710,11 @@ paths:
       summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         401:
           description: Not authorized
@@ -4714,16 +4728,16 @@ paths:
       summary: Proxy a GET request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: pathSuffix
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pathSuffix
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         401:
           description: Not authorized
@@ -4735,16 +4749,16 @@ paths:
       summary: Proxy a PUT request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: pathSuffix
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pathSuffix
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the PUT request to proxy.
         content:
@@ -4763,16 +4777,16 @@ paths:
       summary: Proxy a POST request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: pathSuffix
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pathSuffix
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the POST request to proxy.
         content:
@@ -4791,16 +4805,16 @@ paths:
       summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-      - name: endpoint
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: pathSuffix
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: endpoint
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pathSuffix
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         401:
           description: Not authorized
@@ -4812,7 +4826,7 @@ paths:
   /reports/metrics:
     get:
       tags:
-      - reporting
+        - reporting
       summary: Download usage metrics report for files, datasets and collections as
         CSV.
       description: |
@@ -4833,7 +4847,7 @@ paths:
   /reports/metrics/files:
     get:
       tags:
-      - reporting
+        - reporting
       summary: Download usage metrics report for files as CSV.
       description: |
         Download usage metrics report for files as a CSV file.
@@ -4853,7 +4867,7 @@ paths:
   /reports/metrics/datasets:
     get:
       tags:
-      - reporting
+        - reporting
       summary: Download usage metrics report for datasets as CSV.
       description: |
         Download usage metrics report for datasets as a CSV file.
@@ -4873,7 +4887,7 @@ paths:
   /reports/metrics/collections:
     get:
       tags:
-      - reporting
+        - reporting
       summary: Download usage metrics report for collections as CSV.
       description: |
         Download usage metrics report for collections as a CSV file.
@@ -4893,14 +4907,14 @@ paths:
   /metadata.jsonld/{id}:
     delete:
       tags:
-      - metadata
+        - metadata
       summary: Delete the metadata by id.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4912,14 +4926,14 @@ paths:
   /metadata/autocompletenames:
     get:
       tags:
-      - metadata
+        - metadata
       summary: Get set of metadata fields containing filter substring for autocomplete.
       parameters:
-      - name: filter
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: filter
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4928,7 +4942,7 @@ paths:
   /metadata/distinctdefinitions:
     get:
       tags:
-      - metadata
+        - metadata
       summary: Get Vocabulary definitions with distinct names.
       responses:
         200:
@@ -4938,7 +4952,7 @@ paths:
   /metadata/definitions:
     get:
       tags:
-      - metadata
+        - metadata
       summary: Get Vocabulary definitions.
       responses:
         200:
@@ -4948,14 +4962,14 @@ paths:
   /metadata/definitions/{id}:
     get:
       tags:
-      - metadata
+        - metadata
       summary: Get Vocabulary definitions by id.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -4964,7 +4978,7 @@ paths:
   /sections:
     post:
       tags:
-      - section
+        - section
       summary: Add a section.
       requestBody:
         description: The body of the POST request.
@@ -4972,7 +4986,7 @@ paths:
           application/json:
             schema:
               required:
-              - file_id
+                - file_id
               type: object
               properties:
                 file_id:
@@ -4993,14 +5007,14 @@ paths:
   /sections/{id}:
     get:
       tags:
-      - section
+        - section
       summary: Get a section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -5013,17 +5027,17 @@ paths:
                   file_id: 5b2a836d5e0e8956ed865b29
                   startTime: -1
                   tags:
-                  - a object
+                    - a object
     delete:
       tags:
-      - section
+        - section
       summary: Delete a section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -5032,21 +5046,21 @@ paths:
   /sections/{id}/comments:
     post:
       tags:
-      - section
+        - section
       summary: Add comment to a section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the POST request.
         content:
           application/json:
             schema:
               required:
-              - text
+                - text
               type: object
               properties:
                 text:
@@ -5060,21 +5074,21 @@ paths:
   /sections/{id}/description:
     post:
       tags:
-      - section
+        - section
       summary: Add description to a section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         description: The body of the POST request.
         content:
           application/json:
             schema:
               required:
-              - description
+                - description
               type: object
               properties:
                 description:
@@ -5091,19 +5105,19 @@ paths:
   /sections/{id}/thumbnails/{thumbnail_id}:
     post:
       tags:
-      - section
+        - section
       summary: Add thumbnail to section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: thumbnail_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: thumbnail_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -5115,34 +5129,34 @@ paths:
   /sections/{id}/tags:
     get:
       tags:
-      - section
+        - section
       summary: Get tags of a section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
           content: {}
     post:
       tags:
-      - section
+        - section
       summary: Add tags to section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         content:
           application/json:
             schema:
               required:
-              - tags
+                - tags
               type: object
               properties:
                 tags:
@@ -5156,14 +5170,14 @@ paths:
           content: {}
     delete:
       tags:
-      - section
+        - section
       summary: Delete tags from section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -5172,13 +5186,13 @@ paths:
   /sections/{id}/tags/remove:
     post:
       tags:
-      - section
+        - section
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -5188,14 +5202,14 @@ paths:
   /sections/{id}/tags/remove_all:
     post:
       tags:
-      - section
+        - section
       summary: Delete all tags from section.
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -5204,7 +5218,7 @@ paths:
   /admin/configuration:
     post:
       tags:
-      - admin
+        - admin
       summary: Update system configuration.
       description: |
         Update system configuration.
@@ -5245,7 +5259,7 @@ paths:
   /admin/mail:
     post:
       tags:
-      - admin
+        - admin
       summary: Send email to admins.
       description: |
         Send email to admins.
@@ -5270,7 +5284,7 @@ paths:
   /admin/users:
     post:
       tags:
-      - admin
+        - admin
       summary: Update all users status, set a list of users as active, inactive, admin
         or normal user.
       description: |
@@ -5308,7 +5322,7 @@ paths:
   /changeAppearance:
     post:
       tags:
-      - admin
+        - admin
       summary: Change themes of the clowder instance.
       description: |
         Change themes of the clowder instance.
@@ -5382,7 +5396,7 @@ components:
           format: int64
         authorId:
           type: string # should be miniuser
-          $ref: '#/components/schemas/MiniUser'
+          #$ref: '#/components/schemas/MiniUser'
         status:
           type: string # should be enum
     MiniUser:
@@ -5390,8 +5404,8 @@ components:
     Space:
       type: object
       required:
-      - description
-      - name
+        - description
+        - name
       properties:
         name:
           type: string
@@ -5399,7 +5413,7 @@ components:
           type: string
     Collection:
       required:
-      - name
+        - name
       type: object
       properties:
         name:
@@ -5412,7 +5426,7 @@ components:
           type: string
     Dataset:
       required:
-      - name
+        - name
       type: object
       properties:
         name:
@@ -5422,10 +5436,10 @@ components:
         access:
           type: string
           enum:
-          - PUBLIC
-          - PRIVATE
-          - DEFAULT
-          - TRIAL
+            - PUBLIC
+            - PRIVATE
+            - DEFAULT
+            - TRIAL
         space:
           type: array
           description: if space is not set or set as default, this dataset will not
@@ -5447,8 +5461,8 @@ components:
       type: object
       example:
         '@context':
-        - https://clowderframework.org/contexts/metadata.jsonld
-        - csv_headers: http://clowder.ncsa.illinois.edu/metadata/ncsa.csvheaders
+          - https://clowderframework.org/contexts/metadata.jsonld
+          - csv_headers: http://clowder.ncsa.illinois.edu/metadata/ncsa.csvheaders
         attached_to:
           resource_type: cat:file
           url: https://clowderframework.org/clowder/files/5b2a836d5e0e8956ed865b29
@@ -5459,9 +5473,9 @@ components:
           extractor_id: https://clowderframework.org/clowder/extractors/ncsa.csvheaders/1.0
         content:
           csv_headers:
-          - Site_ID
-          - Date&Time
-          - Discharge(cms)
+            - Site_ID
+            - Date&Time
+            - Discharge(cms)
     Tags:
       type: object
       properties:
@@ -5473,22 +5487,22 @@ components:
           type: string
       example:
         tags:
-        - test1
-        - test2
+          - test1
+          - test2
     Comment:
       required:
-      - text
+        - text
       type: object
       properties:
         text:
           type: string
     License:
       required:
-      - allowDownload
-      - licenseText
-      - licenseType
-      - licenseUrl
-      - rightsHolder
+        - allowDownload
+        - licenseText
+        - licenseType
+        - licenseUrl
+        - rightsHolder
       type: object
       properties:
         licenseType:
@@ -5500,12 +5514,12 @@ components:
         licenseText:
           type: string
           enum:
-          - by-nc-nd
-          - by-nd
-          - by-nc
-          - by-nc-sa
-          - by-sa
-          - by
+            - by-nc-nd
+            - by-nd
+            - by-nc
+            - by-nc-sa
+            - by-sa
+            - by
         allowDownload:
           type: string
 
@@ -5532,8 +5546,18 @@ components:
           schema:
             type: string
             format: binary
-        
-    Disabled: 
+
+    BadRequest:
+      description: |
+        The server could not process your request, this happens for example when
+        the id specified is not of the correct form. See the message field for
+        more information.
+      content:
+        application/json:
+          schema:
+            type: string
+
+    Disabled:
       description: |
         Access to this resource is disabled
       content:
@@ -5541,7 +5565,7 @@ components:
           schema:
             type: string
 
-    Unauthorized: 
+    Unauthorized:
       description: |
         The request has not been applied because it lacks valid authentication
         credentials for the target resource.
