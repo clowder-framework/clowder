@@ -20,6 +20,7 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
 - Allow user to easily flip through the files in a dataset.
   [CATS-1058](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1058)
 - Ability to filter the files and folders in a dataset when sorting is enabled.
+- Visualize existing relations between datasets on the dataset page. This can be extended other resource types.
   
 ### Fixed
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
