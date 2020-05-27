@@ -441,14 +441,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     // Perform recursion first if necessary
     if (recursive) {
       files.get(dataset.files).found.foreach(f => index(f, idx))
-      for (folderid <- dataset.folders) {
-        folders.get(folderid) match {
-          case Some(f) => {
-            files.get(f.files).found.foreach(fi => index(fi, idx))
-          }
-          case None => Logger.error(s"Error getting file $folderid for recursive indexing")
-        }
-      }
+      for (f <- folders.findByParentDatasetId(dataset.id))
+        files.get(f.files).found.foreach(fi => index(fi, idx))
     }
     index(SearchUtils.getElasticsearchObject(dataset), idx.getOrElse(nameOfIndex))
   }
