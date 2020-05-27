@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
 
 ### Added
-- add script to test Clowder extraction.
-- Added ability to delete extractor, both from api and GUI.
+- Script to test extractions through the API.
+- Ability to delete extractor, both from api and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
 - API add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
@@ -24,6 +24,12 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
 ### Fixed
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+
+### Changed
+- Removed buttons to remove datasets from spaces and collections from certain pages where it was creating confusion for 
+  the user. Users thought it was a dataset delete button instead. Also moved Remove button for subcollections to right 
+  side of page to be consistent with other widgets.
+  [CATS-1055](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1055)
 
 ## 1.8.4 - 2020-05-15
 **_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
