@@ -11,7 +11,7 @@ of these changes a reindex of Elasticsearch is required. A reindex can be starte
 ### Added
 - Ability to delete extractor, both from API and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
-- API add tags endpoint now returns the added tags.
+- Add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 - Ability to search by creator name and email address for all resources.
 - List Spaces/Datasets/Collections created by each user on their User Profile page.
@@ -32,8 +32,9 @@ of these changes a reindex of Elasticsearch is required. A reindex can be starte
 
 ### Changed
 - Removed buttons to remove datasets from spaces and collections from certain pages. Moved Remove button for 
-  subcollections to right side of page to be consistent with other widgets.
+  subcollections to right side of page to be consistent with other pages.
   [CATS-1055](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1055)
+- Upgraded swagger documentation to openapi v3.0.1.
 
 ## 1.8.4 - 2020-05-15
 **_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
