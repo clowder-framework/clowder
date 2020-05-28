@@ -9,21 +9,38 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
 
 ### Added
-- Added ability to delete extractor, both from api and GUI.
+- Script to test extractions through the API.
+- Ability to delete extractor, both from api and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
 - API add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 - Ability to search by creator name and email address for all resources.
 - List Spaces/Datasets/Collections created by each user on their User Profile.
   [CATS-1056](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1056)
+- Allow user to easily flip through the files in a dataset.
+  [CATS-1058](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1058)
+- Ability to filter the files and folders in a dataset when sorting is enabled.
+- Visualize existing relations between datasets on the dataset page. This can be extended other resource types.
+  [CATS-1000](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1000)
 - S3ByteStorageService should verify bucket existence on startup and create if it does not exist.
   [CATS-1057](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1057)
   
 ### Fixed
-- Ability to delete tags on file page.
-  [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+
+### Changed
+- Removed buttons to remove datasets from spaces and collections from certain pages where it was creating confusion for 
+  the user. Users thought it was a dataset delete button instead. Also moved Remove button for subcollections to right 
+  side of page to be consistent with other widgets.
+  [CATS-1055](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1055)
+
+## 1.8.4 - 2020-05-15
+**_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
+
+### Fixed
+- Fixed a bug related to improper indexing of files in nested subfolders, which could also affect searching by parent dataset.
 
 ## 1.8.3 - 2020-04-28
 **_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
