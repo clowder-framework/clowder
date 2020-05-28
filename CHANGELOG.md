@@ -10,8 +10,8 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
 
 ### Added
 - Can now switch storage provider to for example S3 storage. See also env.example for configuration options.
-- Added ability to delete extractor, both from api and GUI.
 - Script to test extractions through the API.
+- Ability to delete extractor, both from api and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
 - API add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
