@@ -220,6 +220,34 @@ class Files @Inject() (
           }
         }
 
+        val pager: models.Pager = dataset match {
+          case None => Pager(None, None)
+          case Some(dsId) => {
+            datasets.get(new UUID(dsId)) match {
+              case None => Pager(None, None)
+              case Some(ds) => {
+                val lastIndex = ds.files.length - 1
+                val index = ds.files.indexOf(id)
+
+                // Set prevFile / nextFile, if applicable
+                if (index > 0 && index < lastIndex) {
+                  // Yields UUID of prevFile and nextFile respectively
+                  Pager(Some(ds.files(index + 1)), Some(ds.files(index - 1)))
+                }else if (index == 0 && index < lastIndex) {
+                  // This is the first file in the list, but not the last
+                  Pager(Some(ds.files(index + 1)), None)
+                } else if (index > 0 && index == lastIndex) {
+                  // This is the last file in the list, but not the first
+                  Pager(None, Some(ds.files(index - 1)))
+                } else {
+                  // There is one item on the list, disable paging
+                  Pager(None, None)
+                }
+              }
+            }
+          }
+        }
+
         //call Polyglot to get all possible output formats for this file's content type
         current.plugin[PolyglotPlugin] match {
           case Some(plugin) => {
@@ -238,7 +266,7 @@ class Files @Inject() (
             plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+                mds, isRDFExportEnabled, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date, pager)))
           }
           case None =>
             Logger.debug("Polyglot plugin not found")
@@ -249,7 +277,7 @@ class Files @Inject() (
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, isRDFExportEnabled, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date, pager)))
         }
       }
 

@@ -26,20 +26,16 @@ object SearchUtils {
 
     // Get child_of relationships for File
     var child_of: ListBuffer[String] = ListBuffer()
-    datasets.findByFileIdDirectlyContain(id).map(ds => {
+    // ...first, the dataset which contains the file or its folder
+    datasets.findByFileIdAllContain(id).map(ds => {
       child_of += ds.id.toString
       ds.spaces.map(spid => child_of += spid.toString)
       ds.collections.map(collid => child_of += collid.toString)
     })
-    val folderlist = folders.findByFileId(id).map(fld => {
+    // ...second, the immediate parent folder ID (and the folder's parent) itself
+    folders.findByFileId(id).map(fld => {
       child_of += fld.id.toString
       child_of += fld.parentDatasetId.toString
-      fld.id
-    })
-    datasets.get(folderlist).found.foreach(ds => {
-      child_of += ds.id.toString
-      ds.spaces.map(spid => child_of += spid.toString)
-      ds.collections.map(collid => child_of += collid.toString)
     })
     val child_of_distinct = child_of.toList.distinct
 
