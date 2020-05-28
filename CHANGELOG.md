@@ -23,6 +23,8 @@ of these changes a reindex of Elasticsearch is required. This can be started by 
 - Ability to filter the files and folders in a dataset when sorting is enabled.
 - Visualize existing relations between datasets on the dataset page. This can be extended other resource types.
   [CATS-1000](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1000)
+- S3ByteStorageService should verify bucket existence on startup and create if it does not exist.
+  [CATS-1057](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1057)
   
 ### Fixed
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
