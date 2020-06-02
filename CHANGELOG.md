@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.9.0 - 2020-06-01
 **_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
-of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin either from the Admin menu.**
+of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
 
 ### Added
 - Ability to delete extractor, both from API and GUI.
