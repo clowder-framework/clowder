@@ -19,7 +19,7 @@ import com.ning.http.client.Realm.AuthScheme
  * File Convert Service
  *
  */
-class FileConvertService(application: Application) {
+class FileConvertService() {
 
   val fileConvertUser: Option[String] = configuration.getString("fileconvert.username")
   val fileConvertPassword: Option[String] = configuration.getString("fileconvert.password")
