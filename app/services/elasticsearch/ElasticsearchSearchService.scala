@@ -110,8 +110,8 @@ class ElasticsearchSearchService @Inject() (
         client = None
         false
       }
-      case _: Throwable => {
-        Logger.error("Unknown exception connecting to Elasticsearch")
+      case e: Throwable => {
+        Logger.error("Unknown exception connecting to Elasticsearch", e)
         client.map(_.close())
         client = None
         false
