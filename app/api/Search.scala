@@ -51,7 +51,7 @@ class Search @Inject() (
 
   /** Search using string-encoded Json object (e.g. built by Metadata Search form) */
   def searchJson(query: String, grouping: String, from: Option[Int], size: Option[Int]) = PermissionAction(Permission.ViewDataset) {
-    implicit request =>
+    implicit request => {
       implicit val user = request.user
 
       if (searches.isEnabled) {
@@ -61,7 +61,7 @@ class Search @Inject() (
       } else {
         BadRequest("Elasticsearch plugin could not be reached")
       }
-
+    }
   }
 
   /**

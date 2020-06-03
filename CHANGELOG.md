@@ -24,6 +24,7 @@ Clowder runs in a location that doesn't not have access to https://clowderframew
 ### Changed
 - SpaceSharingPlugin, SpaceCopyPlugin, StagingAreaPlugin replaced with value in application.conf.
 - AdminNotifierPlugin replaced with AdminNotifierService
+- Upgraded Elasticsearch from 2.3.5 to 7.5.2. 
 
 ## Unreleased
 
