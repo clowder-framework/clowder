@@ -132,7 +132,7 @@ services:
 
   # search index (optional, needed for search and sorting future)
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
@@ -147,7 +147,7 @@ services:
       - clowder
     restart: unless-stopped
     volumes:
-      - es:/usr/share/elasticsearch/data
+      - elasticsearch:/usr/share/elasticsearch/data
 
   # monitor clowder extractors
   monitor:
@@ -183,4 +183,4 @@ volumes:
   clowder-custom:
   mongo:
   rabbitmq:
-  es:
+  elasticsearch:
