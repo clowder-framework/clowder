@@ -48,6 +48,38 @@ function confirmDeleteSelected() {
     }
 }
 
+function confirmDeleteMarked(datasetId) {
+    console.log(datasetId);
+    var selected = $.cookie('selected-files-'+datasetId);
+    if (selected) {
+        var msg = "Are you sure you want to delete the selected files?";
+
+        var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
+        modalHTML += '<div class="modal-dialog">';
+        modalHTML += '<div class="modal-content">';
+        modalHTML += '<div class="modal-header">';
+        modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+        modalHTML += '<h4 class="modal-title">Confirm</h4>';
+        modalHTML += '</div>';
+        modalHTML += '<div class="modal-body">';
+        modalHTML += '<p>' + msg + '</p>';
+        modalHTML += '</div>';
+        modalHTML += '<div class="modal-footer">';
+        modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
+        modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:deleteAllSelections()"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+        modalHTML += '</div>';
+        modalHTML += '</div>';
+        modalHTML += '</div>';
+        modalHTML += '</div>';
+
+        var confirmModal = $(modalHTML);
+        confirmModal.modal();
+        confirmModal.modal("show");
+    } else {
+        notify("No files currently selected", "warning")
+    }
+}
+
 function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url) {
     var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
     modalHTML += '<div class="modal-dialog">';

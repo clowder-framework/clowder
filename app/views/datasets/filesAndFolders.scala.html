@@ -1,4 +1,6 @@
-@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String], filter: Option[String])(implicit user: Option[models.User])
+@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder],
+        filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String],
+        filter: Option[String])(implicit user: Option[models.User])
 
 <!-- Breadcrumbs -->
 @if(folderHierarchy.length > 0 ) {
@@ -27,47 +29,126 @@
       });
     });
     </script>
-    <!--label class="sortchoice" for="filename-filter">Filter:-->
-        <table width=100%"">
-            <td width="40%">
-                <div class="input-group">
-                    <!-- TODO: Should the filter value reset when folder level changes? -->
-                    <input type="text" class="form-horizontal form-control" id="filename-filter" placeholder="Search folder and file names..."
-                    value="@filter.getOrElse("")"
-                    onchange="getUpdatedFilesAndFolders()">
-                    <div class="input-group-btn">
-                        <button class="btn btn-default" onclick="getUpdatedFilesAndFolders()">
-                            <span class="glyphicon glyphicon-search"></span></button>
-                    </div>
+
+    <table width=100%"">
+        <td width="30%">
+            <div class="input-group">
+                <!-- TODO: Should the filter value reset when folder level changes? -->
+                <input type="text" class="form-horizontal form-control" id="filename-filter" placeholder="Search folder and file names..."
+                value="@filter.getOrElse("")"
+                onchange="getUpdatedFilesAndFolders()">
+                <div class="input-group-btn">
+                    <button class="btn btn-default" onclick="getUpdatedFilesAndFolders()">
+                        <span class="glyphicon glyphicon-search"></span></button>
                 </div>
-            </td>
-            <td width="30%">
-                <div id="filter-box-value">
-                    &nbsp;
-                    @if(filter.getOrElse("")!="") {
-                        Filtering by <b>@filter.get</b>
-                    }
-                </div>
-            </td>
-            <td width="30%">
-                <label class="sortchoice" for="js-sort-single">Sort By:
-                    <select class="js-sort-single">
-                        <option value="dateN">Newest</option>
-                        <option value="dateO">Oldest</option>
-                        <option value="titleA">Title (A-Z)</option>
-                        <option value="titleZ">Title (Z-A)</option>
-                        <option value="sizeL">Size (L)</option>
-                        <option value="sizeS">Size (S)</option>
-                    </select>
-            </td>
-        </table>
+            </div>
+        </td>
+        <td width="20%">
+            <div id="filter-box-value">
+                &nbsp;
+                @if(filter.getOrElse("")!="") {
+                    Filtering by <b>@filter.get</b>
+                }
+            </div>
+        </td>
+        <td width="20%" >
+            <div id="selected-count-box"></div>
+        </td>
+        <td width="30%">
+            <label class="sortchoice" for="js-sort-single">Sort By:
+                <select class="js-sort-single">
+                    <option value="dateN">Newest</option>
+                    <option value="dateO">Oldest</option>
+                    <option value="titleA">Title (A-Z)</option>
+                    <option value="titleZ">Title (Z-A)</option>
+                    <option value="sizeL">Size (L)</option>
+                    <option value="sizeS">Size (S)</option>
+                </select>
+            </label>
+        </td>
+    </table>
 
-
-
-
-    </label>
     </div>
+} else {
+    <!--Still want to show multiselect box even without sorting-->
+    <div id="selected-count-box"></div>
 }
+
+<script type="text/javascript">
+    function updateSelectedFileCount() {
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            var fileUUIDs = selected.split(',');
+            //$('#selected-count-box').html('Marked Files (<b>'+fileUUIDs.length+'</b>)')
+            $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
+                    'data-toggle="dropdown" aria-expanded="false"> Marked Files (<b>'+fileUUIDs.length+'</b>)' +
+                    '<b class="caret"></b></a><ul class="dropdown-menu"><li>' +
+                    '<a onclick="deleteSelectedFiles();">Delete All</a></li></ul>' +
+                    '</div>')
+        } else {
+            $('#selected-count-box').html('Marked Files (<b>0</b>)')
+        }
+    }
+
+    function deleteSelectedFiles() {
+        console.log("Are you sure?");
+        confirmDeleteMarked('@dataset.id');
+    }
+
+    $(document).ready(function() {
+        $('.fileselect').click(function() {
+            var file_id = $(this).data("id");
+
+            if ($("a[data-id='" + file_id + "'] span.glyphicon").hasClass('glyphicon-plus')) {
+                // SELECT THE FILE
+                // TODO: Add Clear All option
+                var selected = $.cookie('selected-files-@dataset.id');
+                if (selected) {
+                    if (selected.indexOf(file_id) == -1)
+                        selected += ","+file_id;
+                } else {
+                    selected = file_id;
+                }
+                $.cookie('selected-files-@dataset.id', selected);
+
+                $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-plus');
+                $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-ok');
+                updateSelectedFileCount();
+            } else {
+                // DESELECT THE FILE
+                var selected = $.cookie('selected-files-@dataset.id');
+                if (selected && selected.indexOf(file_id) > -1) {
+                    selected = selected.replace(file_id+',', '').replace(','+file_id, '').replace(file_id, '');
+                    $.cookie('selected-files-@dataset.id', selected, {expires: 14});
+                }
+
+                $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-ok');
+                $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-plus');
+                updateSelectedFileCount();
+                // TODO: plain jquery cookies? logout could still see them. play uses key
+                // TODO: show only marked files
+                // TODO: Downloading selected files as Zip - look at downloading folders tasks
+                // make separate tasks for my SIMPL task for a sprint with more granularity
+
+                // TODO: convert selection datasets to a collection
+                // TODO: Selections become Favorites
+                // TODO: recently viewed list?
+            }
+        });
+
+        // Check cookie for any selected files in this dataset and update icons + toolbar
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            var fileUUIDs = selected.split(',');
+            for (idx in fileUUIDs) {
+                file_id = fileUUIDs[idx];
+                $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-plus');
+                $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-ok');
+            }
+            updateSelectedFileCount();
+        }
+    });
+</script>
 
 <!-- Show message when the folder is empty -->
 <div style="display: none" id="empty-folder-div"><h4>
@@ -91,8 +172,12 @@
 
 <!-- Files list -->
 @currentFolder match {
-    case None => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id), dataset.folders.length > 0) }
-    case Some(s) => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)), dataset.folders.length > 0)}
+    case None => {
+        @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id),
+            dataset.folders.length > 0) }
+    case Some(s) => {
+        @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)),
+            dataset.folders.length > 0) }
 }
 
 <div class="row">
