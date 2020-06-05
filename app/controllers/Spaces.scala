@@ -193,11 +193,12 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         val userSelections: List[String] =
           if (user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
-        Logger.debug("User selection " + userSelections)
+        Logger.debug(s"User $user selections: $userSelections")
         
-        val rs = play.api.Play.current.configuration.getBoolean("stagingArea") match {
-          case Some(plugin) => Publications.getPublications(s.id.toString, spaces)
-          case None => List.empty
+        val rs = if (play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)) {
+          Publications.getPublications(s.id.toString, spaces)
+        } else {
+          List.empty
         }
         Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections))
       }
