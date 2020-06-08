@@ -2,6 +2,8 @@
         filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int], space: Option[String],
         filter: Option[String])(implicit user: Option[models.User])
 
+@import play.api.Play.current
+
 <!-- Breadcrumbs -->
 @if(folderHierarchy.length > 0 ) {
     <div><h2 id='folderpath'>
@@ -52,7 +54,7 @@
             </div>
         </td>
         <td width="20%" >
-            <div id="selected-count-box"></div>
+            <div id="selected-count-box">Marked Files (<b>0</b>)</div>
         </td>
         <td width="30%">
             <label class="sortchoice" for="js-sort-single">Sort By:
@@ -82,17 +84,205 @@
             //$('#selected-count-box').html('Marked Files (<b>'+fileUUIDs.length+'</b>)')
             $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
                     'data-toggle="dropdown" aria-expanded="false"> Marked Files (<b>'+fileUUIDs.length+'</b>)' +
-                    '<b class="caret"></b></a><ul class="dropdown-menu"><li>' +
-                    '<a onclick="deleteSelectedFiles();">Delete All</a></li></ul>' +
+                    '<b class="caret"></b></a><ul class="dropdown-menu">' +
+                    // TODO: Show All if only marked are shown
+                    '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
+                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
+                    '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
+                    '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
+                    '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
                     '</div>')
         } else {
             $('#selected-count-box').html('Marked Files (<b>0</b>)')
         }
     }
 
-    function deleteSelectedFiles() {
-        console.log("Are you sure?");
+    function confirmDeleteMarked() {
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            selected = selected.split(',');
+            if (selected.length > 0) {
+                var msg = "Are you sure you want to delete "+String(selected.length)+" marked files?";
+
+                var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
+                modalHTML += '<div class="modal-dialog">';
+                modalHTML += '<div class="modal-content">';
+                modalHTML += '<div class="modal-header">';
+                modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+                modalHTML += '<h4 class="modal-title">Confirm</h4>';
+                modalHTML += '</div>';
+                modalHTML += '<div class="modal-body">';
+                modalHTML += '<p>' + msg + '</p>';
+                modalHTML += '</div>';
+                modalHTML += '<div class="modal-footer">';
+                modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
+                modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" onclick="deleteAllMarked();" data-dismiss="modal"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+
+                var confirmModal = $(modalHTML);
+                confirmModal.modal();
+                confirmModal.modal("show");
+            } else {
+                notify("No files currently marked", "warning")
+            }
+        } else {
+            notify("No files currently marked", "warning")
+        }
+    }
+
+    function deleteAllMarked() {
+        // TODO: Would be nice to have a bulk endpoint for this eventually that takes a string of comma-separated UUIDs
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            selected = selected.split(',');
+            for (entry in selected) {
+                var request = jsRoutes.api.Files.removeFile(selected[entry]).ajax({
+                    type: 'DELETE'
+                });
+                // If this is in request.done, only one ID gets removed in the for loop, so remove them all now
+                removeFileFromMarked(selected[entry]);
+                request.done(function (response, textStatus, jqXHR) {
+                    getUpdatedFilesAndFolders();
+                });
+                request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error("The following error occured: " + textStatus, errorThrown);
+                    notify("Could not delete marked file "+selected[entry]+": " + errorThrown, "error");
+                    // Add it back to selected list
+                    addFileToMarked(selected[entry]);
+                });
+            }
+        }
+    }
+
+    function showOnlyMarked() {
         confirmDeleteMarked('@dataset.id');
+    }
+
+    function downloadMarked() {
+        // TODO: Downloading selected files as Zip - look at downloading folders tasks
+        console.log("Not implemented.")
+    }
+
+    function confirmTagMarked() {
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            var modalHTML = `
+            <div id="enter-tag" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Tag All Marked Files</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                Multiple tags may be entered, separated by commas.
+                            </p>
+                            <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)"
+                                type="text" id="bulk-tag-selector" class="form-control add-resource" placeholder="Enter a tag...">
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
+                            <a type="button" class="btn btn-primary" id="OKModalButton" onclick="tagMarked()"><span class="glyphicon glyphicon-ok"></span> OK</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+
+            var confirmModal = $(modalHTML);
+            confirmModal.modal();
+            confirmModal.modal("show");
+        } else {
+            notify("No files currently marked", "warning")
+        }
+    }
+
+    function tagMarked() {
+        // TODO: Would be nice to have a bulk endpoint for this eventually that takes a string of comma-separated UUIDs
+        var tag = $('#bulk-tag-selector')[0].value;
+        if (tag.length > 0) {
+            var selected = $.cookie('selected-files-@dataset.id');
+            if (selected) {
+                selected = selected.split(',');
+                for (entry in selected) {
+                    var request = jsRoutes.api.Files.addTags(selected[entry]).ajax({
+                        type: 'POST',
+                        dataType: 'json',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            "tags": tag.split(',')
+                        })
+                    });
+                    request.done(function (response, textStatus, jqXHR) {
+                        getUpdatedFilesAndFolders();
+                    });
+                    request.fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        notify("Could not tag marked file " + selected[entry] + ": " + errorThrown, "error");
+                    });
+                }
+            }
+        }
+
+
+
+
+
+        if (tag.length > 0) {
+            var request = jsRoutes.api.Selected.tagAll(tag.split(",")).ajax({
+                type: 'POST'
+            });
+            request.done(function (response, textStatus, jqXHR) {
+                notify("Tag(s) successfully added.", "success", false, 2000);
+            });
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                notify("Could not tag selections: " + errorThrown, "error");
+            });
+
+        } else {
+            console.log("No tag was provided.")
+        }
+        $("#enter-tag").modal("hide")
+    }
+
+    function clearMarked() {
+        // Set cookie to empty, redraw the file list to get corrected display
+        $.cookie('selected-files-@dataset.id', "");
+        getUpdatedFilesAndFolders();
+    }
+
+    function addFileToMarked(file_id) {
+        // TODO: Use Play framework cookies instead of jquery flavor for better security
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            if (selected.indexOf(file_id) == -1)
+                selected += ","+file_id;
+        } else {
+            selected = file_id;
+        }
+        $.cookie('selected-files-@dataset.id', selected);
+
+        $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-plus');
+        $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-ok');
+        updateSelectedFileCount();
+    }
+
+    function removeFileFromMarked(file_id) {
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected && selected.indexOf(file_id) > -1) {
+            selected = selected.replace(file_id+',', '').replace(','+file_id, '').replace(file_id, '');
+            $.cookie('selected-files-@dataset.id', selected, {expires: 14});
+        }
+
+        $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-ok');
+        $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-plus');
+        updateSelectedFileCount();
     }
 
     $(document).ready(function() {
@@ -100,39 +290,10 @@
             var file_id = $(this).data("id");
 
             if ($("a[data-id='" + file_id + "'] span.glyphicon").hasClass('glyphicon-plus')) {
-                // SELECT THE FILE
-                // TODO: Add Clear All option
-                var selected = $.cookie('selected-files-@dataset.id');
-                if (selected) {
-                    if (selected.indexOf(file_id) == -1)
-                        selected += ","+file_id;
-                } else {
-                    selected = file_id;
-                }
-                $.cookie('selected-files-@dataset.id', selected);
-
-                $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-plus');
-                $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-ok');
-                updateSelectedFileCount();
+                addFileToMarked(file_id)
             } else {
-                // DESELECT THE FILE
-                var selected = $.cookie('selected-files-@dataset.id');
-                if (selected && selected.indexOf(file_id) > -1) {
-                    selected = selected.replace(file_id+',', '').replace(','+file_id, '').replace(file_id, '');
-                    $.cookie('selected-files-@dataset.id', selected, {expires: 14});
-                }
+                removeFileFromMarked(file_id);
 
-                $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-ok');
-                $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-plus');
-                updateSelectedFileCount();
-                // TODO: plain jquery cookies? logout could still see them. play uses key
-                // TODO: show only marked files
-                // TODO: Downloading selected files as Zip - look at downloading folders tasks
-                // make separate tasks for my SIMPL task for a sprint with more granularity
-
-                // TODO: convert selection datasets to a collection
-                // TODO: Selections become Favorites
-                // TODO: recently viewed list?
             }
         });
 
