@@ -85,9 +85,11 @@
             $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
                     'data-toggle="dropdown" aria-expanded="false"> Marked Files (<b>'+fileUUIDs.length+'</b>)' +
                     '<b class="caret"></b></a><ul class="dropdown-menu">' +
-                    // TODO: Show All if only marked are shown
-                    '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
-                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
+                    // TODO: Need better solution than cookies to support 'Show Only Marked' request
+                    //'<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
+                    //'<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
+                    // TODO: Support for downloading by folder and marked list will be implemented in the future
+                    //'<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
                     '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
                     '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
                     '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
