@@ -449,7 +449,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           }
 
           //index collection
-          search.index(collection, true)
+          search.index(collection, true, None)
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)

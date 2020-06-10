@@ -11,6 +11,7 @@ import play.api.libs.json._
  *
  */
 trait SearchService {
+  val queueName = "search"
 
   def isEnabled(): Boolean
 
@@ -24,10 +25,13 @@ trait SearchService {
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
              from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User]): SearchResult
 
-  def createIndex()
+  def createIndex(index: String)
+
+  // Swap default index with provided temporary reindex
+  def swapIndex()
 
   /** Delete all indices */
-  def deleteAll()
+  def deleteAll(idx: String)
 
   /** Delete an index */
   def delete(id: String, docType: String = "clowder_object")
@@ -38,26 +42,26 @@ trait SearchService {
   /**
    * Reindex using a resource reference and route to correct handler
    */
-  def index(resource: ResourceRef, recursive: Boolean = true)
+  def index(resource: ResourceRef, recursive: Boolean = true, idx: Option[String])
 
   /**
    * Reindex the given collection, if recursive is set to true it will
    * also reindex all datasets and files.
    */
-  def index(collection: Collection, recursive: Boolean)
+  def index(collection: Collection, recursive: Boolean, idx: Option[String])
 
   /**
    * Reindex the given dataset, if recursive is set to true it will
    * also reindex all files.
    */
-  def index(dataset: Dataset, recursive: Boolean)
+  def index(dataset: Dataset, recursive: Boolean, idx: Option[String])
 
   /** Reindex the given file. */
-  def index(file: File)
+  def index(file: File, idx: Option[String])
 
-  def index(file: TempFile)
+  def index(file: TempFile, idx: Option[String])
 
-  def index(section: Section)
+  def index(section: Section, idx: Option[String])
 
   def indexAll(): String
 

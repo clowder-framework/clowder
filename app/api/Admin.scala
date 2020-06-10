@@ -171,7 +171,7 @@ class Admin @Inject() (userService: UserService,
   }
 
   def reindex = ServerAdminAction { implicit request =>
-    val msg = searches.indexAll(None)
+    val msg = searches.indexAll()
     Ok(toJson(Map("status" -> msg)))
   }
 }

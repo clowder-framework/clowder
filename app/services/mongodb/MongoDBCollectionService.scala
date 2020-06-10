@@ -900,7 +900,8 @@ class MongoDBCollectionService @Inject() (
 
   def index(id: UUID, idx: Option[String] = None) {
     try
-      queues.queue("index_collection", new ResourceRef('collection, id), new ElasticsearchParameters(index=idx))
+      queues.queue("index_collection", new ResourceRef('collection, id),
+        new ElasticsearchParameters(index=idx), searches.queueName)
     catch {
       case except: Throwable => Logger.error(s"Error queuing collection ${id.stringify}: ${except}")
       case _ => Logger.error(s"Error queuing collection ${id.stringify}")

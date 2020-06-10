@@ -1313,7 +1313,8 @@ class MongoDBDatasetService @Inject() (
 
   def index(id: UUID, idx: Option[String] = None) {
     try
-      queues.queue("index_dataset", new ResourceRef('dataset, id), new ElasticsearchParameters(index=idx))
+      queues.queue("index_dataset", new ResourceRef('dataset, id),
+        new ElasticsearchParameters(index=idx), searches.queueName)
     catch {
       case except: Throwable => Logger.error(s"Error queuing dataset ${id.stringify}: ${except}")
       case _ => Logger.error(s"Error queuing dataset ${id.stringify}")

@@ -327,7 +327,8 @@ class MongoDBFileService @Inject() (
 
   def index(id: UUID, idx: Option[String] = None) {
     try
-      queues.queue("index_file", new ResourceRef('file, id), new ElasticsearchParameters(index=idx))
+      queues.queue("index_file", new ResourceRef('file, id),
+        new ElasticsearchParameters(index=idx), searches.queueName)
     catch {
       case except: Throwable => Logger.error(s"Error queuing file ${id.stringify}: ${except}")
       case _ => Logger.error(s"Error queuing file ${id.stringify}")

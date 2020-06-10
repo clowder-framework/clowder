@@ -12,8 +12,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 import java.net.InetAddress
 import java.util.regex.Pattern
 import java.util.HashMap
-import akka.actor.Cancellable
 
+import akka.actor.Cancellable
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 
@@ -24,7 +24,6 @@ import org.elasticsearch.action.search.{SearchPhaseExecutionException, SearchRes
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
 import org.elasticsearch.ElasticsearchException
-
 import org.elasticsearch.client.{RequestOptions, RestClient, RestHighLevelClient}
 import org.elasticsearch.client.indices.{CreateIndexRequest, GetIndexRequest}
 import org.elasticsearch.index.query.QueryBuilders
@@ -35,8 +34,9 @@ import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
-import org.elasticsearch.common.xcontent.{XContentType, XContentFactory, XContentBuilder}
-
+import org.elasticsearch.common.xcontent.{XContentBuilder, XContentFactory, XContentType}
+import org.elasticsearch.index.reindex.{BulkByScrollResponse, ReindexAction, ReindexRequest, ReindexRequestBuilder}
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest
 import org.apache.http.HttpHost
 import api.Permission
 import models.{Collection, Dataset, File, QueuedAction, ResourceRef, SearchResult, Section, Tag, TempFile, UUID, User}
@@ -69,7 +69,7 @@ class ElasticsearchSearchService @Inject() (
 
   // Queue stuff
   val useQueue = play.api.Play.configuration.getBoolean("elasticsearchSettings.useQueue").getOrElse(true)
-  val queueName = "elasticsearch"
+  override val queueName = "elasticsearch"
   var queueTimer: Cancellable = null
 
 
@@ -86,6 +86,8 @@ class ElasticsearchSearchService @Inject() (
         Settings.builder().build()
       }
 
+      // TODO: Need Reindex client
+      // .addPlugin(classOf[ReindexPlugin]).
       client = Some(new RestHighLevelClient(RestClient.builder(new HttpHost(serverAddress, serverPort))))
 
       Logger.debug("--- Elasticsearch Client is being created----")
@@ -221,7 +223,7 @@ class ElasticsearchSearchService @Inject() (
       (field match {case Some(x) => s"&field=$x" case None => ""}) +
       (tag match {case Some(x) => s"&tag=$x" case None => ""})
 
-    val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted)
+    val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted, user)
     accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), source_url)
   }
 
@@ -391,7 +393,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /** Create a new index with preconfigured mapping */
-  def createIndex(): Unit = {
+  def createIndex(index: String = nameOfIndex): Unit = {
     client match {
       case Some(c) => {
         Logger.debug("Index \""+nameOfIndex+"\" does not exist; creating now ---")
@@ -399,6 +401,8 @@ class ElasticsearchSearchService @Inject() (
           val request = new CreateIndexRequest(nameOfIndex)
             .settings(Settings.builder()
               .put("analysis.analyzer.default.type", "standard")
+              .put("analysis.analyzer.email_analyzer.type", "custom")
+              .put("analysis.analyzer.email_analyzer.tokenizer", "uax_url_email")
               .put("index.mapping.ignore_malformed", true)
             )
             .mapping(getElasticsearchObjectMappings(), XContentType.JSON)
@@ -413,13 +417,41 @@ class ElasticsearchSearchService @Inject() (
     }
   }
 
-  /** Delete all indices */
-  def deleteAll {
+  def swapIndex() {
+    val idx = nameOfIndex + "_reindex_temp_swap"
+
+    client match {
+      case Some(c) => {
+        // Check if swap index exists before swapping
+        if (c.indices.exists(new GetIndexRequest(idx), RequestOptions.DEFAULT)) {
+          Logger.debug("Deleting "+nameOfIndex+" index...")
+          deleteAll(nameOfIndex)
+          createIndex(nameOfIndex)
+          Logger.debug("Replacing with "+idx+"...")
+
+          val request = new ReindexRequest()
+          request.setSourceIndices(idx)
+          request.setDestIndex(nameOfIndex)
+          c.reindex(request, RequestOptions.DEFAULT);
+
+          //ReindexAction.INSTANCE.newRequestBuilder(c).source(idx).destination(nameOfIndex).get()
+          Logger.debug("Deleting "+idx+" index...")
+          deleteAll(idx)
+        } else {
+          Logger.error("Elasticsearch index "+idx+" does not exist for swap.")
+        }
+      }
+      case None =>
+    }
+  }
+
+  /** Delete all documents in an index */
+  def deleteAll(idx: String = nameOfIndex) {
     connect()
     client match {
       case Some(c) => {
         try {
-          val request = new DeleteIndexRequest(nameOfIndex)
+          val request = new DeleteIndexRequest(idx)
           val response = c.indices.delete(request, RequestOptions.DEFAULT)
           if (!response.isAcknowledged())
             Logger.error("Did not delete all data from elasticsearch.")
@@ -483,7 +515,7 @@ class ElasticsearchSearchService @Inject() (
   /**
    * Reindex using a resource reference - will send to queue if enabled
    */
-  def index(resource: ResourceRef, recursive: Boolean = true) = {
+  def index(resource: ResourceRef, recursive: Boolean = true, idx: Option[String]) = {
     resource.resourceType match {
       case 'file => {
         files.get(resource.id) match {
@@ -491,7 +523,7 @@ class ElasticsearchSearchService @Inject() (
             if (useQueue)
               queue.queue("index_file", resource, queueName)
             else
-              index(f)
+              index(f, None)
           }
           case None => Logger.error(s"File ID not found: ${resource.id.stringify}")
         }
@@ -502,7 +534,7 @@ class ElasticsearchSearchService @Inject() (
             if (useQueue)
               queue.queue("index_dataset", resource, queueName)
             else
-              index(ds, recursive)
+              index(ds, recursive, None)
           }
           case None => Logger.error(s"Dataset ID not found: ${resource.id.stringify}")
         }
@@ -513,7 +545,7 @@ class ElasticsearchSearchService @Inject() (
             if (useQueue)
               queue.queue("index_collection", resource, queueName)
             else
-              index(c, recursive)
+              index(c, recursive, None)
           }
           case None => Logger.error(s"Collection ID not found: ${resource.id.stringify}")
         }
@@ -525,72 +557,69 @@ class ElasticsearchSearchService @Inject() (
    * Reindex the given collection, if recursive is set to true it will
    * also reindex all datasets and files.
    */
-  def index(collection: Collection, recursive: Boolean) {
+  def index(collection: Collection, recursive: Boolean, idx: Option[String]) {
     connect()
     // Perform recursion first if necessary
     if (recursive) {
       for (dataset <- datasets.listCollection(collection.id.toString)) {
-        index(dataset, recursive)
+        index(dataset, recursive, idx)
       }
     }
-    _index(getElasticsearchObject(collection))
+    _index(getElasticsearchObject(collection), idx)
   }
 
   /**
    * Reindex the given dataset, if recursive is set to true it will
    * also reindex all files.
    */
-  def index(dataset: Dataset, recursive: Boolean) {
+  def index(dataset: Dataset, recursive: Boolean, idx: Option[String]) {
     connect()
     // Perform recursion first if necessary
     if (recursive) {
-      files.get(dataset.files).found.foreach(f => index(f))
-      for (folderid <- dataset.folders) {
-        folders.get(folderid) match {
-          case Some(f) => {
-            files.get(f.files).found.foreach(fi => index(fi))
-          }
-          case None => Logger.error(s"Error getting file $folderid for recursive indexing")
-        }
-      }
+      files.get(dataset.files).found.foreach(f => index(f, idx))
+      for (f <- folders.findByParentDatasetId(dataset.id))
+        files.get(f.files).found.foreach(fi => index(fi, idx))
     }
-    _index(getElasticsearchObject(dataset))
+    _index(getElasticsearchObject(dataset), idx)
   }
 
   /** Reindex the given file. */
-  def index(file: File) {
+  def index(file: File, idx: Option[String]) {
     connect()
     // Index sections first so they register for tag counts
     for (section <- file.sections) {
-      index(section)
+      index(section, idx)
     }
-    _index(getElasticsearchObject(file))
+    _index(getElasticsearchObject(file), idx)
   }
 
-  def index(file: TempFile): Unit = {
+  def index(file: TempFile, idx: Option[String]): Unit = {
     connect()
-    _index(getElasticsearchObject(file))
+    _index(getElasticsearchObject(file), idx)
   }
 
-  def index(section: Section) {
+  def index(section: Section, idx: Option[String]) {
     connect()
-    _index(getElasticsearchObject(section))
+    _index(getElasticsearchObject(section), idx)
   }
 
   def indexAll(): String = {
     // Add all individual entries to the queue and delete this action
-    // delete & recreate index
-    deleteAll()
-    createIndex()
+    val idx = nameOfIndex + "_reindex_temp_swap"
+    Logger.debug("Reindexing database into temporary reindex file: "+idx)
+    createIndex(idx)
     // queue everything for each resource type
-    collections.indexAll()
-    datasets.indexAll()
-    files.indexAll()
-    "Reindexing successfully completed."
+    collections.indexAll(Some(idx))
+    datasets.indexAll(Some(idx))
+    files.indexAll(Some(idx))
+
+    // queue action to swap index once we're done reindexing
+    queue.queue("index_swap", queueName)
+    "Reindexing operation added to queue."
   }
 
   /** Index document using an arbitrary map of fields. */
-  private def _index(esObj: Option[ElasticsearchObject]) {
+  private def _index(esObj: Option[ElasticsearchObject], idx: Option[String]) {
     esObj match {
       case Some(eso) => {
         connect()
@@ -600,6 +629,8 @@ class ElasticsearchSearchService @Inject() (
               .startObject()
               // BASIC INFO
               .field("creator", eso.creator)
+              .field("creator_name", eso.creator_name)
+              .field("creator_email", eso.creator_email)
               .field("created", eso.created)
               .field("created_as", eso.created_as)
               .field("resource_type", eso.resource.resourceType.name)
@@ -653,7 +684,7 @@ class ElasticsearchSearchService @Inject() (
               .endObject()
 
 
-            c.index(new IndexRequest(nameOfIndex).id(eso.resource.id.toString).source(builder), RequestOptions.DEFAULT)
+            c.index(new IndexRequest(idx.getOrElse(nameOfIndex)).id(eso.resource.id.toString).source(builder), RequestOptions.DEFAULT)
           }
           case None => Logger.error("Could not index because Elasticsearch is not connected.")
         }
@@ -675,10 +706,10 @@ class ElasticsearchSearchService @Inject() (
         bldr = bldr.aggregation(agg).size(0)
         // Filter to tags on a particular type of resource if given
         if (resourceType != "")
-          bldr = bldr.query(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty).query())
+          bldr = bldr.query(prepareElasticJsonQuery("resource_type:"+resourceType+"", List.empty, None).query())
         else {
           // Exclude Section tags to avoid double-counting since those are duplicated in File document
-          bldr = bldr.query(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty).query())
+          bldr = bldr.query(prepareElasticJsonQuery("resource_type:file|dataset|collection", List.empty, None).query())
         }
         val req = new SearchRequest(nameOfIndex).source(bldr)
         val response = x.search(req, RequestOptions.DEFAULT)
@@ -828,23 +859,29 @@ class ElasticsearchSearchService @Inject() (
 
   /** Return string-encoded JSON object describing field types */
   private def getElasticsearchObjectMappings(): String = {
-    // TODO: Ability to include metadata fields in "_all" has been removed - solution?
-    """{
+    /** The dynamic template will restrict all dynamic metadata fields to be indexed
+     * as strings for datatypes besides Objects. In the future, this could
+     * be removed, but only once the Search API better supports those data types (e.g. Date).
+     */
+     """{
+      |"date_detection": false,
       |"properties": {
-      |"name": {"type": "text", "copy_to": "_all"},
-      |"description": {"type": "text", "copy_to": "_all"},
-      |"resource_type": {"type": "keyword"},
-      |"child_of": {"type": "keyword"},
-      |"parent_of": {"type": "keyword"},
-      |"creator": {"type": "text"},
-      |"created_as": {"type": "text", "copy_to": "_all"},
-      |"created": {"type": "date", "format": "dateOptionalTime"},
-      |"metadata": {"type": "object"},
-      |"comments": {"type": "text"},
-      |"tags": {"type": "keyword", "copy_to": "_all"},
-      |"_all": {"type": "text"}
+        |"name": {"type": "text", "copy_to": "_all"},
+        |"description": {"type": "text", "copy_to": "_all"},
+        |"resource_type": {"type": "keyword"},
+        |"child_of": {"type": "keyword"},
+        |"parent_of": {"type": "keyword"},
+        |"creator": {"type": "text"},
+        |"creator_name": {"type": "string"},
+        |"creator_email": {"type": "string", "search_analyzer": "email_analyzer", "analyzer": "email_analyzer"},
+        |"created_as": {"type": "text", "copy_to": "_all"},
+        |"created": {"type": "date", "format": "dateOptionalTime"},
+        |"metadata": {"type": "object"},
+        |"comments": {"type": "text"},
+        |"tags": {"type": "keyword", "copy_to": "_all"},
+        |"_all": {"type": "text"}
       |}
-      |}""".stripMargin
+    |}""".stripMargin
   }
 
   /**Attempt to cast String into Double, returning None if not possible**/
@@ -920,7 +957,7 @@ class ElasticsearchSearchService @Inject() (
   }
 
   /**Convert search string into an Elasticsearch-ready JSON query object**/
-  private def prepareElasticJsonQuery(query: String, permitted: List[UUID]): SearchSourceBuilder = {
+  private def prepareElasticJsonQuery(query: String, permitted: List[UUID], user: Option[User]): SearchSourceBuilder = {
     /** OPERATORS
      *  ==  equals (exact match)
      *  !=  not equals (partial matches OK)
@@ -936,7 +973,7 @@ class ElasticsearchSearchService @Inject() (
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
-    val official_terms = List("name", "creator", "resource_type", "in", "contains", "tag")
+    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag")
 
     // Create list of "key:value" terms for parsing by builder
     val terms = ListBuffer[String]()
@@ -951,6 +988,10 @@ class ElasticsearchSearchService @Inject() (
           currterm += "child_of:"
         else if (mt == "contains")
           currterm += "parent_of:"
+        else if (mt == "creator")
+          currterm += "creator_name:"
+        else if (mt == "email")
+          currterm += "creator_email:"
         else if (!official_terms.contains(mt))
           currterm += "metadata."+mt+":"
         else
@@ -988,12 +1029,18 @@ class ElasticsearchSearchService @Inject() (
       }
     })
 
-    // Include special OR condition for restricting to permitted spaces
-    if (permitted.length > 0) {
-      // TODO: How to handle datasets that aren't in any space?
-      permitted.foreach(ps => {
-        bool_clause = bool_clause.should(QueryBuilders.matchQuery("child_of", ps.stringify))
-      })
+    // If user is superadmin or there is no user, no filters applied
+    user match {
+      case Some(u) => {
+        if (!u.superAdminMode) {
+          permitted.foreach(ps => {
+            bool_clause = bool_clause.should(QueryBuilders.matchQuery("child_of", ps.stringify))
+          })
+        }
+      }
+      case None => {
+        // Calling this with no user should only happen internally (e.g. listTags) so no filter
+      }
     }
 
     // Second, populate the MUST NOT portion of Bool query
@@ -1042,20 +1089,16 @@ class ElasticsearchSearchService @Inject() (
 
     // Get child_of relationships for File
     var child_of: ListBuffer[String] = ListBuffer()
-    datasets.findByFileIdDirectlyContain(id).map(ds => {
+    // ...first, the dataset which contains the file or its folder
+    datasets.findByFileIdAllContain(id).map(ds => {
       child_of += ds.id.toString
       ds.spaces.map(spid => child_of += spid.toString)
       ds.collections.map(collid => child_of += collid.toString)
     })
-    val folderlist = folders.findByFileId(id).map(fld => {
+    // ...second, the immediate parent folder ID (and the folder's parent) itself
+    folders.findByFileId(id).map(fld => {
       child_of += fld.id.toString
       child_of += fld.parentDatasetId.toString
-      fld.id
-    })
-    datasets.get(folderlist).found.foreach(ds => {
-      child_of += ds.id.toString
-      ds.spaces.map(spid => child_of += spid.toString)
-      ds.collections.map(collid => child_of += collid.toString)
     })
     val child_of_distinct = child_of.toList.distinct
 
@@ -1113,6 +1156,8 @@ class ElasticsearchSearchService @Inject() (
       ResourceRef(ResourceRef.file, id),
       f.filename,
       f.author.id.toString,
+      f.author.fullName.toString,
+      f.author.email.getOrElse("").toString,
       f.uploadDate,
       f.originalname,
       List.empty,
@@ -1184,6 +1229,8 @@ class ElasticsearchSearchService @Inject() (
       ResourceRef(ResourceRef.dataset, id),
       ds.name,
       ds.author.id.toString,
+      ds.author.fullName.toString,
+      ds.author.email.getOrElse("").toString,
       ds.created,
       "",
       parent_of_distinct,
@@ -1212,6 +1259,8 @@ class ElasticsearchSearchService @Inject() (
       ResourceRef(ResourceRef.collection, c.id),
       c.name,
       c.author.id.toString,
+      c.author.fullName.toString,
+      c.author.email.getOrElse("").toString,
       c.created,
       "",
       parent_of,
@@ -1268,6 +1317,8 @@ class ElasticsearchSearchService @Inject() (
       ResourceRef(ResourceRef.section, id),
       "section-"+id.toString,
       "",
+      "",
+      "",
       new Date,
       "",
       List.empty,
@@ -1284,6 +1335,8 @@ class ElasticsearchSearchService @Inject() (
     Some(new ElasticsearchObject(
       ResourceRef(ResourceRef.file, file.id),
       file.filename,
+      "",
+      "",
       "",
       file.uploadDate,
       "",
@@ -1326,29 +1379,31 @@ class ElasticsearchSearchService @Inject() (
   // process the next entry in the queue
   private def handleQueuedAction(action: QueuedAction) = {
     val recursive = action.elastic_parameters.fold(false)(_.recursive)
+    val idx: Option[String] = action.elastic_parameters.fold[Option[String]](None)(_.index)
 
     action.target match {
       case Some(targ) => {
         action.action match {
           case "index_file" => {
             val target = files.get(targ.id) match {
-              case Some(f) => index(f)
+              case Some(f) => index(f, idx)
               case None => throw new NullPointerException(s"File ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_dataset" => {
             val target = datasets.get(targ.id) match {
-              case Some(ds) => index(ds, recursive)
+              case Some(ds) => index(ds, recursive, idx)
               case None => throw new NullPointerException(s"Dataset ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_collection" => {
             val target = collections.get(targ.id) match {
-              case Some(c) => index(c, recursive)
+              case Some(c) => index(c, recursive, idx)
               case None => throw new NullPointerException(s"Collection ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_all" => indexAll()
+          case "index_swap" => swapIndex()
           case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
         }
       }
@@ -1358,6 +1413,7 @@ class ElasticsearchSearchService @Inject() (
           case "index_dataset" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
           case "index_collection" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
           case "index_all" => indexAll()
+          case "index_swap" => swapIndex()
           case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
         }
       }
@@ -1370,6 +1426,8 @@ class ElasticsearchSearchService @Inject() (
 case class ElasticsearchObject (resource: ResourceRef,
                                 name: String,
                                 creator: String,
+                                creator_name: String,
+                                creator_email: String,
                                 created: Date,
                                 created_as: String = "",
                                 parent_of: List[String] = List.empty,
@@ -1388,6 +1446,8 @@ object ElasticsearchObject {
       "resource" -> JsString(eso.resource.toString),
       "name" -> JsString(eso.name),
       "creator" -> JsString(eso.creator),
+      "creator_name" -> JsString(eso.creator_name),
+      "creator_email" -> JsString(eso.creator_email),
       "created" -> JsString(eso.created.toString),
       "created_as" -> JsString(eso.created_as.toString),
       "parent_of" -> JsArray(eso.parent_of.toSeq.map( (p:String) => Json.toJson(p)): Seq[JsValue]),
@@ -1409,6 +1469,8 @@ object ElasticsearchObject {
       (json \ "resource").as[ResourceRef],
       (json \ "name").as[String],
       (json \ "creator").as[String],
+      (json \ "creator_name").as[String],
+      (json \ "creator_email").as[String],
       (json \ "created").as[Date],
       (json \ "created_as").as[String],
       (json \ "parent_of").as[List[String]],
