@@ -221,16 +221,43 @@ class Files @Inject() (
           }
         }
 
+        val pager: models.Pager = dataset match {
+          case None => Pager(None, None)
+          case Some(dsId) => {
+            datasets.get(new UUID(dsId)) match {
+              case None => Pager(None, None)
+              case Some(ds) => {
+                val lastIndex = ds.files.length - 1
+                val index = ds.files.indexOf(id)
 
-            // Increment view count for file
-            val (view_count, view_date) = files.incrementViews(id, user)
+                // Set prevFile / nextFile, if applicable
+                if (index > 0 && index < lastIndex) {
+                  // Yields UUID of prevFile and nextFile respectively
+                  Pager(Some(ds.files(index + 1)), Some(ds.files(index - 1)))
+                }else if (index == 0 && index < lastIndex) {
+                  // This is the first file in the list, but not the last
+                  Pager(Some(ds.files(index + 1)), None)
+                } else if (index > 0 && index == lastIndex) {
+                  // This is the last file in the list, but not the first
+                  Pager(None, Some(ds.files(index - 1)))
+                } else {
+                  // There is one item on the list, disable paging
+                  Pager(None, None)
+                }
+              }
+            }
+          }
+        }
 
-            val fname = file.filename
-            //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
-            val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
-            //drop all elements left of last divider index
-            val contentTypeEnding = fname.drop(lastDividerIndex)
-            Logger.debug("file name ends in " + contentTypeEnding)
+        // Increment view count for file
+        val (view_count, view_date) = files.incrementViews(id, user)
+
+        val fname = file.filename
+        //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
+        val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
+        //drop all elements left of last divider index
+        val contentTypeEnding = fname.drop(lastDividerIndex)
+        Logger.debug("file name ends in " + contentTypeEnding)
 
         //call FileTransferService to get all possible output formats for this file's content type
 
@@ -239,11 +266,13 @@ class Files @Inject() (
           fileConvertService.getOutputFormats(contentTypeEnding).map(outputFormats =>
               Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+                mds, extractionGroups, outputFormats, space, access, folderHierarchy.reverse.toList,
+                decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date, pager)))
         } else {
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-              mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date)))
+              mds, extractionGroups, None, space, access, folderHierarchy.reverse.toList,
+              decodedSpacesContaining.toList, allDecodedDatasets.toList, view_count, view_date, pager)))
         }
       }
       case None => {
@@ -446,7 +475,7 @@ class Files @Inject() (
                   files.addXMLMetadata(f.id, xmlToJSON)
                   }
 
-                searches.index(f)
+                searches.index(f, None)
 
                 versusService.index(f.id.toString, fileType)
 
@@ -566,7 +595,7 @@ class Files @Inject() (
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              files.addXMLMetadata(f.id, xmlToJSON)
                 }
-              searches.index(f)
+              searches.index(f, None)
 
               versusService.indexFile(f.id, fileType)
 
@@ -1007,7 +1036,7 @@ class Files @Inject() (
               files.addXMLMetadata(id, xmlToJSON)
             }
 
-            searches.index(f)
+            searches.index(f, None)
 
             Ok(f.id.toString)
           }
@@ -1114,8 +1143,8 @@ class Files @Inject() (
                     datasets.addFile(dataset.id, files.get(f.id).get)
 
                     // index dataset and file
-                    searches.index(dataset, true)
-                    searches.index(f)
+                    searches.index(dataset, true, None)
+                    searches.index(f, None)
 
                     // notify extractors that a file has been uploaded and added to a dataset
                     extractionBusService.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)

@@ -61,7 +61,8 @@ class MongoDBFileService @Inject() (
   events: EventService,
   appConfig: AppConfigurationService,
   extractionBusService: ExtractionBusService,
-  searches: SearchService) extends FileService {
+  searches: SearchService,
+  queues: QueueService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -317,15 +318,20 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def indexAll() = {
+  def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
     FileDAO.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(f => {
-      index(new UUID(f.get("_id").toString))
+      index(new UUID(f.get("_id").toString), idx)
     })
   }
 
-  def index(id: UUID) {
-    searches.index(new ResourceRef('file, id))
+  def index(id: UUID, idx: Option[String] = None) {
+    try
+      queues.queue("index_file", new ResourceRef('file, id), new ElasticsearchParameters(index=idx))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing file ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing file ${id.stringify}")
+    }
   }
 
   /**
@@ -631,8 +637,10 @@ class MongoDBFileService @Inject() (
 
   // ---------- Tags related code starts ------------------
   // Input validation is done in api.Files, so no need to check again.
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag] = {
     Logger.debug("Adding tags to file " + id + " : " + tags)
+
+    var tagsAdded : ListBuffer[Tag] = ListBuffer.empty[Tag]
     val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
@@ -647,9 +655,11 @@ class MongoDBFileService @Inject() (
       // Only add tags with new values.
       if (!existingTags.contains(shortTag)) {
         val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        tagsAdded += tagObj
         FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
+    tagsAdded.toList
   }
 
   def removeAllTags(id: UUID) {

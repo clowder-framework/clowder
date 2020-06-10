@@ -31,7 +31,7 @@ class Admin @Inject() (userService: UserService,
    */
   def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
     current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
-    searches.deleteAll
+    searches.deleteAll(_)
 
     Ok(toJson("done"))
   }
@@ -171,7 +171,7 @@ class Admin @Inject() (userService: UserService,
   }
 
   def reindex = ServerAdminAction { implicit request =>
-    val msg = searches.indexAll()
+    val msg = searches.indexAll(None)
     Ok(toJson(Map("status" -> msg)))
   }
 }

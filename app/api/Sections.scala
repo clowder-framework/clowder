@@ -1,15 +1,13 @@
 package api
 
 import javax.inject.{Inject, Singleton}
-
-import models.{Comment, UUID}
+import models.{Comment, ResourceRef, UUID}
 import play.api.Logger
-import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import models.{ResourceRef, UUID, Comment}
+import play.api.libs.json.{JsValue, Json}
 import services._
-import javax.inject.{Inject, Singleton}
-import services._
+
+import scala.collection.mutable.ListBuffer
 
 /**
  * Files sections.
@@ -99,11 +97,17 @@ class Sections @Inject()(
    * Requires that the request body contains a "tags" field of List[String] type.
    */
   def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.section, id)))(parse.json) { implicit request =>
-      val (not_found, error_str) = tags.addTagsHelper(TagCheck_Section, id, request)
+      val (not_found, error_str, tagsAdded) = tags.addTagsHelper(TagCheck_Section, id, request)
 
       // Now the real work: adding the tags.
+      //TODO create List[JsValue] for each tag, then add too response
+      var tagsAddedJsValue : ListBuffer[JsValue] = ListBuffer.empty[JsValue]
+      for (tag <- tagsAdded) {
+        val currentTagJson = Json.obj("id"->tag.id.stringify, "name"->tag.name)
+        tagsAddedJsValue += currentTagJson
+      }
       if ("" == error_str) {
-        Ok(Json.obj("status" -> "success"))
+        Ok(Json.obj("status" -> "success", "tags" ->tagsAddedJsValue.toList))
       } else {
         Logger.error(error_str)
         if (not_found) {

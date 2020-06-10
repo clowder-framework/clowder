@@ -4,29 +4,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 2.0.0-alpha
 
+## 2.0.0-alpha
 
 ### Changed
 - Rabbitmq Plugin replaced with ExtractionBusService, implemented by RabbitmqExtractionBusService
-
+- SpaceSharingPlugin, SpaceCopyPlugin, StagingAreaPlugin replaced with value in application.conf.
+- AdminNotifierPlugin replaced with AdminNotifierService
+- Upgraded Elasticsearch from 2.3.5 to 7.5.2. 
 
 ### Removed
 - Removed geostreams api endpoints, controllers and views
 - Removed postgres plugin
 - ToolManagerPlugin removed. 
+
+## 1.9.0 - 2020-06-01
+**_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
+
+### Added
+- Ability to delete extractor, both from API and GUI.
+  [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
+- Add tags endpoint now returns the added tags.
+  [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+- Ability to search by creator name and email address for all resources.
+- List Spaces/Datasets/Collections created by each user on their User Profile page.
+  [CATS-1056](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1056)
+- Allow user to easily flip through the files in a dataset.
+  [CATS-1058](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1058)
+- Ability to filter files and folders in a dataset when sorting is enabled.
+- Visualize existing relations between datasets on the dataset page. This can be extended other resource types.
+  [CATS-1000](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1000)
+- S3ByteStorageService verifies bucket existence on startup and creates it if it does not exist.
+  [CATS-1057](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1057)
+- Can now switch storage provider in Docker compose, for example S3 storage. See env.example for configuration options.
+- Script to test extractions through the API.
+  
+### Fixed
+- When adding tags to a section of an image, show the new tag without having to refresh the page.
+  [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
+
+### Changed
+- Removed buttons to remove datasets from spaces and collections from certain pages. Moved Remove button for 
+  subcollections to right side of page to be consistent with other pages.
+  [CATS-1055](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1055)
+- Upgraded swagger documentation to openapi v3.0.1.
+
+## 1.8.4 - 2020-05-15
+**_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
+
+### Fixed
+- Fixed a bug related to improper indexing of files in nested subfolders, which could also affect searching by parent dataset.
+
+## 1.8.3 - 2020-04-28
+**_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
+
+### Changed
+- Elasticsearch indexer will now store new metadata fields as strings to avoid unexpected behavior on date fields.
+- When reindexing use a temporary index to reindex while the current one is in use then swap.
+
+### Fixed
+- Ability to delete tags from sections and files on the file page. 
+  [CATS-1046](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1046)
+  [CATS-1042](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1042)
+- User-owned resources will now appear in search results regardless of space permissions. 
+- Updating space ownership for datasets and collections will correctly reindex those resources for searches.
+- Missing index in statistics which would slow down system when inserting download/views.
+
+### Added
+- GitHub Actions to compile and test the code base, create documentation and docker images.
+- Code of Conduct as MD file (will be displayed by GitHub).
+- Templates for Bug, Feature and Pull Request on GitHub.
+
+## 1.8.2 - 2020-02-19
+
+### Fixed
+- Use the passed-in length within S3ByteStorageService.save.
+
+## 1.8.1 - 2020-02-05
+
+### Removed
 - Removed unused RDF libraries. This was probably used by the rdf/xml functionality that was removed a while back but 
 the dependencies were never removed.
 - Removed Jena validation of JSON-LD metadata. It was creating a blank graph and clients couldn't upload metadata when 
 Clowder runs in a location that doesn't not have access to https://clowderframework.org/contexts/metadata.jsonld. 
-- Removed polling of Rabbitmq to collect client information. Extractors now communicate information directly over Rabbitmq.
-
-### Changed
-- SpaceSharingPlugin, SpaceCopyPlugin, StagingAreaPlugin replaced with value in application.conf.
-- AdminNotifierPlugin replaced with AdminNotifierService
-- Upgraded Elasticsearch from 2.3.5 to 7.5.2. 
-
-## Unreleased
 
 ### Added
 - Scripts to migrate files on disk AWS S3.

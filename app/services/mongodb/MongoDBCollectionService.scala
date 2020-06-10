@@ -42,7 +42,8 @@ class MongoDBCollectionService @Inject() (
   events:EventService,
   spaces:SpaceService,
   appConfig: AppConfigurationService,
-  searches: SearchService)  extends CollectionService {
+  searches: SearchService,
+  queues: QueueService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -890,15 +891,20 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def indexAll() = {
+  def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
     Collection.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(c => {
-      index(new UUID(c.get("_id").toString))
+      index(new UUID(c.get("_id").toString), idx)
     })
   }
 
-  def index(id: UUID) {
-    searches.index(new ResourceRef('collection, id))
+  def index(id: UUID, idx: Option[String] = None) {
+    try
+      queues.queue("index_collection", new ResourceRef('collection, id), new ElasticsearchParameters(index=idx))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing collection ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing collection ${id.stringify}")
+    }
   }
 
   def addToSpace(collectionId: UUID, spaceId: UUID): Unit = {

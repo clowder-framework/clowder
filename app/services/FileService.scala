@@ -123,9 +123,9 @@ trait FileService {
    */
   def first(): Option[File]
 
-  def indexAll()
+  def indexAll(idx: Option[String] = None)
   
-  def index(id: UUID)
+  def index(id: UUID, idx: Option[String] = None)
 
   /**
    * Directly insert file into database, for example if the file path is local.
@@ -181,7 +181,7 @@ trait FileService {
 
   def findIntermediates(): List[File]
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag]
 
   def removeAllTags(id: UUID)
 

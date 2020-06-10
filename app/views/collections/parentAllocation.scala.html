@@ -26,6 +26,16 @@
                     } else {
                         @p.childCollectionsCount collections
                     }
+                    <!-- If the user can edit the collection, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+                        @if(Permission.checkPermission(Permission.RemoveResourceFromCollection, ResourceRef(ResourceRef.collection, currentCollection.id))){
+                            | <button onclick="confirmRemoveResourceFromResource('collection','collection','@(p.id)','collection','@(currentCollection.id)','@(currentCollection.name)',true,'@(routes.Collections.collection(currentCollection.id))')"
+                            class="btn btn-link btn-xs" title="Remove the child collection from the collection @p.name">
+                                <span class="glyphicon glyphicon-remove"></span> Remove</button>
+                        } else {
+                            | <div class="inline" title="No permission to delete the child collection">
+                                <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

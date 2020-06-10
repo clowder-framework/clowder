@@ -49,7 +49,8 @@ class MongoDBDatasetService @Inject() (
   metadatas:MetadataService,
   events: EventService,
   appConfig: AppConfigurationService,
-  searches: SearchService) extends DatasetService {
+  searches: SearchService,
+  queues: QueueService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -931,9 +932,10 @@ class MongoDBDatasetService @Inject() (
           false, false, WriteConcern.Safe)
   }
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag] = {
     Logger.debug("Adding tags to dataset " + id + " : " + tags)
     // TODO: Need to check for the owner of the dataset before adding tag
+    var tagsAdded : ListBuffer[Tag] = ListBuffer.empty[Tag]
 
     val dataset = get(id).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
@@ -949,9 +951,11 @@ class MongoDBDatasetService @Inject() (
       // Only add tags with new values.
       if (!existingTags.contains(shortTag)) {
         val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
+        tagsAdded += tagObj
         Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
+    tagsAdded.toList
   }
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean) {
@@ -1300,15 +1304,20 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def indexAll() = {
+  def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
     Dataset.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(d => {
-      index(new UUID(d.get("_id").toString))
+      index(new UUID(d.get("_id").toString), idx)
     })
   }
 
-  def index(id: UUID) {
-    searches.index(new ResourceRef('dataset, id))
+  def index(id: UUID, idx: Option[String] = None) {
+    try
+      queues.queue("index_dataset", new ResourceRef('dataset, id), new ElasticsearchParameters(index=idx))
+    catch {
+      case except: Throwable => Logger.error(s"Error queuing dataset ${id.stringify}: ${except}")
+      case _ => Logger.error(s"Error queuing dataset ${id.stringify}")
+    }
   }
 
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {

@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.0-experimental
 # ----------------------------------------------------------------------
 # BUILD CLOWDER DIST
 # ----------------------------------------------------------------------
@@ -14,10 +13,7 @@ WORKDIR /src
 # install clowder libraries (hopefully cached)
 COPY sbt* /src/
 COPY project /src/project
-RUN --mount=type=cache,target=/root/.ivy2 \
-    --mount=type=cache,target=/root/.m2 \
-    --mount=type=cache,target=/root/.sbt \
-    ./sbt update
+RUN ./sbt update
 
 # environemnt variables
 ENV BRANCH=${BRANCH} \
@@ -30,15 +26,9 @@ COPY lib /src/lib/
 COPY conf /src/conf/
 COPY public /src/public/
 COPY app /src/app/
-RUN --mount=type=cache,target=/root/.ivy2 \
-    --mount=type=cache,target=/root/.m2 \
-    --mount=type=cache,target=/root/.sbt \
-    --mount=type=cache,target=/src/target \
-    rm -rf target/universal/clowder-*.zip clowder clowder-* \
+RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
     && ./sbt dist \
-    && ls -l target/universal/ \
     && unzip -q target/universal/clowder-*.zip \
-    && ls -l \
     && mv clowder-* clowder \
     && mkdir -p clowder/custom clowder/logs
 
@@ -70,14 +60,13 @@ WORKDIR /home/clowder
 VOLUME /home/clowder/custom /home/clowder/data
 
 # copy the build file, this requires sbt dist to be run (will be owned by root)
-COPY --from=clowder-build /src/clowder /home/clowder/
+COPY --chown=0:0 --from=clowder-build /src/clowder /home/clowder/
 COPY docker/clowder.sh docker/healthcheck.sh /home/clowder/
 COPY docker/custom.conf docker/play.plugins /home/clowder/custom/
 
 # Containers should NOT run as root as a good practice
 # numeric id to be compatible with openshift, will run as random userid:0
-RUN mkdir /home/clowder/data && \
-    chgrp -R 0 /home/clowder/ && \
+RUN mkdir -p /home/clowder/data && \
     chmod g+w /home/clowder/logs /home/clowder/data /home/clowder/custom
 USER 10001
 

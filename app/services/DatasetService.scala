@@ -3,10 +3,8 @@ package services
 import java.util.Date
 
 import api.Permission.Permission
-import models._
-import play.api.libs.json.JsValue
 import com.mongodb.casbah.Imports._
-import models.File
+import models.{File, _}
 
 /**
  * Generic dataset service.
@@ -246,10 +244,10 @@ trait DatasetService {
   def selectNewThumbnailFromFiles(datasetId: UUID)
 
   /** Queue all datasets to be indexed in Elasticsearch. */
-  def indexAll()
+  def indexAll(idx: Option[String] = None)
 
   /** Queue a dataset to be indexed in Elasticsearch. */
-  def index(id: UUID)
+  def index(id: UUID, idx: Option[String] = None)
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
@@ -287,7 +285,7 @@ trait DatasetService {
 
   def removeXMLMetadata(id: UUID, fileId: UUID)
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag]
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean)
 

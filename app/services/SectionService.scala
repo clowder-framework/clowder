@@ -3,7 +3,7 @@ package services
 import models.{UUID, Section, Comment, DBResult}
 import play.api.libs.json.JsValue
 import scala.collection.mutable.ArrayBuffer
-import models.User
+import models.{User, Tag}
 
 /**
  * Service to manipulate sections
@@ -16,7 +16,7 @@ trait SectionService {
 
   def get(ids: List[UUID]): DBResult[Section]
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag]
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 

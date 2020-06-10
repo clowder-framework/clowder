@@ -41,7 +41,7 @@ class Comments @Inject()(datasets: DatasetService,
                   if (parent.dataset_id.isDefined) {
                     datasets.get(parent.dataset_id.get) match {
                       case Some(dataset) => {
-                        searches.index(dataset, false)
+                        searches.index(dataset, false, None)
                       }
                       case None => Logger.error("Dataset not found: " + id)
                     }

@@ -225,7 +225,7 @@ class  Datasets @Inject()(
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
                     }
-                  searches.index(d, true)
+                  searches.index(d, true, None)
 
 
                   adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)

@@ -148,6 +148,7 @@ class Spaces @Inject()(spaces: SpaceService,
             spaces.addCollection(collectionId, spaceId, request.user)
             collectionService.addToRootSpaces(collectionId, spaceId)
             events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
+            collectionService.index(collectionId)
             spaces.get(spaceId) match {
               case Some(space) => {
                 if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
@@ -173,6 +174,7 @@ class Spaces @Inject()(spaces: SpaceService,
           } else {
             spaces.addDataset(datasetId, spaceId)
             events.addSourceEvent(request.user,  d.id, d.name, s.id, s.name, EventType.ADD_DATASET_SPACE.toString)
+            datasets.index(datasetId)
             Ok(Json.obj("datasetsInSpace" -> (s.datasetCount + 1).toString))
           }
         }

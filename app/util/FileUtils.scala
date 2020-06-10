@@ -761,7 +761,7 @@ object FileUtils {
 
     // index the file
     if (index) {
-      searches.index(file)
+      searches.index(file, None)
     }
 
     // notify admins a new file was added

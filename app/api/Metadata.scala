@@ -487,36 +487,36 @@ class Metadata @Inject() (
             val metadataId = metadataService.addMetadata(metadata)
             val mdMap = metadata.getExtractionSummary
 
-                attachedTo match {
-                  case Some(resource) => {
-                    resource.resourceType match {
-                      case ResourceRef.dataset => {
-                        datasets.index(resource.id)
-                        //send RabbitMQ message
-                        datasets.get(resource.id) match {
-                          case Some(ds) => {
-                            events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
-                          }
-                        }
-                        extractionBusService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
+            attachedTo match {
+              case Some(resource) => {
+                resource.resourceType match {
+                  case ResourceRef.dataset => {
+                    datasets.index(resource.id)
+                    //send RabbitMQ message
+                    datasets.get(resource.id) match {
+                      case Some(ds) => {
+                        events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
                       }
-                      case ResourceRef.file => {
-                        files.index(resource.id)
-                        //send RabbitMQ message
-                        files.get(resource.id) match {
-                          case Some(f) => {
-                            events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
-                          }
-                        }
-                        extractionBusService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                      }
-                      case _ =>
-                        Logger.error("File resource type not recognized")
                     }
+                    extractionBusService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                   }
-                  case None =>
-                    Logger.error("Metadata missing attachedTo subdocument")
+                  case ResourceRef.file => {
+                    files.index(resource.id)
+                    //send RabbitMQ message
+                    files.get(resource.id) match {
+                      case Some(f) => {
+                        events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
+                      }
+                    }
+                    extractionBusService.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
+                  }
+                  case _ =>
+                    Logger.error("File resource type not recognized")
                 }
+              }
+              case None =>
+                Logger.error("Metadata missing attachedTo subdocument")
+            }
 
             // FIXME: the API should return JSON, not raw HTML
             // Emit our newly-created metadata as both a new card and a new table row

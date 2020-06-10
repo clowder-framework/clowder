@@ -104,17 +104,23 @@ if __name__ == '__main__':
                             except Exception as ex:
                                 # cannnot access the file by loader_id, either permission or not exist.
                                 print_to_logfile(f, "missing", collection, record_id, loader_id, "")
-                            s3bucket.upload(loader_id, s3_path)
+                                continue
+                            uploadS3 = s3bucket.upload(loader_id, s3_path)
                             # update record loader to 'services.s3.S3ByteStorageService'
                             update_data = dict()
                             update_data['loader'] = 'services.s3.S3ByteStorageService'
                             update_data['loader_id'] = s3_path
+                            if update_data['loader_id'].startswith('/'):
+                                update_data['loader_id'] = update_data['loader_id'][1:]
                             status = db[collection].update_one({'_id': ObjectId(record_id)}, {"$set": update_data})
                             if status.modified_count != 1:
                                 raise Exception("failed to update db %d" % record_id)
 
                             nsuccess += 1
-                            print_to_logfile(f, "success", collection, record_id, loader_id, s3_path)
+                            if uploadS3:
+                                print_to_logfile(f, "success", collection, record_id, loader_id, s3_path)
+                            else:
+                                print_to_logfile(f, "notupload", collection, record_id, loader_id, s3_path)
                         else:
                             num_not_disk_storage += 1
                     except Exception as ex:

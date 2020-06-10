@@ -342,8 +342,8 @@ class Files @Inject()(
             val metadataId = metadataService.addMetadata(metadata)
             val mdMap = metadata.getExtractionSummary
 
-                //send RabbitMQ message
-                extractionBusService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
+            //send RabbitMQ message
+            extractionBusService.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
             events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
 
@@ -1032,7 +1032,7 @@ class Files @Inject()(
    */
   def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
 
-    val (not_found, error_str) = tags.addTagsHelper(obj_type, id, request)
+    val (not_found, error_str, tagsAdded) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
       case Some(file) => {
         events.addObjectEvent(request.user, file.id, file.filename, EventType.ADD_TAGS_FILE.toString)
@@ -1508,7 +1508,7 @@ class Files @Inject()(
 
   def index(id: UUID) {
     files.get(id) match {
-      case Some(file) => searches.index(file)
+      case Some(file) => searches.index(file, None)
       case None => Logger.error("File not found: " + id)
     }
   }
