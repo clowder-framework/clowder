@@ -683,8 +683,8 @@ class Files @Inject() (
                           range match { case (start,end) =>
 
                         inputStream.skip(start)
-                        import play.api.mvc.{ ResponseHeader, SimpleResult }
-                        SimpleResult(
+                        import play.api.mvc.{ ResponseHeader, Result }
+                        Result(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
                               CONNECTION -> "keep-alive",
@@ -838,8 +838,8 @@ class Files @Inject() (
 
 
                 inputStream.skip(start)
-                import play.api.mvc.{ ResponseHeader, SimpleResult }
-                SimpleResult(
+                import play.api.mvc.{ ResponseHeader, Result }
+                Result(
                   header = ResponseHeader(PARTIAL_CONTENT,
                     Map(
                       CONNECTION -> "keep-alive",

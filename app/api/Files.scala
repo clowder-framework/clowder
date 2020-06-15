@@ -18,7 +18,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.mvc.{Action, ResponseHeader, Result, SimpleResult}
+import play.api.mvc.{Action, ResponseHeader, Result, Result}
 import services._
 
 import scala.collection.mutable.ListBuffer
@@ -119,7 +119,7 @@ class Files @Inject()(
                     range match {
                       case (start, end) =>
                         inputStream.skip(start)
-                        SimpleResult(
+                        Result(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
                               CONNECTION -> "keep-alive",
@@ -180,7 +180,7 @@ class Files @Inject()(
               range match {
                 case (start, end) =>
                   inputStream.skip(start)
-                  SimpleResult(
+                  Result(
                     header = ResponseHeader(PARTIAL_CONTENT,
                       Map(
                         CONNECTION -> "keep-alive",
@@ -1024,13 +1024,13 @@ class Files @Inject()(
    *      id:       the id in the original addTags call
    *      request:  the request in the original addTags call
    *  Return type:
-   *      play.api.mvc.SimpleResult[JsValue]
+   *      play.api.mvc.Result[JsValue]
    *      in the form of Ok, NotFound and BadRequest
    *      where: Ok contains the JsObject: "status" -> "success", the other two contain a JsString,
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): Result = {
 
     val (not_found, error_str, tagsAdded) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
@@ -1051,7 +1051,7 @@ class Files @Inject()(
     }
   }
 
-  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): Result = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
     files.get(id) match {

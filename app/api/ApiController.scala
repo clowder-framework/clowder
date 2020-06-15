@@ -29,7 +29,7 @@ trait ApiController extends Controller {
 
   /** get user if logged in */
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
@@ -43,7 +43,7 @@ trait ApiController extends Controller {
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
   def PrivateServerAction = new ActionBuilder[UserRequest] {
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
@@ -57,7 +57,7 @@ trait ApiController extends Controller {
 
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
@@ -70,7 +70,7 @@ trait ApiController extends Controller {
 
   /** call code iff user is a server admin */
   def ServerAdminAction = new ActionBuilder[UserRequest] {
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
@@ -83,7 +83,7 @@ trait ApiController extends Controller {
 
   /** call code iff user has right permission for resource */
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
@@ -106,7 +106,7 @@ trait ApiController extends Controller {
    * code around but we don't want users to have access to it.
    */
   def DisabledAction = new ActionBuilder[UserRequest] {
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       Future.successful(Unauthorized("Disabled"))
     }
   }

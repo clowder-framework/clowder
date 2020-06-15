@@ -1,17 +1,17 @@
 // Comment to get more information during initialization
-logLevel := Level.Warn
+//logLevel := Level.Warn
 
 // The Typesafe repository 
-resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
+//resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.6")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.12")
 
 // Create dependency graphs
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
+//addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
 
 // Native packager
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.8.0-RC2")
+//addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.8.0-RC2")
 
 // Show all licenses
 //addSbtPlugin("com.typesafe.sbt" % "sbt-license-report" % "1.0.0")

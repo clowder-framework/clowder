@@ -1308,7 +1308,7 @@ class  Datasets @Inject()(
  *      id:       the id in the original addTags call
  *      request:  the request in the original addTags call
  *  Return type:
- *      play.api.mvc.SimpleResult[JsValue]
+ *      play.api.mvc.Result[JsValue]
  *      in the form of Ok, NotFound and BadRequest
  *      where: Ok contains the JsObject: "status" -> "success", the other two contain a JsString,
  *      which contains the cause of the error, such as "No 'tags' specified", and
