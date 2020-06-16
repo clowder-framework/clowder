@@ -728,6 +728,7 @@ class Files @Inject()(
       "content-type" -> file.contentType,
       "date-created" -> file.uploadDate.toString(),
       "size" -> file.length.toString,
+      "thumbnail" -> file.thumbnail_id.orNull,
       "authorId" -> file.author.id.stringify,
       "status" -> file.status)
 
@@ -735,16 +736,9 @@ class Files @Inject()(
     val jsonMap = file.loader match {
       case "services.filesystem.DiskByteStorageService" => {
         if (serverAdmin)
-          Map(
-            "id" -> file.id.toString,
-            "filename" -> file.filename,
-            "filepath" -> file.loader_id,
-            "filedescription" -> file.description,
-            "content-type" -> file.contentType,
-            "date-created" -> file.uploadDate.toString(),
-            "size" -> file.length.toString,
-            "authorId" -> file.author.id.stringify,
-            "status" -> file.status)
+          defaultMap ++ Map(
+            "filepath" -> file.loader_id
+          )
         else
           defaultMap
       }
@@ -752,18 +746,11 @@ class Files @Inject()(
         if (serverAdmin) {
           val bucketName = configuration.getString(S3ByteStorageService.BucketName).getOrElse("")
           val serviceEndpoint = configuration.getString(S3ByteStorageService.ServiceEndpoint).getOrElse("")
-          Map(
-            "id" -> file.id.toString,
-            "filename" -> file.filename,
+          defaultMap ++ Map(
             "service-endpoint" -> serviceEndpoint,
             "bucket-name" -> bucketName,
-            "object-key" -> file.loader_id,
-            "filedescription" -> file.description,
-            "content-type" -> file.contentType,
-            "date-created" -> file.uploadDate.toString(),
-            "size" -> file.length.toString,
-            "authorId" -> file.author.id.stringify,
-            "status" -> file.status)
+            "object-key" -> file.loader_id
+          )
         } else
           defaultMap
       }
