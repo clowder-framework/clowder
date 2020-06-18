@@ -4,7 +4,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
     scalaVersion := "2.11.12"
 
-    TwirlKeys.useOldParser in Compile := true
+//    TwirlKeys.useOldParser in Compile := true
 
     libraryDependencies ++= Seq(
       guice,
