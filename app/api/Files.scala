@@ -1,33 +1,23 @@
 package api
 
-import scala.annotation.tailrec
-import java.io.FileInputStream
-import java.net.{URL, URLEncoder}
-
-import javax.inject.Inject
-import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
-import com.mongodb.casbah.Imports._
-import controllers.Previewers
-import jsonutils.JsonUtil
-import models._
-import play.api.Logger
-import play.api.Play.{configuration, current}
-import play.api.i18n.Messages
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.Json._
-import play.api.libs.json._
-import play.api.mvc.{Action, ResponseHeader, Result, Result}
-import services._
-
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
-import java.text.SimpleDateFormat
+import java.net.URL
 import java.util.Date
 
-import controllers.Utils
+import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
+import com.mongodb.casbah.Imports._
+import controllers.{Previewers, Utils}
+import javax.inject.Inject
+import jsonutils.JsonUtil
+import models._
+import play.api.i18n.Messages
+import play.api.libs.json.Json._
+import play.api.libs.json._
+import play.api.mvc.{ResponseHeader, Result}
+import play.api.{Configuration, Logger}
+import services._
 import services.s3.S3ByteStorageService
+
+import scala.annotation.tailrec
 
 /**
  * Json API for files.
@@ -53,7 +43,8 @@ class Files @Inject()(
   adminsNotifierService: AdminsNotifierService,
   extractionBusService: ExtractionBusService,
   versusService: VersusService,
-  searches: SearchService) extends ApiController {
+  searches: SearchService,
+  configuration: Configuration) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -649,7 +640,7 @@ class Files @Inject()(
       }
     }
     files.index(id)
-    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+    configuration.get[String]("userdfSPARQLStore") match {
       case "yes" => {
         files.setUserMetadataWasModified(id, true)
       }
@@ -689,8 +680,8 @@ class Files @Inject()(
       }
       case "services.s3.S3ByteStorageService" => {
         if (serverAdmin) {
-          val bucketName = configuration.getString(S3ByteStorageService.BucketName).getOrElse("")
-          val serviceEndpoint = configuration.getString(S3ByteStorageService.ServiceEndpoint).getOrElse("")
+          val bucketName = configuration.get[String](S3ByteStorageService.BucketName)
+          val serviceEndpoint = configuration.get[String](S3ByteStorageService.ServiceEndpoint)
           Map(
             "id" -> file.id.toString,
             "filename" -> file.filename,
@@ -1585,7 +1576,7 @@ class Files @Inject()(
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
         val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        val num = configuration.get[Int]("number_of_recommendations")
         userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
       case None => {
@@ -1721,7 +1712,7 @@ class Files @Inject()(
     if (0 != datasetslists.length) {
       datasetId = datasetslists.head.id
     }
-    val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
+    val extractorId = configuration.get[String]("archiveExtractorId")
     extractionBusService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
       datasetId, newFlags, apiKey, user)
     Logger.info("Sent archive request for file " + id)

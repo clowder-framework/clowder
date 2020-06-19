@@ -1,32 +1,25 @@
 package api
 
-import java.io.{ByteArrayInputStream, InputStream, ByteArrayOutputStream}
-import java.security.{DigestInputStream, MessageDigest}
-import java.text.SimpleDateFormat
-import java.util.zip.{ZipEntry, ZipOutputStream, Deflater}
+import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
+import java.util.zip.{Deflater, ZipOutputStream}
+import java.util.{Calendar, Date}
 
 import Iterators.RootCollectionIterator
-import _root_.util.JSONLD
 import api.Permission.Permission
-import org.apache.commons.codec.binary.Hex
-import play.api.Logger
-import play.api.Play.current
-import models._
-import play.api.libs.iteratee.Enumerator
-import services._
-import play.api.libs.json._
-import play.api.libs.json.{JsObject, JsValue}
-import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject}
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Future, ExecutionContext}
-import play.api.libs.concurrent.Execution.Implicits._
-import scala.util.parsing.json.JSONArray
-import scala.util.{Try, Success, Failure}
-import java.util.{Calendar, Date}
 import controllers.Utils
+import javax.inject.{Inject, Singleton}
+import models._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json.toJson
+import play.api.libs.json.{JsObject, JsValue, _}
+import play.api.{Configuration, Logger}
+import services._
 
 import scala.collection.immutable.List
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -43,7 +36,8 @@ class Collections @Inject() (datasets: DatasetService,
                              folders : FolderService,
                              files: FileService,
                              metadataService : MetadataService,
-                             adminsNotifierService: AdminsNotifierService) extends ApiController {
+                             adminsNotifierService: AdminsNotifierService,
+                             configuration: Configuration) extends ApiController {
 
   def createCollection() = PermissionAction(Permission.CreateCollection) (parse.json) { implicit request =>
     Logger.debug("Creating new collection")
@@ -89,7 +83,7 @@ class Collections @Inject() (datasets: DatasetService,
           case Some(collection) => {
             datasets.get(datasetId) match {
               case Some(dataset) => {
-                if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")) {
+                if (configuration.get[Boolean]("addDatasetToCollectionSpace")) {
                   collections.addDatasetToCollectionSpaces(collection, dataset, request.user)
                 }
                 events.addSourceEvent(request.user, dataset.id, dataset.name, collection.id, collection.name, EventType.ATTACH_DATASET_COLLECTION.toString)
@@ -151,7 +145,7 @@ class Collections @Inject() (datasets: DatasetService,
   def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        val useTrash = configuration.get[Boolean]("useTrash")
         if (!useTrash || (useTrash && collection.trash)){
           events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collectionId)
@@ -242,7 +236,7 @@ class Collections @Inject() (datasets: DatasetService,
     implicit val user = request.user
     var listAll = false
     var collectionList: List[Collection] = List.empty
-    if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
+    if(configuration.get[Boolean]("enable_sharing")) {
       listAll = true
     } else {
       datasets.get(datasetId) match {
@@ -273,7 +267,7 @@ class Collections @Inject() (datasets: DatasetService,
     val allCollections = listCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false,
       request.user, request.user.fold(false)(_.superAdminMode), exact)
     val possibleNewParents = allCollections.filter(c =>
-      if(play.api.Play.current.configuration.getBoolean("enable_sharing").getOrElse(false)) {
+      if(configuration.get[Boolean]("enable_sharing")) {
         (!selfAndAncestors.contains(c) && !descendants.contains(c))
       } else {
         collections.get(UUID(currentCollectionId)) match {
@@ -509,7 +503,7 @@ class Collections @Inject() (datasets: DatasetService,
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
         val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        val num = configuration.get[Int]("number_of_recommendations")
         userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
       case None => {
@@ -761,7 +755,7 @@ class Collections @Inject() (datasets: DatasetService,
     implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadCollectionBagit").getOrElse(true)
+        val bagit = configuration.get[Boolean]("downloadCollectionBagit")
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
         Ok.chunked(enumeratorFromCollection(collection,1024*1024, compression,bagit,user)).withHeaders(

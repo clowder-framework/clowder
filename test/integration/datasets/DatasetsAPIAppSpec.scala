@@ -6,6 +6,7 @@ import play.api.libs.json.{Json, _}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.{Application, Logger, Play}
+import services.DI
 
 import scala.io.Source
 
@@ -18,8 +19,8 @@ import scala.io.Source
 
 //@DoNotDiscover
 class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
-
-  lazy val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  val configuration = DI.injector.getInstance(classOf[play.api.Configuration])
+  lazy val secretKey = configuration.get[String]("commKey")
   lazy val workingDir = System.getProperty("user.dir")
 
   var datasetId: String = ""

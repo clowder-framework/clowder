@@ -4,27 +4,27 @@ import java.io._
 import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
-import api.Permission.Permission
 import java.util.zip._
-import javax.inject.{Inject, Singleton}
+import java.util.{Calendar, Date}
+
+import _root_.util._
+import api.Permission.Permission
 import controllers.{Previewers, Utils}
+import javax.inject.{Inject, Singleton}
 import jsonutils.JsonUtil
 import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
-import play.api.Logger
-import play.api.Play.{configuration, current}
 import play.api.i18n.Messages
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
 import play.api.libs.json.Json._
+import play.api.libs.json._
 import play.api.mvc.AnyContent
+import play.api.{Configuration, Logger}
 import services._
-import _root_.util._
-import scala.concurrent.{ExecutionContext, Future}
+
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -50,7 +50,8 @@ class  Datasets @Inject()(
   appConfig: AppConfigurationService,
   adminsNotifierService: AdminsNotifierService,
   searches: SearchService,
-  extractionBusService: ExtractionBusService) extends ApiController {
+  extractionBusService: ExtractionBusService,
+  configuration: Configuration) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -68,7 +69,7 @@ class  Datasets @Inject()(
   }
 
   def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-    if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
+    if (configuration.get[Boolean]("datasetFileWithinSpace")) {
       Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     } else {
       Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
@@ -256,7 +257,7 @@ class  Datasets @Inject()(
 
       val description = (request.body \ "description").asOpt[String].getOrElse("")
       val access =
-        if(play.Play.application().configuration().getBoolean("verifySpaces")){
+        if(configuration.get[Boolean]("verifySpaces")){
            //verifySpaces == true && access set to trial if not specified otherwise
            (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.TRIAL.toString)
         } else {
@@ -1662,7 +1663,7 @@ class  Datasets @Inject()(
   def detachAndDeleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match{
       case Some(dataset) => {
-        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        val useTrash = configuration.get[Boolean]("useTrash")
         if (!useTrash || (useTrash && dataset.trash)) {
           for (f <- dataset.files) {
             detachFileHelper(dataset.id, f, dataset, request.user)
@@ -1705,7 +1706,7 @@ class  Datasets @Inject()(
   def deleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(ds) => {
-        val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
+        val useTrash = configuration.get[Boolean]("useTrash")
         if (!useTrash || (useTrash && ds.trash)){
           deleteDatasetHelper(id, request)
         } else {
@@ -1928,7 +1929,7 @@ class  Datasets @Inject()(
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
         val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        val num = configuration.get[Int]("number_of_recommendations")
         userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
       case None => {
@@ -2330,7 +2331,7 @@ class  Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = configuration.get[Boolean]("downloadDatasetBagit")
 
         // Increment download count if tracking is enabled
         if (tracking)

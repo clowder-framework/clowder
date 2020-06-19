@@ -9,7 +9,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{Response, WS}
 import play.api.mvc.Request
-import play.api.{ Logger}
+import play.api.{Configuration, Logger}
 
 import scala.collection.immutable.Map
 import scala.collection.mutable.ListBuffer
@@ -25,16 +25,15 @@ class VersusService @Inject() (
                               datasets: DatasetService,
                               sections: SectionService,
                               queries: MultimediaQueryService,
-                              sectionIndexInfo: SectionIndexInfoService
-
+                              sectionIndexInfo: SectionIndexInfoService,
+                              configuration: Configuration
                               ) {
 
   /*
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
   def extract(fileid: UUID)(implicit request: Request[Any]): Future[Response] = {
-    val configuration = play.api.Play.configuration
-    val key = "?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.get[String]("commKey")
     val https = controllers.Utils.https(request)
     val fileUrl = api.routes.Files.download(fileid).absoluteURL(https) + key
     val host = configuration.getString("versus.host").getOrElse("")
@@ -71,8 +70,7 @@ class VersusService @Inject() (
    */
   def getAdapters(): Future[Response] = {
     Logger.trace("VersusPlugin.getAdapters")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val adapterUrl = host + "/adapters"
     val adapterList: Future[Response] = WS.url(adapterUrl).withHeaders("Accept" -> "application/json").get()
 
@@ -84,8 +82,7 @@ class VersusService @Inject() (
    */
   def getExtractors(): Future[Response] = {
     Logger.trace("VersusPlugin.getExtractors")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val extractorUrl = host + "/extractors"
     val extractorList: Future[Response] = WS.url(extractorUrl).withHeaders("Accept" -> "application/json").get()
 
@@ -95,8 +92,7 @@ class VersusService @Inject() (
    * Gets the list of measures available in Versus web server
    */
   def getMeasures(): Future[Response] = {
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val measureUrl = host + "/measures"
     val measureList: Future[Response] = WS.url(measureUrl).withHeaders("Accept" -> "application/json").get()
 
@@ -109,8 +105,7 @@ class VersusService @Inject() (
    */
   def getIndexers(): Future[Response] = {
     Logger.trace("VersusPlugin.getIndexers")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val indexerUrl = host + "/indexers"
     val indexerList: Future[Response] = WS.url(indexerUrl).withHeaders("Accept" -> "application/json").get()
 
@@ -123,8 +118,7 @@ class VersusService @Inject() (
    */
   def getIndexes(): Future[Response] = {
     Logger.trace("VersusPlugin.getIndexes")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
     var k = 0
     val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
@@ -145,8 +139,7 @@ class VersusService @Inject() (
   def getIndexesAsFutureList(): Future[List[models.VersusIndex]] = {
     Logger.trace("VersusPlugin: Getting indexes as a future list")
 
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
     val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     indexList.map {
@@ -170,8 +163,7 @@ class VersusService @Inject() (
   def getIndexesForType(typeToSearch: String, sectionsSelected: List[String]): Future[List[models.VersusIndex]] = {
     Logger.trace("VP getIndexesForType")
     //get all the indexes from versus
-    val configuration = play.api.Play.configuration;
-    val host = configuration.getString("versus.host").getOrElse("");
+    val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes";
 
     var matchingIndexes = new ListBuffer[models.VersusIndex];
@@ -236,8 +228,7 @@ class VersusService @Inject() (
    */
   def getIndexesForContentTypeAsFutureList(contentType: String): Future[List[models.VersusIndex]] = {
     Logger.trace("VersusPlugin,getIndexesForContentTypeAsFutureList")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
 
     val futureResponse: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
@@ -268,8 +259,7 @@ class VersusService @Inject() (
     //will search mongo for given id, if found - will delete, if not found - will do nothing
     val res = sectionIndexInfo.delete(indexId)
 
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val deleteurl = host + "/indexes/" + indexId
     var deleteResponse: Future[Response] = WS.url(deleteurl).delete()
 
@@ -282,8 +272,7 @@ class VersusService @Inject() (
     //Also remove entries from mongo sectionIndexInfo table
     sectionIndexInfo.deleteAll()
 
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
     val response: Future[Response] = WS.url(indexurl).delete()
     response
@@ -295,8 +284,8 @@ class VersusService @Inject() (
    */
   def createIndex(adapter: String, extractor: String, measure: String, indexer: String): Future[UUID] = {
     Logger.trace("VersusPlugin: createIndex")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+
+    val host = configuration.get[String]("versus.host")
     val indexId = WS.url(host + "/indexes").post(
       Map("Adapter" -> Seq(adapter),
         "Extractor" -> Seq(extractor),
@@ -316,8 +305,8 @@ class VersusService @Inject() (
   def indexPreview(previewId: UUID, fileType: String)(implicit request: Request[Any]) {
     //called from /app/api/Indexes.scala->index()  which is called from extractors,
     //(e.g. cinemetrics extractor ->uploadShot, or from face extractor, etc)        
-    val configuration = play.api.Play.configuration
-    val key = "?key=" + configuration.getString("commKey").get
+
+    val key = "?key=" + configuration.get[String]("commKey")
     val https = controllers.Utils.https(request)
     val prevURL = api.routes.Previews.download(previewId).absoluteURL(https) + key
     val host = configuration.getString("versus.host").getOrElse("")
@@ -344,11 +333,10 @@ class VersusService @Inject() (
    */
   def indexFile(fileId: UUID, fileType: String)(implicit request: Request[Any]) {
     //called from /app/controllers/Files.scala->upload()
-    val configuration = play.api.Play.configuration
 
     //fileURL will be used by versus comparison resource to get file's bytes
     //need 'blob' in fileURL
-    val key = "?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.get[String]("commKey")
     val https = controllers.Utils.https(request)
     val fileURL = api.routes.Files.download(fileId).absoluteURL(https) + key
     //indexes that have TYPE parameter contain sections, and indexes that don't have TYPE parameter contain whole files.
@@ -378,8 +366,7 @@ class VersusService @Inject() (
    */
   def addToIndex(url: String, index: models.VersusIndex, fileType: String) {
     Logger.trace("add to index , url = " + url)
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
 
     val mimetypeStr = index.MIMEtype.split("/")(0)
     //fileType = image/png or image/jpeg; MIMEtype = image/* or */*
@@ -402,8 +389,7 @@ class VersusService @Inject() (
     //
     Logger.trace("VersusPlugin: removeFromIndexes for fileId = " + fileId)
 
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
 
     files.get(fileId) match {
       case Some(file) => {
@@ -447,8 +433,7 @@ class VersusService @Inject() (
    */
 
   def buildIndex(indexId: UUID): Future[Response] = {
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val buildurl = host + "/indexes/" + indexId.stringify + "/build"
     var buildResponse: Future[Response] = WS.url(buildurl).post("")
 
@@ -467,8 +452,7 @@ class VersusService @Inject() (
     //called when multimedia search -> find similar is clicked    
     Logger.trace("VersusPlugin - queryIndexForExistingFile  - file id = " + inputFileId)
 
-    val configuration = play.api.Play.configuration
-    val key = "?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.get[String]("commKey")
     val https = controllers.Utils.https(request)
     val queryStr = api.routes.Files.download(inputFileId).absoluteURL(https) + key
 
@@ -480,8 +464,7 @@ class VersusService @Inject() (
    */
   def queryIndexForNewFile(newFileId: UUID, indexId: String)(implicit request: Request[Any]): Future[List[PreviewFilesSearchResult]] = {
     Logger.trace("queryIndexForNewFile")
-    val configuration = play.api.Play.configuration
-    val key = "?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.get[String]("commKey")
     val https = controllers.Utils.https(request)
     val queryStr = api.routes.Files.downloadquery(newFileId).absoluteURL(https) + key
     queryIndex(queryStr, indexId)
@@ -540,8 +523,7 @@ class VersusService @Inject() (
 
   def queryIndex(inputFileURL: String, indexId: String): Future[List[PreviewFilesSearchResult]] = {
     Logger.trace("VersusPlugin.queryIndex")
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
     val queryIndexUrl = host + "/indexes/" + indexId + "/query"
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query
     //will call IndexResource.queryindex on Versus side
@@ -598,8 +580,7 @@ class VersusService @Inject() (
    */
   def queryIndexSorted(inputFileId: String, indexId: String)(implicit request: Request[Any]): Future[scala.collection.immutable.HashMap[String, Double]] = {
     Logger.trace("VersusPlugin.queryIndexSorted, indexId = " + indexId)
-    val configuration = play.api.Play.configuration
-    val host = configuration.getString("versus.host").getOrElse("")
+    val host = configuration.get[String]("versus.host")
 
     //if searching for file already uploaded previously, use api/files
     // val queryStr = client + "/api/files/" + inputFileId + "/blob?key=" + configuration.getString("commKey").get

@@ -5,22 +5,24 @@ import java.net.URLDecoder
 
 import javax.inject.Inject
 import api.Permission._
-import api.{ UserRequest, Permission }
+import api.{Permission, UserRequest}
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.i18n.Messages
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import services._
-import _root_.util.{ Formatters, RequiredFieldsConfig, Publications }
+import _root_.util.{Formatters, Publications, RequiredFieldsConfig}
 import play.api.Play._
+
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ Future, Await }
-import play.api.mvc.{ MultipartFormData, Request, Action, Results }
+import scala.concurrent.{Await, Future}
+import play.api.mvc.{Action, MultipartFormData, Request, Results}
 import play.api.libs.ws._
+
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
 
@@ -40,7 +42,8 @@ class CurationObjects @Inject() (
   userService: UserService,
   metadatas: MetadataService,
   extractionBusService: ExtractionBusService,
-  contextService: ContextLDService) extends SecuredController {
+  contextService: ContextLDService,
+  configuration: Configuration) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc., parsed from conf/messages
@@ -573,7 +576,7 @@ class CurationObjects @Inject() (
           "Number of Datasets" -> Json.toJson(fileIds.length),
           "Number of Collections" -> Json.toJson(c.datasets.length)))
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-    val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$", "")
+    val endpoint = configuration.get[String]("matchmaker.uri").replaceAll("/$", "")
     val futureResponse = WS.url(endpoint).post(valuetoSend)
     Logger.debug("Value to send matchmaker: " + valuetoSend)
     var jsonResponse: play.api.libs.json.JsValue = new JsArray()
@@ -657,7 +660,7 @@ class CurationObjects @Inject() (
             case Some(s) => repository = s
             case None => Ok(views.html.spaces.curationSubmitted(c, "No Repository Provided", success))
           }
-          val key = play.api.Play.configuration.getString("commKey").getOrElse("")
+          val key = configuration.get[String]("commKey")
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
           val dsLicense = c.datasets(0).licenseData.m_licenseType match {
@@ -794,7 +797,7 @@ class CurationObjects @Inject() (
                   "Number of Collections" -> Json.toJson(c.datasets.length))),
               "Rights Holder" -> Json.toJson(rightsholder),
               "Publication Callback" -> Json.toJson(api.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) + "?key=" + key),
-              "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))))
+              "Environment Key" -> Json.toJson(configuration.get[String]("commKey"))))
           Logger.debug("Submitting request for publication: " + valuetoSend)
 
           implicit val context = scala.concurrent.ExecutionContext.Implicits.global
@@ -828,7 +831,7 @@ class CurationObjects @Inject() (
 
       case Some(c) => {
 
-        val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "") + "/urn:uuid:" + id.toString()
+        val endpoint = configuration.get[String]("stagingarea.uri").replaceAll("/$", "") + "/urn:uuid:" + id.toString()
         Logger.debug(endpoint)
         val futureResponse = WS.url(endpoint).get()
 
@@ -886,7 +889,7 @@ class CurationObjects @Inject() (
     implicit val user = request.user
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
 
-    val endpoint = play.Play.application().configuration().getString("publishData.list.uri").replaceAll("/$", "")
+    val endpoint = configuration.get[String]("publishData.list.uri").replaceAll("/$", "")
     Logger.debug(endpoint)
     val futureResponse = WS.url(endpoint).get()
     var publishDataList: List[Map[String, String]] = List.empty
