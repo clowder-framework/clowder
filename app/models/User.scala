@@ -1,13 +1,13 @@
 package models
 
-import play.api.Play.current
+
 import java.security.MessageDigest
 import java.util.Date
 
-import play.api.Play.configuration
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.Json
 import securesocial.core._
-import services.AppConfiguration
+import _root_.services.DI
+
 
 object UserStatus extends Enumeration {
 	  type UserStatus = Value
@@ -18,7 +18,7 @@ object UserStatus extends Enumeration {
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
  */
-trait User extends Identity {
+trait User extends GenericProfile {
   def id: UUID
   def status: UserStatus.Value
   def profile: Option[Profile]
@@ -42,7 +42,8 @@ trait User extends Identity {
    * @return Full gravatar URL for the user's profile picture
    */
   def getAvatarUrl(size: Integer = 256): String = {
-    val default_gravatar = configuration.getString("default_gravatar").getOrElse("")
+    val configuration = DI.injector.getInstance(classOf[play.api.Configuration])
+    val default_gravatar = configuration.get[String]("default_gravatar")
 
     if (profile.isDefined && profile.get.avatarUrl.isDefined) {
       profile.get.avatarUrl.get
@@ -79,7 +80,7 @@ trait User extends Identity {
 
   def format(paren: Boolean): String = {
     val e = email.fold(" ")(x => s""" <${x}> """)
-    val x = (identityId.providerId) match {
+    val x = (providerId) match {
       case ("userpass") => s"""${fullName}${e}[Local Account]"""
       case (provider) => s"""${fullName}${e}[${provider.capitalize}]"""
     }
@@ -91,12 +92,17 @@ trait User extends Identity {
   }
 }
 
+///** This object used to be available in a previous version of Secure Social. To minimize the code changes we are creating
+// * a version here instead of just adding `providerId` and `userId` as individual entries in `User` */
+//case class IdentityId(providerId: String, userId: String) extends UserProfile
+
 object User {
   def anonymous = new ClowderUser(UUID("000000000000000000000000"),
-    new IdentityId("anonymous", ""),
-    firstName="Anonymous",
-    lastName="User",
-    fullName="Anonymous User",
+    providerId = "",
+    userId = "anonymous",
+    firstName= Some("Anonymous"),
+    lastName= Some("User"),
+    fullName= Some("Anonymous User"),
     email=None,
     authMethod=AuthenticationMethod("SystemUser"),
     status=UserStatus.Admin,
@@ -106,18 +112,17 @@ object User {
 
 case class MiniUser(
    id: UUID,
-   fullName: String,
+   fullName: Option[String],
    avatarURL: String,
    email: Option[String])
 
-case class ClowderUser(
+case class ClowderUser (
   id: UUID = UUID.generate(),
-
-  // securesocial identity
-  identityId: IdentityId,
-  firstName: String,
-  lastName: String,
-  fullName: String,
+  providerId: String,
+  userId: String,
+  firstName: Option[String],
+  lastName: Option[String],
+  fullName: Option[String],
   email: Option[String],
   authMethod: AuthenticationMethod,
   avatarUrl: Option[String] = None,
@@ -185,10 +190,10 @@ case class UserTermsOfServices(
 case class UserApiKey(
   name: String,
   key: String,
-  identityId: IdentityId
+  providerId: String,
+  userId: String
 )
 
 object UserApiKey {
-  implicit val identityIdFormat = Json.format[IdentityId]
   implicit val userApiKeyFormat = Json.format[UserApiKey]
 }
