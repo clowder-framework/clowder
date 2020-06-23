@@ -2070,7 +2070,7 @@ class  Datasets @Inject()(
     */
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8,
                             compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean,
-                            user : Option[User], fileIDs: Option[List[UUID]])
+                            user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val dataFolder = if (bagit) "data/" else ""
@@ -2086,8 +2086,10 @@ class  Datasets @Inject()(
         listFilesInFolder(fids, List.empty, dataFolder, filenameMap, inputFiles)
       }
       case None => {
-        // TODO: folderId match ...
-        listFilesInFolder(dataset.files, dataset.folders, dataFolder, filenameMap, inputFiles)
+        folderId match {
+          case Some(fid) => listFilesInFolder(List.empty, List(fid), dataFolder, filenameMap, inputFiles)
+          case None => listFilesInFolder(dataset.files, dataset.folders, dataFolder, filenameMap, inputFiles)
+        }
       }
     }
 
@@ -2426,7 +2428,7 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, user, None)).withHeaders(
+        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, user, None, None)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2450,10 +2452,40 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, Some(fileIDs))).withHeaders(
+        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, Some(fileIDs), None)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " (Partial).zip", request.headers.get("user-agent").getOrElse("")))
         )
+      }
+      // If the dataset wasn't found by ID
+      case None => {
+        NotFound
+      }
+    }
+  }
+
+  def downloadFolder(id: UUID, folderId: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+
+        // Increment download count for each file in folder
+        folders.get(folderId) match {
+          case Some(fo) => {
+            fo.files.foreach(fid => files.incrementDownloads(fid, user))
+
+            // Use custom enumerator to create the zip file on the fly
+            // Use a 1MB in memory byte array
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, None, Some(folderId))).withHeaders(
+              CONTENT_TYPE -> "application/zip",
+              CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ( "+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
+            )
+          }
+          case None => NotFound
+        }
+
+
       }
       // If the dataset wasn't found by ID
       case None => {
