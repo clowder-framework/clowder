@@ -89,7 +89,7 @@
                     //'<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
                     //'<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     // TODO: Support for downloading by folder and marked list will be implemented in the future
-                    //'<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
+                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
                     '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
                     '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
                     '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
@@ -160,12 +160,17 @@
     }
 
     function showOnlyMarked() {
-        confirmDeleteMarked('@dataset.id');
+        console.log("Not implemented.")
     }
 
+    // Download selected files as Zip
     function downloadMarked() {
-        // TODO: Downloading selected files as Zip - look at downloading folders tasks
-        console.log("Not implemented.")
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            window.open(jsRoutes.api.Datasets.downloadPartial('@dataset.id', selected).url, '_blank');
+        } else {
+            notify("No files selected.")
+        }
     }
 
     function confirmTagMarked() {
