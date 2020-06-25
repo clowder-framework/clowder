@@ -129,13 +129,8 @@ class Extractions @Inject()(
   }
 
   /**
-   * *
-   * For DTS service use case: suppose a user posts a file to the extractions API, no extractors and its corresponding queues in the Rabbitmq are available. Now she checks the status
-   * for extractors, i.e., if any new extractor has subscribed to the Rabbitmq. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
-   * it, this time will just uses the file id to submit the request again.
-   * This API takes file id and notifies the user that the request has been sent for processing.
-   * This may change depending on our our design on DTS extraction service.
    *
+   * Given a file id (UUID), submit this file for extraction
    */
   def submitExtraction(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
     current.plugin[RabbitmqPlugin] match {
@@ -597,9 +592,10 @@ class Extractions @Inject()(
             // check that the file is ready for processing
             if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
               (request.body \ "extractor").asOpt[String] match {
-                case Some(extractorId) =>
+                case Some(extractorId) => {
                   p.cancelPendingSubmission(file_id, extractorId, msg_id)
-                    Ok(Json.obj("status" -> "OK"))
+                  Ok(Json.obj("status" -> "OK"))
+                }
                 case None =>
                   BadRequest(toJson(Map("request" -> "extractor field not found")))
               }
@@ -623,9 +619,10 @@ class Extractions @Inject()(
         datasets.get(ds_id) match {
           case Some(ds) => {
             (request.body \ "extractor").asOpt[String] match {
-              case Some(extractorId) =>
+              case Some(extractorId) => {
                 p.cancelPendingSubmission(ds_id, extractorId, msg_id)
                 Ok(Json.obj("status" -> "OK"))
+              }
               case None => BadRequest(toJson(Map("request" -> "extractor field not found")))
             }
           }

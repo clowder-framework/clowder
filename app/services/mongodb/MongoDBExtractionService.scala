@@ -31,6 +31,10 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.findAll().limit(max).toList
   }
 
+  def get(msgId: UUID): Option[Extraction] = {
+    Extraction.findOne(MongoDBObject("id" -> new ObjectId(msgId.stringify)))
+  }
+
   def findById(resource: ResourceRef): List[Extraction] = {
     Extraction.find(MongoDBObject("file_id" -> new ObjectId(resource.id.stringify))).toList
   }
@@ -77,16 +81,26 @@ class MongoDBExtractionService extends ExtractionService {
 
   // Return a mapping of ExtractorName -> (FirstMsgTime, LatestMsgTime, LatestMsg, ListOfAllMessages)
   def groupByType(extraction_list: List[Extraction]): Map[String, ExtractionGroup] = {
+    // map by extractor-type, then by job_id
     var groupings = Map[String, ExtractionGroup]()
 
     for (e <- extraction_list) {
+
+      // Update timestamp and groupings
       if (groupings.contains(e.extractor_id)) {
         // Update entry in the Map
         val format = new java.text.SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy")
         var grp_start = format.parse(groupings(e.extractor_id).firstMsgTime)
         var grp_end = format.parse(groupings(e.extractor_id).latestMsgTime)
         var grp_endmsg = groupings(e.extractor_id).latestMsg
-        var grp_list = groupings(e.extractor_id).allMsgs
+
+        // For each job_id, keep track of all extraction events for that job
+        var grp_map = groupings(e.extractor_id).allMsgs
+        if(grp_map.contains(e.job_id)) {
+          grp_map(e.job_id) ++ List(e)
+        } else {
+          grp_map + (e.job_id -> List(e))
+        }
 
         // Use start time for time groupings as backup because end is frequently empty
         e.start match {
@@ -107,7 +121,7 @@ class MongoDBExtractionService extends ExtractionService {
         e.end match {
           case Some(n) => {
             if (grp_end == "N/A" || n.after(grp_end)) {
-              Logger.info("updating latest msg: "+e.status)
+              Logger.info("updating latest msg: " + e.status)
               grp_end = n
               grp_endmsg = e.status
             }
@@ -118,7 +132,7 @@ class MongoDBExtractionService extends ExtractionService {
           }
           case None => {}
         }
-        groupings = groupings + (e.extractor_id -> ExtractionGroup(grp_start.toString, grp_end.toString, grp_endmsg, grp_list :+ e))
+        groupings = groupings + (e.extractor_id -> ExtractionGroup(grp_start.toString, grp_end.toString, grp_endmsg, grp_map))
 
       } else {
         // Create new entry in the Map
@@ -130,11 +144,10 @@ class MongoDBExtractionService extends ExtractionService {
           case Some(e) => e.toString
           case None => start
         }
-        groupings = groupings + (e.extractor_id -> ExtractionGroup(start, end, e.status, List(e)))
+        groupings = groupings + (e.extractor_id -> ExtractionGroup(start, end, e.status, Map(e.job_id -> List(e))))
       }
 
     }
-
     groupings
   }
 }

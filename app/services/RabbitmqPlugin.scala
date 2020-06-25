@@ -46,6 +46,7 @@ import scala.util.Try
 case class ExtractorMessage(
   msgid: UUID,
   fileId: UUID,
+  jobId: UUID,
   notifies: List[String],
   intermediateId: UUID,
   host: String,
@@ -430,15 +431,16 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param file_id the UUID of file
     * @param extractor_id the extractor queue name to be submitted
     */
-  def postSubmissionEven(file_id: UUID, extractor_id: String): UUID = {
+  def postSubmissionEven(file_id: UUID, extractor_id: String): (UUID, UUID) = {
     val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
 
     import java.text.SimpleDateFormat
     val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
     val submittedDateConvert = Some(new java.util.Date())
-    extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "SUBMITTED", submittedDateConvert, None)) match {
-      case Some(objectid) => UUID(objectid.toString)
-      case None => UUID("")
+    val job_id = UUID.generate()
+    extractions.insert(Extraction(UUID.generate(), file_id, job_id, extractor_id, "SUBMITTED", submittedDateConvert, None)) match {
+      case Some(objectid) => (UUID(objectid.toString), job_id)
+      case None => (UUID(""), job_id)
     }
   }
 
@@ -479,9 +481,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
           val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-          val id = postSubmissionEven(file.id, queue)
+          val (id, job_id) = postSubmissionEven(file.id, queue)
 
-          val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString,
+          val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString,
             d.id, "", apiKey, routingKey, source, "created", None)
           extractWorkQueue(msg)
         }
@@ -504,8 +506,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
     val notifies = getEmailNotificationEmailList(requestAPIKey)
-    val id = postSubmissionEven(file.id, routingKey)
-    val msg = ExtractorMessage(id, file.id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
+    val (id, job_id) = postSubmissionEven(file.id, routingKey)
+    val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
   }
@@ -529,9 +531,9 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
       val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-      val id = postSubmissionEven(file.id, extractorId)
+      val (id, job_id) = postSubmissionEven(file.id, extractorId)
 
-      val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+      val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "added", Some(target))
       extractWorkQueue(msg)
     }
@@ -556,11 +558,11 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
       val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-      val id = postSubmissionEven(dataset.id, extractorId)
+      val (id, job_id) = postSubmissionEven(dataset.id, extractorId)
 
       var totalsize: Long = 0
       filelist.map(f => totalsize += f.length)
-      val msg = ExtractorMessage(id, dataset.id, notifies, dataset.id, host, extractorId, msgExtra, totalsize.toString, dataset.id,
+      val msg = ExtractorMessage(id, dataset.id, job_id, notifies, dataset.id, host, extractorId, msgExtra, totalsize.toString, dataset.id,
         "", apiKey, routingKey, source, "added", None)
       extractWorkQueue(msg)
     }
@@ -583,8 +585,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
 
       val notifies = getEmailNotificationEmailList(requestAPIKey)
-      val id = postSubmissionEven(file.id, extractorId)
-      val msg = ExtractorMessage(id, file.id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+      val (id, job_id) = postSubmissionEven(file.id, extractorId)
+      val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
         "", apiKey, routingKey, source, "removed", Some(target))
       extractWorkQueue(msg)
     }
@@ -608,8 +610,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
 
     val notifies = getEmailNotificationEmailList(requestAPIKey)
-    val id = postSubmissionEven(file.id, queue)
-    val msg = ExtractorMessage(id, file.id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
+    val (id, job_id) = postSubmissionEven(file.id, queue)
+    val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
   }
@@ -630,8 +632,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
 
     val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-    val id = postSubmissionEven(datasetId, queue)
-    val msg = ExtractorMessage(id, datasetId, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
+    val (id, job_id) = postSubmissionEven(datasetId, queue)
+    val msg = ExtractorMessage(id, datasetId, job_id, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
   }
@@ -661,8 +663,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-              val id = postSubmissionEven(resourceRef.id, extractorId)
-              val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+              val (id, job_id) = postSubmissionEven(resourceRef.id, extractorId)
+              val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "added", Some(target))
               extractWorkQueue(msg)
             }
@@ -678,8 +680,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-            val id = postSubmissionEven(resourceRef.id, extractorId)
-            val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+            val (id, job_id) = postSubmissionEven(resourceRef.id, extractorId)
+            val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "added", Some(target))
             extractWorkQueue(msg)
           }
@@ -713,8 +715,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
               val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
               val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-              val id = postSubmissionEven(resourceRef.id, extractorId)
-              val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+              val (id, job_id) = postSubmissionEven(resourceRef.id, extractorId)
+              val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
                 "", apiKey, routingKey, source, "removed", Some(target))
               extractWorkQueue(msg)
             }
@@ -730,8 +732,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
             val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
             val target = Entity(resourceRef, None, JsObject(Seq.empty))
 
-            val id = postSubmissionEven(resourceRef.id, extractorId)
-            val msg = ExtractorMessage(id, resourceRef.id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+            val (id, job_id) = postSubmissionEven(resourceRef.id, extractorId)
+            val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
               "", apiKey, routingKey, source, "removed", Some(target))
             extractWorkQueue(msg)
           }
@@ -758,8 +760,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val notifies = getEmailNotificationEmailList(requestAPIKey)
     val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
 
-    val id = postSubmissionEven(tempFileId, routingKey)
-    val msg = ExtractorMessage(id, tempFileId, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
+    val (id, job_id) = postSubmissionEven(tempFileId, routingKey)
+    val msg = ExtractorMessage(id, tempFileId, job_id, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
       "", apiKey, routingKey, source, "created", None)
     extractWorkQueue(msg)
   }
@@ -778,8 +780,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
     val notifies = getEmailNotificationEmailList(requestAPIKey)
 
-    val id = postSubmissionEven(sectionId, routingKey)
-    val msg = ExtractorMessage(id, sectionId, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
+    val (id, job_id) = postSubmissionEven(sectionId, routingKey)
+    val msg = ExtractorMessage(id, sectionId, job_id, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
       "", apiKey, routingKey, source, "added", Some(target))
     extractWorkQueue(msg)
   }
@@ -954,7 +956,16 @@ class PendingRequestCancellationActor(exchange: String, connection: Option[Conne
       val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
       val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
       var startDate = Some(new java.util.Date())
-      extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Requested", startDate, None))
+      val job_id: UUID = extractions.get(msg_id) match {
+        case Some(extraction) => {
+          extraction.job_id
+        }
+        case None => {
+          Logger.warn("Failed to lookup jobId.. no extraction message found with id=" + msg_id)
+          UUID("")
+        }
+      }
+      extractions.insert(Extraction(UUID.generate(), id, job_id, queueName, "Cancel Requested", startDate, None))
 
       val channel: Channel = connection.get.createChannel()
       //1. connect to the target rabbitmq queue
@@ -1022,9 +1033,9 @@ class PendingRequestCancellationActor(exchange: String, connection: Option[Conne
       // update extraction event
       startDate = Some(new java.util.Date())
       if(foundCancellationRequest) {
-        extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Success", startDate, None))
+        extractions.insert(Extraction(UUID.generate(), id, job_id, queueName, "Cancel Success", startDate, None))
       } else {
-        extractions.insert(Extraction(UUID.generate(), id, queueName, "Cancel Failed", startDate, None))
+        extractions.insert(Extraction(UUID.generate(), id, job_id, queueName, "Cancel Failed", startDate, None))
       }
 
       try {
@@ -1071,7 +1082,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
   val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
 
   def receive = {
-    case ExtractorMessage(msgid, fileid, notifies, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
+    case ExtractorMessage(msgid, fileid, jobid, notifies, intermediateId, host, key, metadata, fileSize, datasetId, flags, secretKey, routingKey,
     source, activity, target) => {
       var theDatasetId = ""
       if (datasetId != null)
@@ -1092,6 +1103,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
         "notifies" -> Json.toJson(notifies),
         "msgid" -> Json.toJson(msgid.stringify),
         "id" -> Json.toJson(fileid.stringify),
+        "jobid" -> Json.toJson(jobid.stringify),
         "intermediateId" -> Json.toJson(intermediateId.stringify),
         "fileSize" -> Json.toJson(fileSize),
         "host" -> Json.toJson(actualHost),
@@ -1125,7 +1137,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
         .deliveryMode(2)
         .build()
       try {
-        Logger.debug(s"Sending $msg to $key")
+        Logger.debug(s"[$jobid] Sending $msg to $key")
         channel.basicPublish("", key, true, basicProperties, msg.toString().getBytes())
       } catch {
         case e: Exception => {
@@ -1169,6 +1181,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       Logger.debug("Received extractor status: " + statusBody)
       val json = Json.parse(statusBody)
       val file_id = UUID((json \ "file_id").as[String])
+      val job_id = UUID((json \ "job_id").as[String])
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
       val startDate = (json \ "start").asOpt[String].map(x =>
@@ -1180,11 +1193,11 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       //       other detailed status updates to logs when we start implementing
       //       distributed logging
       if (updatedStatus.contains("DONE")) {
-        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "DONE", startDate, None))
+        extractions.insert(Extraction(UUID.generate(), file_id, job_id, extractor_id, "DONE", startDate, None))
       } else {
         val commKey = "key=" + play.Play.application().configuration().getString("commKey")
         val parsed_status = status.replace(commKey, "key=secretKey")
-        extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, parsed_status, startDate, None))
+        extractions.insert(Extraction(UUID.generate(), file_id, job_id, extractor_id, parsed_status, startDate, None))
       }
       Logger.debug("updatedStatus=" + updatedStatus + " status=" + status + " startDate=" + startDate)
       models.ExtractionInfoSetUp.updateDTSRequests(file_id, extractor_id)
@@ -1240,3 +1253,4 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
 /** RabbitMQ Bindings retrieve from management API **/
 case class Binding(source: String, vhost: String, destination: String, destination_type: String, routing_key: String,
                    arguments: JsObject, properties_key: String)
+
