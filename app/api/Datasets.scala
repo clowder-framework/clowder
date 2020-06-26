@@ -2065,6 +2065,10 @@ class  Datasets @Inject()(
     * @param dataset dataset from which to get teh files
     * @param chunkSize chunk size in memory in which to buffer the stream
     * @param compression java built in compression value. Use 0 for no compression.
+    * @param bagit whether or not to include bagit structures in zip
+    * @param user an optional user to include in metadata
+    * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
+    * @param folderId a folder UUID in the dataset to include (i.e. folder download)
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
@@ -2440,6 +2444,7 @@ class  Datasets @Inject()(
     }
   }
 
+  // Takes dataset ID and a comma-separated string of file UUIDs in the dataset and streams just those files as a zip
   def downloadPartial(id: UUID, fileList: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
@@ -2479,7 +2484,7 @@ class  Datasets @Inject()(
             // Use a 1MB in memory byte array
             Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, None, Some(folderId))).withHeaders(
               CONTENT_TYPE -> "application/zip",
-              CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ( "+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
+              CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ("+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
             )
           }
           case None => NotFound
