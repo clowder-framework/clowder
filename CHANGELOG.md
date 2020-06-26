@@ -4,37 +4,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
-**_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
-of these changes a reindex of Elasticsearch is required. This can be started by an admin either from GUI or through the API.**
+## [Unreleased]
+
+### Fixed
+- Return thumbnail as part of the file information.
+  [#8](https://github.com/clowder-framework/clowder/issues/8)
+
+## 1.9.0 - 2020-06-01
+**_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
 
 ### Added
-- Can now switch storage provider to for example S3 storage. See also env.example for configuration options.
-- Script to test extractions through the API.
-- Ability to delete extractor, both from api and GUI.
+- Ability to delete extractor, both from API and GUI.
   [CATS-1044](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1044)
-- API add tags endpoint now returns the added tags.
+- Add tags endpoint now returns the added tags.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 - Ability to search by creator name and email address for all resources.
-- List Spaces/Datasets/Collections created by each user on their User Profile.
+- List Spaces/Datasets/Collections created by each user on their User Profile page.
   [CATS-1056](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1056)
 - Allow user to easily flip through the files in a dataset.
   [CATS-1058](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1058)
-- Ability to filter the files and folders in a dataset when sorting is enabled.
+- Ability to filter files and folders in a dataset when sorting is enabled.
 - Visualize existing relations between datasets on the dataset page. This can be extended other resource types.
   [CATS-1000](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1000)
-- S3ByteStorageService should verify bucket existence on startup and create if it does not exist.
+- S3ByteStorageService verifies bucket existence on startup and creates it if it does not exist.
   [CATS-1057](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1057)
+- Can now switch storage provider in Docker compose, for example S3 storage. See env.example for configuration options.
+- Script to test extractions through the API.
   
 ### Fixed
 - When adding tags to a section of an image, show the new tag without having to refresh the page.
   [CATS-1053](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1053)
 
 ### Changed
-- Removed buttons to remove datasets from spaces and collections from certain pages where it was creating confusion for 
-  the user. Users thought it was a dataset delete button instead. Also moved Remove button for subcollections to right 
-  side of page to be consistent with other widgets.
+- Removed buttons to remove datasets from spaces and collections from certain pages. Moved Remove button for 
+  subcollections to right side of page to be consistent with other pages.
   [CATS-1055](https://opensource.ncsa.illinois.edu/jira/browse/CATS-1055)
+- Upgraded swagger documentation to openapi v3.0.1.
 
 ## 1.8.4 - 2020-05-15
 **_Warning:_ This update modifies how information is stored in Elasticsearch for text based searching. To take advantage 
