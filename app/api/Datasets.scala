@@ -2469,6 +2469,7 @@ class  Datasets @Inject()(
     }
   }
 
+  // Takes dataset ID and a folder ID in that dataset and streams just that folder and sub-folders as a zip
   def downloadFolder(id: UUID, folderId: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
