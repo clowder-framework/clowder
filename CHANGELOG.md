@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Ability to mark multiple files in a dataset and perform bulk operations (download, tag, delete) on them at once.
+
 ### Fixed
 - Return thumbnail as part of the file information.
   [#8](https://github.com/clowder-framework/clowder/issues/8)
