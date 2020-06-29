@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 1.10.0 - 2020-06-30
 
 ### Added
 - Ability to mark multiple files in a dataset and perform bulk operations (download, tag, delete) on them at once.
@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Return thumbnail as part of the file information.
   [#8](https://github.com/clowder-framework/clowder/issues/8)
+- Datasets layout on space page would sometimes have overlapping tiles.
 
 ## 1.9.0 - 2020-06-01
 **_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
