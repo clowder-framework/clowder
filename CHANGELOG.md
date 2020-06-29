@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Ability to mark multiple files in a dataset and perform bulk operations (download, tag, delete) on them at once.
+
+### Fixed
+- Return thumbnail as part of the file information.
+  [#8](https://github.com/clowder-framework/clowder/issues/8)
+
 ## 1.9.0 - 2020-06-01
 **_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
 of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**

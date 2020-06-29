@@ -4,15 +4,12 @@
 
 <div class="row" id="tile-view">
     <div class="col-md-12">
-
         @filesList.map { file =>
             @if(parent.resourceType == ResourceRef.folder) {
                 @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, Some(parent.id.stringify), showMove)
             } else {
                 @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, None,showMove)
             }
-
         }
-
     </div>
 </div>
