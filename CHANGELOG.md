@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Datasets layout on space page would sometimes have overlapping tiles.
 
 ### Changed
-- init script with users would return with exit code -1 if user exists, now returns exit code 0
+- mongo-init script with users would return with exit code -1 if user exists, now returns exit code 0.
 
 ## 1.9.0 - 2020-06-01
 
