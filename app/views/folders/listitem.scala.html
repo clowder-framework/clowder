@@ -26,7 +26,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-12 col-lg-12 col-sm-12">
+                    <div class="col-md-8 col-lg-8 col-sm-8">
                         <ul class="list-unstyled">
                             <li>
                                 <span class="glyphicon glyphicon-folder-close"></span> @folder.folders.length
@@ -44,6 +44,21 @@
                             </li>
                         </ul>
                     </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <ul class="list-unstyled">
+                        @if(Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, folder.parentDatasetId))) {
+                            <li>
+                                <button id="downloadButton" onclick="window.open(jsRoutes.api.Datasets.downloadFolder('@folder.parentDatasetId', '@folder.id').url, '_blank');" class="btn btn-link" title="Download and enjoy this file.">
+                                    <span class="glyphicon glyphicon-save"></span> Download
+                                </button>
+                            </li>
+                        } else {
+                            <li>
+                                <div class="inline" title="No permission to download the folder">
+                                    <button disabled class="btn btn-link"><span class="glyphicon glyphicon-save"></span> Download</button>
+                                </div>
+                            </li>
+                        }
                 </div>
             </div>
         </div>

@@ -128,18 +128,21 @@
     <script>
         function activateOne(id) {
             // initialize Masonry
-            var items = $("#" + id); 
-            if(items.length) { 
-            	var $container = $("#" + id).masonry();
-	            // layout Masonry again after all images have loaded
-    	        imagesLoaded( '#masonry', function() {
-        	        $container.masonry({
-            	    itemSelector: '.post-box',
-                	columnWidth: '.post-box',
-                	transitionDuration: 4
-                	});
-            	});
+            var match = $("#" + id);
+            if (!match) {
+                return;
             }
+
+            match.masonry();
+
+            // layout Masonry again after all images have loaded
+            imagesLoaded( '.tiled-image', function() {
+                match.masonry({
+                    itemSelector: '.tiled-image',
+                    columnWidth: '.post-box',
+                    transitionDuration: 4
+                });
+            });
         }
 
         function activate(){
