@@ -468,15 +468,16 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param dataset the dataset the file belongs to
     * @param host the Clowder host URL for sharing extractors across instances
     */
-  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String]): Unit = {
+  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String]): Option[UUID] = {
     val routingKey = exchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
     val extraInfo = Map("filename" -> file.filename)
     val apiKey = requestAPIKey.getOrElse(globalAPIKey)
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
     Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    var jobId: Option[UUID] = None
     dataset match {
-      case Some(d) =>
-        getQueues(d, routingKey, file.contentType).foreach{ queue =>
+      case Some(d) => {
+        getQueues(d, routingKey, file.contentType).foreach { queue =>
           val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
 
           val notifies = getEmailNotificationEmailList(requestAPIKey)
@@ -486,9 +487,14 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString,
             d.id, "", apiKey, routingKey, source, "created", None)
           extractWorkQueue(msg)
+          jobId = Option(job_id)
         }
-      case None =>
+        jobId
+      }
+      case None => {
         Logger.debug("RabbitMQPlugin: No dataset associated with this file")
+        None
+      }
     }
   }
 
@@ -603,7 +609,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param newFlags
     */
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
-    datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): Unit = {
+    datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): UUID = {
     Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
@@ -614,6 +620,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
+    job_id
   }
 
   /**
@@ -625,7 +632,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param newFlags
     */
   def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String,
-    requestAPIKey: Option[String], user: Option[User]): Unit = {
+    requestAPIKey: Option[String], user: Option[User]): UUID = {
     Logger.debug(s"Sending message $queue from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
     val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
@@ -636,6 +643,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val msg = ExtractorMessage(id, datasetId, job_id, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
+    job_id
   }
 
 
