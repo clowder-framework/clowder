@@ -71,13 +71,14 @@ trait MongoDBQueueService {
   def getNextQueuedAction(): Option[QueuedAction] = {
     try {
       val response = Queue.findOne(new MongoDBObject)
-      return Queue.findOne(new MongoDBObject)
+      respone
     } catch {
       case e: MongoException => {
         // TODO: Will generate an error message every 5ms while Mongo is inaccessible...
         //Logger.error("Problem connecting to MongoDB queue.")
-        return None
+        None
       }
+      case _ => None
     }
 
   }
