@@ -5,6 +5,7 @@ import java.util.Date
 import akka.actor.Cancellable
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
+import com.mongodb.MongoException
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{File, _}
 import org.bson.types.ObjectId
@@ -68,7 +69,17 @@ trait MongoDBQueueService {
 
   // get next entry from queue
   def getNextQueuedAction(): Option[QueuedAction] = {
-    return Queue.findOne(new MongoDBObject)
+    try {
+      val response = Queue.findOne(new MongoDBObject)
+      return Queue.findOne(new MongoDBObject)
+    } catch {
+      case e: MongoException => {
+        // TODO: Will generate an error message every 5ms while Mongo is inaccessible...
+        //Logger.error("Problem connecting to MongoDB queue.")
+        return None
+      }
+    }
+
   }
 
   // start pool to being processing queue actions
