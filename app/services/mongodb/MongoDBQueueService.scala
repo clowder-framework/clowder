@@ -71,7 +71,7 @@ trait MongoDBQueueService {
   def getNextQueuedAction(): Option[QueuedAction] = {
     try {
       val response = Queue.findOne(new MongoDBObject)
-      respone
+      response
     } catch {
       case e: MongoException => {
         // TODO: Will generate an error message every 5ms while Mongo is inaccessible...
