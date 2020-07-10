@@ -26,6 +26,7 @@ trait MongoDBQueueService {
   val consumer: String
   var disabledNotified: Boolean = false
   var queueTimer: Cancellable = null
+  var queueFetchError: Boolean = false
 
   // check whether necessary conditions are met (e.g. the plugin is enabled)
   def enabled(): Boolean = {
@@ -71,13 +72,18 @@ trait MongoDBQueueService {
   def getNextQueuedAction(): Option[QueuedAction] = {
     try {
       val response = Queue.findOne(new MongoDBObject)
+      if (queueFetchError) {
+        Logger.info("MongoDB has successfully reconnected.")
+        queueFetchError = false
+      }
       response
     } catch {
       case e: MongoException => {
-        // TODO: Will generate an error message every 5ms while Mongo is inaccessible...
-        // TODO: Make this happen only once, with a flag, then Logger.info when it comes back
-        // TODO: Have a critical vs. noncritical Mongo call that auto wraps this? Lots of calls dont catch
-        Logger.error("Problem connecting to MongoDB queue.")
+        // Only log an error once on failed fetch, instead of repeating every 5ms
+        if (!queueFetchError) {
+          Logger.error("Problem connecting to MongoDB queue.")
+          queueFetchError = true
+        }
         None
       }
       case _ => None
