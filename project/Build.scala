@@ -17,10 +17,9 @@ object ApplicationBuild extends Build {
   val jvm = "1.7"
 
   def appVersion: String = {
-    if (gitBranchName == "master") {
-      getVersion
-    } else {
-      s"${getVersion}-SNAPSHOT"
+    gitBranchName match {
+      case "master" => getVersion
+      case _ => s"${getVersion}-develop"
     }
   }
 
