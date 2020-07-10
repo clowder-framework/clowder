@@ -75,7 +75,9 @@ trait MongoDBQueueService {
     } catch {
       case e: MongoException => {
         // TODO: Will generate an error message every 5ms while Mongo is inaccessible...
-        //Logger.error("Problem connecting to MongoDB queue.")
+        // TODO: Make this happen only once, with a flag, then Logger.info when it comes back
+        // TODO: Have a critical vs. noncritical Mongo call that auto wraps this? Lots of calls dont catch
+        Logger.error("Problem connecting to MongoDB queue.")
         None
       }
       case _ => None
