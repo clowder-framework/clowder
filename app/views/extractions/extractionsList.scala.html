@@ -44,21 +44,6 @@
                                 }
                             }
                             </tbody>
-                            @**<tbody>
-                                @for((job_id, e2) <- extractions(e).allMsgs) {
-                                    <tr>
-                                        <td width="81%"><b>@e2.start</b><br/>
-                                            @e2.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
-                                            @if(e2.status == "SUBMITTED") {
-                                                <a class="btn btn-link" id='@(e2.id)' onclick="cancelSubmission('@(e2.file_id)', '@(e2.id)', '@(e2.extractor_id)', '@(extractType)')">
-                                                    Cancel
-                                                </a>
-                                            }
-                                        </td>
-                                    </tr>
-
-                                }
-                            </tbody>*@
                         </table>
                     </td>
                 </tr>
