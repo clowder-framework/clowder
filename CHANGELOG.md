@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Return thumbnail as part of the file information.
   [#8](https://github.com/clowder-framework/clowder/issues/8)
+- Don't call server side twice when rendering list of files on dataset page.
+  [#7](https://github.com/clowder-framework/clowder/issues/7)
+
 
 ## 1.9.0 - 2020-06-01
 **_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
