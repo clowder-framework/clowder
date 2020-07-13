@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Queue threads (e.g. indexer) will no longer crash permanently if the queue connection is lost temporarily.
 - Docker images would not build correctly.
 - If monitor HTTP server would crash, it would not restart correctly.
+- Don't call server side twice when rendering list of files on dataset page.
+  [#7](https://github.com/clowder-framework/clowder/issues/7)
 
 ### Added
 - Artifacts can be uploaded using SCP to remote server.
