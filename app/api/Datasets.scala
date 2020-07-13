@@ -2096,8 +2096,9 @@ class  Datasets @Inject()(
       }
     }
 
-    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
-    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
+    // Keep two MD5 checksum lists, one for dataset files and one for BagIt files
+    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest]
+    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest]
 
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream(byteArrayOutputStream)
@@ -2107,7 +2108,7 @@ class  Datasets @Inject()(
     var totalBytes = 0L
     var level = "dataset"
     var file_type = "metadata"
-    var file_index = 0 //count for files
+    var file_index = 0
 
     // Begin input stream with dataset info file
     var is = addDatasetInfoToZip(dataFolder, dataset, zip)
@@ -2170,26 +2171,31 @@ class  Datasets @Inject()(
                   }
                 }
                 case ("bag", "bagit.txt") => {
-                  is = addBagItTextToZip(totalBytes,filenameMap.size,zip,dataset,user)
+                  // BagIt "header" data e.g. date, author
+                  is = addBagItTextToZip(totalBytes, filenameMap.size, zip, dataset, user)
                   is = addMD5Entry("bagit.txt", is, md5Files)
                   file_type = "bag-info.txt"
                 }
                 case ("bag", "bag-info.txt") => {
+                  // BagIt version & encoding
                   is = addBagInfoToZip(zip)
                   is = addMD5Entry("bag-info.txt", is, md5Files)
                   file_type = "manifest-md5.txt"
                 }
                 case ("bag", "manifest-md5.txt") => {
-                  is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest],zip)
+                  // List of all dataset (i.e. not BagIt) files and their checksums
+                  is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest], zip)
                   is = addMD5Entry("manifest-md5.txt", is, md5Files)
                   file_type = "datacite.xml"
                 }
                 case ("bag", "datacite.xml") => {
-                  is = addBagitMetadataToZip(zip)
+                  // RDA-recommended DataCite xml file
+                  is = addDataCiteMetadataToZip(zip)
                   file_type = "tagmanifest-md5.txt"
                 }
                 case ("bag", "tagmanifest-md5.txt") => {
-                  is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest],zip)
+                  // List of all BagIt, xml or non-dataset files and their checksums
+                  is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest], zip)
                   is = addMD5Entry("tagmanifest-md5.txt", is, md5Files)
                   val (level, file_type) = ("done", "none")
                 }
@@ -2210,22 +2216,18 @@ class  Datasets @Inject()(
               Some(byteArrayOutputStream.toByteArray)
             }
           }
-          if (level == "file" || level == "dataset"){
+
+          if (level == "file" || level == "dataset")
             totalBytes += bytesRead
-          }
-          // reset temporary byte array
           byteArrayOutputStream.reset()
           Future.successful(chunk)
         }
-        case None => {
-          Future.successful(None)
-        }
+        case None => Future.successful(None)
       }
     })(pec)
   }
 
-  private def addMD5Entry(name: String, is: Option[InputStream],
-                          md5HashMap: scala.collection.mutable.HashMap[String, MessageDigest]) = {
+  private def addMD5Entry(name: String, is: Option[InputStream], md5HashMap: scala.collection.mutable.HashMap[String, MessageDigest]) = {
     val md5 = MessageDigest.getInstance("MD5")
     md5HashMap.put(name, md5)
     Some(new DigestInputStream(is.get, md5))
@@ -2314,32 +2316,36 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[models.User]) = {
+  // BagIt "header" data e.g. date, author
+  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, contact: Option[User]) = {
     zip.putNextEntry(new ZipEntry("bagit.txt"))
-    val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
-    val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
-    val baggingSize = "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
-    val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
-    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
-    val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
-    var s:String = ""
-    if (user.isDefined) {
-      val contactName = "Contact-Name: " + user.get.fullName + "\n"
-      val contactEmail = "Contact-Email: " + user.get.email.getOrElse("") + "\n"
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
-    } else {
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+senderIdentifier+senderDescription
+    var s = ""
+    s += "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
+    s += "Bagging-Date: " + (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime) + "\n"
+    s += "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
+    s += "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
+    s += "Internal-Sender-Identifier: " + dataset.id + "\n"
+    s += "Internal-Sender-Description: " + dataset.description + "\n"
+    contact match {
+      case Some(u) => {
+        s += "Contact-Name: " + user.get.fullName + "\n"
+        s += "Contact-Email: " + user.get.email.getOrElse("") + "\n"
+      }
+      case None => {}
     }
-
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  // BagIt version & encoding
   private def addBagInfoToZip(zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("bag-info.txt"))
-    val s : String = "BagIt-Version: 0.97\n"+"Tag-File-Character-Encoding: UTF-8\n"
+    val s = ""
+    s += "BagIt-Version: 0.97\n"
+    s += "Tag-File-Character-Encoding: UTF-8\n"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  // List of all dataset (i.e. not BagIt) files and their checksums
   private def addManifestMD5ToZip(md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("manifest-md5.txt"))
     var s : String = ""
@@ -2352,6 +2358,16 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  private def addDataCiteMetadataToZip(zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry("metadata/datacite.xml"))
+    var s = ""
+    s += "<resource xsi:schemaLocation=\"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd\">\n"
+    
+
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // List of all BagIt, xml or non-dataset files and their checksums
   private def addTagManifestMD5ToZip(md5map : Map[String,MessageDigest],zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("tagmanifest-md5.txt"))
     var s : String = ""
@@ -2364,11 +2380,6 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addBagitMetadataToZip(zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry("metadata/datacite.xml"))
-    var s = "Datacite v4 stuff goes here."
-    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
-  }
 
   def download(id: UUID, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
