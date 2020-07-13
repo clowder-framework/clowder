@@ -2219,6 +2219,7 @@ class  Datasets @Inject()(
 
           if (level == "file" || level == "dataset")
             totalBytes += bytesRead
+
           byteArrayOutputStream.reset()
           Future.successful(chunk)
         }
@@ -2326,12 +2327,9 @@ class  Datasets @Inject()(
     s += "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
     s += "Internal-Sender-Identifier: " + dataset.id + "\n"
     s += "Internal-Sender-Description: " + dataset.description + "\n"
-    contact match {
-      case Some(u) => {
-        s += "Contact-Name: " + user.get.fullName + "\n"
-        s += "Contact-Email: " + user.get.email.getOrElse("") + "\n"
-      }
-      case None => {}
+    if (contact.isDefined) {
+      s += "Contact-Name: " + contact.get.fullName + "\n"
+      s += "Contact-Email: " + contact.get.email.getOrElse("") + "\n"
     }
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
@@ -2339,7 +2337,7 @@ class  Datasets @Inject()(
   // BagIt version & encoding
   private def addBagInfoToZip(zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("bag-info.txt"))
-    val s = ""
+    var s = ""
     s += "BagIt-Version: 0.97\n"
     s += "Tag-File-Character-Encoding: UTF-8\n"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -2360,9 +2358,26 @@ class  Datasets @Inject()(
 
   private def addDataCiteMetadataToZip(zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("metadata/datacite.xml"))
-    var s = ""
-    s += "<resource xsi:schemaLocation=\"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd\">\n"
-    
+    val nodata = "None"
+    var s = "<resource xsi:schemaLocation=\"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd\">\n"
+
+    // Creators
+    s += "<creators>\n"
+    s += "\t<creator>\n"
+    s += "\t\t<creatorName>"+nodata+"</creatorName>\n"
+    s += "\t\t<nameIdentifier>"+nodata+"</nameIdentifier>\n"
+    s += "\t\t<nameIdentifierScheme>ORCID</nameIdentifierScheme>\n"
+    s += "\t</creator>\n"
+    s += "</creators>\n"
+    // Title
+    s += "<titles>\n\t<title>"+nodata+"</title>\n</titles>\n"
+    // Publisher (required?)
+    s += "<publisher>Clowder</publisher>\n"
+    // Year
+    s += "<publicationYear>"+nodata+"</publicationYear>\n"
+    // Description
+    s += "<descriptions>\n\t<description>"+nodata+"</description>\n</descriptions>\n"
+    s += "</resource>"
 
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
