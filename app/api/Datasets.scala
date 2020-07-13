@@ -2318,7 +2318,7 @@ class  Datasets @Inject()(
   }
 
   // BagIt "header" data e.g. date, author
-  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, contact: Option[User]) = {
+  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[User]) = {
     zip.putNextEntry(new ZipEntry("bagit.txt"))
     var s = ""
     s += "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
@@ -2327,9 +2327,9 @@ class  Datasets @Inject()(
     s += "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
     s += "Internal-Sender-Identifier: " + dataset.id + "\n"
     s += "Internal-Sender-Description: " + dataset.description + "\n"
-    if (contact.isDefined) {
-      s += "Contact-Name: " + contact.get.fullName + "\n"
-      s += "Contact-Email: " + contact.get.email.getOrElse("") + "\n"
+    if (user.isDefined) {
+      s += "Contact-Name: " + user.get.fullName + "\n"
+      s += "Contact-Email: " + user.get.email.getOrElse("") + "\n"
     }
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
