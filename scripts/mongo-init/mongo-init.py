@@ -62,7 +62,7 @@ users = dbase.get_collection('social.users')
 # check if user already exists
 if users.find_one({"identityId.userId": user_name, "identityId.providerId": "userpass"}):
     print("USER ALREADY EXISTS, will not create user")
-    sys.exit(-1)
+    sys.exit(0)
 
 # generate password if not specified
 encrypted_password = "$2a" + bcrypt.hash(user_password, rounds=10)[3:]

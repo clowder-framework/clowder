@@ -4,16 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 1.10.1 - Unreleased
+
+### Fixed
+- Queue threads (e.g. indexer) will no longer crash permanently if the queue connection is lost temporarily.
+- Docker images would not build correctly.
+- If monitor HTTP server would crash, it would not restart correctly.
+- Don't call server side twice when rendering list of files on dataset page.
+  [#7](https://github.com/clowder-framework/clowder/issues/7)
+
+### Added
+- Artifacts can be uploaded using SCP to remote server.
+
+## 1.10.0 - 2020-06-30
+
+### Added
+- Ability to mark multiple files in a dataset and perform bulk operations (download, tag, delete) on them at once.
 
 ### Fixed
 - Return thumbnail as part of the file information.
   [#8](https://github.com/clowder-framework/clowder/issues/8)
-- Don't call server side twice when rendering list of files on dataset page.
-  [#7](https://github.com/clowder-framework/clowder/issues/7)
+- Datasets layout on space page would sometimes have overlapping tiles.
 
+### Changed
+- mongo-init script with users would return with exit code -1 if user exists, now returns exit code 0.
 
 ## 1.9.0 - 2020-06-01
+
 **_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
 of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
 

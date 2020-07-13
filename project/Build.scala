@@ -13,14 +13,13 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.9.0"
+  val version = "1.10.1"
   val jvm = "1.7"
 
   def appVersion: String = {
-    if (gitBranchName == "master") {
-      getVersion
-    } else {
-      s"${getVersion}-SNAPSHOT"
+    gitBranchName match {
+      case "master" => getVersion
+      case _ => s"${getVersion}-develop"
     }
   }
 
