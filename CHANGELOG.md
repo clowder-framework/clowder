@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Queue threads (e.g. indexer) will no longer crash permanently if the queue connection is lost temporarily.
+- Docker images would not build correctly.
+- If monitor HTTP server would crash, it would not restart correctly.
+
+### Added
+- Artifacts can be uploaded using SCP to remote server.
 
 ## 1.10.0 - 2020-06-30
 
