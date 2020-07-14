@@ -2193,7 +2193,7 @@ class  Datasets @Inject()(
                 }
                 case ("bag", "datacite.xml") => {
                   // RDA-recommended DataCite xml file
-                  is = addDataCiteMetadataToZip(zip)
+                  is = addDataCiteMetadataToZip(zip, dataset)
                   file_type = "tagmanifest-md5.txt"
                 }
                 case ("bag", "tagmanifest-md5.txt") => {
@@ -2348,7 +2348,7 @@ class  Datasets @Inject()(
   }
 
   // List of all dataset (i.e. not BagIt) files and their checksums
-  private def addManifestMD5ToZip(md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
+  private def addManifestMD5ToZip(md5map: Map[String,MessageDigest], zip: ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("manifest-md5.txt"))
     var s : String = ""
     md5map.foreach{
@@ -2360,29 +2360,110 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addDataCiteMetadataToZip(zip: ZipOutputStream): Option[InputStream] = {
+  private def addDataCiteMetadataToZip(zip: ZipOutputStream, dataset: Dataset): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("metadata/datacite.xml"))
-    val nodata = "None"
     var s = "<resource xsi:schemaLocation=\"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd\">\n"
+    // https://support.datacite.org/docs/schema-40
+
+    // Prep user data (DataCite v4 specifies Family, Given as name format)
+    var creatorName = dataset.author.fullName
+    var creatorOrcid = ""
+    userService.get(dataset.author.id) match {
+      case Some(u: User) => {
+        creatorName = u.fullName
+        creatorOrcid = u.profile match {
+          case Some(p: Profile) => p.orcidID.getOrElse("")
+          case None => ""
+        }
+      }
+      case None => {}
+    }
+
+    // ---------- REQUIRED FIELDS ----------
+    // Identifier (DOI)
 
     // Creators
     s += "<creators>\n"
     s += "\t<creator>\n"
-    s += "\t\t<creatorName>"+nodata+"</creatorName>\n"
-    s += "\t\t<nameIdentifier>"+nodata+"</nameIdentifier>\n"
-    s += "\t\t<nameIdentifierScheme>ORCID</nameIdentifierScheme>\n"
+    s += "\t\t<creatorName>"+creatorName+"</creatorName>\n"
+    if (creatorOrcid.length > 0) {
+      s += "\t\t<nameIdentifier>"+creatorOrcid+"</nameIdentifier>\n"
+      s += "\t\t<nameIdentifierScheme>ORCID</nameIdentifierScheme>\n"
+    }
     s += "\t</creator>\n"
     s += "</creators>\n"
-    // Title
-    s += "<titles>\n\t<title>"+nodata+"</title>\n</titles>\n"
-    // Publisher (required?)
-    s += "<publisher>Clowder</publisher>\n"
-    // Year
-    s += "<publicationYear>"+nodata+"</publicationYear>\n"
-    // Description
-    s += "<descriptions>\n\t<description>"+nodata+"</description>\n</descriptions>\n"
-    s += "</resource>"
 
+    // Title (Required)
+    s += "<titles>\n\t<title>"+dataset.name+"</title>\n</titles>\n"
+
+    // Publisher (Required)
+    /**
+     * "The name of the entity that holds, archives, publishes prints, distributes, releases, issues, or produces
+     * the resource. This property will be used to formulate the citation, so consider the prominence of the role."
+     *
+     * Not sure Clowder is right here.
+     */
+    s += "<publisher>Clowder</publisher>\n"
+
+    // PublicationYear (Required)
+    val yyyy = new SimpleDateFormat("yyyy").format(dataset.created)
+    s += "<publicationYear>"+yyyy+"</publicationYear>\n"
+
+    // ResourceType
+    /**
+     * The format is open, but the preferred format is a single term of some detail so that a pair can be formed with the sub-property.
+     * Text formats can be free-text OR terms from the CASRAI Publications resource type list. (14)
+     * Examples:
+     * Dataset/Census Data, where "Dataset" is resourceTypeGeneral value and "Census Data" is ResourceType value.
+     * Text/Conference Abstract, where "Text" is resourceTypeGeneral value and "Conference Abstract" is resourceType value aligned with CASRAI Publications term.
+     */
+    s += "<ResourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</ResourceType>\n"
+
+
+    // ---------- RECOMMENDED/OPTIONAL FIELDS ----------
+
+    // Description (R)
+    s += "<descriptions>" +
+      "\n\t<description>"+dataset.description+"</description>" +
+      "\n\t<descriptionType>Abstract</descriptionType>" +
+      "\n</descriptions>\n"
+
+    /** Contributors (R)
+    "The institution or person responsible for collecting, creating, or otherwise
+    contributing to the developement of the dataset." List of example types.
+
+    Should check every file in the dataset for uploaders/metadata contributors other
+    than the creator and include here as well (?).
+     **/
+
+    // Date (Created)
+    val isoDate = new SimpleDateFormat("YYYY-MM-dd").format(dataset.created)
+    s += "<dates>" +
+      "\n\t<date>"+isoDate+"</date>" +
+      "\n\t<dateType>Created</dateType>" +
+      "\n</dates>\n"
+
+    // AlternateIdentifier
+    s += "<alternateIdentifier>"+dataset.id.stringify+"</alternateIdentifier>\n"
+
+    // Format
+    s += "<format>application/zip</format>\n"
+
+    // Subject (R)
+    /**
+     * Subject, keyword, classification code, or key phrase describing the resource.
+     * Tags?
+     */
+
+    // RelatedIdentifier (R) - DOIs, ISBNs, URLs of related resources e.g. 'cited by XYZ'.
+    // Size - free text, e.g. "126 kb", "8 files", can have many
+    // Version
+    // Language - e.g. "en"
+    // Rights - free text e.g. "Creative Commons Attribution 3.0"
+    // GeoLocation (R)
+    // FundingReference
+
+    s += "</resource>"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
