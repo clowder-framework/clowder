@@ -2134,7 +2134,8 @@ class  Datasets @Inject()(
                 case ("dataset", "metadata") => {
                   is = addDatasetMetadataToZip(dataFolder, dataset, zip)
                   is = addMD5Entry("_metadata.json", is, md5Files)
-                  val (level, file_type) = ("file", "info")
+                  level = "file"
+                  file_type = "info"
                 }
                 case ("file", "info") => {
                   val filename = filenameMap(inputFiles(file_index).id)
@@ -2164,9 +2165,11 @@ class  Datasets @Inject()(
                   if (file_index >= inputFiles.size) {
                     if (bagit) {
                       file_index = 0
-                      val (level, file_type) = ("bag", "bagit.txt")
+                      level = "bag"
+                      file_type = "bagit.txt"
                     } else {
-                      val (level, file_type) = ("done", "none")
+                      level = "done"
+                      file_type = "none"
                     }
                   }
                 }
@@ -2197,9 +2200,10 @@ class  Datasets @Inject()(
                   // List of all BagIt, xml or non-dataset files and their checksums
                   is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest], zip)
                   is = addMD5Entry("tagmanifest-md5.txt", is, md5Files)
-                  val (level, file_type) = ("done", "none")
+                  level = "done"
+                  file_type = "none"
                 }
-                case ("done", "done") => {
+                case ("done", "none") => {
                   zip.close()
                   is = None
                 }
