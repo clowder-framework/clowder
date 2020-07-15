@@ -1215,7 +1215,7 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
       // Update database
       extractionInfoResult.fold(
         errors => {
-          Logger.error("Received extractor heartbeat with bad format: " + extractor_info)
+          Logger.debug("Received extractor heartbeat with bad format: " + extractor_info)
         },
         info => {
           extractorsService.getExtractorInfo(info.name) match {
