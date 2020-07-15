@@ -97,9 +97,12 @@ class MongoDBExtractionService extends ExtractionService {
         // For each job_id, keep track of all extraction events for that job
         var grp_map = groupings(e.extractor_id).allMsgs
         if(grp_map.contains(e.job_id)) {
-          grp_map(e.job_id) ++ List(e)
+          val existing: List[Extraction] = grp_map(e.job_id)
+          val updated = List(e) ++ existing
+          // Re-sort list by timestamp (newest first)
+          grp_map = grp_map + (e.job_id -> updated)
         } else {
-          grp_map + (e.job_id -> List(e))
+          grp_map = grp_map + (e.job_id -> List(e))
         }
 
         // Use start time for time groupings as backup because end is frequently empty
