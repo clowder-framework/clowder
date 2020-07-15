@@ -25,23 +25,47 @@
                 </tr>
                 <tr class="collapse" id="extractions-@e.replace('.','-')">
                     <td colspan="4">
-                        <table class="table">
+                        <table class="table table-condensed table-striped">
+                            <thead>
+                                <th>Extraction Job ID</th>
+                                <th>Last Update</th>
+                                <th>Status</th>
+                            </thead>
                             <tbody>
                             @for(job_id <- extractions(e).allMsgs.keysIterator) {
-                                @for(e2 <- extractions(e).allMsgs(job_id)) {
-                                    <tr>
-                                        <td width="19%">@job_id</td>
-                                        <td width="81%"><b>@e2.start</b><br/>
-                                            @e2.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
-                                            @if(e2.status == "SUBMITTED") {
-                                                <a class="btn btn-link" id='@(e2.id)' onclick="cancelSubmission('@(e2.file_id)', '@(e2.id)', '@(e2.extractor_id)', '@(extractType)')">
-                                                    Cancel
-                                                </a>
-                                            }
-                                        </td>
-                                    </tr>
+                                <tr>
+                                    <td width="30%"><a class="btn btn-link" data-toggle="collapse" data-target="#extraction-job-@job_id">@job_id</a></td>
+                                    <td width="20%">@extractions(e).allMsgs(job_id).head.start</td>
+                                    <td width="30%">@extractions(e).allMsgs(job_id).head.status</td>
+                                </tr>
+                                <tr class="collapse" id="extraction-job-@job_id">
+                                    <td colspan="3">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <th>Timestamp</th>
+                                                <th>Status Message</th>
+                                            </thead>
+                                            <tbody>
+                                            @for(e2 <- extractions(e).allMsgs(job_id).reverse) {
+                                                <tr>
+                                                    <td width="40%"><b>@e2.start</b></td>
+                                                    <td width="60%">
+                                                        @e2.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
+                                                        @if(e2.status == "SUBMITTED") {
+                                                            <a class="btn btn-link btn-xs" id='@(e2.id)' onclick="cancelSubmission('@(e2.file_id)', '@(e2.id)', '@(e2.extractor_id)', '@(extractType)')">
+                                                                Cancel
+                                                            </a>
+                                                        }
+                                                    </td>
+                                                </tr>
 
-                                }
+                                            }
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+
+
                             }
                             </tbody>
                         </table>
