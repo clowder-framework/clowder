@@ -9,7 +9,7 @@ info:
     Clowder is a customizable and scalable data management system to support any
     data format and multiple research domains. It is under active development
     and deployed for a variety of research projects.
-  version: 1.9.0
+  version: 1.10.1
   termsOfService: https://clowder.ncsa.illinois.edu/clowder/tos
   contact:
     name: Clowder
@@ -272,7 +272,7 @@ paths:
         - files
       summary: Retrieve physical file object metadata
       description: |
-        Get metadata of the file object (not the resource it describes) as JSON.
+        Get information of the file object (not the resource it describes) as JSON.
         For example, size of file, date created, content type, filename.
       parameters:
         - name: id
@@ -281,9 +281,16 @@ paths:
           schema:
             type: string
       responses:
-        200:
-          description: OK
-          content: {}
+        '200':
+          description: Successfully returns a list of files
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '401':
+          $ref: '#/components/responses/Disabled'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags:
         - files
@@ -5363,13 +5370,16 @@ components:
       properties:
         id:
           type: string
+          example: "5b8e969d5e0e8690971ee23e"
         filename:
           type: string
+          example: "cat.jpg"
         filepath:
           type: string
           description: |
             only specified if user is serveradmin, and storage is
             DiskByteStorageService
+          example: "/home/clowder/data/uploads/41/e2/1e/5b8e969d5e0e8690971ee241"
         service-endpoint:
           type: string
           description: |
@@ -5387,18 +5397,35 @@ components:
             S3ByteStorageService
         filedescription:
           type: string
+          example: "Picture of a cat"
         content-type:
           type: string
+          example: "image/jpeg"
         date-created:
           type: string # should be date-time
+          example: "Tue Sep 04 09:28:45 CDT 2018"
         size:
           type: string # should be integer int64
           format: int64
+          example: "190497"
         authorId:
           type: string # should be miniuser
+          description: id of user who uploaded the file
           #$ref: '#/components/schemas/MiniUser'
+          example: "5447f889fa429866bbd44dbd"
+        thumbnail:
+          type: string
+          description: |
+            optinal id of the thumbnail image of this file
+          example: "5bfd5a2640c6cd6147bb27e0"
         status:
           type: string # should be enum
+          description: |
+            status of the file, this can be one of the following:
+            - CREATED file is created, but blob is not in final place yes
+            - PROCESSING blob is in final place, final processing is done such as sending messagess to RabbitMQ
+            - PROCESSED file is fully procesed by clowder
+          example: "PROCESSED"
     MiniUser:
       type: object
     Space:

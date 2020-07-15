@@ -1,6 +1,8 @@
 # Clowder documentation build configuration file, created by
 # sphinx-quickstart on Wed Mar 26 13:24:40 2014.
 
+# Required for readthedocs. See https://github.com/readthedocs/readthedocs.org/issues/2569
+master_doc = 'index'
 
 # -- Path setup --------------------------------------------------------------
 
@@ -20,7 +22,7 @@ copyright = '2019, University of Illinois at Urbana-Champaign'
 author = 'Luigi Marini'
 
 # The full version, including alpha/beta/rc tags
-release = '1.9.0'
+release = '1.10.1'
 
 
 # -- General configuration ---------------------------------------------------

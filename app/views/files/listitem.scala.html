@@ -3,6 +3,12 @@
 @import _root_.util.Formatters.humanReadableByteCount
 <div class="panel panel-default file-panel" id="@file.id-listitem">
     <div class="panel-body">
+        @if(user.isDefined) {
+            <a href="javascript: void(0)" title="Click to mark file for bulk actions" class="pull-right fileselect" data-id="@file.id">
+                <span class="glyphicon glyphicon-plus"></span>
+            </a>
+        }
+
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
                 @if(!file.thumbnail_id.isEmpty){
@@ -87,8 +93,6 @@
                                 }
                                 case None => {}
                             }
-
-
                         </ul>
                     </div>
                 </div>

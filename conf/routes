@@ -574,6 +574,8 @@ GET            /api/datasets/:id/files                                          
 POST           /api/datasets/:id/files                                                  @api.Datasets.uploadToDatasetFile(id: UUID)
 POST           /api/datasets/:id/urls                                                   @api.Datasets.uploadToDatasetJSON(id: UUID)
 GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1, tracking: Boolean ?= true)
+GET            /api/datasets/:id/downloadPartial                                        @api.Datasets.downloadPartial(id: UUID, fileList: String)
+GET            /api/datasets/:id/downloadFolder                                         @api.Datasets.downloadFolder(id: UUID, folderId: UUID)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID)

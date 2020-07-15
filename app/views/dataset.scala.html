@@ -524,95 +524,93 @@
 		    });
 
         }
-    var cur_description;
-    function updateDescription() {
-		cur_description = $('#ds_description').html().trim();
-		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
-		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
-		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary btn-margins" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"> </span> Save </button>');
-		$('.edit_desc').append('<button id="cancel_desc" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelDescription()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
-		if(cur_description.indexOf("Add a description") != 0) {
-		    $('#desc_input').val(htmlDecode(cur_description.replace(new RegExp("<br>", "g"), "\n")));
-		}
-		$('#ds_description').text("");
-		$('#edit-description').css("display", "none");
-		$('#edit-description').addClass("hiddencomplete");
-		$('#ds_description').css("display", "none");
-		$("#desc_input").select();
-	}
-
-    function cancelDescription() {
-        $('#ds_description').html(cur_description);
-        $('.edit_desc').remove();
-        $('#ds_description').css("display","");
-        $('#edit-description').removeClass("inline");
-        $('#edit-description').css("display", "");
-        $('#ds-description').mouseleave();
-    }
-
-	function saveDescription() {
-		var description = $('#desc_input').val();
-		var encDescription = htmlEncode(description);
-		jsonData = JSON.stringify({"description": encDescription});
-
-		var request = jsRoutes.api.Datasets.updateDescription("@dataset.id").ajax({
-			data: jsonData,
-			type: 'PUT',
-			contentType: "application/json"
-		});
-
-		request.done(function(response, textStatus,jqXHR) {
-			$('#ds_description').html(urlify(htmlEncode(description).replace(/\n/g, "<br>")));
-						if($('#ds_description').html().length == 0) {
-			   $('#aboutdesc > span').text("Add a " + descLabel.toLowerCase());
-			 } else {
-			   $('#aboutdesc > span').text(descLabel + ":");
-			 }
-			$('.edit_desc').remove();
-			//multiline add classes else remove them
-			if ($('#ds_description').html().indexOf("<br>")>=0) {
-			$('#ds_description').addClass("abstract-panel");
-			} else {
-			$('#ds_description').removeClass("abstract-panel");
-			}
-			$('#ds_description').css("display", "");
-			$('#edit-description').removeClass("inline");
-            $('#edit-description').css("display", "");
-            $('#ds-description').mouseleave();
-            notify("Dataset description updated successfully", "success", false, 2000 );
-		});
-
-		request.fail(function(jqXHR, textStatus, errorThrown) {
-			console.error("The following error occurred: " + textStatus, errorThrown);
-			var errMsg = " You must be logged in to update the information about a dataset.";
-			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
-				notify("The dataset information was not updated due to: " + errorThrown, "error");
-			}
-		});
-
-	 }
-
-    function urlify(text) {
-        var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@@#\/%?=~_|!:,.;]*[-A-Z0-9+&@@#\/%=~_|])/ig;
-        return text.replace(urlRegex, function(url) {
-            return '<a href="' + url + '">' + url + '</a>';
-        })
-    }
-
-    function refreshToolSidebar() {
-        // Get current status from ToolManagerPlugin and refresh sidebar table
-        var request = new XMLHttpRequest();
-        request.onreadystatechange = function() {
-            if (request.readyState == 4 && request.status == 200) {
-                $('#toolListContainer').html(request.response);
+        var cur_description;
+        function updateDescription() {
+            cur_description = $('#ds_description').html().trim();
+            $('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
+            $('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
+            $('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary btn-margins" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"> </span> Save </button>');
+            $('.edit_desc').append('<button id="cancel_desc" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelDescription()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
+            if(cur_description.indexOf("Add a description") != 0) {
+                $('#desc_input').val(htmlDecode(cur_description.replace(new RegExp("<br>", "g"), "\n")));
             }
+            $('#ds_description').text("");
+            $('#edit-description').css("display", "none");
+            $('#edit-description').addClass("hiddencomplete");
+            $('#ds_description').css("display", "none");
+            $("#desc_input").select();
         }
 
-        request.open("GET", jsRoutes.controllers.ToolManager.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
-        request.send();
-    }
+        function cancelDescription() {
+            $('#ds_description').html(cur_description);
+            $('.edit_desc').remove();
+            $('#ds_description').css("display","");
+            $('#edit-description').removeClass("inline");
+            $('#edit-description').css("display", "");
+            $('#ds-description').mouseleave();
+        }
 
-    $(function() {
+        function saveDescription() {
+                var description = $('#desc_input').val();
+                var encDescription = htmlEncode(description);
+                jsonData = JSON.stringify({"description": encDescription});
+
+                var request = jsRoutes.api.Datasets.updateDescription("@dataset.id").ajax({
+                    data: jsonData,
+                    type: 'PUT',
+                    contentType: "application/json"
+                });
+
+                request.done(function(response, textStatus,jqXHR) {
+                    $('#ds_description').html(urlify(htmlEncode(description).replace(/\n/g, "<br>")));
+                    if($('#ds_description').html().length == 0) {
+                        $('#aboutdesc > span').text("Add a " + descLabel.toLowerCase());
+                    } else {
+                        $('#aboutdesc > span').text(descLabel + ":");
+                    }
+                    $('.edit_desc').remove();
+                    //multiline add classes else remove them
+                    if ($('#ds_description').html().indexOf("<br>")>=0) {
+                        $('#ds_description').addClass("abstract-panel");
+                    } else {
+                        $('#ds_description').removeClass("abstract-panel");
+                    }
+                    $('#ds_description').css("display", "");
+                    $('#edit-description').removeClass("inline");
+                    $('#edit-description').css("display", "");
+                    $('#ds-description').mouseleave();
+                    notify("Dataset description updated successfully", "success", false, 2000 );
+                });
+
+                request.fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error("The following error occurred: " + textStatus, errorThrown);
+                    var errMsg = " You must be logged in to update the information about a dataset.";
+                    if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+                        notify("The dataset information was not updated due to: " + errorThrown, "error");
+                    }
+                });
+            }
+
+        function urlify(text) {
+            var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@@#\/%?=~_|!:,.;]*[-A-Z0-9+&@@#\/%=~_|])/ig;
+            return text.replace(urlRegex, function(url) {
+                return '<a href="' + url + '">' + url + '</a>';
+            })
+        }
+
+        function refreshToolSidebar() {
+            // Get current status from ToolManagerPlugin and refresh sidebar table
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function() {
+                if (request.readyState == 4 && request.status == 200) {
+                    $('#toolListContainer').html(request.response);
+                }
+            }
+            request.open("GET", jsRoutes.controllers.ToolManager.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
+            request.send();
+        }
+
+        $(function() {
             $(window).on('fileDelete hashchange', function() {
                 getUpdatedFilesAndFolders();
             });
@@ -659,23 +657,21 @@
         });
 
         @if(play.Play.application().configuration().getBoolean("sortInMemory")) {
-        function updatePageAndFolder(idx, folderIdd, sort) {
-            if (folderIdd != "") {
-                location.hash = "folderId=" + folderIdd + "&page=" + idx + "&sort=" + sort;
-            } else {
-                location.hash = "page=" + idx + "&sort=" + sort;
+            function updatePageAndFolder(idx, folderIdd, sort) {
+                if (folderIdd != "") {
+                    location.hash = "folderId=" + folderIdd + "&page=" + idx + "&sort=" + sort;
+                } else {
+                    location.hash = "page=" + idx + "&sort=" + sort;
+                }
             }
-            $(window).trigger("hashchange");
-        }
         } else {
-       function updatePageAndFolder(idx, folderIdd){
-           if(folderIdd != "") {
-               location.hash = "folderId="+folderIdd+"&page="+idx;
-           } else {
-               location.hash="page="+idx;
-           }
-           $(window).trigger("hashchange");
-       }
+            function updatePageAndFolder(idx, folderIdd){
+                if(folderIdd != "") {
+                    location.hash = "folderId="+folderIdd+"&page="+idx;
+                } else {
+                    location.hash="page="+idx;
+                }
+            }
         }
 
        function getUpdatedFilesAndFolders() {

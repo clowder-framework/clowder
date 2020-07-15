@@ -31,6 +31,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: github branch
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          echo "::set-env name=GITHUB_BRANCH::${BRANCH}"
+          if [ "$BRANCH" == "master" ]; then
+            echo "::set-env name=CLOWDER_VERSION::$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
+          elif [ "$BRANCH" == "develop" ]; then
+            echo "::set-env name=CLOWDER_VERSION::develop"
+          else 
+            echo "::set-env name=CLOWDER_VERSION::testing"
+          fi
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
@@ -46,8 +57,18 @@ jobs:
           key: ${{ runner.os }}-sbt-${{ hashFiles('project/Build.scala') }}
       - name: sbt clean update
         run: ./sbt clean update
+        env:
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
       - name: sbt compile
         run: ./sbt compile
+        env:
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
 
   # starts a mongodb instance, and runs the scala tests
   test:
@@ -59,10 +80,18 @@ jobs:
         ports:
           - 27017:27017
     steps:
-      - uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
       - uses: actions/checkout@v2
+      - name: github branch
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          echo "::set-env name=GITHUB_BRANCH::${BRANCH}"
+          if [ "$BRANCH" == "master" ]; then
+            echo "::set-env name=CLOWDER_VERSION::$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
+          elif [ "$BRANCH" == "develop" ]; then
+            echo "::set-env name=CLOWDER_VERSION::develop"
+          else 
+            echo "::set-env name=CLOWDER_VERSION::testing"
+          fi
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
@@ -78,6 +107,11 @@ jobs:
           key: ${{ runner.os }}-sbt-${{ hashFiles('project/Build.scala') }}
       - name: sbt test
         run: ./sbt "test-only integration.APITestSuite"
+        env:
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
 
   # creates zip file of the dist compiled version. The results are
   # uploaded as artifacts for this build as well to the release if
@@ -87,6 +121,17 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
+      - name: github branch
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          echo "::set-env name=GITHUB_BRANCH::${BRANCH}"
+          if [ "$BRANCH" == "master" ]; then
+            echo "::set-env name=CLOWDER_VERSION::$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
+          elif [ "$BRANCH" == "develop" ]; then
+            echo "::set-env name=CLOWDER_VERSION::develop"
+          else 
+            echo "::set-env name=CLOWDER_VERSION::testing"
+          fi
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
@@ -102,13 +147,18 @@ jobs:
           key: ${{ runner.os }}-sbt-${{ hashFiles('project/Build.scala') }}
       - name: sbt dist
         run: ./sbt dist
+        env:
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
       - uses: actions/upload-artifact@v2
         with:
           name: clowder.zip
           path: target/universal/clowder-*.zip
       - name: Upload files to a GitHub release
-        uses: svenstaro/upload-release-action@1.1.0
         if: github.event_name == 'release' && github.event.action == 'created'
+        uses: svenstaro/upload-release-action@1.1.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
@@ -116,6 +166,15 @@ jobs:
           asset_name: clowder.zip
           file: target/universal/clowder-*.zip
           file_glob: true
+      - name: Upload dist to NCSA
+        if: github.event_name == 'push'
+        uses: robkooper/sftp-action@master
+        with:
+          host: ${{ secrets.SCP_HOST }}
+          username: ${{ secrets.SCP_USERNAME }}
+          key: ${{ secrets.SCP_KEY }}
+          files: "target/universal/clowder-*.zip"
+          target: "CATS/${{ env.CLOWDER_VERSION }}/files"
 
   # creates scaladoc, html and epub (no pdflatex) and uploads those
   # as artifacts for this build as well to the release if created.
@@ -124,6 +183,17 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
+      - name: github branch
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          echo "::set-env name=GITHUB_BRANCH::${BRANCH}"
+          if [ "$BRANCH" == "master" ]; then
+            echo "::set-env name=CLOWDER_VERSION::$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
+          elif [ "$BRANCH" == "develop" ]; then
+            echo "::set-env name=CLOWDER_VERSION::develop"
+          else 
+            echo "::set-env name=CLOWDER_VERSION::testing"
+          fi
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
@@ -143,11 +213,25 @@ jobs:
           python-version: 3.7
       - name: sbt doc
         run: ./sbt doc
+        env:
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
       - uses: actions/upload-artifact@v2
         with:
           name: ScalaDoc
           path: target/scala-*/api/
-      - name: sphinx
+      - name: Upload scaladoc to NCSA
+        if: github.event_name == 'push'
+        uses: robkooper/sftp-action@master
+        with:
+          host: ${{ secrets.SCP_HOST }}
+          username: ${{ secrets.SCP_USERNAME }}
+          key: ${{ secrets.SCP_KEY }}
+          files: "target/scala-*/api/*"
+          target: "CATS/${{ env.CLOWDER_VERSION }}/documentation/scaladoc"
+      - name: sphinx  
         run: |
           cd doc/src/sphinx/
           python -m pip install -r requirements.txt
@@ -156,16 +240,34 @@ jobs:
         with:
           name: HTML Documentation
           path: doc/src/sphinx/_build/html
+      - name: Upload sphinx to NCSA
+        if: github.event_name == 'push'
+        uses: robkooper/sftp-action@master
+        with:
+          host: ${{ secrets.SCP_HOST }}
+          username: ${{ secrets.SCP_USERNAME }}
+          key: ${{ secrets.SCP_KEY }}
+          files: "doc/src/sphinx/_build/html/*"
+          target: "CATS/${{ env.CLOWDER_VERSION }}/documentation/sphinx"
       - uses: actions/upload-artifact@v2
         with:
           name: EPUB Documentation
           path: doc/src/sphinx/_build/epub/Clowder.epub
       - name: Upload files to a GitHub release
-        uses: svenstaro/upload-release-action@1.1.0
         if: github.event_name == 'release' && github.event.action == 'created'
+        uses: svenstaro/upload-release-action@1.1.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
           overwrite: true
           asset_name: clowder.epub
           file: doc/src/sphinx/_build/epub/Clowder.epub
+      - name: Upload epub to NCSA
+        if: github.event_name == 'push'
+        uses: robkooper/sftp-action@master
+        with:
+          host: ${{ secrets.SCP_HOST }}
+          username: ${{ secrets.SCP_USERNAME }}
+          key: ${{ secrets.SCP_KEY }}
+          files: "doc/src/sphinx/_build/epub/Clowder.epub"
+          target: "CATS/${{ env.CLOWDER_VERSION }}/files"
