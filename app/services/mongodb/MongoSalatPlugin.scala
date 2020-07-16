@@ -3,25 +3,19 @@ package services.mongodb
 import java.net.URL
 import java.util.{Calendar, Date}
 
-import com.mongodb.{BasicDBObject, CommandFailureException}
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
-import MongoContext.context
 import api.Permission
+import com.mongodb.BasicDBObject
+import com.mongodb.casbah.Imports.{DBObject, _}
+import com.mongodb.casbah.{MongoCollection, MongoConnection, MongoDB, MongoURI}
+import com.mongodb.casbah.commons.MongoDBObject
+import javax.inject.Inject
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
 import org.bson.BSONException
-import play.api.libs.json._
-import play.api.{Application, Logger, Play, Plugin}
-import play.api.Play.current
-import com.mongodb.casbah.MongoURI
-import com.mongodb.casbah.MongoConnection
-import com.mongodb.casbah.MongoDB
-import com.mongodb.casbah.MongoCollection
-import com.mongodb.casbah.gridfs.GridFS
-import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
+import play.api.libs.json._
+import play.api.{Application, Configuration, Logger, Play}
 import services.filesystem.DiskByteStorageService
 import services.{AppConfigurationService, ByteStorageService, DI, MetadataService}
 
@@ -30,7 +24,7 @@ import scala.collection.JavaConverters._
 /**
  * Mongo Salat service.
  */
-class MongoSalatPlugin(app: Application) extends Plugin {
+class MongoSalatPlugin @Inject()(configuration: Configuration)(app: Application) extends Plugin {
   // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/clowder
   var mongoURI: MongoURI = null
 
@@ -40,11 +34,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   lazy val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   override def onStart() {
-    mongoURI = if (play.api.Play.configuration.getString("mongodbURI").isDefined) {
-      MongoURI(play.api.Play.configuration.getString("mongodbURI").get)
-    } else if (play.api.Play.configuration.getString("mongodb.default").isDefined) {
+    mongoURI = if (!configuration.get[String]("mongodbURI").isBlank) {
+      MongoURI(configuration.get[String]("mongodbURI"))
+    } else if (!configuration.get[String]("mongodb.default").isBlank) {
       Logger.info("mongodb.default is deprecated, please use mongodbURI")
-      MongoURI(play.api.Play.configuration.getString("mongodb.default").get)
+      MongoURI(configuration.get[String]("mongodb.default"))
     } else {
       Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/clowder")
       MongoURI("mongodb://127.0.0.1:27017/clowder")
@@ -530,7 +524,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   def updateTagLength() {
     val q = MongoDBObject("tags" -> MongoDBObject("$exists" -> true, "$not" -> MongoDBObject("$size" -> 0)))
-    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+    val maxTagLength = configuration.get[Int]("clowder.tagLength")
     Logger.debug("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
     collection("datasets").find(q).foreach { x =>
       x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach {
@@ -730,7 +724,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
       val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
       val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
-      val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
+      val TokenDuration = configuration.get[Int](TokenDurationKey)
       invite.put("creationTime", new Date())
       val ONE_MINUTE_IN_MILLIS = 60000
       val date: Calendar = Calendar.getInstance()
@@ -747,7 +741,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addLengthSha512PathFile() {
     val dbss = new DiskByteStorageService()
-    lazy val rootPath = Play.current.configuration.getString("clowder.diskStorage.path").getOrElse("")
+    lazy val rootPath = configuration.get[String]("clowder.diskStorage.path")
     for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
       val files = gridFS(prefix)
       collection(prefix + ".files").foreach { file =>
@@ -1285,7 +1279,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def addTrialFlag2(): Unit = {
     val q = MongoDBObject()
 
-    val (s, d) = if (play.Play.application().configuration().getBoolean("verifySpaces")) {
+    val (s, d) = if (configuration.get[Boolean]("verifySpaces")) {
       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString)),
         MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.TRIAL.toString)))
     } else {
@@ -1633,7 +1627,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def removeKeyFromExtractorLogs(): Unit = {
     collection("extractions").foreach { extraction =>
       val status = extraction.getAs[String]("status").getOrElse("")
-      val commKey = "key=" + play.Play.application().configuration().getString("commKey")
+      val commKey = "key=" + configuration.get[String]("commKey")
       val parsed_status = status.replace(commKey, "key=secretKey")
       extraction.put("status", parsed_status)
       collection("extractions").save(extraction, WriteConcern.Safe)

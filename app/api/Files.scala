@@ -1,33 +1,23 @@
 package api
 
-import scala.annotation.tailrec
-import java.io.FileInputStream
-import java.net.{URL, URLEncoder}
-
-import javax.inject.Inject
-import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
-import com.mongodb.casbah.Imports._
-import controllers.Previewers
-import jsonutils.JsonUtil
-import models._
-import play.api.Logger
-import play.api.Play.{configuration, current}
-import play.api.i18n.Messages
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.Json._
-import play.api.libs.json._
-import play.api.mvc.{Action, ResponseHeader, Result, SimpleResult}
-import services._
-
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
-import java.text.SimpleDateFormat
+import java.net.URL
 import java.util.Date
 
-import controllers.Utils
+import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
+import com.mongodb.casbah.Imports._
+import controllers.{Previewers, Utils}
+import javax.inject.Inject
+import jsonutils.JsonUtil
+import models._
+import play.api.i18n.Messages
+import play.api.libs.json.Json._
+import play.api.libs.json._
+import play.api.mvc.{ResponseHeader, Result}
+import play.api.{Configuration, Logger}
+import services._
 import services.s3.S3ByteStorageService
+
+import scala.annotation.tailrec
 
 /**
  * Json API for files.
@@ -53,7 +43,8 @@ class Files @Inject()(
   adminsNotifierService: AdminsNotifierService,
   extractionBusService: ExtractionBusService,
   versusService: VersusService,
-  searches: SearchService) extends ApiController {
+  searches: SearchService,
+  configuration: Configuration) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -119,7 +110,7 @@ class Files @Inject()(
                     range match {
                       case (start, end) =>
                         inputStream.skip(start)
-                        SimpleResult(
+                        Result(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
                               CONNECTION -> "keep-alive",
@@ -180,7 +171,7 @@ class Files @Inject()(
               range match {
                 case (start, end) =>
                   inputStream.skip(start)
-                  SimpleResult(
+                  Result(
                     header = ResponseHeader(PARTIAL_CONTENT,
                       Map(
                         CONNECTION -> "keep-alive",
@@ -649,7 +640,7 @@ class Files @Inject()(
       }
     }
     files.index(id)
-    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+    configuration.get[String]("userdfSPARQLStore") match {
       case "yes" => {
         files.setUserMetadataWasModified(id, true)
       }
@@ -689,8 +680,8 @@ class Files @Inject()(
       }
       case "services.s3.S3ByteStorageService" => {
         if (serverAdmin) {
-          val bucketName = configuration.getString(S3ByteStorageService.BucketName).getOrElse("")
-          val serviceEndpoint = configuration.getString(S3ByteStorageService.ServiceEndpoint).getOrElse("")
+          val bucketName = configuration.get[String](S3ByteStorageService.BucketName)
+          val serviceEndpoint = configuration.get[String](S3ByteStorageService.ServiceEndpoint)
           Map(
             "id" -> file.id.toString,
             "filename" -> file.filename,
@@ -1024,13 +1015,13 @@ class Files @Inject()(
    *      id:       the id in the original addTags call
    *      request:  the request in the original addTags call
    *  Return type:
-   *      play.api.mvc.SimpleResult[JsValue]
+   *      play.api.mvc.Result[JsValue]
    *      in the form of Ok, NotFound and BadRequest
    *      where: Ok contains the JsObject: "status" -> "success", the other two contain a JsString,
    *      which contains the cause of the error, such as "No 'tags' specified", and
    *      "The file with id 5272d0d7e4b0c4c9a43e81c8 is not found".
    */
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): Result = {
 
     val (not_found, error_str, tagsAdded) = tags.addTagsHelper(obj_type, id, request)
     files.get(id) match {
@@ -1051,7 +1042,7 @@ class Files @Inject()(
     }
   }
 
-  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): Result = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
     files.get(id) match {
@@ -1585,7 +1576,7 @@ class Files @Inject()(
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
         val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        val num = configuration.get[Int]("number_of_recommendations")
         userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
       case None => {
@@ -1721,7 +1712,7 @@ class Files @Inject()(
     if (0 != datasetslists.length) {
       datasetId = datasetslists.head.id
     }
-    val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
+    val extractorId = configuration.get[String]("archiveExtractorId")
     extractionBusService.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
       datasetId, newFlags, apiKey, user)
     Logger.info("Sent archive request for file " + id)

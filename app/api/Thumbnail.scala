@@ -37,8 +37,8 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
             }
             range match { case (start,end) =>
               inputStream.skip(start)
-              import play.api.mvc.{ ResponseHeader, SimpleResult }
-              SimpleResult(
+              import play.api.mvc.{ ResponseHeader, Result }
+              Result(
                 header = ResponseHeader(PARTIAL_CONTENT,
                   Map(
                     CONNECTION -> "keep-alive",

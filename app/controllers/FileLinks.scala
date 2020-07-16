@@ -10,7 +10,7 @@ import models._
 import play.api.Logger
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json
-import play.api.mvc.{Action, ResponseHeader, SimpleResult}
+import play.api.mvc.{Action, ResponseHeader, Result}
 import services.{FileLinkService, FileService}
 import util.FileUtils
 import play.api.libs.concurrent.Execution.Implicits._
@@ -81,7 +81,7 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
                     range match {
                       case (start, end) =>
                         inputStream.skip(start)
-                        SimpleResult(
+                        Result(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
                               CONNECTION -> "keep-alive",

@@ -1,38 +1,31 @@
 package services.mongodb
 
 import java.io._
-import java.text.SimpleDateFormat
-import java.util.{ArrayList, Date}
-import javax.inject.{Inject, Singleton}
+import java.util.Date
 
-import Transformation.LidoToCidocConvertion
-import util.{Formatters, Parsers}
 import api.Permission
 import api.Permission.Permission
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
-import com.mongodb.casbah.commons.MongoDBList
-import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
 import com.mongodb.util.JSON
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import javax.inject.{Inject, Singleton}
 import jsonutils.JsonUtil
 import models.{File, _}
-import org.apache.commons.io.FileUtils
 import org.bson.types.ObjectId
 import org.json.JSONObject
-import play.api.Logger
 import play.api.Play._
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.{Configuration, Logger}
 import services._
-import services.mongodb.MongoContext.context
+import util.{Formatters, Parsers}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
 
 /**
  * Use Mongodb to store datasets.
@@ -50,7 +43,8 @@ class MongoDBDatasetService @Inject() (
   events: EventService,
   appConfig: AppConfigurationService,
   searches: SearchService,
-  queues: QueueService) extends DatasetService {
+  queues: QueueService,
+  configuration: Configuration) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -342,7 +336,7 @@ class MongoDBDatasetService @Inject() (
     // - access  == show all datasets the user can see
     // - default == public only
     val public = MongoDBObject("public" -> true)
-    val enablePublic = play.Play.application().configuration().getBoolean("enablePublic")
+    val enablePublic = configuration.getBoolean("enablePublic")
     //emptySpaces should not be used in most cases since your dataset maybe in a space, then you are changed to viewer or kicked off.
     val emptySpaces = MongoDBObject("spaces" -> List.empty)
     val publicSpaces = spaces.listByStatus(SpaceStatus.PUBLIC.toString).map(s => new ObjectId(s.id.stringify))
@@ -356,7 +350,7 @@ class MongoDBDatasetService @Inject() (
     }
 
     // create access filter
-    val filterAccess = if (showAll || configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewDataset)) {
+    val filterAccess = if (showAll || configuration.get[String]("permissions") == "public" && permissions.contains(Permission.ViewDataset)) {
       MongoDBObject()
     } else {
       user match {
@@ -589,7 +583,7 @@ class MongoDBDatasetService @Inject() (
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+    if(!(configuration.get[String]("permissions") == "public")){
       user match {
         case Some(u) if u.superAdminMode => orlist += MongoDBObject()
         case Some(u) if !u.superAdminMode => {
@@ -724,7 +718,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def findByTag(tag: String, user: Option[User]): List[Dataset] = {
-    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+    if(configuration.get[String]("permissions") == "public"){
       Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
     } else {
       Dataset.dao.find(buildTagFilter(user) ++
@@ -742,7 +736,7 @@ class MongoDBDatasetService @Inject() (
         MongoDBObject("tags.name" -> tag) ++ ("created" $lte Parsers.fromISO8601(start))
       }
     }
-    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+    if(!(configuration.get[String]("permissions") == "public")) {
       filter = buildTagFilter(user) ++ filter
     }
     val order = if (reverse) {
@@ -940,7 +934,7 @@ class MongoDBDatasetService @Inject() (
     val dataset = get(id).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
-    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+    val maxTagLength = configuration.get[Int]("clowder.tagLength")
     tags.foreach(tag => {
       val shortTag = if (tag.length > maxTagLength) {
         Logger.error("Tag is truncated to " + maxTagLength + " chars : " + tag)
@@ -1339,7 +1333,7 @@ class MongoDBDatasetService @Inject() (
       $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
 
-    if (play.Play.application().configuration().getBoolean("verifySpaces")) {
+    if (configuration.getBoolean("verifySpaces")) {
 
       get(datasetId) match {
         case Some(d) if !d.spaces.map(s => spaces.get(s)).flatten.exists(_.isTrial == false) =>
@@ -1356,10 +1350,10 @@ class MongoDBDatasetService @Inject() (
 
 		    val fileSep = System.getProperty("file.separator")
 		    val lineSep = System.getProperty("line.separator")
-		    var dsMdDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
+		    var dsMdDumpDir = configuration.get[String]("datasetdump.dir")
 			if(!dsMdDumpDir.endsWith(fileSep))
 				dsMdDumpDir = dsMdDumpDir + fileSep
-			var dsMdDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
+			var dsMdDumpMoveDir = configuration.get[String]("datasetdumpmove.dir")
 			if(dsMdDumpMoveDir.equals("")){
 				Logger.warn("Will not move dumped datasets metadata to staging directory. No staging directory set.")
 			}
@@ -1423,10 +1417,10 @@ class MongoDBDatasetService @Inject() (
 
 		    val fileSep = System.getProperty("file.separator")
 		    val lineSep = System.getProperty("line.separator")
-		    var datasetsDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
+		    var datasetsDumpDir = configuration.get[String]("datasetdump.dir")
 			if(!datasetsDumpDir.endsWith(fileSep))
 				datasetsDumpDir = datasetsDumpDir + fileSep
-			var dsDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
+			var dsDumpMoveDir = configuration.get[String]("datasetdumpmove.dir")
 			if(dsDumpMoveDir.equals("")){
 				Logger.warn("Will not move dumped dataset groupings to staging directory. No staging directory set.")
 			}

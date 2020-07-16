@@ -1,23 +1,17 @@
 package api
 
 import java.util.Date
-import javax.inject.Inject
+
 import api.Permission.Permission
-import models._
-import play.api.Logger
 import controllers.Utils
-import play.api.Play._
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
-import play.api.libs.json.Json.toJson
+import javax.inject.Inject
+import models._
+import play.api.i18n.Messages
+import play.api.libs.json.{JsError, JsResult, JsSuccess, Json}
+import play.api.libs.json.Json.{toJson, _}
+import play.api.{Configuration, Logger}
 import services._
 import util.Mail
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
-import play.api.i18n.Messages
-
-import scala.util.Try
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -29,7 +23,8 @@ class Spaces @Inject()(spaces: SpaceService,
                        events: EventService,
                        datasets: DatasetService,
                        adminsNotifierService: AdminsNotifierService,
-                       appConfig: AppConfigurationService) extends ApiController {
+                       appConfig: AppConfigurationService,
+                       configuration: Configuration) extends ApiController {
 
   /**
     * String name of the Space such as 'Project space' etc., parsed from conf/messages
@@ -151,7 +146,7 @@ class Spaces @Inject()(spaces: SpaceService,
             collectionService.index(collectionId)
             spaces.get(spaceId) match {
               case Some(space) => {
-                if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+                if (configuration.get[Boolean]("addDatasetToCollectionSpace")){
                   collectionService.addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId, request.user)
                 }
                 Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
@@ -622,7 +617,7 @@ class Spaces @Inject()(spaces: SpaceService,
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
         val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        val num = configuration.get[Int]("number_of_recommendations")
         userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
       case None => {

@@ -8,13 +8,10 @@ import models._
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.util.EntityUtils
-import services._
-import play.api.libs.json._
-import play.api.libs.json.Json
-import play.api.libs.json.JsResult
 import play.api.libs.json.Json.toJson
-import play.api.Logger
-import play.api.Play.current
+import play.api.libs.json.{JsResult, Json, _}
+import play.api.{Configuration, Logger}
+import services._
 
 /**
  * Manipulates publication requests curation objects.
@@ -28,8 +25,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
       spaces: SpaceService,
       userService: UserService,
       curationObjectController: controllers.CurationObjects,
-      metadatas: MetadataService
-      ) extends ApiController {
+      metadatas: MetadataService,
+      configuration: Configuration) extends ApiController {
   def getCurationObjectOre(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
@@ -37,7 +34,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case Some(c) => {
 
           val https = controllers.Utils.https(request)
-          val key = play.api.Play.configuration.getString("commKey").getOrElse("")
+          val key = configuration.get[String]("commKey")
           val filesJson = curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map { file =>
 
             var fileMetadata = scala.collection.mutable.Map.empty[String, JsValue]
@@ -283,7 +280,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
       implicit val user = request.user
       curations.get(curationId) match {
         case Some(c) => {
-          val endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val endpoint = configuration.get[String]("stagingarea.uri").replaceAll("/$","")
           val httpDelete = new HttpDelete(endpoint + "/urn:uuid:" + curationId.toString())
           val client = new DefaultHttpClient
           val response = client.execute(httpDelete)

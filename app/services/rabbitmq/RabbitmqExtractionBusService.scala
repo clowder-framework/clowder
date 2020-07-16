@@ -40,7 +40,8 @@ class RabbitmqExtractionBusService @Inject() (
                                  spacesService: SpaceService,
                                  extractorsService: ExtractorService,
                                  datasetService: DatasetService,
-                                 userService: UserService) extends ExtractionBusService {
+                                 userService: UserService,
+                                 configuration: Configuration) extends ExtractionBusService {
 
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
@@ -60,11 +61,10 @@ class RabbitmqExtractionBusService @Inject() (
   var vhost: String = ""
   var username: String = ""
   var password: String = ""
-  var rabbitmquri: String =  play.api.Play.configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-  var exchange: String =  play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
-  var mgmtPort: String = play.api.Play.configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
-
-  var globalAPIKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  var rabbitmquri: String =  configuration.get[String]("clowder.rabbitmq.uri")
+  var exchange: String =  configuration.get[String]("clowder.rabbitmq.exchange")
+  var mgmtPort: String = configuration.get[String]("clowder.rabbitmq.managmentPort")
+  var globalAPIKey = configuration.get[String]("commKey")
 
   try {
     val uri = new URI(rabbitmquri)
@@ -80,10 +80,9 @@ class RabbitmqExtractionBusService @Inject() (
   /** On start connect to broker. */
   override def onStart() {
     Logger.info("Starting RabbitMQ Plugin")
-    val configuration = play.api.Play.configuration
-    rabbitmquri = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
-    exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
-    mgmtPort = configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
+    rabbitmquri = configuration.get[String]("clowder.rabbitmq.uri")
+    exchange = configuration.get[String]("clowder.rabbitmq.exchange")
+    mgmtPort = configuration.get[String]("clowder.rabbitmq.managmentPort")
     Logger.debug("uri= "+ rabbitmquri)
 
     try {
@@ -157,8 +156,6 @@ class RabbitmqExtractionBusService @Inject() (
     if (channel.isDefined) return true
     if (!factory.isDefined) return true
 
-    val configuration = play.api.Play.configuration
-
     try {
       val protocol = if (factory.get.isSSL) "https://" else "http://"
       restURL = Some(protocol + factory.get.getHost +  ":" + mgmtPort)
@@ -230,7 +227,7 @@ class RabbitmqExtractionBusService @Inject() (
       // Setup cancellation queue. Pop messages from extraction queue until we find the one we want to cancel.
       // Store messages in the extraction queue temporarely in this queue.
       try {
-        val cancellationSearchTimeout: Long = configuration.getString("submission.cancellation.search.timeout").getOrElse("500").toLong
+        val cancellationSearchTimeout = configuration.get[Long]("submission.cancellation.search.timeout")
         // create cancellation download queue to hold pending rabbitmq message
         channel.get.queueDeclare(cancellationDownloadQueueName, true, false, false, null)
         // Actor to connect to a rabbitmq queue to cancel the pending request
@@ -919,9 +916,12 @@ class RabbitmqExtractionBusService @Inject() (
   * @param connection                     the connection to the rabbitmq
   * @param cancellationDownloadQueueName  the queue name of the cancellation downloaded queue
   */
-class PendingRequestCancellationActor @Inject() (exchange: String, connection: Option[Connection], cancellationDownloadQueueName: String, cancellationSearchTimeout: Long) extends Actor {
-  val configuration = play.api.Play.configuration
-  val CancellationSearchNumLimits: Integer = configuration.getString("submission.cancellation.search.numlimits").getOrElse("100").toInt
+class PendingRequestCancellationActor @Inject()(configuration: Configuration)
+                                               (exchange: String,
+                                                connection: Option[Connection],
+                                                cancellationDownloadQueueName: String,
+                                                cancellationSearchTimeout: Long) extends Actor {
+  val CancellationSearchNumLimits = configuration.get[Int]("submission.cancellation.search.numlimits")
   def receive = {
     case CancellationMessage(id, queueName, msg_id) => {
       val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
@@ -1037,10 +1037,10 @@ class PendingRequestCancellationActor @Inject() (exchange: String, connection: O
   * Send message on specified channel directly to a queue and tells receiver to reply
   * on specified queue.
   */
-class PublishDirectActor @Inject() (channel: Channel, replyQueueName: String) extends Actor {
-  val appHttpPort = play.api.Play.configuration.getString("http.port").getOrElse("")
-  val appHttpsPort = play.api.Play.configuration.getString("https.port").getOrElse("")
-  val clowderurl = play.api.Play.configuration.getString("clowder.rabbitmq.clowderurl")
+class PublishDirectActor @Inject() (channel: Channel, replyQueueName: String, configuration: Configuration) extends Actor {
+  val appHttpPort = configuration.get[String]("http.port")
+  val appHttpsPort = configuration.get[String]("https.port")
+  val clowderurl = configuration.get[String]("clowder.rabbitmq.clowderurl")
 
   val rabbitmqService: ExtractionBusService = DI.injector.getInstance(classOf[ExtractionBusService])
 
@@ -1134,8 +1134,8 @@ class MsgConsumer(channel: Channel, target: ActorRef) extends DefaultConsumer(ch
 /**
   * Actual message on reply queue.
   */
-class EventFilter(channel: Channel, queue: String) extends Actor {
-  val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+class EventFilter @Inject()(configuration: Configuration, extractions: ExtractionService)
+                           (channel: Channel, queue: String) extends Actor {
 
   def receive = {
     case statusBody: String =>
@@ -1155,7 +1155,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       if (updatedStatus.contains("DONE")) {
         extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, "DONE", startDate, None))
       } else {
-        val commKey = "key=" + play.Play.application().configuration().getString("commKey")
+        val commKey = "key=" + configuration.get[String]("commKey")
         val parsed_status = status.replace(commKey, "key=secretKey")
         extractions.insert(Extraction(UUID.generate(), file_id, extractor_id, parsed_status, startDate, None))
       }
@@ -1169,9 +1169,8 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
   * @param channel
   * @param queue
   */
-class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
-  val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
-  val extractorsService: ExtractorService = DI.injector.getInstance(classOf[ExtractorService])
+class ExtractorsHeartbeats @Inject()(extractions: ExtractionService, extractorsService: ExtractorService)
+                                    (channel: Channel, queue: String) extends Actor {
 
   def receive = {
     case statusBody: String =>

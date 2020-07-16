@@ -68,8 +68,8 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                   case (start, end) =>
 
                     inputStream.skip(start)
-                    import play.api.mvc.{ResponseHeader, SimpleResult}
-                    SimpleResult(
+                    import play.api.mvc.{ResponseHeader, Result}
+                    Result(
                       header = ResponseHeader(PARTIAL_CONTENT,
                         Map(
                           CONNECTION -> "keep-alive",
@@ -209,8 +209,8 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                       case (start, end) =>
 
                         inputStream.skip(start)
-                        import play.api.mvc.{ResponseHeader, SimpleResult}
-                        SimpleResult(
+                        import play.api.mvc.{ResponseHeader, Result}
+                        Result(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
                               CONNECTION -> "keep-alive",

@@ -7,7 +7,7 @@ import models.{Logo, ResourceRef, UUID, User}
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import play.api.mvc.{Action, Result, SimpleResult}
+import play.api.mvc.{Action, Result, Result}
 import services.LogoService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -146,14 +146,14 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
     }
   }
 
-  private def checkLogoPermission(logo: Option[Logo], user: Option[User]):Either[String, SimpleResult] = {
+  private def checkLogoPermission(logo: Option[Logo], user: Option[User]):Either[String, Result] = {
     logo match {
       case Some(l) => checkLogoPermission(l.path, l.name, user)
       case None => Right(Forbidden(s"You do not have permission to modify logo"))
     }
   }
 
-  private def checkLogoPermission(path: String, name: String, user: Option[User]):Either[String, SimpleResult] = {
+  private def checkLogoPermission(path: String, name: String, user: Option[User]):Either[String, Result] = {
     path.split("-", 2) match {
       case Array("GLOBAL", id @_*) => {
         if (Permission.checkServerAdmin(user)) {

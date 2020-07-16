@@ -9,7 +9,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee._
 import play.api.libs.ws.WS.WSRequestHolder
 import play.api.libs.ws._
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 
 import scala.concurrent.Future
 
@@ -109,9 +109,9 @@ class Proxy @Inject()() extends ApiController {
 
   /**
     * Copies the header values from our intermediary (proxied) response to the
-    * SimpleResult that we will return to the caller of the proxy API
+    * Result that we will return to the caller of the proxy API
     */
-  def buildProxiedResponse(lastResponse: Response, proxiedResponse: SimpleResult): SimpleResult = {
+  def buildProxiedResponse(lastResponse: Response, proxiedResponse: Result): Result = {
     // TODO: other response headers my be needed for specific cases
     val chunkedResponse = proxiedResponse.withHeaders (
       //CONNECTION -> lastResponse.header("Connection").orNull,
@@ -132,9 +132,9 @@ class Proxy @Inject()() extends ApiController {
   }
 
   /**
-    * Given a response, chunk its body and return/forward it as a SimpleResult
+    * Given a response, chunk its body and return/forward it as a Result
     */
-  def chunkAndForwardResponse(originalResponse: Response): SimpleResult = {
+  def chunkAndForwardResponse(originalResponse: Response): Result = {
     val statusCode = originalResponse.getAHCResponse.getStatusCode
     if (statusCode >= 400) {
       Logger.error("PROXY :: " + statusCode + " - " + originalResponse.getAHCResponse.getStatusText)
@@ -145,7 +145,7 @@ class Proxy @Inject()() extends ApiController {
     val bodyEnumerator = Enumerator.fromStream(bodyStream)
     val payload = Status(statusCode).chunked(bodyEnumerator)
 
-    // Return a SimpleResult, coerced into our desired Content-Type
+    // Return a Result, coerced into our desired Content-Type
     val contentType = originalResponse.header("Content-Type").getOrElse("text/plain")
     return buildProxiedResponse(originalResponse, payload).as(contentType)
   }

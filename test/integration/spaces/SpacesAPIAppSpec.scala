@@ -94,7 +94,7 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
       app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
     "make the FakeApplication available implicitly" in {
-      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      def getConfig(key: String)(implicit app: Application) = app.configuration.get[String](key)
       getConfig("ehcacheplugin") mustBe Some("disabled")
     }
     "start the FakeApplication" in {

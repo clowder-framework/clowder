@@ -7,9 +7,11 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.Logger
 import org.scalatestplus.play.PlaySpec
+
 import scala.io.Source
 import org.scalatestplus.play._
-import play.api.{Play, Application}
+import play.api.{Application, Play}
+import services.DI
 
 
 /*
@@ -20,8 +22,8 @@ import play.api.{Play, Application}
 
 //@DoNotDiscover
 class PreviewsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
-
-  lazy val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  val configuration = DI.injector.getInstance(classOf[play.api.Configuration])
+  lazy val secretKey = configuration.get[String]("commKey")
   lazy val workingDir = System.getProperty("user.dir")
   lazy val emptyJson = new JsObject(List.empty)
 
