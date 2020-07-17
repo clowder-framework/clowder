@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LIST=$1
+LIST=list.txt
 
 while IFS=, read -r path days;
 do
