@@ -2366,6 +2366,7 @@ class  Datasets @Inject()(
     // https://support.datacite.org/docs/schema-40
 
     // Prep user data (DataCite v4 specifies Family, Given as name format)
+    // TODO: Need to resolve how to present names - take last word as Family and rest Given unless specified elsewhere?
     var creatorName = dataset.author.fullName
     var creatorOrcid = ""
     userService.get(dataset.author.id) match {
@@ -2381,6 +2382,8 @@ class  Datasets @Inject()(
 
     // ---------- REQUIRED FIELDS ----------
     // Identifier (DOI)
+    // TODO: We don't have a DOI yet in most cases. It seems that DataCite v4+ requires one, however RDA does not.
+    s += "<identifier identifierType=\"DOI\">:none</identifier>\n"
 
     // Creators
     s += "<creators>\n"
@@ -2393,55 +2396,48 @@ class  Datasets @Inject()(
     s += "\t</creator>\n"
     s += "</creators>\n"
 
-    // Title (Required)
+    // Title
     s += "<titles>\n\t<title>"+dataset.name+"</title>\n</titles>\n"
 
-    // Publisher (Required)
-    /**
-     * "The name of the entity that holds, archives, publishes prints, distributes, releases, issues, or produces
-     * the resource. This property will be used to formulate the citation, so consider the prominence of the role."
-     *
-     * Not sure Clowder is right here.
-     */
+    // Publisher
+    // TODO: Not sure Clowder is right here.
     s += "<publisher>Clowder</publisher>\n"
 
-    // PublicationYear (Required)
+    // PublicationYear
     val yyyy = new SimpleDateFormat("yyyy").format(dataset.created)
     s += "<publicationYear>"+yyyy+"</publicationYear>\n"
 
     // ResourceType
-    /**
-     * The format is open, but the preferred format is a single term of some detail so that a pair can be formed with the sub-property.
-     * Text formats can be free-text OR terms from the CASRAI Publications resource type list. (14)
-     * Examples:
-     * Dataset/Census Data, where "Dataset" is resourceTypeGeneral value and "Census Data" is ResourceType value.
-     * Text/Conference Abstract, where "Text" is resourceTypeGeneral value and "Conference Abstract" is resourceType value aligned with CASRAI Publications term.
-     */
-    s += "<ResourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</ResourceType>\n"
-
+    s += "<resourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</ResourceType>\n"
 
     // ---------- RECOMMENDED/OPTIONAL FIELDS ----------
 
-    // Description (R)
-    s += "<descriptions>" +
-      "\n\t<description>"+dataset.description+"</description>" +
-      "\n\t<descriptionType>Abstract</descriptionType>" +
-      "\n</descriptions>\n"
+    // Description
+    s += "<descriptions>\n\t<description descriptionType=\"Abstract\">"+dataset.description+"</description>\n</descriptions>\n"
 
-    /** Contributors (R)
-    "The institution or person responsible for collecting, creating, or otherwise
-    contributing to the developement of the dataset." List of example types.
+    // Contributors (anyone else who provided files or metadata)
+    val contribList = ListBuffer[String]()
+    datasets.getUserMetadataJSON(dataset.id).foreach(md => {
+      val mdAuth = md.toString
+      if (mdAuth.length > 1 && mdAuth != creatorName) contribList += mdAuth
+    })
+    files.get(dataset.files).found.foreach(fi => {
+      if (fi.author.fullName != creatorName) contribList += fi.author.fullName
+      files.getUserMetadataJSON(fi.id).foreach(md => {
+        val mdAuth = md.toString
+        if (mdAuth.length > 1 && mdAuth != creatorName) contribList += mdAuth
+      })
+    })
 
-    Should check every file in the dataset for uploaders/metadata contributors other
-    than the creator and include here as well (?).
-     **/
+    if (contribList.length > 0) {
+      s += "<contributors>\n"
+      contribList.distinct.foreach(name => s += "\t<contributor contributorType=\"\">"+name+"</contributor>\n")
+      s += "</contributors>\n"
+    }
 
     // Date (Created)
     val isoDate = new SimpleDateFormat("YYYY-MM-dd").format(dataset.created)
-    s += "<dates>" +
-      "\n\t<date>"+isoDate+"</date>" +
-      "\n\t<dateType>Created</dateType>" +
-      "\n</dates>\n"
+    s += "<dates>\n\t<date dateType=\"Created\">"+isoDate+"</date>\n</dates>\n"
 
     // AlternateIdentifier
     s += "<alternateIdentifier>"+dataset.id.stringify+"</alternateIdentifier>\n"
@@ -2449,17 +2445,29 @@ class  Datasets @Inject()(
     // Format
     s += "<format>application/zip</format>\n"
 
-    // Subject (R)
-    /**
-     * Subject, keyword, classification code, or key phrase describing the resource.
-     * Tags?
-     */
+    // Subjects
+    if (dataset.tags.length > 0) {
+      s += "<subjects>\n"
+      dataset.tags.foreach(t => s += "\t<tag>"+t.name+"</tag>\n")
+      s += "</subjects>\n"
+    }
 
-    // RelatedIdentifier (R) - DOIs, ISBNs, URLs of related resources e.g. 'cited by XYZ'.
-    // Size - free text, e.g. "126 kb", "8 files", can have many
+    // RelatedIdentifier
+    val clowder_url = "CLOWDER URL GOES HERE"
+    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+clowder_url+"</ResourceType>\n"
+
+    // Size (can have many)
+    s += "<sizes>\n\t<size>"+dataset.files.length.toString+" files</size>\n</sizes>\n"
+
+    // Rights
+    // TODO: Clean these up?
+    val rURL = dataset.licenseData.m_licenseUrl
+    val rightsURI = if (rURL.length > 0) " rightsURI=\""+rURL+"\"" else ""
+    val rightsTxt = dataset.licenseData.m_licenseText
+    s += "<rights"+rightsURI+">"+rightsTxt+"</rights>\n"
+
     // Version
     // Language - e.g. "en"
-    // Rights - free text e.g. "Creative Commons Attribution 3.0"
     // GeoLocation (R)
     // FundingReference
 

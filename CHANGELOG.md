@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Datasets downloaded with Clowder now include DataCite v4 XML files in the output /metadata folder for interoperability purposes.
+
 ## 1.10.0 - 2020-06-30
 
 ### Added
