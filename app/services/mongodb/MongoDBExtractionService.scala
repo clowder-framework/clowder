@@ -60,7 +60,7 @@ class MongoDBExtractionService extends ExtractionService {
   val allOfFile = Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
 	var extractorsTimeArray=List[Date]()
 	for(currentExtraction <- allOfFile){
-	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
+	    extractorsTimeArray = currentExtraction.start :: extractorsTimeArray
 	}
   return extractorsTimeArray
 }
@@ -106,20 +106,16 @@ class MongoDBExtractionService extends ExtractionService {
         }
 
         // Use start time for time groupings as backup because end is frequently empty
-        e.start match {
-          case Some(s) => {
-            if (grp_start == "N/A" || s.before(grp_start))
-              grp_start = s
-            else if (grp_end == "N/A" || s.after(grp_end)) {
-              grp_end = s
-              grp_endmsg = e.status
-            }
-            else if (s == grp_end) {
-              // Update message chronologically even if timestamp matches
-              grp_endmsg = e.status
-            }
-          }
-          case None => {}
+        val s = e.start
+        if (grp_start == "N/A" || s.before(grp_start))
+          grp_start = s
+        else if (grp_end == "N/A" || s.after(grp_end)) {
+          grp_end = s
+          grp_endmsg = e.status
+        }
+        else if (s == grp_end) {
+          // Update message chronologically even if timestamp matches
+          grp_endmsg = e.status
         }
         e.end match {
           case Some(n) => {
@@ -139,10 +135,7 @@ class MongoDBExtractionService extends ExtractionService {
 
       } else {
         // Create new entry in the Map
-        val start = e.start match {
-          case Some(s) => s.toString
-          case None => "N/A"
-        }
+        val start = e.start.toString
         val end = e.end match {
           case Some(e) => e.toString
           case None => start

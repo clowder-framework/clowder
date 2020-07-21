@@ -15,7 +15,7 @@ case class Extraction(
   job_id: UUID,
   extractor_id: String,
   status: String = "N/A",
-  start: Option[Date],
+  start: Date,
   end: Option[Date])
 
 /**
