@@ -27,19 +27,19 @@
                     <td colspan="4">
                         <table class="table table-condensed table-striped">
                             <thead>
-                                <th>Extraction Job ID</th>
+                                <th></th>
                                 <th>Last Update</th>
                                 <th>Status</th>
                             </thead>
                             <tbody>
                             @for(job_id <- extractions(e).allMsgs.keysIterator) {
-                                <tr>
-                                    <td width="30%"><a class="btn btn-link" data-toggle="collapse" data-target="#extraction-job-@job_id">@job_id</a></td>
-                                    <td width="20%">@extractions(e).allMsgs(job_id).head.start</td>
-                                    <td width="30%">@extractions(e).allMsgs(job_id).head.status</td>
+                                <tr class="accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extraction-job-@job_id">
+                                    <td width="35%" title="@job_id"><a class="btn btn-link">@extractions(e).allMsgs(job_id).head.start</a></td>
+                                    <td width="60%" class="accordion-status">@extractions(e).allMsgs(job_id).head.status</td>
                                 </tr>
+                                </tr class="accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extraction-job-@job_id">
                                 <tr class="collapse" id="extraction-job-@job_id">
-                                    <td colspan="3">
+                                    <td colspan="3" style="padding: 0 50px;">
                                         <table class="table table-hover">
                                             <thead>
                                                 <th>Timestamp</th>
@@ -102,3 +102,25 @@
             });
         }
 </script>
+<style>
+    .clickable {
+        cursor: pointer;
+    }
+    .accordion-toggle:before {
+        /* symbol for "opening" panels */
+        font-family: 'Glyphicons Halflings';  /* essential for enabling glyphicon */
+        content: "\e114";    /* adjust as needed, taken from bootstrap.css */
+        float: right;        /* adjust as needed */
+        color: grey;         /* adjust as needed */
+        padding: 12px 8px;
+    }
+    .accordion-toggle.collapsed:before {
+        /* symbol for "collapsed" panels */
+        content: "\e080";    /* adjust as needed, taken from bootstrap.css */
+        padding: 12px 8px;
+    }
+
+    .accordion-status {
+        padding: 12px 8px !important;
+    }
+</style>
