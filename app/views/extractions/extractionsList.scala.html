@@ -5,6 +5,7 @@
     } else {
         <table class="table">
             <thead>
+                <th></th>
                 <th width="20%">Extractor</th>
                 <th width="20%">Started</th>
                 <th width="20%">Latest Update</th>
@@ -12,9 +13,9 @@
             </thead>
             <tbody>
             @for((extractorName, group) <- extractions.toSeq.sortWith(_._2.latestMsgTime > _._2.latestMsgTime)) {
-                <tr>
+                <tr class="extractor-accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extractions-@extractorName.replace('.','-')">
                     <td>
-                        <a class="btn btn-link" data-toggle="collapse" data-target="#extractions-@extractorName.replace('.','-')">
+                        <a class="btn btn-link">
                             @extractorName
                         </a>
                     </td>
@@ -24,7 +25,7 @@
 
                 </tr>
                 <tr class="collapse" id="extractions-@extractorName.replace('.','-')">
-                    <td colspan="4">
+                    <td colspan="5">
                         <table class="table table-condensed table-striped">
                             <thead>
                                 <th></th>
@@ -33,11 +34,10 @@
                             </thead>
                             <tbody>
                             @for((job_id, eventList) <- group.allMsgs.toSeq.sortWith(_._1.stringify > _._1.stringify)) {
-                                <tr class="accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extraction-job-@job_id">
+                                <tr class="job-list-accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extraction-job-@job_id">
                                     <td width="35%" title="@job_id"><a class="btn btn-link">@eventList.head.start</a></td>
-                                    <td width="60%" class="accordion-status">@eventList.head.status</td>
+                                    <td width="60%" class="accordion-status" style="vertical-align:middle;">@eventList.head.status</td>
                                 </tr>
-                                </tr class="accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extraction-job-@job_id">
                                 <tr class="collapse" id="extraction-job-@job_id">
                                     <td colspan="3" style="padding: 0 50px;">
                                         <table class="table table-hover">
@@ -106,21 +106,24 @@
     .clickable {
         cursor: pointer;
     }
-    .accordion-toggle:before {
+    .job-list-accordion-toggle:before, .extractor-accordion-toggle:before {
         /* symbol for "opening" panels */
         font-family: 'Glyphicons Halflings';  /* essential for enabling glyphicon */
         content: "\e114";    /* adjust as needed, taken from bootstrap.css */
         float: right;        /* adjust as needed */
         color: grey;         /* adjust as needed */
-        padding: 12px 8px;
     }
-    .accordion-toggle.collapsed:before {
+    .job-list-accordion-toggle.collapsed:before, .extractor-accordion-toggle.collapsed:before {
         /* symbol for "collapsed" panels */
         content: "\e080";    /* adjust as needed, taken from bootstrap.css */
-        padding: 12px 8px;
     }
-
-    .accordion-status {
+    .job-list-accordion-toggle:before {
+        padding: 14px 12px;
+    }
+    .extractor-accordion-toggle:before {
+        padding: 16px 12px;
+    }
+    .job-list-accordion-status {
         padding: 12px 8px !important;
     }
 </style>
