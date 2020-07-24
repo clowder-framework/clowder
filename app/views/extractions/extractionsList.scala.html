@@ -25,11 +25,11 @@
 
                 </tr>
                 <tr class="collapse" id="extractions-@extractorName.replace('.','-')">
-                    <td colspan="5">
+                    <td colspan="5" class="extractor-log">
                         <table class="table table-condensed table-striped">
                             <thead>
                                 <th></th>
-                                <th>Last Update</th>
+                                <th>Submission</th>
                                 <th>Status</th>
                             </thead>
                             <tbody>
@@ -39,8 +39,8 @@
                                     <td width="60%" class="accordion-status" style="vertical-align:middle;">@eventList.head.status</td>
                                 </tr>
                                 <tr class="collapse" id="extraction-job-@job_id">
-                                    <td colspan="3" style="padding: 0 50px;">
-                                        <table class="table table-hover">
+                                    <td colspan="3" class="extractor-log">
+                                        <table class="table table-condensed">
                                             <thead>
                                                 <th>Timestamp</th>
                                                 <th>Status Message</th>
@@ -52,9 +52,7 @@
                                                     <td width="60%">
                                                         @evt.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
                                                         @if(evt.status == "SUBMITTED") {
-                                                            <a class="btn btn-link btn-xs" id='@(evt.id)' onclick="cancelSubmission('@(evt.file_id)', '@(evt.id)', '@(evt.extractor_id)', '@(extractType)')">
-                                                                Cancel
-                                                            </a>
+                                                            <a class="btn btn-link" id='@(evt.id)' onclick="cancelSubmission('@(evt.file_id)', '@(evt.id)', '@(evt.extractor_id)', '@(extractType)')">(Cancel submission)</a>
                                                         }
                                                     </td>
                                                 </tr>
@@ -125,5 +123,9 @@
     }
     .job-list-accordion-status {
         padding: 12px 8px !important;
+    }
+    .extractor-log {
+        padding: 10px 0px 10px 50px !important;
+        border-top: none !important;
     }
 </style>
