@@ -100,7 +100,7 @@ if [ $nsuccess = 12 ]; then
     nsuccess=0
     post_message "Upload+extract test script continuous 24 hours success!"
 fi
-echo $nsuccess
+
 export SUCCESS=$nsuccess
 env > ./my_env.sh
 
