@@ -89,9 +89,19 @@ while [ $FILE_EXTRACTED -eq 0 ]; do
     sleep 10
 done
 echo "File extraction complete."
-    
+
+source ./my_env.sh
+nsuccess=$(($SUCCESS+1))
+if [ $nsuccess = 12 ]; then
+    nsuccess=0
+fi
+echo $nsuccess
+export SUCCESS=$nsuccess
+env > ./my_env.sh
+post_message "Upload+extract test script all day success!"    
 
 # ------------------------ Delete dataset ------------------------
 curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
+
 
 echo "Test complete."
