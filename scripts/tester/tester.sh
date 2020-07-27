@@ -15,6 +15,7 @@ SLACK_TOKEN=${SLACK_TOKEN:-""}
 SLACK_CHANNEL=${SLACK_CHANNEL:-"#github"}
 SLACK_USER=${SLACK_USER:-"NCSA Build"}
 
+source ./my_env.sh
 
 post_message() {
   printf "$1\n"
@@ -54,6 +55,8 @@ while [ $FILE_UPLOADED = 0 ]; do
       echo "File upload not PROCESSED after 2 minutes. There may be a problem. Deleting dataset."
       curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
       post_message "Upload+extract test script failing on $CLOWDER_URL\/files\/$FILE_ID (status is not PROCESSED)"
+      export SUCCESS=0
+      env > ./my_env.sh
       exit 1
     fi
     echo "File upload not complete; checking again in 10 seconds."
@@ -83,6 +86,8 @@ while [ $FILE_EXTRACTED -eq 0 ]; do
       echo "File extraction not DONE after 4 minutes. There may be a problem. Deleting dataset."
       curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
       post_message "Upload+extract test script failing on $CLOWDER_URL/files/$FILE_ID (extractor not DONE)"
+      export SUCCESS=0
+      env > ./my_env.sh
       exit 1
     fi
     echo "File extraction not complete; checking again in 10 seconds."
@@ -90,7 +95,7 @@ while [ $FILE_EXTRACTED -eq 0 ]; do
 done
 echo "File extraction complete."
 
-source ./my_env.sh
+
 nsuccess=$(($SUCCESS+1))
 if [ $nsuccess = 12 ]; then
     nsuccess=0
