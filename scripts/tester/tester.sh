@@ -102,7 +102,7 @@ fi
 echo $nsuccess
 export SUCCESS=$nsuccess
 env > ./my_env.sh
-post_message "Upload+extract test script all day success!"    
+post_message "Upload+extract test script continuous 24 hours success!"    
 
 # ------------------------ Delete dataset ------------------------
 curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
