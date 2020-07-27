@@ -2,14 +2,11 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.{ClowderUser, RequestResource, ResourceRef, User, UserStatus}
-import org.apache.commons.lang.StringEscapeUtils._
+import models.{ClowderUser, ResourceRef, User, UserStatus}
 import play.api.i18n.Messages
 import play.api.mvc._
-import securesocial.core.{Authenticator, SecureSocial, UserService}
+import securesocial.core.SecureSocial
 import services._
-import securesocial.core.IdentityProvider
-import securesocial.core.providers.utils.RoutesHelper
 
 import scala.concurrent.Future
 
@@ -24,12 +21,12 @@ import scala.concurrent.Future
  * PermissionAction: call the wrapped code iff the user has the right permission on the reference object.
  *
  */
-trait SecuredController extends Controller {
+trait SecuredController extends BaseController with play.api.i18n.I18nSupport {
 
   val userservice = DI.injector.getInstance(classOf[services.UserService])
 
   /** get user if logged in */
-  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest, AnyContent] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -49,7 +46,7 @@ trait SecuredController extends Controller {
   /**
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
-  def PrivateServerAction = new ActionBuilder[UserRequest] {
+  def PrivateServerAction = new ActionBuilder[UserRequest, AnyContent] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -65,7 +62,7 @@ trait SecuredController extends Controller {
   }
 
   /** call code iff user is logged in */
-  def AuthenticatedAction = new ActionBuilder[UserRequest] {
+  def AuthenticatedAction = new ActionBuilder[UserRequest, AnyContent] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -86,7 +83,7 @@ trait SecuredController extends Controller {
   }
 
   /** call code if user is a server admin */
-  def ServerAdminAction = new ActionBuilder[UserRequest] {
+  def ServerAdminAction = new ActionBuilder[UserRequest, AnyContent] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {

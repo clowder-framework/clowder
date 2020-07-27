@@ -7,7 +7,7 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.mvc._
 import securesocial.core.providers.UsernamePasswordProvider
-import securesocial.core.{Authenticator, SecureSocial, UserService}
+import securesocial.core.SecureSocial
 import services.{AppConfiguration, DI}
 
 import scala.concurrent.Future
@@ -23,12 +23,14 @@ import scala.concurrent.Future
  * PermissionAction: call the wrapped code iff the user has the right permission on the reference object.
  *
  */
-trait ApiController extends Controller {
+trait ApiController extends BaseController {
 
   val userservice = DI.injector.getInstance(classOf[services.UserService])
 
   /** get user if logged in */
-  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest, AnyContentAsJson] {
+    def parser = controllerComponents.parsers.json
+    def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -42,7 +44,9 @@ trait ApiController extends Controller {
   /**
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
-  def PrivateServerAction = new ActionBuilder[UserRequest] {
+  def PrivateServerAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
+    def parser = controllerComponents.parsers.json
+    def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -56,7 +60,9 @@ trait ApiController extends Controller {
   }
 
   /** call code iff user is logged in */
-  def AuthenticatedAction = new ActionBuilder[UserRequest] {
+  def AuthenticatedAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
+    def parser = controllerComponents.parsers.json
+    def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -69,7 +75,9 @@ trait ApiController extends Controller {
   }
 
   /** call code iff user is a server admin */
-  def ServerAdminAction = new ActionBuilder[UserRequest] {
+  def ServerAdminAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
+    def parser = controllerComponents.parsers.json
+    def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -82,7 +90,10 @@ trait ApiController extends Controller {
   }
 
   /** call code iff user has right permission for resource */
-  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None,
+                       affectedResource: Option[ResourceRef] = None) = new ActionBuilder[UserRequest, AnyContentAsJson] {
+    def parser = controllerComponents.parsers.json
+    def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -105,7 +116,9 @@ trait ApiController extends Controller {
    * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
    * code around but we don't want users to have access to it.
    */
-  def DisabledAction = new ActionBuilder[UserRequest] {
+  def DisabledAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
+    def parser = controllerComponents.parsers.json
+    def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       Future.successful(Unauthorized("Disabled"))
     }
