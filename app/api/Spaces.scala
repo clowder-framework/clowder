@@ -24,7 +24,7 @@ class Spaces @Inject()(spaces: SpaceService,
                        datasets: DatasetService,
                        adminsNotifierService: AdminsNotifierService,
                        appConfig: AppConfigurationService,
-                       configuration: Configuration) extends ApiController {
+                       configuration: Configuration) extends ApiController with play.api.i18n.I18nSupport {
 
   /**
     * String name of the Space such as 'Project space' etc., parsed from conf/messages

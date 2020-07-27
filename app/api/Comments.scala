@@ -20,7 +20,7 @@ class Comments @Inject()(datasets: DatasetService,
 												 comments: CommentService,
 												 events: EventService,
 												 users: UserService,
-												 searches: SearchService) extends ApiController {
+												 searches: SearchService) extends ApiController with play.api.i18n.I18nSupport {
 
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
       Logger.trace("Adding comment")
