@@ -95,7 +95,6 @@ while [ $FILE_EXTRACTED -eq 0 ]; do
 done
 echo "File extraction complete."
 
-
 nsuccess=$(($SUCCESS+1))
 if [ $nsuccess = 12 ]; then
     nsuccess=0
