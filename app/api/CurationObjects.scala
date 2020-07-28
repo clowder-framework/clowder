@@ -262,7 +262,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                 }
               }
               case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                Logger.error("Errors: " + JsError.toJson(e).toString())
                 BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
               }
             }

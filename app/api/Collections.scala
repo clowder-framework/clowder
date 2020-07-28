@@ -356,7 +356,7 @@ class Collections @Inject() (datasets: DatasetService,
             name = s.get
           }
           case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            Logger.error("Errors: " + JsError.toJson(e).toString())
             BadRequest(toJson(s"name data is missing"))
           }
         }
@@ -383,7 +383,7 @@ class Collections @Inject() (datasets: DatasetService,
             description = s.get
           }
           case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            Logger.error("Errors: " + JsError.toJson(e).toString())
             BadRequest(toJson(s"description data is missing"))
           }
         }

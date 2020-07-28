@@ -819,7 +819,7 @@ class Files @Inject()(
             name = s.get
           }
           case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            Logger.error("Errors: " + JsError.toJson(e).toString())
             BadRequest(toJson(s"name data is missing"))
           }
         }
@@ -891,7 +891,7 @@ class Files @Inject()(
           licenseType = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"licenseType data is missing."))
         }
       }
@@ -904,7 +904,7 @@ class Files @Inject()(
           rightsHolder = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"rightsHolder data is missing."))
         }
       }
@@ -937,7 +937,7 @@ class Files @Inject()(
           }
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"licenseText data is missing."))
         }
       }
@@ -950,7 +950,7 @@ class Files @Inject()(
           licenseUrl = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"licenseUrl data is missing."))
         }
       }
@@ -963,7 +963,7 @@ class Files @Inject()(
           allowDownload = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"allowDownload data is missing."))
         }
       }
@@ -1443,7 +1443,7 @@ class Files @Inject()(
             Ok(toJson(Map("status" -> "success")))
           }
           case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            Logger.error("Errors: " + JsError.toJson(e).toString())
             BadRequest(toJson(s"description data is missing"))
           }
         }

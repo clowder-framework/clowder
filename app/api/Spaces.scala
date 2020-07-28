@@ -351,7 +351,7 @@ class Spaces @Inject()(spaces: SpaceService,
           description = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson("description data is missing from the updateSpace call."))
         }
       }
@@ -364,7 +364,7 @@ class Spaces @Inject()(spaces: SpaceService,
           name = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson("name data is missing from the updateSpace call."))
         }
       }
@@ -377,7 +377,7 @@ class Spaces @Inject()(spaces: SpaceService,
           timeAsString = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson("timetolive data is missing from the updateSpace call."))
         }
       }
@@ -388,7 +388,7 @@ class Spaces @Inject()(spaces: SpaceService,
           enabled = b.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson("enabled data is missing from the updateSpace call."))
         }
       }
@@ -398,7 +398,7 @@ class Spaces @Inject()(spaces: SpaceService,
           access = b.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson("access data is missing from the updateSpace call."))
         }
       }
@@ -531,7 +531,7 @@ class Spaces @Inject()(spaces: SpaceService,
           }
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson("rolesandusers data is missing from the updateUsers call."))
         }
       }

@@ -918,7 +918,7 @@ class  Datasets @Inject()(
           description = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"description data is missing."))
         }
       }
@@ -931,7 +931,7 @@ class  Datasets @Inject()(
           name = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"name data is missing."))
         }
       }
@@ -967,7 +967,7 @@ class  Datasets @Inject()(
           name = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"name data is missing."))
         }
       }
@@ -1006,7 +1006,7 @@ class  Datasets @Inject()(
           description = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"description data is missing."))
         }
       }
@@ -1043,7 +1043,7 @@ class  Datasets @Inject()(
           creator = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"creator data is missing."))
         }
       }
@@ -1159,7 +1159,7 @@ class  Datasets @Inject()(
           licenseType = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"licenseType data is missing."))
         }
       }
@@ -1172,7 +1172,7 @@ class  Datasets @Inject()(
           rightsHolder = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"rightsHolder data is missing."))
         }
       }
@@ -1205,7 +1205,7 @@ class  Datasets @Inject()(
           }
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"licenseText data is missing."))
         }
       }
@@ -1218,7 +1218,7 @@ class  Datasets @Inject()(
           licenseUrl = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"licenseUrl data is missing."))
         }
       }
@@ -1231,7 +1231,7 @@ class  Datasets @Inject()(
           allowDownload = s.get
         }
         case e: JsError => {
-          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          Logger.error("Errors: " + JsError.toJson(e).toString())
           BadRequest(toJson(s"allowDownload data is missing."))
         }
       }

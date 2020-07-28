@@ -152,7 +152,7 @@ class Comments @Inject()(datasets: DatasetService,
 	    		             	 		commentText = s.get
 	    		             	 	}
 	    		             	 	case e: JsError => {
-	    		             	 		Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+	    		             	 		Logger.error("Errors: " + JsError.toJson(e).toString())
 	    		             	 		BadRequest(toJson(s"description data is missing."))
 	    		             	 	}                            
 	    		                 }

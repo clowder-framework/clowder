@@ -417,7 +417,7 @@ class Extractions @Inject()(
     // Update database
     extractionInfoResult.fold(
       errors => {
-        BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
+        BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toJson(errors)))
       },
       info => {
         extractors.updateExtractorInfo(info) match {
