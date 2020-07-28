@@ -6,6 +6,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 //    TwirlKeys.useOldParser in Compile := true
 
+    routesImport += "models._"
+    routesImport += "Binders._"
+
     libraryDependencies ++= Seq(
       guice,
       "org.joda" % "joda-convert" % "2.2.1",
