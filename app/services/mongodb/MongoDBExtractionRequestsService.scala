@@ -3,7 +3,7 @@ package services.mongodb
 import org.bson.types.ObjectId
 import java.util.Date
 import play.api.Play.current
-import com.novus.salat.dao.{ ModelCompanion, SalatDAO }
+import salat.dao.{ ModelCompanion, SalatDAO }
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.ArrayList
 import play.api.libs.concurrent

@@ -2,7 +2,7 @@ package services.mongodb
 
 import models.Institution
 import services.InstitutionService
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import play.Logger

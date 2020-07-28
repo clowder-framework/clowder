@@ -1,9 +1,9 @@
 package models
 
 import org.bson.types.ObjectId
-import com.novus.salat.transformers.CustomTransformer
 import play.api.Logger
 import play.api.libs.json._
+import salat.transformers.CustomTransformer
 
 /**
  * Wrapper for system IDs. Currently defaults to MongoDB ObjectId, but should be made generic in the future.

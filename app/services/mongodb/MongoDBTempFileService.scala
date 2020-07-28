@@ -7,7 +7,7 @@ import services.TempFileService
 import models.{UUID, TempFile}
 import javax.inject.Singleton
 import org.bson.types.ObjectId
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 

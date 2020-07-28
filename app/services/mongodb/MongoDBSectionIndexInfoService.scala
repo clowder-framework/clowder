@@ -1,6 +1,6 @@
 package services.mongodb
 
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._

@@ -5,7 +5,7 @@ import java.util.Date
 import akka.actor.Cancellable
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import models.{File, _}
 import org.bson.types.ObjectId
 import play.api.Logger
@@ -14,7 +14,7 @@ import play.api.libs.json.{Json, JsObject}
 import play.libs.Akka
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoContext.context
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._

@@ -5,7 +5,7 @@ import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.MongoDBObject
 import play.api.Logger
 import models._
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._

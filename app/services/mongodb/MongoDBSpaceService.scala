@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import models._
 import org.bson.types.ObjectId
 import play.api.Logger

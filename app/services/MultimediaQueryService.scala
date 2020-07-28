@@ -2,7 +2,7 @@ package services
 
 
 import java.io.InputStream
-import com.novus.salat.dao.SalatMongoCursor
+import salat.dao.SalatMongoCursor
 import models.{MultimediaDistance, UUID, MultimediaFeatures, TempFile}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject

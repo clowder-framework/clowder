@@ -3,13 +3,13 @@ package services.mongodb
 import models._
 import java.util.Date
 import services.SchedulerService
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import play.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.SalatMongoCursor
+import salat.dao.SalatMongoCursor
 
 /**
  * Use MongoDB to store schedules

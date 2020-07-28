@@ -2,7 +2,7 @@ package services.mongodb
 
 import models.{DBResult, UUID, Comment}
 import services.CommentService
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import play.Logger

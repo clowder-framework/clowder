@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.mongodb.casbah.Imports.ObjectId
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import javax.inject.{Inject, Singleton}
 import models.{FileLink, MiniUser, UUID}
 import play.api.Play.current

@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import com.novus.salat.annotations.raw.Ignore
+import salat.annotations.raw.Ignore
 
 /**
  * Comment

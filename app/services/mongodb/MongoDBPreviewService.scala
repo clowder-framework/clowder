@@ -14,7 +14,7 @@ import org.apache.http.entity.mime.{HttpMultipartMode, MultipartEntity}
 import org.apache.http.entity.mime.content.StringBody
 import java.nio.charset.Charset
 import org.apache.http.util.EntityUtils
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._

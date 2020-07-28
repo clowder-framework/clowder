@@ -5,8 +5,8 @@ import java.util.Date
 
 import com.mongodb.DBObject
 import com.mongodb.util.JSON
-import com.novus.salat._
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat._
+import salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
 import securesocial.core.{AuthenticationMethod, Identity, IdentityId, UserServicePlugin}
@@ -655,7 +655,7 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
   override def save(user: Identity): User = {
     // user is always of type SocialUser when this function is entered
     // first convert the socialuser object to a mongodbobject
-    val userobj = com.novus.salat.grater[Identity].asDBObject(user)
+    val userobj = salat.grater[Identity].asDBObject(user)
 
     // replace _typeHint with the right model type so it will get correctly deserialized
     userobj.put("_typeHint", "models.ClowderUser")

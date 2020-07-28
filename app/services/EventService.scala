@@ -5,7 +5,7 @@ import com.mongodb.casbah.Imports._
 import java.util.Date
 
 
-import com.novus.salat.dao.SalatMongoCursor
+import salat.dao.SalatMongoCursor
 /**
  * Service definition to interact with Events database.
  *

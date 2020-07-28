@@ -1,7 +1,7 @@
 package services
 
 
-import com.novus.salat.dao.SalatMongoCursor
+import salat.dao.SalatMongoCursor
 import models.{VocabularyTerm, UUID, Vocabulary}
 import securesocial.core.Identity
 

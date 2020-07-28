@@ -2,7 +2,7 @@ package services.mongodb
 
 import javax.inject.{Inject, Singleton}
 import services.DatasetService
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.casbah.Imports._
 import play.api.Play._
 import scala.Some

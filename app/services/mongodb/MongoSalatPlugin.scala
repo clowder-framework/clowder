@@ -1360,7 +1360,7 @@ class MongoSalatPlugin @Inject()(configuration: Configuration)(app: Application)
                   Some(new URL("http://clowder.ncsa.illinois.edu/clowder/api/extractors/ncsa.file.digest"))),
                 Json.parse("{\"sha512\": \"" + sha + "\"}"),
                 None)
-              val dbmd = com.novus.salat.grater[Metadata].asDBObject(mdObj)
+              val dbmd = salat.grater[Metadata].asDBObject(mdObj)
               collection("metadata").insert(dbmd, WriteConcern.Safe)
 
               try {

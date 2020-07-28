@@ -7,7 +7,7 @@ import play.api.Application
 import securesocial.core.{AuthenticatorStore, Authenticator}
 import play.api.Logger
 import java.util.Date
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.casbah.Imports._
 import play.api.Play._
 import securesocial.core.IdentityId

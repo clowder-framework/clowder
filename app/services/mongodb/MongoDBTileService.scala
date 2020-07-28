@@ -2,7 +2,7 @@ package services.mongodb
 
 import com.mongodb.casbah.WriteConcern
 import services.{ByteStorageService, PreviewService, TileService}
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import MongoContext.context
 import play.api.Play.current

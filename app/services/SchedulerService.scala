@@ -3,7 +3,7 @@ import models._
 import play.api.libs.json.JsValue
 import com.mongodb.casbah.Imports._
 
-import com.novus.salat.dao.SalatMongoCursor
+import salat.dao.SalatMongoCursor
 /**
  * Service to add a job to scheduler
  *

@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
-import com.novus.salat.dao.{ModelCompanion, SalatDAO, SalatMongoCursor}
+import salat.dao.{ModelCompanion, SalatDAO, SalatMongoCursor}
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import models.{MultimediaDistance, MultimediaFeatures, TempFile, UUID}

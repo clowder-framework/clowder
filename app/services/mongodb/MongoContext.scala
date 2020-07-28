@@ -3,8 +3,8 @@ package services.mongodb
 import java.net.{URI, URL}
 
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
-import com.novus.salat.transformers.CustomTransformer
-import com.novus.salat.{TypeHintFrequency, StringTypeHintStrategy, Context}
+import salat.transformers.CustomTransformer
+import salat.{TypeHintFrequency, StringTypeHintStrategy, Context}
 import play.api.{Logger, Play}
 import play.api.Play.current
 import models.UUIDTransformer

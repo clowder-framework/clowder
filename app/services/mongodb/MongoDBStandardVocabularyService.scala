@@ -6,7 +6,7 @@ import com.mongodb.casbah.Imports.$set
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import services.mongodb.MongoContext.context
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import models.{StandardVocab, UUID}
 import javax.inject.{Inject, Singleton}

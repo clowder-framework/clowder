@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
 import play.api.Logger

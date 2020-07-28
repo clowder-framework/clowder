@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 
 import api.Permission
 import api.Permission._
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import models._
 import org.bson.types.ObjectId
 import play.api.Play._

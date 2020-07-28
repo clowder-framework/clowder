@@ -7,7 +7,7 @@ import services.{ByteStorageService, ThumbnailService}
 import models.{Thumbnail, UUID}
 import com.mongodb.casbah.commons.MongoDBObject
 import javax.inject.{Inject}
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import util.FileUtils

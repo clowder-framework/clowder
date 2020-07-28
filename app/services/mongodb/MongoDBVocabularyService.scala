@@ -5,7 +5,7 @@ import securesocial.core.Identity
 import services.mongodb.MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 
-import com.novus.salat.dao.{SalatMongoCursor, ModelCompanion, SalatDAO}
+import salat.dao.{SalatMongoCursor, ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import models._
 import javax.inject.{Singleton, Inject}

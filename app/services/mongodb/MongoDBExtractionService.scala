@@ -4,8 +4,8 @@ import services.ExtractionService
 import models.{UUID, Extraction, ExtractionGroup, ResourceRef}
 import org.bson.types.ObjectId
 import play.api.Play.current
-import com.novus.salat.dao.ModelCompanion
-import com.novus.salat.dao.SalatDAO
+import salat.dao.ModelCompanion
+import salat.dao.SalatDAO
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date

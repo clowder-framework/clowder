@@ -33,7 +33,7 @@ import models.File
 import play.api.libs.json.JsObject
 import java.util.Date
 
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
 import com.mongodb.casbah.Imports._

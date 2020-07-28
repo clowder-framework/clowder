@@ -8,13 +8,13 @@ import java.util.Date
 import org.bson.types.ObjectId
 import services._
 import api.Permission.Permission
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import play.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.SalatMongoCursor
+import salat.dao.SalatMongoCursor
 
 /**
   * Use MongoDB for storing events.

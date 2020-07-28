@@ -1,7 +1,7 @@
 package models
 
 import org.bson.types.ObjectId
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import services.mongodb.MongoContext.context
 import play.api.Play.current
 import play.api.Logger

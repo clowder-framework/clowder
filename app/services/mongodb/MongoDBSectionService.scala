@@ -5,7 +5,7 @@ import services.{CommentService, DatasetService, FileService, FolderService, Pre
 import models._
 import javax.inject.{Inject, Singleton}
 import java.util.Date
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
 import play.api.Logger

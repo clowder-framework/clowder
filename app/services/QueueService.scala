@@ -5,7 +5,7 @@ import java.util.Date
 import akka.actor.Cancellable
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import models.{File, _}
 import org.bson.types.ObjectId
 import play.api.Logger

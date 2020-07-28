@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 import org.joda.time.DateTime
 import java.util.Date
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import play.api.Play._
 import securesocial.core.IdentityId

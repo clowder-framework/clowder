@@ -5,7 +5,7 @@ package services.mongodb
 
 import api.Permission
 import api.Permission.Permission
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import models._

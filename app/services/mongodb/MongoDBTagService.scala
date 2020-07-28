@@ -3,7 +3,7 @@ package services.mongodb
 import javax.inject.Inject
 
 import api.UserRequest
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import models.{Tag, UUID}
 import org.bson.types.ObjectId
 import play.api.Logger

@@ -4,7 +4,7 @@ import java.io.InputStream
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO}
 import models.{User, Logo, UUID}
 import play.api.Play.current
 import services.{ByteStorageService, LogoService}
