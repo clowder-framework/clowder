@@ -10,6 +10,7 @@ import os
 import logging
 import json
 import threading
+import requests
 import pika
 
 
@@ -116,7 +117,7 @@ class RabbitMQMonitor():
 
             if msg["type"] == 'missing':
                 jbody = json.loads(self.body)
-                logging.error("%s %s no longer exists." % (jbody["resource_type"], jbody["resource_id"]))
+                logging.error("%s [%s] message removed." % (jbody["resource_type"], jbody["resource_id"]))
                 channel.basic_ack(self.method.delivery_tag)
                 with self.lock:
                     self.finished = True
@@ -127,7 +128,7 @@ class RabbitMQMonitor():
                 # TODO: If resource exists but retry count > some N, should we stop bouncing it back to main queue?
                 jbody = json.loads(self.body)
                 jbody["retry_count"] = 0
-                logging.error("%s %s goes back to the main queue, precious!" % (jbody["resource_type"], jbody["resource_id"]))
+                logging.error("%s [%s] message resubmitted." % (jbody["resource_type"], jbody["resource_id"]))
                 channel.basic_publish(exchange='',
                                       routing_key=self.queue_basic,
                                       properties=properties,
@@ -141,21 +142,56 @@ class RabbitMQMonitor():
 
     def evaluate_message(self, jbody):
         # TODO: If dataset or file, check existence as necessary.
-        self.messages.append({
-            "type": "resubmit",
-            "resource_type": jbody["type"],
-            "resource_id": jbody["id"]
-        })
+        logging.getLogger(__name__).info(jbody)
+        host = jbody.get('host', '')
+        if host == '':
+            return
+        elif not host.endswith('/'):
+            host += '/'
+        key = jbody.get("secretKey", '')
+        res_type = jbody["type"]
+        res_id = jbody["id"]
+
+        logging.getLogger(__name__).info("Checking %s?key=%s" % (host, key))
+        r = self.check_existence(host, key, res_type, res_id)
+        resubmit = False
+
+        if r.status_code == 200:
+            # The erroneous resource exists, so resubmit to main queue
+            resubmit = True
+        elif r.status_code == 401:
+            # Unauthorized to view resource, but it exists so resubmit (extractor might use other creds)
+            logging.getLogger(__name__).error("Not authorized: %s [%s]" % (res_type, res_id))
+            resubmit = True
+        else:
+            logging.getLogger(__name__).error("%s: %s [%s]" % (r, res_type, res_id))
+            self.messages.append({
+                "type": "missing",
+                "resource_type": res_type,
+                "resource_id": res_id
+            })
+
+        if resubmit:
+            self.messages.append({
+                "type": "resubmit",
+                "resource_type": res_type,
+                "resource_id": res_id
+            })
+    # Return status code of request for the resource from Clowder
+    def check_existence(self, host, key, resource_type, resource_id):
+        # TODO: Is there a better exists URL to use?
+        clowder_url = "%sapi/%s/%s/metadata?key=%s" % (host, resource_type, resource_id, key)
+        r = requests.get(clowder_url)
+        return r.status_code
 
     def is_finished(self):
         with self.lock:
             return self.worker and not self.worker.isAlive() and self.finished and len(self.messages) == 0
 
 
-logging.getLogger(__name__).info("Starting to listen")
-print("Starting to listen...")
-rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672/%2f')
-extractor_name = os.getenv('EXTRACTOR_QUEUE', 'ncsa.image.preview')
-monitor = RabbitMQMonitor(rabbitmq_uri, extractor_name)
-logging.getLogger(__name__).info("Starting to listen to "+extractor_name)
-monitor.listen()
+if __name__ == '__main__':
+    rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672/%2f')
+    extractor_name = os.getenv('EXTRACTOR_QUEUE', 'ncsa.image.preview')
+    monitor = RabbitMQMonitor(rabbitmq_uri, extractor_name)
+    logging.getLogger(__name__).info("Starting to listen to "+extractor_name)
+    monitor.listen()
