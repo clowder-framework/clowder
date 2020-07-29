@@ -46,7 +46,7 @@ import scala.util.Try
 case class ExtractorMessage(
   msgid: UUID,
   fileId: UUID,
-  jobId: UUID,
+  jobId: Option[UUID],
   notifies: List[String],
   intermediateId: UUID,
   host: String,
@@ -431,13 +431,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param file_id the UUID of file
     * @param extractor_id the extractor queue name to be submitted
     */
-  def postSubmissionEven(file_id: UUID, extractor_id: String): (UUID, UUID) = {
+  def postSubmissionEven(file_id: UUID, extractor_id: String): (UUID, Option[UUID]) = {
     val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
 
     import java.text.SimpleDateFormat
     val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
     val submittedDateConvert = new java.util.Date()
-    val job_id = UUID.generate()
+    val job_id = Some(UUID.generate())
     extractions.insert(Extraction(UUID.generate(), file_id, job_id, extractor_id, "SUBMITTED", submittedDateConvert, None)) match {
       case Some(objectid) => (UUID(objectid.toString), job_id)
       case None => (UUID(""), job_id)
@@ -487,7 +487,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
           val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString,
             d.id, "", apiKey, routingKey, source, "created", None)
           extractWorkQueue(msg)
-          jobId = Option(job_id)
+          jobId = job_id
         }
         jobId
       }
@@ -609,7 +609,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param newFlags
     */
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
-    datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): UUID = {
+    datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): Option[UUID] = {
     Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
     val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
@@ -632,7 +632,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param newFlags
     */
   def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String,
-    requestAPIKey: Option[String], user: Option[User]): UUID = {
+    requestAPIKey: Option[String], user: Option[User]): Option[UUID] = {
     Logger.debug(s"Sending message $queue from $host with extraInfo $extraInfo")
     val apiKey = getApiKey(requestAPIKey, user)
     val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
@@ -964,13 +964,13 @@ class PendingRequestCancellationActor(exchange: String, connection: Option[Conne
       val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
       val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
       var startDate = new java.util.Date()
-      val job_id: UUID = extractions.get(msg_id) match {
+      val job_id: Option[UUID] = extractions.get(msg_id) match {
         case Some(extraction) => {
           extraction.job_id
         }
         case None => {
           Logger.warn("Failed to lookup jobId.. no extraction message found with id=" + msg_id)
-          UUID("")
+          None
         }
       }
       extractions.insert(Extraction(UUID.generate(), id, job_id, queueName, "Cancel Requested", startDate, None))
@@ -1111,7 +1111,7 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
         "notifies" -> Json.toJson(notifies),
         "msgid" -> Json.toJson(msgid.stringify),
         "id" -> Json.toJson(fileid.stringify),
-        "jobid" -> Json.toJson(jobid.stringify),
+        "jobid" -> Json.toJson(jobid.get.stringify),
         "intermediateId" -> Json.toJson(intermediateId.stringify),
         "fileSize" -> Json.toJson(fileSize),
         "host" -> Json.toJson(actualHost),
@@ -1189,7 +1189,10 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       Logger.debug("Received extractor status: " + statusBody)
       val json = Json.parse(statusBody)
       val file_id = UUID((json \ "file_id").as[String])
-      val job_id = UUID((json \ "job_id").as[String])
+      val job_id: Option[UUID] = (json \ "job_id").asOpt[String] match {
+        case Some(jid) => { Some(UUID(jid)) }
+        case None => { None }
+      }
       val extractor_id = (json \ "extractor_id").as[String]
       val status = (json \ "status").as[String]
       val startDate = (json \ "start").asOpt[String].map(x =>

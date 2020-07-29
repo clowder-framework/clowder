@@ -142,7 +142,7 @@ class Extractions @Inject()(
               // FIXME dataset not available?
               plugin.fileCreated(file, None, Utils.baseUrl(request), request.apiKey) match {
                 case Some(jobId) => {
-                  Ok(Json.obj("status" -> "Ok", "job_id" -> jobId))
+                  Ok(Json.obj("status" -> "OK", "job_id" -> jobId))
                 }
                 case None => {
                   val message = "No jobId found for Extraction"

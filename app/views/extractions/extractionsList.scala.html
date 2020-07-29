@@ -1,4 +1,5 @@
 @(extractions: Map[String, ExtractionGroup], extractType: String)
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
 <div class="well">
     @if(extractions.size == 0) {
         <p>No extraction events recorded.</p>
@@ -36,7 +37,7 @@
                             @for((job_id, eventList) <- group.allMsgs.toSeq.sortWith(_._1.stringify > _._1.stringify)) {
                                 <tr class="job-list-accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extraction-job-@job_id">
                                     <td width="35%" title="@job_id"><a class="btn btn-link">@eventList.head.start</a></td>
-                                    <td width="60%" class="accordion-status" style="vertical-align:middle;">@eventList.head.status</td>
+                                    <td width="60%" class="accordion-status" style="vertical-align:middle;">@eventList.head.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
                                 </tr>
                                 <tr class="collapse" id="extraction-job-@job_id">
                                     <td colspan="3" class="extractor-log">
@@ -52,7 +53,7 @@
                                                     <td width="60%">
                                                         @evt.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
                                                         @if(evt.status == "SUBMITTED") {
-                                                            <a class="btn btn-link" id='@(evt.id)' onclick="cancelSubmission('@(evt.file_id)', '@(evt.id)', '@(evt.extractor_id)', '@(extractType)')">(Cancel submission)</a>
+                                                            <a class="btn btn-link btn-xs" id='@(evt.id)' onclick="cancelSubmission('@(evt.file_id)', '@(evt.id)', '@(evt.extractor_id)', '@(extractType)')">(Cancel submission)</a>
                                                         }
                                                     </td>
                                                 </tr>
@@ -100,32 +101,3 @@
             });
         }
 </script>
-<style>
-    .clickable {
-        cursor: pointer;
-    }
-    .job-list-accordion-toggle:before, .extractor-accordion-toggle:before {
-        /* symbol for "opening" panels */
-        font-family: 'Glyphicons Halflings';  /* essential for enabling glyphicon */
-        content: "\e114";    /* adjust as needed, taken from bootstrap.css */
-        float: right;        /* adjust as needed */
-        color: grey;         /* adjust as needed */
-    }
-    .job-list-accordion-toggle.collapsed:before, .extractor-accordion-toggle.collapsed:before {
-        /* symbol for "collapsed" panels */
-        content: "\e080";    /* adjust as needed, taken from bootstrap.css */
-    }
-    .job-list-accordion-toggle:before {
-        padding: 14px 12px;
-    }
-    .extractor-accordion-toggle:before {
-        padding: 16px 12px;
-    }
-    .job-list-accordion-status {
-        padding: 12px 8px !important;
-    }
-    .extractor-log {
-        padding: 10px 0px 10px 50px !important;
-        border-top: none !important;
-    }
-</style>
