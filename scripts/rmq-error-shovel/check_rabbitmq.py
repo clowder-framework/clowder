@@ -19,6 +19,7 @@ class RabbitMQMonitor():
     def __init__(self, rabbitmq_uri, extractor_name):
         self.connection = None
         self.channel = None
+
         self.rabbitmq_uri = rabbitmq_uri
         self.queue_basic = extractor_name
         self.queue_error = "error."+extractor_name
@@ -95,6 +96,8 @@ class RabbitMQMonitor():
             json_body = json.loads(self._decode_body(body))
             if 'routing_key' not in json_body and method.routing_key:
                 json_body['routing_key'] = method.routing_key
+            json_body["header"] = header
+            json_body["method"] = method
 
             self.worker = threading.Thread(target=self.evaluate_message, args=(json_body,))
             self.worker.start()
@@ -114,46 +117,70 @@ class RabbitMQMonitor():
         while self.messages:
             with self.lock:
                 msg = self.messages.pop(0)
+                method = msg["body"]["method"]
+                header = msg["body"]["header"]
+                del msg["body"]["method"]
+                del msg["body"]["header"]
 
             if msg["type"] == 'missing':
-                jbody = json.loads(self.body)
-                logging.error("%s [%s] message removed." % (jbody["resource_type"], jbody["resource_id"]))
-                channel.basic_ack(self.method.delivery_tag)
+                logging.getLogger(__name__).error("%s [%s] message removed." % (msg["resource_type"], msg["resource_id"]))
+                channel.basic_ack(method.delivery_tag)
+
                 with self.lock:
                     self.finished = True
 
             elif msg["type"] == 'resubmit':
-                properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
+                properties = pika.BasicProperties(delivery_mode=2, reply_to=header.reply_to)
                 # Reset retry count to 0
                 # TODO: If resource exists but retry count > some N, should we stop bouncing it back to main queue?
-                jbody = json.loads(self.body)
-                jbody["retry_count"] = 0
-                logging.error("%s [%s] message resubmitted." % (jbody["resource_type"], jbody["resource_id"]))
+                msg["body"]["retry_count"] = 0
+                logging.getLogger(__name__).error("%s [%s] message resubmitted." % (msg["resource_type"], msg["resource_id"]))
                 channel.basic_publish(exchange='',
                                       routing_key=self.queue_basic,
                                       properties=properties,
-                                      body=json.dumps(jbody))
-                channel.basic_ack(self.method.delivery_tag)
+                                      body=json.dumps(msg["body"]))
+                channel.basic_ack(method.delivery_tag)
                 with self.lock:
                     self.finished = True
 
             else:
                 logging.getLogger(__name__).error("Received unknown message type [%s]." % msg["type"])
 
-    def evaluate_message(self, jbody):
+    def evaluate_message(self, body):
         # TODO: If dataset or file, check existence as necessary.
-        logging.getLogger(__name__).info(jbody)
-        host = jbody.get('host', '')
+        host = body.get('host', '')
         if host == '':
             return
         elif not host.endswith('/'):
             host += '/'
-        key = jbody.get("secretKey", '')
-        res_type = jbody["type"]
-        res_id = jbody["id"]
+        host = host.replace("localhost", "host.docker.internal")
+        key = body.get("secretKey", '')
 
-        logging.getLogger(__name__).info("Checking %s?key=%s" % (host, key))
-        r = self.check_existence(host, key, res_type, res_id)
+        fileid = body.get('id', '')
+        datasetid = body.get('datasetId', '')
+
+        # determine resource type; defaults to file
+        resource_type = "file"
+        message_type = body['routing_key']
+        if message_type.find(".dataset.") > -1:
+            resource_type = "dataset"
+        elif message_type.find(".file.") > -1:
+            resource_type = "file"
+        elif message_type.find("metadata.added") > -1:
+            resource_type = "metadata"
+        elif message_type == "extractors." + self.queue_basic:
+            # This was a manually submitted extraction
+            if datasetid == fileid:
+                resource_type = "dataset"
+            else:
+                resource_type = "file"
+
+        if resource_type == "dataset":
+            resource_id = datasetid
+        else:
+            resource_id = fileid
+
+        r = self.check_existence(host, key, resource_type, resource_id)
         resubmit = False
 
         if r.status_code == 200:
@@ -161,35 +188,44 @@ class RabbitMQMonitor():
             resubmit = True
         elif r.status_code == 401:
             # Unauthorized to view resource, but it exists so resubmit (extractor might use other creds)
-            logging.getLogger(__name__).error("Not authorized: %s [%s]" % (res_type, res_id))
+            logging.getLogger(__name__).error("Not authorized: %s [%s]" % (resource_type, resource_id))
             resubmit = True
         else:
-            logging.getLogger(__name__).error("%s: %s [%s]" % (r, res_type, res_id))
+            logging.getLogger(__name__).error("%s: %s [%s]" % (r, resource_type, resource_id))
             self.messages.append({
                 "type": "missing",
-                "resource_type": res_type,
-                "resource_id": res_id
+                "resource_type": resource_type,
+                "resource_id": resource_id,
+                "body": body
             })
 
         if resubmit:
             self.messages.append({
                 "type": "resubmit",
-                "resource_type": res_type,
-                "resource_id": res_id
+                "resource_type": resource_type,
+                "resource_id": resource_id,
+                "body": body
             })
-    # Return status code of request for the resource from Clowder
+
+    # Return response of request for the resource from Clowder
     def check_existence(self, host, key, resource_type, resource_id):
         # TODO: Is there a better exists URL to use?
-        clowder_url = "%sapi/%s/%s/metadata?key=%s" % (host, resource_type, resource_id, key)
+        clowder_url = "%sapi/%ss/%s/metadata?key=%s" % (host, resource_type, resource_id, key)
+        logging.getLogger(__name__).info(clowder_url)
         r = requests.get(clowder_url)
-        return r.status_code
+        return r
 
     def is_finished(self):
         with self.lock:
             return self.worker and not self.worker.isAlive() and self.finished and len(self.messages) == 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    logging.basicConfig(format='%(asctime)-15s [%(threadName)-15s] %(levelname)-7s :'
+                               ' %(name)s - %(message)s',
+                        level=logging.INFO)
+    logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARN)
+
     rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672/%2f')
     extractor_name = os.getenv('EXTRACTOR_QUEUE', 'ncsa.image.preview')
     monitor = RabbitMQMonitor(rabbitmq_uri, extractor_name)
