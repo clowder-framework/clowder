@@ -98,7 +98,7 @@ if [ ! -e memoryfile ]; then
 elif [ "$(cat memoryfile)" != "$today" ]; then
      post_message "Upload+extract test script success!"
 fi
-
+echo $today > memoryfile
 
 # ------------------------ Delete dataset ------------------------
 curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
