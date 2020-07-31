@@ -1,6 +1,6 @@
 package services
 
-import play.api.libs.ws.Response
+import play.api.libs.ws.WSResponse
 import play.api.{Application, Logger}
 import securesocial.core._
 
@@ -10,7 +10,7 @@ import securesocial.core._
 class ORCIDProvider(application: Application) extends OAuth2Provider(application) {
   override def id = ORCIDProvider.ORCID
 
-  override protected def buildInfo(response: Response): OAuth2Info = {
+  override protected def buildInfo(response: WSResponse): OAuth2Info = {
     val json = response.json
     if ( Logger.isDebugEnabled ) {
       Logger.debug("[securesocial] got json back [" + json + "]")

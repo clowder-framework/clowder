@@ -11,6 +11,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
     libraryDependencies ++= Seq(
       guice,
+      ws,
       "org.joda" % "joda-convert" % "2.2.1",
       "net.logstash.logback" % "logstash-logback-encoder" % "6.2",
 //      "io.lemonlabs" %% "scala-uri" % "1.5.1",

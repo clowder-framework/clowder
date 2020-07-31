@@ -1,12 +1,13 @@
 package services
 
 import play.libs.Akka
-import play.api.{ Plugin, Logger, Application }
+import play.api.{ Logger, Application }
 import java.io._
+import javax.inject.Inject
 import play.api.Play.{ current, configuration }
 import play.api.libs.iteratee._
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.ws._
+import play.api.libs.ws.WSClient
 import scala.concurrent._
 import scala.concurrent.duration._
 import com.ning.http.multipart.{ ByteArrayPartSource, Part, FilePart, MultipartRequestEntity }
@@ -19,7 +20,7 @@ import com.ning.http.client.Realm.AuthScheme
  * File Convert Service
  *
  */
-class FileConvertService() {
+class FileConvertService @Inject() (WS: WSClient) () {
 
   val fileConvertUser: Option[String] = configuration.getString("fileconvert.username")
   val fileConvertPassword: Option[String] = configuration.getString("fileconvert.password")

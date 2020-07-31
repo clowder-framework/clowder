@@ -7,7 +7,7 @@ import models.{PreviewFilesSearchResult, SearchResultFile, SearchResultPreview, 
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{Response, WS}
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.Request
 import play.api.{Configuration, Logger}
 
@@ -16,7 +16,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 /**
- * Versus Plugin
+ * Versus Service
  *
  */
 class VersusService @Inject() (
@@ -24,15 +24,14 @@ class VersusService @Inject() (
                               previews: PreviewService,
                               datasets: DatasetService,
                               sections: SectionService,
-                              queries: MultimediaQueryService,
                               sectionIndexInfo: SectionIndexInfoService,
-                              configuration: Configuration
-                              ) {
+                              configuration: Configuration,
+                              WS: WSClient) {
 
   /*
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
-  def extract(fileid: UUID)(implicit request: Request[Any]): Future[Response] = {
+  def extract(fileid: UUID)(implicit request: Request[Any]): Future[WSResponse] = {
     val key = "?key=" + configuration.get[String]("commKey")
     val https = controllers.Utils.https(request)
     val fileUrl = api.routes.Files.download(fileid).absoluteURL(https) + key
@@ -68,11 +67,11 @@ class VersusService @Inject() (
   /*
    * Gets the list of adapters avaliable in Versus web server
    */
-  def getAdapters(): Future[Response] = {
+  def getAdapters(): Future[WSResponse] = {
     Logger.trace("VersusPlugin.getAdapters")
     val host = configuration.get[String]("versus.host")
     val adapterUrl = host + "/adapters"
-    val adapterList: Future[Response] = WS.url(adapterUrl).withHeaders("Accept" -> "application/json").get()
+    val adapterList: Future[WSResponse] = WS.url(adapterUrl).withHeaders("Accept" -> "application/json").get()
 
     adapterList
   }
@@ -80,21 +79,21 @@ class VersusService @Inject() (
   /*
    * Gets the list of extractors available in Versus web server
    */
-  def getExtractors(): Future[Response] = {
+  def getExtractors(): Future[WSResponse] = {
     Logger.trace("VersusPlugin.getExtractors")
     val host = configuration.get[String]("versus.host")
     val extractorUrl = host + "/extractors"
-    val extractorList: Future[Response] = WS.url(extractorUrl).withHeaders("Accept" -> "application/json").get()
+    val extractorList: Future[WSResponse] = WS.url(extractorUrl).withHeaders("Accept" -> "application/json").get()
 
     extractorList
   }
   /*
    * Gets the list of measures available in Versus web server
    */
-  def getMeasures(): Future[Response] = {
+  def getMeasures(): Future[WSResponse] = {
     val host = configuration.get[String]("versus.host")
     val measureUrl = host + "/measures"
-    val measureList: Future[Response] = WS.url(measureUrl).withHeaders("Accept" -> "application/json").get()
+    val measureList: Future[WSResponse] = WS.url(measureUrl).withHeaders("Accept" -> "application/json").get()
 
     measureList
   }
@@ -103,11 +102,11 @@ class VersusService @Inject() (
    * Gets the list of indexers available in Versus web server
    *  
    */
-  def getIndexers(): Future[Response] = {
+  def getIndexers(): Future[WSResponse] = {
     Logger.trace("VersusPlugin.getIndexers")
     val host = configuration.get[String]("versus.host")
     val indexerUrl = host + "/indexers"
-    val indexerList: Future[Response] = WS.url(indexerUrl).withHeaders("Accept" -> "application/json").get()
+    val indexerList: Future[WSResponse] = WS.url(indexerUrl).withHeaders("Accept" -> "application/json").get()
 
     indexerList
   }
@@ -116,12 +115,12 @@ class VersusService @Inject() (
    * Get all indexes from Versus web server
    * 
    */
-  def getIndexes(): Future[Response] = {
+  def getIndexes(): Future[WSResponse] = {
     Logger.trace("VersusPlugin.getIndexes")
     val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
     var k = 0
-    val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
+    val indexList: Future[WSResponse] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     indexList.map { response =>
       val json: JsValue = Json.parse(response.body)
       val seqOfIndexes = json.as[Seq[models.VersusIndexTypeName]]
@@ -141,7 +140,7 @@ class VersusService @Inject() (
 
     val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
-    val indexList: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
+    val indexList: Future[WSResponse] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     indexList.map {
       response =>
         val json: JsValue = Json.parse(response.body)
@@ -167,7 +166,7 @@ class VersusService @Inject() (
     val indexurl = host + "/indexes";
 
     var matchingIndexes = new ListBuffer[models.VersusIndex];
-    val futureResponse: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
+    val futureResponse: Future[WSResponse] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     futureResponse.map {
       response =>
         val json: JsValue = Json.parse(response.body)
@@ -231,7 +230,7 @@ class VersusService @Inject() (
     val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
 
-    val futureResponse: Future[Response] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
+    val futureResponse: Future[WSResponse] = WS.url(indexurl).withHeaders("Accept" -> "application/json").get()
     futureResponse.map {
 
       response =>
@@ -252,7 +251,7 @@ class VersusService @Inject() (
    * Sends a request to Versus to delete an index based on its id
    * If sectionIndex - delete entry from sectionIndexInfo db collection
    */
-  def deleteIndex(indexId: UUID): Future[Response] = {
+  def deleteIndex(indexId: UUID): Future[WSResponse] = {
     Logger.trace("VersusPlugin.deleteIndex for indexid = " + indexId)
 
     //also delete from mongo collection
@@ -261,20 +260,20 @@ class VersusService @Inject() (
 
     val host = configuration.get[String]("versus.host")
     val deleteurl = host + "/indexes/" + indexId
-    var deleteResponse: Future[Response] = WS.url(deleteurl).delete()
+    var deleteResponse: Future[WSResponse] = WS.url(deleteurl).delete()
 
     deleteResponse
   }
   /**
    * Sends a request to delete all indexes in Versus
    */
-  def deleteAllIndexes(): Future[Response] = {
+  def deleteAllIndexes(): Future[WSResponse] = {
     //Also remove entries from mongo sectionIndexInfo table
     sectionIndexInfo.deleteAll()
 
     val host = configuration.get[String]("versus.host")
     val indexurl = host + "/indexes"
-    val response: Future[Response] = WS.url(indexurl).delete()
+    val response: Future[WSResponse] = WS.url(indexurl).delete()
     response
   }
 
@@ -406,7 +405,7 @@ class VersusService @Inject() (
               for (indexList <- getIndexesAsFutureList()) {
                 for (index <- indexList) {
                   val queryurl = host + "/indexes/" + index.id + "/remove_from"
-                  val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(preview.id.stringify)))
+                  val resultFuture: Future[WSResponse] = WS.url(queryurl).post(Map("infile" -> Seq(preview.id.stringify)))
                 }
               }
             }
@@ -417,7 +416,7 @@ class VersusService @Inject() (
           for (indexList <- getIndexesAsFutureList()) {
             for (index <- indexList) {
               val queryurl = host + "/indexes/" + index.id + "/remove_from"
-              val resultFuture: Future[Response] = WS.url(queryurl).post(Map("infile" -> Seq(fileId.stringify)))
+              val resultFuture: Future[WSResponse] = WS.url(queryurl).post(Map("infile" -> Seq(fileId.stringify)))
             }
           }
         }
@@ -432,10 +431,10 @@ class VersusService @Inject() (
    * Sends a request to Versus to build an index based on id
    */
 
-  def buildIndex(indexId: UUID): Future[Response] = {
+  def buildIndex(indexId: UUID): Future[WSResponse] = {
     val host = configuration.get[String]("versus.host")
     val buildurl = host + "/indexes/" + indexId.stringify + "/build"
-    var buildResponse: Future[Response] = WS.url(buildurl).post("")
+    var buildResponse: Future[WSResponse] = WS.url(buildurl).post("")
 
     buildResponse
   }
@@ -528,7 +527,7 @@ class VersusService @Inject() (
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query
     //will call IndexResource.queryindex on Versus side
 
-    val responseFuture: Future[Response] = WS.url(queryIndexUrl).post(Map("infile" -> Seq(inputFileURL)))
+    val responseFuture: Future[WSResponse] = WS.url(queryIndexUrl).post(Map("infile" -> Seq(inputFileURL)))
     //mapping Future[Response] to Future[List[PreviewFilesSearchResult]]    
     
     responseFuture.map{
@@ -588,7 +587,7 @@ class VersusService @Inject() (
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
     val queryStr = api.routes.Files.downloadquery(UUID(inputFileId)).absoluteURL(https) + key
-    val responseFuture: Future[Response] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile" -> Seq(queryStr)))
+    val responseFuture: Future[WSResponse] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile" -> Seq(queryStr)))
 
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query
     //will call IndexResource.queryindex on Versus side

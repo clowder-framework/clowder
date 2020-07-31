@@ -10,22 +10,16 @@ import models._
 import play.api.{ Logger, Play }
 import play.api.data.Forms._
 import play.api.data.{ Form, Forms }
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.i18n.Messages
 import services._
 import securesocial.core.providers.{ Token, UsernamePasswordProvider }
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import play.api.libs.ws._
 import services.AppConfiguration
 import util.{ Formatters, Mail, Publications }
 
 import scala.collection.immutable.List
 import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
-import scala.concurrent.{ Future, Await }
-import scala.concurrent.duration._
-import org.apache.commons.lang.StringEscapeUtils.escapeJava
+
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.

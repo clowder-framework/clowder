@@ -14,7 +14,7 @@ import play.api.Logger
 import play.api.Play._
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.libs.ws.WS
+import play.api.libs.ws.WSClient
 import play.api.mvc.Result
 import services._
 import play.api.i18n.Messages
@@ -30,7 +30,6 @@ import scala.concurrent.Future
  */
 @Singleton
 class Metadata @Inject() (
-  spaces: SpaceService,
   metadataService: MetadataService,
   contextService: ContextLDService,
   userService: UserService,
@@ -41,7 +40,8 @@ class Metadata @Inject() (
   events: EventService,
   spaceService: SpaceService,
   searches: SearchService,
-  extractionBusService: ExtractionBusService) extends ApiController {
+  extractionBusService: ExtractionBusService,
+  WS: WSClient) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>

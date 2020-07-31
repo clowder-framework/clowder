@@ -1,22 +1,20 @@
 package util
 
-import play.api.Play._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.json.Json._
-import scala.concurrent.{ Future, Await }
-import play.api.mvc.{ MultipartFormData, Request, Action, Results }
-import play.api.libs.ws._
-import scala.concurrent.duration._
+import play.api.libs.ws.WSClient
+
 import models._
-import services.SpaceService
+import services.{DI, SpaceService}
 
 /**
  * Utility to get publications from sead services.
  *
  */
 object Publications {
-      
+    val WS: WSClient =  DI.injector.getInstance(classOf[WSClient])
       
     def getPublications(space: String, spaces: SpaceService) = {
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global

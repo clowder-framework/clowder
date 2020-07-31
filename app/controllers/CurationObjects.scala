@@ -4,11 +4,8 @@ import java.util.Date
 import java.net.URLDecoder
 
 import javax.inject.Inject
-import api.Permission._
 import api.{Permission, UserRequest}
-import com.fasterxml.jackson.annotation.JsonValue
 import models._
-import org.apache.commons.lang.StringEscapeUtils._
 import play.api.{Configuration, Logger}
 import play.api.i18n.Messages
 import play.api.libs.json._
@@ -16,12 +13,11 @@ import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import services._
 import _root_.util.{Formatters, Publications, RequiredFieldsConfig}
-import play.api.Play._
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Await, Future}
 import play.api.mvc.{Action, MultipartFormData, Request, Results}
-import play.api.libs.ws._
+import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
@@ -32,18 +28,15 @@ import play.api.libs.json.Reads._
 class CurationObjects @Inject() (
   curations: CurationService,
   datasets: DatasetService,
-  collections: CollectionService,
   spaces: SpaceService,
   files: FileService,
   folders: FolderService,
-  comments: CommentService,
-  sections: SectionService,
   events: EventService,
   userService: UserService,
   metadatas: MetadataService,
   extractionBusService: ExtractionBusService,
-  contextService: ContextLDService,
-  configuration: Configuration) extends SecuredController {
+  configuration: Configuration,
+  WS: WSClient) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc., parsed from conf/messages

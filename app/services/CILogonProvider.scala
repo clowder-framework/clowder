@@ -1,6 +1,7 @@
 package services
 
-import play.api.libs.ws.WS
+import javax.inject.Inject
+import play.api.libs.ws.WSClient
 import play.api.{Application, Logger}
 import play.api.libs.json.JsObject
 import securesocial.core._
@@ -10,7 +11,7 @@ import scala.collection.JavaConverters._
 /**
  * A CILogon OAuth2 Provider
  */
-class CILogonProvider(application: Application) extends OAuth2Provider(application) {
+class CILogonProvider @Inject()(WS: WSClient) (application: Application) extends OAuth2Provider(application) {
   val Error = "error"
   val Message = "message"
   val Type = "type"
