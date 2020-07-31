@@ -42,7 +42,7 @@ class RabbitMQMonitor():
                                                    on_message_callback=self.on_message,
                                                    auto_ack=False)
 
-        logging.getLogger(__name__).info("Starting to listen for error messages.")
+        logging.getLogger(__name__).info("Starting to listen for error messages on %s" % self.queue_error)
         try:
             # pylint: disable=protected-access
             while self.channel and self.channel.is_open and self.channel._consumer_infos:
@@ -211,7 +211,6 @@ class RabbitMQMonitor():
     def check_existence(self, host, key, resource_type, resource_id):
         # TODO: Is there a better exists URL to use?
         clowder_url = "%sapi/%ss/%s/metadata?key=%s" % (host, resource_type, resource_id, key)
-        logging.getLogger(__name__).info(clowder_url)
         r = requests.get(clowder_url)
         return r
 
@@ -229,5 +228,4 @@ if __name__ == "__main__":
     rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672/%2f')
     extractor_name = os.getenv('EXTRACTOR_QUEUE', 'ncsa.image.preview')
     monitor = RabbitMQMonitor(rabbitmq_uri, extractor_name)
-    logging.getLogger(__name__).info("Starting to listen to "+extractor_name)
     monitor.listen()
