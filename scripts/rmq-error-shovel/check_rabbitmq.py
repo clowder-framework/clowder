@@ -5,6 +5,9 @@
 Given a particular RabbitMQ instance and extractor name, this will check the error queue of that extractor for messages.
 - If the dataset or file in the message exists, send the message back to the main queue.
 - If it does not exist, generate a log entry and delete the message from the error queue permanently.
+
+If the CLOWDER_HOST and CLOWDER_KEY environment variables are set, they will be used to check the existence of
+files and datasets instead of the host and key found in the RabbitMQ message.
 """
 import os
 import logging
@@ -16,13 +19,15 @@ import pika
 
 # Simplified version of pyClowder's RabbitMQConnector class.
 class RabbitMQMonitor():
-    def __init__(self, rabbitmq_uri, extractor_name):
+    def __init__(self, rabbitmq_uri, extractor_name, clowder_host, clowder_key):
         self.connection = None
         self.channel = None
 
         self.rabbitmq_uri = rabbitmq_uri
         self.queue_basic = extractor_name
         self.queue_error = "error."+extractor_name
+        self.clowder_host = clowder_host
+        self.clowder_key = clowder_key
 
         self.worker = None
         self.finished = False
@@ -123,7 +128,7 @@ class RabbitMQMonitor():
                 del msg["body"]["header"]
 
             if msg["type"] == 'missing':
-                logging.getLogger(__name__).error("%s [%s] message removed." % (msg["resource_type"], msg["resource_id"]))
+                logging.getLogger(__name__).info("%s [%s] removed." % (msg["resource_type"], msg["resource_id"]))
                 channel.basic_ack(method.delivery_tag)
 
                 with self.lock:
@@ -134,7 +139,7 @@ class RabbitMQMonitor():
                 # Reset retry count to 0
                 # TODO: If resource exists but retry count > some N, should we stop bouncing it back to main queue?
                 msg["body"]["retry_count"] = 0
-                logging.getLogger(__name__).error("%s [%s] message resubmitted." % (msg["resource_type"], msg["resource_id"]))
+                logging.getLogger(__name__).info("%s [%s] resubmitted." % (msg["resource_type"], msg["resource_id"]))
                 channel.basic_publish(exchange='',
                                       routing_key=self.queue_basic,
                                       properties=properties,
@@ -147,13 +152,11 @@ class RabbitMQMonitor():
                 logging.getLogger(__name__).error("Received unknown message type [%s]." % msg["type"])
 
     def evaluate_message(self, body):
-        # TODO: If dataset or file, check existence as necessary.
         host = body.get('host', '')
         if host == '':
             return
         elif not host.endswith('/'):
             host += '/'
-        host = host.replace("localhost", "host.docker.internal")
         key = body.get("secretKey", '')
 
         fileid = body.get('id', '')
@@ -185,13 +188,14 @@ class RabbitMQMonitor():
 
         if r.status_code == 200:
             # The erroneous resource exists, so resubmit to main queue
+            logging.getLogger(__name__).error("%s [%s]: Resubmitting." % (resource_type, resource_id))
             resubmit = True
         elif r.status_code == 401:
             # Unauthorized to view resource, but it exists so resubmit (extractor might use other creds)
-            logging.getLogger(__name__).error("Not authorized: %s [%s]" % (resource_type, resource_id))
+            logging.getLogger(__name__).error("%s [%s]: Credentials not authorized. Resubmitting." % (resource_type, resource_id))
             resubmit = True
         else:
-            logging.getLogger(__name__).error("%s: %s [%s]" % (r, resource_type, resource_id))
+            logging.getLogger(__name__).error("%s [%s]: %s. Removing." % (resource_type, resource_id, r))
             self.messages.append({
                 "type": "missing",
                 "resource_type": resource_type,
@@ -209,8 +213,12 @@ class RabbitMQMonitor():
 
     # Return response of request for the resource from Clowder
     def check_existence(self, host, key, resource_type, resource_id):
+        # Perform replacements from environment variables if needed
+        host_url = self.clowder_host if self.clowder_host != '' else host
+        if not host_url.endswith('/'): host_url += '/'
+        secret_key = self.clowder_key if self.clowder_key != '' else key
         # TODO: Is there a better exists URL to use?
-        clowder_url = "%sapi/%ss/%s/metadata?key=%s" % (host, resource_type, resource_id, key)
+        clowder_url = "%sapi/%ss/%s/metadata?key=%s" % (host_url, resource_type, resource_id, secret_key)
         r = requests.get(clowder_url)
         return r
 
@@ -227,5 +235,7 @@ if __name__ == "__main__":
 
     rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672/%2f')
     extractor_name = os.getenv('EXTRACTOR_QUEUE', 'ncsa.image.preview')
-    monitor = RabbitMQMonitor(rabbitmq_uri, extractor_name)
+    clowder_host = os.getenv('CLOWDER_HOST', '')
+    clowder_key = os.getenv('CLOWDER_KEY', '')
+    monitor = RabbitMQMonitor(rabbitmq_uri, extractor_name, clowder_host, clowder_key)
     monitor.listen()
