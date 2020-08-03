@@ -1,20 +1,15 @@
 package api
 
-import java.util.Date
-
 import javax.inject.Inject
 import models._
-import org.apache.commons.lang3.StringEscapeUtils
-import play.api.mvc.Controller
+import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import play.api.templates.Html
+import play.api.libs.json.{JsString, JsUndefined, JsValue}
+import play.api.mvc.Controller
 import services._
 import services.mongodb.MongoSalatPlugin
-import play.api.Logger
 import util.Mail
-
-import play.api.libs.json.{JsString, JsUndefined, JsValue}
 
 /**
  * Admin endpoints for JSON API.

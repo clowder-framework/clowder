@@ -19,6 +19,8 @@ import play.api.Play._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
 import play.api.{Configuration, Logger}
+import salat.dao.{ModelCompanion, SalatDAO}
+import salat.global.ctx
 import services._
 import util.{Formatters, Parsers}
 
@@ -1529,10 +1531,8 @@ class MongoDBDatasetService @Inject() (
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Dataset, ObjectId](collection = x.collection("datasets")) {}
-  }
+  val mongo = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Dataset, ObjectId](collection = mongo.collection("datasets")) {}
 }
 
 object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {

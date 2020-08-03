@@ -14,10 +14,10 @@ import util.JSONLD
 class FileIterator (pathToFile : String, file : models.File,zip : ZipOutputStream, md5Files :scala.collection.mutable.HashMap[String, MessageDigest], files : FileService, folders : FolderService , metadataService : MetadataService) extends Iterator[Option[InputStream]] {
 
   def getFileInfoAsJson(file : models.File) : JsValue = {
-    val rightsHolder = {
+    val rightsHolder: String = {
       val licenseType = file.licenseData.m_licenseType
       if (licenseType == "license1") {
-        file.author.fullName
+        file.author.fullName.getOrElse("Name not available")
       } else if (licenseType == "license2") {
         "Creative Commons"
       } else if (licenseType == "license3") {

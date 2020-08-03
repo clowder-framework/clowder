@@ -17,7 +17,7 @@ object DI {
  * Default production module.
  */
 class ConfigurationModule extends AbstractModule {
-  protected def configure() {
+  override def configure() {
     bind(classOf[AppConfigurationService]).to(get("service.appConfiguration", "services.mongodb.MongoDBAppConfigurationService"))
     bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
 
@@ -56,6 +56,7 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[SearchService]).to(get("service.SearchService", "services.elasticsearch.ElasticsearchSearchService"))
     bind(classOf[QueueService]).to(get("service.QueueService", "services.mongodb.MongoDBQueueService"))
     bind(classOf[ExtractionBusService]).to(get("service.ExtractionBusService", "services.rabbitmq.RabbitmqExtractionBusService"))
+    bind(classOf[ExtractionBusService]).to(get("service.mongodb.MongoStartup", "services.mongodb.MongoSalatPlugin"))
   }
 
   protected def get[T](key: String, missing: String) : Class[T] = {

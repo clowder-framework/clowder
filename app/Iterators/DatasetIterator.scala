@@ -19,10 +19,10 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
 
   //get files in the dataset
   def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
-    val rightsHolder = {
+    val rightsHolder: String = {
       val licenseType = dataset.licenseData.m_licenseType
       if (licenseType == "license1") {
-        dataset.author.fullName
+        dataset.author.fullName.getOrElse("Name not available")
       } else if (licenseType == "license2") {
         "Creative Commons"
       } else if (licenseType == "license3") {
