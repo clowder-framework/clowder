@@ -1,30 +1,30 @@
 package api
 
+import _root_.util._
 import java.io._
 import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.zip._
 import java.util.{Calendar, Date}
-
-import _root_.util._
-import api.Permission.Permission
-import controllers.{Previewers, Utils}
 import javax.inject.{Inject, Singleton}
-import jsonutils.JsonUtil
-import models._
-import org.apache.commons.codec.binary.Hex
-import org.json.JSONObject
+import scala.collection.mutable.{Map, HashMap, ListBuffer}
+import scala.concurrent.Future
 import play.api.i18n.Messages
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.mvc.AnyContent
 import play.api.{Configuration, Logger}
+import jsonutils.JsonUtil
+import org.apache.commons.codec.binary.Hex
+import org.json.JSONObject
+import akka.stream.scaladsl.Source
+
+import api.Permission.Permission
+import models._
+import controllers.{Previewers, Utils}
 import services._
 
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -37,7 +37,6 @@ class  Datasets @Inject()(
   collections: CollectionService,
   sections: SectionService,
   comments: CommentService,
-  previews: PreviewService,
   extractions: ExtractionService,
   metadataService: MetadataService,
   contextService: ContextLDService,
@@ -46,7 +45,6 @@ class  Datasets @Inject()(
   folders: FolderService,
   relations: RelationService,
   userService: UserService,
-  thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
   adminsNotifierService: AdminsNotifierService,
   searches: SearchService,
@@ -1938,7 +1936,6 @@ class  Datasets @Inject()(
     }
   }
 
-
   /**
     * Create a mapping for each file to their unique location
     */
@@ -1992,19 +1989,19 @@ class  Datasets @Inject()(
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : Option[User])
-                           (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
-    implicit val pec = ec.prepare()
+  def streamDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION,
+                    bagit: Boolean, user : Option[User]) = {
+
     val dataFolder = if (bagit) "data/" else ""
-    val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
-    val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
+    val filenameMap = Map.empty[UUID, String]
+    val inputFiles = ListBuffer.empty[models.File]
 
     // compute list of all files and folder in dataset. This will also make sure
     // that all files and folder names are unique.
     listFilesInFolder(dataset.files, dataset.folders, dataFolder, filenameMap, inputFiles)
 
-    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
-    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
+    val md5Files = HashMap.empty[String, MessageDigest] //for the files
+    val md5Bag = HashMap.empty[String, MessageDigest] //for the bag files
 
     // which file we are currently processing
 
@@ -2053,7 +2050,7 @@ class  Datasets @Inject()(
     file_type = 1 //next is metadata
 
 
-    Enumerator.generateM({
+    Source.unfoldAsync({
       is match {
         case Some(inputStream) => {
           val buffer = new Array[Byte](chunkSize)
@@ -2190,9 +2187,8 @@ class  Datasets @Inject()(
           Future.successful(None)
         }
       }
-    })(pec)
+    })
   }
-
 
   private def addFileToZip(filename: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
@@ -2339,7 +2335,7 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(
+        Ok.chunked(streamDataset(dataset,1024*1024, compression, bagit, user)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2510,7 +2506,6 @@ class  Datasets @Inject()(
 
     }
   }
-
 
   def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user

@@ -1,76 +1,58 @@
 package Iterators
 
 import java.io.InputStream
-import java.security.MessageDigest
+import java.security.{DigestInputStream, MessageDigest}
 import java.util.zip.ZipOutputStream
 
-import models.{Dataset, User}
+import scala.collection.mutable.HashMap
+import models.{Collection, Dataset, User}
 import services._
 
-import scala.collection.mutable.ListBuffer
 
-//this is used to download the datasets in a collection
-//it creates an iterator for each dataset in the collection
-class DatasetsInCollectionIterator(pathToFolder : String, collection : models.Collection, zip : ZipOutputStream, md5Files : scala.collection.mutable.HashMap[String, MessageDigest], user : Option[User],
-                                  datasets : DatasetService, files : FileService, folders : FolderService, metadataService : MetadataService,
-                                   spaces : SpaceService) extends Iterator[Option[InputStream]] {
+/**
+ * This is used to download the datasets in a collection.
+ * It creates an iterator for each dataset in the collection.
+ */
+class DatasetsInCollectionIterator (pathToFolder: String, collection: Collection, zip: ZipOutputStream, md5Files: HashMap[String, MessageDigest],
+                                    user: Option[User]) extends Iterator[Option[InputStream]] {
 
+  // Guice injection doesn't work in the context we're using this in
+  val datasets = DI.injector.getInstance(classOf[DatasetService])
+  val files = DI.injector.getInstance(classOf[FileService])
+  val folders = DI.injector.getInstance(classOf[FolderService])
+  val spaces = DI.injector.getInstance(classOf[SpaceService])
 
-  def getDatasetsInCollection(collection : models.Collection,user : User) : List[Dataset] = {
-    var datasetsInCollection : ListBuffer[Dataset] = ListBuffer.empty[Dataset]
-    var datasetsInCollectionList = datasets.listCollection(collection.id.stringify,Some(user))
-    datasetsInCollectionList
+  val datasetList = datasets.listCollection(collection.id.stringify, user)
+  var currentDatasetIdx = 0
+  var currentDataset: Option[Dataset] = None
+  var currentDatasetIterator: Option[DatasetIterator] = None
+  if (datasetList.size > 0) {
+    currentDataset = Some(datasetList(currentDatasetIdx))
+    currentDatasetIterator = Some(new DatasetIterator(pathToFolder + "/" + currentDataset.get.name,
+      currentDataset.get, zip, md5Files))
   }
 
 
-
-  val datasetsInCollection = getDatasetsInCollection(collection, user.get)
-
-  var datasetCount = 0
-  val numDatasets = datasetsInCollection.size
-
-  var currentDataset : Option[Dataset] = if (numDatasets > 0){
-    Some(datasetsInCollection(datasetCount))
-  } else {
-    None
-  }
-
-  var currentDatasetIterator : Option[DatasetIterator]  = if (numDatasets > 0){
-
-    Some(new DatasetIterator(pathToFolder+"/"+currentDataset.get.name,currentDataset.get, zip, md5Files,
-    folders, files,metadataService,datasets,spaces))
-  } else {
-    None
-  }
-
-
-  def hasNext() = {
-
+  def hasNext(): Boolean = {
     currentDatasetIterator match {
       case Some(datasetIterator) => {
-        if (datasetIterator.hasNext()){
-          true
-        } else {
-          if (datasetCount < numDatasets -1){
-            datasetCount +=1
-            currentDataset = Some(datasetsInCollection(datasetCount))
-            currentDataset match {
-              case Some(cd) => {
-                currentDatasetIterator = Some(new DatasetIterator(pathToFolder+"/"+cd.name,cd, zip, md5Files,
-                  folders, files,metadataService,datasets,spaces))
-                true
-              }
-              case None => false
-            }
-          } else
-            false
+        if (datasetIterator.hasNext()) true
+        else {
+          if (currentDatasetIdx < datasetList.size -1) {
+            currentDatasetIdx +=1
+            currentDataset = Some(datasetList(currentDatasetIdx))
+            currentDatasetIterator = Some(new DatasetIterator(pathToFolder + "/" + currentDataset.get.name,
+              currentDataset.get, zip, md5Files))
+            true
+          }
+          else false
         }
       }
       case None => false
     }
   }
 
-  def next() = {
+  def next(): Option[DigestInputStream] = {
     currentDatasetIterator match {
       case Some(datasetIterator) => datasetIterator.next()
       case None => None

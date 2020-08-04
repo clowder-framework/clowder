@@ -2,16 +2,16 @@ package api
 
 import java.io.FileInputStream
 import javax.inject.Inject
-
-import models.{Logo, ResourceRef, UUID, User}
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json._
-import play.api.mvc.{Action, Result, Result}
-import services.LogoService
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json._
+import play.api.mvc.Result
+import akka.stream.scaladsl.StreamConverters
+
+import models.{Logo, ResourceRef, UUID, User}
+import services.LogoService
+
 
 class Logos @Inject()(logos: LogoService) extends ApiController {
 
@@ -102,7 +102,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   def downloadId(id: UUID, file: Option[String]) = Action.async { implicit request =>
     logos.getBytes(id) match {
       case Some((inputStream, filename, contentType, contentLength)) =>
-        Future(Ok.chunked(Enumerator.fromStream(inputStream))
+        Future(Ok.chunked(StreamConverters.fromInputStream(() => inputStream))
           .withHeaders(CONTENT_TYPE -> contentType))
       case None => {
         file match {
