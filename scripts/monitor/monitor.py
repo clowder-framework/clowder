@@ -58,6 +58,9 @@ def http_server(host_port=9999):
     server = http.server.HTTPServer(("", host_port), MyServer)
     try:
         server.serve_forever()
+    except:
+        logging.exception("Error in http server")
+        sys.exit(1)
     finally:
         server.server_close()
 
