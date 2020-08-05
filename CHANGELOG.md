@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Datasets downloaded with Clowder now include DataCite v4 XML files in the output /metadata folder for interoperability purposes.
 
+## 1.10.1 - 2020-07-16
+
+### Fixed
+- Queue threads (e.g. Elasticsearch indexer) will no longer crash permanently if the queue connection to Mongo is lost temporarily.
+- Docker images would not build correctly on GitHub.
+- If monitor HTTP server would crash, it would not restart correctly.
+- Don't call server side twice when rendering list of files on dataset page.
+  [#7](https://github.com/clowder-framework/clowder/issues/7)
+- Fixed Sphinx build errors and switched to using pipenv. Now building docs on [readthedocs](https://clowder-framework.readthedocs.io/en/latest/).
+
+### Added
+- GitHub artifacts can be uploaded using SCP to remote server.
+
 ## 1.10.0 - 2020-06-30
 
 ### Added

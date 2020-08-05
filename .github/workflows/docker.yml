@@ -1,8 +1,10 @@
 name: Docker
 
+# initially we would us on: [release] as well, the problem is that
+# the code in clowder would not know what branch the code is in,
+# and would not set the right version flags.
+
 # This will run when:
-# - a new release is created, to make sure the right tags of the
-#   docker images are pushed (expects tags to be v1.8.4).
 # - when new code is pushed to master/develop to push the tags
 #   latest and develop
 # - when a pull request is created and updated  to make sure the
@@ -12,9 +14,6 @@ name: Docker
 # - DOCKERHUB_USERNAME : username that can push to the org
 # - DOCKERHUB_PASSWORD : password asscoaited with the username
 on:
-  release:
-    types: created
-
   push:
     branches:
       - master
@@ -63,24 +62,48 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # calculate some variables that are used later
+      - name: github branch
+        run: |
+          BRANCH=${GITHUB_REF##*/}
+          echo "::set-env name=GITHUB_BRANCH::${BRANCH}"
+          if [ "$BRANCH" == "master" ]; then
+            version="$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
+            tags="latest"
+            oldversion=""
+            while [ "${oldversion}" != "${version}" ]; do
+              oldversion="${version}"
+              tags="${tags},${version}"
+              version=${version%.*}
+            done
+            echo "::set-env name=CLOWDER_VERSION::$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
+            echo "::set-env name=CLOWDER_TAGS::${tags}"
+          elif [ "$BRANCH" == "develop" ]; then
+            echo "::set-env name=CLOWDER_VERSION::develop"
+            echo "::set-env name=CLOWDER_TAGS::develop"
+          else 
+            echo "::set-env name=CLOWDER_VERSION::testing"
+            echo "::set-env name=CLOWDER_TAGS::"
+          fi
+
       # build the docker image, this will always run to make sure
       # the Dockerfile still works.
       - name: Build image
         run: |
           docker build \
-            --build-arg BRANCH=${{ github.ref }} \
-            --build-arg VERSION=${{ github.run_number }} \
+            --build-arg BRANCH=${GITHUB_BRANCH} \
+            --build-arg VERSION=${CLOWDER_VERSION} \
             --build-arg BUILDNUMBER=${{ github.run_number }} \
             --build-arg GITSHA1=${{ github.sha  }} \
             --tag image ${{ matrix.FOLDER }}
 
       # this will publish to the actor (person) github packages
       - name: Publish to GitHub
-        if: github.event_name != 'pull_request'
-        uses: elgohr/Publish-Docker-Github-Action@2.14
+        if: github.event_name == 'push'
+        uses: elgohr/Publish-Docker-Github-Action@2.18
         env:
-          BRANCH: ${{ github.ref }}
-          VERSION: ${{ github.run_number }}
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
         with:
@@ -88,18 +111,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           context: ${{ matrix.FOLDER }}
-          tag_semver: true
-          tag_names: true
+          tags: "${{ env.CLOWDER_TAGS }}"
           registry: docker.pkg.github.com
           buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
 
       # this will publish to the clowder dockerhub repo
       - name: Publish to Docker Hub
-        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
-        uses: elgohr/Publish-Docker-Github-Action@2.14
+        if: github.event_name == 'push' && github.repository == env.MASTER_REPO
+        uses: elgohr/Publish-Docker-Github-Action@2.18
         env:
-          BRANCH: ${{ github.ref }}
-          VERSION: ${{ github.run_number }}
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
         with:
@@ -107,25 +129,31 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           context: ${{ matrix.FOLDER }}
-          tag_semver: true
-          tag_names: true
+          tags: "${{ env.CLOWDER_TAGS }}"
           buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
 
       # this will update the README of the dockerhub repo
       - name: check file
         id: filecheck
-        if: github.event_name == 'release' && github.repository == env.MASTER_REPO
         run: |
-          if [ "${{ matrix.README }}" != "" -a -e "${{ matrix.README }}" ]; then
-            echo "##[set-output name=exists;]true"
+          if [ "${{ matrix.README }}" != "" ]; then
+            if [ -e "${{ matrix.README }}" ]; then
+              echo "##[set-output name=readme;]${{ matrix.README }}"
+            else
+              echo "##[set-output name=readme;]"
+            fi
           else
-            echo "##[set-output name=exists;]false"
+            if [ -e "${{ matrix.FOLDER }}/README.md" ]; then
+              echo "##[set-output name=readme;]${{ matrix.FOLDER }}/README.md"
+            else
+              echo "##[set-output name=readme;]"
+            fi
           fi
       - name: Docker Hub Description
-        if: github.event_name == 'release' && github.repository == env.MASTER_REPO && steps.filecheck.outputs.exists == 'true'
+        if: github.event_name == 'push' && github.repository == env.MASTER_REPO && env.BRANCH == 'master' && steps.filecheck.outputs.readme != ''
         uses: peter-evans/dockerhub-description@v2
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
           DOCKERHUB_REPOSITORY: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
-          README_FILEPATH: ${{ matrix.README }}
+          README_FILEPATH: ${{ steps.filecheck.outputs.readme }}

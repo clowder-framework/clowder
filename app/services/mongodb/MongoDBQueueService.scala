@@ -5,6 +5,7 @@ import java.util.Date
 import akka.actor.Cancellable
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
+import com.mongodb.MongoException
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models.{File, _}
 import org.bson.types.ObjectId
@@ -25,6 +26,7 @@ trait MongoDBQueueService {
   val consumer: String
   var disabledNotified: Boolean = false
   var queueTimer: Cancellable = null
+  var queueFetchError: Boolean = false
 
   // check whether necessary conditions are met (e.g. the plugin is enabled)
   def enabled(): Boolean = {
@@ -68,7 +70,25 @@ trait MongoDBQueueService {
 
   // get next entry from queue
   def getNextQueuedAction(): Option[QueuedAction] = {
-    return Queue.findOne(new MongoDBObject)
+    try {
+      val response = Queue.findOne(new MongoDBObject)
+      if (queueFetchError) {
+        Logger.info("MongoDB has successfully reconnected.")
+        queueFetchError = false
+      }
+      response
+    } catch {
+      case e: MongoException => {
+        // Only log an error once on failed fetch, instead of repeating every 5ms
+        if (!queueFetchError) {
+          Logger.error("Problem connecting to MongoDB queue.")
+          queueFetchError = true
+        }
+        None
+      }
+      case _ => None
+    }
+
   }
 
   // start pool to being processing queue actions
