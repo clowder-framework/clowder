@@ -2133,7 +2133,7 @@ class  Datasets @Inject()(
               (level, file_type) match {
                 case ("dataset", "metadata") => {
                   is = addDatasetMetadataToZip(dataFolder, dataset, zip)
-                  is = addMD5Entry("_metadata.json", is, md5Files)
+                  is = addMD5Entry(dataFolder+"_dataset_metadata.json", is, md5Files)
                   level = "file"
                   file_type = "info"
                 }
@@ -2176,19 +2176,19 @@ class  Datasets @Inject()(
                 case ("bag", "bagit.txt") => {
                   // BagIt "header" data e.g. date, author
                   is = addBagItTextToZip(totalBytes, filenameMap.size, zip, dataset, user)
-                  is = addMD5Entry("bagit.txt", is, md5Files)
+                  is = addMD5Entry("bagit.txt", is, md5Bag)
                   file_type = "bag-info.txt"
                 }
                 case ("bag", "bag-info.txt") => {
                   // BagIt version & encoding
                   is = addBagInfoToZip(zip)
-                  is = addMD5Entry("bag-info.txt", is, md5Files)
+                  is = addMD5Entry("bag-info.txt", is, md5Bag)
                   file_type = "manifest-md5.txt"
                 }
                 case ("bag", "manifest-md5.txt") => {
                   // List of all dataset (i.e. not BagIt) files and their checksums
                   is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest], zip)
-                  is = addMD5Entry("manifest-md5.txt", is, md5Files)
+                  is = addMD5Entry("manifest-md5.txt", is, md5Bag)
                   file_type = "datacite.xml"
                 }
                 case ("bag", "datacite.xml") => {
@@ -2199,7 +2199,6 @@ class  Datasets @Inject()(
                 case ("bag", "tagmanifest-md5.txt") => {
                   // List of all BagIt, xml or non-dataset files and their checksums
                   is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest], zip)
-                  is = addMD5Entry("tagmanifest-md5.txt", is, md5Files)
                   level = "done"
                   file_type = "none"
                 }
