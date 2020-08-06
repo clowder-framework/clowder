@@ -16,6 +16,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
+import play.api.libs.functional.syntax._
 import play.api.mvc.MultipartFormData
 import services._
 
@@ -129,13 +130,8 @@ class Extractions @Inject()(
   }
 
   /**
-   * *
-   * For DTS service use case: suppose a user posts a file to the extractions API, no extractors and its corresponding queues in the Rabbitmq are available. Now she checks the status
-   * for extractors, i.e., if any new extractor has subscribed to the Rabbitmq. If yes, she may again wants to submit the file for extraction again. Since she has already uploaded
-   * it, this time will just uses the file id to submit the request again.
-   * This API takes file id and notifies the user that the request has been sent for processing.
-   * This may change depending on our our design on DTS extraction service.
    *
+   * Given a file id (UUID), submit this file for extraction
    */
   def submitExtraction(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
     current.plugin[RabbitmqPlugin] match {
@@ -143,15 +139,22 @@ class Extractions @Inject()(
         if (UUID.isValid(id.stringify)) {
           files.get(id) match {
             case Some(file) => {
-              current.plugin[RabbitmqPlugin].foreach {
-                // FIXME dataset not available?
-                _.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+              // FIXME dataset not available?
+              plugin.fileCreated(file, None, Utils.baseUrl(request), request.apiKey) match {
+                case Some(jobId) => {
+                  Ok(Json.obj("status" -> "OK", "job_id" -> jobId))
+                }
+                case None => {
+                  val message = "No jobId found for Extraction"
+                  Logger.error(message)
+                  InternalServerError(toJson(Map("status" -> "KO", "message" -> message)))
+                }
               }
-              Ok("Sent for Extraction. check the status")
             }
-            case None =>
+            case None => {
               Logger.error("Could not retrieve file that was just saved.")
               InternalServerError("Error uploading file")
+            }
           } //file match
         } // if Object id
         else {
@@ -529,12 +532,20 @@ class Extractions @Inject()(
               // if extractor_id is not specified default to execution of all extractors matching mime type
               val key = (request.body \ "extractor").asOpt[String] match {
                 case Some(extractorId) =>
-                  p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
+                  val job_id = p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                     datasetId, newFlags, request.apiKey, request.user)
+                  Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
                 case None =>
-                  p.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+                  p.fileCreated(file, None, Utils.baseUrl(request), request.apiKey) match {
+                    case Some(job_id) => {
+                      Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
+                    }
+                  }
               }
-              Ok(Json.obj("status" -> "OK"))
+
+              val message = "No jobId found for Extraction on fileid=" + file_id.stringify
+              Logger.error(message)
+              InternalServerError(toJson(Map("status" -> "KO", "msg" -> message)))
             } else {
               Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
             }
@@ -570,8 +581,8 @@ class Extractions @Inject()(
               "parameters" -> parameters.toString,
               "action" -> "manual-submission")
 
-            p.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
-            Ok(Json.obj("status" -> "OK"))
+            val job_id = p.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
+            Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
           }
           case None =>
             BadRequest(toJson(Map("request" -> "Dataset not found")))
@@ -597,9 +608,10 @@ class Extractions @Inject()(
             // check that the file is ready for processing
             if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
               (request.body \ "extractor").asOpt[String] match {
-                case Some(extractorId) =>
+                case Some(extractorId) => {
                   p.cancelPendingSubmission(file_id, extractorId, msg_id)
-                    Ok(Json.obj("status" -> "OK"))
+                  Ok(Json.obj("status" -> "OK"))
+                }
                 case None =>
                   BadRequest(toJson(Map("request" -> "extractor field not found")))
               }
@@ -623,9 +635,10 @@ class Extractions @Inject()(
         datasets.get(ds_id) match {
           case Some(ds) => {
             (request.body \ "extractor").asOpt[String] match {
-              case Some(extractorId) =>
+              case Some(extractorId) => {
                 p.cancelPendingSubmission(ds_id, extractorId, msg_id)
                 Ok(Json.obj("status" -> "OK"))
+              }
               case None => BadRequest(toJson(Map("request" -> "extractor field not found")))
             }
           }

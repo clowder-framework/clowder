@@ -16,6 +16,8 @@ trait ExtractionService {
 
   def findAll(max: Int = 100): List[Extraction]
 
+  def get(msgId: UUID): Option[Extraction]
+
   def findById(resource: ResourceRef): List[Extraction]
 
   def insert(extraction: Extraction): Option[ObjectId]
