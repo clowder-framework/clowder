@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-- improve simple test to report all day success.
+- Script to clean extractors' tmp files.
+- Script for RabbitMQ error queue cleanup.
+
+### Changed
+- Improved simple test to report all day success.
 
 ## 1.10.1 - 2020-07-16
 
