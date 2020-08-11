@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- Error queue cleanup script
+- Script to clean extractors' tmp files.
+- Script for RabbitMQ error queue cleanup.
 
 ## 1.10.1 - 2020-07-16
 
