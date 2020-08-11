@@ -54,6 +54,7 @@ while [ $FILE_UPLOADED = 0 ]; do
       echo "File upload not PROCESSED after 2 minutes. There may be a problem. Deleting dataset."
       curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
       post_message "Upload+extract test script failing on $CLOWDER_URL\/files\/$FILE_ID (status is not PROCESSED)"
+      rm memoryfile
       exit 1
     fi
     echo "File upload not complete; checking again in 10 seconds."
@@ -83,15 +84,24 @@ while [ $FILE_EXTRACTED -eq 0 ]; do
       echo "File extraction not DONE after 4 minutes. There may be a problem. Deleting dataset."
       curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
       post_message "Upload+extract test script failing on $CLOWDER_URL/files/$FILE_ID (extractor not DONE)"
+      rm memoryfile
       exit 1
     fi
     echo "File extraction not complete; checking again in 10 seconds."
     sleep 10
 done
 echo "File extraction complete."
-    
+
+today=$(date +'%Y-%m-%d')
+if [ ! -e memoryfile ]; then
+     post_message "Upload+extract test script success!"
+elif [ "$(cat memoryfile)" != "$today" ]; then
+     post_message "Upload+extract test script success!"
+fi
+echo $today > memoryfile
 
 # ------------------------ Delete dataset ------------------------
 curl -X DELETE $CLOWDER_URL/api/datasets/$DATASET_ID?key=$CLOWDER_KEY
+
 
 echo "Test complete."

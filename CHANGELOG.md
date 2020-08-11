@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 - Script to clean extractors' tmp files.
 - Script for RabbitMQ error queue cleanup.
+
+### Changed
+- Improved simple test to report all day success.
 
 ## 1.10.1 - 2020-07-16
 
