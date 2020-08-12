@@ -731,7 +731,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else
           builder.startObject().startObject("query_string").field("default_field", key)
             .field("query", "\""+value+"\"").endObject().endObject()
-            //.field("query", value).endObject().endObject()
       }
       case _ => {}
     }
@@ -843,7 +842,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var curropr = ""
     var currval = ""
     matches.foreach(mt => {
-      Logger.info(mt)
       // Determine if the string was a key or value
       if (query.contains(mt+":") || query.contains("\""+mt+"\":")) {
         // Do some user-friendly replacement
@@ -865,8 +863,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       } else
         terms += (("_all", ":", mt.toLowerCase()))
     })
-
-    Logger.info(terms.toString)
 
     // Now that we have a nicely structured list of (key, operator, value) tuples we can translate to Elastic objects
     var builder = jsonBuilder().startObject().startObject("bool")
