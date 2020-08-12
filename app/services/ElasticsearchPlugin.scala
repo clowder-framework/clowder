@@ -130,53 +130,37 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
   }
 
-  /** Search using a simple text string, appending parameters from API to string if provided */
+  /**
+   * Search using a simple text string.
+   * The API endpoint supports several parameters like datasetid that are translated and appended to the query first.
+   * @param query
+   * @param resource_type - Restrict to particular resource_type
+   * @param datasetid - Restrict to particular dataset ID (only returns files)
+   * @param collectionid - Restrict to particular collection ID
+   * @param spaceid - Restrict to particular space ID
+   * @param folderid - Restrict to particular folder ID
+   * @param field - Restrict to a specific metadata field (assumes query is the value)
+   * @param tag - Restrict to a particular tag (exact match)
+   * @param from
+   * @param size
+   * @param permitted
+   * @param user
+   * @param index
+   */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
              from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User],
              index: String = nameOfIndex): ElasticsearchResult = {
 
+    // Convert any parameters from API into the query syntax equivalent so we can parse it all together later
     var expanded_query = query
-
-    // whether to restrict to a particular metadata field, or search all fields (including tags, name, etc.)
-    val mdfield = field match {
-      case Some(k) => expanded_query = " "+k+":\""+expanded_query+"\""
-      case None => {}
-    }
-
-    // Restrict to a particular tag - currently requires exact match
-    tag match {
-      case Some(t) => expanded_query += " tag:"+t
-      case None => {}
-    }
-
-    // Restrict to particular resource_type if requested
-    resource_type match {
-      case Some(restype) => expanded_query += " resource_type:"+restype
-      case None => {}
-    }
-
-    // Restrict to particular dataset ID (only return files)
-    datasetid match {
-      case Some(dsid) => expanded_query += " in:"+dsid+" resource_type:file"
-      case None => {}
-    }
-
-    // Restrict to particular collection ID
-    collectionid match {
-      case Some(cid) => expanded_query += " in:"+cid
-      case None => {}
-    }
-
-    spaceid match {
-      case Some(spid) => expanded_query += " in:"+spid
-      case None => {}
-    }
-
-    folderid match {
-      case Some(fid) => expanded_query += " in:"+fid
-      case None => {}
-    }
+    field.foreach(k => expanded_query = " "+k+":\""+expanded_query+"\"")
+    tag.foreach(t => expanded_query += s" tag:$t")
+    resource_type.foreach(restype => expanded_query += s" resource_type:$restype")
+    datasetid.foreach(dsid => expanded_query += s" in:$dsid resource_type:file")
+    collectionid.foreach(cid => expanded_query += s" in:$cid")
+    spaceid.foreach(spid => expanded_query += s" in:$spid")
+    folderid.foreach(fid => expanded_query += s" in:$fid")
 
     val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted, user)
     accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
@@ -290,7 +274,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       new ResourceRef(Symbol(h.getSource().get("resource_type").toString), UUID(h.getId()))
     }).toList, response.getHits().getTotalHits())
   }
-
 
   /** Create a new index with preconfigured mappgin */
   def createIndex(index: String = nameOfIndex): Unit = {
@@ -746,7 +729,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
         else
-          builder.startObject().startObject("query_string").field("default_field", key).field("query", value).endObject().endObject()
+          builder.startObject().startObject("query_string").field("default_field", key)
+            .field("query", "\""+value+"\"").endObject().endObject()
+            //.field("query", value).endObject().endObject()
       }
       case _ => {}
     }
@@ -762,7 +747,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     builder
   }
 
-  /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
+  /** Convert list of search term JsValues into an Elasticsearch-ready JSON query object **/
   def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
     /** OPERATORS
       *  :   contains (partial match)
@@ -837,73 +822,68 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     builder
   }
 
-  /**Convert search string into an Elasticsearch-ready JSON query object**/
+  /** Convert search string into an Elasticsearch-ready JSON query object **/
   def prepareElasticJsonQuery(query: String, permitted: List[UUID], user: Option[User]): XContentBuilder = {
-    /** OPERATORS
-      *  ==  equals (exact match)
-      *  !=  not equals (partial matches OK)
-      *  <   less than
-      *  >   greater than
-      **/
 
     // Use regex to split string into a list, preserving quoted phrases as single value
     val matches = ListBuffer[String]()
-    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query.replace(":", " "))
+    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query)//.replace(":", " "))
     while (m.find()) {
-      matches += m.group(1).replace("\"", "").replace("__", " ")
+      var mat = m.group(1).replace("\"", "").replace("__", " ")
+      if (mat.startsWith(":")) mat = mat.substring(1)
+      matches += mat
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
     val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag")
 
-    // Create list of "key:value" terms for parsing by builder
-    val terms = ListBuffer[String]()
-    var currterm = ""
+    // Create list of (key, operator, value) for passing to builder
+    val terms = ListBuffer[(String, String, String)]()
+    var currkey = ""
+    var curropr = ""
+    var currval = ""
     matches.foreach(mt => {
+      Logger.info(mt)
       // Determine if the string was a key or value
       if (query.contains(mt+":") || query.contains("\""+mt+"\":")) {
         // Do some user-friendly replacement
-        if (mt == "tag")
-          currterm += "tags:"
-        else if (mt == "in")
-          currterm += "child_of:"
-        else if (mt == "contains")
-          currterm += "parent_of:"
-        else if (mt == "creator")
-          currterm += "creator_name:"
-        else if (mt == "email")
-          currterm += "creator_email:"
-        else if (!official_terms.contains(mt))
-          currterm += "metadata."+mt+":"
+        if (mt == "tag") currkey = "tags"
+        else if (mt == "in") currkey = "child_of"
+        else if (mt == "contains") currkey = "parent_of"
+        else if (mt == "creator") currkey = "creator_name"
+        else if (mt == "email") currkey = "creator_email"
+        else if (!official_terms.contains(mt)) currkey = "metadata."+mt
         else
-          currterm += mt+":"
+          currkey = mt
+        curropr = ":"
       } else if (query.contains(":"+mt) || query.contains(":\""+mt+"\"")) {
-        currterm += mt.toLowerCase()
-        terms += currterm
-        currterm = ""
-      } else {
-        terms += "_all:"+mt.toLowerCase()
-      }
+        currval = mt.toLowerCase()
+        terms += ((currkey, curropr, currval))
+        currkey = ""
+        curropr = ""
+        currval = ""
+      } else
+        terms += (("_all", ":", mt.toLowerCase()))
     })
 
+    Logger.info(terms.toString)
+
+    // Now that we have a nicely structured list of (key, operator, value) tuples we can translate to Elastic objects
     var builder = jsonBuilder().startObject().startObject("bool")
 
     // First, populate the MUST portion of Bool query
     var populatedMust = false
-    terms.map(term => {
-      for (operator <- mustOperators) {
-        if (term.contains(operator)) {
-          val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator)+1, term.length)
-
-          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-          if (mustOperators.contains(operator) && !populatedMust) {
-            builder.startArray("must")
-            populatedMust = true
-          }
-
-          builder = parseMustOperators(builder, key, value, operator)
+    terms.map(entry => {
+      val key = entry._1
+      val curropr = entry._2
+      val value = entry._3
+      if (mustOperators.contains(curropr)) {
+        // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+        if (!populatedMust) {
+          builder.startArray("must")
+          populatedMust = true
         }
+        builder = parseMustOperators(builder, key, value, curropr)
       }
     })
 
@@ -939,20 +919,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Second, populate the MUST NOT portion of Bool query
     var populatedMustNot = false
-    terms.map(term => {
-      for (operator <- mustNotOperators) {
-        if (term.contains(operator)) {
-          val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator), term.length)
-
-          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-          if (mustNotOperators.contains(operator) && !populatedMustNot) {
-            builder.startArray("must_not")
-            populatedMustNot = true
-          }
-
-          builder = parseMustNotOperators(builder, key, value, operator)
+    terms.map(entry => {
+      val key = entry._1
+      val curropr = entry._2
+      val value = entry._3
+      if (mustNotOperators.contains(curropr)) {
+        // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+        if (!populatedMustNot) {
+          builder.startArray("must_not")
+          populatedMustNot = true
         }
+        builder = parseMustNotOperators(builder, key, value, curropr)
       }
     })
     if (populatedMustNot) builder.endArray()
