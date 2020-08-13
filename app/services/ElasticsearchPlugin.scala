@@ -48,7 +48,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
   val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
 
-  val mustOperators = List("==", "<", ">", ":")
+  val mustOperators = List("==", "<=", ">=", "<", ">", ":")
   val mustNotOperators = List("!=")
 
 
@@ -720,11 +720,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Create appropriate search object based on operator */
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
-    // TODO: Suppert lte, gte (<=, >=)
     operator match {
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
       case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
       case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      case "<=" => builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
+      case ">=" => builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
       case ":" => {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
@@ -826,10 +827,23 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Use regex to split string into a list, preserving quoted phrases as single value
     val matches = ListBuffer[String]()
-    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query)//.replace(":", " "))
+    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query)
     while (m.find()) {
       var mat = m.group(1).replace("\"", "").replace("__", " ")
-      if (mat.startsWith(":")) mat = mat.substring(1)
+      (mustOperators ::: mustNotOperators).foreach(op => {
+        if (mat.startsWith(op)) {
+          // Make sure x<=4 is "x lte 4" not "x lt =4"
+          var foundLonger = false
+          (mustOperators ::: mustNotOperators).foreach(longerop => {
+            if (longerop!=op && longerop.length>op.length && mat.startsWith(longerop)) {
+              mat = mat.substring(longerop.length)
+              foundLonger = true
+            }
+          })
+          if (!foundLonger)
+            mat = mat.substring(op.length)
+        }
+      })
       matches += mat
     }
 
@@ -838,12 +852,22 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Create list of (key, operator, value) for passing to builder
     val terms = ListBuffer[(String, String, String)]()
-    var currkey = ""
-    var curropr = ""
+    var currkey = "_all"
+    var curropr = ":" // Defaults to 'contains' match on _all if no key:value pairs are found (assumes whole string is the value)
     var currval = ""
     matches.foreach(mt => {
+      // Check if the current term appears before or after one of the operators, and what operator is
+      var entryType = "value"
+      (mustOperators ::: mustNotOperators).foreach(op => {
+        if (query.contains(mt+op) || query.contains("\""+mt+"\""+op)) {
+          entryType = "key"
+          curropr = op
+        } else if (query.contains(op+mt) || query.contains(op+"\""+mt+"\""))
+          curropr = op
+      })
+
       // Determine if the string was a key or value
-      if (query.contains(mt+":") || query.contains("\""+mt+"\":")) {
+      if (entryType == "key") {
         // Do some user-friendly replacement
         if (mt == "tag") currkey = "tags"
         else if (mt == "in") currkey = "child_of"
@@ -853,15 +877,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else if (!official_terms.contains(mt)) currkey = "metadata."+mt
         else
           currkey = mt
-        curropr = ":"
-      } else if (query.contains(":"+mt) || query.contains(":\""+mt+"\"")) {
+      } else if (entryType == "value") {
         currval = mt.toLowerCase()
         terms += ((currkey, curropr, currval))
-        currkey = ""
-        curropr = ""
+        currkey = "_all"
+        curropr = ":"
         currval = ""
-      } else
-        terms += (("_all", ":", mt.toLowerCase()))
+      }
     })
 
     // Now that we have a nicely structured list of (key, operator, value) tuples we can translate to Elastic objects
