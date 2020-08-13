@@ -1940,49 +1940,6 @@ class  Datasets @Inject()(
   }
 
   /**
-    * Create a mapping for each file to their unique location
-    */
-  def listFilesInFolder(fileids: List[UUID], folderids: List[UUID], parent: String, filenameMap: scala.collection.mutable.Map[UUID, String], inputFiles: scala.collection.mutable.ListBuffer[models.File]): Unit = {
-    // get all file objects
-    val fileobjs = files.get(fileids).found
-
-    // map fileobj to filename, make sure filename is unique
-    // potential improvemnt would be to keep a map -> array of ids
-    // if array.length == 1, then no duplicate, else fix all duplicate ids
-    fileobjs.foreach(f => {
-      inputFiles.append(f)
-      if (fileobjs.exists(x => x.id != f.id && x.filename == f.filename)) {
-        // create new filename filename_id.ext
-        val (filename, ext) = f.filename.lastIndexOf('.') match {
-          case(-1) => (f.filename, "")
-          case(x) => (f.filename.substring(0, x), f.filename.substring(x))
-        }
-        filenameMap(f.id) = s"${parent}${filename}_${f.id}${ext}"
-      } else {
-        filenameMap(f.id) = s"${parent}${f.filename}"
-      }
-    })
-
-    // get all folder objects
-    val folderobjs = folderids.flatMap(x => folders.get(x) match {
-      case Some(f) => Some(f)
-      case None => {
-        Logger.error(s"Could not find folder with id=${x.uuid}")
-        None
-      }
-    })
-    folderobjs.foreach(f => {
-      val folder = if (folderobjs.exists(x => x.id != f.id && x.displayName == f.displayName)) {
-        // this case should not happen since folders are made unique at creation
-        s"${parent}${f.displayName}_${f.id.stringify}/"
-      } else {
-        s"${parent}${f.displayName}/"
-      }
-      listFilesInFolder(f.files, f.folders, folder, filenameMap, inputFiles)
-    })
-  }
-
-  /**
     * Loop over all files in a dataset and return chunks for the result zip file that will be
     * streamed to the client. The zip files are streamed and not stored on disk.
     *
