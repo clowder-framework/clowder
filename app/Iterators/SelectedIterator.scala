@@ -3,6 +3,7 @@ package Iterators
 import java.io.InputStream
 import java.security.{DigestInputStream, MessageDigest}
 import java.util.zip.ZipOutputStream
+import scala.collection.mutable.HashMap
 
 import models.{Dataset, User}
 import services._
@@ -11,16 +12,14 @@ import services._
 /**
   * this class is used to download user selections. it has a bagit iterator as well.
   */
-class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : ZipOutputStream,
-                       md5Files : scala.collection.mutable.HashMap[String, MessageDigest],
-                       md5Bag : scala.collection.mutable.HashMap[String, MessageDigest],
-                       user : Option[User], totalBytes : Long, bagit : Boolean,
-                       datasets : DatasetService, files : FileService, folders : FolderService, metadataService : MetadataService,
-                       spaces : SpaceService) extends Iterator[Option[InputStream]] {
+class SelectedIterator(pathToFolder: String, selected: List[Dataset], zip: ZipOutputStream,
+                       md5Files: HashMap[String, MessageDigest], md5Bag: HashMap[String, MessageDigest],
+                       user: Option[User], bagit: Boolean) extends Iterator[Option[InputStream]] {
 
   var currentDatasetIdx = 0
   var currentDataset = selected(currentDatasetIdx)
-  var currentDatasetIterator = new DatasetIterator(pathToFolder+"/"+currentDataset.name, currentDataset, zip, md5Files)
+  var currentDatasetIterator = new DatasetIterator(pathToFolder+"/"+currentDataset.name,
+    currentDataset, zip, md5Files, md5Bag, user, false)
   var bagItIterator : Option[BagItIterator] = None
   var bytesSoFar : Long  = 0L
   var file_type = "dataset_iterator"
@@ -46,11 +45,15 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
           currentDatasetIdx += 1
           currentDataset = selected(currentDatasetIdx)
           currentDatasetIterator = new DatasetIterator(pathToFolder+"/"+currentDataset.name,
-            currentDataset, zip, md5Files)
+            currentDataset, zip, md5Files, md5Bag, user, false)
           true
         } else if (bagit) {
-          bagItIterator = Some(new BagItIterator(pathToFolder,
-            None, zip, md5Bag, md5Files, bytesSoFar, user))
+          val senderId = user match {
+            case Some(u) => u.id.stringify
+            case None => "Unknown User"
+          }
+          bagItIterator = Some(new BagItIterator(pathToFolder, zip, senderId, "User Dataset Selections",
+            md5Bag, md5Files, user))
           file_type = "bagit"
           true
         } else false

@@ -4,30 +4,28 @@ import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.util.zip.ZipOutputStream
 
-import Iterators.SelectedIterator
-import controllers.Utils
-import play.api.libs.iteratee.Enumerator
+import javax.inject.Inject
+
+import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import play.api.libs.json.Json._
 import play.api.Logger
 import play.api.Play.current
-import javax.inject.Inject
+import akka.stream.scaladsl.Source
+import Iterators.SelectedIterator
+import akka.NotUsed
+import controllers.Utils
 import services._
 import models.{Dataset, EventType, UUID, User}
 import util.FileUtils
 
-import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Selected items.
  */
 class Selected @Inject()(selections: SelectionService,
                          datasets: DatasetService,
-                         files: FileService,
-                         spaces:SpaceService,
-                         folders : FolderService,
-                         metadataService : MetadataService,
                          events: EventService) extends Controller with ApiController {
 
   def get() = AuthenticatedAction { implicit request =>
@@ -79,7 +77,6 @@ class Selected @Inject()(selections: SelectionService,
     }
   }
 
-
   def clearAll() = AuthenticatedAction { implicit request =>
     Logger.debug("Requesting Selected.clearAll")
     request.user match {
@@ -111,7 +108,8 @@ class Selected @Inject()(selections: SelectionService,
       case Some(user) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
         val selected = selections.get(user.email.get)
-        Ok.chunked(enumeratorFromSelected(selected,1024*1024,bagit,Some(user))).withHeaders(
+        val stream = streamSelected(selected,1024*1024, bagit, Some(user))
+        Ok.chunked(stream).withHeaders(
           "Content-Type" -> "application/zip",
           "Content-Disposition" -> (FileUtils.encodeAttachment("Selected Datasets.zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -120,34 +118,39 @@ class Selected @Inject()(selections: SelectionService,
     }
   }
 
-  def enumeratorFromSelected(selected: List[Dataset], chunkSize: Int = 1024 * 8, bagit: Boolean, user : Option[User])
-                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
-    implicit val pec = ec.prepare()
+  /**
+   * Loop over all datasets in a user selection and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param selected dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @return Source to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
+  def streamSelected(selected: List[Dataset], chunkSize: Int = 1024 * 8,
+                     bagit: Boolean, user : Option[User]): Source[Array[Byte], NotUsed] = {
+
     val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest]
     val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest]
-
     var totalBytes = 0L
     var bytesSet = false
-
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream(byteArrayOutputStream)
 
-    val current_iterator = new SelectedIterator("Selected Datasets", selected, zip, md5Files, md5Bag, user,
-      totalBytes, bagit, datasets, files, folders, metadataService, spaces)
-
+    val current_iterator = new SelectedIterator("Selected Datasets",
+      selected, zip, md5Files, md5Bag, user, bagit)
     var is = current_iterator.next()
 
-    Enumerator.generateM({
-      is match {
+    Source.unfoldAsync(is) { currChunk =>
+      currChunk match {
         case Some(inputStream) => {
-          if (current_iterator.isBagIt() && bytesSet == false){
+          if (current_iterator.isBagIt() && !bytesSet) {
             current_iterator.setBytes(totalBytes)
             bytesSet = true
           }
           val buffer = new Array[Byte](chunkSize)
           val bytesRead = scala.concurrent.blocking {
             inputStream.read(buffer)
-
           }
           val chunk = bytesRead match {
             case -1 => {
@@ -171,13 +174,11 @@ class Selected @Inject()(selections: SelectionService,
             }
           }
           byteArrayOutputStream.reset()
-          Future.successful(chunk)
+          Future.successful(Some((is, chunk.get)))
         }
-        case None => {
-          Future.successful(None)
-        }
+        case None => Future.successful(None)
       }
-    })(pec)
+    }
   }
 
   def tagAll(tags: List[String]) = AuthenticatedAction { implicit request =>

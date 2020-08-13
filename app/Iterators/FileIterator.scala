@@ -34,25 +34,6 @@ class FileIterator (pathToFile: String, file: File, zip: ZipOutputStream, md5Fil
   var file_type = "file_info"
 
 
-  private def getFileInfoAsJson(file: File): JsValue = {
-    Json.obj(
-      "id" -> file.id,
-      "filename" -> file.filename,
-      "author" -> file.author.email,
-      "uploadDate" -> file.uploadDate.toString,
-      "contentType" -> file.contentType,
-      "description" -> file.description,
-      "license" -> Json.obj(
-        "licenseText" -> file.licenseData.m_licenseText,
-        "rightsHolder" -> (file.licenseData.m_licenseType match {
-          case "license1" => file.author.fullName.getOrElse("Limited")
-          case "license2" => "Creative Commons"
-          case "license3" => "Public Domain Dedication"
-          case _ => "None"
-        })
-      ))
-  }
-
   def hasNext(): Boolean = {
     file_type match {
       case "file_info" => true
@@ -68,7 +49,7 @@ class FileIterator (pathToFile: String, file: File, zip: ZipOutputStream, md5Fil
         val md5 = MessageDigest.getInstance("MD5")
         md5Files.put(file.filename+"_info.json", md5)
         is = IteratorUtils.addJsonFileToZip(zip, pathToFile, file.filename+"_info",
-          getFileInfoAsJson(file))
+          IteratorUtils.getFileInfoAsJson(file))
         file_type = "file_metadata"
         Some(new DigestInputStream(is.get, md5))
       }

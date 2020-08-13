@@ -45,22 +45,6 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
   var file_type = "collection_info"
 
 
-  private def getCollectionInfoAsJson(collection: Collection): JsValue = {
-    Json.obj(
-      "id" -> collection.id.toString,
-      "name" -> collection.name,
-      "description" -> collection.description,
-      "created" -> collection.created.toString,
-      "author"-> collection.author.email.toString,
-      "root_flag" -> collections.hasRoot(collection).toString,
-      "child_collection_ids"-> collection.child_collection_ids.toString,
-      "parent_collection_ids" -> collection.parent_collection_ids.toString,
-      "childCollectionsCount" -> collection.childCollectionsCount.toString,
-      "datasetCount"-> collection.datasetCount.toString,
-      "spaces" -> collection.spaces.toString
-    )
-  }
-
   def setBytes(totalBytes: Long) = {
     bytesSoFar = totalBytes
     bagItIterator match {
@@ -86,7 +70,8 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
           file_type = "child_collections"
           true
         } else if (bagit) {
-          bagItIterator = Some(new BagItIterator(pathToFolder, Some(collection), zip, md5Bag, md5Files, bytesSoFar, user))
+          bagItIterator = Some(new BagItIterator(pathToFolder, zip, collection.id.stringify, collection.description,
+            md5Bag, md5Files, bytesSoFar, user))
           file_type = "bagit"
           true
         } else false
@@ -103,8 +88,8 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
                 currentCollection.get, zip, md5Files, md5Bag, user, false))
               true
             } else if (bagit) {
-              bagItIterator = Some(new BagItIterator(pathToFolder,
-                Some(collection), zip, md5Bag, md5Files, bytesSoFar, user))
+              bagItIterator = Some(new BagItIterator(pathToFolder, zip, collection.id.stringify, collection.description,
+                md5Bag, md5Files, user))
               file_type = "bagit"
               true
             } else false
@@ -128,7 +113,7 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
         val md5 = MessageDigest.getInstance("MD5")
         md5Files.put(pathToFolder + "_info.json", md5)
         val is = IteratorUtils.addJsonFileToZip(zip, pathToFolder, collection.name+"_info",
-          getCollectionInfoAsJson(collection))
+          IteratorUtils.getCollectionInfoAsJson(collection))
         file_type = "collection_metadata"
         Some(new DigestInputStream(is.get, md5))
       }

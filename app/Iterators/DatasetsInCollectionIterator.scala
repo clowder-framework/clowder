@@ -13,7 +13,8 @@ import services._
  * This is used to download the datasets in a collection.
  * It creates an iterator for each dataset in the collection.
  */
-class DatasetsInCollectionIterator (pathToFolder: String, collection: Collection, zip: ZipOutputStream, md5Files: HashMap[String, MessageDigest],
+class DatasetsInCollectionIterator (pathToFolder: String, collection: Collection, zip: ZipOutputStream,
+                                    md5Files: HashMap[String, MessageDigest], md5Bag: HashMap[String, MessageDigest],
                                     user: Option[User]) extends Iterator[Option[InputStream]] {
 
   // Guice injection doesn't work in the context we're using this in
@@ -29,7 +30,7 @@ class DatasetsInCollectionIterator (pathToFolder: String, collection: Collection
   if (datasetList.size > 0) {
     currentDataset = Some(datasetList(currentDatasetIdx))
     currentDatasetIterator = Some(new DatasetIterator(pathToFolder + "/" + currentDataset.get.name,
-      currentDataset.get, zip, md5Files))
+      currentDataset.get, zip, md5Files, md5Bag, user, false))
   }
 
 
@@ -42,7 +43,7 @@ class DatasetsInCollectionIterator (pathToFolder: String, collection: Collection
             currentDatasetIdx +=1
             currentDataset = Some(datasetList(currentDatasetIdx))
             currentDatasetIterator = Some(new DatasetIterator(pathToFolder + "/" + currentDataset.get.name,
-              currentDataset.get, zip, md5Files))
+              currentDataset.get, zip, md5Files, md5Bag, user, false))
             true
           }
           else false

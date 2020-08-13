@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.util.zip.{Deflater, ZipOutputStream}
 import java.util.{Calendar, Date}
+
 import javax.inject.{Inject, Singleton}
+
 import scala.collection.immutable.List
 import scala.collection.mutable.{HashMap, ListBuffer}
 import scala.concurrent.Future
@@ -13,8 +15,8 @@ import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, JsValue, _}
 import play.api.{Configuration, Logger}
 import akka.stream.scaladsl.Source
-
 import Iterators.CollectionIterator
+import akka.NotUsed
 import api.Permission.Permission
 import controllers.Utils
 import models._
@@ -764,10 +766,20 @@ class Collections @Inject() (datasets: DatasetService,
     }
   }
 
-  // TODO: Comments about this
+  /**
+   * Loop over all datasets in a collection and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param collection dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @param compression java built in compression value. Use 0 for no compression.
+   * @return Source to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
   def streamCollection(collection: Collection, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION,
-                               bagit: Boolean, user: Option[User]) = {
+                       bagit: Boolean, user: Option[User]): Source[Array[Byte], NotUsed] = {
 
+    // Keep two MD5 checksum lists, one for collection files and one for BagIt files
     val md5Files = HashMap.empty[String, MessageDigest]
     val md5Bag = HashMap.empty[String, MessageDigest]
     var totalBytes = 0L
@@ -778,8 +790,8 @@ class Collections @Inject() (datasets: DatasetService,
     val current_iterator = new CollectionIterator(collection.name, collection, zip, md5Files, md5Bag, user, bagit)
     var is = current_iterator.next()
 
-    Source.unfoldAsync({
-      is match {
+    Source.unfoldAsync(is) { currChunk =>
+      currChunk match {
         case Some(inputStream) => {
           if (current_iterator.isBagIt() && bytesSet == false) {
             current_iterator.setBytes(totalBytes)
@@ -810,10 +822,10 @@ class Collections @Inject() (datasets: DatasetService,
             }
           }
           byteArrayOutputStream.reset()
-          Future.successful(chunk)
+          Future.successful(Some((is, chunk.get)))
         }
         case None => Future.successful(None)
       }
-    })
+    }
   }
 }
