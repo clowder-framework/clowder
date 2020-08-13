@@ -10,7 +10,6 @@ import play.api.Logger
 import models.{Dataset, File, ResourceRef, UUID, User}
 import services._
 import util.JSONLD
-import Iterators.IteratorUtils
 
 
 /**
@@ -52,8 +51,8 @@ class DatasetIterator(pathToFolder: String, dataset: Dataset, zip: ZipOutputStre
    * enforce uniqueness.
    */
   def generateUniqueNames(fileids: List[UUID], folderids: List[UUID], parent: String): (Map[UUID, String], List[File]) = {
-    val filenameMap = MutaMap.empty[UUID, String]
-    val inputFilesBuffer = ListBuffer.empty[File]
+    var filenameMap = MutaMap.empty[UUID, String]
+    var inputFilesBuffer = ListBuffer.empty[File]
 
     val fileobjs = files.get(fileids).found
 
@@ -89,7 +88,9 @@ class DatasetIterator(pathToFolder: String, dataset: Dataset, zip: ZipOutputStre
       } else {
         s"${parent}${f.displayName}/"
       }
-      (filenameMap, inputFilesBuffer) = generateUniqueNames(f.files, f.folders, folder)
+      val (subMap, subFiles) = generateUniqueNames(f.files, f.folders, folder)
+      filenameMap = filenameMap ++ subMap
+      inputFilesBuffer = inputFilesBuffer ++ subFiles
     })
 
     (filenameMap.toMap, inputFilesBuffer.toList)
