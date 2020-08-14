@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.10.2 - Unreleased
+
+### Fixed
+- Escape colon characters on search values for search box and advanced search to allow those values in a search.
+
 ## 1.10.1 - 2020-07-16
 
 ### Fixed
