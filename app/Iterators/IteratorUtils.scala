@@ -77,7 +77,7 @@ object IteratorUtils {
       "license" -> Json.obj(
         "licenseText" -> file.licenseData.m_licenseText,
         "rightsHolder" -> (file.licenseData.m_licenseType match {
-          case "license1" => file.author.fullName.getOrElse("Limited")
+          case "license1" => file.author.fullName.getOrElse[String]("Limited")
           case "license2" => "Creative Commons"
           case "license3" => "Public Domain Dedication"
           case _ => "None"
@@ -98,7 +98,7 @@ object IteratorUtils {
       "license" -> Json.obj(
         "licenseText" -> dataset.licenseData.m_licenseText,
         "rightsHolder" -> (dataset.licenseData.m_licenseType match {
-          case "license1" => dataset.author.fullName.getOrElse("Limited")
+          case "license1" => dataset.author.fullName.getOrElse[String]("Limited")
           case "license2" => "Creative Commons"
           case "license3" => "Public Domain Dedication"
           case _ => "None"

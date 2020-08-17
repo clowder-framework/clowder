@@ -35,7 +35,7 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
   val folders = DI.injector.getInstance(classOf[FolderService])
   val spaces = DI.injector.getInstance(classOf[SpaceService])
 
-  val datasetIterator = new DatasetsInCollectionIterator(pathToFolder+"/"+collection.name, collection, zip, md5Files, user)
+  val datasetIterator = new DatasetsInCollectionIterator(pathToFolder+"/"+collection.name, collection, zip, md5Files, md5Bag, user)
   var bagItIterator: Option[BagItIterator] = None
   val childCollections = collections.get(collection.child_collection_ids).found
   var currentCollection: Option[Collection] = None
@@ -71,7 +71,7 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
           true
         } else if (bagit) {
           bagItIterator = Some(new BagItIterator(pathToFolder, zip, collection.id.stringify, collection.description,
-            md5Bag, md5Files, bytesSoFar, user))
+            md5Bag, md5Files, user))
           file_type = "bagit"
           true
         } else false
@@ -122,7 +122,7 @@ class CollectionIterator (pathToFolder: String, collection: Collection, zip: Zip
         md5Files.put(pathToFolder + "_metadata.json", md5)
         // TODO: How is _metadata distinct from _info.json? Is this required (we don't support collection metadata)?
         val metadataMap = Json.obj(
-          "author" -> collection.author.email.getOrElse(""),
+          "author" -> collection.author.email.getOrElse[String](""),
           "description" -> collection.description,
           "created" -> collection.created.toString
         )

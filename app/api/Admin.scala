@@ -1,28 +1,24 @@
 package api
 
-import java.util.Date
-
 import javax.inject.Inject
 import models._
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.lang.StringEscapeUtils
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import play.api.templates.Html
+import play.twirl.api.Html
+
 import services._
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 import util.Mail
 
-import play.api.libs.json.{JsString, JsUndefined, JsValue}
+import play.api.libs.json.{JsString, JsDefined, JsUndefined, JsValue}
 
 /**
  * Admin endpoints for JSON API.
  */
 class Admin @Inject() (userService: UserService,
-    datasets: DatasetService,
-    collections: CollectionService,
-    files: FileService,
     events: EventService,
     searches: SearchService) extends Controller with ApiController {
 
@@ -91,14 +87,13 @@ class Admin @Inject() (userService: UserService,
 
   private def getValueString(body: JsValue, key: String): Option[String] = {
     body \ key match {
-      case x: JsUndefined => None
-      case x: JsString => Some(x.value)
-      case x: JsValue => Some(x.toString)
+      case x: JsDefined => Some(x.get.toString)
+      case _ => None
     }
   }
 
   def mail = UserAction(false)(parse.json) { implicit request =>
-    val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
+    val body = StringEscapeUtils.escapeHtml((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
     val htmlbody = if (!current.configuration.getBoolean("smtp.mimicuser").getOrElse(true)) {
