@@ -432,6 +432,8 @@ line-height: 1.5;
                 $('#basicRadioBtn').removeClass('btn-link');
                 $('#advancedRadioBtn').addClass('btn-link');
                 $('#advancedRadioBtn').removeClass('btn-primary');
+                $('#groupRadioBtn').removeClass('btn-primary');
+                $('#groupRadioBtn').addClass('btn-link');
             });
             // Enable button group toggle functionality
             $('#advancedRadioBtn').click(function () {
@@ -445,6 +447,22 @@ line-height: 1.5;
                 $('#advancedRadioBtn').removeClass('btn-link');
                 $('#basicRadioBtn').addClass('btn-link');
                 $('#basicRadioBtn').removeClass('btn-primary');
+                $('#groupRadioBtn').removeClass('btn-primary');
+                $('#groupRadioBtn').addClass('btn-link');
+            });
+            $('#groupRadioBtn').click(function () {
+               console.log('clicked the group');
+                $('#addMetadataBasic').hide();
+                $('#selected_field').hide();
+                $('#addMetadataAdvanced').show();
+
+                // Toggle 'Advanced' to active, 'Basic' to inactive
+                $('#advancedRadioBtn').removeClass('btn-primary');
+                $('#advancedRadioBtn').addClass('btn-link');
+                $('#basicRadioBtn').addClass('btn-link');
+                $('#basicRadioBtn').removeClass('btn-primary');
+                $('#groupRadioBtn').addClass('btn-primary');
+                $('#groupRadioBtn').removeClass('btn-link');
             });
 
             // render advanced metadata form inputs
