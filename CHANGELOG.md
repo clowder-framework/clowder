@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Improved simple test to report all day success.
+- Expose a read-only list of extractors to all users.
 
 ## 1.10.1 - 2020-07-16
 
