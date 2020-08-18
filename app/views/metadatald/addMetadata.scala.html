@@ -13,6 +13,7 @@
                         <div class="btn-group btn-group-xs" role="group" aria-label="metadataEntryMode">
                             <button id="basicRadioBtn" type="button" class="btn btn-primary">Basic</button>
                             <button id="advancedRadioBtn" type="button" class="btn btn-link">Advanced</button>
+                            <button id="groupRadioBtn" types="button" class="btn btn-link">Group</button>
                         </div>
                     </div>
                 </div>
@@ -35,6 +36,26 @@
                     </div>
                     <div id="addMetadataAdvanced" hidden>
 
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <hr />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <form id="advanced-metadata-form" class="form-horizontal form-md">
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <button id="add-bulk-metadata-button" type="submit" class="btn btn-default pull-right"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="addMetadataGroup" hidden >
                         <div class="row">
                             <div class="col-sm-12">
                                 <hr />
@@ -400,6 +421,7 @@ line-height: 1.5;
         $(document).ready(function() {
             // Enable button group toggle functionality
             $('#basicRadioBtn').click(function () {
+                console.log('clicked basic');
                 // Hide "Advanced", show "Basic"
                 $('#addMetadataAdvanced').hide();
                 $('#addMetadataBasic').show();
