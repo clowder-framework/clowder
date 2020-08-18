@@ -71,7 +71,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
 
 
-  def showExtractorInfo(extractorName: String) = ServerAdminAction { implicit request =>
+  def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
