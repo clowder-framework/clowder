@@ -400,9 +400,10 @@ line-height: 1.5;
         type: 'GET',
         contentType: "application/json"
     });
-
+    console.log('url is', url);
     request.done(function (response, textStatus, jqXHR) {
         var fields = response;
+        console.log('the response', response);
         for (var i = 0; i < fields.length; i++) {
             var elem = $("<option></option>");
             elem.attr("data-description", fields[i].json.description);
