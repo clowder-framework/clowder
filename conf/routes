@@ -887,7 +887,7 @@ POST        /extractors                                                         
 
 GET         /api/tree/getChildrenOfNode                                                     @api.Tree.getChildrenOfNode(nodeType : String ?= "root", nodeId : Option[String] ?= None, mine : Boolean ?= false)
 
- ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # METADATAGROUPS API
 # ----------------------------------------------------------------------
 
@@ -898,4 +898,4 @@ GET        /api/metadataGroup/listSpace/:id                                     
 POST       /api/metadataGroup/:datasetId/attachToDataset                                   @api.MetadataGroup.attachToDataset(datasetId: UUID)
 POST       /api/metadataGroup/:groupId/attachToFile/:fileId                                @api.MetadataGroup.attachToFile(groupId: UUID, fileId: UUID)
 GET        /api/metadataGroup/getByFile/:fileId                                            @api.MetadataGroup.getAttachedToFile(fileId: UUID)
-GET
+GET        /api/metadataGroup/getByDataset/:datasetId                                      @api.MetadataGroup.getAttachedToDataset(datasetId: UUID)
