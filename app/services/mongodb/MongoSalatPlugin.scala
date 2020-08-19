@@ -215,6 +215,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       case ResourceRef.section => Some(collection("sections"))
       case ResourceRef.curationObject => Some(collection("curationObjects"))
       case ResourceRef.curationFile => Some(collection("curationFiles"))
+      case ResourceRef.metadataGroup => Some(collection("metadatagroup"))
+
       case _ => {
         Logger.error(s"Can not map resource ${resourceType} to collection.")
         None
