@@ -446,6 +446,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates permissions for the admin Role
     updateMongo("update-admin-role", updateAdminRole)
+
+    //add metadata group permissions
+    updateMongo(updateKey = "update-roles-metadatagroup", updateRolesMetadataGroup)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1661,6 +1664,49 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         val tempUserSpace = userSpaceRole.asInstanceOf[BasicDBObject]
         val tempRole = tempUserSpace.get("role").asInstanceOf[BasicDBObject]
         if(tempRole.get("name") == "Editor") {
+          tempRole.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
+        }
+      }
+      user.put("spaceandrole", userSpaceRoles)
+      collection("social.users").save(user, WriteConcern.Safe)
+    }
+  }
+
+  private def updateRolesMetadataGroup(): Unit = {
+
+    val query = MongoDBObject("name" -> "Admin")
+    val operation = MongoDBObject("$addToSet" -> MongoDBObject("permissions" -> Permission.ArchiveFile.toString))
+    collection("roles").update(query, operation)
+
+    val editorQuery = MongoDBObject("name" -> "Editor")
+    collection("roles").find(editorQuery).foreach {role =>
+      role.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
+      collection("roles").save(role, WriteConcern.Safe)
+    }
+    collection("social.users").foreach{user =>
+      val userSpaceRoles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      userSpaceRoles.foreach{ userSpaceRole =>
+        val tempUserSpace = userSpaceRole.asInstanceOf[BasicDBObject]
+        val tempRole = tempUserSpace.get("role").asInstanceOf[BasicDBObject]
+        if(tempRole.get("name") == "Editor") {
+          tempRole.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
+        }
+      }
+      user.put("spaceandrole", userSpaceRoles)
+      collection("social.users").save(user, WriteConcern.Safe)
+    }
+
+    val viewerQuery = MongoDBObject("name" -> "Viewer")
+    collection("roles").find(viewerQuery).foreach {role =>
+      role.put("permissions", Permission.READONLY.map(_.toString).toSet)
+      collection("roles").save(role, WriteConcern.Safe)
+    }
+    collection("social.users").foreach{user =>
+      val userSpaceRoles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      userSpaceRoles.foreach{ userSpaceRole =>
+        val tempUserSpace = userSpaceRole.asInstanceOf[BasicDBObject]
+        val tempRole = tempUserSpace.get("role").asInstanceOf[BasicDBObject]
+        if(tempRole.get("name") == "Viewer") {
           tempRole.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
         }
       }
