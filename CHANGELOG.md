@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Script to clean extractors' tmp files.
 - Script for RabbitMQ error queue cleanup.
+- Ability to use basic html formatting in the welcome message on the home page. [#51](https://github.com/clowder-framework/clowder/issues/51)
 
 ### Changed
 - Improved simple test to report all day success.

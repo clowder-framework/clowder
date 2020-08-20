@@ -3,6 +3,9 @@ package util
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import org.owasp.html.Sanitizers
+import services.AppConfiguration
+
 /**
  * Formatters
  */
@@ -76,5 +79,16 @@ object Formatters {
   def iso8601(date: String): Date = {
     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
     formatter.parse(date)
+  }
+
+  /**
+   * Sanitize text to safely output to web frontend. For example remove any kind of javascript snippets.
+   * @param unsanitezedText user created text that has not been sanitized
+   * @return text that has been sanitized
+   */
+  def sanitizeHTML(unsanitezedText: String): String = {
+    val policy = Sanitizers.FORMATTING.and(Sanitizers.LINKS).and(Sanitizers.IMAGES).and(Sanitizers.BLOCKS).
+      and(Sanitizers.STYLES).and(Sanitizers.TABLES)
+    policy.sanitize(AppConfiguration.getWelcomeMessage)
   }
 }

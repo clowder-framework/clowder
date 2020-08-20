@@ -72,6 +72,9 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     filters,
+
+    "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20180219.1",
+
     // login
     "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.unboundid" % "unboundid-ldapsdk" % "4.0.1",
