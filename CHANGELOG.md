@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improved simple test to report all day success.
 - Expose a read-only list of extractors to all users.
 
+### Fixed
+- typesafe now only offers https access
+  [#49](https://github.com/clowder-framework/clowder/issues/49)
+
 ## 1.10.1 - 2020-07-16
 
 ### Fixed
