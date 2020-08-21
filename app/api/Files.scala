@@ -5,19 +5,22 @@ import java.util.Date
 
 import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
 import com.mongodb.casbah.Imports._
-import controllers.{Previewers, Utils}
 import javax.inject.Inject
-import jsonutils.JsonUtil
-import models._
+import scala.annotation.tailrec
 import play.api.i18n.Messages
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.mvc.{ResponseHeader, Result}
 import play.api.{Configuration, Logger}
+import jsonutils.JsonUtil
+import akka.stream.scaladsl.StreamConverters
+import play.api.http.HttpEntity
+
+import controllers.{Previewers, Utils}
+import models._
 import services._
 import services.s3.S3ByteStorageService
 
-import scala.annotation.tailrec
 
 /**
  * Json API for files.
@@ -30,7 +33,6 @@ class Files @Inject()(
   tags: TagService,
   comments: CommentService,
   extractions: ExtractionService,
-  dtsrequests:ExtractionRequestsService,
   previews: PreviewService,
   metadataService: MetadataService,
   contextService: ContextLDService,
@@ -39,7 +41,6 @@ class Files @Inject()(
   folders: FolderService,
   spaces: SpaceService,
   userService: UserService,
-  appConfig: AppConfigurationService,
   adminsNotifierService: AdminsNotifierService,
   extractionBusService: ExtractionBusService,
   versusService: VersusService,
@@ -110,24 +111,24 @@ class Files @Inject()(
                     range match {
                       case (start, end) =>
                         inputStream.skip(start)
+                        val conLen = (end - start + 1)
                         Result(
                           header = ResponseHeader(PARTIAL_CONTENT,
                             Map(
                               CONNECTION -> "keep-alive",
                               ACCEPT_RANGES -> "bytes",
                               CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                              CONTENT_LENGTH -> (end - start + 1).toString,
+                              CONTENT_LENGTH -> conLen.toString,
                               CONTENT_TYPE -> contentType
                             )
                           ),
-                          body = Enumerator.fromStream(inputStream)
-                        )
+                          body = HttpEntity.Streamed(StreamConverters.fromInputStream(() => inputStream), Some(conLen.toLong), Some(contentType)))
                     }
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
 
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.chunked(StreamConverters.fromInputStream(() => inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
                   }
@@ -169,24 +170,27 @@ class Files @Inject()(
                 case x => (x(0).toLong, x(1).toLong)
               }
               range match {
-                case (start, end) =>
+                case (start, end) => {
                   inputStream.skip(start)
+                  val conLen = (end - start + 1)
                   Result(
                     header = ResponseHeader(PARTIAL_CONTENT,
                       Map(
                         CONNECTION -> "keep-alive",
                         ACCEPT_RANGES -> "bytes",
                         CONTENT_RANGE -> "bytes %d-%d/%d".format(start, end, contentLength),
-                        CONTENT_LENGTH -> (end - start + 1).toString,
+                        CONTENT_LENGTH -> conLen.toString,
                         CONTENT_TYPE -> contentType
                       )
                     ),
-                    body = Enumerator.fromStream(inputStream)
+                    body = HttpEntity.Streamed(StreamConverters.fromInputStream(() => inputStream), Some(conLen.toLong), Some(contentType))
                   )
+                }
+                case _ => BadRequest("Unexpected range")
               }
             }
             case None => {
-              Ok.chunked(Enumerator.fromStream(inputStream))
+              Ok.chunked(StreamConverters.fromInputStream(() => inputStream))
                 .withHeaders(CONTENT_TYPE -> contentType)
                 .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
             }
@@ -355,8 +359,8 @@ class Files @Inject()(
     val json = request.body.as[JsObject]
 
     try {
-      val fileList: JsValue = (json \ "files")
-      val metadata: JsValue = (json \ "metadata")
+      val fileList: JsValue = (json \ "files").getOrElse(JsNull)
+      val metadata: JsValue = (json \ "metadata").getOrElse(JsNull)
           //parse request for agent/creator info
           //creator can be UserAgent or ExtractorAgent
           var creator: models.Agent = null
@@ -364,7 +368,7 @@ class Files @Inject()(
             case s: JsSuccess[Agent] => {
               creator = s.get
               //if creator is found, continue processing
-              val context: JsValue = (metadata \ "@context")
+              val context: JsValue = (metadata \ "@context").getOrElse(JsNull)
 
               // check if the context is a URL to external endpoint
               val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
@@ -1370,10 +1374,10 @@ class Files @Inject()(
 
   def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
-      case Some(file) => {
+      case Some(f) => {
         val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
           .filter(metadata => metadata.creator.typeOfAgent == "extractor" || metadata.creator.typeOfAgent == "cat:extractor")
-          .map(JSONLD.jsonMetadataWithContext(_) \ "content")
+          .map(md => (JSONLD.jsonMetadataWithContext(md) \ "content").getOrElse(JsNull))
         Ok(toJson(listOfMetadata))
       }
       case None => {

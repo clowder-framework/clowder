@@ -1,39 +1,32 @@
 package api
 
-import api.Permission.Permission
 import java.net.{URL, URLEncoder}
 import java.util.Date
-
-import controllers.Utils
 import javax.inject.{Inject, Singleton}
-import models.{ResourceRef, UUID, UserAgent, _}
-import org.elasticsearch.action.search.SearchResponse
-import org.apache.commons.lang.WordUtils
-import play.api.Play.current
-import play.api.Logger
-import play.api.Play._
-import play.api.libs.json.Json._
-import play.api.libs.json._
-import play.api.libs.ws.WS
-import play.api.mvc.Result
-import services._
-import play.api.i18n.Messages
-import play.api.libs.json.JsValue
-
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
+import org.apache.commons.lang.WordUtils
+import play.api.Logger
+import play.api.libs.json.Json._
+import play.api.libs.json._
+import play.api.libs.ws.WSClient
+import play.api.mvc.Result
+import play.api.libs.json.JsValue
+
+import api.Permission.Permission
+import controllers.Utils
+import services._
+import models.{ResourceRef, UUID, UserAgent, _}
+
 
 /**
  * Manipulate generic metadata.
  */
 @Singleton
 class Metadata @Inject() (
-  spaces: SpaceService,
   metadataService: MetadataService,
   contextService: ContextLDService,
-  userService: UserService,
   datasets: DatasetService,
   files: FileService,
   curations: CurationService,
@@ -41,7 +34,8 @@ class Metadata @Inject() (
   events: EventService,
   spaceService: SpaceService,
   searches: SearchService,
-  extractionBusService: ExtractionBusService) extends ApiController {
+  extractionBusService: ExtractionBusService,
+  WS: WSClient) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -450,7 +444,7 @@ class Metadata @Inject() (
           val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + user.id
           val creator = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
 
-          val context: JsValue = (json \ "@context")
+          val context: JsValue = (json \ "@context").getOrElse(JsNull)
 
           // figure out what resource this is attached to
           val attachedTo =

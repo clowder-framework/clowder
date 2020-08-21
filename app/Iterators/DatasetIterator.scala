@@ -1,175 +1,176 @@
 package Iterators
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.InputStream
 import java.security.{DigestInputStream, MessageDigest}
-import java.util.zip.{ZipEntry, ZipOutputStream}
-
-import models._
+import java.util.zip.ZipOutputStream
+import scala.collection.mutable.{HashMap, ListBuffer, Map => MutaMap}
+import play.api.libs.json.Json
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
+
+import models.{Dataset, File, ResourceRef, UUID, User}
 import services._
 import util.JSONLD
 
-import scala.collection.mutable.ListBuffer
 
-//this iterator is used for downloading a dataset
-//it has a file iterator
-class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipOutputStream, md5Files :scala.collection.mutable.HashMap[String, MessageDigest],
-                      folders : FolderService, files: FileService, metadataService : MetadataService, datasets: DatasetService, spaces : SpaceService) extends Iterator[Option[InputStream]] {
+/**
+ * This is used to download a dataset.
+ *
+ * @param pathToFolder - base path into which collection contents will be written inside the output zip file
+ * @param dataset - the dataset to be downloaded
+ * @param zip - a ZipOutputStream that will receive contents and metadata of the collection
+ * @param md5Files - HashMap for MD5 checksums of all data files that go into the zip
+ * @param md5Bag - HashMap for MD5 checksums of all BagIt metadata files that go into the zip
+ * @param user - if a user is specified, datasets will be limited to their permissions
+ * @param bagit - whether or not to include BagIt metadata in the output
+ */
+class DatasetIterator(pathToFolder: String, dataset: Dataset, zip: ZipOutputStream,
+                       md5Files: HashMap[String, MessageDigest], md5Bag: HashMap[String, MessageDigest],
+                       user: Option[User], bagit: Boolean) extends Iterator[Option[InputStream]] {
 
-  //get files in the dataset
-  def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
-    val rightsHolder: String = {
-      val licenseType = dataset.licenseData.m_licenseType
-      if (licenseType == "license1") {
-        dataset.author.fullName.getOrElse("Name not available")
-      } else if (licenseType == "license2") {
-        "Creative Commons"
-      } else if (licenseType == "license3") {
-        "Public Domain Dedication"
+  // Guice injection doesn't work in the context we're using this in
+  val files = DI.injector.getInstance(classOf[FileService])
+  val folders = DI.injector.getInstance(classOf[FolderService])
+  val spaces = DI.injector.getInstance(classOf[SpaceService])
+  val metadatas = DI.injector.getInstance(classOf[MetadataService])
+
+  val dataFolder = if (bagit) "data/" else ""
+  val (filenameMap, childFiles) = generateUniqueNames(dataset.files, dataset.folders, dataFolder)
+
+  var bagItIterator: Option[BagItIterator] = None
+  var currentFile: Option[File] = None
+  var currentFileIterator: Option[FileIterator] = None
+  var currentFileIdx = 0
+  var is: Option[InputStream] = None
+  var bytesSoFar = 0L
+  var file_type = "dataset_info"
+
+
+  /**
+   * Compute list of all files and folders in dataset. Ensure all
+   * files and folder names are unique because Clowder does not
+   * enforce uniqueness.
+   */
+  def generateUniqueNames(fileids: List[UUID], folderids: List[UUID], parent: String): (Map[UUID, String], List[File]) = {
+    var filenameMap = MutaMap.empty[UUID, String]
+    var inputFilesBuffer = ListBuffer.empty[File]
+
+    val fileobjs = files.get(fileids).found
+
+    // map fileobj to filename, make sure filename is unique
+    // potential improvemnt would be to keep a map -> array of ids
+    // if array.length == 1, then no duplicate, else fix all duplicate ids
+    fileobjs.foreach(f => {
+      inputFilesBuffer.append(f)
+      if (fileobjs.exists(x => x.id != f.id && x.filename == f.filename)) {
+        // create new filename filename_id.ext
+        val (filename, ext) = f.filename.lastIndexOf('.') match {
+          case(-1) => (f.filename, "")
+          case(x) => (f.filename.substring(0, x), f.filename.substring(x))
+        }
+        filenameMap(f.id) = s"${parent}${filename}_${f.id}${ext}"
       } else {
-        "None"
-      }
-    }
-
-    val spaceNames = for (
-      spaceId <- dataset.spaces;
-      space <- spaces.get(spaceId)
-    ) yield {
-      space.name
-    }
-
-    val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
-    Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset.description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
-  }
-
-  def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+dataset.name+"_info.json"
-    zip.putNextEntry(new ZipEntry(folderName + "/"+dataset.name+"_info.json"))
-    val infoListMap = Json.prettyPrint(getDatasetInfoAsJson(dataset))
-    Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
-  }
-
-  def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    val path = folderName + "/"+dataset.name+"_dataset_metadata.json"
-    zip.putNextEntry(new ZipEntry(folderName + "/"+dataset.name+"_metadata.json"))
-    val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
-      .map(JSONLD.jsonMetadataWithContext(_))
-    val s : String = Json.prettyPrint(Json.toJson(datasetMetadata))
-    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
-  }
-
-  val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
-  var inputFilesBuffer = new ListBuffer[File]()
-  files.get(dataset.files).found.foreach(file => {
-    inputFilesBuffer += file
-
-    // Don't create folder for files unless there's a filename collision
-    var foundDuplicate = false
-    files.get(dataset.files).found.foreach(compare_file => {
-      if (compare_file.filename == file.filename && compare_file.id != file.id) {
-        foundDuplicate = true
+        filenameMap(f.id) = s"${parent}${f.filename}"
       }
     })
-    if (foundDuplicate)
-      folderNameMap(file.id) = pathToFolder + "/" + file.filename + "_" + file.id.stringify + "/"
-    else
-      folderNameMap(file.id) = pathToFolder
-  })
 
-  folders.findByParentDatasetId(dataset.id).foreach{ folder => {
-    files.get(folder.files).found.foreach(file => {
-      inputFilesBuffer += file
-      var name = folder.displayName
-      var f1: Folder = folder
-      while(f1.parentType == "folder") {
-        folders.get(f1.parentId) match {
-          case Some(fparent) => {
-            name = fparent.displayName + "/"+ name
-            f1 = fparent
-          }
-          case None =>
-        }
+    // get all folder objects
+    val folderobjs = folderids.flatMap(x => folders.get(x) match {
+      case Some(f) => Some(f)
+      case None => {
+        Logger.error(s"Could not find folder with id=${x.uuid}")
+        None
       }
-
-      // Don't create folder for files unless there's a filename collision
-      var foundDuplicate = false
-      files.get(folder.files).found.foreach(compare_file => {
-        if (compare_file.filename == file.filename && compare_file.id != file.id) {
-          foundDuplicate = true
-        }
-      })
-      if (foundDuplicate)
-        folderNameMap(file.id) = pathToFolder + "/" + name + "/" + file.filename + "_" + file.id.stringify + "/"
-      else
-        folderNameMap(file.id) = pathToFolder + "/" + name + "/"
     })
-  }}
-  val inputFiles = inputFilesBuffer.toList
+    folderobjs.foreach(f => {
+      val folder = if (folderobjs.exists(x => x.id != f.id && x.displayName == f.displayName)) {
+        // this case should not happen since folders are made unique at creation
+        s"${parent}${f.displayName}_${f.id.stringify}/"
+      } else {
+        s"${parent}${f.displayName}/"
+      }
+      val (subMap, subFiles) = generateUniqueNames(f.files, f.folders, folder)
+      filenameMap = filenameMap ++ subMap
+      inputFilesBuffer = inputFilesBuffer ++ subFiles
+    })
 
-  val numFiles = inputFiles.size
+    (filenameMap.toMap, inputFilesBuffer.toList)
+  }
 
-  var fileCounter = 0
+  def setBytes(totalBytes: Long) = {
+    bytesSoFar = totalBytes
+    bagItIterator match {
+      case Some(bagIterator) => bagIterator.setBytes(bytesSoFar)
+      case None => {}
+    }
+  }
 
-  var currentFileIterator : Option[FileIterator] = None
+  def isBagIt(): Boolean = {
+    file_type == "bagit"
+  }
 
-  var is : Option[InputStream] = None
-  var file_type : Int = 0
-
-  def hasNext() = {
-    if (file_type < 2){
-      true
-    } else if (file_type == 2){
-      currentFileIterator match {
+  def hasNext(): Boolean = {
+    file_type match {
+      case "dataset_info" => true
+      case "dataset_metadata" => true
+      case "file_iterator" => currentFileIterator match {
         case Some(fileIterator) => {
-          if (fileIterator.hasNext()){
+          if (fileIterator.hasNext()) true
+          else if (currentFileIdx < childFiles.size-1) {
+            currentFileIdx += 1
+            currentFile = Some(childFiles(currentFileIdx))
+            currentFileIterator = Some(new FileIterator(
+              filenameMap(currentFile.get.id), currentFile.get, zip, md5Files))
             true
-          } else if (fileCounter < numFiles -1){
-            fileCounter +=1
-            currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),zip,md5Files,files,folders,metadataService))
+          } else if (bagit) {
+            bagItIterator = Some(new BagItIterator(pathToFolder, zip, dataset.id.stringify, dataset.description,
+              md5Bag, md5Files, user))
+            file_type = "bagit"
             true
-          } else {
-            false
-          }
+          } else false
         }
         case None => false
       }
-    } else {
-      false
+      case _ => false
     }
-
   }
 
-  def next() = {
+  def next(): Option[DigestInputStream] = {
+    var dis: Option[DigestInputStream] = None
     file_type match {
-      case 0 => {
-        is = addDatasetInfoToZip(pathToFolder,dataset,zip)
-        val md5 = MessageDigest.getInstance("MD5")
-        md5Files.put("_info.json",md5)
-        file_type+=1
-        Some(new DigestInputStream(is.get, md5))
+      case "dataset_info" => {
+        val filename = s"${dataset.name}_info.json"
+        is = IteratorUtils.addJsonFileToZip(zip, pathToFolder, filename,
+          IteratorUtils.getDatasetInfoAsJson(dataset))
+        dis = IteratorUtils.addMD5Entry(filename, is, md5Files)
+        file_type = "dataset_metadata"
       }
-      case 1 => {
-        is = addDatasetMetadataToZip(pathToFolder,dataset,zip)
-        val md5 = MessageDigest.getInstance("MD5")
-        md5Files.put("_metadata.json",md5)
-        if (numFiles > 0){
-          file_type+=1
-          currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),zip,md5Files,files,folders,metadataService))
-        } else {
-          file_type+=2
-        }
-
-        Some(new DigestInputStream(is.get, md5))
+      case "dataset_metadata" => {
+        val filename = s"${dataset.name}_metadata.json"
+        is = IteratorUtils.addJsonFileToZip(zip, pathToFolder, dataset.name+"_metadata", Json.toJson(
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(JSONLD.jsonMetadataWithContext(_))))
+        dis = IteratorUtils.addMD5Entry(filename, is, md5Files)
+        // Only create a file iterator if the dataset has files
+        if (childFiles.size > 0) {
+          file_type = "file_iterator"
+          currentFile = Some(childFiles(currentFileIdx))
+          currentFileIterator = Some(new FileIterator(filenameMap(currentFile.get.id),
+            currentFile.get, zip, md5Files))
+        } else file_type = "done"
       }
-      case 2 => {
+      case "file_iterator" => {
         currentFileIterator match {
-          case Some(fileIterator) => {
-            fileIterator.next()
-          }
+          case Some(fileIterator) => fileIterator.next()
+          case None => {}
+        }
+      }
+      case "bagit" => {
+        bagItIterator match {
+          case Some(bagIterator) => bagIterator.next()
           case None => None
         }
       }
+      case _ => None
     }
+    dis
   }
 }

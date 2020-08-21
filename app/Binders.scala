@@ -1,9 +1,7 @@
 import models.UUID
 import play.api.mvc._
-import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
-import play.api.libs.json._
-import play.api.data.validation.ValidationError
+import play.api.mvc.JavascriptLiteral
 
 object Binders {
 

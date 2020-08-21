@@ -1,32 +1,13 @@
 package services
 
-import java.io.IOException
-import java.net.URI
-import java.text.SimpleDateFormat
-import java.net.URLEncoder
-
-import akka.actor.{Actor, ActorRef, PoisonPill, Props}
-
-import scala.concurrent.duration._
 import scala.language.postfixOps
-import com.ning.http.client.Realm.AuthScheme
-import com.rabbitmq.client.AMQP.BasicProperties
-import com.rabbitmq.client.AMQP.Queue
+import scala.concurrent.Future
 import com.rabbitmq.client._
-import javax.inject.Inject
-import models._
-import org.bson.types.ObjectId
-import play.api.http.MimeTypes
-import play.api.Play.current
 import play.api.libs.json._
-import play.api.libs.ws.{Response, WS}
-import play.api.{Application, Configuration, Logger, Plugin}
-import play.libs.Akka
-import securesocial.core.IdentityId
-import services.Entity
+import play.api.libs.ws.WSResponse
 
-import scala.concurrent.{Await, Future}
-import scala.util.Try
+import models._
+
 
 /**
  * Despite the `fileId` be named as such, it is currently serialized as `id` and used as the id of any resource in
@@ -112,17 +93,17 @@ trait ExtractionBusService {
 
   def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String, requestAPIKey: Option[String])
 
-  def getExchanges : Future[Response]
+  def getExchanges : Future[WSResponse]
 
-  def getQueuesNamesForAnExchange(exchange: String): Future[Response]
+  def getQueuesNamesForAnExchange(exchange: String): Future[WSResponse]
 
-  def getBindings: Future[Response]
+  def getBindings: Future[WSResponse]
 
-  def getChannelsList: Future[Response]
+  def getChannelsList: Future[WSResponse]
 
-  def getQueueDetails(qname: String): Future[Response]
+  def getQueueDetails(qname: String): Future[WSResponse]
 
-  def getQueueBindings(qname: String): Future[Response]
+  def getQueueBindings(qname: String): Future[WSResponse]
 
   def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID)
 

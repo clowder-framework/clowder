@@ -21,7 +21,7 @@ import org.bson.types.ObjectId
 import play.api.http.MimeTypes
 import play.api.Play.current
 import play.api.libs.json._
-import play.api.libs.ws.{Response, WS}
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.{Application, Configuration, Logger}
 import play.libs.Akka
 import securesocial.core.IdentityId
@@ -41,7 +41,8 @@ class RabbitmqExtractionBusService @Inject() (
                                  extractorsService: ExtractorService,
                                  datasetService: DatasetService,
                                  userService: UserService,
-                                 configuration: Configuration) extends ExtractionBusService {
+                                 configuration: Configuration,
+                                 WS: WSClient) extends ExtractionBusService {
 
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
@@ -758,7 +759,7 @@ class RabbitmqExtractionBusService @Inject() (
   // ----------------------------------------------------------------------
   // RABBITMQ MANAGEMENT ENDPOINTS
   // ----------------------------------------------------------------------
-  def getRestEndPoint(path: String): Future[Response] = {
+  def getRestEndPoint(path: String): Future[WSResponse] = {
     connect
 
     restURL match {
@@ -777,7 +778,7 @@ class RabbitmqExtractionBusService @Inject() (
   /**
     * Get the exchange list for a given host
     */
-  def getExchanges : Future[Response] = {
+  def getExchanges : Future[WSResponse] = {
     connect
     getRestEndPoint("/api/exchanges/" + vhost )
   }
@@ -785,7 +786,7 @@ class RabbitmqExtractionBusService @Inject() (
   /**
     * get list of queues attached to an exchange
     */
-  def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
+  def getQueuesNamesForAnExchange(exchange: String): Future[WSResponse] = {
     connect
     getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
   }
@@ -793,21 +794,21 @@ class RabbitmqExtractionBusService @Inject() (
   /**
     * Get the binding lists (lists of routing keys) from the rabbitmq broker
     */
-  def getBindings: Future[Response] = {
+  def getBindings: Future[WSResponse] = {
     getRestEndPoint("/api/bindings")
   }
 
   /**
     * Get Channel list from rabbitmq broker
     */
-  def getChannelsList: Future[Response] = {
+  def getChannelsList: Future[WSResponse] = {
     getRestEndPoint("/api/channels")
   }
 
   /**
     * Get queue details for a given queue
     */
-  def getQueueDetails(qname: String): Future[Response] = {
+  def getQueueDetails(qname: String): Future[WSResponse] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname)
   }
@@ -816,7 +817,7 @@ class RabbitmqExtractionBusService @Inject() (
   /**
     * Get queue bindings for a given host and queue from rabbitmq broker
     */
-  def getQueueBindings(qname: String): Future[Response] = {
+  def getQueueBindings(qname: String): Future[WSResponse] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname + "/bindings")
   }
@@ -824,7 +825,7 @@ class RabbitmqExtractionBusService @Inject() (
   /**
     * Get Channel information from rabbitmq broker for given channel id 'cid'
     */
-  def getChannelInfo(cid: String): Future[Response] = {
+  def getChannelInfo(cid: String): Future[WSResponse] = {
     getRestEndPoint("/api/channels/" + cid)
   }
 

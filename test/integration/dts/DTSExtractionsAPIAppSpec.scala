@@ -2,29 +2,19 @@ package integration
 
 import org.scalatestplus.play.OneServerPerSuite
 import org.scalatestplus.play.PlaySpec
-import play.api.test.FakeApplication
 import play.api.test.Helpers
-import play.api.libs.ws.WS
-import play.api.test.FutureAwaits
-import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import play.api.libs.json.Json
 import org.apache.http.entity.StringEntity
-import play.api.libs.json.JsObject
-import org.scalatest.DoNotDiscover
 import org.json.simple.parser.JSONParser
-import org.json.simple.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import scala.util.control._
 import org.scalatest.GivenWhenThen
 import java.io.FileReader
 
-import play.api.test._
-import org.scalatest._
-import org.scalatestplus.play._
 import play.api.{Play, Application}
 
 

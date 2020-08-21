@@ -4,10 +4,12 @@ import java.security.MessageDigest
 import concurrent.Await
 import scala.concurrent.duration._
 import play.api.Logger
-import play.api.libs.ws.WS
+import play.api.libs.ws.WSClient
 import securesocial.core.providers.UsernamePasswordProvider
+import services.{DI, FileService}
 
 object GravatarUtils {
+  val WS: WSClient =  DI.injector.getInstance(classOf[WSClient])
 
   // Start code from: securesocial.core.providers.utils.GravatarHelper. - Changing gravatar url to be https.
   def avatarFor(email: String): Option[String] = {

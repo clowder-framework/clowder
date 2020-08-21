@@ -7,11 +7,11 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee._
-import play.api.libs.ws.WS.WSRequestHolder
 import play.api.libs.ws._
 import play.api.mvc.Result
 
 import scala.concurrent.Future
+import scala.collection.JavaConversions._
 
 /**
   * An API that allows you to configure Clowder as a reverse-proxy. Proxy rules can be composed by defining a
@@ -37,7 +37,7 @@ object Proxy {
   val ConfigPrefix: String = "clowder.proxy."
 }
 
-class Proxy @Inject()() extends ApiController {
+class Proxy @Inject() (WS: WSClient) extends ApiController {
   import Proxy.ConfigPrefix
 
   /**
@@ -66,19 +66,21 @@ class Proxy @Inject()() extends ApiController {
   /**
     * Build up our intermediary (proxied) request from the original
     */
-  def buildProxiedRequest(proxyTarget: String, originalRequest: UserRequest[String]): WSRequestHolder = {
+  def buildProxiedRequest(proxyTarget: String, originalRequest: UserRequest[String]): WSRequest = {
     // Parse basic auth credentials from target URL
     val targetUrl: URL = new URL(proxyTarget);
     val userInfo = targetUrl.getUserInfo()
     val sanitizedUrl = proxyTarget.replaceAll(userInfo + "@", "")
 
+    var or = originalRequest.queryString
+    or
+
     // If we find a username/password, scrape them out of the target URL
     val username = if (null != userInfo) { userInfo.split(":").apply(0) } else { "" }
     val password = if (null != userInfo) { userInfo.split(":").apply(1) } else { "" }
 
-    val initialReq = WS.url(sanitizedUrl)
-        .withQueryString(originalRequest.queryString.mapValues(_.head).toSeq: _*)
-        .withFollowRedirects(true)
+    val params = mapAsJavaMap(originalRequest.queryString.mapValues(f => seqAsJavaList(f)))
+    val initialReq = WS.url(sanitizedUrl).setQueryString(params).setFollowRedirects(true)
 
     // If original request had Content-Type/Length headers, copy them to the proxied request
     val contentType = originalRequest.headers.get("Content-Type").orNull

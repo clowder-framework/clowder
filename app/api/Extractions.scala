@@ -15,7 +15,7 @@ import play.api.libs.{Files, MimeTypes}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.libs.ws.{Response, WS}
+import play.api.libs.ws.{WSResponse, WSClient}
 import play.api.mvc.MultipartFormData
 import services._
 
@@ -32,10 +32,9 @@ class Extractions @Inject()(
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
-  previews: PreviewService,
-  thumbnails: ThumbnailService,
   extractionBusService: ExtractionBusService,
-  appConfig: AppConfigurationService) extends ApiController {
+  appConfig: AppConfigurationService,
+  WS: WSClient) extends ApiController {
 
   /**
    * Uploads file for extraction and returns a file id ; It does not index the file.

@@ -5,21 +5,24 @@ import java.security.MessageDigest
 import java.util.zip.{Deflater, ZipOutputStream}
 import java.util.{Calendar, Date}
 
-import Iterators.RootCollectionIterator
-import api.Permission.Permission
-import controllers.Utils
 import javax.inject.{Inject, Singleton}
-import models._
-import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.collection.immutable.List
+import scala.collection.mutable.{HashMap, ListBuffer}
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsObject, JsValue, _}
 import play.api.{Configuration, Logger}
+import akka.stream.scaladsl.Source
+import Iterators.CollectionIterator
+import akka.NotUsed
+import api.Permission.Permission
+import controllers.Utils
+import models._
 import services._
 
-import scala.collection.immutable.List
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+
 
 
 /**
@@ -33,9 +36,6 @@ class Collections @Inject() (datasets: DatasetService,
                              events: EventService,
                              spaces:SpaceService,
                              appConfig: AppConfigurationService,
-                             folders : FolderService,
-                             files: FileService,
-                             metadataService : MetadataService,
                              adminsNotifierService: AdminsNotifierService,
                              configuration: Configuration) extends ApiController {
 
@@ -335,7 +335,7 @@ class Collections @Inject() (datasets: DatasetService,
       "name" -> collection.name,
       "description" -> collection.description,
       "created" -> collection.created.toString,
-      "author"-> collection.author.toString,
+      "author"-> collection.author.email.toString,
       "root_flag" -> collections.hasRoot(collection).toString,
       "child_collection_ids"-> collection.child_collection_ids.toString,
       "parent_collection_ids" -> collection.parent_collection_ids.toString,
@@ -666,8 +666,6 @@ class Collections @Inject() (datasets: DatasetService,
     Ok(toJson(all_collections_list))
   }
 
-
-
   def getTopLevelCollections() = PermissionAction(Permission.ViewCollection){ implicit request =>
     implicit val user = request.user
     val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
@@ -696,8 +694,6 @@ class Collections @Inject() (datasets: DatasetService,
       case None => BadRequest(toJson("collection not found"))
     }
   }
-
-
 
   def getChildCollections(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
@@ -758,7 +754,7 @@ class Collections @Inject() (datasets: DatasetService,
         val bagit = configuration.get[Boolean]("downloadCollectionBagit")
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromCollection(collection,1024*1024, compression,bagit,user)).withHeaders(
+        Ok.chunked(streamCollection(collection,1024*1024, compression, bagit, user)).withHeaders(
           "Content-Type" -> "application/zip",
           "Content-Disposition" -> ("attachment; filename=\"" + collection.name+ ".zip\"")
         )
@@ -770,73 +766,66 @@ class Collections @Inject() (datasets: DatasetService,
     }
   }
 
+  /**
+   * Loop over all datasets in a collection and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param collection dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @param compression java built in compression value. Use 0 for no compression.
+   * @return Source to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
+  def streamCollection(collection: Collection, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION,
+                       bagit: Boolean, user: Option[User]): Source[Array[Byte], NotUsed] = {
 
-  def enumeratorFromCollection(collection: Collection, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : Option[User])
-                              (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
-
-    implicit val pec = ec.prepare()
-    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest]
-    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest]
-
+    // Keep two MD5 checksum lists, one for collection files and one for BagIt files
+    val md5Files = HashMap.empty[String, MessageDigest]
+    val md5Bag = HashMap.empty[String, MessageDigest]
     var totalBytes = 0L
-
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream(byteArrayOutputStream)
-
     var bytesSet = false
 
-    //val datasetsInCollection = getDatasetsInCollection(collection,user.get)
-    var current_iterator = new RootCollectionIterator(collection.name,collection,zip,md5Files,md5Bag,user, totalBytes,bagit,collections,
-    datasets,files,folders,metadataService,spaces)
-
-
-
-    //var current_iterator = new FileIterator(folderNameMap(inputFiles(1).id),inputFiles(1), zip,md5Files)
+    val current_iterator = new CollectionIterator(collection.name, collection, zip, md5Files, md5Bag, user, bagit)
     var is = current_iterator.next()
 
-    Enumerator.generateM({
-      is match {
+    Source.unfoldAsync(is) { currChunk =>
+      currChunk match {
         case Some(inputStream) => {
-          if (current_iterator.isBagIt() && bytesSet == false){
+          if (current_iterator.isBagIt() && bytesSet == false) {
             current_iterator.setBytes(totalBytes)
             bytesSet = true
           }
           val buffer = new Array[Byte](chunkSize)
           val bytesRead = scala.concurrent.blocking {
             inputStream.read(buffer)
-
           }
           val chunk = bytesRead match {
             case -1 => {
               zip.closeEntry()
               inputStream.close()
               Some(byteArrayOutputStream.toByteArray)
-              if (current_iterator.hasNext()){
+              if (current_iterator.hasNext())
                 is = current_iterator.next()
-              } else{
+              else {
                 zip.close()
                 is = None
               }
               Some(byteArrayOutputStream.toByteArray)
             }
             case read => {
-              if (!current_iterator.isBagIt()){
+              if (!current_iterator.isBagIt())
                 totalBytes += bytesRead
-              }
               zip.write(buffer, 0, read)
               Some(byteArrayOutputStream.toByteArray)
             }
           }
           byteArrayOutputStream.reset()
-          Future.successful(chunk)
+          Future.successful(Some((is, chunk.get)))
         }
-        case None => {
-          Future.successful(None)
-        }
+        case None => Future.successful(None)
       }
-    })(pec)
-
+    }
   }
-
 }
-

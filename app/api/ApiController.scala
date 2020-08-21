@@ -4,6 +4,7 @@ import api.Permission.Permission
 import models.{ClowderUser, ResourceRef, User, UserStatus}
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Logger
 import play.api.mvc._
 import securesocial.core.providers.UsernamePasswordProvider
@@ -29,7 +30,7 @@ trait ApiController extends BaseController {
 
   /** get user if logged in */
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json
+    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
@@ -45,7 +46,7 @@ trait ApiController extends BaseController {
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
   def PrivateServerAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json
+    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
@@ -61,7 +62,7 @@ trait ApiController extends BaseController {
 
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json
+    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
@@ -76,7 +77,7 @@ trait ApiController extends BaseController {
 
   /** call code iff user is a server admin */
   def ServerAdminAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json
+    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
@@ -92,7 +93,7 @@ trait ApiController extends BaseController {
   /** call code iff user has right permission for resource */
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None,
                        affectedResource: Option[ResourceRef] = None) = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json
+    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
@@ -117,7 +118,7 @@ trait ApiController extends BaseController {
    * code around but we don't want users to have access to it.
    */
   def DisabledAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json
+    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       Future.successful(Unauthorized("Disabled"))
@@ -142,7 +143,7 @@ trait ApiController extends BaseController {
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
       authenticator <- SecureSocial.authenticatorFromRequest(request);
-      identity <- UserService.find(authenticator.identityId)
+      identity <- userservice.find(authenticator.identityId)
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity) match {
@@ -203,7 +204,7 @@ trait ApiController extends BaseController {
     // 4) check api key, either the global one in the config file or the user key in the database
     request.queryString.get("key").foreach { key =>
       val userservice = DI.injector.getInstance(classOf[services.UserService])
-      val commkey = play.Play.application().configuration().getString("commKey")
+      val commkey = AppConfiguration.appConfig.getProperty[String]("commKey")
       key.foreach { realkey =>
         // check to see if this is the global key
         if (realkey == commkey) {
