@@ -776,7 +776,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       builder.startArray("should").startObject().startObject("bool")
 
     // 2) populate the MUST/SHOULD portion
-    if (mustList.length > 0) {
+    if (mustList.length > 0 || mustNotList.length > 0) {
       grouping match {
         case "AND" => builder.startArray("must")
         case "OR" => builder.startArray("should")
@@ -787,6 +787,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val value = (jv \ "field_value").toString.replace("\"", "")
         builder = parseMustOperators(builder, key, value, operator)
       })
+
+      // Also add != fields to MUST EXISTS query so we don't return all documents without those fields too
+      mustNotList.foreach(jv => {
+        val key = (jv \ "field_key").toString.replace("\"","")
+        builder.startObject().startObject("exists").field("field", key).endObject().endObject()
+      })
+
       builder.endArray()
     }
 
@@ -902,6 +909,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           populatedMust = true
         }
         builder = parseMustOperators(builder, key, value, curropr)
+      }
+
+      // For != operators, include an EXISTS query to avoid returning all documents without that field
+      if (mustNotOperators.contains(curropr)) {
+        if (!populatedMust) {
+          builder.startArray("must")
+          populatedMust = true
+        }
+        builder.startObject().startObject("exists").field("field", key).endObject().endObject()
       }
     })
 
