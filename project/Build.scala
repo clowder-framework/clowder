@@ -154,6 +154,7 @@ object ApplicationBuild extends Build {
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
+    resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
 
     // add custom folder to the classpath, use this to add/modify clowder:
     // custom/public/stylesheets/themes     - for custom themes
