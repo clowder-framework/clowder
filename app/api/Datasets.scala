@@ -5,8 +5,10 @@ import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
+
 import api.Permission.Permission
 import java.util.zip._
+
 import javax.inject.{Inject, Singleton}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
@@ -14,7 +16,7 @@ import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
-import play.api.Play.{configuration, current}
+import play.api.Play.{configuration, current, routes}
 import play.api.i18n.Messages
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
@@ -23,6 +25,8 @@ import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
 import _root_.util._
+import controllers.Utils.https
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
 
@@ -2066,6 +2070,7 @@ class  Datasets @Inject()(
     * @param chunkSize chunk size in memory in which to buffer the stream
     * @param compression java built in compression value. Use 0 for no compression.
     * @param bagit whether or not to include bagit structures in zip
+   *  @param baseURL the root Clowder URL for metadata files, from original request
     * @param user an optional user to include in metadata
     * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
     * @param folderId a folder UUID in the dataset to include (i.e. folder download)
@@ -2073,7 +2078,7 @@ class  Datasets @Inject()(
     *         in the dataset
     */
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8,
-                            compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean,
+                            compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, baseURL: String,
                             user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
@@ -2193,7 +2198,7 @@ class  Datasets @Inject()(
                 }
                 case ("bag", "datacite.xml") => {
                   // RDA-recommended DataCite xml file
-                  is = addDataCiteMetadataToZip(zip, dataset)
+                  is = addDataCiteMetadataToZip(zip, dataset, baseURL)
                   file_type = "tagmanifest-md5.txt"
                 }
                 case ("bag", "tagmanifest-md5.txt") => {
@@ -2359,7 +2364,7 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addDataCiteMetadataToZip(zip: ZipOutputStream, dataset: Dataset): Option[InputStream] = {
+  private def addDataCiteMetadataToZip(zip: ZipOutputStream, dataset: Dataset, baseURL: String): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("metadata/datacite.xml"))
     var s = "<resource xsi:schemaLocation=\"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd\">\n"
     // https://support.datacite.org/docs/schema-40
@@ -2451,9 +2456,8 @@ class  Datasets @Inject()(
       s += "</subjects>\n"
     }
 
-    // RelatedIdentifier
-    val clowder_url = "CLOWDER URL GOES HERE"
-    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+clowder_url+"</ResourceType>\n"
+    // RelatedIdentifier (Clowder root URL)
+    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+baseURL+"</ResourceType>\n"
 
     // Size (can have many)
     s += "<sizes>\n\t<size>"+dataset.files.length.toString+" files</size>\n</sizes>\n"
@@ -2493,6 +2497,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
         if (tracking)
@@ -2500,7 +2505,7 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, user, None, None)).withHeaders(
+        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, baseURL, user, None, None)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2519,13 +2524,14 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         val fileIDs = fileList.split(',').map(fid => new UUID(fid)).toList
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count for each file
         fileIDs.foreach(fid => files.incrementDownloads(fid, user))
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, Some(fileIDs), None)).withHeaders(
+        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, Some(fileIDs), None)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " (Partial).zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2543,6 +2549,8 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
+
 
         // Increment download count for each file in folder
         folders.get(folderId) match {
@@ -2551,7 +2559,7 @@ class  Datasets @Inject()(
 
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, None, Some(folderId))).withHeaders(
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, None, Some(folderId))).withHeaders(
               CONTENT_TYPE -> "application/zip",
               CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ("+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
             )
