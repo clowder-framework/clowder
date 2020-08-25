@@ -23,7 +23,7 @@ class ElasticsearchQueue @Inject() (
 
   // check whether necessary conditions are met (e.g. the plugin is enabled)
   override def enabled(): Boolean = {
-    return current.plugin[ElasticsearchPlugin].exists(es => es.isEnabled())
+    current.plugin[ElasticsearchPlugin].exists(es => es.isEnabled())
   }
 
   // process the next entry in the queue

@@ -6,17 +6,20 @@ import akka.actor.Cancellable
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import com.mongodb.MongoException
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models.{File, _}
 import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.Play._
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{JsObject, Json}
 import play.libs.Akka
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoContext.context
+
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.collection.mutable.ListBuffer
 
 /**
  * Generic queue service.
@@ -88,7 +91,31 @@ trait MongoDBQueueService {
       }
       case _ => None
     }
+  }
 
+  // get multiple entries from queue
+  def getNextQueuedActions(size: Int): List[QueuedAction] = {
+    val results: ListBuffer[QueuedAction] = ListBuffer.empty
+    try {
+      val responses = Queue.find(new MongoDBObject).limit(size)
+      if (queueFetchError) {
+        Logger.info("MongoDB has successfully reconnected.")
+        queueFetchError = false
+      }
+      responses.foreach(f => results.append(f))
+
+    } catch {
+      case e: MongoException => {
+        // Only log an error once on failed fetch, instead of repeating every 5ms
+        if (!queueFetchError) {
+          Logger.error("Problem connecting to MongoDB queue.")
+          queueFetchError = true
+        }
+        None
+      }
+      case _ => None
+    }
+    results.toList
   }
 
   // start pool to being processing queue actions
@@ -96,10 +123,7 @@ trait MongoDBQueueService {
     if (queueTimer == null) {
       // TODO: Need to make these in a separate pool
       queueTimer = Akka.system().scheduler.schedule(0 seconds, 5 millis) {
-        getNextQueuedAction match {
-          case Some(qa) => handleQueuedAction(qa)
-          case None => {}
-        }
+        handleQueuedActions(getNextQueuedActions(64))
       }
     }
   }
@@ -116,6 +140,23 @@ trait MongoDBQueueService {
         Queue.remove(action)
       }
     }
+  }
+
+  // wrapper for processing next batch of actions in queue
+  def handleQueuedActions(actions: List[QueuedAction]) = {
+    actions.foreach(act => {
+      try {
+        handler(act)
+      }
+      catch {
+        case except: Throwable => {
+          Logger.error(s"Error handling ${act.action}: ${except}")
+        }
+      }
+    })
+
+    // Remove all actions regardless of error status so we don't get stuck
+    Queue.removeByIds(actions.map(act => new ObjectId(act.id.stringify)))
   }
 
   // process the next action in the queue
