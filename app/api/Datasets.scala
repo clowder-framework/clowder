@@ -5,8 +5,10 @@ import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
+
 import api.Permission.Permission
 import java.util.zip._
+
 import javax.inject.{Inject, Singleton}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
@@ -14,7 +16,7 @@ import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
-import play.api.Play.{configuration, current}
+import play.api.Play.{configuration, current, routes}
 import play.api.i18n.Messages
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
@@ -23,6 +25,8 @@ import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
 import _root_.util._
+import controllers.Utils.https
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
 
@@ -2066,6 +2070,7 @@ class  Datasets @Inject()(
     * @param chunkSize chunk size in memory in which to buffer the stream
     * @param compression java built in compression value. Use 0 for no compression.
     * @param bagit whether or not to include bagit structures in zip
+   *  @param baseURL the root Clowder URL for metadata files, from original request
     * @param user an optional user to include in metadata
     * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
     * @param folderId a folder UUID in the dataset to include (i.e. folder download)
@@ -2073,7 +2078,7 @@ class  Datasets @Inject()(
     *         in the dataset
     */
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8,
-                            compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean,
+                            compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, baseURL: String,
                             user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
@@ -2081,8 +2086,7 @@ class  Datasets @Inject()(
     val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
     val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
 
-    // compute list of all files and folder in dataset. This will also make sure
-    // that all files and folder names are unique.
+    // Get list of all files and folder in dataset and enforce unique names
     fileIDs match {
       case Some(fids) => {
         Logger.info("Downloading only some files")
@@ -2097,62 +2101,33 @@ class  Datasets @Inject()(
       }
     }
 
-    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
-    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
-
-    // which file we are currently processing
+    // Keep two MD5 checksum lists, one for dataset files and one for BagIt files
+    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest]
+    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest]
 
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream(byteArrayOutputStream)
-    // zip compression level
     zip.setLevel(compression)
 
+    // Prep enumeration handlers
     var totalBytes = 0L
-    var level = 0 //dataset,file, bag
-    var file_type = 0 //
-    var count = 0 //count for files
+    var level = "dataset"
+    var file_type = "metadata"
+    var file_index = 0
 
-    /*
-     * Explanation for the cases
-     *
-     * the level can be:
-     *    0 (file)
-     *    1 (dataset)
-     *    2 (bag)
-     *
-     * when the level is file, the file_type can be:
-     *    0 (info)
-     *    1 (metadata)
-     *    2 (the actual files)
-     *
-     * when the level is dataset, the file_type can be:
-     *    0 (info)
-     *    1 (metadata)
-     *
-     * when the level is bag, the file_type can be:
-     *    0 - bagit.txt
-     *    1 - bag-info.txt
-     *    2 - manifest-md5.txt
-     *    3 - tagmanifest-md5.txt
-     *
-     * when the dataset is finished (in either mode) the level = -1 and file_type = -1 and
-     * the enumerator is finished
-     */
-
-    var is: Option[InputStream] = addDatasetInfoToZip(dataFolder, dataset, zip)
-    //digest input stream
+    // Begin input stream with dataset info file
+    var is = addDatasetInfoToZip(dataFolder, dataset, zip)
     val md5 = MessageDigest.getInstance("MD5")
-    md5Files.put(dataFolder+"_info.json",md5)
-    is = Some(new DigestInputStream(is.get,md5))
-    file_type = 1 //next is metadata
+    md5Files.put(dataFolder+"_info.json", md5)
+    is = Some(new DigestInputStream(is.get, md5))
 
+    // Handle rest of dataset structure by individual file
     Enumerator.generateM({
       is match {
         case Some(inputStream) => {
           val buffer = new Array[Byte](chunkSize)
           val bytesRead = scala.concurrent.blocking {
             inputStream.read(buffer)
-
           }
           val chunk = bytesRead match {
             case -1 => {
@@ -2160,111 +2135,88 @@ class  Datasets @Inject()(
               zip.closeEntry()
               inputStream.close()
 
-              (level,file_type) match {
-                //dataset, info
-                case (0,0) => {
-                  is = addDatasetInfoToZip(dataFolder,dataset,zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put("_info.json",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  file_type = file_type + 1
+              (level, file_type) match {
+                case ("dataset", "metadata") => {
+                  is = addDatasetMetadataToZip(dataFolder, dataset, zip)
+                  is = addMD5Entry(dataFolder+"_dataset_metadata.json", is, md5Files)
+                  level = "file"
+                  file_type = "info"
                 }
-                //dataset, metadata
-                case (0,1) => {
-                  is = addDatasetMetadataToZip(dataFolder,dataset,zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put("_metadata.json",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  level = 1
-                  file_type = 0
-                }
-                //file info
-                case (1,0) =>{
-                  is = addFileInfoToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(filenameMap(inputFiles(count).id)+"_info.json",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  if (count+1 < inputFiles.size ){
-                    count +=1
-                  } else {
-                    count = 0
-                    file_type = 1
+                case ("file", "info") => {
+                  val filename = filenameMap(inputFiles(file_index).id)
+                  is = addFileInfoToZip(filename, inputFiles(file_index), zip)
+                  is = addMD5Entry(filename+"_info.json", is, md5Files)
+                  file_index += 1
+                  if (file_index >= inputFiles.size) {
+                    file_index = 0
+                    file_type = "metadata"
                   }
                 }
-                //file metadata
-                case (1,1) =>{
-                  is = addFileMetadataToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(filenameMap(inputFiles(count).id)+"_metadata.json",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  if (count+1 < inputFiles.size ){
-                    count +=1
-                  } else {
-                    count = 0
-                    file_type = 2
+                case ("file", "metadata") => {
+                  val filename = filenameMap(inputFiles(file_index).id)
+                  is = addFileMetadataToZip(filename, inputFiles(file_index), zip)
+                  is = addMD5Entry(filename+"_metadata.json", is, md5Files)
+                  file_index += 1
+                  if (file_index >= inputFiles.size){
+                    file_index = 0
+                    file_type = "bytes"
                   }
                 }
-                //files
-                case (1,2) => {
-                  is = addFileToZip(filenameMap(inputFiles(count).id), inputFiles(count), zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Files.put(filenameMap(inputFiles(count).id),md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  if (count+1 < inputFiles.size ){
-                    count +=1
-                  } else {
-                    if (bagit){
-                      count = 0
-                      level = 2
-                      file_type = 0
+                case ("file", "bytes") => {
+                  val filename = filenameMap(inputFiles(file_index).id)
+                  is = addFileToZip(filename, inputFiles(file_index), zip)
+                  is = addMD5Entry(filename, is, md5Files)
+                  file_index +=1
+                  if (file_index >= inputFiles.size) {
+                    if (bagit) {
+                      file_index = 0
+                      level = "bag"
+                      file_type = "bagit.txt"
                     } else {
-                      //done
-                      level = -1
-                      file_type = -1
+                      level = "done"
+                      file_type = "none"
                     }
-
                   }
                 }
-                //bagit.txt
-                case (2,0) => {
-                  is = addBagItTextToZip(totalBytes,filenameMap.size,zip,dataset,user)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("bagit.txt",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  file_type = 1
+                case ("bag", "bagit.txt") => {
+                  // BagIt "header" data e.g. date, author
+                  is = addBagItTextToZip(totalBytes, filenameMap.size, zip, dataset, user)
+                  is = addMD5Entry("bagit.txt", is, md5Bag)
+                  file_type = "bag-info.txt"
                 }
-                //bag-info.txt
-                case (2,1) => {
+                case ("bag", "bag-info.txt") => {
+                  // BagIt version & encoding
                   is = addBagInfoToZip(zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("bag-info.txt",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  file_type = 2
+                  is = addMD5Entry("bag-info.txt", is, md5Bag)
+                  file_type = "manifest-md5.txt"
                 }
-                //manifest-md5.txt
-                case (2,2) => {
-                  is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest],zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("manifest-md5.txt",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  file_type = 3
+                case ("bag", "manifest-md5.txt") => {
+                  // List of all dataset (i.e. not BagIt) files and their checksums
+                  is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest], zip)
+                  is = addMD5Entry("manifest-md5.txt", is, md5Bag)
+                  file_type = "datacite.xml"
                 }
-                //tagmanifest-md5.txt
-                case (2,3) => {
-                  is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest],zip)
-                  val md5 = MessageDigest.getInstance("MD5")
-                  md5Bag.put("tagmanifest-md5.txt",md5)
-                  is = Some(new DigestInputStream(is.get, md5))
-                  level = -1
-                  file_type = -1
+                case ("bag", "datacite.xml") => {
+                  // RDA-recommended DataCite xml file
+                  is = addDataCiteMetadataToZip(zip, dataset, baseURL)
+                  file_type = "tagmanifest-md5.txt"
                 }
-                //the end, or a bad case
+                case ("bag", "tagmanifest-md5.txt") => {
+                  // List of all BagIt, xml or non-dataset files and their checksums
+                  is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest], zip)
+                  level = "done"
+                  file_type = "none"
+                }
+                case ("done", "none") => {
+                  zip.close()
+                  is = None
+                }
                 case (_,_) => {
+                  Logger.error("Unexpected values in dataset zip enum. Closing out anyway.")
                   zip.close()
                   is = None
                 }
               }
-              //this is generated after all the matches
               Some(byteArrayOutputStream.toByteArray)
             }
             case read => {
@@ -2272,20 +2224,23 @@ class  Datasets @Inject()(
               Some(byteArrayOutputStream.toByteArray)
             }
           }
-          if (level < 2){
+
+          if (level == "file" || level == "dataset")
             totalBytes += bytesRead
-          }
-          // reset temporary byte array
+
           byteArrayOutputStream.reset()
           Future.successful(chunk)
         }
-        case None => {
-          Future.successful(None)
-        }
+        case None => Future.successful(None)
       }
     })(pec)
   }
 
+  private def addMD5Entry(name: String, is: Option[InputStream], md5HashMap: scala.collection.mutable.HashMap[String, MessageDigest]) = {
+    val md5 = MessageDigest.getInstance("MD5")
+    md5HashMap.put(name, md5)
+    Some(new DigestInputStream(is.get, md5))
+  }
 
   private def addFileToZip(filename: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
@@ -2370,33 +2325,34 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[models.User]) = {
+  // BagIt "header" data e.g. date, author
+  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[User]) = {
     zip.putNextEntry(new ZipEntry("bagit.txt"))
-    val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
-    val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
-    val baggingSize = "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
-    val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
-    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
-    val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
-    var s:String = ""
+    var s = ""
+    s += "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
+    s += "Bagging-Date: " + (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime) + "\n"
+    s += "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
+    s += "Payload-Oxum: " + totalbytes + "." + totalFiles + "\n"
+    s += "Internal-Sender-Identifier: " + dataset.id + "\n"
+    s += "Internal-Sender-Description: " + dataset.description + "\n"
     if (user.isDefined) {
-      val contactName = "Contact-Name: " + user.get.fullName + "\n"
-      val contactEmail = "Contact-Email: " + user.get.email.getOrElse("") + "\n"
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
-    } else {
-      s = softwareLine+baggingDate+baggingSize+payLoadOxum+senderIdentifier+senderDescription
+      s += "Contact-Name: " + user.get.fullName + "\n"
+      s += "Contact-Email: " + user.get.email.getOrElse("") + "\n"
     }
-
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  // BagIt version & encoding
   private def addBagInfoToZip(zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("bag-info.txt"))
-    val s : String = "BagIt-Version: 0.97\n"+"Tag-File-Character-Encoding: UTF-8\n"
+    var s = ""
+    s += "BagIt-Version: 0.97\n"
+    s += "Tag-File-Character-Encoding: UTF-8\n"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addManifestMD5ToZip(md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
+  // List of all dataset (i.e. not BagIt) files and their checksums
+  private def addManifestMD5ToZip(md5map: Map[String,MessageDigest], zip: ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("manifest-md5.txt"))
     var s : String = ""
     md5map.foreach{
@@ -2408,6 +2364,121 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  private def addDataCiteMetadataToZip(zip: ZipOutputStream, dataset: Dataset, baseURL: String): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry("metadata/datacite.xml"))
+    var s = "<resource xsi:schemaLocation=\"http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd\">\n"
+    // https://support.datacite.org/docs/schema-40
+
+    // Prep user data (DataCite v4 specifies Family, Given as name format)
+    // TODO: Need to resolve how to present names - take last word as Family and rest Given unless specified elsewhere?
+    var creatorName = dataset.author.fullName
+    var creatorOrcid = ""
+    userService.get(dataset.author.id) match {
+      case Some(u: User) => {
+        creatorName = u.fullName
+        creatorOrcid = u.profile match {
+          case Some(p: Profile) => p.orcidID.getOrElse("")
+          case None => ""
+        }
+      }
+      case None => {}
+    }
+
+    // ---------- REQUIRED FIELDS ----------
+    // Identifier (DOI)
+    // TODO: We don't have a DOI yet in most cases. It seems that DataCite v4+ requires one, however RDA does not.
+    s += "<identifier identifierType=\"DOI\">:none</identifier>\n"
+
+    // Creators
+    s += "<creators>\n"
+    s += "\t<creator>\n"
+    s += "\t\t<creatorName>"+creatorName+"</creatorName>\n"
+    if (creatorOrcid.length > 0) {
+      s += "\t\t<nameIdentifier>"+creatorOrcid+"</nameIdentifier>\n"
+      s += "\t\t<nameIdentifierScheme>ORCID</nameIdentifierScheme>\n"
+    }
+    s += "\t</creator>\n"
+    s += "</creators>\n"
+
+    // Title
+    s += "<titles>\n\t<title>"+dataset.name+"</title>\n</titles>\n"
+
+    // Publisher
+    // TODO: Not sure Clowder is right here.
+    s += "<publisher>Clowder</publisher>\n"
+
+    // PublicationYear
+    val yyyy = new SimpleDateFormat("yyyy").format(dataset.created)
+    s += "<publicationYear>"+yyyy+"</publicationYear>\n"
+
+    // ResourceType
+    s += "<resourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</ResourceType>\n"
+
+    // ---------- RECOMMENDED/OPTIONAL FIELDS ----------
+
+    // Description
+    s += "<descriptions>\n\t<description descriptionType=\"Abstract\">"+dataset.description+"</description>\n</descriptions>\n"
+
+    // Contributors (anyone else who provided files or metadata)
+    val contribList = ListBuffer[String]()
+    datasets.getUserMetadataJSON(dataset.id).foreach(md => {
+      val mdAuth = md.toString
+      if (mdAuth.length > 1 && mdAuth != creatorName) contribList += mdAuth
+    })
+    files.get(dataset.files).found.foreach(fi => {
+      if (fi.author.fullName != creatorName) contribList += fi.author.fullName
+      files.getUserMetadataJSON(fi.id).foreach(md => {
+        val mdAuth = md.toString
+        if (mdAuth.length > 1 && mdAuth != creatorName) contribList += mdAuth
+      })
+    })
+
+    if (contribList.length > 0) {
+      s += "<contributors>\n"
+      contribList.distinct.foreach(name => s += "\t<contributor contributorType=\"\">"+name+"</contributor>\n")
+      s += "</contributors>\n"
+    }
+
+    // Date (Created)
+    val isoDate = new SimpleDateFormat("YYYY-MM-dd").format(dataset.created)
+    s += "<dates>\n\t<date dateType=\"Created\">"+isoDate+"</date>\n</dates>\n"
+
+    // AlternateIdentifier
+    s += "<alternateIdentifier>"+dataset.id.stringify+"</alternateIdentifier>\n"
+
+    // Format
+    s += "<format>application/zip</format>\n"
+
+    // Subjects
+    if (dataset.tags.length > 0) {
+      s += "<subjects>\n"
+      dataset.tags.foreach(t => s += "\t<tag>"+t.name+"</tag>\n")
+      s += "</subjects>\n"
+    }
+
+    // RelatedIdentifier (Clowder root URL)
+    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+baseURL+"</ResourceType>\n"
+
+    // Size (can have many)
+    s += "<sizes>\n\t<size>"+dataset.files.length.toString+" files</size>\n</sizes>\n"
+
+    // Rights
+    // TODO: Clean these up?
+    val rURL = dataset.licenseData.m_licenseUrl
+    val rightsURI = if (rURL.length > 0) " rightsURI=\""+rURL+"\"" else ""
+    val rightsTxt = dataset.licenseData.m_licenseText
+    s += "<rights"+rightsURI+">"+rightsTxt+"</rights>\n"
+
+    // Version
+    // Language - e.g. "en"
+    // GeoLocation (R)
+    // FundingReference
+
+    s += "</resource>"
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // List of all BagIt, xml or non-dataset files and their checksums
   private def addTagManifestMD5ToZip(md5map : Map[String,MessageDigest],zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("tagmanifest-md5.txt"))
     var s : String = ""
@@ -2420,11 +2491,13 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+
   def download(id: UUID, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
         if (tracking)
@@ -2432,7 +2505,7 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, user, None, None)).withHeaders(
+        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, baseURL, user, None, None)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2451,13 +2524,14 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         val fileIDs = fileList.split(',').map(fid => new UUID(fid)).toList
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count for each file
         fileIDs.foreach(fid => files.incrementDownloads(fid, user))
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, Some(fileIDs), None)).withHeaders(
+        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, Some(fileIDs), None)).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " (Partial).zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2475,6 +2549,8 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
+
 
         // Increment download count for each file in folder
         folders.get(folderId) match {
@@ -2483,7 +2559,7 @@ class  Datasets @Inject()(
 
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, user, None, Some(folderId))).withHeaders(
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, None, Some(folderId))).withHeaders(
               CONTENT_TYPE -> "application/zip",
               CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ("+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
             )
