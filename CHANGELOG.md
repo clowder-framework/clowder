@@ -4,10 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.10.2 - Unreleased
+## [Unreleased]
+
+### Added
+- Script to clean extractors' tmp files.
+- Script for RabbitMQ error queue cleanup.
+
+### Changed
+- Improved simple test to report all day success.
+- Expose a read-only list of extractors to all users.
 
 ### Fixed
 - Escape colon characters on search values for search box and advanced search to allow those values in a search.
+- typesafe now only offers https access
+  [#49](https://github.com/clowder-framework/clowder/issues/49)
 
 ## 1.10.1 - 2020-07-16
 
