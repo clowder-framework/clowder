@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Expose a read-only list of extractors to all users.
 
 ### Fixed
+- Escape colon characters on search values for search box and advanced search to allow those values in a search.
 - typesafe now only offers https access
   [#49](https://github.com/clowder-framework/clowder/issues/49)
 
