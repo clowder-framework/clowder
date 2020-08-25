@@ -12,9 +12,10 @@ import play.api.libs.functional.syntax._
 case class Extraction(
   id: UUID = UUID.generate,
   file_id: UUID,
+  job_id: Option[UUID],
   extractor_id: String,
   status: String = "N/A",
-  start: Option[Date],
+  start: Date,
   end: Option[Date])
 
 /**
@@ -169,9 +170,10 @@ case class ExtractorProcessTriggers(dataset: List[String] = List.empty,
                                     file: List[String] = List.empty,
                                     metadata: List[String] = List.empty)
 
+
 case class ExtractionGroup(
                           firstMsgTime: String,
                           latestMsgTime: String,
                           latestMsg: String,
-                          allMsgs: List[Extraction]
+                          allMsgs: Map[UUID, List[Extraction]]
                           )
