@@ -27,6 +27,7 @@ import models.{Collection, Dataset, ElasticsearchResult, File, Folder, ResourceR
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
+import org.apache.commons.lang.StringUtils
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest
 
 
@@ -843,7 +844,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val matches = ListBuffer[String]()
     val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
     while (m.find()) {
-      var mat = m.group(1).replace("\"", "").replace("__", " ")
+      var mat = m.group(1).replace("\"", "").replace("__", " ").trim
       if (mat.trim.length>0) {
         (mustOperators ::: mustNotOperators).foreach(op => {
           if (mat.startsWith(op)) {
@@ -875,10 +876,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       // Check if the current term appears before or after one of the operators, and what operator is
       var entryType = "unknown"
       (mustOperators ::: mustNotOperators).foreach(op => {
-        if ((query.contains(mt+op) || query.contains("\""+mt+"\""+op)) && entryType=="unknown") {
+        val reducedSpaces = StringUtils.normalizeSpace(query)
+        if ((reducedSpaces.contains(mt+op) || reducedSpaces.contains("\""+mt+"\""+op) ||
+            reducedSpaces.contains(mt+" "+op) || reducedSpaces.contains("\""+mt+" \""+op)) && entryType=="unknown") {
           entryType = "key"
           curropr = op
-        } else if (query.contains(op+mt) || query.contains(op+"\""+mt+"\"")) {
+        } else if (reducedSpaces.contains(op+mt) || reducedSpaces.contains(op+"\""+mt+"\"") ||
+            reducedSpaces.contains(op+" "+mt) || reducedSpaces.contains(op+"\" "+mt+"\"")) {
           entryType = "value"
           curropr = op
         }
@@ -897,7 +901,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else
           currkey = mt
       } else if (entryType == "value") {
-        currval = mt.toLowerCase()
+        if (currkey!="exists" && currkey!="missing")
+          currval = mt.toLowerCase()
+        else currval= mt
         terms += ((currkey, curropr, currval))
         currkey = "_all"
         curropr = ":"
