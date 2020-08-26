@@ -144,16 +144,14 @@ trait MongoDBQueueService {
 
   // wrapper for processing next batch of actions in queue
   def handleQueuedActions(actions: List[QueuedAction]) = {
-    actions.foreach(act => {
-      try {
-        handler(act)
+    try {
+      handler(actions)
+    }
+    catch {
+      case except: Throwable => {
+        Logger.error(s"Error handling bulk actions: ${except}")
       }
-      catch {
-        case except: Throwable => {
-          Logger.error(s"Error handling ${act.action}: ${except}")
-        }
-      }
-    })
+    }
 
     // Remove all actions regardless of error status so we don't get stuck
     Queue.removeByIds(actions.map(act => new ObjectId(act.id.stringify)))
@@ -161,6 +159,9 @@ trait MongoDBQueueService {
 
   // process the next action in the queue
   def handler(action: QueuedAction)
+
+  // process a batch of actions in the queue
+  def handler(actions: List[QueuedAction])
 
   object Queue extends ModelCompanion[QueuedAction, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {

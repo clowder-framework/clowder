@@ -1,13 +1,14 @@
 package services
 
 import javax.inject.Inject
-
 import models._
 import play.api.Logger
 import play.api.Play._
 import play.api.libs.json.Json._
-import play.api.libs.json.{Json, JsValue, Writes}
+import play.api.libs.json.{JsValue, Json, Writes}
 import services._
+
+import scala.collection.mutable.ListBuffer
 
 /**
  * Elasticsearch queue service to allow code that updates ES indexes to proceed asynchronously.
@@ -16,8 +17,7 @@ import services._
 class ElasticsearchQueue @Inject() (
   files: FileService,
   datasets: DatasetService,
-  collections: CollectionService,
-  sections: SectionService) extends MongoDBQueueService {
+  collections: CollectionService) extends MongoDBQueueService {
 
   override val consumer = "elasticsearch"
 
@@ -35,19 +35,19 @@ class ElasticsearchQueue @Inject() (
       case Some(targ) => {
         action.action match {
           case "index_file" => {
-            val target = files.get(targ.id) match {
+            files.get(targ.id) match {
               case Some(f) => current.plugin[ElasticsearchPlugin].foreach(p => p.index(f, idx))
               case None => throw new NullPointerException(s"File ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_dataset" => {
-            val target = datasets.get(targ.id) match {
+            datasets.get(targ.id) match {
               case Some(ds) => current.plugin[ElasticsearchPlugin].foreach(p => p.index(ds, recursive, idx))
               case None => throw new NullPointerException(s"Dataset ${targ.id.stringify} no longer found for indexing")
             }
           }
           case "index_collection" => {
-            val target = collections.get(targ.id) match {
+            collections.get(targ.id) match {
               case Some(c) => current.plugin[ElasticsearchPlugin].foreach(p => p.index(c, recursive, idx))
               case None => throw new NullPointerException(s"Collection ${targ.id.stringify} no longer found for indexing")
             }
@@ -69,6 +69,49 @@ class ElasticsearchQueue @Inject() (
       }
     }
   }
+
+  // process a list of actions in the queue
+  def handler(actions: List[QueuedAction]) = {
+    // Process similar actions in batches
+    var currentBatch: ListBuffer[UUID] = ListBuffer.empty
+    var batchAction = ""
+    var batchRecurs = false
+    var batchIndex: Option[String]  = None
+
+    actions.foreach(act => {
+      val recursive = act.elastic_parameters.fold(false)(_.recursive)
+      val idx: Option[String] = act.elastic_parameters.fold[Option[String]](None)(_.index)
+      if (batchAction == "") {
+        batchAction = act.action
+        batchRecurs = recursive
+        batchIndex = idx
+      }
+
+      // If the next action is just a new ID for same params, add to current batch. Otherwise handle batch and start new
+      if (act.action==batchAction && recursive==batchRecurs && idx==batchIndex && act.target.isDefined)
+        currentBatch.append(act.target.get.id)
+      else {
+        _handlerBatch(currentBatch.toList, batchAction, batchRecurs, batchIndex)
+        currentBatch = ListBuffer.empty
+        batchAction = act.action
+        batchRecurs = recursive
+        batchIndex = idx
+      }
+    })
+  }
+
+  // Process batch of IDs with same action
+  def _handlerBatch(targets: List[UUID], action: String, recursive: Boolean, index: Option[String]) = {
+    action match {
+      case "index_file" => files.get(targets).found.foreach(f => current.plugin[ElasticsearchPlugin].foreach(p => p.index(f, index)))
+      case "index_dataset" => datasets.get(targets).found.foreach(ds => current.plugin[ElasticsearchPlugin].foreach(p => p.index(ds, recursive, index)))
+      case "index_collection" => collections.get(targets).found.foreach(c => current.plugin[ElasticsearchPlugin].foreach(p => p.index(c, recursive, index)))
+      case "index_all" => _indexAll()
+      case "index_swap" => _swapIndex()
+      case _ =>
+    }
+  }
+
 
   def _indexAll() = {
     // Add all individual entries to the queue and delete this action
