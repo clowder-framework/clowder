@@ -729,7 +729,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case ":" => {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
-        else
+        else if (key == "exists") {
+          val cleaned = if (!value.startsWith("metadata.")) "metadata."+value else value
+          builder.startObject().startObject("exists").field("field", cleaned).endObject().endObject()
+        } else if (key == "missing") {
+          val cleaned = if (!value.startsWith("metadata.")) "metadata."+value else value
+          builder.startObject().startObject("bool").startArray("must_not").startObject()
+            .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
+        } else
           builder.startObject().startObject("query_string").field("default_field", key)
             .field("query", "\""+value+"\"").endObject().endObject()
       }
@@ -834,28 +841,30 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Use regex to split string into a list, preserving quoted phrases as single value
     val matches = ListBuffer[String]()
-    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query)
+    val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
     while (m.find()) {
       var mat = m.group(1).replace("\"", "").replace("__", " ")
-      (mustOperators ::: mustNotOperators).foreach(op => {
-        if (mat.startsWith(op)) {
-          // Make sure x<=4 is "x lte 4" not "x lt =4"
-          var foundLonger = false
-          (mustOperators ::: mustNotOperators).foreach(longerop => {
-            if (longerop!=op && longerop.length>op.length && mat.startsWith(longerop)) {
-              mat = mat.substring(longerop.length)
-              foundLonger = true
-            }
-          })
-          if (!foundLonger)
-            mat = mat.substring(op.length)
-        }
-      })
-      matches += mat
+      if (mat.trim.length>0) {
+        (mustOperators ::: mustNotOperators).foreach(op => {
+          if (mat.startsWith(op)) {
+            // Make sure x<=4 is "x lte 4" not "x lt =4"
+            var foundLonger = false
+            (mustOperators ::: mustNotOperators).foreach(longerop => {
+              if (longerop!=op && longerop.length>op.length && mat.startsWith(longerop)) {
+                mat = mat.substring(longerop.length)
+                foundLonger = true
+              }
+            })
+            if (!foundLonger)
+              mat = mat.substring(op.length)
+          }
+        })
+        matches += mat
+      }
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
-    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag")
+    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
 
     // Create list of (key, operator, value) for passing to builder
     val terms = ListBuffer[(String, String, String)]()
@@ -864,14 +873,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var currval = ""
     matches.foreach(mt => {
       // Check if the current term appears before or after one of the operators, and what operator is
-      var entryType = "value"
+      var entryType = "unknown"
       (mustOperators ::: mustNotOperators).foreach(op => {
-        if (query.contains(mt+op) || query.contains("\""+mt+"\""+op)) {
+        if ((query.contains(mt+op) || query.contains("\""+mt+"\""+op)) && entryType=="unknown") {
           entryType = "key"
           curropr = op
-        } else if (query.contains(op+mt) || query.contains(op+"\""+mt+"\""))
+        } else if (query.contains(op+mt) || query.contains(op+"\""+mt+"\"")) {
+          entryType = "value"
           curropr = op
+        }
       })
+      if (entryType=="unknown") entryType = "value"
 
       // Determine if the string was a key or value
       if (entryType == "key") {
