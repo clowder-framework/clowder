@@ -746,7 +746,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
         else
-          builder.startObject().startObject("query_string").field("default_field", key).field("query", value).endObject().endObject()
+          builder.startObject().startObject("query_string").field("default_field", key)
+            .field("query", "\""+value+"\"").endObject().endObject()
       }
       case _ => {}
     }
@@ -848,41 +849,51 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Use regex to split string into a list, preserving quoted phrases as single value
     val matches = ListBuffer[String]()
-    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query.replace(":", " "))
+    val m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(query)
     while (m.find()) {
-      matches += m.group(1).replace("\"", "").replace("__", " ")
+      var mat = m.group(1).replace("\"", "").replace("__", " ")
+      if (mat.startsWith(":")) mat = mat.substring(1)
+      if (mat.endsWith(":")) mat = mat.substring(0, mat.length-2)
+      matches += mat
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
     val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag")
 
-    // Create list of "key:value" terms for parsing by builder
-    val terms = ListBuffer[String]()
-    var currterm = ""
+    // Create list of (key, operator, value) for passing to builder
+    val terms = ListBuffer[(String, String, String)]()
+    var currkey = "_all"
+    var curropr = ":" // Defaults to 'contains' match on _all if no key:value pairs are found (assumes whole string is the value)
+    var currval = ""
     matches.foreach(mt => {
-      // Determine if the string was a key or value
+      // Check if the current term appears before or after one of the operators, and what operator is
+      var entryType = "value"
       if (query.contains(mt+":") || query.contains("\""+mt+"\":")) {
+        entryType = "key"
+      }
+
+      // Determine if the string was a key or value
+      if (entryType == "key") {
         // Do some user-friendly replacement
         if (mt == "tag")
-          currterm += "tags:"
+          currkey = "tags"
         else if (mt == "in")
-          currterm += "child_of:"
+          currkey = "child_of"
         else if (mt == "contains")
-          currterm += "parent_of:"
+          currkey = "parent_of"
         else if (mt == "creator")
-          currterm += "creator_name:"
+          currkey = "creator_name"
         else if (mt == "email")
-          currterm += "creator_email:"
+          currkey = "creator_email"
         else if (!official_terms.contains(mt))
-          currterm += "metadata."+mt+":"
+          currkey = "metadata."+mt
         else
-          currterm += mt+":"
-      } else if (query.contains(":"+mt) || query.contains(":\""+mt+"\"")) {
-        currterm += mt.toLowerCase()
-        terms += currterm
-        currterm = ""
-      } else {
-        terms += "_all:"+mt.toLowerCase()
+          currkey = mt
+      } else if (entryType == "value") {
+        currval += mt.toLowerCase()
+        terms += ((currkey, curropr, currval))
+        currkey = "_all"
+        currval = ""
       }
     })
 
@@ -890,12 +901,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // First, populate the MUST portion of Bool query
     var populatedMust = false
-    terms.map(term => {
+    terms.map(entry => {
+      val key = entry._1
+      val curropr = entry._2
+      val value = entry._3
       for (operator <- mustOperators) {
-        if (term.contains(operator)) {
-          val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator)+1, term.length)
-
+        if (curropr == operator) {
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustOperators.contains(operator) && !populatedMust) {
             builder.startArray("must")
@@ -939,12 +950,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Second, populate the MUST NOT portion of Bool query
     var populatedMustNot = false
-    terms.map(term => {
+    terms.map(entry => {
+      val key = entry._1
+      val curropr = entry._2
+      val value = entry._3
       for (operator <- mustNotOperators) {
-        if (term.contains(operator)) {
-          val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator), term.length)
-
+        if (curropr == operator) {
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustNotOperators.contains(operator) && !populatedMustNot) {
             builder.startArray("must_not")
