@@ -1,17 +1,19 @@
 package controllers
 
 import java.net.URL
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import api.Permission
 import api.Permission._
 import play.api.{Logger, Play, Routes}
 import play.api.mvc.Action
 import services._
 import models.{Event, UUID, User, UserStatus}
+import org.owasp.html.Sanitizers
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
+import util.Formatters.sanitizeHTML
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
@@ -212,9 +214,11 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         val spacesCount = spaces.count()
         val usersCount = users.count()
 
+        val sanitezedWelcomeText = sanitizeHTML(AppConfiguration.getWelcomeMessage)
+
         Ok(views.html.index(datasetsCount, filesCount, filesBytes,
           collectionsCount, spacesCount, usersCount,
-          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+          AppConfiguration.getDisplayName, sanitezedWelcomeText))
       }
     }
   }
@@ -233,8 +237,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val spacesCount = spaces.count()
     val usersCount = users.count()
 
+    val sanitezedWelcomeText = sanitizeHTML(AppConfiguration.getWelcomeMessage)
+
     Ok(views.html.index(datasetsCount, filesCount, filesBytes, collectionsCount,
-        spacesCount, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+        spacesCount, usersCount, AppConfiguration.getDisplayName, sanitezedWelcomeText))
   }
 
   def email(subject: String, body: String) = UserAction(needActive=false) { implicit request =>
