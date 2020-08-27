@@ -1113,11 +1113,8 @@ class MongoDBFileService @Inject() (
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
   val COLLECTION = "uploads"
-
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection(COLLECTION)) {}
-  }
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[File, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
