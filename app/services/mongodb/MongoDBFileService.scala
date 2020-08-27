@@ -1118,15 +1118,13 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
 }
 
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
-    val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Versus, ObjectId](collection = x.collection("versus.descriptors")) {}
-  }
+  val COLLECTION = "versus.descriptors"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Versus, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object FileStats extends ModelCompanion[StatisticUser, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[StatisticUser, ObjectId](collection = x.collection("statistics.users")) {}
-  }
+  val COLLECTION = "statistics.users"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[StatisticUser, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

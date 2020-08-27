@@ -1,13 +1,13 @@
 package services.mongodb
 
-import models.{DBResult, UUID, Comment}
-import services.CommentService
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import play.Logger
-import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
+import models.{Comment, DBResult, UUID}
+import org.bson.types.ObjectId
+import play.Logger
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{CommentService, DI}
 
 /**
  * Use MongoDB to store Comments
@@ -100,9 +100,8 @@ class MongoDBCommentService extends CommentService {
 
 
 object Comment extends ModelCompanion[Comment, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Comment, ObjectId](collection = x.collection("comments")) {}
-  }
+  val COLLECTION = "comments"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Comment, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 

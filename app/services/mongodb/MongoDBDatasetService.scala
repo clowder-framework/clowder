@@ -8,6 +8,7 @@ import api.Permission.Permission
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
 import com.mongodb.util.JSON
 import javax.inject.{Inject, Singleton}
@@ -1550,15 +1551,13 @@ object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {
 object LicenseData extends ModelCompanion[LicenseData, ObjectId] {
 //  val collection = MongoConnection()("test-alt")("licensedata")
 //  val dao = new SalatDAO[LicenseData, ObjectId](collection = collection) {}
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[LicenseData, ObjectId](collection = x.collection("licensedata")) {}
-  }
+  val COLLECTION = "licensedata"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[LicenseData, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object DatasetStats extends ModelCompanion[StatisticUser, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[StatisticUser, ObjectId](collection = x.collection("statistics.users")) {}
-  }
+  val COLLECTION = "statistics.users"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[StatisticUser, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

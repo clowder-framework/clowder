@@ -1,22 +1,24 @@
 package services.mongodb
 
 import java.net.URI
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import api.Permission
 import api.Permission._
-import salat.dao.{SalatDAO, ModelCompanion}
+import salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
-import services.{EventService, MetadataService, CurationService, SpaceService}
+import services.{CurationService, DI, EventService, MetadataService, SpaceService}
 import util.Direction._
 import java.util.Date
+
 import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.TypeImports.ObjectId
 import util.Formatters
 
 
@@ -330,10 +332,9 @@ object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
  * Salat CurationObjectMetadata model companion.
  */
 object CurationFileDAO extends ModelCompanion[CurationFile, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[CurationFile, ObjectId](collection = x.collection("curationFiles")) {}
-  }
+  val COLLECTION = "curationFiles"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[CurationFile, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 
@@ -341,8 +342,7 @@ object CurationFileDAO extends ModelCompanion[CurationFile, ObjectId] {
  * Salat CurationObjectMetadata model companion.
  */
 object CurationFolderDAO extends ModelCompanion[CurationFolder, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[CurationFolder, ObjectId](collection = x.collection("curationFolders")) {}
-  }
+  val COLLECTION = "curationFolders"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[CurationFolder, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

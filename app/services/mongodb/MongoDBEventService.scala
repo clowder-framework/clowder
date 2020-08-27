@@ -1,20 +1,17 @@
 package services.mongodb
 
-import javax.inject.Inject
+import java.util.Date
 
 import api.Permission
-import models._
-import java.util.Date
-import org.bson.types.ObjectId
-import services._
-import api.Permission.Permission
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import play.Logger
-import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
-import salat.dao.SalatMongoCursor
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.TypeImports.ObjectId
+import javax.inject.Inject
+import models._
+import play.Logger
+import salat.dao.{ModelCompanion, SalatDAO, SalatMongoCursor}
+import services._
+import services.mongodb.MongoContext.context
 
 /**
   * Use MongoDB for storing events.
@@ -219,8 +216,7 @@ class MongoDBEventService @Inject() (
 }
 
 object Event extends ModelCompanion[Event, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Event, ObjectId](collection = x.collection("events")) {}
-  }
+  val COLLECTION = "events"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Event, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

@@ -1,17 +1,15 @@
 package services.mongodb
 
-import services.ExtractionService
-import models.{UUID, Extraction, ExtractionGroup, ResourceRef}
-import org.bson.types.ObjectId
-import play.api.Play.current
-import salat.dao.ModelCompanion
-import salat.dao.SalatDAO
-import MongoContext.context
-import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date
-import play.api.Logger
-import models.WebPageResource
+
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
+import models.{Extraction, ExtractionGroup, ResourceRef, UUID, WebPageResource}
+import org.bson.types.ObjectId
+import play.api.Logger
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{DI, ExtractionService}
 
 /**
  * Use MongoDB to store extractions
@@ -140,16 +138,14 @@ class MongoDBExtractionService extends ExtractionService {
 }
 
 object Extraction extends ModelCompanion[Extraction, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Extraction, ObjectId](collection = x.collection("extractions")) {}
-  }
+  val COLLECTION = "extractions"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Extraction, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object WebPageResource extends ModelCompanion[WebPageResource,ObjectId]{
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[WebPageResource, ObjectId](collection = x.collection("webpage.resources")) {}
-  }
+  val COLLECTION = "webpage.resources"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[WebPageResource, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 

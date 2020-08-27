@@ -4,16 +4,20 @@
 package services.mongodb
 
 import play.api.Application
-import securesocial.core.{AuthenticatorStore, Authenticator}
+import securesocial.core.{Authenticator, AuthenticatorStore}
 import play.api.Logger
 import java.util.Date
-import salat.dao.{SalatDAO, ModelCompanion}
+
+import salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import play.api.Play._
 import securesocial.core.IdentityId
 import scala.Some
 import org.joda.time.DateTime
 import MongoContext.context
+import org.bson.types.ObjectId
+import securesocial.core.authenticator.Authenticator
+import services.DI
 
 /**
  * Track securesocial authenticated users in MongoDB.
@@ -29,10 +33,10 @@ case class LocalAuthenticator(
 
 object AuthenticatorDAO extends ModelCompanion[LocalAuthenticator, ObjectId] {
 
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[LocalAuthenticator, ObjectId](collection = x.collection("social.authenticator")) {}
-  }
+  val COLLECTION = "social.authenticator"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[LocalAuthenticator, ObjectId](collection = mongos.collection(COLLECTION)) {}
+
 
   def save(authenticator: Authenticator) {
     val localAuth = LocalAuthenticator(authenticator.id, authenticator.identityId,

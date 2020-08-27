@@ -1,27 +1,17 @@
 package services.mongodb
 
-import org.bson.types.ObjectId
 import java.util.Date
-import play.api.Play.current
-import salat.dao.{ ModelCompanion, SalatDAO }
-import com.mongodb.casbah.commons.MongoDBObject
-import java.util.ArrayList
-import play.api.libs.concurrent
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.JsObject
-import play.api.Logger
-import play.api.Play.current
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import models._
+
 import com.mongodb.casbah.Imports._
-import com.mongodb.WriteConcern
+import com.mongodb.casbah.commons.MongoDBObject
+import javax.inject.Inject
+import models._
+import org.bson.types.ObjectId
+import play.api.Logger
+import play.api.libs.json.Json
+import salat.dao.{ModelCompanion, SalatDAO}
 import services.mongodb.MongoContext.context
-import services.mongodb.MongoSalatPlugin
-import services.ExtractionService
-import java.text.SimpleDateFormat
-import services.ExtractionRequestsService
-import javax.inject.{Singleton, Inject}
+import services.{DI, ExtractionRequestsService, ExtractionService}
 
 /**
  * MongoDB implementation for ExtractionRequestsService to keep track of extraction requests
@@ -97,9 +87,8 @@ class MongoDBExtractionRequestsService @Inject()(extractions: ExtractionService)
 
 object ExtractionRequests extends ModelCompanion[ExtractionRequests, ObjectId] {
   // TODO RK handle exception for instance if we switch to other DB
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ExtractionRequests, ObjectId](collection = x.collection("dtsrequests")) {}
-  }
+  val COLLECTION = "dtsrequests"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[ExtractionRequests, ObjectId](collection = mongos.collection(COLLECTION)) {}
 
 }  

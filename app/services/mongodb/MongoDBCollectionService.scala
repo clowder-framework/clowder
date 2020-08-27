@@ -1127,15 +1127,13 @@ class MongoDBCollectionService @Inject() (
 }
 
 object Collection extends ModelCompanion[Collection, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Collection, ObjectId](collection = x.collection("collections")) {}
-  }
+  val COLLECTION = "collections"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Collection, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object CollectionStats extends ModelCompanion[StatisticUser, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[StatisticUser, ObjectId](collection = x.collection("statistics.users")) {}
-  }
+  val COLLECTION = "statistics.users"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[StatisticUser, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
