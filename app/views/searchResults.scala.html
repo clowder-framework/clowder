@@ -37,6 +37,15 @@
                         <li>@Messages("help.search.overview4") <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-regexp-query.html#regexp-syntax">@Messages("help.search.overview5")</a></li>
                     </ul>
                     <table style="width:100%;">
+                        <tr><td width="120"><b>operator</b></td>
+                            <td width="400"></td></tr>
+                        <tr><td><b>==</b></td><td>equals</td></tr>
+                        <tr><td><b>!=</b></td><td>does not equal</td></tr>
+                        <tr><td><b>:</b></td><td>contains</td></tr>
+                        <tr><td><b>< ></b></td><td>less than / greater than</td></tr>
+                        <tr><td><b><= >=</b></td><td>less or equal to / greater or equal to </td></tr>
+                    </table></br>
+                    <table style="width:100%;">
                         <tr><td width="120"><b>@Messages("help.search.col1")</b></td>
                             <td width="250"><b>@Messages("help.search.col2")</b></td>
                             <td width="400"></td></tr>
@@ -67,6 +76,12 @@
                         <tr><td>contains</td>
                             <td>contains:5ccafe167ceaec481ae86816</td>
                             <td>@Messages("help.search.contains", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase)</td></tr>
+                        <tr><td>exists</td>
+                            <td>exists:"PixelMetadata.MeanNDVI"</td>
+                            <td>@Messages("help.search.exists")</td></tr>
+                        <tr><td>missing</td>
+                            <td>missing:"SatelliteAnalyzer:QualityScore"</td>
+                            <td>@Messages("help.search.missing")</td></tr>
                         <tr><td>metadata</td>
                             <td>"Funding Institution":"University of Illinois"</td>
                             <td>@Messages("help.search.metadata")</td></tr>
