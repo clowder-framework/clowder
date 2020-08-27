@@ -1,18 +1,18 @@
 package services.mongodb
 
-import com.mongodb.casbah.WriteConcern
-import services.{ByteStorageService, PreviewService, TileService}
-import salat.dao.{ModelCompanion, SalatDAO}
-import org.bson.types.ObjectId
-import MongoContext.context
-import play.api.Play.current
 import java.io.InputStream
-import com.mongodb.casbah.commons.MongoDBObject
-import models.{UUID, Tile}
-import play.api.libs.json.{JsValue, JsObject}
+
 import com.mongodb.casbah.Imports._
-import play.api.Logger
+import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.commons.MongoDBObject
 import javax.inject.{Inject, Singleton}
+import models.{Tile, UUID}
+import org.bson.types.ObjectId
+import play.api.Logger
+import play.api.libs.json.{JsObject, JsValue}
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{ByteStorageService, DI, PreviewService, TileService}
 import util.FileUtils
 
 /**
@@ -90,9 +90,6 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
 
 object TileDAO extends ModelCompanion[Tile, ObjectId] {
   val COLLECTION = "tiles"
-
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Tile, ObjectId](collection = x.collection(COLLECTION)) {}
-  }
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Tile, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

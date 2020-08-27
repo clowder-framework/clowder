@@ -1,15 +1,13 @@
 package services.mongodb
 
-import models._
 import java.util.Date
-import services.SchedulerService
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import play.Logger
-import com.mongodb.casbah.commons.MongoDBObject
+
 import com.mongodb.casbah.Imports._
-import salat.dao.SalatMongoCursor
+import com.mongodb.casbah.commons.MongoDBObject
+import models._
+import salat.dao.{ModelCompanion, SalatDAO, SalatMongoCursor}
+import services.mongodb.MongoContext.context
+import services.{DI, SchedulerService}
 
 /**
  * Use MongoDB to store schedules
@@ -113,8 +111,7 @@ class MongoDBSchedulerService extends SchedulerService {
 }
 
 object Jobs extends ModelCompanion[TimerJob, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[TimerJob, ObjectId](collection = x.collection("jobs")) {}
-  }
+  val COLLECTION = "jobs"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[TimerJob, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

@@ -13,8 +13,7 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.{ContextLDService, CurationService, DatasetService, SearchService, ExtractorMessage, FileService,
-  FolderService, MetadataService, ExtractionBusService}
+import services.{ContextLDService, CurationService, DI, DatasetService, ExtractionBusService, ExtractorMessage, FileService, FolderService, MetadataService, SearchService}
 import api.{Permission, UserRequest}
 import controllers.Utils
 
@@ -291,15 +290,13 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService,
 }
 
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin")
-    case Some(x) => new SalatDAO[Metadata, ObjectId](collection = x.collection("metadata")) {}
-  }
+  val COLLECTION = "metadata"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Metadata, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object MetadataDefinitionDAO extends ModelCompanion[MetadataDefinition, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin")
-    case Some(x) => new SalatDAO[MetadataDefinition, ObjectId](collection = x.collection("metadata.definitions")) {}
-  }
+  val COLLECTION = "metadata.definitions"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[MetadataDefinition, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

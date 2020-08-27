@@ -706,29 +706,29 @@ class MongoDBSpaceService @Inject() (
       case None => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
     }
+  val COLLECTION = "uploads"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[File, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 
   /**
    * Salat UserSpace model companion.
    */
   object UserSpaceDAO extends ModelCompanion[UserSpace, ObjectId] {
-    val dao = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
-    }
+    val COLLECTION = "spaces.users"
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[UserSpace, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 
 
   object SpaceInviteDAO extends ModelCompanion[SpaceInvite, ObjectId] {
-    val dao = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No mongoSalatPlugin");
-      case Some(x) => new SalatDAO[SpaceInvite, ObjectId](collection = x.collection("spaces.invites")) {}
-    }
+    val COLLECTION = "spaces.invites"
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[SpaceInvite, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 
   object ExtractorsForSpaceDAO extends ModelCompanion[ExtractorsForSpace, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ExtractorsForSpace, ObjectId](collection = x.collection("spaces.extractors")) {}
-  }
+    val COLLECTION = "spaces.extractors"
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[ExtractorsForSpace, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

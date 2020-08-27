@@ -1,12 +1,11 @@
 package services.mongodb
 
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.Logger
-import services.SectionIndexInfoService
 import models.{SectionIndexInfo, UUID}
+import play.api.Logger
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{DI, SectionIndexInfoService}
 
 /**
  * USe Mongodb to store section index information
@@ -89,8 +88,7 @@ class MongoDBSectionIndexInfoService extends SectionIndexInfoService {
 }
 
 object SectionIndexInfoDAO extends ModelCompanion[SectionIndexInfo, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[SectionIndexInfo, ObjectId](collection = x.collection("sectionIndexInfo")) {}
-  }
+  val COLLECTION = "sectionIndexInfo"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[SectionIndexInfo, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

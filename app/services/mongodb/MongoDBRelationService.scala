@@ -1,15 +1,11 @@
 package services.mongodb
 
-import models.{ResourceType, UUID, Relation}
-import org.bson.types.ObjectId
-import services.RelationService
-
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import play.Logger
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.Imports._
+import models.{Relation, ResourceType, UUID}
+import org.bson.types.ObjectId
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{DI, RelationService}
 
 /**
  * Track relationships between resources
@@ -62,9 +58,8 @@ class MongoDBRelationService extends RelationService {
   }
 
   object RelationDAO extends ModelCompanion[Relation, ObjectId] {
-    val dao = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[Relation, ObjectId](collection = x.collection("relations")) {}
-    }
+    val COLLECTION = "relations"
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[Relation, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 }

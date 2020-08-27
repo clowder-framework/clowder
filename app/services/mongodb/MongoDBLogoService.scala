@@ -4,11 +4,10 @@ import java.io.InputStream
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import models.{Logo, UUID, User}
 import salat.dao.{ModelCompanion, SalatDAO}
-import models.{User, Logo, UUID}
-import play.api.Play.current
-import services.{ByteStorageService, LogoService}
 import services.mongodb.MongoContext.context
+import services.{ByteStorageService, DI, LogoService}
 import util.FileUtils
 
 class MongoDBLogoService extends LogoService {
@@ -99,11 +98,8 @@ class MongoDBLogoService extends LogoService {
 
   object LogoDAO extends ModelCompanion[Logo, ObjectId] {
     val COLLECTION = "logos"
-
-    val dao = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[Logo, ObjectId](collection = x.collection(COLLECTION)) {}
-    }
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[Logo, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 
 }

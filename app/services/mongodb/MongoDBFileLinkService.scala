@@ -1,18 +1,14 @@
 package services.mongodb
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import com.mongodb.casbah.Imports.ObjectId
-import salat.dao.{ModelCompanion, SalatDAO}
-import javax.inject.{Inject, Singleton}
-import models.{FileLink, MiniUser, UUID}
-import play.api.Play.current
-import services.{FileLinkService, FileService}
-import MongoContext.context
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
+import javax.inject.{Inject, Singleton}
 import models.UUIDConversions._
+import models.{FileLink, MiniUser, UUID}
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{DI, FileLinkService, FileService}
 
 @Singleton
 class MongoDBFileLinkService @Inject() (
@@ -49,8 +45,7 @@ class MongoDBFileLinkService @Inject() (
 }
 
 object FileLinkDAO extends ModelCompanion[FileLink, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[FileLink, ObjectId](collection = x.collection("downloads.links")) {}
-  }
+  val COLLECTION = "downloads.links"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[FileLink, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

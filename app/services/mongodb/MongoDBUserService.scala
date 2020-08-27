@@ -626,6 +626,9 @@ class MongoDBUserService @Inject() (
       case None => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) => new SalatDAO[User, ObjectId](collection = x.collection("social.users")) {}
     }
+    val COLLECTION = "uploads"
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[File, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 
   object UserApiKeyDAO extends ModelCompanion[UserApiKey, ObjectId] {
@@ -633,6 +636,9 @@ class MongoDBUserService @Inject() (
       case None => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) => new SalatDAO[UserApiKey, ObjectId](collection = x.collection("users.apikey")) {}
     }
+    val COLLECTION = "uploads"
+    val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+    val dao = new SalatDAO[File, ObjectId](collection = mongos.collection(COLLECTION)) {}
   }
 }
 
@@ -755,6 +761,9 @@ object RoleDAO extends ModelCompanion[Role, ObjectId] {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Role, ObjectId](collection = x.collection("roles")) {}
   }
+  val COLLECTION = "uploads"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[File, ObjectId](collection = mongos.collection(COLLECTION)) {}
 
   def findById(id: String): Option[Role] = {
     dao.findOne(MongoDBObject("_id" -> new ObjectId(id)))
@@ -775,20 +784,18 @@ object RoleDAO extends ModelCompanion[Role, ObjectId] {
  * services classes that utilize it.
  */
 object UserSpaceAndRoleData extends ModelCompanion[UserSpaceAndRole, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceandrole")) {}
-  }
+  val COLLECTION = "spaceandrole"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[UserSpaceAndRole, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 /**
   * Used to store Mini users in MongoDB.
   */
 object MiniUserDAO extends ModelCompanion[MiniUser, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[MiniUser, ObjectId](collection = x.collection("social.miniusers")) {}
-  }
+  val COLLECTION = "social.miniusers"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[MiniUser, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 

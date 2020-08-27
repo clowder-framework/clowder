@@ -5,13 +5,12 @@ import java.util.Date
 import com.mongodb.casbah.Imports.$set
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
-import services.mongodb.MongoContext.context
-import salat.dao.{ModelCompanion, SalatDAO}
-import org.bson.types.ObjectId
-import models.{StandardVocab, UUID}
 import javax.inject.{Inject, Singleton}
-import services.StandardVocabularyService
-import play.api.Play._
+import models.{StandardVocab, UUID}
+import org.bson.types.ObjectId
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{DI, StandardVocabularyService}
 
 
 @Singleton
@@ -47,8 +46,7 @@ class MongoDBStandardVocabularyService @Inject() extends StandardVocabularyServi
 }
 
 object StandardVocabulary extends ModelCompanion[StandardVocab, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[StandardVocab, ObjectId](collection = x.collection("metadata.vocabularies")) {}
-  }
+  val COLLECTION = "metadata.vocabularies"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[StandardVocab, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

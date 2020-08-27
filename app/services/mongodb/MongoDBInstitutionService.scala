@@ -1,13 +1,11 @@
 package services.mongodb
 
-import models.Institution
-import services.InstitutionService
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import play.Logger
-import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
+import models.Institution
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services.{DI, InstitutionService}
 
 /**
  * Use mongodb to store institutions.
@@ -30,8 +28,7 @@ class MongoDBInstitutionService extends InstitutionService {
 
 
 object Institution extends ModelCompanion[Institution, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Institution, ObjectId](collection = x.collection("institutions")) {}
-  }
+  val COLLECTION = "institutions"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Institution, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

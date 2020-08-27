@@ -4,16 +4,14 @@ import com.mongodb.casbah.Imports._
 import securesocial.core.Identity
 import services.mongodb.MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
-
-import salat.dao.{SalatMongoCursor, ModelCompanion, SalatDAO}
+import salat.dao.{ModelCompanion, SalatDAO, SalatMongoCursor}
 import org.bson.types.ObjectId
 import models._
-import javax.inject.{Singleton, Inject}
-
-
+import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
-import services.{VocabularyService, UserService}
+import services.{DI, UserService, VocabularyService}
 import play.api.Play._
+
 import scala.util.{Success, Try}
 
 
@@ -119,8 +117,7 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
 }
 
 object Vocabulary extends ModelCompanion[Vocabulary, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Vocabulary, ObjectId](collection = x.collection("vocabularies")) {}
-  }
+  val COLLECTION = "vocabularies"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Vocabulary, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

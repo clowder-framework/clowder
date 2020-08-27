@@ -13,7 +13,7 @@ import models.{MultimediaDistance, MultimediaFeatures, TempFile, UUID}
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsObject
-import services.{MultimediaQueryService, SectionService, SpaceService}
+import services.{DI, MultimediaQueryService, SectionService, SpaceService}
 import services.mongodb.MongoContext.context
 import util.FileUtils
 import javax.inject.Inject
@@ -242,15 +242,13 @@ def getFile(id: UUID): Option[TempFile] = {
 }
 
 object MultimediaFeaturesDAO extends ModelCompanion[MultimediaFeatures, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[MultimediaFeatures, ObjectId](collection = x.collection("multimedia.features")) {}
-  }
+  val COLLECTION = "multimedia.features"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[MultimediaFeatures, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 
 object MultimediaDistanceDAO extends ModelCompanion[MultimediaDistance, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[MultimediaDistance, ObjectId](collection = x.collection("multimedia.distances")) {}
-  }
+  val COLLECTION = "multimedia.distances"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[MultimediaDistance, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

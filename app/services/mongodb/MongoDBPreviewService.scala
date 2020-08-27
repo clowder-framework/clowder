@@ -1,31 +1,21 @@
 package services.mongodb
 
-import java.util.Date
+import java.io.{BufferedReader, InputStream, InputStreamReader}
 
-import org.bson.types.ObjectId
-import services.{ByteStorageService, TileService, FileService, PreviewService}
-import com.mongodb.casbah.commons.MongoDBObject
-import java.io.{InputStreamReader, BufferedReader, InputStream}
-import play.api.Logger
-import models._
-import org.apache.http.impl.client.DefaultHttpClient
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.mime.{HttpMultipartMode, MultipartEntity}
-import org.apache.http.entity.mime.content.StringBody
-import java.nio.charset.Charset
-import org.apache.http.util.EntityUtils
-import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.JsValue
-import javax.inject.{Inject, Singleton}
-import models.Preview
-import play.api.libs.json.JsObject
-import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.TypeImports.ObjectId
+import javax.inject.{Inject, Singleton}
+import models.{Preview, _}
+import play.api.Logger
+import play.api.libs.json.{JsObject, JsValue}
+import salat.dao.{ModelCompanion, SalatDAO}
+import services.mongodb.MongoContext.context
+import services._
 import util.FileUtils
-import collection.JavaConverters._
+
+import scala.collection.JavaConverters._
 
 /**
  * Use MongoDB to store previews
@@ -246,10 +236,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
   val COLLECTION = "previews"
-
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection(COLLECTION)) {}
-  }
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Preview, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
 

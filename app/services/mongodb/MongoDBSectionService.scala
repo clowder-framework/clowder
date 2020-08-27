@@ -1,10 +1,11 @@
 package services.mongodb
 
 import org.bson.types.ObjectId
-import services.{CommentService, DatasetService, FileService, FolderService, PreviewService, SectionService}
+import services.{CommentService, DI, DatasetService, FileService, FolderService, PreviewService, SectionService}
 import models._
 import javax.inject.{Inject, Singleton}
 import java.util.Date
+
 import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
@@ -203,8 +204,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
 }
 
 object SectionDAO extends ModelCompanion[Section, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Section, ObjectId](collection = x.collection("sections")) {}
-  }
+  val COLLECTION = "sections"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Section, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

@@ -153,8 +153,7 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
 }
 
 object FolderDAO extends ModelCompanion[Folder, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None =>throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Folder, ObjectId](collection = x.collection("folders")){}
-  }
+  val COLLECTION = "folders"
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[Folder, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }
