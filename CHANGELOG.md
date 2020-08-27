@@ -7,12 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Datasets downloaded with Clowder now include DataCite v4 XML files in the output /metadata folder for interoperability purposes.
 - Script to clean extractors' tmp files.
 - Script for RabbitMQ error queue cleanup.
+- Ability to use basic html formatting in the welcome message on the home page. [#51](https://github.com/clowder-framework/clowder/issues/51)
 
 ### Changed
 - Improved simple test to report all day success.
 - Expose a read-only list of extractors to all users.
+
+### Fixed
+- Escape colon characters on search values for search box and advanced search to allow those values in a search.
+- typesafe now only offers https access
+  [#49](https://github.com/clowder-framework/clowder/issues/49)
+- if uploading files by url > 2147483647 it would fail
+  [#54](https://github.com/clowder-framework/clowder/issues/54)
 
 ## 1.10.1 - 2020-07-16
 

@@ -739,7 +739,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
         } else
           builder.startObject().startObject("query_string").field("default_field", key)
-            .field("query", "\""+value+"\"").endObject().endObject()
+            .field("query", value).endObject().endObject()
       }
       case _ => {}
     }

@@ -657,7 +657,7 @@ object FileUtils {
     // actually save the file
     val conn = url.openConnection()
 
-    ByteStorageService.save(conn.getInputStream, "uploads", conn.getContentLength) match {
+    ByteStorageService.save(conn.getInputStream, "uploads", conn.getContentLengthLong) match {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
