@@ -49,7 +49,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
   val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
 
-  val mustOperators = List("==", "<=", ">=", "<", ">", ":")
+  // TODO: Removed gt lt gte lte operators until numeric_detection can be enabled on the dynamic mapper
+  val mustOperators = List("==", ":") // "<=", ">=", "<", ">", ":")
   val mustNotOperators = List("!=")
 
 
@@ -690,13 +691,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
+
     /** The dynamic template will restrict all dynamic metadata fields to be indexed
      * as strings for datatypes besides Objects. In the future, this could
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
+    // TODO: Enable "numeric_detection": true alongside date_detection
     """{"clowder_object": {
           |"date_detection": false,
-          |"numeric_detection": true,
           |"properties": {
             |"name": {"type": "string"},
             |"description": {"type": "string"},
@@ -845,7 +847,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Use regex to split string into a list, preserving quoted phrases as single value
     val matches = ListBuffer[String]()
-    val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
+    val m = Pattern.compile("([^\":= ]+|\".+?\")").matcher(query)
+    //val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
     while (m.find()) {
       var mat = m.group(1).replace("\"", "").replace("__", " ").trim
       if (mat.length>0) {
