@@ -64,9 +64,8 @@ securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
 #Search help text
 help.search.toggle=Search Syntax
 help.search.overview1=If the term or metadata field contains spaces, use double quotes to enclose the phrase.
-help.search.overview2=By default, word parts are searched ("bag" returns "side airbags"), so you don't need to include wildcards at the start and end.
+help.search.overview2=You can use * as a wildcard character.
 help.search.overview3=Case does not matter unless noted.
-help.search.overview4=Regular expressions are supported.
 help.search.overview5=(Elasticsearch regular expression syntax help)
 help.search.col1=field
 help.search.col2=example
