@@ -845,7 +845,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
     while (m.find()) {
       var mat = m.group(1).replace("\"", "").replace("__", " ").trim
-      if (mat.trim.length>0) {
+      if (mat.length>0) {
+        // Remove operators from terms e.g. <=value becomes value
         (mustOperators ::: mustNotOperators).foreach(op => {
           if (mat.startsWith(op)) {
             // Make sure x<=4 is "x lte 4" not "x lt =4"
@@ -878,11 +879,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       (mustOperators ::: mustNotOperators).foreach(op => {
         val reducedSpaces = StringUtils.normalizeSpace(query)
         if ((reducedSpaces.contains(mt+op) || reducedSpaces.contains("\""+mt+"\""+op) ||
-            reducedSpaces.contains(mt+" "+op) || reducedSpaces.contains("\""+mt+" \""+op)) && entryType=="unknown") {
+            reducedSpaces.contains(mt+" "+op) || reducedSpaces.contains("\""+mt+"\" "+op)) && entryType=="unknown") {
           entryType = "key"
           curropr = op
         } else if (reducedSpaces.contains(op+mt) || reducedSpaces.contains(op+"\""+mt+"\"") ||
-            reducedSpaces.contains(op+" "+mt) || reducedSpaces.contains(op+"\" "+mt+"\"")) {
+            reducedSpaces.contains(op+" "+mt) || reducedSpaces.contains(op+" \""+mt+"\"")) {
           entryType = "value"
           curropr = op
         }
