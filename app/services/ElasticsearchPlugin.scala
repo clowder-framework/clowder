@@ -737,9 +737,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           val cleaned = if (!value.startsWith("metadata.")) "metadata."+value else value
           builder.startObject().startObject("bool").startArray("must_not").startObject()
             .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
-        } else
+        } else {
+          val cleaned = value.replace(":", "\\:") // Colons have special meaning in query_string
           builder.startObject().startObject("query_string").field("default_field", key)
-            .field("query", value).endObject().endObject()
+            .field("query", cleaned).endObject().endObject()
+        }
       }
       case _ => {}
     }
