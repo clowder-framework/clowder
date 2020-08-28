@@ -696,6 +696,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      */
     """{"clowder_object": {
           |"date_detection": false,
+          |"numeric_detection": true,
           |"properties": {
             |"name": {"type": "string"},
             |"description": {"type": "string"},
