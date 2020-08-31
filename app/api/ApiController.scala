@@ -24,7 +24,7 @@ import scala.concurrent.Future
  * PermissionAction: call the wrapped code iff the user has the right permission on the reference object.
  *
  */
-trait ApiController extends BaseController {
+trait ApiController extends InjectedController {
 
   val userservice = DI.injector.getInstance(classOf[services.UserService])
 

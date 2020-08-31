@@ -2,16 +2,15 @@ package api
 
 import java.net.URL
 
-import com.ning.http.client.Realm.AuthScheme
 import javax.inject.Inject
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.iteratee._
 import play.api.libs.ws._
 import play.api.mvc.Result
+import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
-import scala.collection.JavaConversions._
+import scala.io.Source
+import akka.stream.scaladsl.StreamConverters
 
 /**
   * An API that allows you to configure Clowder as a reverse-proxy. Proxy rules can be composed by defining a
@@ -27,17 +26,13 @@ import scala.collection.JavaConversions._
   *
   * With the above configured, navigating to /api/proxy/google will proxy your requests to https://www.google.com
   * and transparently send you the response to your proxied request.
-  *
-  *
-  * @author Mike Lambert
-  *
   */
 object Proxy {
   /** The prefix to search Clowder's configuration for proxy endpoint */
   val ConfigPrefix: String = "clowder.proxy."
 }
 
-class Proxy @Inject() (WS: WSClient) extends ApiController {
+class Proxy @Inject() (WS: WSClient, configuration: Configuration) extends ApiController {
   import Proxy.ConfigPrefix
 
   /**
@@ -46,11 +41,10 @@ class Proxy @Inject() (WS: WSClient) extends ApiController {
   def getProxyTarget(endpoint_key: String, pathSuffix: String): String = {
     // Prefix our configuration values
     val endpointCfgKey = ConfigPrefix + endpoint_key
-    val playConfig = play.Play.application().configuration()
 
     // If this endpoint has been configured, return it
-    if (playConfig.keys.contains(endpointCfgKey)) {
-      val urlBase = playConfig.getString(endpointCfgKey)
+    if (configuration.keys.contains(endpointCfgKey)) {
+      val urlBase = configuration.get[String](endpointCfgKey)
       if (null != pathSuffix) {
         return urlBase + "/" + pathSuffix
       }
@@ -72,21 +66,19 @@ class Proxy @Inject() (WS: WSClient) extends ApiController {
     val userInfo = targetUrl.getUserInfo()
     val sanitizedUrl = proxyTarget.replaceAll(userInfo + "@", "")
 
-    var or = originalRequest.queryString
-    or
-
     // If we find a username/password, scrape them out of the target URL
     val username = if (null != userInfo) { userInfo.split(":").apply(0) } else { "" }
     val password = if (null != userInfo) { userInfo.split(":").apply(1) } else { "" }
 
-    val params = mapAsJavaMap(originalRequest.queryString.mapValues(f => seqAsJavaList(f)))
-    val initialReq = WS.url(sanitizedUrl).setQueryString(params).setFollowRedirects(true)
+    val params: Map[String, Seq[String]]  = originalRequest.request.queryString
+    val paramsAsTuples = for ((parameter, values) <- params.toSeq; v <- values) yield parameter -> v
+    val initialReq: WSRequest = WS.url(sanitizedUrl).addQueryStringParameters(paramsAsTuples:_*).withFollowRedirects(true)
 
     // If original request had Content-Type/Length headers, copy them to the proxied request
     val contentType = originalRequest.headers.get("Content-Type").orNull
     val contentLength = originalRequest.headers.get("Content-Length").orNull
     val reqWithContentHeaders = if (contentType != null && contentLength != null) {
-      initialReq.withHeaders(CONTENT_TYPE -> contentType, CONTENT_LENGTH -> contentLength)
+      initialReq.addHttpHeaders(CONTENT_TYPE -> contentType, CONTENT_LENGTH -> contentLength)
     } else {
       initialReq
     }
@@ -94,7 +86,7 @@ class Proxy @Inject() (WS: WSClient) extends ApiController {
     // If original request had a Cookie header, copy it to the proxied request
     val cookies = originalRequest.headers.get("Cookie").orNull
     val reqWithHeaders = if (cookies != null) {
-      reqWithContentHeaders.withHeaders(COOKIE -> cookies)
+      reqWithContentHeaders.addHttpHeaders(COOKIE -> cookies)
     } else {
       reqWithContentHeaders
     }
@@ -102,7 +94,7 @@ class Proxy @Inject() (WS: WSClient) extends ApiController {
     // If the configured URL contained service account credentials(UserInfo), copy it to the proxied request
     if (!username.isEmpty && !password.isEmpty) {
       Logger.debug(s"PROXY :: Using service account credentials - $username")
-      return reqWithHeaders.withAuth(username, password, AuthScheme.BASIC)
+      return reqWithHeaders.withAuth(username, password, WSAuthScheme.BASIC)
     } else {
       Logger.debug("PROXY :: No credentials specified")
       return reqWithHeaders
@@ -113,7 +105,7 @@ class Proxy @Inject() (WS: WSClient) extends ApiController {
     * Copies the header values from our intermediary (proxied) response to the
     * Result that we will return to the caller of the proxy API
     */
-  def buildProxiedResponse(lastResponse: Response, proxiedResponse: Result): Result = {
+  def buildProxiedResponse(lastResponse: WSResponse, proxiedResponse: Result): Result = {
     // TODO: other response headers my be needed for specific cases
     val chunkedResponse = proxiedResponse.withHeaders (
       //CONNECTION -> lastResponse.header("Connection").orNull,
@@ -126,30 +118,28 @@ class Proxy @Inject() (WS: WSClient) extends ApiController {
     // Default Content-Disposition to a sensible value if it is not present
     // TODO: test cases seemed to pass consistently, but is "inline" the best default here?
     // TODO: Do ANY of these headers have sensible/noop defaults? Would this even be this a good idea?
-    val contentDisposition = lastResponse.header ("Content-Disposition").orNull
+    val contentDisposition = lastResponse.header("Content-Disposition").orNull
     contentDisposition match {
-      case null | "" => return chunkedResponse
-      case _ => return chunkedResponse.withHeaders(CONTENT_DISPOSITION -> contentDisposition)
+      case null | "" => chunkedResponse
+      case _ => chunkedResponse.withHeaders(CONTENT_DISPOSITION -> contentDisposition)
     }
   }
 
   /**
     * Given a response, chunk its body and return/forward it as a Result
     */
-  def chunkAndForwardResponse(originalResponse: Response): Result = {
-    val statusCode = originalResponse.getAHCResponse.getStatusCode
+  def chunkAndForwardResponse(originalResponse: WSResponse): Result = {
+    val statusCode = originalResponse.status
     if (statusCode >= 400) {
-      Logger.error("PROXY :: " + statusCode + " - " + originalResponse.getAHCResponse.getStatusText)
+      Logger.error("PROXY :: " + statusCode + " - " + originalResponse.statusText)
     }
 
     // Chunk the response
-    val bodyStream = originalResponse.ahcResponse.getResponseBodyAsStream
-    val bodyEnumerator = Enumerator.fromStream(bodyStream)
-    val payload = Status(statusCode).chunked(bodyEnumerator)
+    val payload = Status(statusCode).chunked(originalResponse.bodyAsSource)
 
     // Return a Result, coerced into our desired Content-Type
     val contentType = originalResponse.header("Content-Type").getOrElse("text/plain")
-    return buildProxiedResponse(originalResponse, payload).as(contentType)
+    buildProxiedResponse(originalResponse, payload).as(contentType)
   }
 
   /**
