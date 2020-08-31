@@ -26,7 +26,6 @@
                             <tr>
                                 <th>Enabled</th>
                                 <th>Name</th>
-                                <th>Description</th>
                                 <th>Process Triggers</th>
                             </tr>
                         </thead>
@@ -38,7 +37,6 @@
                                         @if(!Permission.checkServerAdmin(user)) {disabled="true"}
                                         @if(selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
                                     <td><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
-                                    <td>@extractor.description</td>
                                     <td>
                                             <!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
                                         <p @if(extractor.process.dataset.isEmpty) {hidden}>
