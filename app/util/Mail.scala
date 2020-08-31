@@ -1,22 +1,25 @@
 package util
 
+import akka.actor.ActorSystem
 import models.User
-import play.api.libs.concurrent.Akka
-import play.api.templates.Html
-import play.api.Logger
-import com.typesafe.plugin._
-import play.api.libs.concurrent.Execution.Implicits._
-import services.{DI, UserService}
+import play.api.Play.current
+import play.api.libs.mailer.Email
+import play.api.{Logger, Play}
+import play.twirl.api.Html
+import services.{DI, MailerService, UserService}
 
 import scala.collection.immutable.Iterable
 import scala.collection.mutable
 import scala.concurrent.duration._
-import play.api.Play.current
 
 /**
   * Helper functions for sending emails.
   */
 object Mail {
+
+  val actorSystem = Play.current.injector.instanceOf[ActorSystem]
+  val mailerClient = DI.injector.getInstance(classOf[MailerService])
+
   /**
    * Send email to a single recipient
    */
@@ -70,14 +73,10 @@ object Mail {
       Logger.debug("Sending email to %s".format(realto.toList:_*))
       Logger.debug("Mail = [%s]".format(text))
     }
-    Akka.system.scheduler.scheduleOnce(1.seconds) {
-      val mail = use[MailerPlugin].email
-      mail.setSubject(subject)
-      mail.setRecipient(realto.toList:_*)
-      mail.setFrom(realfrom)
-
-      // the mailer plugin handles null / empty string gracefully
-      mail.send("", text)
+    import play.api.libs.concurrent.Execution.Implicits.defaultContext
+    actorSystem.scheduler.scheduleOnce(1.seconds) {
+      val mail = Email(subject, realfrom, realto.toList, Some(text))
+      mailerClient.send(mail)
     }
   }
 

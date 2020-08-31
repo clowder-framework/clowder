@@ -1,15 +1,16 @@
 package api
 
+import java.util.{Date, TimeZone}
+
 import api.Permission._
-import play.api.libs.iteratee.Enumerator
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import models.{Collection, Dataset, File, UserStatus}
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
-import play.api.Logger
-import javax.inject.Inject
-import java.util.{TimeZone, Date}
 import services._
-import models.{File, Dataset, Collection, ProjectSpace, User, UserStatus}
+
+import scala.concurrent.Future
 
 
 /**

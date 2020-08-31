@@ -2,33 +2,29 @@ package api
 
 import javax.inject.Inject
 import models._
-import play.api.Logger
 import org.apache.commons.lang.StringEscapeUtils
-import play.api.mvc.Controller
-import play.api.Play.current
+import play.api.Logger
+import play.api.Configuration
 import play.api.libs.json.Json.toJson
-import play.api.libs.json.{JsString, JsUndefined, JsValue}
-import play.api.mvc.Controller
+import play.api.libs.json.{JsDefined, JsValue}
+import play.api.mvc.BaseController
 import play.twirl.api.Html
-
 import services._
-import services.mongodb.MongoSalatPlugin
+import services.mongodb.MongoStartup
 import util.Mail
-
-import play.api.libs.json.{JsString, JsDefined, JsUndefined, JsValue}
 
 /**
  * Admin endpoints for JSON API.
  */
-class Admin @Inject() (userService: UserService,
-    events: EventService,
-    searches: SearchService) extends Controller with ApiController {
+class Admin @Inject() (mongoStartup: MongoStartup)(userService: UserService,
+                                                events: EventService,
+                                                searches: SearchService, configuration: Configuration) extends BaseController with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
    */
   def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
-    current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
+    mongoStartup.dropAllData(resetAll)
     searches.deleteAll(_)
 
     Ok(toJson("done"))
@@ -98,7 +94,7 @@ class Admin @Inject() (userService: UserService,
     val body = StringEscapeUtils.escapeHtml((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
-    val htmlbody = if (!current.configuration.getBoolean("smtp.mimicuser").getOrElse(true)) {
+    val htmlbody = if (!configuration.get[Boolean]("smtp.mimicuser") {
       val sender = request.user match {
         case Some(u) => u.email.getOrElse("")
         case None => ""
