@@ -1,7 +1,10 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String])(implicit user: Option[models.User])
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String],
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
+
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
 
 @main("Extractors") {
     @if(runningExtractors.size == 0) {
@@ -10,14 +13,117 @@
         </div>
     } else {
         <div class="page-header">
-            <h1>Extractors</h1>
+            <h1>Extractor Catalog</h1>
         </div>
-        <div class="row">
-            <div class="col-xs-12">
-                <p>List of all extractors currently registered with the system. If enabled, the extractor will automatically
-                    execute on a resource when the process trigger is matched.</p>
+        @if(showOptional("additionalInfo")) {
+            <div class="row">
+                <div class="col-xs-12">
+                    <p>List of all extractors currently registered with the system. If enabled, the extractor will automatically
+                        execute on a resource when the process trigger is matched.</p>
+                </div>
             </div>
-        </div>
+        }
+
+        <form class="form-horizontal">
+            <!-- TODO: Label search filters -->
+            @if(showOptional("labelSection")) {
+                <fieldset class="labels-border">
+                    <legend class="labels-border">Labels</legend>
+                    <div class="control-group">
+                        <!-- TODO: Show checkbox for each label, enabled by default -->
+                        <!-- TODO: Group labels together by Category (e.g. Type, Group, Other, etc) -->
+                        <div class="btn-group" data-toggle="buttons">
+
+                            <!-- Disguised checkboxes as buttons -->
+                            <label class="btn btn-primary active">
+                                <input type="checkbox" autocomplete="off" checked> Image
+                            </label>
+                            <label class="btn btn-primary active">
+                                <input type="checkbox" autocomplete="off" checked> Video
+                            </label>
+                            <label class="btn btn-primary active">
+                                <input type="checkbox" autocomplete="off" checked> Audio
+                            </label>
+                        </div>
+                    </div>
+                </fieldset>
+            }
+
+            <!-- TODO: Other search filters -->
+            @if(showOptional("filterSection")) {
+                <fieldset class="filters-border">
+                    <legend class="filters-border">Filters</legend>
+                    <div class="control-group">
+                        <div class="row">
+                            <div class="col-sm-5">
+
+                                <!-- TODO: Generic search filter -->
+                                <div class="form-group">
+                                    <div class="col-sm-12">
+                                        <input type="text" class="form-control" id="genericSearchFilter" placeholder="Search for extractors...">
+                                    </div>
+                                </div>
+
+                                <!-- TODO: Process trigger search filter -->
+                                <div class="form-group">
+                                    <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
+                                    <div class="col-sm-9">
+                                        <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter">
+                                            <option>file/*</option>
+                                            <option>dataset/*</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-5">
+
+                                <!-- TODO: ProjectSpace search filter -->
+                                <div class="form-group">
+                                    <label for="spaceSearchFilter" class="col-sm-4 control-label">Within Space:</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control" name="spaceSearchFilter" id="spaceSearchFilter">
+                                            <option>Space A</option>
+                                            <option>Space B</option>
+                                            <option>Space C</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- TODO: Metadata search filter -->
+                                <div class="form-group">
+                                    <label for="metadataSearchFilter" class="col-sm-4 control-label">Produces Metadata:</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
+                                            <option>Key 1</option>
+                                            <option>Key 2</option>
+                                            <option>Key 3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TODO: Match ALL/ANY filter radio buttons -->
+                            <div class="col-sm-2">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="matching" id="matchAny" autocomplete="off" checked> Match ANY filter
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="matching" id="matchAll" autocomplete="off"> Match ALL filters
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </fieldset>
+            }
+        </form>
+
         <div class="row top-padding">
             <div class="col-xs-12">
                 @form(action = routes.Extractors.updateExtractors(), 'id -> "formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
@@ -26,51 +132,173 @@
                             <tr>
                                 <th>Enabled</th>
                                 <th>Name</th>
-                                <th>Process Triggers</th>
+                                <th>Authors</th>
+                                <th>Version</th>
+                                <th>Maturity</th>
+                                <th>My Jobs</th>
+                                <th>All Jobs</th>
+                                <th>Rating</th>
+                                @if(showOptional("processTriggers")) { <th>Process Triggers</th> }
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                                 <!-- Display all running extractors. If extractor already in this space, check the box. -->
                             @runningExtractors.map { extractor =>
                                 <tr>
-                                    <td><input type="checkbox" name="extractors" value="@extractor.name"
+                                    <td class="v-center"><input type="checkbox" name="extractors" value="@extractor.name"
                                         @if(!Permission.checkServerAdmin(user)) {disabled="true"}
                                         @if(selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
-                                    <td><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
-                                    <td>
-                                            <!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
-                                        <p @if(extractor.process.dataset.isEmpty) {hidden}>
-                                        Datasets:
-                                        <span @if(extractor.process.dataset.length > 1) {hidden}>@extractor.process.dataset</span>
-                                        <ul @if(extractor.process.dataset.length == 1) {hidden}>
-                                        @extractor.process.dataset.map { eventName =>
-                                            <li>@eventName</li>
-                                        }
+
+                                    <!-- Extractor Name -->
+                                    <td class="v-center"><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
+
+                                    <!-- Extractor Author and Contributors -->
+                                    <td class="v-center">
+                                        <ul>
+                                            @for(contributor <- (extractor.author +: extractor.contributors)) {
+                                                <li>@contributor</li>
+                                            }
                                         </ul>
-                                        </p>
-                                        <p @if(extractor.process.file.isEmpty) {hidden}>
-                                        Files:
-                                        <span @if(extractor.process.file.length > 1) {hidden}>@extractor.process.file</span>
-                                        <ul @if(extractor.process.file.length == 1) {hidden}>
-                                        @extractor.process.file.map { fileType =>
-                                            <li>@fileType</li>
-                                        }
-                                        </ul>
-                                        </p>
-                                        <p @if(extractor.process.metadata.isEmpty) {hidden}>
-                                        Metadata:
-                                        <span @if(extractor.process.metadata.length > 1) {hidden}>@extractor.process.metadata</span>
-                                        <ul @if(extractor.process.metadata.length == 1) {hidden}>
-                                        @extractor.process.metadata.map { eventName =>
-                                            <li>@eventName</li>
-                                        }
-                                        </ul>
-                                        </p>
-                                        <p @if(!extractor.process.metadata.isEmpty
-                                            || !extractor.process.file.isEmpty
-                                            || !extractor.process.dataset.isEmpty) {hidden}>
-                                        None
-                                        </p>
+                                    </td>
+
+                                    <!-- TODO: Extractor versions / previous version timeline -->
+                                    <td class="v-center">
+                                        @extractor.version
+                                    </td>
+
+                                    <!-- TODO: Extractor maturity (e.g. Development, Staging, Production) -->
+                                    <td class="v-center">
+                                        TBD
+                                    </td>
+
+                                    <!-- TODO: Extractor Job Counts: My Job Submissions -->
+                                    <td class="v-center">
+                                        TBD
+                                    </td>
+
+                                    <!-- TODO: Extractor Job Counts: All Job Submissions -->
+                                    <td class="v-center">
+                                        TBD
+                                    </td>
+
+                                    <!-- TODO: Extractor Ratings -->
+                                    <!-- Format: "Average of all ratings" / 5 ("Total number of ratings") -->
+                                    <td class="v-center">
+                                        <!-- TODO: Link to Extractors Ratings view -->
+                                        <a class="btn btn-link" href="#">
+                                            TBD / 5 (TBD)
+                                        </a>
+                                    </td>
+
+                                    <!-- Extractor Process Triggers (hidden by default) -->
+                                    @if(showOptional("processTriggers")) {
+                                        <td class="v-center">
+                                                <!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
+                                            <p @if(extractor.process.dataset.isEmpty) {hidden}>
+                                            Datasets:
+                                            <span @if(extractor.process.dataset.length > 1) {hidden}>@extractor.process.dataset</span>
+                                            <ul @if(extractor.process.dataset.length == 1) {hidden}>
+                                            @extractor.process.dataset.map { eventName =>
+                                                <li>@eventName</li>
+                                            }
+                                            </ul>
+                                            </p>
+                                            <p @if(extractor.process.file.isEmpty) {hidden}>
+                                            Files:
+                                            <span @if(extractor.process.file.length > 1) {hidden}>@extractor.process.file</span>
+                                            <ul @if(extractor.process.file.length == 1) {hidden}>
+                                            @extractor.process.file.map { fileType =>
+                                                <li>@fileType</li>
+                                            }
+                                            </ul>
+                                            </p>
+                                            <p @if(extractor.process.metadata.isEmpty) {hidden}>
+                                            Metadata:
+                                            <span @if(extractor.process.metadata.length > 1) {hidden}>@extractor.process.metadata</span>
+                                            <ul @if(extractor.process.metadata.length == 1) {hidden}>
+                                            @extractor.process.metadata.map { eventName =>
+                                                <li>@eventName</li>
+                                            }
+                                            </ul>
+                                            </p>
+                                            <p @if(!extractor.process.metadata.isEmpty
+                                                || !extractor.process.file.isEmpty
+                                                || !extractor.process.dataset.isEmpty) {hidden}>
+                                            None
+                                            </p>
+                                        </td>
+                                    }
+
+                                    <!-- Extractor More Actions Dropdown -->
+                                    <td class="v-center">
+                                        <div class="dropdown">
+                                            <button class="btn btn-link btn-xs dropdown-toggle" style="color:black" id="more-@extractor.name" type="button" data-toggle="dropdown">
+                                                <span class="glyphicon glyphicon-option-vertical"></span>
+                                            </button>
+                                            <ul class="dropdown-menu pull-right" role="menu" aria-labelledby="more-@extractor.name">
+                                                <!-- View Extractor Details -->
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="@routes.Extractors.showExtractorInfo(extractor.name)">
+                                                        View Details
+                                                    </a>
+                                                </li>
+
+                                                <!-- TODO: View Extractor Job History -->
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="#">
+                                                        View History
+                                                    </a>
+                                                </li>
+
+                                                <!-- TODO: View Extractor Logs -->
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="#">
+                                                        View Logs
+                                                    </a>
+                                                </li>
+
+                                                <!-- TODO: View Extractor Metrics -->
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="#">
+                                                        View Metrics
+                                                    </a>
+                                                </li>
+
+                                                <!-- TODO: Rate & Comment on Extractor -->
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="#">
+                                                        Rate & Comment
+                                                    </a>
+                                                </li>
+
+                                                <!-- TODO: Admin-only: Extractor maturity (e.g. Development, Staging, Production) -->
+                                                @if(Permission.checkServerAdmin(user)) {
+                                                    <li role="presentation" class="divider"></li>
+
+                                                    <!-- TODO: Change Maturity to "Development" -->
+                                                    <li role="presentation">
+                                                        <a role="menuitem" tabindex="-1" href="#">
+                                                            Move to Development
+                                                        </a>
+                                                    </li>
+
+                                                    <!-- TODO: Change Maturity to "Staging" -->
+                                                    <li role="presentation">
+                                                        <a role="menuitem" tabindex="-1" href="#">
+                                                            Move to Staging
+                                                        </a>
+                                                    </li>
+
+                                                    <!-- TODO: Change Maturity to "Production" -->
+                                                    <li role="presentation">
+                                                        <a role="menuitem" tabindex="-1" href="#">
+                                                            Move to Production
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                             }
