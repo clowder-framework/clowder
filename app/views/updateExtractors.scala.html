@@ -29,6 +29,14 @@
             @if(showOptional("labelSection")) {
                 <fieldset class="labels-border">
                     <legend class="labels-border">Labels</legend>
+
+                    <!-- TODO: Link to Extractor Labels view iff user is server admin -->
+                    @if(Permission.checkServerAdmin(user)) {
+                        <a href="#" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
+                            <span class="glyphicon glyphicon-wrench"></span> Manage
+                        </a>
+                    }
+
                     <div class="control-group">
                         <!-- TODO: Show checkbox for each label, enabled by default -->
                         <!-- TODO: Group labels together by Category (e.g. Type, Group, Other, etc) -->
@@ -304,7 +312,7 @@
                             }
                         </tbody>
                     </table>
-                    @if(Permission.checkServerAdmin(user)){
+                    @if(Permission.checkServerAdmin(user)) {
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary" name = "submitValue" value="Update"><span class='glyphicon glyphicon-send'></span> Update</button>
                             <a class="btn btn-default" id="cancel_space"><span class="glyphicon glyphicon-remove" ></span> Cancel</a>
