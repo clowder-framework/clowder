@@ -53,8 +53,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
       "org.apache.httpcomponents" % "httpmime" % "4.2.3",
 
       // Mailing
-      "com.typesafe.play" %% "play-mailer" % "8.0.1",
-      "com.typesafe.play" %% "play-mailer-guice" % "8.0.1",
+      "com.typesafe.play" %% "play-mailer" % "6.0.1",
+      "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
 
       // JSONparser and JSONObject
       "com.googlecode.json-simple" % "json-simple" % "1.1.1",

@@ -5,6 +5,7 @@ import models.User
 import play.api.Play.current
 import play.api.libs.mailer.Email
 import play.api.{Logger, Play}
+import play.api.libs.mailer.MailerClient
 import play.twirl.api.Html
 import services.{DI, MailerService, UserService}
 
@@ -18,7 +19,8 @@ import scala.concurrent.duration._
 object Mail {
 
   val actorSystem = Play.current.injector.instanceOf[ActorSystem]
-  val mailerClient = DI.injector.getInstance(classOf[MailerService])
+  val mailerClient = DI.injector.getInstance(classOf[MailerClient])
+
 
   /**
    * Send email to a single recipient
@@ -100,8 +102,8 @@ object Mail {
     user match {
       case Some(u) => {
         u.email match {
-          case Some(e) => s""""${u.fullName.replace("\"", "")}" <${e}>"""
-          case None => s""""${u.fullName.replace("\"", "")}" <${from}>"""
+          case Some(e) => s""""${u.fullName.getOrElse(User.anonymous.fullName.get).replace("\"", "")}" <${e}>"""
+          case None => s""""${u.fullName.getOrElse(User.anonymous.fullName.get).replace("\"", "")}" <${from}>"""
         }
       }
       case None => s""""${name.replace("\"", "")}" <${from}>"""

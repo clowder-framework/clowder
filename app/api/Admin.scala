@@ -94,7 +94,7 @@ class Admin @Inject() (mongoStartup: MongoStartup)(userService: UserService,
     val body = StringEscapeUtils.escapeHtml((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
-    val htmlbody = if (!configuration.get[Boolean]("smtp.mimicuser") {
+    val htmlbody = if (!configuration.get[Boolean]("smtp.mimicuser")) {
       val sender = request.user match {
         case Some(u) => u.email.getOrElse("")
         case None => ""
