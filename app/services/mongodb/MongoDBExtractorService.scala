@@ -110,7 +110,7 @@ class MongoDBExtractorService extends ExtractorService {
     exDetails.drop()
     exServers.drop()
     exInputTypes.drop()
-    Logger.debug("Collections Dropped: extractors.names,extractors.details,extractor.servers,exractor.inputtypes")
+    Logger.debug("Collections Dropped: extractors.names,extractors.details,extractor.servers,extractor.inputtypes")
   }
 
   //------------------------Temporary fix--------------------------------

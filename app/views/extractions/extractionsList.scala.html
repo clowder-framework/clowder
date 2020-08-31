@@ -1,46 +1,74 @@
 @(extractions: Map[String, ExtractionGroup], extractType: String)
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
 <div class="well">
     @if(extractions.size == 0) {
         <p>No extraction events recorded.</p>
     } else {
         <table class="table">
             <thead>
+                <th></th>
                 <th width="20%">Extractor</th>
                 <th width="20%">Started</th>
                 <th width="20%">Latest Update</th>
                 <th width="40%">Latest Status</th>
             </thead>
             <tbody>
-            @for(e <- extractions.keysIterator) {
-                <tr>
+            @for((extractorName, group) <- extractions.toSeq.sortWith(_._2.latestMsgTime > _._2.latestMsgTime)) {
+                <tr class="extractor-accordion-toggle clickable collapsed" data-toggle="collapse" data-target="#extractions-@extractorName.replace('.','-')">
                     <td>
-                        <a class="btn btn-link" data-toggle="collapse" data-target="#extractions-@e.replace('.','-')">
-                            @e
+                        <a class="btn btn-link">
+                            @extractorName
                         </a>
                     </td>
-                    <td>@extractions(e).firstMsgTime</td>
-                    <td>@extractions(e).latestMsgTime</td>
-                    <td>@extractions(e).latestMsg.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
+                    <td>@group.firstMsgTime</td>
+                    <td>@group.latestMsgTime</td>
+                    <td>@group.latestMsg.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
 
                 </tr>
-                <tr class="collapse" id="extractions-@e.replace('.','-')">
-                    <td colspan="4">
-                        <table class="table">
+                <tr class="collapse" id="extractions-@extractorName.replace('.','-')">
+                    <td colspan="5" class="extractor-log">
+                        <table class="table table-condensed table-striped">
+                            <thead>
+                                <th></th>
+                                <th>Submission</th>
+                                <th>Status</th>
+                            </thead>
                             <tbody>
-                                @for(e2 <- extractions(e).allMsgs) {
-                                    <tr>
-                                        <td width="19%"></td>
-                                        <td width="81%"><b>@e2.start</b><br/>
-                                            @e2.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
-                                            @if(e2.status == "SUBMITTED") {
-                                                <a class="btn btn-link" id='@(e2.id)' onclick="cancelSubmission('@(e2.file_id)', '@(e2.id)', '@(e2.extractor_id)', '@(extractType)')">
-                                                    Cancel
-                                                </a>
-                                            }
-                                        </td>
-                                    </tr>
+                            @for((job_id, eventList) <- group.allMsgs.toSeq.sortWith(_._1.stringify > _._1.stringify)) {
+                                <tr class="job-list-accordion-toggle clickable collapsed" data-toggle="collapse" @if(job_id.stringify != "") { data-target="#extraction-job-@job_id" } else { data-target="#extraction-job-other" }>
+                                    <td width="35%" @if(job_id.stringify != "") {  title="@job_id" } else { title="These events did not include a job ID. Please update this extractor to send back the value for jobid."}>
+                                        <a class="btn btn-link">@if(job_id.stringify != "") { @eventList.head.start } else { No Job ID }</a>
+                                    </td>
+                                    <td width="60%" class="accordion-status" style="vertical-align: middle;">@eventList.head.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
+                                </tr>
+                                <tr class="collapse" @if(job_id.stringify != "") { id="extraction-job-@job_id" } else { id="extraction-job-other" }>
 
-                                }
+                                    <td colspan="3" class="extractor-log">
+                                        <table class="table table-condensed">
+                                            <thead>
+                                                <th>Timestamp</th>
+                                                <th>Status Message</th>
+                                            </thead>
+                                            <tbody>
+                                            @for(evt <- group.allMsgs(job_id).reverse) {
+                                                <tr>
+                                                    <td width="40%"><b>@evt.start</b></td>
+                                                    <td width="60%">
+                                                        @evt.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
+                                                        @if(evt.status == "SUBMITTED") {
+                                                            <a class="btn btn-link btn-xs" id='@(evt.id)' onclick="cancelSubmission('@(evt.file_id)', '@(evt.id)', '@(evt.extractor_id)', '@(extractType)')">(Cancel submission)</a>
+                                                        }
+                                                    </td>
+                                                </tr>
+
+                                            }
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+
+
+                            }
                             </tbody>
                         </table>
                     </td>

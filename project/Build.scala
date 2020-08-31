@@ -72,6 +72,9 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     filters,
+
+    "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20180219.1",
+
     // login
     "ws.securesocial" %% "securesocial" % "2.1.4" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "com.unboundid" % "unboundid-ldapsdk" % "4.0.1",
@@ -154,6 +157,7 @@ object ApplicationBuild extends Build {
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
+    resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
 
     // add custom folder to the classpath, use this to add/modify clowder:
     // custom/public/stylesheets/themes     - for custom themes

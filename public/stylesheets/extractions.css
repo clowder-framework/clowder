@@ -1,0 +1,33 @@
+.clickable {
+    cursor: pointer;
+}
+
+.job-list-accordion-toggle:before, .extractor-accordion-toggle:before {
+    /* symbol for "opening" panels */
+    font-family: 'Glyphicons Halflings';  /* essential for enabling glyphicon */
+    content: "\e114";    /* adjust as needed, taken from bootstrap.css */
+    float: right;        /* adjust as needed */
+    color: grey;         /* adjust as needed */
+}
+
+.job-list-accordion-toggle.collapsed:before, .extractor-accordion-toggle.collapsed:before {
+    /* symbol for "collapsed" panels */
+    content: "\e080";    /* adjust as needed, taken from bootstrap.css */
+}
+
+.job-list-accordion-toggle:before {
+    padding: 14px 12px;
+}
+
+.extractor-accordion-toggle:before {
+    padding: 16px 12px;
+}
+
+.job-list-accordion-status {
+    padding: 12px 8px !important;
+}
+
+.extractor-log {
+    padding: 10px 0px 10px 50px !important;
+    border-top: none !important;
+}
