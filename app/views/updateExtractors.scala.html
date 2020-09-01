@@ -4,9 +4,9 @@
 @import helper._
 @import api.Permission
 
-<link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
-
 @main("Extractors") {
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
+
     @if(runningExtractors.size == 0) {
         <div class="page-header">
             <h1>No extractors running</h1>
@@ -151,7 +151,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                                <!-- Display all running extractors. If extractor already in this space, check the box. -->
+                            <!-- Display all running extractors. If extractor already in this space, check the box. -->
                             @runningExtractors.map { extractor =>
                                 <tr>
                                     <td class="v-center"><input type="checkbox" name="extractors" value="@extractor.name"
