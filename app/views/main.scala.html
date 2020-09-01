@@ -110,7 +110,7 @@
                             }
                             <li><a href="@routes.Datasets.list(showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-briefcase"> </span> @Messages("datasets.title")</a></li>
                             <li><a href="@routes.Collections.list(showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-th-large"> </span> @Messages("collections.title")</a></li>
-                            <li><a href="@routes.Extractors.selectExtractors()"><span class="glyphicon glyphicon-transfer"> </span> @Messages("extractors.title")</a></li>
+                            <li><a href="@routes.Extractors.selectExtractors()"><span class="glyphicon glyphicon-fullscreen"> </span> @Messages("extractors.title")</a></li>
                             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined){
                                 <li><a href="@routes.CurationObjects.getPublishedData("")"><span class="glyphicon glyphicon-book"></span> Published Data</a></li>
                             }

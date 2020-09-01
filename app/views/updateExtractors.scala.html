@@ -7,6 +7,10 @@
 @main("Extractors") {
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
 
+    <ol class="breadcrumb">
+        <li><span class="glyphicon glyphicon-fullscreen"></span> Extractor Catalog</li>
+    </ol>
+
     @if(runningExtractors.size == 0) {
         <div class="page-header">
             <h1>No extractors running</h1>
