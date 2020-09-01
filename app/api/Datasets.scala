@@ -2199,6 +2199,11 @@ class  Datasets @Inject()(
                 case ("bag", "datacite.xml") => {
                   // RDA-recommended DataCite xml file
                   is = addDataCiteMetadataToZip(zip, dataset, baseURL)
+                  file_type = "clowder.xml"
+                }
+                case ("bag", "clowder.xml") => {
+                  // Clowder bespoke xml file (other instances can use to replicate the dataset)
+                  is = addClowderXMLMetadataToZip(zip, dataset, baseURL)
                   file_type = "tagmanifest-md5.txt"
                 }
                 case ("bag", "tagmanifest-md5.txt") => {
@@ -2476,6 +2481,44 @@ class  Datasets @Inject()(
 
     s += "</resource>"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def addClowderXMLMetadataToZip(zip: ZipOutputStream, dataset: Dataset, baseURL: String): Option[InputStream] = {
+    """
+      | Generate Clowder XML format that can be used to recreate the dataset & files as accurately as possible.
+      |
+      | WILL BE RECREATED:
+      | dataset name, description, metadata & tags
+      | folders, files, file metadata & tags
+      |
+      | The files/folders/metadata are exported as files and do not need to be replicated here.
+      |
+      | WILL NOT BE RECREATED:
+      | original author, creation date (included as metadata)
+      | parent collection & space relationships
+      | extraction event history (source URL included as metadata for reference)
+    """
+    zip.putNextEntry(new ZipEntry("metadata/clowder.xml"))
+    var content = "<clowderDataset>\n"
+
+    // Top-level dataset information
+    content += s"\t<id>${dataset.id.stringify}</id>\n"
+    content += s"\t<name>${dataset.name}</name>\n"
+    content += s"\t<description>${dataset.description}</description>\n"
+    content += s"\t<tags>${dataset.tags.mkString(",")}</tags>\n"
+
+    // Original source information
+    content += s"\t<source>\n"
+    content += s"\t\t<authorId>${dataset.author.id.stringify}</authorId>\n"
+    content += s"\t\t<authorName>${dataset.author.fullName}</authorName>\n"
+    content += s"\t\t<authorEmail>${dataset.author.email.getOrElse("")}</authorEmail>\n"
+    content += s"\t\t<creators>${dataset.creators.toString}</creators>\n"
+    content += s"\t\t<created>${dataset.created.toString}</created>\n"
+    content += s"\t\t<url>$baseURL</url>\n"
+    content += s"\t</source>\n"
+
+    content += "</clowderDataset>"
+    Some(new ByteArrayInputStream(content.getBytes("UTF-8")))
   }
 
   // List of all BagIt, xml or non-dataset files and their checksums
