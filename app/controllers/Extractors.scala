@@ -69,7 +69,14 @@ class Extractors  @Inject() (extractions: ExtractionService,
     Redirect(routes.Application.index())
   }
 
-
+  def showExtractorLog(extractorName: String) = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
+    targetExtractor match {
+      case Some(extractor) => Ok(views.html.extractorDetails(extractor))
+      case None => InternalServerError("Extractor not found: " + extractorName)
+    }
+  }
 
   def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
