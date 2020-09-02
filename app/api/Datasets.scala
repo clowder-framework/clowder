@@ -22,13 +22,14 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.mvc.AnyContent
+import play.api.mvc.{Action, AnyContent, MultipartFormData}
 import services._
 import _root_.util._
 import controllers.Utils.https
+import play.api.libs.Files
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Map => MutaMap}
 
 /**
  * Dataset API.
@@ -41,7 +42,6 @@ class  Datasets @Inject()(
   collections: CollectionService,
   sections: SectionService,
   comments: CommentService,
-  previews: PreviewService,
   extractions: ExtractionService,
   metadataService: MetadataService,
   contextService: ContextLDService,
@@ -51,7 +51,6 @@ class  Datasets @Inject()(
   folders: FolderService,
   relations: RelationService,
   userService: UserService,
-  thumbnailService : ThumbnailService,
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
@@ -252,6 +251,80 @@ class  Datasets @Inject()(
         case None => BadRequest(toJson("Missing parameter [file_id]"))
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+
+  // Create a dataset by uploading a compliant BagIt archive
+  def createFromBag() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request: UserRequest[MultipartFormData[Files.TemporaryFile]] =>
+    Logger.info("--- API Creating new dataset from zip archive ----")
+    /**
+     * Logic flow
+     * 1. check zip archive for clowder.xml first, then datacite.xml, if neither is found we reject
+     * 2. create dataset and populate metadata
+     *      TODO: should collection-level bags be supported somehow? clowder-specific context so not in datacite.xml. no folder or collection metadata.
+     *      TODO: if nested folders require individual metadata, the parents can be collections, but if they have metadata, reject?
+     * 3. download files if necessary/possible
+     *      TODO: just make uploadToDataset accept a URL and stream the file broadly if that isn't already possible.
+     * 4. upload files to Clowder and populate metadata
+     */
+
+    var mainXML: Option[String] = None
+    var dsInfo: Option[String] = None
+    var dsMeta: Option[String] = None
+
+    // Maps of filename -> _info, actual bytes, metadata, and folder path
+    val fileInfos: MutaMap[String, String] = MutaMap.empty
+    val fileBytes: MutaMap[String, String] = MutaMap.empty
+    val fileMetas: MutaMap[String, String] = MutaMap.empty
+    val fileFolds: MutaMap[String, String] = MutaMap.empty
+    val distinctFolders: ListBuffer[String] = ListBuffer.empty
+
+    request.body.files.foreach { f =>
+      if (f.filename.endsWith(".zip")) {
+        // Use zip contents to create a roadmap for next actions
+        val bag = new ZipFile(f.ref.file)
+        // Need assignment to be explicit here or an infinite loop occurs
+        val entries = bag.entries
+
+        while (entries.hasMoreElements()) {
+          val entry = entries.nextElement()
+          entry.getName match {
+            case "metadata/clowder.xml" => mainXML = Some(entry.getName) // overrides datacite.xml
+            case "metadata/datacite.xml" => if (!mainXML.isDefined) mainXML = Some(entry.getName)
+            case "data/_dataset_metadata.json" => dsMeta = Some(entry.getName)
+            case path if (path.startsWith("data/") && path.endsWith("/_info.json")) =>
+              dsInfo = Some(entry.getName)
+            case path if (path.startsWith("data/") && path.endsWith("_info.json")) => {
+              val filename = path.split("/").last.replace("_info.json", "")
+              fileInfos += (filename -> path)
+            }
+            case path if (path.startsWith("data/") && path.endsWith("_metadata.json")) => {
+              val filename = path.split("/").last.replace("_metadata.json", "")
+              fileMetas += (filename -> path)
+            }
+            case path if (path.startsWith("data/")) => {
+              val filename = path.split("/").last
+              val foldername = path.replace("data/", "").replace(filename, "")
+              fileBytes += (filename-> path)
+              fileFolds += (filename -> foldername)
+              distinctFolders.append(foldername)
+            }
+            case _ => {}
+          }
+        }
+
+        // Create datasets and folders to contain files
+        val folderIds: MutaMap[String, String] = MutaMap.empty
+        //val dsid = createEmptyDataset()
+        //addTagsToDataset()
+        distinctFolders.distinct.sorted.foreach(folderPath => {
+          //val folderId = createFolder()
+          //folderIds += (folderPath -> folderId)
+        })
+      }
+    }
+
+
+    Ok("Ok?")
   }
 
   /**
@@ -872,7 +945,6 @@ class  Datasets @Inject()(
       }
     }
   }
-
 
   private def getFilesWithinFolders(id: UUID, serveradmin: Boolean=false, max: Int = -1): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
@@ -1899,7 +1971,6 @@ class  Datasets @Inject()(
     }
   }
 
-
   def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id)  match {
       case Some(dataset) => {
@@ -2017,7 +2088,6 @@ class  Datasets @Inject()(
       }
     }
   }
-
 
   /**
     * Create a mapping for each file to their unique location
@@ -2534,7 +2604,6 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-
   def download(id: UUID, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
@@ -2778,7 +2847,6 @@ class  Datasets @Inject()(
 
     }
   }
-
 
   def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
