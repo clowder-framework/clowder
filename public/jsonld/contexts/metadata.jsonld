@@ -20,11 +20,9 @@
     "extractor": "cat:extractor",
     "content": {
       "@id": "https://clowder.ncsa.illinois.edu/metadata#content"
-    }
+    },
     "attached_to": "https://clowder.ncsa.illinois.edu/metadata/attachedTo",
     "resource_type": "https://clowder.ncsa.illinois.edu/resource/type",
     "url": "https://clowder.ncsa.illinois.edu/resource"
   }
 }
-
-
