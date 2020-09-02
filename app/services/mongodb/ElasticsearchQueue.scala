@@ -97,6 +97,9 @@ class ElasticsearchQueue @Inject() (
         batchRecurs = recursive
         batchIndex = idx
       }
+
+      // Finally, handle the last batch
+      _handlerBatch(currentBatch.toList, batchAction, batchRecurs, batchIndex)
     })
   }
 
