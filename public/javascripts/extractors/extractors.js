@@ -1,3 +1,7 @@
+function redirectToSelectExtractors() {
+    window.location.href = jsRoutes.controllers.Extractors.selectExtractors().url;
+}
+
 function removeExtractor(extractorName){
 
     console.log('removing extractor', extractorName);
@@ -7,8 +11,7 @@ function removeExtractor(extractorName){
     });
 
     request.done(function (response, textStatus, jqXHR){
-        var url = jsRoutes.controllers.Extractors.selectExtractors().url;
-        window.location.href=url;
+        redirectToSelectExtractors();
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -18,4 +21,26 @@ function removeExtractor(extractorName){
             notify("The extractor was not deleted from the system due to : " + errorThrown, "error");
         }
     });
+}
+
+
+function changeMaturity(extractorName, newMaturity) {
+    console.log('updating maturity: ', extractorName + " -> " + newMaturity);
+     var request = jsRoutes.api.Extractions.changeMaturity(extractorName, newMaturity).ajax({ type: 'PUT' })
+
+    request.done(function (response, textStatus, jqXHR){
+        redirectToSelectExtractors();
+        console.log("Updated maturity: " + extractorName + " -> " + newMaturity);
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown) {
+        console.error("The following error occurred: " + textStatus, errorThrown);
+        var errMsg = "Something went wrong updating extractor.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("The extractor was not updated due to : " + errorThrown, "error");
+        }
+    });
+
+    // Return false to cancel browser's default handling
+    return false;
 }
