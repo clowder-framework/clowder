@@ -456,25 +456,6 @@ class Extractions @Inject()(
     Ok(toJson(Map("status" -> "success")))
   }
 
-  def changeMaturity(extractorName: String, newMaturity: String) = ServerAdminAction { implicit request =>
-    // Lookup existing extractor info
-    extractors.getExtractorInfo(extractorName) match {
-      case Some(e) => {
-        // Modify the maturity in the backend
-        extractors.updateExtractorInfo(
-          ExtractorInfo(e.id, e.name, e.version, e.updated,
-            e.description, e.author, e.contributors, e.contexts,
-            e.repository, e.external_services, e.libraries,
-            e.bibtex, newMaturity, e.process, e.categories, e.parameters)
-        ) match {
-          case Some(updated) => Ok(s"${updated.name} is now in ${updated.maturity}")
-          case None => InternalServerError(s"Failed updating maturity for extractor=$extractorName")
-        }
-      }
-      case None => NotFound(s"Extractor not found: $extractorName")
-    }
-  }
-
   def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
 
     // If repository is of type object, change it into an array.

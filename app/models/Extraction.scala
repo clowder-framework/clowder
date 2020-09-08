@@ -123,7 +123,7 @@ object ExtractorInfo {
   }
   implicit val dateFormat = new Format[Date] {
     def reads(json: JsValue): JsResult[Date] = JsSuccess(json.as[Date])
-    def writes(date: Date): JsValue = Json.toJson(date.toString)
+    def writes(date: Date): JsValue = Json.toJson(date)
   }
   implicit val extractorInfoWrites = Json.writes[ExtractorInfo]
   implicit val extractorInfoReads: Reads[ExtractorInfo] = (
