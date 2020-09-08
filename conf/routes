@@ -173,7 +173,6 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 GET            /extractors/:extractorName                                               @controllers.Extractors.showExtractorInfo(extractorName)
 
-
 # ----------------------------------------------------------------------
 # SENSORS
 # ----------------------------------------------------------------------
@@ -412,6 +411,7 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+PUT            /api/extractors/:extractorName/maturity/:newMaturity                     @api.Extractions.changeMaturity(extractorName, newMaturity)
 
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
 POST           /api/datasets/:ds_id/extractions                                         @api.Extractions.submitDatasetToExtractor(ds_id: UUID)

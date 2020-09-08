@@ -90,6 +90,7 @@ case class ExtractorInfo(
   external_services: List[String],
   libraries: List[String],
   bibtex: List[String],
+  maturity: String = "Development",
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
   parameters: JsValue = JsObject(Seq())
@@ -138,6 +139,7 @@ object ExtractorInfo {
       (JsPath \ "external_services").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
+      (JsPath \ "maturity").read[String] and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
