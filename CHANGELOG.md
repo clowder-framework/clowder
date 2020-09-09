@@ -4,24 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 1.11.0 - 2020-08-31
 
 ### Added
-- Datasets downloaded with Clowder now include DataCite v4 XML files in the output /metadata folder for interoperability purposes.
-- Script to clean extractors' tmp files.
-- Script for RabbitMQ error queue cleanup.
-- Ability to use basic html formatting in the welcome message on the home page. [#51](https://github.com/clowder-framework/clowder/issues/51)
+- Downloaded datasets now include DataCite v4 XML files in the output /metadata folder.
+- Script to clean extractors' tmp files `scripts/clean-extractors-tmpfiles/`.
+- Script for RabbitMQ error queue cleanup `scripts/rmq-error-shovel/`.
+- Ability to use HTML formatting in the welcome message on the home page. [#51](https://github.com/clowder-framework/clowder/issues/51)
+- Expose a read-only list of extractors to all users.
 
 ### Changed
-- Improved simple test to report all day success.
-- Expose a read-only list of extractors to all users.
+- Improved test script `scripts/tester/tester.sh` to report successes once a day.
 
 ### Fixed
 - Escape colon characters on search values for search box and advanced search to allow those values in a search.
-- typesafe now only offers https access
-  [#49](https://github.com/clowder-framework/clowder/issues/49)
-- if uploading files by url > 2147483647 it would fail
-  [#54](https://github.com/clowder-framework/clowder/issues/54)
+- Typesafe now only offers https access. [#49](https://github.com/clowder-framework/clowder/issues/49)
+- If uploading files by url > 2147483647 it would fail. [#54](https://github.com/clowder-framework/clowder/issues/54)
 
 ## 1.10.1 - 2020-07-16
 
