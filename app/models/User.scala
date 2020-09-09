@@ -18,7 +18,7 @@ object UserStatus extends Enumeration {
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
  */
-trait User extends GenericProfile {
+trait User extends BasicProfile {
   def id: UUID
   def status: UserStatus.Value
   def profile: Option[Profile]
@@ -193,6 +193,9 @@ case class UserApiKey(
   providerId: String,
   userId: String
 )
+
+/** Legacy class previously used by SecureSocial */
+case class IdentityId(providerId: String, userId: String)
 
 object UserApiKey {
   implicit val userApiKeyFormat = Json.format[UserApiKey]
