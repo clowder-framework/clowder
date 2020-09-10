@@ -77,13 +77,14 @@ class Extractors  @Inject() (extractions: ExtractionService,
     val playConfig = play.Play.application().configuration()
     val serviceEndpoint = playConfig.getString("clowder.log.serviceEndpoint")
     Logger.debug(s"logging endpoint - $serviceEndpoint")
-
+/*
     val futureResponse = WS.url(serviceEndpoint).get()
     val logs = logService.getLog()
     logs match {
       case Some() => Ok(view.html.extractorLog(logs))
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
+*/
 /*
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
@@ -91,7 +92,6 @@ class Extractors  @Inject() (extractions: ExtractionService,
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
     */
- */
   }
 
   def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
