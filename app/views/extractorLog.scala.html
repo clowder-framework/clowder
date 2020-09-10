@@ -1,0 +1,30 @@
+@(logs:List[String], size:Integer)
+
+@main("Extractors"){
+    <div class="page-header">
+        <h1>Logs</h1>
+    </div>
+    @if(size == 0) {
+        <div class="row">
+            <div class="col-md-12">
+                No Logs found. Sorry!
+            </div>
+        </div>
+    }else{
+        <div class="container" >
+            <div class="row-fluid" >
+                <div>
+                    <table id='tablec'  style="table-layout: fixed;width: 30%" cellpadding="10"  cellspacing="0" border="1">
+                        <tbody>
+                        @for(req <- logs){
+                            <tr>
+                                <td>@req</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}
