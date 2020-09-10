@@ -22,7 +22,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
                              datasetService: DatasetService,
                              folders: FolderService,
                              spaces: SpaceService,
-                             logService: LogService,
+                             //logService: LogService,
                              datasets: DatasetService ) extends Controller with SecuredController {
 
   def listAllExtractions = ServerAdminAction { implicit request =>
@@ -76,7 +76,8 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     val playConfig = play.Play.application().configuration()
     val serviceEndpoint = playConfig.getString("clowder.log.serviceEndpoint")
-    Logger.debug(s"logging endpoint - $serviceEndpoint")
+    Logger.warn(s"playConfig - $playConfig")
+    Logger.warn("hello world")
 /*
     val futureResponse = WS.url(serviceEndpoint).get()
     val logs = logService.getLog()
@@ -85,13 +86,13 @@ class Extractors  @Inject() (extractions: ExtractionService,
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
 */
-/*
+
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorDetails(extractor))
+      //case Some(extractor) => Ok(views.html.extractorDetails(extractor))
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
-    */
+
   }
 
   def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
