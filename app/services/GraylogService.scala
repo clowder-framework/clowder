@@ -8,7 +8,7 @@ import javax.inject.{Inject, Singleton}
  */
 @Singleton
 class GraylogService @Inject() (serviceEndpoint: String) extends LogService {
-  def getLog(extractorName: String, submissionID: String): String = {
+  def getLog(extractorName: String, submissionID: String): List[String] = {
     return "hello"
   }
 }
