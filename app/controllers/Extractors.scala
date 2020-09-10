@@ -10,6 +10,8 @@ import services._
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
+import play.api.libs.ws.{Response, WS}
+
 /**
  * Information about extractors.
  */
@@ -17,9 +19,10 @@ import scala.collection.mutable.ListBuffer
 class Extractors  @Inject() (extractions: ExtractionService,
                              extractorService: ExtractorService,
                              fileService: FileService,
-                              datasetService: DatasetService,
+                             datasetService: DatasetService,
                              folders: FolderService,
                              spaces: SpaceService,
+                             logService: LogService,
                              datasets: DatasetService ) extends Controller with SecuredController {
 
   def listAllExtractions = ServerAdminAction { implicit request =>
@@ -71,11 +74,24 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def showExtractorLog(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
+    val playConfig = play.Play.application().configuration()
+    val serviceEndpoint = playConfig.getString("clowder.log.serviceEndpoint")
+    Logger.debug(s"logging endpoint - $serviceEndpoint")
+
+    val futureResponse = WS.url(serviceEndpoint).get()
+    val logs = logService.getLog()
+    logs match {
+      case Some() => Ok(view.html.extractorLog(logs))
+      case None => InternalServerError("Extractor not found: " + extractorName)
+    }
+/*
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
       case Some(extractor) => Ok(views.html.extractorDetails(extractor))
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
+    */
+ */
   }
 
   def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
