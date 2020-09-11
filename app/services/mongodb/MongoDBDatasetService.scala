@@ -1536,11 +1536,10 @@ object Dataset extends ModelCompanion[Dataset, ObjectId] {
   val dao = new SalatDAO[Dataset, ObjectId](collection = mongo.collection("datasets")) {}
 }
 
+
 object DatasetXMLMetadata extends ModelCompanion[DatasetXMLMetadata, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[DatasetXMLMetadata, ObjectId](collection = x.collection("datasetxmlmetadata")) {}
-  }
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[DatasetXMLMetadata, ObjectId](collection = mongos.collection("datasetxmlmetadata")) {}
 }
 
 /**

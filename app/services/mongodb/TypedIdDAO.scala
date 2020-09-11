@@ -1,18 +1,16 @@
 package services.mongodb
 
+import models.TypedID
 import org.bson.types.ObjectId
 import salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import models.TypedID
+import services.DI
+import services.mongodb.MongoContext.context
 
 /**
  * Used to store Typed ID in MongoDB.
  *
  */
 object TypedIDDAO extends ModelCompanion[TypedID, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[TypedID, ObjectId](collection = x.collection("TypedID")) {}
-  }
+  val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
+  val dao = new SalatDAO[TypedID, ObjectId](collection = mongos.collection("TypedID")) {}
 }
