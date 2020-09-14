@@ -33,12 +33,13 @@ class Extractors  @Inject() (extractions: ExtractionService,
    */
   def showJobHistory(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    val allExtractions = extractions.findAll()
-    val groups = extractions.groupByType(allExtractions)
-    val extractorGroup = groups(extractorName)
     extractorService.getExtractorInfo(extractorName) match {
-      case Some(info) => Ok(views.html.extractorJobHistory(info, extractorGroup))
       case None => NotFound(s"No extractor found with name=${extractorName}")
+      case Some(info) => {
+        val allExtractions = extractions.findAll()
+        val groups = extractions.groupByType(allExtractions)
+        Ok(views.html.extractorJobHistory(info, groups(extractorName)))
+      }
     }
   }
 
