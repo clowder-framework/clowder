@@ -29,6 +29,20 @@ class Extractors  @Inject() (extractions: ExtractionService,
   }
 
   /**
+   * Gets a map of all updates from all jobs given to this extractor.
+   */
+  def showJobHistory(extractorName: String) = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    val allExtractions = extractions.findAll()
+    val groups = extractions.groupByType(allExtractions)
+    val extractorGroup = groups(extractorName)
+    extractorService.getExtractorInfo(extractorName) match {
+      case Some(info) => Ok(views.html.extractorJobHistory(info, extractorGroup))
+      case None => NotFound(s"No extractor found with name=${extractorName}")
+    }
+  }
+
+  /**
     * Gets list of extractors from mongo. Displays the page to enable/disable extractors.
     */
   def selectExtractors() = AuthenticatedAction { implicit request =>
