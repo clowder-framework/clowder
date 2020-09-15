@@ -675,24 +675,24 @@ class MongoDBSpaceService @Inject() (
    * If entry for this spaceId already exists, adds extractor to it.
    * Otherwise, creates a new entry with spaceId and extractor.
    */
-  def addExtractor (spaceId: UUID, extractor: String) {
-	  //will add extractor to the list of extractors for this space, only if it's not there.
+  def enableExtractor(spaceId: UUID, extractor: String) {
 	  val query = MongoDBObject("spaceId" -> spaceId.stringify)
-	  ExtractorsForSpaceDAO.update(query, $addToSet("extractors" -> extractor), true, false, WriteConcern.Safe)
+	  ExtractorsForSpaceDAO.update(query, $addToSet("enabled" -> extractor), true, false, WriteConcern.Safe)
+  }
+
+  def disableExtractor(spaceId: UUID, extractor: String) {
+    val query = MongoDBObject("spaceId" -> spaceId.stringify)
+    ExtractorsForSpaceDAO.update(query, $addToSet("disabled" -> extractor), true, false, WriteConcern.Safe)
   }
 
   /**
    * Returns a list of extractors associated with this spaceId.
    */
-  def getAllExtractors(spaceId: UUID): List[String] = {
-    //Note: in models.ExtractorsForSpace, spaceId must be a String
+  def getAllExtractors(spaceId: UUID): Option[ExtractorsForSpace] = {
+    // Note: in models.ExtractorsForSpace, spaceId must be a String
     // if space Id is UUID, will compile but throws Box run-time error
     val query = MongoDBObject("spaceId" -> spaceId.stringify)
-
-    val list = (for (extr <- ExtractorsForSpaceDAO.find(query)) yield extr).toList
-    //get extractors' names for given space id
-    val extractorList: List[String] = list.flatMap(_.extractors)
-    extractorList
+    ExtractorsForSpaceDAO.findOne(query)
   }
 
 

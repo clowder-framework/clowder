@@ -1,4 +1,4 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], globalSelections: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
+@(runningExtractors: List[ExtractorInfo], enabledInSpace: List[String], disabledInSpace: List[String], globalSelections: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 
@@ -32,7 +32,8 @@
 		<table class="table">
 			<thead>
 				<tr>
-					<th>Enabled</th>
+					<th>Enabled Globally</th>
+					<th>Disable in Space</th>
 					<th>Name</th>
 					<th>Description</th>
 					<th>Process Triggers</th>
@@ -45,7 +46,14 @@
 					<td><input type="checkbox" name="extractors" value="@extractor.name"
 						@if(globalSelections.contains(extractor.name)) {disabled="disabled"}
 						@if(globalSelections.contains(extractor.name) ||
-								selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
+								enabledInSpace.contains(extractor.name)) {checked} else {unchecked}></td>
+					<td>
+						@if(globalSelections.contains(extractor.name)) {
+							<input type="checkbox" name="extractors-override" value="@extractor.name"
+								@if(disabledInSpace.contains(extractor.name)) {checked}
+								@if(enabledInSpace.contains(extractor.name)) {unchecked}
+							></td>
+					    }
 					<td><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
 					<td>@extractor.description</td>
 					<td>

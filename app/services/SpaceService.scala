@@ -275,12 +275,21 @@ trait SpaceService {
 	 * If entry for spaceId already exists, will update list of extractors.
 	 * Otherwise will create and add a new document to the collection, with spaceId and extractor given.
 	 */
-	def addExtractor(spaceId: UUID, extractor:String)
+	def enableExtractor(spaceId: UUID, extractor: String)
+
+  /**
+   * Disable extractors within the space. This is used to override global selections.
+   * @param spaceId
+   * @param extractor
+   */
+  def disableExtractor(spaceId: UUID, extractor: String)
 	
 	/**
-	 * Get all extractors for this space id.
+	 * Get all extractors for this space id. This is the union of all enabled and disabled extractors for this space.
+   * If a user never manually enabled or disabled an extractor for a space it will not be returned, but the extractor
+   * might still be enabled/disabled at the instance level.
 	 */
-  def getAllExtractors(spaceId: UUID): List[String]
+  def getAllExtractors(spaceId: UUID): Option[ExtractorsForSpace]
 
   /**
 	 * Delete an entire entry with extractors for this space id.
