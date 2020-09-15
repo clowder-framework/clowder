@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - proxy will no correctly handle paths that end with a / at the end.
 
+### CHanged
+- updated update-clowder script to work with migration to github
+
 ## 1.11.0 - 2020-08-31
 
 ### Added
