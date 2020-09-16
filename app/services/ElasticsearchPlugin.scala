@@ -697,7 +697,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
     """{"clowder_object": {
-          |"date_detection": false,
+          |"date_detection": true,
           |"numeric_detection": true,
           |"properties": {
             |"name": {"type": "string"},
