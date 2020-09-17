@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - proxy will no correctly handle paths that end with a / at the end.
 
+### Changed
+- Can now control parallelism of queue service, specifically elasticsearch. Now uses batches of 50 documents
+
 ## 1.11.0 - 2020-08-31
 
 ### Added

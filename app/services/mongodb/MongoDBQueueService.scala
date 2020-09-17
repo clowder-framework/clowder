@@ -1,22 +1,20 @@
 package services
 
-import java.util.Date
-
 import akka.actor.Cancellable
-import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import com.mongodb.MongoException
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{File, _}
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import models.{ElasticsearchParameters, QueuedAction, ResourceRef}
 import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.Play._
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{JsObject, Json}
 import play.libs.Akka
 import services.mongodb.MongoSalatPlugin
 import services.mongodb.MongoContext.context
+
 import scala.concurrent.duration._
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext
 
 /**
  * Generic queue service.
@@ -24,8 +22,11 @@ import play.api.libs.concurrent.Execution.Implicits._
  */
 trait MongoDBQueueService {
   val consumer: String
+  val threads: Int = 1
+  val batchSize: Int = 50
+  val interval: FiniteDuration = 5 milliseconds
+  var ec : ExecutionContext = null
   var disabledNotified: Boolean = false
-  var queueTimer: Cancellable = null
   var queueFetchError: Boolean = false
 
   // check whether necessary conditions are met (e.g. the plugin is enabled)
@@ -68,15 +69,15 @@ trait MongoDBQueueService {
     }
   }
 
-  // get next entry from queue
-  def getNextQueuedAction(): Option[QueuedAction] = {
+  // get next entries from queue
+  def getBatchQueuedAction(): List[QueuedAction] = {
     try {
-      val response = Queue.findOne(new MongoDBObject)
+      val response = Queue.find(new MongoDBObject).limit(batchSize)
       if (queueFetchError) {
         Logger.info("MongoDB has successfully reconnected.")
         queueFetchError = false
       }
-      response
+      response.toList
     } catch {
       case e: MongoException => {
         // Only log an error once on failed fetch, instead of repeating every 5ms
@@ -84,22 +85,20 @@ trait MongoDBQueueService {
           Logger.error("Problem connecting to MongoDB queue.")
           queueFetchError = true
         }
-        None
+        List.empty[QueuedAction]
       }
-      case _ => None
+      case _ => List.empty[QueuedAction]
     }
-
   }
 
-  // start pool to being processing queue actions
+  // start processing queue actions
   def listen() = {
-    if (queueTimer == null) {
-      // TODO: Need to make these in a separate pool
-      queueTimer = Akka.system().scheduler.schedule(0 seconds, 5 millis) {
-        getNextQueuedAction match {
-          case Some(qa) => handleQueuedAction(qa)
-          case None => {}
-        }
+    if (ec == null) {
+      ec = ExecutionContext.fromExecutor(new java.util.concurrent.ForkJoinPool(threads))
+      for (_ <- 1 to threads) {
+        Akka.system().scheduler.schedule(0 seconds, interval) {
+          getBatchQueuedAction().foreach(qa => handleQueuedAction(qa))
+        }(ec)
       }
     }
   }
