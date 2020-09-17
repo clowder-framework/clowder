@@ -263,6 +263,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Ok("")
    }
 
+  def healthz() = Action { implicit request =>
+    Ok("healthy")
+  }
+
   /**
    * Bookmarklet
    */
