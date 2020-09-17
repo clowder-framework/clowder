@@ -24,6 +24,7 @@ GET            /                                                                
 GET            /about                                                                   @controllers.Application.about
 GET            /tos                                                                     @controllers.Application.tos(redirect: Option[String] ?= None)
 GET            /email                                                                   @controllers.Application.email(subject: String ?= "", body: String ?= "")
+GET            /healthz                                                                 @controllers.Application.healthz()
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
