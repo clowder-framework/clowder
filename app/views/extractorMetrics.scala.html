@@ -1,0 +1,39 @@
+@(extractorInfo: ExtractorInfo)
+@import _root_.util.Formatters._
+@import helper._
+@import api.Permission
+
+@main("Extractor Metrics") {
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
+
+    <ol class="breadcrumb">
+        <li><span class="glyphicon glyphicon-fullscreen"></span> Extractor Metrics</li>
+    </ol>
+
+
+    <div class="page-header">
+        <h1>@extractorInfo.name Metrics</h1>
+    </div>
+
+
+    <div class="row top-padding">
+        <div class="col-xs-12">
+            @form(action = routes.Extractors.updateExtractors(), 'id -> "formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Authors</th>
+                            <th>Version</th>
+                            <th>Last Commit Sha</th>
+                            <th>Last RunTime</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            } <!-- end of form -->
+        </div>
+    </div>
+}

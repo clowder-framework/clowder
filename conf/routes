@@ -172,7 +172,7 @@ POST           /spaces/submit                                                   
 # EXTRACTORS
 # ----------------------------------------------------------------------
 GET            /extractors/:extractorName                                               @controllers.Extractors.showExtractorInfo(extractorName)
-
+GET            /extractors/:extractorName/metrics                                       @controllers.Extractors.showExtractorMetrics(extractorName)
 
 # ----------------------------------------------------------------------
 # SENSORS

@@ -80,6 +80,15 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
   }
 
+  def showExtractorMetrics(extractorName: String) = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
+    targetExtractor match {
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractor))
+      case None => InternalServerError("Extractor Info not found: " + extractorName)
+    }
+  }
+
   def submitFileExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     implicit val user = request.user
     val all_extractors = extractorService.listExtractorsInfo(List("EXTRACT", "CONVERT"))
