@@ -73,7 +73,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
   def showExtractorLog(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val logs = logService.getLog(extractorName, None)
-    Ok(views.html.extractorLog(logs, logs.size))
+    Ok(views.html.extractorLog(extractorName, logs, logs.size))
   }
 
   def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>

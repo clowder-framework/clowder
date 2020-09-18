@@ -264,11 +264,13 @@
                                                 </li>
 
                                                 <!-- TODO: View Extractor Logs -->
+                                                @if(play.Play.application().configuration().getBoolean("viewextractorlogs")) {
                                                 <li role="presentation">
                                                     <a role="menuitem" tabindex="-1" href="@routes.Extractors.showExtractorLog(extractor.name)">
                                                         <span class="glyphicon glyphicon-console"></span> View Logs
                                                     </a>
                                                 </li>
+                                                }
 
                                                 <!-- TODO: View Extractor Metrics -->
                                                 <li role="presentation">

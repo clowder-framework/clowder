@@ -1,13 +1,13 @@
-@(logs:List[String], size:Integer)
+@(extractorName: String, logs:List[String], size:Integer)(implicit user: Option[models.User])
 
 @main("Extractors"){
     <div class="page-header">
-        <h1>Logs</h1>
+        <h1>Logs for @extractorName </h1>
     </div>
     @if(size == 0) {
         <div class="row">
             <div class="col-sm-8">
-                No Logs found. Sorry!
+                No Logs found.
             </div>
         </div>
     }else{
