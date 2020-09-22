@@ -49,7 +49,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
   val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
 
-  // TODO: Removed gt lt gte lte operators until numeric_detection can be enabled on the dynamic mapper
   val mustOperators = List("==", "<=", ">=", "<", ">", ":")
   val mustNotOperators = List("!=")
 
@@ -696,6 +695,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * as strings for datatypes besides Objects. In the future, this could
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
+    // TODO: Enable "numeric_detection": true alongside date_detection
     """{"clowder_object": {
           |"date_detection": true,
           |"numeric_detection": true,
