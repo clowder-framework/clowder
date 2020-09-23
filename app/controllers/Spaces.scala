@@ -134,14 +134,22 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
             // 1. remove entry with extractors for this space from mongo
             spaces.deleteAllExtractors(existing_space.id)
             // 2. if extractors are selected, add them
-            if (dataParts.isDefinedAt("extractors")) {
-              extractors = dataParts("extractors").toList
-              extractors.map(spaces.enableExtractor(existing_space.id, _))
+            val prefix = "extractors-"
+            extractors = dataParts.keysIterator.filter(_.startsWith(prefix)).toList
+            extractors.foreach { extractor =>
+              // get the first entry and ignore all others (there should only be one)
+              val name = extractor.substring(prefix.length)
+              val enabled = dataParts(extractor)(0).toBoolean
+              if (enabled) {
+                spaces.enableExtractor(existing_space.id, name)
+              } else {
+                spaces.disableExtractor(existing_space.id, name)
+              }
             }
-            if (dataParts.isDefinedAt("extractors-override")) {
-              extractors = dataParts("extractors-override").toList
-              extractors.map(spaces.disableExtractor(existing_space.id, _))
-            }
+//            if (dataParts.isDefinedAt("extractors-override")) {
+//              extractors = dataParts("extractors-override").toList
+//              extractors.map(spaces.disableExtractor(existing_space.id, _))
+//            }
             Redirect(routes.Spaces.getSpace(new UUID(space_id)))
           }
           case None => {

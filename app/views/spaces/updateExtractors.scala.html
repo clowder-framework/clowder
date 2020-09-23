@@ -32,8 +32,9 @@
 		<table class="table">
 			<thead>
 				<tr>
-					<th>Enabled Globally</th>
-					<th>Disable in Space</th>
+					<th class="text-center">Enabled Globally</th>
+					<th class="text-center">Space Enabled</th>
+					<th class="text-center">Space Disabled</th>
 					<th>Name</th>
 					<th>Description</th>
 					<th>Process Triggers</th>
@@ -43,17 +44,19 @@
 			<!-- Display all running extractors. If extractor already in this space, check the box. -->
 			@runningExtractors.map { extractor =>
 				<tr>
-					<td><input type="checkbox" name="extractors" value="@extractor.name"
-						@if(globalSelections.contains(extractor.name)) {disabled="disabled"}
-						@if(globalSelections.contains(extractor.name) ||
-								enabledInSpace.contains(extractor.name)) {checked} else {unchecked}></td>
-					<td>
+					<td class="text-center">
 						@if(globalSelections.contains(extractor.name)) {
-							<input type="checkbox" name="extractors-override" value="@extractor.name"
-								@if(disabledInSpace.contains(extractor.name)) {checked}
-								@if(enabledInSpace.contains(extractor.name)) {unchecked}
-							></td>
-					    }
+							<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+						}
+					</td>
+					<td class="text-center">
+						<input type="radio" name="extractors-@extractor.name" value="true"
+							@if(enabledInSpace.contains(extractor.name)) {checked}>
+					</td>
+					<td class="text-center">
+						<input type="radio" name="extractors-@extractor.name" value="false"
+							@if(disabledInSpace.contains(extractor.name)) {checked}>
+					</td>
 					<td><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
 					<td>@extractor.description</td>
 					<td>
