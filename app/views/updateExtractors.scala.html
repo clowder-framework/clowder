@@ -80,7 +80,7 @@
                                 <div class="form-group">
                                     <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                     <div class="col-sm-9">
-                                        <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter">
+                                        <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="this.form.submit()">
                                             <option>file/*</option>
                                             <option>dataset/*</option>
                                         </select>
@@ -326,4 +326,14 @@
             </div>
         </div>
     }
+
+    <script>
+            $('document').ready(function(){
+                var params = new URLSearchParams(window.location.search);
+                var targetParameter = "processTriggerSearchFilter"
+                if (params.has(targetParameter)) {
+                    document.getElementById(targetParameter).value = params.get(targetParameter);
+                }
+            });
+    </script>
 } 
