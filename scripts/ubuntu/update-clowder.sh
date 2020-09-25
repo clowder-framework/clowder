@@ -27,6 +27,12 @@ SLACK_CHANNEL="#simpl-ops"
 # MSTeams Webhook
 MSTEAMS_URL=""
 
+# INFLUXDB
+INFLUXDB_URL=""
+INFLUXDB_DATABASE=""
+INFLUXDB_USERNAME=""
+INFLUXDB_PASSWORD=""
+
 # change to folder where script is installed
 cd /home/clowder
 
@@ -106,10 +112,20 @@ if [ -s ${CLOWDER_ZIPFILE} ]; then
       payload="{\"title\": \"UPDATE CLOWDER\", \"text\": \"${txt}\" }"
       result=$(curl -s -X POST -H "Content-Type: application/json" -d "${payload}" $MSTEAMS_URL)
     fi
+    if [ "${INFLUXDB_URL}" != "" -a "${INFLUXDB_DATABASE}" != "" -a "${INFLUXDB_USERNAME}" != "" -a "${INFLUXDB_PASSWORD}" != "" ]; then
+      url="${INFLUXDB_URL}/api/v2/write?bucket=${INFLUXDB_DATABASE}&precision=ns"
+      tags="host=${HOSTNAME}"
+      timestamp="$(date -u +"%s%N")"
+      values="version=\"$( grep '\-Dbuild.version' clowder/bin/clowder | sed 's/.*=\(.*\)"$/\1/' )\""
+      values="${values},branch=\"$( grep '\-Dbuild.branch' clowder/bin/clowder | sed 's/.*=\(.*\)"$/\1/' )\""
+      values="${values},build=\"$( grep '\-Dbuild.bamboo' clowder/bin/clowder | sed 's/.*=\(.*\)"$/\1/' )\""
+      values="${values},gitsha1=\"$( grep '\-Dbuild.gitsha1' clowder/bin/clowder | sed 's/.*=\(.*\)"$/\1/' )\""
+      auth="Authorization: Token ${INFLUXDB_USERNAME}:${INFLUXDB_PASSWORD}"
+      result=$(curl -s -i -XPOST "$url" --header "$auth" --data "clowder_update,${tags} ${values} ${timestamp}")
+    fi
     if [ "${STDOUT}" != "" ]; then
       cat /tmp/$$.txt >&3
     fi
     rm /tmp/$$.txt
   fi
 fi
-
