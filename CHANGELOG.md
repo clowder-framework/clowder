@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Ability to override extractors at the space level when they are enabled at the global level. [#56](https://github.com/clowder-framework/clowder/issues/56)
+- added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
+
+### Fixed
+- proxy will no correctly handle paths that end with a / at the end.
+
+### Changed
+- updated update-clowder script to work with migration to github
 
 ## 1.11.0 - 2020-08-31
 
