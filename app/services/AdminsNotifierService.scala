@@ -7,10 +7,10 @@ import play.api.{Application, Configuration, Logger}
 import play.api.Play.current
 import util.Mail
 
-class AdminsNotifierService @Inject()(userService: UserService)() {
+class AdminsNotifierService @Inject()(userService: UserService, config: Configuration)() {
 
   val enabled = {
-    !play.api.Play.configuration.getString("adminnotifierservice").filter(_ == "disabled").isDefined
+    !config.get[String]("adminnotifierservice").filter(_ == "disabled").isDefined
   }
   
   def sendAdminsNotification(baseURL: String, resourceType: String = "Dataset", eventType: String = "added",

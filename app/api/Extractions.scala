@@ -6,17 +6,13 @@ import java.util.Calendar
 import javax.inject.Inject
 
 import controllers.Utils
-import fileutils.FilesUtils
 import models._
-import play.api.Logger
-import play.api.Play.{configuration, current}
-import play.api.http.ContentTypes
-import play.api.libs.{Files, MimeTypes}
+import play.api.{Logger, Configuration}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.libs.ws.{WSResponse, WSClient}
-import play.api.mvc.MultipartFormData
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.ahc.AhcWSResponse
 import services._
 
 import scala.collection.mutable.ListBuffer
@@ -34,6 +30,7 @@ class Extractions @Inject()(
   extractors: ExtractorService,
   extractionBusService: ExtractionBusService,
   appConfig: AppConfigurationService,
+  config: Configuration,
   WS: WSClient) extends ApiController {
 
   /**

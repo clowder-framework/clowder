@@ -1,8 +1,9 @@
 @(title: String)(content: Html)(implicit user: Option[models.User] = None)
 
-@import services.AppConfiguration
+@import java.util.List
+@import services.{AppConfiguration, DI}
 @import play.api.i18n.Messages
-@import play.api.Play.current
+@import play.api.Configuration
 <!DOCTYPE html>
 
 <html lang="en">
@@ -53,7 +54,7 @@
                   <span class="glyphicon-bar"></span>
                   <span class="glyphicon-bar"></span>
                 </button>
-                @services.DI.injector.getInstance(classOf[services.LogoService]).get("GLOBAL", "logo") match {
+                @DI.injector.getInstance(classOf[services.LogoService]).get("GLOBAL", "logo") match {
                     case Some(logo) => {
                         <a class="navbar-brand" style="padding-top: 5px; padding-bottom: 5px" href="@routes.Application.index">
                             <img class="pull-left" style="height: 100%" src="@api.routes.Logos.downloadPath("GLOBAL", "logo")" alt="LOGO">
@@ -80,7 +81,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="@routes.Application.index"><span class="glyphicon glyphicon-user"></span> Dashboard</a></li>
-                            @if(play.Play.application().configuration().getBoolean("enablePublic")) {
+                            @if(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("enablePublic")) {
                                 <li><a href="@routes.Spaces.list(showPublic=false)"><span class="glyphicon glyphicon-hdd"></span> @Messages("spaces.title")</a></li>
                                 <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
@@ -100,17 +101,17 @@
                             <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-hdd"> </span> @Messages("spaces.title")</a></li>
                             @user match {
                                 case Some(x) => {
-                                    @if(play.Play.application().configuration().getBoolean("verifySpaces") && api.Permission.checkServerAdmin(user)) {
-                                        <li><a href="@routes.Spaces.list(onlyTrial=true, showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-hdd"> </span> Trial @Messages("spaces.title")</a></li>
+                                    @if(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("verifySpaces") && api.Permission.checkServerAdmin(user)) {
+                                        <li><a href="@routes.Spaces.list(onlyTrial=true, showOnlyShared = DI.injector.getInstance(classOf[Configuration]).get[Boolean]("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-hdd"> </span> Trial @Messages("spaces.title")</a></li>
                                     }
                                 }
                                 case None => {
 
                                 }
                             }
-                            <li><a href="@routes.Datasets.list(showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-briefcase"> </span> @Messages("datasets.title")</a></li>
-                            <li><a href="@routes.Collections.list(showOnlyShared = play.Play.application().configuration().getBoolean("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-th-large"> </span> @Messages("collections.title")</a></li>
-                            @if(play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false)){
+                            <li><a href="@routes.Datasets.list(showOnlyShared = DI.injector.getInstance(classOf[Configuration]).get[Boolean]("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-briefcase"> </span> @Messages("datasets.title")</a></li>
+                            <li><a href="@routes.Collections.list(showOnlyShared = DI.injector.getInstance(classOf[Configuration]).get[Boolean]("showOnlySharedInExplore"))"><span class="glyphicon glyphicon-th-large"> </span> @Messages("collections.title")</a></li>
+                            @if(DI.injector.getInstance(classOf[Configuration]).get[Option[Boolean]]("stagingArea").getOrElse(false)) {
                                 <li><a href="@routes.CurationObjects.getPublishedData("")"><span class="glyphicon glyphicon-book"></span> Published Data</a></li>
                             }
                             @if(user.isDefined){
@@ -155,7 +156,7 @@
                                 Clear All</a></li>
                         </ul>
                     </li>
-                    @if(play.Play.application().configuration().getBoolean("useTrash")){
+                    @if(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("useTrash")){
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 Trash <b class="caret"></b>
@@ -178,9 +179,8 @@
                             }
                             <li><a href="@routes.Application.tos(None)">Terms of Service</a></li>
                             <li><a href="@routes.Application.swaggerUI()" target="_blank">API</a></li>
-                            @play.Play.application.configuration.getConfigList("helpMenu").map { helpItem =>
+                            @DI.injector.getInstance(classOf[Configuration]).getConfigList("helpMenu").getOrElse(List.empty).map { helpItem =>
                               <li><a href="@helpItem.getString("url")" target="_blank">@helpItem.getString("label")</a></li>
-
                             }
                         </ul>
                     </li>
@@ -245,7 +245,7 @@
                              </li>
                         }
                         case None => {
-                            @if(play.Play.application().configuration().getBoolean("securesocial.registrationEnabled", true)) {
+                            @if(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("securesocial.registrationEnabled")) {
                                 <li>
                                     <a href="@securesocial.core.providers.utils.RoutesHelper.startSignUp()" title="Sign up to the system">Sign up</a>
                                 </li>
@@ -403,7 +403,7 @@
                             <p>
                                 Multiple tags may be entered, separated by commas.
                             </p>
-                            <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)"
+                            <input maxlength="@DI.injector.getInstance(classOf[Configuration]).get[Option[Int]]("clowder.tagLength").getOrElse(100)"
                                 type="text" id="bulk-tag-selector" class="form-control add-resource" placeholder="Enter a tag...">
 
                         </div>

@@ -105,11 +105,6 @@ class RabbitmqExtractionBusService @Inject() (
     close()
   }
 
-  /** Check if play plugin is enabled **/
-//  lazy val enabled = {
-//    play.api.Play.configuration.getString("rabbitmqplugin").filter(_ == "disabled").isDefined
-//  }
-
   /** Close connection to broker. **/
   def close() {
     Logger.debug("Closing connection")

@@ -454,7 +454,7 @@ object FileUtils {
     }
 
     // getStringList returns a java.util.List as opposed to the kind of List we want, thus the conversion
-    val sourcelist = play.api.Play.configuration.getStringList("filesystem.sourcepaths").map(_.toList).getOrElse(List.empty[String])
+    val sourcelist = config.getStringList("filesystem.sourcepaths").map(_.toList).getOrElse(List.empty[String])
 
     // Is the current path included in the source whitelist?
     if (sourcelist.exists(s => path.startsWith(s))) {

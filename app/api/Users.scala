@@ -1,17 +1,20 @@
 package api
 
 import javax.inject.Inject
+import play.api.Configuration
 import play.api.libs.json._
 import play.api.Play.current
 import services.UserService
 import models._
 import services._
-import play.api.Logger
+import play.api.{Logger, Configuration}
 
 /**
  * API to interact with the users.
  */
-class Users @Inject()(users: UserService, events: EventService) extends ApiController {
+class Users @Inject()(users: UserService,
+                      events: EventService,
+                     config: Configuration) extends ApiController {
   /**
    * Returns a list of all users in the system.
    */
@@ -173,7 +176,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
       case Some(followeeModel) => {
         val sourceFollowerIDs = followeeModel.followers
         val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        val num = config.get[Option[Int]]("number_of_recommendations")
         users.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
       }
       case None => {

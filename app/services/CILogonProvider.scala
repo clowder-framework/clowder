@@ -2,7 +2,7 @@ package services
 
 import javax.inject.Inject
 import play.api.libs.ws.WSClient
-import play.api.{Application, Logger}
+import play.api.{Application, Logger, Configuration}
 import play.api.libs.json.JsObject
 import securesocial.core._
 import scala.collection.JavaConverters._
@@ -11,7 +11,7 @@ import scala.collection.JavaConverters._
 /**
  * A CILogon OAuth2 Provider
  */
-class CILogonProvider @Inject()(WS: WSClient) (application: Application) extends OAuth2Provider(application) {
+class CILogonProvider @Inject()(WS: WSClient) (application: Application, config: Configuration) extends OAuth2Provider(application) {
   val Error = "error"
   val Message = "message"
   val Type = "type"
@@ -50,7 +50,8 @@ class CILogonProvider @Inject()(WS: WSClient) (application: Application) extends
           val avatarUrl = ( me \ Picture).asOpt[String]
           val email = ( me \ Email).asOpt[String]
           val groups = ( me \ Groups).asOpt[List[String]]
-          (application.configuration.getList("securesocial.cilogon.groups"), groups) match {
+
+          (config.getList("securesocial.cilogon.groups"), groups) match {
             case (Some(conf), Some(cilogon)) => {
               val conflist = conf.unwrapped().asScala.toList
               if (cilogon.intersect(conflist).isEmpty) {

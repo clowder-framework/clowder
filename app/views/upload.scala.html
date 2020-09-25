@@ -180,7 +180,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload.js")"></script>
 <!-- The File Upload processing plugin -->
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-process.js")"></script>
-@if(play.Play.application.configuration.getBoolean("clowder.upload.previews", true)) {
+@if(config.get[Boolean]("clowder.upload.previews")) {
     <!-- The File Upload image preview & resize plugin -->
     <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-image.js")"></script>
     <!-- The File Upload audio preview plugin -->

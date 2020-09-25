@@ -25,7 +25,7 @@ import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.WriteConcern
-import play.api.Logger
+import play.api.{Configuration, Logger}
 
 import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
@@ -62,7 +62,8 @@ class MongoDBFileService @Inject() (
   appConfig: AppConfigurationService,
   extractionBusService: ExtractionBusService,
   searches: SearchService,
-  queues: QueueService) extends FileService {
+  queues: QueueService,
+  config: Configuration) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -645,7 +646,7 @@ class MongoDBFileService @Inject() (
     val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
-    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+    val maxTagLength = config.get[Int]("clowder.tagLength")
     tags.foreach(tag => {
       val shortTag = if (tag.length > maxTagLength) {
         Logger.error("Tag is truncated to " + maxTagLength + " chars : " + tag)
@@ -983,10 +984,10 @@ class MongoDBFileService @Inject() (
 
 		    val fileSep = System.getProperty("file.separator")
 		    val lineSep = System.getProperty("line.separator")
-		    var fileMdDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
+		    var fileMdDumpDir = config.get[String]("filedump.dir")
 			if(!fileMdDumpDir.endsWith(fileSep))
 				fileMdDumpDir = fileMdDumpDir + fileSep
-			var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
+			var fileMdDumpMoveDir = config.get[String]("filedumpmove.dir")
 			if(fileMdDumpMoveDir.equals("")){
 				Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")
 			}

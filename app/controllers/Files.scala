@@ -9,8 +9,7 @@ import api.Permission
 import fileutils.FilesUtils
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import play.api.Logger
-import play.api.Play.{configuration, current}
+import play.api.{Configuration, Logger}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.iteratee._
@@ -53,7 +52,8 @@ class Files @Inject() (
   adminsNotifierService: AdminsNotifierService,
   extractionBusService: ExtractionBusService,
   appConfig: AppConfigurationService,
-  searches: SearchService) extends SecuredController {
+  searches: SearchService,
+  config: Configuration) extends SecuredController {
 
   /**
    * Upload form.
@@ -874,7 +874,7 @@ class Files @Inject() (
    * Gets type of index and list of sections, and passes on to the Search controller
    */
   def uploadSelectQuery() = PermissionAction(Permission.ViewDataset)(parse.multipartFormData) { implicit request =>
-    val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
+    val nameOfIndex = config.get[Option[String]]("elasticsearchSettings.indexNamePrefix")
     //=== processing searching within files or sections of files or both ===
     //dataParts are from the seach form in view/multimediasearch
     //get type of index and list of sections, and pass on to the Search controller

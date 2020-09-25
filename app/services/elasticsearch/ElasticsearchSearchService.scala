@@ -4,7 +4,7 @@ import scala.util.Try
 import scala.collection.mutable.{ListBuffer, MutableList}
 import scala.collection.immutable.List
 import scala.concurrent.duration._
-import play.api.{Application, Logger, Plugin}
+import play.api.{Application, Logger, Configuration}
 import play.api.Play.current
 import play.api.libs.json._
 import play.libs.Akka
@@ -56,19 +56,20 @@ class ElasticsearchSearchService @Inject() (
                                              datasets: DatasetService,
                                              collections: CollectionService,
                                              metadatas: MetadataService,
-                                             queue: QueueService) extends SearchService {
+                                             queue: QueueService,
+                                           config: Configuration) extends SearchService {
   var client: Option[RestHighLevelClient] = None
-  val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
-  val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("http://localhost")
-  val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
-  val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
-  val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
+  val nameOfCluster = config.get[String]("elasticsearchSettings.clusterName")
+  val serverAddress = config.get[String]("elasticsearchSettings.serverAddress")
+  val serverPort = config.get[Int]("elasticsearchSettings.serverPort")
+  val nameOfIndex = config.get[String]("elasticsearchSettings.indexNamePrefix")
+  val maxResults = config.get[Int]("elasticsearchSettings.maxResults")
 
   val mustOperators = List("==", "<", ">", ":")
   val mustNotOperators = List("!=")
 
   // Queue stuff
-  val useQueue = play.api.Play.configuration.getBoolean("elasticsearchSettings.useQueue").getOrElse(true)
+  val useQueue = config.get[Boolean]("elasticsearchSettings.useQueue")
   override val queueName = "elasticsearch"
   var queueTimer: Cancellable = null
 

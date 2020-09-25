@@ -9,7 +9,7 @@ import java.util.Date
 import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
@@ -21,7 +21,12 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
  * USe MongoDB to store sections
  */
 @Singleton
-class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService, files: FileService, datasets: DatasetService, folders: FolderService) extends SectionService {
+class MongoDBSectionService @Inject() (comments: CommentService,
+                                       previews: PreviewService,
+                                       files: FileService,
+                                       datasets: DatasetService,
+                                       folders: FolderService,
+                                      config: Configuration) extends SectionService {
   
   def listSections(): List[Section] = {
     SectionDAO.findAll.toList
@@ -35,7 +40,7 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
-    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+    val maxTagLength = config.get[Int]("clowder.tagLength")
     tags.foreach(tag => {
       val shortTag = if (tag.length > maxTagLength) {
         Logger.error("Tag is truncated to " + maxTagLength + " chars : " + tag)

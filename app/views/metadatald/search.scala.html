@@ -1,6 +1,7 @@
 @(spaces: List[ProjectSpace], selectedSpace: Option[ProjectSpace] = None)(implicit user: Option[models.User])
 
-@import play.api.Play.current
+@import play.api.Configuration
+@import services.DI
 
 @main("Metadata Search") {
     @selectedSpace match {
@@ -122,7 +123,7 @@
         var metadata_definitions = [];
 
         // count_stepsize is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
-        var count_stepsize = @{play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)};
+        var count_stepsize = @{DI.injector.getInstance(classOf[Configuration]).get[Int]("elasticsearchSettings.maxResults")};
         var count = 0;
         var skipped_count = 0;
         // Whether all results for current search have been exhausted & displayed yet

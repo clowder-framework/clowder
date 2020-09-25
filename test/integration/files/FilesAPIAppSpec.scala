@@ -1,11 +1,12 @@
 package integration
 
+import javax.inject.Inject
 import org.scalatestplus.play.{PlaySpec, _}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Json, _}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.{Application, Logger, Play}
+import play.api.{Application, Configuration, Logger, Play}
 
 import scala.io.Source
 
@@ -17,9 +18,9 @@ import scala.io.Source
 
 
 //@DoNotDiscover
-class FilesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+class FilesAPIAppSpec @Inject() (config: Configuration) extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
-  lazy val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  lazy val secretKey = config.get[String]("commKey")
   lazy val workingDir = System.getProperty("user.dir")
 
   var morrowPlotFileId: String = ""

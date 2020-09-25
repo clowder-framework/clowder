@@ -1,7 +1,8 @@
 @(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html, spaceId: Option[UUID], spaceName: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import play.api.i18n.Messages
 @import helper._
-@import play.api.Play.current
+@import services.DI
+@import play.api.Configuration
 @import models.SpaceStatus
 @import api.Permission
 @import _root_.util.Formatters._
@@ -258,7 +259,7 @@ $('.affiliated-space-add').click(function () {
     }
 
   });
-  @if(!play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
+  @if(!DI.injector.getInstance(classOf[Configuration]).get[Boolean]("enable_expiration")) {
     $("#expiration").closest(".control-group").hide();
     $("#editTime").closest(".control-group").hide();
   }

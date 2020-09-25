@@ -1,7 +1,7 @@
 @(query: String)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
-@import scala.collection.mutable.ListBuffer
-@import play.api.Play.current
+@import services.DI
+@import play.api.Configuration
 
 @main("Search") {
 	<div class="row with-margin-md">
@@ -91,7 +91,7 @@
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
         // count_stepsize is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
-        var count_stepsize = @{play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)};
+        var count_stepsize = @{DI.injector.getInstance(classOf[Configuration]).get[Int]("elasticsearchSettings.maxResults")};
         count_stepsize = 2;
         var count = 0;
         var skipped_count = 0;

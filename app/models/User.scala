@@ -126,7 +126,6 @@ case class ClowderUser (
   email: Option[String],
   authMethod: AuthenticationMethod,
   avatarUrl: Option[String] = None,
-  oAuth1Info: Option[OAuth1Info] = None,
   oAuth2Info: Option[OAuth2Info] = None,
   passwordInfo: Option[PasswordInfo] = None,
 

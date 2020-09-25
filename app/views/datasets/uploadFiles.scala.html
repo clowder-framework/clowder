@@ -1,5 +1,6 @@
 @(dataset: Dataset, folderId: Option[String])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
+@import services.DI
 <!--
 The sections of this file dealing with the multi file uploader library are loosely based on the demo
 of the blueimp jQuery File Upload library. An open source project located here: http://blueimp.github.io/jQuery-File-Upload/
@@ -183,7 +184,7 @@ of the blueimp jQuery File Upload library. An open source project located here: 
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload.js")"></script>
 <!-- The File Upload processing plugin -->
 <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-process.js")"></script>
-@if(play.Play.application.configuration.getBoolean("clowder.upload.previews", true)) {
+@if(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("clowder.upload.previews")) {
     <!-- The File Upload image preview & resize plugin -->
     <script src="@routes.Assets.at("javascripts/file-uploader/jquery.fileupload-image.js")"></script>
     <!-- The File Upload audio preview plugin -->

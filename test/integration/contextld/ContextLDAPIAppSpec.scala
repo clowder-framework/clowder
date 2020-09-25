@@ -1,38 +1,17 @@
 package integration
 
-import play.api.test.FakeApplication
+import javax.inject.Inject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import play.api.Logger
-import org.scalatestplus.play.OneAppPerSuite
+import play.api.{Configuration, Logger}
 import org.scalatestplus.play.PlaySpec
-import play.api.Play
-import org.apache.http.entity.mime.content.ContentBody
-import org.apache.http.entity.mime.MultipartEntity
-import org.apache.http.entity.mime.MultipartEntityBuilder
-import org.apache.commons.io.output.ByteArrayOutputStream
-import org.apache.http.entity.mime.content.FileBody
-import play.api.libs.json.JsObject
-import scala.io.Source
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.FileReader
-import java.io.File
-import play.api.http.Writeable
-import play.api.mvc.MultipartFormData
-import play.api.libs.Files.TemporaryFile
-import play.api.mvc.MultipartFormData.FilePart
-import play.api.mvc.Codec
-import org.apache.http.entity.ContentType
 
-import play.api.test._
-import org.scalatest._
+import scala.io.Source
 import org.scalatestplus.play._
-import play.api.{Play, Application}
+import play.api.{Application, Play}
 
 /*
  * Integration tests for Context-LD API - Router test
@@ -42,7 +21,7 @@ import play.api.{Play, Application}
 
 
 //@DoNotDiscover
-class ContextLDAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+class ContextLDAPIAppSpec @Inject() (config: Configuration) extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
   case class FileName(size: String, datecreated: String, id: String, contenttype: String, filename: String)
 
@@ -94,7 +73,7 @@ class ContextLDAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipart
  	
   "The Context-LD API Spec" must {
     "respond to the createContext() function routed by POST /api/contexts" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
 
       //link up json file here before fake request.
       val workingDir = System.getProperty("user.dir")
@@ -138,7 +117,7 @@ class ContextLDAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipart
 
 
   "respond to the getContextById(id: UUID) and removeContextById(id: UUID) functions routed by GET/DELETE /api/contexts/:id" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
 
       //link up json file here before fake request.
       val workingDir = System.getProperty("user.dir")

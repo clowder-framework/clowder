@@ -11,11 +11,13 @@ import org.apache.http.entity.StringEntity
 import org.json.simple.parser.JSONParser
 import java.io.BufferedReader
 import java.io.InputStreamReader
+
 import scala.util.control._
 import org.scalatest.GivenWhenThen
 import java.io.FileReader
 
-import play.api.{Play, Application}
+import javax.inject.Inject
+import play.api.{Application, Play, Configuration}
 
 
 /*
@@ -26,7 +28,7 @@ import play.api.{Play, Application}
  */
 
 //@DoNotDiscover
-class DTSExtractionsAPIAppSpec extends PlaySpec with OneServerPerSuite with GivenWhenThen {
+class DTSExtractionsAPIAppSpec @Inject() (config: Configuration) extends PlaySpec with OneServerPerSuite with GivenWhenThen {
  
 
   "The DTS Extractions API Spec" must {
@@ -45,7 +47,7 @@ class DTSExtractionsAPIAppSpec extends PlaySpec with OneServerPerSuite with Give
     }
     "provide an actual running server for DTS functional test" in {
 
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
       val client = new DefaultHttpClient()
       val requestUrl = "http://localhost:" + port + "/api/extractions/upload_url?key=" + secretKey
       val httpPost = new HttpPost(requestUrl)

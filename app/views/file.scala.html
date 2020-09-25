@@ -8,7 +8,8 @@
 		view_count: Int, view_date: java.util.Date, pager: models.Pager)(implicit user: Option[models.User], request: RequestHeader)
 
 @import helper._
-@import play.api.Play.current
+@import play.api.Configuration
+@import services.DI
 @import api.Permission
 @import _root_.util.FileUtils
 @import _root_.util.Formatters._
@@ -73,7 +74,7 @@
 			Configuration.expressInstallPath = "@(routes.Assets.at("plugins") + "/" + "expressInstall.swf")";
 			Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 			Configuration.imagesPath = "@(routes.Assets.at("images"))";
-			Configuration.appContext = "@play.api.Play.configuration.getString("application.context").getOrElse("")";
+			Configuration.appContext = "@DI.injector.getInstance(classOf[Configuration]).get[String]("application.context")";
 			var cur_description;
 			function updateFileDescription() {
 				cur_description = $('#ds_description').html().trim();
@@ -542,7 +543,8 @@
 								}
 							});
 					</script>
-					@defining(play.api.Play.configuration.getBoolean("navOnSectionClick").getOrElse(true)){navOnSectionClick=>
+
+					@defining(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("navOnSectionClick")){navOnSectionClick=>
 						<script>
 								$(function() {
 									// Load the classic theme
@@ -1068,7 +1070,7 @@
 				@if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.file, file.id))) {
 					<form class="form-inline">
 						<div class="input-group input-group-sm col-md-8">
-							<input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<input type="text" maxlength="@DI.injector.getInstance(classOf[Configuration]).get[Int]("clowder.tagLength")" id="tagField" class="form-control">
 							<span class="input-group-btn">
 								<button class="btn btn-default btn-large" id="tagB" title="Add Tag" >
 									<span class="glyphicon glyphicon-tag"></span>Tag
@@ -1079,7 +1081,7 @@
 				} else {
 					<form class="form-inline">
 						<div class="input-group input-group-sm col-md-8">
-							<input disabled type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<input disabled type="text" maxlength="@DI.injector.getInstance(classOf[Configuration]).get[Int]("clowder.tagLength")" id="tagField" class="form-control">
 							<span class="input-group-btn">
 								<button class="btn btn-default btn-large" id="tagB" title="Add Tag" disabled>
 									<span class="glyphicon glyphicon-tag"></span>Tag

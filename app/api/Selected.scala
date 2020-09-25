@@ -7,11 +7,9 @@ import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import play.api.libs.json.Json._
-import play.api.Logger
-import play.api.Play.current
+import play.api.{Configuration, Logger}
 import akka.stream.scaladsl.Source
 import Iterators.SelectedIterator
 import akka.NotUsed
@@ -26,7 +24,8 @@ import util.FileUtils
  */
 class Selected @Inject()(selections: SelectionService,
                          datasets: DatasetService,
-                         events: EventService) extends Controller with ApiController {
+                         events: EventService,
+                         config: Configuration) extends Controller with ApiController {
 
   def get() = AuthenticatedAction { implicit request =>
     Logger.debug("Requesting Selected.get" + request.body)
@@ -106,7 +105,7 @@ class Selected @Inject()(selections: SelectionService,
     Logger.debug("Requesting Selected.downloadAll")
     request.user match {
       case Some(user) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = config.get[Boolean]("downloadDatasetBagit")
         val selected = selections.get(user.email.get)
         val stream = streamSelected(selected,1024*1024, bagit, Some(user))
         Ok.chunked(stream).withHeaders(

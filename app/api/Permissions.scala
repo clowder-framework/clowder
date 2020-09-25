@@ -2,9 +2,8 @@ package api
 
 import api.Permission.getUserByIdentity
 import models.{UUID, ResourceRef, User, UserStatus}
-import play.api.Logger
+import play.api.{Logger, Configuration}
 import play.api.mvc._
-import play.api.Play.configuration
 import services._
 
 /**

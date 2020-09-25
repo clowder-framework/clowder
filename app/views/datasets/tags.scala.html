@@ -1,7 +1,8 @@
 @(dataset: Dataset)(implicit user: Option[models.User])
 
 @import api.Permission
-@import play.api.Play.current
+@import play.api.Configuration
+@import services.DI
 
 <div class="row">
     <div class="col-md-12">
@@ -35,7 +36,7 @@
         @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
             <form class="form-inline">
                 <div class="input-group input-group-sm">
-                    <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" type="text" id="tagField" class="form-control add-resource">
+                    <input maxlength="@DI.injector.getInstance(classOf[Configuration]).get[Int]("clowder.tagLength")" type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
                             <span class="glyphicon glyphicon-tag"></span> Tag

@@ -7,32 +7,32 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import play.api.Logger
+import play.api.{Application, Configuration, Logger, Play}
 import org.scalatestplus.play.OneAppPerSuite
 import org.scalatestplus.play.PlaySpec
-import play.api.Play
 import org.apache.http.entity.mime.content.ContentBody
 import org.apache.http.entity.mime.MultipartEntity
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.commons.io.output.ByteArrayOutputStream
 import org.apache.http.entity.mime.content.FileBody
 import play.api.libs.json.JsObject
+
 import scala.io.Source
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.FileReader
 import java.io.File
+
+import javax.inject.Inject
 import play.api.http.Writeable
 import play.api.mvc.MultipartFormData
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.Codec
 import org.apache.http.entity.ContentType
-
 import play.api.test._
 import org.scalatest._
 import org.scalatestplus.play._
-import play.api.{Play, Application}
 
 /*
  * Integration tests for Spaces API - Router test
@@ -42,7 +42,7 @@ import play.api.{Play, Application}
 
 
 //@DoNotDiscover
-class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+class SpacesAPIAppSpec @Inject() (config: Configuration) extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
   case class FileName(size: String, datecreated: String, id: String, contenttype: String, filename: String)
 
@@ -104,7 +104,7 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
  	
  "The Space API Spec must" must {
     "respond to the createSpace() function routed by POST /api/spaces" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
 
       //link up json file here before fake request.
       val workingDir = System.getProperty("user.dir")
@@ -147,7 +147,7 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
     }
 
     "respond to the get(id:UUID) function routed by GET /api/spaces/:id  " in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
       val Some(result) = route(FakeRequest(GET, "/api/spaces"))
       info("Status="+status(result))
       status(result) mustEqual OK
@@ -189,7 +189,7 @@ class SpacesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpl
 
 
     "respond to the removeSpace(id:UUID) function routed by DELETE /api/spaces/:id  " in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
       val Some(result) = route(FakeRequest(GET, "/api/spaces"))
       info("Status="+status(result))
       status(result) mustEqual OK

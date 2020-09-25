@@ -1,15 +1,15 @@
 package integration
 
 
+import javax.inject.Inject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.libs.json.Json
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import play.api.Logger
+import play.api.{Application, Configuration, Logger, Play}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play._
-import play.api.{Play, Application}
 
 /*
  * Based on http://stackoverflow.com/questions/15133794/writing-a-test-case-for-file-uploads-in-play-2-1-and-scala
@@ -20,9 +20,9 @@ import play.api.{Play, Application}
  */
 
 //@DoNotDiscover
-class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+class ExtractionsAPIAppSpec @Inject() (config: Configuration) extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
-  lazy val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+  lazy val secretKey = config.get[String]("commKey")
   lazy val workingDir = System.getProperty("user.dir")
 
   var ncsaLogoFileId: String = ""

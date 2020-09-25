@@ -1,16 +1,16 @@
 package integration
 
+import javax.inject.Inject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.libs.json.Json
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import play.api.Logger
+import play.api.{Application, Configuration, Logger, Play}
 import org.scalatestplus.play.PlaySpec
 
 import scala.io.Source
 import org.scalatestplus.play._
-import play.api.{Application, Play}
 import services.DI
 
 
@@ -21,7 +21,7 @@ import services.DI
  */
 
 //@DoNotDiscover
-class PreviewsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+class PreviewsAPIAppSpec @Inject() (config: Configuration) extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
   val configuration = DI.injector.getInstance(classOf[play.api.Configuration])
   lazy val secretKey = configuration.get[String]("commKey")
   lazy val workingDir = System.getProperty("user.dir")
@@ -189,7 +189,7 @@ class PreviewsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     }
 
     "respond to the list() function routed by GET /api/previews" in {
-      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val secretKey = config.get[String]("commKey")
       val Some(result) = route(FakeRequest(GET, "/api/previews?key=" + secretKey))
       info("Status=" + status(result))
       status(result) mustEqual OK

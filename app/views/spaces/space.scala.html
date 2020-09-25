@@ -1,7 +1,8 @@
 @(space: ProjectSpace, collections: List[Collection], publicDatasets: List[Dataset], datasets: List[Dataset], publishedData: List[play.api.libs.json.JsValue], servicesUrl: String, userRoleMap: Map[User, String], userSelections: List[String])(implicit user: Option[models.User])
 @import play.api.libs.json._
 
-@import play.api.Play.current
+@import services.DI
+@import play.api.Configuration
 @import api.Permission
 @import play.api.i18n.Messages
 @main(space.name) {
@@ -118,7 +119,7 @@
             @if(play.Play.application().configuration().getBoolean("enablePublic")) {
                 @spaces.access(space, userRoleMap, "row ds-section-sm break-word space-col-right")
             }
-            @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
+            @if(DI.injector.getInstance(classOf[Configuration]).get[Boolean]("enable_expiration")) {
                 @spaces.spaceConfiguration(space)
             }
         </div>
