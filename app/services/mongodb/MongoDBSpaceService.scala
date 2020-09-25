@@ -4,11 +4,11 @@ package services.mongodb
 import javax.inject.{Inject, Singleton}
 import api.Permission
 import api.Permission.Permission
-import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.Imports.{$and, _}
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
 import play.api.Logger
@@ -683,6 +683,11 @@ class MongoDBSpaceService @Inject() (
   def disableExtractor(spaceId: UUID, extractor: String) {
     val query = MongoDBObject("spaceId" -> spaceId.stringify)
     ExtractorsForSpaceDAO.update(query, $addToSet("disabled" -> extractor), true, false, WriteConcern.Safe)
+  }
+
+  def setDefaultExtractor(spaceId: UUID, extractor: String) {
+    val query = MongoDBObject("spaceId" -> spaceId.stringify)
+    ExtractorsForSpaceDAO.update(query, $pull("disabled" -> extractor,"enabled" -> extractor), true, false, WriteConcern.Safe)
   }
 
   /**

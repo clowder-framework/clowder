@@ -96,13 +96,14 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         case Some(s) => {
           // get list of registered extractors
           val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo(List.empty)
+          // list of extractors enabled globally
+          val globalSelections: List[String] = extractors.getEnabledExtractors()
           // get list of extractors registered with a specific space
           val selectedExtractors: Option[ExtractorsForSpace] = spaces.getAllExtractors(id)
           val (enabledInSpace, disabledInSpace) = spaces.getAllExtractors(id) match {
             case Some(extractorsForSpace) => (extractorsForSpace.enabled, extractorsForSpace.disabled)
             case None => (List.empty[String], List.empty[String])
           }
-          val globalSelections: List[String] = extractors.getEnabledExtractors()
           Ok(views.html.spaces.updateExtractors(runningExtractors, enabledInSpace, disabledInSpace, globalSelections, id, s.name))
         }
         case None => InternalServerError(spaceTitle + " not found")
@@ -139,11 +140,15 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
             extractors.foreach { extractor =>
               // get the first entry and ignore all others (there should only be one)
               val name = extractor.substring(prefix.length)
-              val enabled = dataParts(extractor)(0).toBoolean
-              if (enabled) {
+              val value = dataParts(extractor)(0)
+              if (value.equals("default")) {
+                spaces.setDefaultExtractor(existing_space.id, name)
+              } else if (value.equals("enabled")) {
                 spaces.enableExtractor(existing_space.id, name)
-              } else {
+               } else if (value.equals("disabled")) {
                 spaces.disableExtractor(existing_space.id, name)
+              } else {
+                Logger.error("Wrong value for update space extractor form")
               }
             }
 //            if (dataParts.isDefinedAt("extractors-override")) {

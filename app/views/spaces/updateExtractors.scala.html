@@ -2,7 +2,7 @@
 @import _root_.util.Formatters._
 @import helper._
 
-@main("Space") {
+@main("Space Extractors") {
 	<div>
 		<ol class="breadcrumb">
 			<li><span class="glyphicon glyphicon-hdd"></span>  <a href="@routes.Spaces.getSpace(space)" title="@spaceName"> @Html(ellipsize(spaceName,18))</a></li>
@@ -16,7 +16,7 @@
   </div>
  } else {
      <div class="page-header">
-		 <h1>Extractors</h1>
+		 <h1>Space Extractors</h1>
      </div>
 	 <div class="row top-padding">
 		 <div class="col-xs-12">
@@ -32,31 +32,19 @@
 		<table class="table">
 			<thead>
 				<tr>
-					<th class="text-center">Enabled Globally</th>
-					<th class="text-center">Space Enabled</th>
-					<th class="text-center">Space Disabled</th>
 					<th>Name</th>
 					<th>Description</th>
 					<th>Process Triggers</th>
+					<th class="text-center">Enabled</th>
+					<th class="text-center">Use Default</th>
+					<th class="text-center">Enable in Space</th>
+					<th class="text-center">Disable in Space</th>
 				</tr>
 			</thead>
 			<tbody>
 			<!-- Display all running extractors. If extractor already in this space, check the box. -->
 			@runningExtractors.map { extractor =>
 				<tr>
-					<td class="text-center">
-						@if(globalSelections.contains(extractor.name)) {
-							<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-						}
-					</td>
-					<td class="text-center">
-						<input type="radio" name="extractors-@extractor.name" value="true"
-							@if(enabledInSpace.contains(extractor.name)) {checked}>
-					</td>
-					<td class="text-center">
-						<input type="radio" name="extractors-@extractor.name" value="false"
-							@if(disabledInSpace.contains(extractor.name)) {checked}>
-					</td>
 					<td><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
 					<td>@extractor.description</td>
 					<td>
@@ -93,6 +81,23 @@
 							|| !extractor.process.dataset.isEmpty) {hidden}>
 						None
 						</p>
+					</td>
+					<td class="text-center">
+						@if(globalSelections.contains(extractor.name)) {
+							<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+						}
+					</td>
+					<td class="text-center">
+						<input type="radio" name="extractors-@extractor.name" value="default"
+						@if(!enabledInSpace.contains(extractor.name) && !disabledInSpace.contains(extractor.name)) {checked}>
+					</td>
+					<td class="text-center">
+						<input type="radio" name="extractors-@extractor.name" value="enabled"
+						@if(enabledInSpace.contains(extractor.name)) {checked}>
+					</td>
+					<td class="text-center">
+						<input type="radio" name="extractors-@extractor.name" value="disabled"
+						@if(disabledInSpace.contains(extractor.name)) {checked}>
 					</td>
 				</tr>
 			}

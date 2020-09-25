@@ -170,7 +170,7 @@ class MongoDBExtractorService extends ExtractorService {
   def listExtractorsInfo(categories: List[String]): List[ExtractorInfo] = {
     var list_queue = List[ExtractorInfo]()
 
-    val allDocs = ExtractorInfoDAO.findAll()
+    val allDocs = ExtractorInfoDAO.findAll().sort(orderBy = MongoDBObject("name" -> -1))
     for (doc <- allDocs) {
       // If no categories are specified, return all extractor names
       var category_match = categories.isEmpty

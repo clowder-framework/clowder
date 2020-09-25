@@ -283,6 +283,14 @@ trait SpaceService {
    * @param extractor
    */
   def disableExtractor(spaceId: UUID, extractor: String)
+
+
+  /**
+   * Follow the global setting for whether to trigger an extractor or not.
+   * @param spaceId
+   * @param extractor
+   */
+  def setDefaultExtractor(spaceId: UUID, extractor: String)
 	
 	/**
 	 * Get all extractors for this space id. This is the union of all enabled and disabled extractors for this space.
