@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - proxy will no correctly handle paths that end with a / at the end.
 - submitting an extraction will always return a 500 error, see [#84](https://github.com/clowder-framework/clowder/issues/84)
 
-### CHanged
-- updated update-clowder script to work with migration to github
+### Changed
+- updated update-clowder script to work with migration to github. Has the ability now to push a message to MSTEAMS as well as influxdb.
 
 ## 1.11.0 - 2020-08-31
 
