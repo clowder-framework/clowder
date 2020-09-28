@@ -10,7 +10,7 @@ import services._
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import java.util.{Calendar, Date}
-import java.text.SimpleDateFormatval yearcal = Calendar.getInstance
+import java.text.SimpleDateFormatval
 import java.util.concurrent.TimeUnit
 import java.util.Calendar
 
