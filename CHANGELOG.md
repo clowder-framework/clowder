@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
+- MongoDB index for `folders.files`.
 
 ### Fixed
 - Fixed health check script when using custom path prefix
@@ -16,6 +17,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - updated update-clowder script to work with migration to github. Has the ability now to push a message to MSTEAMS as well as influxdb.
+
+### Changed
+- Can now control parallelism of queue service, specifically elasticsearch. Now uses batches of 50 documents.
 
 ## 1.11.0 - 2020-08-31
 

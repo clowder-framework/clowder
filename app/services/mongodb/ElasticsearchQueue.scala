@@ -20,6 +20,8 @@ class ElasticsearchQueue @Inject() (
   sections: SectionService) extends MongoDBQueueService {
 
   override val consumer = "elasticsearch"
+  override val threads = play.api.Play.configuration.getInt("elasticsearch.threads").getOrElse(1)
+  override val batchSize = play.api.Play.configuration.getInt("elasticsearch.batchSize").getOrElse(20)
 
   // check whether necessary conditions are met (e.g. the plugin is enabled)
   override def enabled(): Boolean = {
