@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
+- MongoDB index for `folders.files`.
 
 ### Fixed
 - proxy will no correctly handle paths that end with a / at the end.
 
 ### Changed
-- Can now control parallelism of queue service, specifically elasticsearch. Now uses batches of 50 documents
+- Can now control parallelism of queue service, specifically elasticsearch. Now uses batches of 50 documents.
 
 ## 1.11.0 - 2020-08-31
 
