@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ExtractorInfo, Folder, ResourceRef, UUID}
+import models.{ExtractorInfo, Folder, ResourceRef, UUID, Extraction}
 import play.api.mvc.Controller
 import api.Permission
 import javax.inject.{Inject, Singleton}
@@ -9,6 +9,9 @@ import services._
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
+import java.util.{Calendar, Date}
+import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
 
 /**
  * Information about extractors.
@@ -82,9 +85,61 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
   def showExtractorMetrics(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
+
+    val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+    val todaydate = dateFormatter.format(new java.util.Date())
+
+    import java.util.Calendar
+    val hourcal = Calendar.getInstance
+    hourcal.add(Calendar.HOUR, -24)
+    val yesterdaydate = dateFormatter.format(hourcal.getTime)
+
+    val daycal = Calendar.getInstance
+    daycal.add(Calendar.WEEK_OF_MONTH, -1)
+    val last7daydate = dateFormatter.format(daycal.getTime)
+
+    val monthcal = Calendar.getInstance
+    monthcal.add(Calendar.MONTH, -1)
+    val lastmonthdate = dateFormatter.format(monthcal.getTime)
+
+//    val yearcal = Calendar.getInstance
+//    yearcal.add(Calendar.YEAR, -1)
+//    val lastyeardate = dateFormatter.format(yearcal.getTime)
+
+    Logger.warn("today date: " + todaydate)
+    Logger.warn("yesterday date: " + yesterdaydate)
+    Logger.warn("last 7 day date: " + last7daydate)
+    Logger.warn("last month date: " + lastmonthdate)
+
+//    Logger.warn("last year date: " + lastyeardate)
+
+    val myDonelist = extractions.findByExtractorIDBefore(extractorName, "DONE", yesterdaydate, 10)
+    val mySubmittedlist = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", yesterdaydate, 10)
+    var n: Long = 0
+    var sum: Long = 0
+    for ((done, submitted) <- (myDonelist zip mySubmittedlist)) {
+      Logger.warn("my done date: " + done.start + ", fileid: " + done.file_id)
+      Logger.warn("my submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
+      Logger.warn("done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
+      val diffInMillies = Math.abs(done.start.getTime - submitted.start.getTime)
+      val diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS)
+      Logger.warn("diff in sec: " + diff)
+      sum = sum + diff
+      n = n+1
+    }
+    var average = sum.toFloat
+    if(n > 0) {
+      average = average/n
+    }
+    Logger.warn("average: " + average)
+
+    val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
+    Logger.warn("lastweek submitted: " + lastweeksubmitted.size)
+    val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
+
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorMetrics(extractor))
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toInt, lastweeksubmitted.size, lastmonthsubmitted.size))
       case None => InternalServerError("Extractor Info not found: " + extractorName)
     }
   }

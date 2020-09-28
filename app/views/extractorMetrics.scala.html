@@ -1,39 +1,48 @@
-@(extractorInfo: ExtractorInfo)
-@import _root_.util.Formatters._
-@import helper._
+@(extractorName: String, average: Int, lastweeksubmitted: Int, lastmonthsubmitted: Int)(implicit user: Option[models.User])
 @import api.Permission
 
-@main("Extractor Metrics") {
-    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/extractions.css")">
+@main("Extractor Details") {
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/extractors/extractors.js")" type="text/javascript"></script>
+    <style>
+            strong        { text-align: right; }
+            fieldset      { margin-top: 5px; }
+            .form-actions { margin-top: 15px; }
+    </style>
 
     <ol class="breadcrumb">
-        <li><span class="glyphicon glyphicon-fullscreen"></span> Extractor Metrics</li>
+        <li><span class="glyphicon glyphicon-fullscreen"></span> <a href="@routes.Extractors.selectExtractors()">Extractor Catalog</a></li>
+        <li><span class="glyphicon glyphicon-search"></span> @extractorName</li>
     </ol>
 
+    <div class="page-header"><h1>Metrics Details</h1></div>
 
-    <div class="page-header">
-        <h1>@extractorInfo.name Metrics</h1>
-    </div>
+    <div class="row">
+        <div class="col-sm-8">
+            <form>
+                <fieldset>
 
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorNameField">Last 24 Hours Execution Average</strong>
+                        <span class="col-sm-9" for="extractorNameField">@average  Sec</span>
+                    </div>
+                        <!-- TODO: It would be nice to make this a mailto: link, but it doesn't seem trivial to scrape this out -->
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorAuthorField">Last Week Submitted</strong>
+                        <span class="col-sm-9" for="extractorAuthorField">@lastweeksubmitted</span>
+                    </div>
 
-    <div class="row top-padding">
-        <div class="col-xs-12">
-            @form(action = routes.Extractors.updateExtractors(), 'id -> "formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Authors</th>
-                            <th>Version</th>
-                            <th>Last Commit Sha</th>
-                            <th>Last RunTime</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                    <div class="row form-group">
+                        <strong class="col-sm-3" for="extractorVersionField">Last Month Submitted</strong>
+                        <span class="col-sm-9" for="extractorVersionField">@lastmonthsubmitted</span>
+                    </div>
+                </fieldset>
 
-                    </tbody>
-                </table>
-            } <!-- end of form -->
+            </form>
+        </div>
+
+        <div class="col-sm-4">
+                <!-- Insert sidebar here, if desired-->
         </div>
     </div>
 }

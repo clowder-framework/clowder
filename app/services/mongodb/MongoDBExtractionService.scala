@@ -1,5 +1,7 @@
 package services.mongodb
 
+import java.text.SimpleDateFormat
+
 import services.ExtractionService
 import models.{UUID, Extraction, ExtractionGroup, ResourceRef}
 import org.bson.types.ObjectId
@@ -37,6 +39,12 @@ class MongoDBExtractionService extends ExtractionService {
 
   def findById(resource: ResourceRef): List[Extraction] = {
     Extraction.find(MongoDBObject("file_id" -> new ObjectId(resource.id.stringify))).toList
+  }
+
+  def findByExtractorIDBefore(extractorID: String, status: String, date: String, limit: Int): List[Extraction] = {
+    val order = MongoDBObject("start"-> -1 )
+    val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
+    Extraction.find($and("extractor_id" $eq extractorID, "status" $eq status, "start" $gte sinceDate)).sort(order).limit(limit).toList
   }
 
   def insert(extraction: Extraction): Option[ObjectId] = {
