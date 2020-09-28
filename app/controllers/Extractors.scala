@@ -116,24 +116,25 @@ class Extractors  @Inject() (extractions: ExtractionService,
       Logger.debug("my submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
       Logger.debug("done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
       val diffInMillies = Math.abs(done.start.getTime - submitted.start.getTime)
-      val diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS)
-      Logger.warn("diff in sec: " + diff)
-      sum = sum + diff
+      Logger.debug("diffInMillies in ms: " + diffInMillies)
+      sum = sum + diffInMillies
       n = n+1
     }
+    sum = TimeUnit.SECONDS.convert(sum, TimeUnit.MILLISECONDS)
     var average = sum.toFloat
+    Logger.debug("average: " + average)
     if(n > 0) {
       average = average/n
     }
     Logger.debug("average: " + average)
 
     val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
-    Logger.warn("lastweek submitted: " + lastweeksubmitted.size)
+    Logger.debug("lastweek submitted: " + lastweeksubmitted.size)
     val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
 
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toInt, lastweeksubmitted.size, lastmonthsubmitted.size))
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastweeksubmitted.size, lastmonthsubmitted.size))
       case None => InternalServerError("Extractor Info not found: " + extractorName)
     }
   }
