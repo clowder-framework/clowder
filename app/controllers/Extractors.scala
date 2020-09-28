@@ -10,8 +10,9 @@ import services._
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import java.util.{Calendar, Date}
-import java.text.SimpleDateFormat
+import java.text.SimpleDateFormatval yearcal = Calendar.getInstance
 import java.util.concurrent.TimeUnit
+import java.util.Calendar
 
 /**
  * Information about extractors.
@@ -89,7 +90,6 @@ class Extractors  @Inject() (extractions: ExtractionService,
     val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
     val todaydate = dateFormatter.format(new java.util.Date())
 
-    import java.util.Calendar
     val hourcal = Calendar.getInstance
     hourcal.add(Calendar.HOUR, -24)
     val yesterdaydate = dateFormatter.format(hourcal.getTime)
@@ -102,25 +102,19 @@ class Extractors  @Inject() (extractions: ExtractionService,
     monthcal.add(Calendar.MONTH, -1)
     val lastmonthdate = dateFormatter.format(monthcal.getTime)
 
-//    val yearcal = Calendar.getInstance
-//    yearcal.add(Calendar.YEAR, -1)
-//    val lastyeardate = dateFormatter.format(yearcal.getTime)
-
-    Logger.warn("today date: " + todaydate)
-    Logger.warn("yesterday date: " + yesterdaydate)
-    Logger.warn("last 7 day date: " + last7daydate)
-    Logger.warn("last month date: " + lastmonthdate)
-
-//    Logger.warn("last year date: " + lastyeardate)
+    Logger.debug("today date: " + todaydate)
+    Logger.debug("yesterday date: " + yesterdaydate)
+    Logger.debug("last 7 day date: " + last7daydate)
+    Logger.debug("last month date: " + lastmonthdate)
 
     val myDonelist = extractions.findByExtractorIDBefore(extractorName, "DONE", yesterdaydate, 10)
     val mySubmittedlist = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", yesterdaydate, 10)
     var n: Long = 0
     var sum: Long = 0
     for ((done, submitted) <- (myDonelist zip mySubmittedlist)) {
-      Logger.warn("my done date: " + done.start + ", fileid: " + done.file_id)
-      Logger.warn("my submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
-      Logger.warn("done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
+      Logger.debug("my done date: " + done.start + ", fileid: " + done.file_id)
+      Logger.debug("my submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
+      Logger.debug("done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
       val diffInMillies = Math.abs(done.start.getTime - submitted.start.getTime)
       val diff = TimeUnit.SECONDS.convert(diffInMillies, TimeUnit.MILLISECONDS)
       Logger.warn("diff in sec: " + diff)
@@ -131,7 +125,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     if(n > 0) {
       average = average/n
     }
-    Logger.warn("average: " + average)
+    Logger.debug("average: " + average)
 
     val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
     Logger.warn("lastweek submitted: " + lastweeksubmitted.size)
