@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
 
 ### Fixed
+- Fixed health check script when using custom path prefix
 - proxy will no correctly handle paths that end with a / at the end.
 - submitting an extraction will always return a 500 error, see [#84](https://github.com/clowder-framework/clowder/issues/84)
 
