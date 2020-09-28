@@ -50,7 +50,8 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     val runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
-    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors))
+    val groups = extractions.groupByType(extractions.findAll())
+    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
   }
 
   /**

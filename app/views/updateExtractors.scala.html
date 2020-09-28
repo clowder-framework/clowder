@@ -1,4 +1,4 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String],
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
         showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
@@ -147,7 +147,7 @@
                                 <th>Authors</th>
                                 <th>Version</th>
                                 <th>Maturity</th>
-                                <th>My Jobs</th>
+                                <!-- th>My Jobs</th -->
                                 <th>All Jobs</th>
                                 <th>Rating</th>
                                 @if(showOptional("processTriggers")) { <th>Process Triggers</th> }
@@ -185,13 +185,13 @@
                                     </td>
 
                                     <!-- TODO: Extractor Job Counts: My Job Submissions -->
-                                    <td class="v-center">
+                                    <!-- td class="v-center">
                                         TBD
-                                    </td>
+                                    </td -->
 
-                                    <!-- TODO: Extractor Job Counts: All Job Submissions -->
+                                    <!-- Extractor Job Counts: All Job Submissions -->
                                     <td class="v-center">
-                                        TBD
+                                        @groups(extractor.name).allMsgs.keySet.size
                                     </td>
 
                                     <!-- TODO: Extractor Ratings -->
