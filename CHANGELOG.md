@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
+- MongoDB index for `folders.files`.
 
 ### Fixed
 - Fixed health check script when using custom path prefix
