@@ -4296,24 +4296,6 @@ paths:
         404:
           description: Not found
           content: {}
-    put:
-      tags:
-        - extractions
-      summary: Updates information about a specific extractor
-      description: Extractions for Files.
-      parameters:
-        - name: name
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-        404:
-          description: Not found
-          content: {}
 
   /extractions/{id}/status:
     get:
