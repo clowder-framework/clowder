@@ -238,87 +238,71 @@
                                     </td>
                                 }
 
-                                <!-- Extractor More Actions Dropdown -->
+                                    <!-- Extractor More Actions Dropdown -->
                                 <td class="v-center">
                                     <div class="dropdown">
                                         <button class="btn btn-link btn-xs dropdown-toggle" style="color:black" id="more-@extractor.name" type="button" data-toggle="dropdown">
                                             <span class="glyphicon glyphicon-option-vertical"></span>
                                         </button>
                                         <ul class="dropdown-menu pull-right" role="menu" aria-labelledby="more-@extractor.name">
-                                            <!-- View Extractor Details -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="@routes.Extractors.showExtractorInfo(extractor.name)">
-                                                    <span class="glyphicon glyphicon-search"></span> View Details
-                                                </a>
-                                            </li>
-
-                                            <!-- TODO: View Extractor Job History -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="#">
-                                                    <span class="glyphicon glyphicon-tasks"></span> View History
-                                                </a>
-                                            </li>
-
-                                            <!-- TODO: View Extractor Logs -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="#">
-                                                    <span class="glyphicon glyphicon-console"></span> View Logs
-                                                </a>
-                                            </li>
-
-                                            <!-- TODO: View Extractor Metrics -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="#">
-                                                    <span class="glyphicon glyphicon-dashboard"></span> View Metrics
-                                                </a>
-                                            </li>
-
                                             <!-- TODO: Rate & Comment on Extractor -->
                                             <li role="presentation">
                                                 <a role="menuitem" tabindex="-1" href="#">
                                                     <span class="glyphicon glyphicon-comment"></span> Rate & Comment
                                                 </a>
                                             </li>
-
-                                            <!-- TODO: Admin-only: Extractor maturity (e.g. Development, Staging, Production) -->
+                                                <!-- Admin-only: Extractor maturity (e.g. Development, Staging, Production) -->
                                             @if(Permission.checkServerAdmin(user)) {
                                                 <li role="presentation" class="divider"></li>
 
-                                                <!-- TODO: Change Maturity to "Development" -->
-                                                <li role="presentation">
-                                                    <a role="menuitem" tabindex="-1" href="#">
-                                                        <span class="glyphicon glyphicon-blackboard"></span> Move to Development
-                                                    </a>
-                                                </li>
+                                                    <!-- Change Maturity to "Development" -->
+                                                @if(extractor.maturity != "Development") {
+                                                    <li role="presentation">
+                                                        <a role="menuitem" tabindex="-1" href="#" onclick="changeMaturity('@extractor.name', 'Development')">
+                                                            <span class="glyphicon glyphicon-blackboard"></span>
+                                                            Move to Development
+                                                        </a>
+                                                    </li>
+                                                }
 
-                                                <!-- TODO: Change Maturity to "Staging" -->
-                                                <li role="presentation">
-                                                    <a role="menuitem" tabindex="-1" href="#">
-                                                        <span class="glyphicon glyphicon-asterisk"></span> Move to Staging
-                                                    </a>
-                                                </li>
+                                                    <!-- Change Maturity to "Staging" -->
+                                                @if(extractor.maturity != "Staging") {
+                                                    <li role="presentation">
+                                                        <a role="menuitem" tabindex="-1" href="#" onclick="changeMaturity('@extractor.name', 'Staging')">
+                                                            <span class="glyphicon glyphicon-asterisk"></span>
+                                                            Move to Staging
+                                                        </a>
+                                                    </li>
+                                                }
 
-                                                <!-- TODO: Change Maturity to "Production" -->
-                                                <li role="presentation">
-                                                    <a role="menuitem" tabindex="-1" href="#">
-                                                        <span class="glyphicon glyphicon-globe"></span> Move to Production
-                                                    </a>
-                                                </li>
+                                                    <!-- Change Maturity to "Production" -->
+                                                @if(extractor.maturity != "Production") {
+                                                    <li role="presentation">
+                                                        <a role="menuitem" tabindex="-1" href="#" onclick="changeMaturity('@extractor.name', 'Production')">
+                                                            <span class="glyphicon glyphicon-globe"></span>
+                                                            Move to Production
+                                                        </a>
+                                                    </li>
+                                                }
                                             }
-                                        </ul>
+                                            </ul>
                                     </div>
                                 </td>
                             </tr>
                         }
-                    </tbody>
+                </tbody>
                 </table>
                 @if(Permission.checkServerAdmin(user)) {
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary" name = "submitValue" value="Update"><span class='glyphicon glyphicon-send'></span> Update</button>
                         <a class="btn btn-default" id="cancel_space"><span class="glyphicon glyphicon-remove" ></span> Cancel</a>
                     </div>
+
+                    <script src="@routes.Assets.at("javascripts/errorRedirect.js")"></script>
+                    <script src="@routes.Assets.at("javascripts/extractors/extractors.js")"></script>
                 }
-            } <!-- end of form -->
+                } <!-- end of form -->
+            </div>
         </div>
     </div>
 
@@ -332,4 +316,4 @@
                 }
             });
     </script>
-} 
+}
