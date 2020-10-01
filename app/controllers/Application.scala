@@ -31,8 +31,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
    * @param path the path minus the slash
    * @return moved permanently to path without /
    */
-  def untrail(path: String) = Action {
-    MovedPermanently("/" + path)
+  def untrail(path: String) = Action { implicit request =>
+    MovedPermanently(s"${Utils.baseUrl(request, false)}/${path}")
   }
 
   def swaggerUI = Action { implicit request =>
@@ -262,6 +262,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Logger.debug("---controller: PreFlight Information---")
     Ok("")
    }
+
+  def healthz() = Action { implicit request =>
+    Ok("healthy")
+  }
 
   /**
    * Bookmarklet
