@@ -256,35 +256,24 @@ class  Datasets @Inject()(
   // Create a dataset by uploading a compliant BagIt archive
   def createFromBag() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request: UserRequest[MultipartFormData[Files.TemporaryFile]] =>
     Logger.info("--- API Creating new dataset from zip archive ----")
-    /**
-     * Logic flow
-     * 1. check zip archive for clowder.xml first, then datacite.xml, if neither is found we reject
-     * 2. create dataset and populate metadata
-     *      TODO: should collection-level bags be supported somehow? clowder-specific context so not in datacite.xml. no folder or collection metadata.
-     *      TODO: if nested folders require individual metadata, the parents can be collections, but if they have metadata, reject?
-     * 3. download files if necessary/possible
-     *      TODO: just make uploadToDataset accept a URL and stream the file broadly if that isn't already possible.
-     * 4. upload files to Clowder and populate metadata
-     */
 
     var mainXML: Option[String] = None
-    var dsInfo: Option[String] = None
-    var dsMeta: Option[String] = None
+    var dsInfo: Option[String] = None   // dataset _info.json
+    var dsMeta: Option[String] = None   // dataset _metadata.json
 
-    // Maps of filename -> _info, actual bytes, metadata, and folder path
-    val fileInfos: MutaMap[String, String] = MutaMap.empty
-    val fileBytes: MutaMap[String, String] = MutaMap.empty
-    val fileMetas: MutaMap[String, String] = MutaMap.empty
-    val fileFolds: MutaMap[String, String] = MutaMap.empty
+    val fileInfos: MutaMap[String, String] = MutaMap.empty  // filename -> file _info.json
+    val fileBytes: MutaMap[String, String] = MutaMap.empty  // filename -> actual file bytes
+    val fileMetas: MutaMap[String, String] = MutaMap.empty  // filename -> file _metadata.json
+    val fileFolds: MutaMap[String, String] = MutaMap.empty  // filename -> folder (data/foo/bar/file.txt -> foo/bar/)
     val distinctFolders: ListBuffer[String] = ListBuffer.empty
 
     request.body.files.foreach { f =>
       if (f.filename.endsWith(".zip")) {
-        // Use zip contents to create a roadmap for next actions
+        // TODO: Is it dangerous to blindly open uploaded zip file? Decompression bomb, malicious contents, etc?
         val bag = new ZipFile(f.ref.file)
-        // Need assignment to be explicit here or an infinite loop occurs
-        val entries = bag.entries
+        val entries = bag.entries // Need assignment to be explicit here or an infinite loop occurs
 
+        // Check each file in the zip looking for known filenames
         while (entries.hasMoreElements()) {
           val entry = entries.nextElement()
           entry.getName match {
@@ -312,19 +301,34 @@ class  Datasets @Inject()(
           }
         }
 
-        // Create datasets and folders to contain files
-        val folderIds: MutaMap[String, String] = MutaMap.empty
-        //val dsid = createEmptyDataset()
-        //addTagsToDataset()
-        distinctFolders.distinct.sorted.foreach(folderPath => {
-          //val folderId = createFolder()
-          //folderIds += (folderPath -> folderId)
-        })
+        /** LOGIC FLOW
+         * check zip archive for clowder.xml first, then datacite.xml, if neither is found we reject
+         * if any files are referenced rather than included, check links. any dead links = abort the upload
+         * create dataset
+         *   populate metadata from JSON
+         * create each file
+         *   download one by one if necessary to avoid staging too much data at once
+         *   (if any download fails, try to undo what has been done to this point and stop upload)
+         *   populate metadata from JSON
+         */
+
+        // Ingest XML file if found
+        if (mainXML.isDefined) {
+
+          // Create datasets and folders to contain files
+          val folderIds: MutaMap[String, String] = MutaMap.empty
+          //val dsid = createEmptyDataset()
+          //addTagsToDataset()
+          distinctFolders.distinct.sorted.foreach(folderPath => {
+            //val folderId = createFolder()
+            //folderIds += (folderPath -> folderId)
+          })
+        }
       }
     }
 
 
-    Ok("Ok?")
+    Ok("Ok")
   }
 
   /**
