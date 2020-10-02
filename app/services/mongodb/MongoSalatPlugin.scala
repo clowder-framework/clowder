@@ -444,6 +444,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates permissions for the admin Role
     updateMongo("update-admin-role", updateAdminRole)
+
+    // Updates extractors enabled and disabled in a space
+    updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1665,6 +1668,21 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       user.put("spaceandrole", userSpaceRoles)
       collection("social.users").save(user, WriteConcern.Safe)
     }
+  }
+
+  private def updateSpaceExtractorsSelection(): Unit = {
+    collection("spaces.extractors").foreach { space =>
+      val enabled = space.getAsOrElse[MongoDBList]("extractors", MongoDBList.empty)
+
+      collection("spaces.extractors").update(
+        MongoDBObject("_id" -> space.get("_id")),
+        MongoDBObject("$set" -> MongoDBObject("enabled" -> enabled)), upsert = false, multi = false)
+
+      collection("spaces.extractors").update(
+        MongoDBObject("_id" -> space.get("_id")),
+        $unset("extractors"))
+    }
+    print("DONE")
   }
 
 }
