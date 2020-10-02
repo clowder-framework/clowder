@@ -695,9 +695,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * as strings for datatypes besides Objects. In the future, this could
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
-    // TODO: Enable "numeric_detection": true alongside date_detection
     """{"clowder_object": {
-          |"date_detection": true,
           |"numeric_detection": true,
           |"properties": {
             |"name": {"type": "string"},
