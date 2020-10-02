@@ -126,8 +126,6 @@ object ExtractorInfo {
   }
 
   implicit val dateFormat = new Format[Date] {
-    val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
     def reads(json: JsValue): JsResult[Date] = JsSuccess(json.as[Date])
     def writes(date: Date): JsValue = Json.toJson(Parsers.toISO8601(date))
   }
