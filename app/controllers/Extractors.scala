@@ -107,10 +107,13 @@ class Extractors  @Inject() (extractions: ExtractionService,
     Logger.debug("last 7 day date: " + last7daydate)
     Logger.debug("last month date: " + lastmonthdate)
 
+    // get at most 10 ``DONE'' submission from yesterday.
     val myDonelist = extractions.findByExtractorIDBefore(extractorName, "DONE", yesterdaydate, 10)
+    // get at most 10 ``SUBMITTED'' submission from yesterday.
     val mySubmittedlist = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", yesterdaydate, 10)
     var n: Long = 0
     var sum: Long = 0
+    // calculate the diff time between ``SUBMITTED'' and ``DONE''.
     for ((done, submitted) <- (myDonelist zip mySubmittedlist)) {
       Logger.debug("my done date: " + done.start + ", fileid: " + done.file_id)
       Logger.debug("my submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
@@ -127,9 +130,10 @@ class Extractors  @Inject() (extractions: ExtractionService,
       average = average/n
     }
     Logger.debug("average: " + average)
-
+    // get at the number of ``SUBMITTED'' submission in last week.
     val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
     Logger.debug("lastweek submitted: " + lastweeksubmitted.size)
+    // get at the number of ``SUBMITTED'' submission in last month.
     val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
 
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
