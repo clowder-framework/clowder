@@ -1,5 +1,6 @@
 Following is a list of contributors in alphabetical order:
 
+- Aaraj Habib
 - Ashwini Vaidya
 - Avinash Kumar
 - Ben Galewsky
