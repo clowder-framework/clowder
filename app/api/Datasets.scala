@@ -26,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, MultipartFormData}
 import services._
 import _root_.util._
 import controllers.Utils.https
+import org.json.simple.parser.JSONParser
 import play.api.libs.Files
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -257,76 +258,106 @@ class  Datasets @Inject()(
   def createFromBag() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request: UserRequest[MultipartFormData[Files.TemporaryFile]] =>
     Logger.info("--- API Creating new dataset from zip archive ----")
 
-    var mainXML: Option[String] = None
-    var dsInfo: Option[String] = None   // dataset _info.json
-    var dsMeta: Option[String] = None   // dataset _metadata.json
+    var mainXML: Option[ZipEntry] = None
+    var dsInfo: Option[ZipEntry] = None   // dataset _info.json
+    var dsMeta: Option[ZipEntry] = None   // dataset _metadata.json
 
-    val fileInfos: MutaMap[String, String] = MutaMap.empty  // filename -> file _info.json
-    val fileBytes: MutaMap[String, String] = MutaMap.empty  // filename -> actual file bytes
-    val fileMetas: MutaMap[String, String] = MutaMap.empty  // filename -> file _metadata.json
+    val fileInfos: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> file _info.json
+    val fileBytes: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> actual file bytes
+    val fileMetas: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> file _metadata.json
     val fileFolds: MutaMap[String, String] = MutaMap.empty  // filename -> folder (data/foo/bar/file.txt -> foo/bar/)
     val distinctFolders: ListBuffer[String] = ListBuffer.empty
 
-    request.body.files.foreach { f =>
-      if (f.filename.endsWith(".zip")) {
-        // TODO: Is it dangerous to blindly open uploaded zip file? Decompression bomb, malicious contents, etc?
-        val bag = new ZipFile(f.ref.file)
-        val entries = bag.entries // Need assignment to be explicit here or an infinite loop occurs
+    // Can't do this anonymously...
+    implicit val user = request.user
+    user match {
+      case Some(identity) => {
+        request.body.files.foreach { f =>
+          if (f.filename.endsWith(".zip")) {
+            // TODO: Is it dangerous to blindly open uploaded zip file? Decompression bomb, malicious contents, etc?
+            val bag = new ZipFile(f.ref.file)
+            val entries = bag.entries // Need assignment to be explicit here or an infinite loop occurs
 
-        // Check each file in the zip looking for known filenames
-        while (entries.hasMoreElements()) {
-          val entry = entries.nextElement()
-          entry.getName match {
-            case "metadata/clowder.xml" => mainXML = Some(entry.getName) // overrides datacite.xml
-            case "metadata/datacite.xml" => if (!mainXML.isDefined) mainXML = Some(entry.getName)
-            case "data/_dataset_metadata.json" => dsMeta = Some(entry.getName)
-            case path if (path.startsWith("data/") && path.endsWith("/_info.json")) =>
-              dsInfo = Some(entry.getName)
-            case path if (path.startsWith("data/") && path.endsWith("_info.json")) => {
-              val filename = path.split("/").last.replace("_info.json", "")
-              fileInfos += (filename -> path)
+            // Check each file in the zip looking for known filenames
+            while (entries.hasMoreElements()) {
+              val entry = entries.nextElement()
+              entry.getName match {
+                case "metadata/clowder.xml" => mainXML = Some(entry) // overrides datacite.xml
+                case "metadata/datacite.xml" => if (!mainXML.isDefined) mainXML = Some(entry)
+                case "data/_dataset_metadata.json" => dsMeta = Some(entry)
+                case path if (path.startsWith("data/") && path.endsWith("/_info.json")) => dsInfo = Some(entry)
+                case path if (path.startsWith("data/") && path.endsWith("_info.json")) => {
+                  val filename = path.split("/").last.replace("_info.json", "")
+                  fileInfos += (filename -> entry)
+                }
+                case path if (path.startsWith("data/") && path.endsWith("_metadata.json")) => {
+                  val filename = path.split("/").last.replace("_metadata.json", "")
+                  fileMetas += (filename -> entry)
+                }
+                case path if (path.startsWith("data/")) => {
+                  val filename = path.split("/").last
+                  val foldername = path.replace("data/", "").replace(filename, "")
+                  fileBytes += (filename-> entry)
+                  fileFolds += (filename -> foldername)
+                  distinctFolders.append(foldername)
+                }
+                case _ => {}
+              }
             }
-            case path if (path.startsWith("data/") && path.endsWith("_metadata.json")) => {
-              val filename = path.split("/").last.replace("_metadata.json", "")
-              fileMetas += (filename -> path)
+
+            /** LOGIC FLOW
+             * prep data from the _infos found
+             * if any files are referenced rather than included, check links. any dead links = abort the upload
+             * create dataset
+             *   populate metadata from JSON
+             * create each file
+             *   download one by one if necessary to avoid staging too much data at once
+             *   (if any download fails, try to undo what has been done to this point and stop upload)
+             *   populate metadata from JSON
+             */
+
+            if (mainXML.isDefined) {
+              // Create dataset itself
+              val xmldata = scala.xml.XML.load(bag.getInputStream(mainXML.get))
+              var dsName: Option[String] = None
+              var dsDesc: Option[String] = None
+              (xmldata \\ "title").foreach(node => dsName = Some(node.text))
+              (xmldata \\ "description").foreach(node => dsDesc = Some(node.text))
+              val dsCreators = (xmldata \\ "creatorName").map(node => node.text)
+
+              if (dsName.isDefined) {
+                val ds = Dataset(
+                  name = dsName.get,
+                  description = dsDesc.getOrElse(""),
+                  created = new Date(),
+                  author = identity,
+                  licenseData = License.fromAppConfig(),
+                  stats = new Statistics(),
+                  creators = dsCreators.toList
+                )
+              }
+
+              // Add metadata to dataset
+              if (dsMeta.isDefined) {
+                val mdStream = bag.getInputStream(dsMeta.get)
+                val dsMd = (new JSONParser()).parse(new InputStreamReader(mdStream, "UTF-8"))
+                Logger.info(dsMd.toString)
+              }
+
+              // Add folders to dataset
+              val folderIds: MutaMap[String, String] = MutaMap.empty
+              distinctFolders.distinct.sorted.foreach(folderPath => {
+                //val folderId = createFolder()
+                //folderIds += (folderPath -> folderId)
+              })
+            } else {
+              BadRequest("No supported XML metadata file found.")
             }
-            case path if (path.startsWith("data/")) => {
-              val filename = path.split("/").last
-              val foldername = path.replace("data/", "").replace(filename, "")
-              fileBytes += (filename-> path)
-              fileFolds += (filename -> foldername)
-              distinctFolders.append(foldername)
-            }
-            case _ => {}
           }
         }
-
-        /** LOGIC FLOW
-         * check zip archive for clowder.xml first, then datacite.xml, if neither is found we reject
-         * if any files are referenced rather than included, check links. any dead links = abort the upload
-         * create dataset
-         *   populate metadata from JSON
-         * create each file
-         *   download one by one if necessary to avoid staging too much data at once
-         *   (if any download fails, try to undo what has been done to this point and stop upload)
-         *   populate metadata from JSON
-         */
-
-        // Ingest XML file if found
-        if (mainXML.isDefined) {
-
-          // Create datasets and folders to contain files
-          val folderIds: MutaMap[String, String] = MutaMap.empty
-          //val dsid = createEmptyDataset()
-          //addTagsToDataset()
-          distinctFolders.distinct.sorted.foreach(folderPath => {
-            //val folderId = createFolder()
-            //folderIds += (folderPath -> folderId)
-          })
-        }
       }
+      case None => BadRequest("Must provide an associated user account.")
     }
-
 
     Ok("Ok")
   }
@@ -2491,7 +2522,7 @@ class  Datasets @Inject()(
     s += "<publicationYear>"+yyyy+"</publicationYear>\n"
 
     // ResourceType
-    s += "<resourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</ResourceType>\n"
+    s += "<resourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</resourceType>\n"
 
     // ---------- RECOMMENDED/OPTIONAL FIELDS ----------
 
@@ -2536,7 +2567,7 @@ class  Datasets @Inject()(
     }
 
     // RelatedIdentifier (Clowder root URL)
-    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+baseURL+"</ResourceType>\n"
+    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+baseURL+"</relatedIdentifier>\n"
 
     // Size (can have many)
     s += "<sizes>\n\t<size>"+dataset.files.length.toString+" files</size>\n</sizes>\n"
