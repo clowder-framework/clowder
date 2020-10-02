@@ -26,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, MultipartFormData}
 import services._
 import _root_.util._
 import controllers.Utils.https
+import org.json.simple.{JSONObject => SimpleJSONObject, JSONArray}
 import org.json.simple.parser.JSONParser
 import play.api.libs.Files
 
@@ -268,7 +269,6 @@ class  Datasets @Inject()(
     val fileFolds: MutaMap[String, String] = MutaMap.empty  // filename -> folder (data/foo/bar/file.txt -> foo/bar/)
     val distinctFolders: ListBuffer[String] = ListBuffer.empty
 
-    // Can't do this anonymously...
     implicit val user = request.user
     user match {
       case Some(identity) => {
@@ -335,21 +335,37 @@ class  Datasets @Inject()(
                   stats = new Statistics(),
                   creators = dsCreators.toList
                 )
-              }
+                datasets.insert(ds) match {
+                  case Some(dsid) => {
+                    // Add metadata to dataset
+                    if (dsMeta.isDefined) {
+                      val mdStream = bag.getInputStream(dsMeta.get)
+                      val datasetMeta = parseJsonFileInZip(mdStream)
+                      try {
+                        datasetMeta.asInstanceOf[JsArray].value.foreach(v => {
+                          processBagMetadataJsonLD(ds.id, v)
+                        })
+                      } catch {
+                        case e: Exception => {
+                          Logger.info("Caught error")
+                          processBagMetadataJsonLD(ds.id, datasetMeta)
+                        }
+                      }
+                    }
 
-              // Add metadata to dataset
-              if (dsMeta.isDefined) {
-                val mdStream = bag.getInputStream(dsMeta.get)
-                val dsMd = (new JSONParser()).parse(new InputStreamReader(mdStream, "UTF-8"))
-                Logger.info(dsMd.toString)
+                    // Add folders to dataset
+                    val folderIds: MutaMap[String, String] = MutaMap.empty
+                    distinctFolders.distinct.sorted.foreach(folderPath => {
+                      if (!(folderPath == "" || folderPath == "/")) {
+                        Logger.info(folderPath)
+                        //val folderId = createFolder()
+                        //folderIds += (folderPath -> folderId)
+                      }
+                    })
+                  }
+                  case None => BadRequest("Error creating new dataset")
+                }
               }
-
-              // Add folders to dataset
-              val folderIds: MutaMap[String, String] = MutaMap.empty
-              distinctFolders.distinct.sorted.foreach(folderPath => {
-                //val folderId = createFolder()
-                //folderIds += (folderPath -> folderId)
-              })
             } else {
               BadRequest("No supported XML metadata file found.")
             }
@@ -360,6 +376,47 @@ class  Datasets @Inject()(
     }
 
     Ok("Ok")
+  }
+
+  private def processBagMetadataJsonLD(datasetId: UUID, json: JsValue) = {
+    //parse request for agent/creator info
+    json.validate[Agent] match {
+      case s: JsSuccess[Agent] => {
+        val creator = s.get
+
+        // check if the context is a URL to external endpoint
+        val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+
+        // check if context is a JSON-LD document
+        val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+          .map(contextService.addContext(new JsString("context name"), _))
+
+        // when the new metadata is added
+        val createdAt = new Date()
+
+        //parse the rest of the request to create a new models.Metadata object
+        val attachedTo = ResourceRef(ResourceRef.dataset, datasetId)
+        val content = (json \ "content")
+        val version = None
+        val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+          content, version)
+        metadataService.addMetadata(metadata)
+      }
+      case e: JsError => {
+        Logger.error("Error getting creator");
+      }
+    }
+  }
+
+  private def parseJsonFileInZip(is: InputStream): JsValue = {
+    val reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))
+    var outstr = ""
+    var line = reader.readLine
+    while (line != null) {
+      outstr += line
+      line = reader.readLine
+    }
+    Json.parse(outstr)
   }
 
   /**
@@ -779,7 +836,6 @@ class  Datasets @Inject()(
           case None => Logger.error(s"Error getting dataset $id"); NotFound
         }
      }
-
 
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
