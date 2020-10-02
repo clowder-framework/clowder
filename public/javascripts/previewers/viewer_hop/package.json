@@ -1,0 +1,6 @@
+{ 
+  "name": "VHOP",
+  "main": "viewer_hop.js",
+  "file": true,
+  "contentType": ["model/ply", "application/octet-stream"]
+}
