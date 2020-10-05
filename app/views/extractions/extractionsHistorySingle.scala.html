@@ -1,0 +1,46 @@
+@(group: ExtractionGroup, extractType: String)
+
+<table class="table table-condensed table-striped">
+    <thead>
+        <th></th>
+        <th>Submission</th>
+        <th>Status</th>
+    </thead>
+    <tbody>
+    @for((job_id, eventList) <- group.allMsgs.toSeq.sortWith(_._1.stringify > _._1.stringify)) {
+        <tr class="job-list-accordion-toggle clickable collapsed" data-toggle="collapse" @if(job_id.stringify != "") { data-target="#extraction-job-@job_id" } else { data-target="#extraction-job-other" }>
+            <td width="35%" @if(job_id.stringify != "") {  title="@job_id" } else { title="These events did not include a job ID. Please update this extractor to send back the value for jobid."}>
+                <a class="btn btn-link">@if(job_id.stringify != "") { @eventList.head.start } else { No Job ID }</a>
+            </td>
+            <td width="60%" class="accordion-status" style="vertical-align: middle;">@eventList.head.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")</td>
+        </tr>
+        <tr class="collapse" @if(job_id.stringify != "") { id="extraction-job-@job_id" } else { id="extraction-job-other" }>
+
+            <td colspan="3" class="extractor-log">
+                <table class="table table-condensed">
+                    <thead>
+                        <th>Timestamp</th>
+                        <th>Status Message</th>
+                    </thead>
+                    <tbody>
+                    @for(evt <- group.allMsgs(job_id).reverse) {
+                        <tr>
+                            <td width="40%"><b>@evt.start</b></td>
+                            <td width="60%">
+                                @evt.status.replace("StatusMessage.start", "START").replace("StatusMessage.processing", "PROCESS").replace("StatusMessage.error", "ERROR")
+                                @if(evt.status == "SUBMITTED") {
+                                    <a class="btn btn-link btn-xs" id='@(evt.id)' onclick="cancelSubmission('@(evt.file_id)', '@(evt.id)', '@(evt.extractor_id)', '@(extractType)')">(Cancel submission)</a>
+                                }
+                            </td>
+                        </tr>
+
+                    }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+
+
+    }
+    </tbody>
+</table>
