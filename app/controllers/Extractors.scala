@@ -48,7 +48,14 @@ class Extractors  @Inject() (extractions: ExtractionService,
     */
   def selectExtractors() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    val runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
+    // Filter extractors by the trigger type if necessary
+    var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
+    request.getQueryString("processTriggerSearchFilter") match {
+      case Some("file/*") => runningExtractors = runningExtractors.filter(re => re.process.file.length > 0)
+      case Some("dataset/*") => runningExtractors = runningExtractors.filter(re => re.process.dataset.length > 0)
+      case Some("metadata/*") => runningExtractors = runningExtractors.filter(re => re.process.metadata.length > 0)
+      case None => {}
+    }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
     Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
