@@ -136,9 +136,33 @@ class Extractors  @Inject() (extractions: ExtractionService,
     // get at the number of ``SUBMITTED'' submission in last month.
     val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
 
+    // calculate the last 10 execution average time in the time range of last month between ``SUBMITTED'' and ``DONE''.
+    // get at most 10 ``DONE'' submission from last month.
+    val myLastTenDonelist = extractions.findByExtractorIDBefore(extractorName, "DONE", lastmonthdate, 10)
+    // get at most 10 ``SUBMITTED'' submission from last month.
+    val myLastTenSubmittedlist = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 10)
+    n = 0
+    sum = 0
+    for ((done, submitted) <- (myLastTenDonelist zip myLastTenSubmittedlist)) {
+      Logger.debug("my last 10 done date: " + done.start + ", fileid: " + done.file_id)
+      Logger.debug("my last 10 submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
+      Logger.debug("last 10 done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
+      val diffInMillies = Math.abs(done.start.getTime - submitted.start.getTime)
+      Logger.warn("last 10 diffInMillies in ms: " + diffInMillies)
+      sum = sum + diffInMillies
+      n = n+1
+    }
+    sum = TimeUnit.SECONDS.convert(sum, TimeUnit.MILLISECONDS)
+    var lastTenAverage = sum.toFloat
+    Logger.debug("last 10 average: " + lastTenAverage)
+    if(n > 0) {
+      lastTenAverage = lastTenAverage/n
+    }
+    Logger.warn("last 10 average: " + lastTenAverage)
+
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastweeksubmitted.size, lastmonthsubmitted.size))
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastTenAverage.toString, lastweeksubmitted.size, lastmonthsubmitted.size))
       case None => InternalServerError("Extractor Info not found: " + extractorName)
     }
   }

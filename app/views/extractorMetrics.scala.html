@@ -1,4 +1,4 @@
-@(extractorName: String, average: String, lastweeksubmitted: Int, lastmonthsubmitted: Int)(implicit user: Option[models.User])
+@(extractorName: String, yesterdayAverage: String, lastTenAverage: String, lastweeksubmitted: Int, lastmonthsubmitted: Int)(implicit user: Option[models.User])
 @import api.Permission
 
 @main("Extractor Details") {
@@ -23,9 +23,13 @@
 
                     <div class="row form-group">
                         <strong class="col-sm-4" for="extractorNameField">Last 24 Hours Execution Average</strong>
-                        <span class="col-sm-8" for="extractorNameField">@average  Sec</span>
+                        <span class="col-sm-8" for="extractorNameField">@yesterdayAverage  Sec</span>
                     </div>
-                        <!-- TODO: It would be nice to make this a mailto: link, but it doesn't seem trivial to scrape this out -->
+                    <div class="row form-group">
+                        <strong class="col-sm-4" for="extractorNameField">Last 10 Execution Average</strong>
+                        <span class="col-sm-8" for="extractorNameField">@lastTenAverage  Sec</span>
+                    </div>
+
                     <div class="row form-group">
                         <strong class="col-sm-4" for="extractorAuthorField">Last Week Submitted</strong>
                         <span class="col-sm-8" for="extractorAuthorField">@lastweeksubmitted</span>
