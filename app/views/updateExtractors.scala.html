@@ -1,4 +1,4 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String],
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
         showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
@@ -150,57 +150,18 @@
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Display all running extractors. If extractor already in this space, check the box. -->
-                        @runningExtractors.map { extractor =>
-                            <tr>
-                                <td class="v-center"><input type="checkbox" name="extractors" value="@extractor.name"
-                                    @if(!Permission.checkServerAdmin(user)) {disabled="true"}
-                                    @if(selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
+                        <tbody>
+                            <!-- Display all running extractors. If extractor already in this space, check the box. -->
+                            @runningExtractors.map { extractor =>
+                                <tr>
+                                    <td class="v-center"><input type="checkbox" name="extractors" value="@extractor.name"
+                                        @if(!Permission.checkServerAdmin(user)) {disabled="true"}
+                                        @if(selectedExtractors.contains(extractor.name)) {checked} else {unchecked}></td>
 
-                                <!-- Extractor Name -->
-                                <td class="v-center"><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
+                                    <!-- Extractor Name -->
+                                    <td class="v-center"><a href="@routes.Extractors.showExtractorInfo(extractor.name)">@extractor.name</a></td>
 
-                                <!-- Extractor Author and Contributors -->
-                                <td class="v-center">
-                                    <ul>
-                                        @for(contributor <- (extractor.author +: extractor.contributors)) {
-                                            <li>@contributor</li>
-                                        }
-                                    </ul>
-                                </td>
-
-                                <!-- TODO: Extractor versions / previous version timeline -->
-                                <td class="v-center">
-                                    @extractor.version
-                                </td>
-
-                                <!-- TODO: Extractor maturity (e.g. Development, Staging, Production) -->
-                                <td class="v-center">
-                                    TBD
-                                </td>
-
-                                <!-- TODO: Extractor Job Counts: My Job Submissions -->
-                                <td class="v-center">
-                                    TBD
-                                </td>
-
-                                <!-- TODO: Extractor Job Counts: All Job Submissions -->
-                                <td class="v-center">
-                                    TBD
-                                </td>
-
-                                <!-- TODO: Extractor Ratings -->
-                                <!-- Format: "Average of all ratings" / 5 ("Total number of ratings") -->
-                                <td class="v-center">
-                                    <!-- TODO: Link to Extractors Ratings view -->
-                                    <a class="btn btn-link" href="#">
-                                        TBD / 5 (TBD)
-                                    </a>
-                                </td>
-
-                                <!-- Extractor Process Triggers (hidden by default) -->
-                                @if(showOptional("processTriggers")) {
+                                    <!-- Extractor Author and Contributors -->
                                     <td class="v-center">
                                             <!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
                                         <p @if(extractor.process.dataset.isEmpty) {hidden}>
@@ -236,7 +197,74 @@
                                         None
                                         </p>
                                     </td>
-                                }
+
+                                    <!-- TODO: Extractor versions / previous version timeline -->
+                                    <td class="v-center">
+                                        @extractor.version
+                                    </td>
+
+                                    <!-- Extractor maturity (e.g. Development, Staging, Production) -->
+                                    <td class="v-center">
+                                        @extractor.maturity
+                                    </td>
+
+                                    <!-- TODO: Extractor Job Counts: My Job Submissions -->
+                                    <!-- td class="v-center">
+                                        TBD
+                                    </td -->
+
+                                    <!-- Extractor Job Counts: All Job Submissions -->
+                                    <td class="v-center">
+                                        @groups(extractor.name).allMsgs.keySet.size
+                                    </td>
+
+                                    <!-- TODO: Extractor Ratings -->
+                                    <!-- Format: "Average of all ratings" / 5 ("Total number of ratings") -->
+                                    <td class="v-center">
+                                        <!-- TODO: Link to Extractors Ratings view -->
+                                        <a class="btn btn-link" href="#">
+                                            TBD / 5 (TBD)
+                                        </a>
+                                    </td>
+
+                                    <!-- Extractor Process Triggers (hidden by default) -->
+                                    @if(showOptional("processTriggers")) {
+                                        <td class="v-center">
+                                                <!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
+                                            <p @if(extractor.process.dataset.isEmpty) {hidden}>
+                                            Datasets:
+                                            <span @if(extractor.process.dataset.length > 1) {hidden}>@extractor.process.dataset</span>
+                                            <ul @if(extractor.process.dataset.length == 1) {hidden}>
+                                            @extractor.process.dataset.map { eventName =>
+                                                <li>@eventName</li>
+                                            }
+                                            </ul>
+                                            </p>
+                                            <p @if(extractor.process.file.isEmpty) {hidden}>
+                                            Files:
+                                            <span @if(extractor.process.file.length > 1) {hidden}>@extractor.process.file</span>
+                                            <ul @if(extractor.process.file.length == 1) {hidden}>
+                                            @extractor.process.file.map { fileType =>
+                                                <li>@fileType</li>
+                                            }
+                                            </ul>
+                                            </p>
+                                            <p @if(extractor.process.metadata.isEmpty) {hidden}>
+                                            Metadata:
+                                            <span @if(extractor.process.metadata.length > 1) {hidden}>@extractor.process.metadata</span>
+                                            <ul @if(extractor.process.metadata.length == 1) {hidden}>
+                                            @extractor.process.metadata.map { eventName =>
+                                                <li>@eventName</li>
+                                            }
+                                            </ul>
+                                            </p>
+                                            <p @if(!extractor.process.metadata.isEmpty
+                                                || !extractor.process.file.isEmpty
+                                                || !extractor.process.dataset.isEmpty) {hidden}>
+                                            None
+                                            </p>
+                                        </td>
+                                    }
 
                                     <!-- Extractor More Actions Dropdown -->
                                 <td class="v-center">
@@ -252,12 +280,12 @@
                                                 </a>
                                             </li>
 
-                                                <!-- TODO: View Extractor Job History -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="#">
-                                                    <span class="glyphicon glyphicon-tasks"></span> View History
-                                                </a>
-                                            </li>
+                                                <!-- View Extractor Job History -->
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="@routes.Extractors.showJobHistory(extractor.name)">
+                                                        <span class="glyphicon glyphicon-tasks"></span> View History
+                                                    </a>
+                                                </li>
 
                                                 <!-- TODO: View Extractor Logs -->
                                             <li role="presentation">
