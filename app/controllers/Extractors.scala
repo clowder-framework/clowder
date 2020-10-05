@@ -124,7 +124,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
       n = n+1
     }
     sum = TimeUnit.SECONDS.convert(sum, TimeUnit.MILLISECONDS)
-    var average = sum.toFloat
+    var average = BigDecimal.valueOf(sum)
     Logger.debug("average: " + average)
     if(n > 0) {
       average = average/n
@@ -153,7 +153,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
       n = n+1
     }
     sum = TimeUnit.SECONDS.convert(sum, TimeUnit.MILLISECONDS)
-    var lastTenAverage = sum.toFloat
+    var lastTenAverage = BigDecimal.valueOf(sum)
     Logger.debug("last 10 average: " + lastTenAverage)
     if(n > 0) {
       lastTenAverage = lastTenAverage/n
