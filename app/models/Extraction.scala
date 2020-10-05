@@ -1,10 +1,13 @@
 package models
 
 import java.net.URL
-import java.util.Date
-import play.api.libs.json._
-import play.api.libs.json.Reads._
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Date, TimeZone}
+
+import util.Parsers
 import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 
 /**
  * Status information about extractors and extractions.
@@ -81,7 +84,7 @@ case class ExtractorInfo(
   id: UUID,
   name: String,
   version: String,
-  updated: Date,
+  updated: Date = Calendar.getInstance().getTime,
   description: String,
   author: String,
   contributors: List[String],
@@ -90,6 +93,7 @@ case class ExtractorInfo(
   external_services: List[String],
   libraries: List[String],
   bibtex: List[String],
+  maturity: String = "Development",
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
   parameters: JsValue = JsObject(Seq())
@@ -120,16 +124,19 @@ object ExtractorInfo {
     def reads(json: JsValue): JsResult[URL] = JsSuccess(new URL(json.toString()))
     def writes(url: URL): JsValue = Json.toJson(url.toExternalForm)
   }
+
   implicit val dateFormat = new Format[Date] {
     def reads(json: JsValue): JsResult[Date] = JsSuccess(json.as[Date])
-    def writes(date: Date): JsValue = Json.toJson(date.toString)
+    def writes(date: Date): JsValue = Json.toJson(Parsers.toISO8601(date))
   }
+
   implicit val extractorInfoWrites = Json.writes[ExtractorInfo]
+
   implicit val extractorInfoReads: Reads[ExtractorInfo] = (
     (JsPath \ "id").read[UUID].orElse(Reads.pure(UUID.generate())) and
       (JsPath \ "name").read[String] and
       (JsPath \ "version").read[String] and
-      (JsPath \ "updated").read[Date].orElse(Reads.pure((new Date()))) and
+      Reads.pure(Calendar.getInstance().getTime) and
       (JsPath \ "description").read[String] and
       (JsPath \ "author").read[String] and
       (JsPath \ "contributors").read[List[String]].orElse(Reads.pure(List.empty)) and
@@ -138,6 +145,7 @@ object ExtractorInfo {
       (JsPath \ "external_services").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
+      (JsPath \ "maturity").read[String].orElse(Reads.pure("Development")) and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))

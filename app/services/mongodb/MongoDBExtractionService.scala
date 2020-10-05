@@ -141,7 +141,7 @@ class MongoDBExtractionService extends ExtractionService {
       }
 
     }
-    groupings
+    groupings.withDefaultValue(ExtractionGroup("N / A", "N / A", "N / A", Map()))
   }
 }
 
