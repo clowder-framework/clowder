@@ -67,7 +67,7 @@
                             <!-- TODO: Generic search filter -->
                             <div class="form-group">
                                 <div class="col-sm-12">
-                                    <input type="text" class="form-control" id="genericSearchFilter" placeholder="Search for extractors...">
+                                    <input type="text" class="form-control" name="genericSearchFilter" id="genericSearchFilter" placeholder="Search for extractors...">
                                 </div>
                             </div>
 
@@ -76,6 +76,7 @@
                                 <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                 <div class="col-sm-9">
                                     <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="this.form.submit()">
+                                        <option></option>
                                         <option>file/*</option>
                                         <option>dataset/*</option>
                                         <option>metadata/*</option>
@@ -91,6 +92,7 @@
                                 <label for="spaceSearchFilter" class="col-sm-4 control-label">Within Space:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="spaceSearchFilter" id="spaceSearchFilter">
+                                        <option></option>
                                         <option>Space A</option>
                                         <option>Space B</option>
                                         <option>Space C</option>
@@ -103,6 +105,7 @@
                                 <label for="metadataSearchFilter" class="col-sm-4 control-label">Produces Metadata:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
+                                        <option></option>
                                         <option>Key 1</option>
                                         <option>Key 2</option>
                                         <option>Key 3</option>
@@ -338,9 +341,12 @@
     <script>
             $('document').ready(function(){
                 var params = new URLSearchParams(window.location.search);
-                var targetParameter = "processTriggerSearchFilter"
-                if (params.has(targetParameter)) {
-                    document.getElementById(targetParameter).value = params.get(targetParameter);
+                var targetParameters = ["genericSearchFilter", "processTriggerSearchFilter", "spaceSearchFilter","metadataSearchFilter"];
+                for (idx in targetParameters) {
+                    var targetParameter = targetParameters[idx];
+                    if (params.has(targetParameter)) {
+                        document.getElementById(targetParameter).value = params.get(targetParameter);
+                    }
                 }
             });
     </script>
