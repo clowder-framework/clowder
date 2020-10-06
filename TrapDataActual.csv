@@ -1,0 +1,5 @@
+﻿COLLECDATE,CLIMDIV,FIPSCOUNTY,ORGANIZATION,LOCATEID,COLLECSAMPLEID,POOLSIZE,RESULTTYPE,WEEK_NEW,JURISDNAME,COLLECCITY,LOGITUDE,LATITUDE,GENUS,SPECIES,GENDER,TRAPTYPE,TESTTYPE
+21-Jun-10,2,Champaign,Champaign Public Health Dept.,1234,4321,50,negative,35,Champaign Public Health Dept.,Peoria,-88.1234,41.4321,Culex,cx. Complex,Female,GRAVID,Eliza
+22-Jun-10,2,Champaign,Champaign Public Health Dept.,1234,4321,50,negative,35,Champaign Public Health Dept.,Peoria,-88.1234,41.4321,Culex,cx. Complex,Female,GRAVID,Eliza
+23-Jun-10,2,Champaign,Champaign Public Health Dept.,1234,4321,50,negative,35,Champaign Public Health Dept.,Peoria,-88.1234,41.4321,Culex,cx. Complex,Female,GRAVID,Eliza
+24-Jun-10,2,Champaign,Champaign Public Health Dept.,1234,4321,50,negative,35,Champaign Public Health Dept.,Peoria,-88.1234,41.4321,Culex,cx. Complex,Female,GRAVID,Eliza

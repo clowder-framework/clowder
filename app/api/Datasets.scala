@@ -1,6 +1,7 @@
 package api
 
 import java.io._
+import java.io.{File => JFile}
 import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
@@ -266,7 +267,7 @@ class  Datasets @Inject()(
     val fileInfos: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> file _info.json
     val fileBytes: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> actual file bytes
     val fileMetas: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> file _metadata.json
-    val fileFolds: MutaMap[String, String] = MutaMap.empty  // filename -> folder (data/foo/bar/file.txt -> foo/bar/)
+    val fileFolds: MutaMap[String, String] = MutaMap.empty    // filename -> folder (data/foo/bar/file.txt -> foo/bar/)
     val distinctFolders: ListBuffer[String] = ListBuffer.empty
 
     implicit val user = request.user
@@ -306,7 +307,7 @@ class  Datasets @Inject()(
             }
 
             /** LOGIC FLOW
-             * prep data from the _infos found
+             * prep data from the _info.json files
              * if any files are referenced rather than included, check links. any dead links = abort the upload
              * create dataset
              *   populate metadata from JSON
@@ -326,24 +327,17 @@ class  Datasets @Inject()(
               val dsCreators = (xmldata \\ "creatorName").map(node => node.text)
 
               if (dsName.isDefined) {
-                val ds = Dataset(
-                  name = dsName.get,
-                  description = dsDesc.getOrElse(""),
-                  created = new Date(),
-                  author = identity,
-                  licenseData = License.fromAppConfig(),
-                  stats = new Statistics(),
-                  creators = dsCreators.toList
-                )
+                val ds = Dataset(name=dsName.get, description=dsDesc.getOrElse(""), created=new Date(), author=identity,
+                  licenseData=License.fromAppConfig(), stats=new Statistics(), creators=dsCreators.toList)
                 datasets.insert(ds) match {
                   case Some(dsid) => {
-                    // Add metadata to dataset
+                    // Add dataset metadata if necessary
                     if (dsMeta.isDefined) {
                       val mdStream = bag.getInputStream(dsMeta.get)
                       val datasetMeta = parseJsonFileInZip(mdStream)
                       try {
                         datasetMeta.asInstanceOf[JsArray].value.foreach(v => {
-                          processBagMetadataJsonLD(ds.id, v)
+                          processBagMetadataJsonLD(UUID(dsid), v)
                         })
                       } catch {
                         case e: Exception => {
@@ -353,13 +347,40 @@ class  Datasets @Inject()(
                       }
                     }
 
-                    // Add folders to dataset
-                    val folderIds: MutaMap[String, String] = MutaMap.empty
+                    // Add folders to dataset with proper nesting
+                    var folderIds: MutaMap[String, String] = MutaMap.empty
                     distinctFolders.distinct.sorted.foreach(folderPath => {
-                      if (!(folderPath == "" || folderPath == "/")) {
-                        Logger.info(folderPath)
-                        //val folderId = createFolder()
-                        //folderIds += (folderPath -> folderId)
+                      if (!(folderPath == "" || folderPath == "/"))
+                        folderIds = ensureFolderExistsInDataset(ds, folderPath, folderIds)
+                    })
+
+                    // Add files to corresponding folders
+                    fileInfos.keys.foreach(filename => {
+                      fileBytes.get(filename) match {
+                        case Some(bytes) => {
+                          // Get file metadata and folder info
+                          val fileFolder = fileFolds.get(filename).get
+                          if (fileFolder != "" && fileFolder != "/") {
+                            val folderId = folderIds.get(fileFolder).get
+                          }
+
+                          // Unzip file and upload it
+                          val is = bag.getInputStream(bytes)
+                          val outstream = new FileOutputStream(filename)
+                          val buffer = new Array[Byte](1024)
+                          var chunk = is.read(buffer);
+                          while (chunk > 0) {
+                            outstream.write(buffer, 0, chunk)
+                            chunk = is.read(buffer)
+                          }
+                          outstream.close()
+                          Logger.info("file is here: "+filename)
+                          FileUtils.processBagFile(filename, new JFile(filename), user.get)
+                        }
+                        case None => {
+                          // TODO: Check if file has remote path to download it
+                          BadRequest("Not all files found in archive ("+filename+" missing)")
+                        }
                       }
                     })
                   }
@@ -378,10 +399,12 @@ class  Datasets @Inject()(
     Ok("Ok")
   }
 
+  // Add JSON data from a JSON-LD file into a dataset
   private def processBagMetadataJsonLD(datasetId: UUID, json: JsValue) = {
     //parse request for agent/creator info
     json.validate[Agent] match {
       case s: JsSuccess[Agent] => {
+        // TODO: This code is similar to addMetadataJsonLD() but skips RMQ message and event - combine them cleanly?
         val creator = s.get
 
         // check if the context is a URL to external endpoint
@@ -408,6 +431,7 @@ class  Datasets @Inject()(
     }
   }
 
+  // Open JSON data in a zipfile as a JsValue
   private def parseJsonFileInZip(is: InputStream): JsValue = {
     val reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))
     var outstr = ""
@@ -417,6 +441,40 @@ class  Datasets @Inject()(
       line = reader.readLine
     }
     Json.parse(outstr)
+  }
+
+  // Recursively create folder levels in a dataset that is being created from bag
+  private def ensureFolderExistsInDataset(dataset: Dataset, folderPath: String, folderIds: MutaMap[String, String]): MutaMap[String, String] = {
+    var updatedFolderIds = folderIds
+    folderIds.get(folderPath) match {
+      case Some(_) => {}
+      case None => {
+        // Folder still needs to be created
+        val folderLevels = folderPath.split('/')
+        val baseFolder = folderLevels.last
+        val parentFolder = folderLevels.take(folderLevels.length-1).mkString("/")
+
+        Logger.info("folder: "+baseFolder)
+        Logger.info("parent: "+parentFolder)
+
+        if (parentFolder.trim.length == 0) {
+          // Folder has no parent to add directly to dataset
+          val f = Folder(author=dataset.author, created=new Date(), name=baseFolder, displayName=baseFolder,
+            files=List.empty, folders=List.empty, parentId=dataset.id, parentType="dataset", parentDatasetId=dataset.id)
+          folders.insert(f)
+          datasets.addFolder(dataset.id, f.id)
+        } else {
+          // Folder has parent so add to parent folder
+          updatedFolderIds = ensureFolderExistsInDataset(dataset, parentFolder, updatedFolderIds)
+          val parentId = updatedFolderIds.get(parentFolder).get
+          val f = Folder(author=dataset.author, created=new Date(), name=baseFolder, displayName=baseFolder,
+            files=List.empty, folders=List.empty, parentId=UUID(parentId), parentType="folder", parentDatasetId=dataset.id)
+          folders.insert(f)
+          folders.addSubFolder(UUID(parentId), f.id)
+        }
+      }
+    }
+    updatedFolderIds
   }
 
   /**

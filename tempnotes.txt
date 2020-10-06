@@ -1,0 +1,35 @@
+XPS space issue - mount sites into /tmp to sidestep storage issue?
+
+issue for Kimberly to upload Zongyang's CSVs into BETYdb
+
+
+
+MASK WITH DIFFERENT CHANNELS
+- include a dummy first file in txt to set desired VRT characteristics?
+- write fix to translate Grey+Unknown Float32 tifs into RGB byte tifs?
+- GDAL 2.3 -ot Byte -colorinterp red,green,blue
+
+
+
+Add a new permission for Archiving specifically to provide more flexibility over who can do this. 
+
+custom conf setting for archiver handler
+
+extractor_info CATEGORY - Extract, Archive, Publish, Convert
+
+potentially include Archive in Process block w/ S3/Mongo/Disk
+
+archive/unarchive button
+
+
+
+
+
+
+
+
+
+
+
+
+

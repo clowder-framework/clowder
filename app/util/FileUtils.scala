@@ -350,6 +350,17 @@ object FileUtils {
     uploadedFiles.toList
   }
 
+  // process a file from a bagit zipfile upload
+  def processBagFile(filename: String, file: java.io.File, user: User) = {
+    val fobj = File(UUID.generate, "", filename, filename, user, new Date(), FileUtils.getContentType(filename, None),
+      file.length, "", isIntermediate=false, showPreviews="DatasetLevel", licenseData=License.fromAppConfig,
+      stats=new Statistics(), status=FileStatus.CREATED.toString)
+    files.save(fobj)
+    Logger.info(s"created file ${fobj.id}")
+
+
+  }
+
   // process a single uploaded file
   private def processFileMultipart(f: MultipartFormData.FilePart[Files.TemporaryFile], metadata: Option[Seq[String]],
                           user: User, creator: Agent, clowderurl: String,
