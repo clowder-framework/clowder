@@ -288,11 +288,16 @@
                                                 </li>
 
                                                 <!-- TODO: View Extractor Logs -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="#">
-                                                    <span class="glyphicon glyphicon-console"></span> View Logs
-                                                </a>
-                                            </li>
+                                                @if(play.Play.application().configuration().getString("clowder.log.serviceEndpoint")
+                                                        && play.Play.application().configuration().getString("clowder.log.username")
+                                                        && play.Play.application().configuration().getString("clowder.log.extractorNamePrefix")
+                                                ) {
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="@routes.Extractors.showExtractorLog(extractor.name)">
+                                                        <span class="glyphicon glyphicon-console"></span> View Logs
+                                                    </a>
+                                                </li>
+                                                }
 
                                                 <!-- TODO: View Extractor Metrics -->
                                             <li role="presentation">

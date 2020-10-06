@@ -17,9 +17,10 @@ import scala.collection.mutable.ListBuffer
 class Extractors  @Inject() (extractions: ExtractionService,
                              extractorService: ExtractorService,
                              fileService: FileService,
-                              datasetService: DatasetService,
+                             datasetService: DatasetService,
                              folders: FolderService,
                              spaces: SpaceService,
+                             logService: LogService,
                              datasets: DatasetService ) extends Controller with SecuredController {
 
   def listAllExtractions = ServerAdminAction { implicit request =>
@@ -92,7 +93,11 @@ class Extractors  @Inject() (extractions: ExtractionService,
     Redirect(routes.Application.index())
   }
 
-
+  def showExtractorLog(extractorName: String) = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    val logs = logService.getLog(extractorName, None)
+    Ok(views.html.extractorLog(extractorName, logs, logs.size))
+  }
 
   def showExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
