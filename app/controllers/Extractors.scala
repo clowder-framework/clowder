@@ -66,6 +66,15 @@ class Extractors  @Inject() (extractions: ExtractionService,
     Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
   }
 
+  def manageLabels = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val categories = List[String]("EXTRACT")
+    val extractors = extractorService.listExtractorsInfo(categories)
+    val labels = extractorService.listExtractorsLabels()
+
+    Ok(views.html.extractorLabels(labels, extractors))
+  }
+
   /**
     * Processes POST request. Updates list of extractors associated with this instance in mongo.
     */

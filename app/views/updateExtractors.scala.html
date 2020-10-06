@@ -31,7 +31,7 @@
 
                 <!-- TODO: Link to Extractor Labels view iff user is server admin -->
                 @if(Permission.checkServerAdmin(user)) {
-                    <a href="#" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
+                    <a href="@routes.Extractors.manageLabels" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
                         <span class="glyphicon glyphicon-wrench"></span> Manage
                     </a>
                 }
