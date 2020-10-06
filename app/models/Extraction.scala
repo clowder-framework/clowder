@@ -185,3 +185,21 @@ case class ExtractionGroup(
                           latestMsg: String,
                           allMsgs: Map[UUID, List[Extraction]]
                           )
+
+case class ExtractorsLabel(
+                            id: UUID,
+                            name: String,
+                            category: Option[String],
+                            extractors: List[String]
+                         )
+
+object ExtractorsLabel {
+  implicit val extractorsLabelWrites = Json.writes[ExtractorsLabel]
+
+  /*implicit val extractorsLabelReads: Reads[ExtractorsLabel] = (
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "category").read[String] and
+      (JsPath \ "extractors").read[List[String]].orElse(Reads.pure(List.empty))
+    )(ExtractorsLabel.apply _)*/
+}

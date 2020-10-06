@@ -42,4 +42,10 @@ trait ExtractorService {
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo]
 
   def deleteExtractor(extractorName: String)
+
+  def listExtractorsLabels(): List[ExtractorsLabel]
+
+  def createExtractorsLabel(name: String, category: Option[String], extractors: List[String]): Option[ExtractorsLabel]
+
+  def updateExtractorsLabel(label: ExtractorsLabel): Option[ExtractorsLabel]
 }

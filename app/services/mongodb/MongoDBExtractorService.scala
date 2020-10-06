@@ -216,6 +216,28 @@ class MongoDBExtractorService extends ExtractorService {
 
     }
   }
+
+  def listExtractorsLabels(): List[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findAll().toList
+  }
+
+  def createExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): Option[ExtractorsLabel] = {
+    val id = UUID.generate()
+    val label = ExtractorsLabel(id, name, category, assignedExtractors)
+    ExtractorsLabelDAO.save(label)
+    Some(label)
+  }
+
+  def updateExtractorsLabel(updated: ExtractorsLabel): Option[ExtractorsLabel] = {
+    val query = MongoDBObject("id" -> updated.id)
+    ExtractorsLabelDAO.findOne(query) match {
+      case Some(old) => {
+        ExtractorsLabelDAO.update(query, updated, false, false, WriteConcern.Safe)
+        Some(updated)
+      }
+      case None => None
+    }
+  }
 }
 
 object ExtractorServer extends ModelCompanion[ExtractorServer, ObjectId] {
@@ -256,6 +278,13 @@ object ExtractorInfoDAO extends ModelCompanion[ExtractorInfo, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[ExtractorInfo, ObjectId](collection = x.collection("extractors.info")) {}
+  }
+}
+
+object ExtractorsLabelDAO extends ModelCompanion[ExtractorsLabel, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[ExtractorsLabel, ObjectId](collection = x.collection("extractors.labels")) {}
   }
 }
 

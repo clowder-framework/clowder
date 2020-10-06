@@ -674,4 +674,26 @@ class Extractions @Inject()(
     Ok(toJson("added new event"))
   }
 
+  def createExtractorsLabel() = ServerAdminAction(parse.json) { implicit request =>
+    val name = (request.body \ "name").as[String]
+    val category = (request.body \ "category").asOpt[String]
+    val assignedExtractors = (request.body \ "extractors").as[List[String]]
+
+    extractors.createExtractorsLabel(name, category, assignedExtractors) match {
+      case Some(lbl) => { Ok(Json.toJson(lbl)) }
+      case None => { BadRequest("Failed to create new label") }
+    }
+  }
+
+  def updateExtractorsLabel(id: UUID) = ServerAdminAction(parse.json) { implicit request =>
+    val name = (request.body \ "name").as[String]
+    val category = (request.body \ "category").asOpt[String]
+    val assignedExtractors = (request.body \ "extractors").as[List[String]]
+
+    val label = ExtractorsLabel(id, name, category, assignedExtractors)
+    extractors.updateExtractorsLabel(label) match {
+      case Some(lbl) => { Ok(Json.toJson(lbl)) }
+      case None => { BadRequest("Failed to update existing label") }
+    }
+  }
 }
