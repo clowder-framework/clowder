@@ -222,21 +222,12 @@ class MongoDBExtractorService extends ExtractorService {
   }
 
   def createExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): Option[ExtractorsLabel] = {
-    val id = UUID.generate()
-    val label = ExtractorsLabel(id, name, category, assignedExtractors)
-    ExtractorsLabelDAO.save(label)
-    Some(label)
+    updateExtractorsLabel(ExtractorsLabel(UUID.generate, name, category, assignedExtractors))
   }
 
   def updateExtractorsLabel(updated: ExtractorsLabel): Option[ExtractorsLabel] = {
-    val query = MongoDBObject("id" -> updated.id)
-    ExtractorsLabelDAO.findOne(query) match {
-      case Some(old) => {
-        ExtractorsLabelDAO.update(query, updated, false, false, WriteConcern.Safe)
-        Some(updated)
-      }
-      case None => None
-    }
+    ExtractorsLabelDAO.save(updated, WriteConcern.Safe)
+    Some(updated)
   }
 }
 

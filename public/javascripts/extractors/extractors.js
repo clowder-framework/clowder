@@ -108,3 +108,37 @@ function changeMaturity(extractorName, newMaturity) {
 
     return false;
 }
+
+
+// Save current modal info based on selection
+function saveExtractorsLabel(label) {
+    let request;
+    if (label.id) {    // Update existing label
+        console.log('Saving label updates:', label);
+        request = jsRoutes.api.Extractions.updateExtractorsLabel(label.id).ajax({
+            data: JSON.stringify(label),
+            type: 'PUT',
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+    } else {    // Create new label
+        console.log("Creating new label:", label);
+        request = jsRoutes.api.Extractions.createExtractorsLabel().ajax({
+            data: JSON.stringify(label),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+    }
+
+    request.done(function (response, textStatus, jqXHR){
+        setModalValues("", "", "", []);
+        notify("Label has been updated", "success");
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+    });
+
+    return request;
+}

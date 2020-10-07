@@ -675,25 +675,45 @@ class Extractions @Inject()(
   }
 
   def createExtractorsLabel() = ServerAdminAction(parse.json) { implicit request =>
-    val name = (request.body \ "name").as[String]
-    val category = (request.body \ "category").asOpt[String]
-    val assignedExtractors = (request.body \ "extractors").as[List[String]]
+    // Fetch parameters from request body
+    val (name, category, assignedExtractors) = parseExtractorsLabel(request)
 
+    // Perform validation
+    validateExtractorsLabel(name, category, assignedExtractors)
+
+    // Create new label
     extractors.createExtractorsLabel(name, category, assignedExtractors) match {
-      case Some(lbl) => { Ok(Json.toJson(lbl)) }
-      case None => { BadRequest("Failed to create new label") }
+      case Some(lbl) => Ok(Json.toJson(lbl))
+      case None => BadRequest("Failed to create new label")
     }
   }
 
   def updateExtractorsLabel(id: UUID) = ServerAdminAction(parse.json) { implicit request =>
+    // Fetch parameters from request body
+    val (name, category, assignedExtractors) = parseExtractorsLabel(request)
+
+    // Perform validation
+    validateExtractorsLabel(name, category, assignedExtractors)
+
+    // Update existing label
+    val label = ExtractorsLabel(id, name, category, assignedExtractors)
+    extractors.updateExtractorsLabel(label) match {
+      case Some(lbl) => Ok(Json.toJson(lbl))
+      case None => BadRequest("Failed to update existing label")
+    }
+  }
+
+  def parseExtractorsLabel(request: UserRequest[JsValue]): (String, Option[String], List[String]) = {
     val name = (request.body \ "name").as[String]
     val category = (request.body \ "category").asOpt[String]
     val assignedExtractors = (request.body \ "extractors").as[List[String]]
 
-    val label = ExtractorsLabel(id, name, category, assignedExtractors)
-    extractors.updateExtractorsLabel(label) match {
-      case Some(lbl) => { Ok(Json.toJson(lbl)) }
-      case None => { BadRequest("Failed to update existing label") }
+    (name, category, assignedExtractors)
+  }
+
+  def validateExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): Unit = {
+    if (name.isEmpty) {
+      BadRequest("Label Name cannot be empty")
     }
   }
 }
