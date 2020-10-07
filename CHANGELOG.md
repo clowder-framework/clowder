@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Script for RabbitMQ error queue cleanup.
 - Ability to use basic html formatting in the welcome message on the home page. [#51](https://github.com/clowder-framework/clowder/issues/51)
 - Add endpoint and view page for the extractor metrics.
+- Add endpoint and view page to view a extractor's log from graylog.
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
 
 ### Changed
