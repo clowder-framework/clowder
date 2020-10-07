@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ExtractorInfo, Folder, ResourceRef, UUID}
+import models.{ExtractorInfo, Folder, ResourceRef, UUID, Extraction}
 import play.api.mvc.Controller
 import api.Permission
 import javax.inject.{Inject, Singleton}
@@ -9,6 +9,10 @@ import services._
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
+import java.util.{Calendar, Date}
+import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
+import java.util.Calendar
 
 /**
  * Information about extractors.
@@ -105,6 +109,89 @@ class Extractors  @Inject() (extractions: ExtractionService,
     targetExtractor match {
       case Some(extractor) => Ok(views.html.extractorDetails(extractor))
       case None => InternalServerError("Extractor not found: " + extractorName)
+    }
+  }
+
+  def showExtractorMetrics(extractorName: String) = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+
+    val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+    val todaydate = dateFormatter.format(new java.util.Date())
+
+    val hourcal = Calendar.getInstance
+    hourcal.add(Calendar.HOUR, -24)
+    val yesterdaydate = dateFormatter.format(hourcal.getTime)
+
+    val daycal = Calendar.getInstance
+    daycal.add(Calendar.WEEK_OF_MONTH, -1)
+    val last7daydate = dateFormatter.format(daycal.getTime)
+
+    val monthcal = Calendar.getInstance
+    monthcal.add(Calendar.MONTH, -1)
+    val lastmonthdate = dateFormatter.format(monthcal.getTime)
+
+    Logger.debug("today date: " + todaydate)
+    Logger.debug("yesterday date: " + yesterdaydate)
+    Logger.debug("last 7 day date: " + last7daydate)
+    Logger.debug("last month date: " + lastmonthdate)
+
+    // get at most 10 ``DONE'' submission from yesterday.
+    val myDonelist = extractions.findByExtractorIDBefore(extractorName, "DONE", yesterdaydate, 10)
+    // get at most 10 ``SUBMITTED'' submission from yesterday.
+    val mySubmittedlist = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", yesterdaydate, 10)
+    var n: Long = 0
+    var sum: Long = 0
+    // calculate the diff time between ``SUBMITTED'' and ``DONE''.
+    for ((done, submitted) <- (myDonelist zip mySubmittedlist)) {
+      Logger.debug("my done date: " + done.start + ", fileid: " + done.file_id)
+      Logger.debug("my submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
+      Logger.debug("done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
+      val diffInMillies = Math.abs(done.start.getTime - submitted.start.getTime)
+      Logger.debug("diffInMillies in ms: " + diffInMillies)
+      sum = sum + diffInMillies
+      n = n+1
+    }
+    sum = TimeUnit.SECONDS.convert(sum, TimeUnit.MILLISECONDS)
+    var average = BigDecimal.valueOf(sum)
+    Logger.debug("average: " + average)
+    if(n > 0) {
+      average = average/n
+    }
+    Logger.debug("average: " + average)
+    // get at the number of ``SUBMITTED'' submission in last week.
+    val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
+    Logger.debug("lastweek submitted: " + lastweeksubmitted.size)
+    // get at the number of ``SUBMITTED'' submission in last month.
+    val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
+
+    // calculate the last 10 execution average time in the time range of last month between ``SUBMITTED'' and ``DONE''.
+    // get at most 10 ``DONE'' submission from last month.
+    val myLastTenDonelist = extractions.findByExtractorIDBefore(extractorName, "DONE", lastmonthdate, 10)
+    // get at most 10 ``SUBMITTED'' submission from last month.
+    val myLastTenSubmittedlist = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 10)
+    n = 0
+    sum = 0
+    for ((done, submitted) <- (myLastTenDonelist zip myLastTenSubmittedlist)) {
+      Logger.debug("my last 10 done date: " + done.start + ", fileid: " + done.file_id)
+      Logger.debug("my last 10 submitted date: " + submitted.start + ", fileid: " + submitted.file_id)
+      Logger.debug("last 10 done.start.getTime: " + done.start.getTime + ", submitted.start.getTime: " + submitted.start.getTime)
+      val diffInMillies = Math.abs(done.start.getTime - submitted.start.getTime)
+      Logger.warn("last 10 diffInMillies in ms: " + diffInMillies)
+      sum = sum + diffInMillies
+      n = n+1
+    }
+    sum = TimeUnit.SECONDS.convert(sum, TimeUnit.MILLISECONDS)
+    var lastTenAverage = BigDecimal.valueOf(sum)
+    Logger.debug("last 10 average: " + lastTenAverage)
+    if(n > 0) {
+      lastTenAverage = lastTenAverage/n
+    }
+    Logger.warn("last 10 average: " + lastTenAverage)
+
+    val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
+    targetExtractor match {
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastTenAverage.toString, lastweeksubmitted.size, lastmonthsubmitted.size))
+      case None => InternalServerError("Extractor Info not found: " + extractorName)
     }
   }
 

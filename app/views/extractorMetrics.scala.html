@@ -1,0 +1,50 @@
+@(extractorName: String, yesterdayAverage: String, lastTenAverage: String, lastweeksubmitted: Int, lastmonthsubmitted: Int)(implicit user: Option[models.User])
+@import api.Permission
+
+@main("Extractor Details") {
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/extractors/extractors.js")" type="text/javascript"></script>
+    <style>
+            strong        { text-align: right; }
+            fieldset      { margin-top: 5px; }
+            .form-actions { margin-top: 15px; }
+    </style>
+
+    <ol class="breadcrumb">
+        <li><span class="glyphicon glyphicon-fullscreen"></span> <a href="@routes.Extractors.selectExtractors()">Extractor Catalog</a></li>
+        <li><span class="glyphicon glyphicon-search"></span> @extractorName</li>
+    </ol>
+
+    <div class="page-header"><h1>@extractorName Metrics Details</h1></div>
+
+    <div class="row">
+        <div class="col-sm-8">
+                <fieldset>
+
+                    <div class="row form-group">
+                        <strong class="col-sm-4" >Last 24 Hours Execution Average</strong>
+                        <span class="col-sm-8" >@yesterdayAverage  Sec</span>
+                    </div>
+                    <div class="row form-group">
+                        <strong class="col-sm-4" >Last 10 Execution Average</strong>
+                        <span class="col-sm-8" >@lastTenAverage  Sec</span>
+                    </div>
+
+                    <div class="row form-group">
+                        <strong class="col-sm-4" >Last Week Submitted</strong>
+                        <span class="col-sm-8" >@lastweeksubmitted</span>
+                    </div>
+
+                    <div class="row form-group">
+                        <strong class="col-sm-4" >Last Month Submitted</strong>
+                        <span class="col-sm-8" >@lastmonthsubmitted</span>
+                    </div>
+                </fieldset>
+
+        </div>
+
+        <div class="col-sm-4">
+                <!-- Insert sidebar here, if desired-->
+        </div>
+    </div>
+}
