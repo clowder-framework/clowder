@@ -530,22 +530,24 @@ class Extractions @Inject()(
                 datasetId = datasetslists.head.id
               }
               // if extractor_id is not specified default to execution of all extractors matching mime type
-              val key = (request.body \ "extractor").asOpt[String] match {
+              (request.body \ "extractor").asOpt[String] match {
                 case Some(extractorId) =>
                   val job_id = p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                     datasetId, newFlags, request.apiKey, request.user)
                   Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
-                case None =>
+                case None => {
                   p.fileCreated(file, None, Utils.baseUrl(request), request.apiKey) match {
                     case Some(job_id) => {
                       Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
                     }
+                    case None => {
+                      val message = "No jobId found for Extraction on fileid=" + file_id.stringify
+                      Logger.error(message)
+                      InternalServerError(toJson(Map("status" -> "KO", "msg" -> message)))
+                    }
                   }
+                }
               }
-
-              val message = "No jobId found for Extraction on fileid=" + file_id.stringify
-              Logger.error(message)
-              InternalServerError(toJson(Map("status" -> "KO", "msg" -> message)))
             } else {
               Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
             }

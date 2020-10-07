@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.11.1 - 2020-09-29
 
 **_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
 of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
@@ -15,7 +15,13 @@ of these changes a reindex of Elasticsearch is required. A reindex can be starte
 added to search API now that those data are properly compared.
 
 ### Fixed
-- proxy will no correctly handle paths that end with a / at the end.
+- Fixed health check script when using custom path prefix.
+- Proxy will no correctly handle paths that end with a / at the end.
+- Submitting an extraction will always return a 500 error, see [#84](https://github.com/clowder-framework/clowder/issues/84)
+- Added MongoDB index for `folders.files`.
+
+### Changed
+- Updated update-clowder script to work with migration to github. Has the ability now to push a message to MSTEAMS as well as influxdb.
 
 ## 1.11.0 - 2020-08-31
 
