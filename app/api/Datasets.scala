@@ -23,11 +23,11 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.mvc.{Action, AnyContent, MultipartFormData}
+import play.api.mvc.{Action, AnyContent, MultipartFormData, SimpleResult}
 import services._
 import _root_.util._
 import controllers.Utils.https
-import org.json.simple.{JSONObject => SimpleJSONObject, JSONArray}
+import org.json.simple.{JSONArray, JSONObject => SimpleJSONObject}
 import org.json.simple.parser.JSONParser
 import play.api.libs.Files
 
@@ -271,6 +271,8 @@ class  Datasets @Inject()(
     val distinctFolders: ListBuffer[String] = ListBuffer.empty
 
     implicit val user = request.user
+
+    var outcome: SimpleResult = BadRequest("Something went wrong.")
     user match {
       case Some(identity) => {
         request.body.files.foreach { f =>
@@ -283,7 +285,7 @@ class  Datasets @Inject()(
             while (entries.hasMoreElements()) {
               val entry = entries.nextElement()
               entry.getName match {
-                case "metadata/clowder.xml" => mainXML = Some(entry) // overrides datacite.xml
+                // TODO: case "metadata/clowder.xml" => mainXML = Some(entry) // overrides datacite.xml
                 case "metadata/datacite.xml" => if (!mainXML.isDefined) mainXML = Some(entry)
                 case "data/_dataset_metadata.json" => dsMeta = Some(entry)
                 case path if (path.startsWith("data/") && path.endsWith("/_info.json")) => dsInfo = Some(entry)
@@ -337,13 +339,11 @@ class  Datasets @Inject()(
                       val datasetMeta = parseJsonFileInZip(mdStream)
                       try {
                         datasetMeta.asInstanceOf[JsArray].value.foreach(v => {
-                          processBagMetadataJsonLD(UUID(dsid), v)
+                          processBagMetadataJsonLD(ResourceRef(ResourceRef.dataset, UUID(dsid)), v)
                         })
                       } catch {
-                        case e: Exception => {
-                          Logger.info("Caught error")
-                          processBagMetadataJsonLD(ds.id, datasetMeta)
-                        }
+                        case e: Exception =>
+                          processBagMetadataJsonLD(ResourceRef(ResourceRef.dataset, UUID(dsid)), datasetMeta)
                       }
                     }
 
@@ -354,7 +354,7 @@ class  Datasets @Inject()(
                         folderIds = ensureFolderExistsInDataset(ds, folderPath, folderIds)
                     })
 
-                    // Add files to corresponding folders
+                    // Add files to corresponding folders (if any files fail, the whole upload should fail)
                     var criticalFail: Option[String] = None
                     fileInfos.keys.foreach(filename => {
                       if (criticalFail.isEmpty) {
@@ -362,13 +362,10 @@ class  Datasets @Inject()(
                           case Some(bytes) => {
 
                             // Get file metadata and folder info
-                            var folderId: Option[String] = None
-                            val fileFolder = fileFolds.get(filename).get
-                            fileFolds.get(filename) match {
-                              case Some(fo) =>
-                            }
-                            if (fileFolder != "" && fileFolder != "/") {
-                              folderId = folderIds.get(fileFolder)
+                            val folderId = fileFolds.get(filename) match {
+                              case Some(fid) if (fid != "" && fid != "/") =>
+                                folderIds.get(fid)
+                              case _ => None
                             }
 
                             // Unzip file to temporary location
@@ -385,7 +382,20 @@ class  Datasets @Inject()(
                             val newfile = FileUtils.processBagFile(filename, user.get, ds, folderId)
                             newfile match {
                               case Some(nf) => {
-                                // TODO: Add metadata
+                                // Add file metadata if necessary
+                                val fileMeta = fileMetas.get(filename)
+                                if (fileMeta.isDefined) {
+                                  val mdStream = bag.getInputStream(fileMeta.get)
+                                  val fMeta = parseJsonFileInZip(mdStream)
+                                  try {
+                                    fMeta.asInstanceOf[JsArray].value.foreach(v => {
+                                      processBagMetadataJsonLD(ResourceRef(ResourceRef.file, nf.id), v)
+                                    })
+                                  } catch {
+                                    case e: Exception =>
+                                      processBagMetadataJsonLD(ResourceRef(ResourceRef.file, nf.id), fMeta)
+                                  }
+                                }
                               }
                               case None => {
                                 Logger.error("Problem creating "+filename+" - removing dataset.")
@@ -403,29 +413,24 @@ class  Datasets @Inject()(
                     })
 
                     if (criticalFail.isDefined)
-                      BadRequest(criticalFail.get)
-                    else {
-                      Ok("All done.")
-                    }
-
+                      outcome = BadRequest(criticalFail.get)
+                    else
+                      outcome = Ok("Created dataset "+ds.id.stringify)
                   }
-                  case None => BadRequest("Error creating new dataset")
+                  case None => outcome = BadRequest("Error creating new dataset")
                 }
-              }
-            } else {
-              BadRequest("No supported XML metadata file found.")
-            }
+              } else outcome = BadRequest("No dataset info found in "+mainXML.get)
+            } else outcome = BadRequest("No supported XML metadata file found.")
           }
         }
       }
-      case None => BadRequest("Must provide an associated user account.")
+      case None => outcome = BadRequest("Must provide an associated user account.")
     }
-
-    Ok("Ok")
+    outcome
   }
 
   // Add JSON data from a JSON-LD file into a dataset
-  private def processBagMetadataJsonLD(datasetId: UUID, json: JsValue) = {
+  private def processBagMetadataJsonLD(resource: ResourceRef, json: JsValue) = {
     //parse request for agent/creator info
     json.validate[Agent] match {
       case s: JsSuccess[Agent] => {
@@ -443,7 +448,7 @@ class  Datasets @Inject()(
         val createdAt = new Date()
 
         //parse the rest of the request to create a new models.Metadata object
-        val attachedTo = ResourceRef(ResourceRef.dataset, datasetId)
+        val attachedTo = resource
         val content = (json \ "content")
         val version = None
         val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
