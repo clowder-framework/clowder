@@ -1,5 +1,5 @@
 @(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
-        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->true, "processTriggers"->false, "labelSection"->false, "filterSection"->false, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
@@ -344,14 +344,15 @@
         </div>
     </div>
 
-
-    <script>
-            $('document').ready(function(){
-                var params = new URLSearchParams(window.location.search);
-                var targetParameter = "processTriggerSearchFilter"
-                if (params.has(targetParameter)) {
-                    document.getElementById(targetParameter).value = params.get(targetParameter);
-                }
-            });
-    </script>
+    @if(showOptional("filterSection")) {
+        <script>
+                $('document').ready(function () {
+                    var params = new URLSearchParams(window.location.search);
+                    var targetParameter = "processTriggerSearchFilter"
+                    if (params.has(targetParameter)) {
+                        document.getElementById(targetParameter).value = params.get(targetParameter);
+                    }
+                });
+        </script>
+    }
 }
