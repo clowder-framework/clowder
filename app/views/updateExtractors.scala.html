@@ -1,5 +1,5 @@
 @(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
-        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true))(implicit user: Option[models.User])
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
@@ -143,9 +143,9 @@
                             <th>Authors</th>
                             <th>Version</th>
                             <th>Maturity</th>
-                            <th>My Jobs</th>
+                            <!-- th>My Jobs</th -->
                             <th>All Jobs</th>
-                            <th>Rating</th>
+                            @if(showOptional("ratings")) { <th>Rating</th> }
                             @if(showOptional("processTriggers")) { <th>Process Triggers</th> }
                             <th></th>
                         </tr>
@@ -163,39 +163,11 @@
 
                                     <!-- Extractor Author and Contributors -->
                                     <td class="v-center">
-                                            <!-- TODO: Hide full text behind a modal? Possible to show truncated preview here? -->
-                                        <p @if(extractor.process.dataset.isEmpty) {hidden}>
-                                        Datasets:
-                                        <span @if(extractor.process.dataset.length > 1) {hidden}>@extractor.process.dataset</span>
-                                        <ul @if(extractor.process.dataset.length == 1) {hidden}>
-                                        @extractor.process.dataset.map { eventName =>
-                                            <li>@eventName</li>
+                                        <ul>
+                                        @for(contributor <- (extractor.author +: extractor.contributors)) {
+                                            <li>@contributor</li>
                                         }
                                         </ul>
-                                        </p>
-                                        <p @if(extractor.process.file.isEmpty) {hidden}>
-                                        Files:
-                                        <span @if(extractor.process.file.length > 1) {hidden}>@extractor.process.file</span>
-                                        <ul @if(extractor.process.file.length == 1) {hidden}>
-                                        @extractor.process.file.map { fileType =>
-                                            <li>@fileType</li>
-                                        }
-                                        </ul>
-                                        </p>
-                                        <p @if(extractor.process.metadata.isEmpty) {hidden}>
-                                        Metadata:
-                                        <span @if(extractor.process.metadata.length > 1) {hidden}>@extractor.process.metadata</span>
-                                        <ul @if(extractor.process.metadata.length == 1) {hidden}>
-                                        @extractor.process.metadata.map { eventName =>
-                                            <li>@eventName</li>
-                                        }
-                                        </ul>
-                                        </p>
-                                        <p @if(!extractor.process.metadata.isEmpty
-                                            || !extractor.process.file.isEmpty
-                                            || !extractor.process.dataset.isEmpty) {hidden}>
-                                        None
-                                        </p>
                                     </td>
 
                                     <!-- TODO: Extractor versions / previous version timeline -->
@@ -220,12 +192,14 @@
 
                                     <!-- TODO: Extractor Ratings -->
                                     <!-- Format: "Average of all ratings" / 5 ("Total number of ratings") -->
-                                    <td class="v-center">
-                                        <!-- TODO: Link to Extractors Ratings view -->
-                                        <a class="btn btn-link" href="#">
-                                            TBD / 5 (TBD)
-                                        </a>
-                                    </td>
+                                    @if(showOptional("ratings")) {
+                                        <td class="v-center">
+                                                <!-- TODO: Link to Extractors Ratings view -->
+                                            <a class="btn btn-link" href="#">
+                                                TBD / 5 (TBD)
+                                            </a>
+                                        </td>
+                                    }
 
                                     <!-- Extractor Process Triggers (hidden by default) -->
                                     @if(showOptional("processTriggers")) {
@@ -308,11 +282,13 @@
                                             </li>
 
                                             <!-- TODO: Rate & Comment on Extractor -->
-                                            <li role="presentation">
-                                                <a role="menuitem" tabindex="-1" href="#">
-                                                    <span class="glyphicon glyphicon-comment"></span> Rate & Comment
-                                                </a>
-                                            </li>
+                                            @if(showOptional("ratings")) {
+                                                <li role="presentation">
+                                                    <a role="menuitem" tabindex="-1" href="#">
+                                                        <span class="glyphicon glyphicon-comment"></span> Rate & Comment
+                                                    </a>
+                                                </li>
+                                            }
                                                 <!-- Admin-only: Extractor maturity (e.g. Development, Staging, Production) -->
                                             @if(Permission.checkServerAdmin(user)) {
                                                 <li role="presentation" class="divider"></li>
