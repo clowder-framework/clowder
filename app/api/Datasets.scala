@@ -355,34 +355,59 @@ class  Datasets @Inject()(
                     })
 
                     // Add files to corresponding folders
+                    var criticalFail: Option[String] = None
                     fileInfos.keys.foreach(filename => {
-                      fileBytes.get(filename) match {
-                        case Some(bytes) => {
-                          // Get file metadata and folder info
-                          val fileFolder = fileFolds.get(filename).get
-                          if (fileFolder != "" && fileFolder != "/") {
-                            val folderId = folderIds.get(fileFolder).get
-                          }
+                      if (criticalFail.isEmpty) {
+                        fileBytes.get(filename) match {
+                          case Some(bytes) => {
 
-                          // Unzip file and upload it
-                          val is = bag.getInputStream(bytes)
-                          val outstream = new FileOutputStream(filename)
-                          val buffer = new Array[Byte](1024)
-                          var chunk = is.read(buffer);
-                          while (chunk > 0) {
-                            outstream.write(buffer, 0, chunk)
-                            chunk = is.read(buffer)
+                            // Get file metadata and folder info
+                            var folderId: Option[String] = None
+                            val fileFolder = fileFolds.get(filename).get
+                            fileFolds.get(filename) match {
+                              case Some(fo) =>
+                            }
+                            if (fileFolder != "" && fileFolder != "/") {
+                              folderId = folderIds.get(fileFolder)
+                            }
+
+                            // Unzip file to temporary location
+                            val is = bag.getInputStream(bytes)
+                            val outstream = new FileOutputStream(filename)
+                            val buffer = new Array[Byte](1024)
+                            var chunk = is.read(buffer);
+                            while (chunk > 0) {
+                              outstream.write(buffer, 0, chunk)
+                              chunk = is.read(buffer)
+                            }
+                            outstream.close()
+
+                            val newfile = FileUtils.processBagFile(filename, user.get, ds, folderId)
+                            newfile match {
+                              case Some(nf) => {
+                                // TODO: Add metadata
+                              }
+                              case None => {
+                                Logger.error("Problem creating "+filename+" - removing dataset.")
+                                datasets.removeDataset(ds.id, request.host, request.apiKey, user)
+                                criticalFail = Some("Not all files in zip file could be proceesed ("+filename+")")
+                              }
+                            }
                           }
-                          outstream.close()
-                          Logger.info("file is here: "+filename)
-                          FileUtils.processBagFile(filename, new JFile(filename), user.get)
-                        }
-                        case None => {
-                          // TODO: Check if file has remote path to download it
-                          BadRequest("Not all files found in archive ("+filename+" missing)")
+                          case None => {
+                            // TODO: Check if file has remote path to download it
+                            criticalFail = Some("Not all files found in archive ("+filename+" missing)")
+                          }
                         }
                       }
                     })
+
+                    if (criticalFail.isDefined)
+                      BadRequest(criticalFail.get)
+                    else {
+                      Ok("All done.")
+                    }
+
                   }
                   case None => BadRequest("Error creating new dataset")
                 }
@@ -454,19 +479,17 @@ class  Datasets @Inject()(
         val baseFolder = folderLevels.last
         val parentFolder = folderLevels.take(folderLevels.length-1).mkString("/")
 
-        Logger.info("folder: "+baseFolder)
-        Logger.info("parent: "+parentFolder)
-
         if (parentFolder.trim.length == 0) {
           // Folder has no parent to add directly to dataset
           val f = Folder(author=dataset.author, created=new Date(), name=baseFolder, displayName=baseFolder,
             files=List.empty, folders=List.empty, parentId=dataset.id, parentType="dataset", parentDatasetId=dataset.id)
           folders.insert(f)
           datasets.addFolder(dataset.id, f.id)
+          updatedFolderIds += (folderPath -> f.id.stringify)
         } else {
           // Folder has parent so add to parent folder
           updatedFolderIds = ensureFolderExistsInDataset(dataset, parentFolder, updatedFolderIds)
-          val parentId = updatedFolderIds.get(parentFolder).get
+          val parentId = folderIds.get(parentFolder).get
           val f = Folder(author=dataset.author, created=new Date(), name=baseFolder, displayName=baseFolder,
             files=List.empty, folders=List.empty, parentId=UUID(parentId), parentType="folder", parentDatasetId=dataset.id)
           folders.insert(f)

@@ -1,6 +1,6 @@
 package util
 
-import java.io.FileInputStream
+import java.io.{File => JFile}
 import java.net.URL
 import java.util.Date
 
@@ -351,14 +351,30 @@ object FileUtils {
   }
 
   // process a file from a bagit zipfile upload
-  def processBagFile(filename: String, file: java.io.File, user: User) = {
-    val fobj = File(UUID.generate, "", filename, filename, user, new Date(), FileUtils.getContentType(filename, None),
-      file.length, "", isIntermediate=false, showPreviews="DatasetLevel", licenseData=License.fromAppConfig,
-      stats=new Statistics(), status=FileStatus.CREATED.toString)
-    files.save(fobj)
-    Logger.info(s"created file ${fobj.id}")
+  def processBagFile(filename: String, user: User, dataset: Dataset, folderId: Option[String]): Option[File] = {
+    val file = new JFile(filename)
 
+    // Save file bytes
+    ByteStorageService.save(file, "uploads") match {
+      case Some((loader_id, loader, length)) => {
+        val fileobj = File(UUID.generate, loader_id, filename, filename, user, new Date(), getContentType(filename, None),
+          file.length, loader, licenseData=License.fromAppConfig, stats=new Statistics(), status=FileStatus.PROCESSED.toString)
+        files.save(fileobj)
+        appConfig.incrementCount('files, 1)
+        appConfig.incrementCount('bytes, file.length)
 
+        // Add to dataset/folder if given
+        folderId match {
+          case Some(fid) => folders.addFile(UUID(fid), fileobj.id)
+          case None => datasets.addFile(dataset.id, fileobj)
+        }
+        Some(fileobj)
+      }
+      case None => {
+        Logger.error("Unable to save file bytes to Clowder.")
+        None
+      }
+    }
   }
 
   // process a single uploaded file
