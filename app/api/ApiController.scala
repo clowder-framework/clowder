@@ -7,6 +7,8 @@ import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Logger
 import play.api.mvc._
+import play.api.mvc.Results.Unauthorized
+import play.api.mvc.{ControllerComponents => controllerComponents}
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.SecureSocial
 import services.{AppConfiguration, DI}
