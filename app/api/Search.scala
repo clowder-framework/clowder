@@ -49,10 +49,16 @@ class Search @Inject() (
           (tag match {case Some(x) => s"&tag=$x" case None => ""})
 
         // Add space filter to search here as a simple permissions check
-        val permitted = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
+        val superAdmin = request.user match {
+          case Some(u) => u.superAdminMode
+          case None => false
+        }
+        val permitted = if (superAdmin)
+          List[UUID]()
+        else
+          spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
 
         val response = plugin.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
-
         val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
         Ok(toJson(result))
       }
