@@ -1,5 +1,5 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
-        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->false, "ratings"->false))(implicit user: Option[models.User])
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup], labels: List[ExtractorsLabel],
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
@@ -42,15 +42,11 @@
                     <div class="btn-group" data-toggle="buttons">
 
                         <!-- Disguised checkboxes as buttons -->
-                        <label class="btn btn-primary active">
-                            <input type="checkbox" autocomplete="off" checked> Image
-                        </label>
-                        <label class="btn btn-primary active">
-                            <input type="checkbox" autocomplete="off" checked> Video
-                        </label>
-                        <label class="btn btn-primary active">
-                            <input type="checkbox" autocomplete="off" checked> Audio
-                        </label>
+                        @for(label <- labels) {
+                            <label class="btn btn-primary active">
+                                <input type="checkbox" autocomplete="off" checked> @label.name
+                            </label>
+                        }
                     </div>
                 </div>
             </fieldset>

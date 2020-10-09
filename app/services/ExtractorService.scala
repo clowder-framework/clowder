@@ -48,4 +48,6 @@ trait ExtractorService {
   def createExtractorsLabel(name: String, category: Option[String], extractors: List[String]): Option[ExtractorsLabel]
 
   def updateExtractorsLabel(label: ExtractorsLabel): Option[ExtractorsLabel]
+
+  def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel]
 }

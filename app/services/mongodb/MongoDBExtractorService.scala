@@ -13,6 +13,9 @@ import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 @Singleton
 class MongoDBExtractorService extends ExtractorService {
 
@@ -228,6 +231,10 @@ class MongoDBExtractorService extends ExtractorService {
   def updateExtractorsLabel(updated: ExtractorsLabel): Option[ExtractorsLabel] = {
     ExtractorsLabelDAO.save(updated, WriteConcern.Safe)
     Some(updated)
+  }
+
+  def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findAll().filter(_.extractors.contains(extractorName)).toList
   }
 }
 

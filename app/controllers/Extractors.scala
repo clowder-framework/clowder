@@ -63,7 +63,8 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
-    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
+    val labels = extractorService.listExtractorsLabels()
+    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, labels))
   }
 
   def manageLabels = ServerAdminAction { implicit request =>
@@ -116,7 +117,10 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorDetails(extractor))
+      case Some(extractor) => {
+        val labels = extractorService.getLabelsForExtractor(extractor.name)
+        Ok(views.html.extractorDetails(extractor, labels))
+      }
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
   }
