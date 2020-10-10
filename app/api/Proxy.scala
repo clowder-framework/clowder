@@ -40,6 +40,8 @@ object Proxy {
 class Proxy @Inject()() extends ApiController {
   import Proxy.ConfigPrefix
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   /**
     * Translates an endpoint_key to a target endpoint based on Clowder's configuration
     */
@@ -142,7 +144,7 @@ class Proxy @Inject()() extends ApiController {
 
     // Chunk the response
     val bodyStream = originalResponse.ahcResponse.getResponseBodyAsStream
-    val bodyEnumerator = Enumerator.fromStream(bodyStream)
+    val bodyEnumerator = Enumerator.fromStream(bodyStream, chunksize)
     val payload = Status(statusCode).chunked(bodyEnumerator)
 
     // Return a SimpleResult, coerced into our desired Content-Type
