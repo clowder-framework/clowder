@@ -4,9 +4,8 @@ import java.io.IOException
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
+
 import javax.inject.Singleton
-
-
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 
 import scala.concurrent.duration._
@@ -22,6 +21,7 @@ import play.api.http.MimeTypes
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.ahc.AhcWSResponse
 import play.api.{Application, Configuration, Logger}
 import play.libs.Akka
 import securesocial.core.IdentityId
@@ -754,7 +754,7 @@ class RabbitmqExtractionBusService @Inject() (
   // ----------------------------------------------------------------------
   // RABBITMQ MANAGEMENT ENDPOINTS
   // ----------------------------------------------------------------------
-  def getRestEndPoint(path: String): Future[WSResponse] = {
+  def getRestEndPoint(path: String): Future[] = {
     connect
 
     restURL match {

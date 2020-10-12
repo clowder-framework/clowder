@@ -1,17 +1,17 @@
 package api
 
-import java.io.{FileInputStream, InputStream}
+import java.io.{FileInputStream, InputStream, ByteArrayInputStream}
 import java.net.URL
 import java.util.Calendar
-import javax.inject.Inject
 
+import javax.inject.Inject
 import controllers.Utils
 import models._
-import play.api.{Logger, Configuration}
+import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.libs.ws.ahc.AhcWSResponse
 import services._
 
@@ -77,10 +77,10 @@ class Extractions @Inject()(
           val listIds = for {fileurl <- listURLs} yield {
             val urlsplit = fileurl.split("/")
             val filename = urlsplit(urlsplit.length - 1)
-            val futureResponse = WS.url(fileurl).get()
-            val fid = for {response <- futureResponse} yield {
+            val futureResponse : Future[WSResponse] = WS.url(fileurl).get()
+            val fid = for {response : Future[AhcWSResponse] <- futureResponse} yield {
               if (response.status == 200) {
-                val inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
+                val inputStream: InputStream = new ByteArrayInputStream(response.bodyAsBytes.toStream)
                 val contentLengthStr = response.header("Content-Length").getOrElse("-1")
                 val contentLength = Integer.parseInt(contentLengthStr).toLong
                 val file = files.save(inputStream, filename, contentLength, response.header("Content-Type"), user, null)
@@ -247,7 +247,7 @@ class Extractions @Inject()(
               //Get the bindings
               val blist = extractionBusService.getBindings
               val fstatus = for {
-                rkeyResponse <- blist
+                rkeyResponse : WSResponse <- blist
               } yield {
                 val status = computeStatus(rkeyResponse, file, l)
                 Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
@@ -274,7 +274,7 @@ class Extractions @Inject()(
     }
   }
 
-  def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
+  def computeStatus(response: WSResponse, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
 
     var isActivity = "false"
     extractions.findIfBeingProcessed(file.id) match {
