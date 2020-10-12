@@ -470,7 +470,7 @@ class Metadata @Inject() (
             } else None
 
           //parse the rest of the request to create a new models.Metadata object
-          val content = (json \ "content")
+          val content = (json \ "content").get
           val version = None
 
           if (attachedTo.isDefined) {

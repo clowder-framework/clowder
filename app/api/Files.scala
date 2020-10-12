@@ -310,7 +310,7 @@ class Files @Inject()(
           case s: JsSuccess[Agent] => {
             creator = s.get
             //if creator is found, continue processing
-            val context: JsValue = (json \ "@context")
+            val context: JsValue = (json \ "@context").get
 
             // check if the context is a URL to external endpoint
             val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
@@ -324,14 +324,14 @@ class Files @Inject()(
               } else None
 
             // when the new metadata is added
-            val createdAt = Parsers.parseDate((json \ "created_at")).fold(new Date())(_.toDate)
+            val createdAt = Parsers.parseDate((json \ "created_at").get).fold(new Date())(_.toDate)
 
             //parse the rest of the request to create a new models.Metadata object
             val attachedTo = ResourceRef(ResourceRef.file, id)
             val content = (json \ "content")
             val version = None
             val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-              content, version)
+              content.get, version)
 
             //add metadata to mongo
             val metadataId = metadataService.addMetadata(metadata)
@@ -382,7 +382,7 @@ class Files @Inject()(
                 } else None
 
               // when the new metadata is added
-              val createdAt = Parsers.parseDate((metadata \ "created_at")).fold(new Date())(_.toDate)
+              val createdAt = Parsers.parseDate((metadata \ "created_at").get).fold(new Date())(_.toDate)
 
               //parse the rest of the request to create a new models.Metadata object
               val content = (metadata \ "content")
@@ -391,7 +391,7 @@ class Files @Inject()(
               files.get(fileList.asInstanceOf[JsArray].value.map(v => UUID(v.toString.replace("\"", ""))).toList).found.foreach(f => {
                 val attachedTo = ResourceRef(ResourceRef.file, f.id)
                 val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
+                  content.get, version)
 
                 //add metadata to mongo
                 val metadataId = metadataService.addMetadata(metadata)
@@ -1604,7 +1604,7 @@ class Files @Inject()(
               case None => NotFound(s"Error: No $spaceTitle found for $id.")
             }
           }
-          userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+          userList = userList.distinct.sortBy(u => u.fullName.getOrElse(u.id.stringify).toLowerCase)
         })
 
         if (userList.nonEmpty) {

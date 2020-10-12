@@ -619,7 +619,7 @@ class  Datasets @Inject()(
                 val content = (json \ "content")
                 val version = None
                 val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
+                  content.get, version)
 
                 //add metadata to mongo
                 val metadataId = metadataService.addMetadata(metadata)
@@ -1813,7 +1813,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
           .filter(metadata => metadata.creator.typeOfAgent == "extractor" || metadata.creator.typeOfAgent == "cat:extractor")
-          .map(JSONLD.jsonMetadataWithContext(_) \ "content")
+          .map(JSONLD.jsonMetadataWithContext(_) \ "content").map(jlr => jlr.get)
         Ok(toJson(listOfMetadata))
       }
       case None => Logger.error("Error finding dataset" + id); InternalServerError
@@ -2205,7 +2205,8 @@ class  Datasets @Inject()(
             case None => NotFound(s"Error: No $spaceTitle found for $id.")
           }
         }
-        userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+        // TODO: Sort by last name or email of user, once they are not Option[String]
+        userList = userList.distinct.sortBy(u => u.fullName.getOrElse(u.userId).toLowerCase)
 
         if (userList.nonEmpty) {
           Ok(Json.toJson(userList.map(user => Json.obj(

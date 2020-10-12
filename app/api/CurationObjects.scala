@@ -118,7 +118,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
           }
           var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
           for(key <- metadataKeys) {
-            metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
+            metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}.toList))
           }
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
           for(md <- metadatas.getDefinitions(Some(c.space))) {

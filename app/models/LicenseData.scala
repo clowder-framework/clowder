@@ -25,7 +25,10 @@ case class LicenseData (
      */
     def isDownloadAllowed(user: Option[User]) = {
       (m_licenseType != "license1") || m_allowDownload || Permission.checkPermission(user, Permission.DownloadFiles) || (user match {
-        case Some(x) => isRightsOwner(x.fullName)
+        case Some(x) => x.fullName match {
+          case Some(fn) => isRightsOwner(fn)
+          case None => false
+        }
         case None => false
       })
     }

@@ -36,7 +36,7 @@ class ContextLD @Inject() (
       case Some(user) => {
         val context = request.body.\("@context")
         val contextName = request.body.\("context_name")
-        val contextId = contextlds.addContext(contextName.as[JsString], context)
+        val contextId = contextlds.addContext(contextName.as[JsString], context.get)
         Ok(toJson(Map("id" -> contextId.toString)))
       }
       case None => BadRequest(toJson("Not authorized."))

@@ -136,6 +136,7 @@ object Permission extends Enumeration {
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
   lazy val vocabularies: VocabularyService = DI.injector.getInstance(classOf[VocabularyService])
   lazy val vocabularyterms: VocabularyTermService = DI.injector.getInstance(classOf[VocabularyTermService])
+  lazy val configuration: Configuration = DI.injector.getInstance(classOf[Configuration])
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
@@ -247,7 +248,7 @@ object Permission extends Enumeration {
   }
 
   def checkPermission(user: Option[User], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
-    (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRef) match {
+    (user, configuration.get[String]("permissions"), resourceRef) match {
       case (Some(u), "public", Some(r)) => {
         if (READONLY.contains(permission))
           true
@@ -255,7 +256,7 @@ object Permission extends Enumeration {
           checkPermission(u, permission, r)
       }
       case (Some(u), "private", Some(r)) => {
-        if (configuration(play.api.Play.current).getBoolean("makeGeostreamsPublicReadable").getOrElse(true) && permission == Permission.ViewGeoStream)
+        if (configuration.get[Boolean]("makeGeostreamsPublicReadable") && permission == Permission.ViewGeoStream)
           true
         else
           checkPermission(u, permission, r)
@@ -264,7 +265,7 @@ object Permission extends Enumeration {
       case (None, "private", Some(res)) => checkAnonymousPrivatePermissions(permission, res)
       case (None, "public", _) => READONLY.contains(permission)
       case (None, "private", None) => {
-        if (configuration(play.api.Play.current).getBoolean("makeGeostreamsPublicReadable").getOrElse(true) && permission == Permission.ViewGeoStream)
+        if (configuration.get[Boolean]("makeGeostreamsPublicReadable") && permission == Permission.ViewGeoStream)
           true
         else {
           Logger.debug(s"Private, no user, no resourceRef, permission=${permission}", new Exception())
@@ -279,7 +280,7 @@ object Permission extends Enumeration {
   }
 
   def checkPermissions(user: Option[User], permission: Permission, resourceRefs: List[ResourceRef]): PermissionsList = {
-    (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRefs) match {
+    (user, configuration.get[String]("permissions"), resourceRefs) match {
       case (Some(u), "public", r) => {
         if (READONLY.contains(permission))
           generatePermissionsList(r, true)
@@ -287,7 +288,7 @@ object Permission extends Enumeration {
           checkPermissions(u, permission, r)
       }
       case (Some(u), "private", r) => {
-        if (configuration(play.api.Play.current).getBoolean("makeGeostreamsPublicReadable").getOrElse(true) && permission == Permission.ViewGeoStream)
+        if (configuration.get[Boolean]("makeGeostreamsPublicReadable") && permission == Permission.ViewGeoStream)
           generatePermissionsList(r, true)
         else
           checkPermissions(u, permission, r)
@@ -924,7 +925,7 @@ object Permission extends Enumeration {
 
   /** on a private server this will return true iff user logged in, on public server this will always be true */
   def checkPrivateServer(user: Option[User]): Boolean = {
-    configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" || user.isDefined
+    configuration.get[String]("permissions") == "public" || user.isDefined
   }
 
   // Shortcut for changing Map to a PermissionsList object
