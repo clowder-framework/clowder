@@ -1,17 +1,12 @@
 package api
 
-import models.{Event, UUID, File}
-import play.api.Play._
-import services._
-import play.api.libs.json.{JsObject, JsValue}
-import play.api.libs.json.Json.toJson
-import javax.inject.Inject
-
-import util.Mail
-import play.api.templates.Html
-
-import scala.util.{Failure, Success, Try}
 import controllers.Utils
+import javax.inject.Inject
+import models.Event
+import play.api.libs.json.Json.toJson
+import play.twirl.api.Html
+import services._
+import util.Mail
 
 
 class Events @Inject() (events: EventService,
