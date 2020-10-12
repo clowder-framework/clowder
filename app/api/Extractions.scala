@@ -17,7 +17,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
 import play.api.libs.functional.syntax._
-import play.api.mvc.MultipartFormData
+import play.api.mvc.{Action, MultipartFormData, Result, SimpleResult}
 import services._
 
 import scala.collection.mutable.ListBuffer
@@ -678,23 +678,53 @@ class Extractions @Inject()(
     // Fetch parameters from request body
     val (name, category, assignedExtractors) = parseExtractorsLabel(request)
 
-    // Validate and create new label
-    validateExtractorsLabel(name, category, assignedExtractors)
-    val label = extractors.createExtractorsLabel(name, category, assignedExtractors)
+    // Validate that name is not empty
+    if (name.isEmpty) {
+      BadRequest("Label Name cannot be empty")
+    } else {
+      // Validate that name is unique
+      extractors.getExtractorsLabel(name) match {
+        case Some(lbl) => Conflict("Label name is already in use: " + lbl.name)
+        case None => {
+          // Create the new label
+          val label = extractors.createExtractorsLabel(name, category, assignedExtractors)
+          Ok(Json.toJson(label))
+        }
+      }
 
-    Ok(Json.toJson(label))
+    }
+
   }
 
   def updateExtractorsLabel(id: UUID) = ServerAdminAction(parse.json) { implicit request =>
     // Fetch parameters from request body
     val (name, category, assignedExtractors) = parseExtractorsLabel(request)
 
-    // Validate and perform update
-    validateExtractorsLabel(name, category, assignedExtractors)
-    val label = ExtractorsLabel(id, name, category, assignedExtractors)
-    val updatedLabel = extractors.updateExtractorsLabel(label)
-
-    Ok(Json.toJson(updatedLabel))
+    // Validate that name is not empty
+    if (name.isEmpty) {
+      BadRequest("Label Name cannot be empty")
+    } else {
+      // Validate that name is still unique
+      extractors.getExtractorsLabel(name) match {
+        case Some(lbl) => {
+          // Exclude current id (in case name hasn't changed)
+          if (lbl.id != id) {
+            Conflict("Label name is already in use: " + lbl.name)
+          } else {
+            // Update the label
+            val label = ExtractorsLabel(id, name, category, assignedExtractors)
+            val updatedLabel = extractors.updateExtractorsLabel(label)
+            Ok(Json.toJson(updatedLabel))
+          }
+        }
+        case None => {
+          // Update the label
+          val label = ExtractorsLabel(id, name, category, assignedExtractors)
+          val updatedLabel = extractors.updateExtractorsLabel(label)
+          Ok(Json.toJson(updatedLabel))
+        }
+      }
+    }
   }
 
   def deleteExtractorsLabel(id: UUID) = ServerAdminAction { implicit request =>
@@ -714,11 +744,5 @@ class Extractions @Inject()(
     val assignedExtractors = (request.body \ "extractors").as[List[String]]
 
     (name, category, assignedExtractors)
-  }
-
-  def validateExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): Unit = {
-    if (name.isEmpty) {
-      BadRequest("Label Name cannot be empty")
-    }
   }
 }

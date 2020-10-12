@@ -45,7 +45,7 @@
                                 <div class="btn-group" data-toggle="buttons">
                                 @for(label <- catLabels) {
                                     <label class="btn btn-primary active">
-                                        <input type="checkbox" autocomplete="off" checked> @label.name
+                                        <input id="label-@label.name" class="label-checkbox" type="checkbox" autocomplete="off" checked> @label.name
                                     </label>
                                 }
                                 </div>
@@ -348,9 +348,20 @@
         <script>
                 $('document').ready(function () {
                     var params = new URLSearchParams(window.location.search);
-                    var targetParameter = "processTriggerSearchFilter"
-                    if (params.has(targetParameter)) {
-                        document.getElementById(targetParameter).value = params.get(targetParameter);
+                    var processTriggerParam = "processTriggerSearchFilter"
+                    if (params.has(processTriggerParam)) {
+                        document.getElementById(processTriggerParam).value = params.get(processTriggerParam);
+                    }
+                    var labelsParam = "labelsFilter"
+                    if (params.has(labelsParam)) {
+                        // If we have a label param, uncheck all other labels
+                        var labelNames = params.get(labelsParam).split(',');
+                        if (labels => 1) { $('.label-checkbox').prop("checked", false); }
+
+                        // Check only the labels in the query string
+                        labelNames.forEach(function(labelName) {
+                            $('label-' + labelName).prop("checked", true);
+                        });
                     }
                 });
         </script>

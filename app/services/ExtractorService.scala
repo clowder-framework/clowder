@@ -45,6 +45,8 @@ trait ExtractorService {
 
   def listExtractorsLabels(): List[ExtractorsLabel]
 
+  def getExtractorsLabel(name: String): Option[ExtractorsLabel]
+  
   def getExtractorsLabel(id: UUID): Option[ExtractorsLabel]
 
   def createExtractorsLabel(name: String, category: Option[String], extractors: List[String]): ExtractorsLabel

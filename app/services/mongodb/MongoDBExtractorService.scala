@@ -223,6 +223,10 @@ class MongoDBExtractorService extends ExtractorService {
     ExtractorsLabelDAO.findAll().toList
   }
 
+  def getExtractorsLabel(name: String): Option[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findOne(MongoDBObject("name" -> name))
+  }
+
   def getExtractorsLabel(id: UUID): Option[ExtractorsLabel] = {
     ExtractorsLabelDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
