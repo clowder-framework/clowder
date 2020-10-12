@@ -108,7 +108,6 @@
     <script>
         // count_stepsize is the batch size to get results; e.g. 60 would be 1-60, 61-120, 121-180, etc.
         var count_stepsize = @{play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)};
-        count_stepsize = 2;
         var count = 0;
         var skipped_count = 0;
         // Whether all results for current search have been exhausted & displayed yet
@@ -174,7 +173,7 @@
                     if (resp.size > 0) {
                         if (resp.total_size < resp.scanned_size)
                             skipped_count += (resp.total_size - resp.count);
-                        else
+                        else if (resp.total_size > (resp.from+resp.count))
                             skipped_count += (resp.scanned_size - resp.count);
                     } else if (resp.hasOwnProperty('next') || resp.total_size == resp.scanned_size) {
                         skipped_count += resp.total_size

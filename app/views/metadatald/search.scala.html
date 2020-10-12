@@ -464,14 +464,15 @@
                 count += resp.scanned_size;
                 searching = false;
 
-                // Correctly increment skipped count
+                // Correctly increment skipped count if we are missing results but have no more pages
                 if (resp.count != resp.total_size) {
                     if (resp.size > 0) {
                         if (resp.total_size < resp.scanned_size)
                             skipped_count += (resp.total_size - resp.count);
-                        else
+                        else if (resp.total_size > (resp.from+resp.count)) // last page case
                             skipped_count += (resp.scanned_size - resp.count);
                     } else if (resp.hasOwnProperty('next') || resp.total_size == resp.scanned_size) {
+                        // We got size zero result, but ES reports there should be some in total_size
                         skipped_count += resp.total_size
                     }
                 }
