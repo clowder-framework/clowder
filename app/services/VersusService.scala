@@ -8,6 +8,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.ahc.AhcWSResponse
 import play.api.mvc.Request
 import play.api.{Configuration, Logger}
 
