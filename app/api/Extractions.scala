@@ -80,7 +80,7 @@ class Extractions @Inject()(
             val futureResponse : Future[WSResponse] = WS.url(fileurl).get()
             val fid = for {response : Future[AhcWSResponse] <- futureResponse} yield {
               if (response.status == 200) {
-                val inputStream: InputStream = new java.io.ByteArrayInputStream(response.bodyAsBytes.toStream)
+                val inputStream: InputStream = new ByteArrayInputStream(response.bodyAsBytes.toStream)
                 val contentLengthStr = response.header("Content-Length").getOrElse("-1")
                 val contentLength = Integer.parseInt(contentLengthStr).toLong
                 val file = files.save(inputStream, filename, contentLength, response.header("Content-Type"), user, null)
@@ -247,7 +247,7 @@ class Extractions @Inject()(
               //Get the bindings
               val blist = extractionBusService.getBindings
               val fstatus = for {
-                rkeyResponse <- blist
+                rkeyResponse : WSResponse <- blist
               } yield {
                 val status = computeStatus(rkeyResponse, file, l)
                 Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
@@ -274,7 +274,7 @@ class Extractions @Inject()(
     }
   }
 
-  def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
+  def computeStatus(response: WSResponse, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
 
     var isActivity = "false"
     extractions.findIfBeingProcessed(file.id) match {
