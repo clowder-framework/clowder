@@ -5,6 +5,8 @@ import scala.concurrent.duration._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.ahc.AhcWSResponse
+
 
 import models._
 import services.{DI, SpaceService}
@@ -52,7 +54,7 @@ object Publications {
 
           rawDataList.reverse
         } else {
-          Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
+          Logger.error("Error Getting published data: " + response.body)
           List.empty
         }
     }

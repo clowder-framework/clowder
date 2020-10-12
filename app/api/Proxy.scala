@@ -4,13 +4,11 @@ import java.net.URL
 
 import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.ws._
+import play.api.libs.ws.{WSAuthScheme, WSClient, WSRequest, WSResponse}
 import play.api.mvc.Result
 import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
-import scala.io.Source
-import akka.stream.scaladsl.StreamConverters
 
 /**
   * An API that allows you to configure Clowder as a reverse-proxy. Proxy rules can be composed by defining a
