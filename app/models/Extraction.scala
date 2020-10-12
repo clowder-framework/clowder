@@ -194,12 +194,18 @@ case class ExtractorsLabel(
                          )
 
 object ExtractorsLabel {
-  implicit val extractorsLabelWrites = Json.writes[ExtractorsLabel]
-
-  /*implicit val extractorsLabelReads: Reads[ExtractorsLabel] = (
+  implicit val writes = new Writes[ExtractorsLabel] {
+    def writes(label: ExtractorsLabel) = Json.obj(
+      "id" -> label.id,
+      "name" -> label.name,
+      "category" -> label.category,
+      "extractors" -> label.extractors
+    )
+  }
+  implicit val reads = (
     (JsPath \ "id").read[UUID] and
       (JsPath \ "name").read[String] and
-      (JsPath \ "category").read[String] and
+      (JsPath \ "category").readNullable[String] and
       (JsPath \ "extractors").read[List[String]].orElse(Reads.pure(List.empty))
-    )(ExtractorsLabel.apply _)*/
+    )(ExtractorsLabel.apply _)
 }

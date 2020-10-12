@@ -426,6 +426,7 @@ GET            /api/extractors/:name                                            
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 POST           /api/extractors/labels                                                   @api.Extractions.createExtractorsLabel()
 PUT            /api/extractors/labels/:id                                               @api.Extractions.updateExtractorsLabel(id: UUID)
+DELETE         /api/extractors/labels/:id                                               @api.Extractions.deleteExtractorsLabel(id: UUID)
 
 
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)

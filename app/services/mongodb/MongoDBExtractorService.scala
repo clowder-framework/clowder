@@ -13,8 +13,7 @@ import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import org.bson.types.ObjectId
 
 @Singleton
 class MongoDBExtractorService extends ExtractorService {
@@ -224,13 +223,22 @@ class MongoDBExtractorService extends ExtractorService {
     ExtractorsLabelDAO.findAll().toList
   }
 
-  def createExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): Option[ExtractorsLabel] = {
+  def getExtractorsLabel(id: UUID): Option[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+  }
+
+  def createExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): ExtractorsLabel = {
     updateExtractorsLabel(ExtractorsLabel(UUID.generate, name, category, assignedExtractors))
   }
 
-  def updateExtractorsLabel(updated: ExtractorsLabel): Option[ExtractorsLabel] = {
+  def updateExtractorsLabel(updated: ExtractorsLabel): ExtractorsLabel = {
     ExtractorsLabelDAO.save(updated, WriteConcern.Safe)
-    Some(updated)
+    updated
+  }
+
+  def deleteExtractorsLabel(label: ExtractorsLabel): ExtractorsLabel = {
+    ExtractorsLabelDAO.remove(label)
+    label
   }
 
   def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel] = {

@@ -63,7 +63,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
-    val labels = extractorService.listExtractorsLabels()
+    val labels = extractorService.listExtractorsLabels().groupBy(_.category.getOrElse("Other"))
     Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, labels))
   }
 

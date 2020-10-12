@@ -3,8 +3,8 @@ package api
 import java.io.{FileInputStream, InputStream}
 import java.net.URL
 import java.util.Calendar
-import javax.inject.Inject
 
+import javax.inject.Inject
 import controllers.Utils
 import fileutils.FilesUtils
 import models._
@@ -678,28 +678,33 @@ class Extractions @Inject()(
     // Fetch parameters from request body
     val (name, category, assignedExtractors) = parseExtractorsLabel(request)
 
-    // Perform validation
+    // Validate and create new label
     validateExtractorsLabel(name, category, assignedExtractors)
+    val label = extractors.createExtractorsLabel(name, category, assignedExtractors)
 
-    // Create new label
-    extractors.createExtractorsLabel(name, category, assignedExtractors) match {
-      case Some(lbl) => Ok(Json.toJson(lbl))
-      case None => BadRequest("Failed to create new label")
-    }
+    Ok(Json.toJson(label))
   }
 
   def updateExtractorsLabel(id: UUID) = ServerAdminAction(parse.json) { implicit request =>
     // Fetch parameters from request body
     val (name, category, assignedExtractors) = parseExtractorsLabel(request)
 
-    // Perform validation
+    // Validate and perform update
     validateExtractorsLabel(name, category, assignedExtractors)
-
-    // Update existing label
     val label = ExtractorsLabel(id, name, category, assignedExtractors)
-    extractors.updateExtractorsLabel(label) match {
-      case Some(lbl) => Ok(Json.toJson(lbl))
-      case None => BadRequest("Failed to update existing label")
+    val updatedLabel = extractors.updateExtractorsLabel(label)
+
+    Ok(Json.toJson(updatedLabel))
+  }
+
+  def deleteExtractorsLabel(id: UUID) = ServerAdminAction { implicit request =>
+    // Fetch existing label
+    extractors.getExtractorsLabel(id) match {
+      case Some(lbl) => {
+        val deleted = extractors.deleteExtractorsLabel(lbl)
+        Ok(Json.toJson(deleted))
+      }
+      case None => BadRequest("Failed to delete label: " + id)
     }
   }
 

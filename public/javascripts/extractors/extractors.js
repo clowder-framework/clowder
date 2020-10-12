@@ -110,7 +110,7 @@ function changeMaturity(extractorName, newMaturity) {
 }
 
 
-// Save current modal info based on selection
+// Saves a new or existing label
 function saveExtractorsLabel(label) {
     let request;
     if (label.id) {    // Update existing label
@@ -132,8 +132,25 @@ function saveExtractorsLabel(label) {
     }
 
     request.done(function (response, textStatus, jqXHR){
-        setModalValues("", "", "", []);
         notify("Label has been updated", "success");
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+    });
+
+    return request;
+}
+
+// Delete label by id
+function deleteExtractorsLabel(id) {
+    console.log('Deleting label:', id);
+    let request = jsRoutes.api.Extractions.deleteExtractorsLabel(id).ajax({
+        type: 'DELETE'
+    });
+
+    request.done(function (response, textStatus, jqXHR){
+        notify("Label has been deleted", "success");
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){

@@ -1,5 +1,5 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup], labels: List[ExtractorsLabel],
-        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup], labelCategories: Map[String, List[ExtractorsLabel]],
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
@@ -29,25 +29,29 @@
             <fieldset class="labels-border">
                 <legend class="labels-border">Labels</legend>
 
-                <!-- TODO: Link to Extractor Labels view iff user is server admin -->
+                <!-- Link to Extractor Labels view iff user is server admin -->
                 @if(Permission.checkServerAdmin(user)) {
                     <a href="@routes.Extractors.manageLabels" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
                         <span class="glyphicon glyphicon-wrench"></span> Manage
                     </a>
                 }
 
-                <div class="control-group">
-                    <!-- TODO: Show checkbox for each label, enabled by default -->
-                    <!-- TODO: Group labels together by Category (e.g. Type, Group, Other, etc) -->
-                    <div class="btn-group" data-toggle="buttons">
-
-                        <!-- Disguised checkboxes as buttons -->
-                        @for(label <- labels) {
-                            <label class="btn btn-primary active">
-                                <input type="checkbox" autocomplete="off" checked> @label.name
-                            </label>
-                        }
-                    </div>
+                <div class="row">
+                    <!-- Disguised checkboxes as buttons -->
+                    @for((categoryName, catLabels) <- labelCategories) {
+                        <div class="col-sm-4">
+                            <strong>@categoryName</strong>
+                            <div class="control-group">
+                                <div class="btn-group" data-toggle="buttons">
+                                @for(label <- catLabels) {
+                                    <label class="btn btn-primary active">
+                                        <input type="checkbox" autocomplete="off" checked> @label.name
+                                    </label>
+                                }
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </fieldset>
         }

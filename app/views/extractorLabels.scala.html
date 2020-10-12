@@ -48,7 +48,10 @@
                             </ul>
                         </td>
                         <td>
+
                             <button class="btn btn-xs btn-default" onclick="editLabel('@label.id','@label.name', '@label.category', @Json.toJson(label.extractors.map(_.replaceAll("&quot;", "'"))))"><span class="glyphicon glyphicon-pencil"></span></button>
+                            <button class="btn btn-xs btn-default" onclick="deleteExtractorsLabel('@label.id').then(refresh)"><span class="glyphicon glyphicon-trash"></span></button>
+
                         </td>
                     </tr>
                 }
