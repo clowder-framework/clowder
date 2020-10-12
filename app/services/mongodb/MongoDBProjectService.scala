@@ -2,7 +2,7 @@ package services.mongodb
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import models.Project
+import models.{Project => ClowderProject}
 import salat.dao.{ModelCompanion, SalatDAO}
 import services.mongodb.MongoContext.context
 import services.{DI, ProjectService}
@@ -17,14 +17,14 @@ class MongoDBProjectService extends ProjectService {
   }
 
   override def addNewProject(project: String) = {
-    Project.insert(new Project(project));
+    Project.insert(new ClowderProject(project));
   }
 
 }
 
 
-object Project extends ModelCompanion[Project, ObjectId] {
+object Project extends ModelCompanion[ClowderProject, ObjectId] {
   val COLLECTION = "projects"
   val mongos: MongoStartup = DI.injector.getInstance(classOf[MongoStartup])
-  val dao = new SalatDAO[Project, ObjectId](collection = mongos.collection(COLLECTION)) {}
+  val dao = new SalatDAO[ClowderProject, ObjectId](collection = mongos.collection(COLLECTION)) {}
 }

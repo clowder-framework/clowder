@@ -362,7 +362,7 @@ class Datasets @Inject() (
       }
       case _ =>
         Ok(views.html.datasetList(decodedDatasetList.toList, prev, next, limit, viewMode, space, spaceName,
-        status, title, owner, ownerName, when, date, userSelections, showTrash))
+        status, title, owner, ownerName.get, when, date, userSelections, showTrash))
     }
   }
 

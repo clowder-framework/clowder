@@ -509,7 +509,8 @@ class Spaces @Inject()(spaces: SpaceService,
                           spaces.addUser(UUID(aUserId), aRole, spaceId)
                           events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
-                          val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
+                          val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser,
+                            newmember.get.getMiniUser.fullName.getOrElse("Clowder User"), aRole.name)
                           Mail.sendEmail(s"[${AppConfiguration.getDisplayName}] - Added to $spaceTitle", request.user, newmember ,theHtml)
                         }
                       }
@@ -694,7 +695,7 @@ class Spaces @Inject()(spaces: SpaceService,
             }
 
             userService.listUsersInSpace(s.id).map { member =>
-              val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
+              val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName.getOrElse("Clowder User"))
               Mail.sendEmail("Space Status update", request.user, member, theHtml)
             }
             Ok(toJson(Map("status" -> "success")))
