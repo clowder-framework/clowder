@@ -1,10 +1,10 @@
 package api
 
-import java.io.{FileInputStream, InputStream}
+import java.io.{FileInputStream, InputStream, ByteArrayInputStream}
 import java.net.URL
 import java.util.Calendar
-import javax.inject.Inject
 
+import javax.inject.Inject
 import controllers.Utils
 import models._
 import play.api.{Configuration, Logger}
@@ -77,10 +77,10 @@ class Extractions @Inject()(
           val listIds = for {fileurl <- listURLs} yield {
             val urlsplit = fileurl.split("/")
             val filename = urlsplit(urlsplit.length - 1)
-            val futureResponse = WS.url(fileurl).get()
-            val fid = for {response <- futureResponse} yield {
+            val futureResponse : Future[WSResponse] = WS.url(fileurl).get()
+            val fid = for {response : Future[AhcWSResponse] <- futureResponse} yield {
               if (response.status == 200) {
-                val inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
+                val inputStream: InputStream = new java.io.ByteArrayInputStream(response.bodyAsBytes.toStream)
                 val contentLengthStr = response.header("Content-Length").getOrElse("-1")
                 val contentLength = Integer.parseInt(contentLengthStr).toLong
                 val file = files.save(inputStream, filename, contentLength, response.header("Content-Type"), user, null)
