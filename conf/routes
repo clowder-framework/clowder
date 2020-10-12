@@ -7,6 +7,13 @@
 
 #OPTIONS       /*path                                                                   @controllers.Application.options(path)
 OPTIONS        /*path                                                                   api.ApiHelp.options(path)
+
+# operations are applied in this order, to prevent untrail from removing
+# the trailing / at the end of the /api/proxy calls it is placed before
+# the untrail call
+GET            /api/proxy/:endpoint_key                                                 @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
+GET            /api/proxy/:endpoint_key/                                                @api.Proxy.get(endpoint_key: String, pathSuffix: String = "")
+GET            /api/proxy/:endpoint_key/*pathSuffix                                     @api.Proxy.get(endpoint_key: String, pathSuffix: String)
 GET            /*path/                                                                  @controllers.Application.untrail(path: String)
 
 # ----------------------------------------------------------------------
@@ -17,6 +24,7 @@ GET            /                                                                
 GET            /about                                                                   @controllers.Application.about
 GET            /tos                                                                     @controllers.Application.tos(redirect: Option[String] ?= None)
 GET            /email                                                                   @controllers.Application.email(subject: String ?= "", body: String ?= "")
+GET            /healthz                                                                 @controllers.Application.healthz()
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
@@ -859,17 +867,14 @@ DELETE       /api/standardvocab/:id                                             
 # PROXY API
 # ----------------------------------------------------------------------
 
-GET         /api/proxy/:endpoint_key                                                        @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
-GET         /api/proxy/:endpoint_key/                                                       @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
-GET         /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.get(endpoint_key: String, pathSuffix: String)
 POST        /api/proxy/:endpoint_key                                                        @api.Proxy.post(endpoint_key: String, pathSuffix: String = null)
-POST        /api/proxy/:endpoint_key/                                                       @api.Proxy.post(endpoint_key: String, pathSuffix: String = null)
+POST        /api/proxy/:endpoint_key/                                                       @api.Proxy.post(endpoint_key: String, pathSuffix: String = "")
 POST        /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.post(endpoint_key: String, pathSuffix: String)
 PUT         /api/proxy/:endpoint_key                                                        @api.Proxy.put(endpoint_key: String, pathSuffix: String = null)
-PUT         /api/proxy/:endpoint_key/                                                       @api.Proxy.put(endpoint_key: String, pathSuffix: String = null)
+PUT         /api/proxy/:endpoint_key/                                                       @api.Proxy.put(endpoint_key: String, pathSuffix: String = "")
 PUT         /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.put(endpoint_key: String, pathSuffix: String)
 DELETE      /api/proxy/:endpoint_key                                                        @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
-DELETE      /api/proxy/:endpoint_key/                                                       @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
+DELETE      /api/proxy/:endpoint_key/                                                       @api.Proxy.delete(endpoint_key: String, pathSuffix: String = "")
 DELETE      /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.delete(endpoint_key: String, pathSuffix: String)
 
 # ----------------------------------------------------------------------
