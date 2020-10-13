@@ -49,7 +49,7 @@ trait ExtractorService {
   
   def getExtractorsLabel(id: UUID): Option[ExtractorsLabel]
 
-  def createExtractorsLabel(name: String, category: Option[String], extractors: List[String]): ExtractorsLabel
+  def createExtractorsLabel(name: String, category: Option[String], assignedExtractors:List[String]): ExtractorsLabel
 
   def updateExtractorsLabel(label: ExtractorsLabel): ExtractorsLabel
 

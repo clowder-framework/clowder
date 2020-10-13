@@ -69,8 +69,8 @@ class Extractors  @Inject() (extractions: ExtractionService,
     request.getQueryString("labelFilter") match {
       case None => {}
       case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
-        case Some(label) => runningExtractors = runningExtractors.filter(re => label.extractors.contains(re.name))
         case None => {}
+        case Some(label) => runningExtractors = runningExtractors.filter(re => label.extractors.contains(re.name))
       }
     }
 

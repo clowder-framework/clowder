@@ -475,7 +475,26 @@ class Extractions @Inject()(
       },
       info => {
         extractors.updateExtractorInfo(info) match {
-          case Some(u) => Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+          case Some(u) => {
+            // Create/assign any default labels for this extractor
+            u.defaultLabels.foreach(labelName => {
+              extractors.getExtractorsLabel(labelName) match {
+                case None => {
+                  // Label does not exist - create then assign it
+                  val createdLabel = extractors.createExtractorsLabel(labelName, Some("Default"), List[String](u.name))
+                }
+                case Some(lbl) => {
+                  // Label already exists, assign it
+                  if (!lbl.extractors.contains(u.name)) {
+                    val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](u.name))
+                    val updatedLabel = extractors.updateExtractorsLabel(label)
+                  }
+                }
+              }
+            })
+
+            Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+          }
           case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
         }
       }
@@ -691,9 +710,7 @@ class Extractions @Inject()(
           Ok(Json.toJson(label))
         }
       }
-
     }
-
   }
 
   def updateExtractorsLabel(id: UUID) = ServerAdminAction(parse.json) { implicit request =>
@@ -712,15 +729,13 @@ class Extractions @Inject()(
             Conflict("Label name is already in use: " + lbl.name)
           } else {
             // Update the label
-            val label = ExtractorsLabel(id, name, category, assignedExtractors)
-            val updatedLabel = extractors.updateExtractorsLabel(label)
+            val updatedLabel = extractors.updateExtractorsLabel(ExtractorsLabel(id, name, category, assignedExtractors))
             Ok(Json.toJson(updatedLabel))
           }
         }
         case None => {
           // Update the label
-          val label = ExtractorsLabel(id, name, category, assignedExtractors)
-          val updatedLabel = extractors.updateExtractorsLabel(label)
+          val updatedLabel = extractors.updateExtractorsLabel(ExtractorsLabel(id, name, category, assignedExtractors))
           Ok(Json.toJson(updatedLabel))
         }
       }

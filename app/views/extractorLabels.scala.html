@@ -39,7 +39,7 @@
                 @for(label <- labels) {
                     <tr>
                         <td>@label.name</td>
-                        <td>@label.category.getOrElse("")</td>
+                        <td>@label.category.getOrElse("Other")</td>
                         <td>
                             <ul>
                             @for(extractorName <- label.extractors) {

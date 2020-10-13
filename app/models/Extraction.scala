@@ -72,6 +72,10 @@ case class ExtractorDetail(
  * @param external_services external services used by the extractor
  * @param libraries libraries on which the code depends
  * @param bibtex bibtext formatted citation of relevant papers
+ * @param maturity indicates whether this extractor is ready for public consumption
+ *             * For example: "Development" (default), "Staging", or "Production"
+ * @param defaultLabels the categorization labels that were imported by default
+ *             * For example: "Development" (default), "Staging", or "Production"
  * @param process events that should trigger this extractor to process
  * @param categories list of categories that apply to the extractor
  * @param parameters JSON schema representing allowed parameters
@@ -94,6 +98,7 @@ case class ExtractorInfo(
   libraries: List[String],
   bibtex: List[String],
   maturity: String = "Development",
+  defaultLabels: List[String] = List[String](),
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
   parameters: JsValue = JsObject(Seq())
@@ -146,6 +151,7 @@ object ExtractorInfo {
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "maturity").read[String].orElse(Reads.pure("Development")) and
+      (JsPath \ "labels").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
@@ -208,4 +214,14 @@ object ExtractorsLabel {
       (JsPath \ "category").readNullable[String] and
       (JsPath \ "extractors").read[List[String]].orElse(Reads.pure(List.empty))
     )(ExtractorsLabel.apply _)
+}
+
+case class LabelAssignment (
+                            extractorId: UUID,
+                            labelId: UUID
+                          )
+
+object LabelAssignment {
+  implicit val writes = Json.writes[LabelAssignment]
+  implicit val reads = Json.reads[LabelAssignment]
 }

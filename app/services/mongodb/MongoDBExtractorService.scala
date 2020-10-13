@@ -215,7 +215,6 @@ class MongoDBExtractorService extends ExtractorService {
       case None => {
         Logger.info("No extractor found with name: " + extractorName)
       }
-
     }
   }
 
@@ -246,7 +245,20 @@ class MongoDBExtractorService extends ExtractorService {
   }
 
   def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel] = {
-    ExtractorsLabelDAO.findAll().filter(_.extractors.contains(extractorName)).toList
+    var results = List[ExtractorsLabel]()
+    ExtractorInfoDAO.findOne(MongoDBObject("name"->extractorName)) match {
+      case Some(info) => {
+        val assignments = LabelAssignmentDAO.find(MongoDBObject("extractorId"->info.id)).toList
+        for(assignment <- assignments) {
+          ExtractorsLabelDAO.findOne(MongoDBObject("_id" -> assignment.labelId.stringify)) match {
+            case Some(label) => {
+              results = results.::(label)
+            }
+          }
+        }
+      }
+    }
+    results
   }
 }
 
@@ -295,6 +307,13 @@ object ExtractorsLabelDAO extends ModelCompanion[ExtractorsLabel, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[ExtractorsLabel, ObjectId](collection = x.collection("extractors.labels")) {}
+  }
+}
+
+object LabelAssignmentDAO extends ModelCompanion[LabelAssignment, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[LabelAssignment, ObjectId](collection = x.collection("extractors.labels.assignments")) {}
   }
 }
 

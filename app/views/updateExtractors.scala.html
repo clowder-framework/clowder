@@ -348,14 +348,16 @@
             function submitFilters(labelName, context) {
                 // Grab existing query string values
                 var currentParams = new URLSearchParams(window.location.search);
-                var targets = context.formAction.split('@routes.Extractors.selectExtractors()')
+                var targets = context.formAction.split('@routes.Extractors.selectExtractors()');
+
+                // If same filter selected twice, de-select it
+                var currentLabel = currentParams.get('labelFilter');
+                var newLabelName = labelName === currentLabel ? null : (labelName || currentLabel);
 
                 // Set new query strings parameters based on form value
                 var newParams = new URLSearchParams(targets[1]);
-                var newLabelName = labelName || currentParams.get('labelFilter')
-                if (newLabelName) {
-                    newParams.set('labelFilter', newLabelName);
-                }
+                newLabelName ? newParams.set('labelFilter', newLabelName) : newParams.delete('labelFilter');
+
                 window.location.search = newParams.toString();
             }
 
