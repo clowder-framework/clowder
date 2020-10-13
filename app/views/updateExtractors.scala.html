@@ -44,9 +44,9 @@
                             <div class="control-group">
                                 <div class="btn-group" data-toggle="buttons">
                                 @for(label <- catLabels) {
-                                    <label class="btn btn-primary active">
-                                        <input id="label-@label.name" class="label-checkbox" type="checkbox" autocomplete="off" checked> @label.name
-                                    </label>
+                                    <button onclick="submitFilters('@label.name', this)" id="label-@label.name" role="button" class="btn btn-primary label-filter-btn">
+                                        <input type="checkbox" autocomplete="off" checked> @label.name
+                                    </button>
                                 }
                                 </div>
                             </div>
@@ -71,11 +71,11 @@
                                 </div>
                             </div>
 
-                            <!-- TODO: Process trigger search filter -->
+                            <!-- Process trigger search filter -->
                             <div class="form-group">
                                 <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                 <div class="col-sm-9">
-                                    <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="this.form.submit()">
+                                    <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="submitFilters(null, this)">
                                         <option>file/*</option>
                                         <option>dataset/*</option>
                                         <option>metadata/*</option>
@@ -344,26 +344,38 @@
         </div>
     </div>
 
-    @if(showOptional("filterSection")) {
-        <script>
-                $('document').ready(function () {
-                    var params = new URLSearchParams(window.location.search);
-                    var processTriggerParam = "processTriggerSearchFilter"
-                    if (params.has(processTriggerParam)) {
-                        document.getElementById(processTriggerParam).value = params.get(processTriggerParam);
-                    }
-                    var labelsParam = "labelsFilter"
-                    if (params.has(labelsParam)) {
-                        // If we have a label param, uncheck all other labels
-                        var labelNames = params.get(labelsParam).split(',');
-                        if (labels => 1) { $('.label-checkbox').prop("checked", false); }
+    <script>
+            function submitFilters(labelName, context) {
+                // Grab existing query string values
+                var currentParams = new URLSearchParams(window.location.search);
+                var targets = context.formAction.split('@routes.Extractors.selectExtractors()')
 
-                        // Check only the labels in the query string
-                        labelNames.forEach(function(labelName) {
-                            $('label-' + labelName).prop("checked", true);
-                        });
-                    }
-                });
-        </script>
-    }
+                // Set new query strings parameters based on form value
+                var newParams = new URLSearchParams(targets[1]);
+                var newLabelName = labelName || currentParams.get('labelFilter')
+                if (newLabelName) {
+                    newParams.set('labelFilter', newLabelName);
+                }
+                window.location.search = newParams.toString();
+            }
+
+            $('document').ready(function () {
+                var params = new URLSearchParams(window.location.search);
+                var processTriggerParam = "processTriggerSearchFilter"
+                if (params.has(processTriggerParam)) {
+                    $(processTriggerParam).val(params.get(processTriggerParam));
+                }
+                var labelParam = "labelFilter"
+                if (params.has(labelParam)) {
+                    // If we have a label param, uncheck all other labels
+                    $('.label-filter-btn').removeClass("btn-primary");
+                    $('.label-filter-btn').addClass("btn-default");
+
+                    // Check only the label in the query string
+                    var labelName = params.get(labelParam);
+                    $('#label-' + labelName).removeClass("btn-default");
+                    $('#label-' + labelName).addClass("btn-primary");
+                }
+            });
+    </script>
 }

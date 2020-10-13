@@ -55,6 +55,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     // Filter extractors by the trigger type if necessary
     var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
+
     request.getQueryString("processTriggerSearchFilter") match {
       case Some("file/*") => runningExtractors = runningExtractors.filter(re => re.process.file.length > 0)
       case Some("dataset/*") => runningExtractors = runningExtractors.filter(re => re.process.dataset.length > 0)
@@ -63,8 +64,17 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
-    val labels = extractorService.listExtractorsLabels().groupBy(_.category.getOrElse("Other"))
-    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, labels))
+    val allLabels = extractorService.listExtractorsLabels()
+    val categorizedLabels = allLabels.groupBy(_.category.getOrElse("Other"))
+    request.getQueryString("labelFilter") match {
+      case None => {}
+      case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
+        case Some(label) => runningExtractors = runningExtractors.filter(re => label.extractors.contains(re.name))
+        case None => {}
+      }
+    }
+
+    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, categorizedLabels))
   }
 
   def manageLabels = ServerAdminAction { implicit request =>
