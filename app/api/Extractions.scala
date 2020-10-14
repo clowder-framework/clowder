@@ -17,7 +17,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.{Response, WS}
 import play.api.libs.functional.syntax._
-import play.api.mvc.{Action, MultipartFormData, Result, SimpleResult}
+import play.api.mvc.MultipartFormData
 import services._
 
 import scala.collection.mutable.ListBuffer

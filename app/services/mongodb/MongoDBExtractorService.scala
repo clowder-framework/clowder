@@ -310,13 +310,6 @@ object ExtractorsLabelDAO extends ModelCompanion[ExtractorsLabel, ObjectId] {
   }
 }
 
-object LabelAssignmentDAO extends ModelCompanion[LabelAssignment, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[LabelAssignment, ObjectId](collection = x.collection("extractors.labels.assignments")) {}
-  }
-}
-
 object ExtractorsForInstanceDAO extends ModelCompanion[ExtractorsForInstance, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");

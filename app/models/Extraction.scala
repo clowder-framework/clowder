@@ -215,13 +215,3 @@ object ExtractorsLabel {
       (JsPath \ "extractors").read[List[String]].orElse(Reads.pure(List.empty))
     )(ExtractorsLabel.apply _)
 }
-
-case class LabelAssignment (
-                            extractorId: UUID,
-                            labelId: UUID
-                          )
-
-object LabelAssignment {
-  implicit val writes = Json.writes[LabelAssignment]
-  implicit val reads = Json.reads[LabelAssignment]
-}
