@@ -9,6 +9,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
     routesImport += "models._"
     routesImport += "Binders._"
 
+    resolvers += "dice.repository" at "https://raw.github.com/DICE-UNC/DICE-Maven/master/releases"
+
     libraryDependencies ++= Seq(
       guice,
       ws,
@@ -64,7 +66,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 //      "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
 
       // iRods filestorage
-//      "org.irods.jargon" % "jargon-core" % "3.3.3-alpha1",
+      "org.irods.jargon" % "jargon-core" % "4.3.1.0-RELEASE",
 
       // jsonp return from /api
 //      "org.julienrf" %% "play-jsonp-filter" % "1.1",

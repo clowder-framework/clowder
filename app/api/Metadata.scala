@@ -36,7 +36,8 @@ class Metadata @Inject() (
   spaceService: SpaceService,
   searches: SearchService,
   extractionBusService: ExtractionBusService,
-  WS: WSClient) extends ApiController {
+  WS: WSClient,
+  config: AppConfigurationService) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -150,7 +151,7 @@ class Metadata @Inject() (
               // assign a default uri if not specified
               if (uri == "") {
                 // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
-                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                uri = config.getProperty("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
                 body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
               }
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
@@ -176,7 +177,7 @@ class Metadata @Inject() (
             // assign a default uri if not specified
             if (uri == "") {
               // http://clowder.ncsa.illinois.edu/metadata#CamelCase
-              uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+              uri = config.getProperty("metadata.uri.prefix") + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
               body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
             }
             addDefinitionHelper(uri, body, None, user, None)
@@ -188,7 +189,7 @@ class Metadata @Inject() (
               // assign a default uri if not specified
               if (uri == "") {
                 // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
-                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                uri = config.getProperty("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
                 body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
               }
               addDefinitionHelper(uri, body, Some(space.id), user, Some(space))
@@ -570,7 +571,7 @@ class Metadata @Inject() (
   def getPerson(pid: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-    val peopleEndpoint = (play.Play.application().configuration().getString("people.uri"))
+    val peopleEndpoint = config.getProperty("people.uri").toString
     if (peopleEndpoint != null) {
       val endpoint = (peopleEndpoint + "/" + URLEncoder.encode(pid, "UTF-8"))
       val futureResponse = WS.url(endpoint).get()
@@ -600,8 +601,8 @@ class Metadata @Inject() (
   def listPeople(term: String, limit: Int) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-    val endpoint = (play.Play.application().configuration().getString("people.uri"))
-    if (play.api.Play.current.configuration.getBoolean("stagingArea").getOrElse(false) && endpoint != null) {
+    val endpoint = config.getProperty("people.uri").toString
+    if (config.getProperty("stagingArea").getOrElse(false) && endpoint != null) {
 
       val futureResponse = WS.url(endpoint).get()
       var jsonResponse: play.api.libs.json.JsValue = new JsArray()
@@ -671,7 +672,7 @@ class Metadata @Inject() (
   def getRepository(id: String) = PermissionAction(Permission.ViewMetadata).async { implicit request =>
 
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-    val repoEndpoint = (play.Play.application().configuration().getString("SEADservices.uri")) + "repositories"
+    val repoEndpoint = config.getProperty("SEADservices.uri").toString + "repositories"
     if (repoEndpoint != null) {
       val endpoint = (repoEndpoint + "/" + URLEncoder.encode(id, "UTF-8"))
       val futureResponse = WS.url(endpoint).get()
