@@ -28,6 +28,8 @@ import util.FileUtils
 @Singleton
 class Previews @Inject()(previews: PreviewService, tiles: TileService) extends ApiController {
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   def list = PermissionAction(Permission.ViewFile) {
     request =>
       val list = for (p <- previews.listPreviews()) yield jsonPreview(p)
@@ -79,12 +81,12 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                           CONTENT_TYPE -> contentType
                         )
                       ),
-                      body = Enumerator.fromStream(inputStream)
+                      body = Enumerator.fromStream(inputStream, chunksize)
                     )
                 }
               }
               case None => {
-                Ok.chunked(Enumerator.fromStream(inputStream))
+                Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                   .withHeaders(CONTENT_TYPE -> contentType)
                   .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 
@@ -238,12 +240,12 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                               CONTENT_TYPE -> contentType
                             )
                           ),
-                          body = Enumerator.fromStream(inputStream)
+                          body = Enumerator.fromStream(inputStream, chunksize)
                         )
                     }
                   }
                   case None => {
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(tilename, request.headers.get("user-agent").getOrElse(""))))
 

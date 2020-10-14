@@ -53,6 +53,8 @@ class Files @Inject() (
   folders: FolderService,
   appConfig: AppConfigurationService) extends SecuredController {
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   /**
    * Upload form.
    */
@@ -731,14 +733,14 @@ class Files @Inject() (
                                                   CONTENT_TYPE -> contentType
                                                   )
                                           ),
-                                          body = Enumerator.fromStream(inputStream)
+                                          body = Enumerator.fromStream(inputStream, chunksize)
                                   )
                     }
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
 
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
                   }
@@ -832,7 +834,7 @@ class Files @Inject() (
                       }.map {
                         x =>
                           //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
-                          Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName)))
+                          Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName), chunksize))
                             .withHeaders(CONTENT_TYPE -> "some-content-Type")
                             .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(outputFileName, request.headers.get("user-agent").getOrElse(""))))
                       }.recover {
@@ -894,12 +896,12 @@ class Files @Inject() (
 	                    CONTENT_TYPE -> contentType
 	                  )
 	                ),
-	                body = Enumerator.fromStream(inputStream)
+	                body = Enumerator.fromStream(inputStream, chunksize)
 	              )
             }
           }
           case None => {
-            Ok.chunked(Enumerator.fromStream(inputStream))
+            Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
               .withHeaders(CONTENT_TYPE -> contentType)
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 

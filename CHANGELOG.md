@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-
-## Unreleased
+## [Unreleased]
 
 ### Added
+- Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
+  faster downloads and less CPU usage at the cost of slightly more memory use.
 - Add endpoint and view page for the extractor metrics.
 - Add endpoint and view page to view a extractor's log from graylog.
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
