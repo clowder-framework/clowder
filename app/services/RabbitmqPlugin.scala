@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.net.URLEncoder
+import java.util
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 
@@ -23,6 +24,7 @@ import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
 import securesocial.core.IdentityId
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Await, Future}
 import scala.util.Try
 
@@ -315,15 +317,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     contentType.replace(".", "_").replace("/", ".")
 
   /**
-    * Given a dataset, return the union of all extractors registered for each space the dataset is in.
-    * @param dataset
-    * @return list of active extractors
-    */
-  private def getRegisteredExtractors(dataset: Dataset): List[String] = {
-    dataset.spaces.flatMap(s => spacesService.getAllExtractors(s))
-  }
-
-  /**
     * Check if given operation matches any existing records cached in ExtractorInfo.
     * Note, dataset operation is in the format of "x.y",
     *       mimetype of files is in the format of "x/y"
@@ -360,16 +353,26 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Find all extractors enabled for the space the dataset belongs and the matched operation.
+    * Find all extractors enabled/disabled for the space the dataset belongs and the matched operation.
     * @param dataset  The dataset used to find which space to query for registered extractors.
     * @param operation The dataset operation requested.
     * @return A list of extractors IDs.
     */
-  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): List[String] = {
-    dataset.spaces.flatMap(s =>
-      spacesService.getAllExtractors(s).flatMap(exId =>
-        extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-        containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name))
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): (List[String], List[String]) = {
+    var enabledExtractors = new ListBuffer[String]()
+    var disabledExtractors = new ListBuffer[String]()
+    dataset.spaces.map(space => {
+      val extractors = spacesService.getAllExtractors(space)
+      enabledExtractors.appendAll(extractors.get.enabled.flatMap { exId =>
+        extractorsService.getExtractorInfo(exId).filter(exInfo =>
+          containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+      })
+      disabledExtractors.appendAll(extractors.get.disabled.flatMap { exId =>
+        extractorsService.getExtractorInfo(exId).filter(exInfo =>
+          containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+      })
+    })
+    (enabledExtractors.toList, disabledExtractors.toList)
   }
 
   /**
@@ -418,12 +421,14 @@ class RabbitmqPlugin(application: Application) extends Plugin {
       else ""
     // get extractors enabled at the global level
     val globalExtractors = getGlobalExtractorsByOperation(operation)
-    // get extractors enabled at the space level
-    val spaceExtractors = getSpaceExtractorsByOperation(dataset, operation)
+    // get extractors enabled/disabled at the space level
+    val (enabledExtractors, disabledExtractors) = getSpaceExtractorsByOperation(dataset, operation)
     // get queues based on RabbitMQ bindings (old method).
     val queuesFromBindings = getQueuesFromBindings(routingKey)
     // take the union of queues so that we publish to a specific queue only once
-    globalExtractors.toSet union spaceExtractors.toSet union queuesFromBindings.toSet
+    val selected = (globalExtractors.toSet -- disabledExtractors.toSet) union enabledExtractors.toSet union queuesFromBindings.toSet
+    Logger.debug("Extractors selected for submission: " + selected)
+    selected
   }
 
   /**

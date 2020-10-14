@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
+  disable and enable triggers. 
 - Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
   faster downloads and less CPU usage at the cost of slightly more memory use.
 - Add endpoint and view page for the extractor metrics.
