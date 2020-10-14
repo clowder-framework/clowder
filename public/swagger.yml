@@ -9,7 +9,7 @@ info:
     Clowder is a customizable and scalable data management system to support any
     data format and multiple research domains. It is under active development
     and deployed for a variety of research projects.
-  version: 1.11.1
+  version: 1.11.2
   termsOfService: https://clowder.ncsa.illinois.edu/clowder/tos
   contact:
     name: Clowder
@@ -4292,6 +4292,9 @@ paths:
       responses:
         200:
           description: OK
+          content: {}
+        404:
+          description: Not found
           content: {}
 
   /extractions/{id}/status:
