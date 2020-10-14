@@ -1,8 +1,7 @@
 package api
 
 import api.Permission._
-import services.{RdfSPARQLService, PreviewService, SpaceService,
-MultimediaQueryService, ElasticsearchPlugin}
+import services.{RdfSPARQLService, PreviewService, SpaceService, MultimediaQueryService, ElasticsearchPlugin}
 import play.Logger
 import scala.collection.mutable.{ListBuffer, HashMap}
 import util.{SearchUtils, SearchResult}
