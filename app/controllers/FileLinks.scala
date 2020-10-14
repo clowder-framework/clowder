@@ -1,19 +1,20 @@
 package controllers
 
+import java.io.{ByteArrayOutputStream, InputStream}
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import akka.stream.scaladsl.Source
 import api.Permission
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation.ANONYMOUS
 import javax.inject.Inject
 import models._
 import play.api.Logger
-import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json
-import play.api.mvc.{Action, ResponseHeader, Result}
+import play.api.mvc.{ResponseHeader, Result}
 import services.{FileLinkService, FileService}
 import util.FileUtils
-import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.concurrent.Future
 
 
 class FileLinks @Inject() (files: FileService, linksService: FileLinkService) extends SecuredController {
@@ -61,6 +62,8 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
 
   def download(linkId: UUID) = Action { implicit request =>
     implicit val user = Some(User.anonymous)
+    val chunkSize = 1024*1024
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     linksService.getLinkByLinkId(linkId) match {
       case Some(filelink) => {
         val fileid = filelink.fileId
@@ -91,14 +94,28 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
                               CONTENT_TYPE -> contentType
                             )
                           ),
-                          body = Enumerator.fromStream(inputStream)
+                          body = Source.unfoldAsync(inputStream)
                         )
                     }
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
-
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    val sourceResponse = Source.unfoldAsync(inputStream) { currStream => {
+                      val buffer = new Array[Byte](chunkSize)
+                      val bytesRead = scala.concurrent.blocking {
+                        currStream.read(buffer)
+                      }
+                      val chunk = bytesRead match {
+                        case -1 => {
+                          currStream.close()
+                          Some(byteArrayOutputStream.toByteArray)
+                        }
+                        case read => Some(byteArrayOutputStream.toByteArray)
+                      }
+                      byteArrayOutputStream.reset()
+                      Future.successful(Some((currStream, chunk.get)))
+                    }}
+                    Ok.chunked(sourceResponse)
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
                   }
