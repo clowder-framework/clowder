@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Fixed
-- Fixed permissions checks on search results for search interfaces that would cause misleading counts.
+- Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)
 
 ## 1.11.1 - 2020-09-29
 
