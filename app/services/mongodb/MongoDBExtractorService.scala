@@ -248,14 +248,11 @@ class MongoDBExtractorService extends ExtractorService {
     var results = List[ExtractorsLabel]()
     ExtractorInfoDAO.findOne(MongoDBObject("name"->extractorName)) match {
       case Some(info) => {
-        val assignments = LabelAssignmentDAO.find(MongoDBObject("extractorId"->info.id)).toList
-        for(assignment <- assignments) {
-          ExtractorsLabelDAO.findOne(MongoDBObject("_id" -> assignment.labelId.stringify)) match {
-            case Some(label) => {
-              results = results.::(label)
-            }
+        ExtractorsLabelDAO.findAll().foreach(label => {
+          if (label.extractors.contains(extractorName)) {
+            results = results ++ List[ExtractorsLabel](label)
           }
-        }
+        })
       }
     }
     results
