@@ -246,6 +246,6 @@ trait FileService {
 
   def incrementDownloads(id: UUID, user: Option[User])
 
-  def getMetrics(): Iterator[File]
+  def getFileIterator(): Iterator[File]
 
 }

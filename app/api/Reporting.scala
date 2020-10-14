@@ -2,14 +2,18 @@ package api
 
 import api.Permission._
 import play.api.libs.iteratee.Enumerator
+
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import play.api.Logger
 import javax.inject.Inject
-import java.util.{TimeZone, Date}
+import java.util.{Date, TimeZone}
+
 import services._
-import models.{File, Dataset, Collection, ProjectSpace, User, UserStatus}
+import models.{Collection, Dataset, File, ProjectSpace, UUID, User, UserStatus}
+
+import scala.collection.mutable.ListBuffer
 
 
 /**
@@ -28,7 +32,7 @@ class Reporting @Inject()(selections: SelectionService,
   def fileMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating file metrics report")
 
-    val results = files.getMetrics()
+    val results = files.getFileIterator()
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
@@ -138,7 +142,7 @@ class Reporting @Inject()(selections: SelectionService,
     datasets.getMetrics().foreach(ds => {
       contents += _buildDatasetRow(ds, true)
     })
-    files.getMetrics().foreach(f => {
+    files.getFileIterator().foreach(f => {
       contents += _buildFileRow(f)
     })
 
@@ -223,7 +227,7 @@ class Reporting @Inject()(selections: SelectionService,
     )
   }
 
-  def _buildFileRow(f: File): String = {
+  private def _buildFileRow(f: File): String = {
     var contents = ""
 
     // Parent datasets, collections & spaces are sublists within the columns
@@ -287,7 +291,7 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
-  def _buildDatasetRow(ds: Dataset, returnAllColums: Boolean = false): String = {
+  private def _buildDatasetRow(ds: Dataset, returnAllColums: Boolean = false): String = {
     """returnAllColumns will include empty columns to align with file rows on report"""
     var contents = ""
 
@@ -341,7 +345,7 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
-  def _buildCollectionRow(coll: Collection, returnAllColums: Boolean = false): String = {
+  private def _buildCollectionRow(coll: Collection, returnAllColums: Boolean = false): String = {
     """returnAllColumns will include empty columns to align with file rows on report"""
 
     var contents = ""
@@ -389,4 +393,103 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
+  def fileStorage() = ServerAdminAction { implicit request =>
+    val results = files.getFileIterator()
+
+    var headerRow = true
+    val enum = Enumerator.generateM({
+      val chunk = if (headerRow) {
+        // upload size, file type, dataset, collection, space, upload user, admin and owner of space (Business unit user belongs to on upload).
+
+        // TODO: How should this look if the datasets are in multiple spaces? associate owner with space ID somehow? separate rows?
+        val header = "file_type,id,name,owner,owner_email,owner_id,size_kb,uploaded,location,parent_datasets,parent_collections,parent_spaces,space_owners,space_admins\n"
+        headerRow = false
+        Some(header.getBytes("UTF-8"))
+      } else {
+        scala.concurrent.blocking {
+          if (results.hasNext) {
+            try {
+              // build next row of storage report
+              val f = results.next
+              var contents = ""
+
+              // Parent datasets, collections & spaces are sublists within the columns
+              val parent_datasets = datasets.findByFileIdAllContain(f.id)
+              var ds_list = ""
+              var coll_list = ""
+              var space_list = ""
+              val space_ids: ListBuffer[UUID] = ListBuffer.empty
+              var i = 1
+              var j = 1
+              var k = 1
+              parent_datasets.foreach(ds => {
+                ds_list += (if (i>1) ", " else "") + ds.id
+                ds.collections.foreach(coll => {
+                  if (!coll_list.contains(coll.uuid)) {
+                    coll_list += (if (j>1) ", " else "") + coll.uuid
+                    j += 1
+                  }
+                })
+                ds.spaces.foreach(sp => {
+                  if (!space_list.contains(sp.uuid)) {
+                    space_list += (if (k>1) ", " else "") + sp.uuid
+                    space_ids += sp
+                    k += 1
+                  }
+                })
+                i += 1
+              })
+
+              // Get admin and owner of space(s)
+              // TODO: Should we include email and/or name too?
+              var space_owner_list = ""
+              var space_admin_list = ""
+              var l = 1
+              var m = 1
+              spaces.get(space_ids.toList).found.foreach(sp => {
+                space_owner_list += (if (l>1) ", " else "") + sp.creator.uuid
+                l += 1
+                spaces.getUsersInSpace(sp.id, Some("admin")).foreach(spadmin => {
+                  space_admin_list += (if (m>1) ", " else "") + spadmin.id.uuid
+                  m += 1
+                })
+
+              })
+
+              contents += "\""+f.contentType+"\","
+              contents += "\""+f.id.toString+"\","
+              contents += "\""+f.filename+"\","
+              contents += "\""+f.author.fullName+"\","
+              contents += "\""+f.author.email.getOrElse("")+"\","
+              contents += "\""+f.author.id+"\","
+              contents += (f.length/1000).toInt.toString+","
+              contents += dateFormat.format(f.uploadDate)+","
+              contents += "\""+f.loader_id+"\","
+              contents += "\""+ds_list+"\","
+              contents += "\""+coll_list+"\","
+              contents += "\""+space_list+"\""
+              contents += "\""+space_owner_list+"\""
+              contents += "\""+space_admin_list+"\""
+              contents += "\n"
+
+
+
+              Some(_buildFileRow(results.next).getBytes("UTF-8"))
+            }
+            catch {
+              case _ => Some("".getBytes("UTF-8"))
+            }
+          }
+          else None
+        }
+      }
+
+      Future(chunk)
+    })
+
+    Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
+      "Content-Type" -> "text/csv",
+      "Content-Disposition" -> "attachment; filename=FileMetrics.csv"
+    )
+  }
 }

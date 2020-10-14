@@ -177,7 +177,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
         val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
         val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
-        val usersInSpace = spaces.getUsersInSpace(id)
+        val usersInSpace = spaces.getUsersInSpace(id, None)
         var curationObjectsInSpace: List[CurationObject] = List()
         var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
         creator match {
@@ -250,7 +250,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
       case Some(s) => {
         val creator = users.findById(s.creator)
         var creatorActual: User = null
-        val usersInSpace = spaces.getUsersInSpace(id)
+        val usersInSpace = spaces.getUsersInSpace(id, None)
         var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
         creator match {
           case Some(theCreator) => {
@@ -376,7 +376,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
               val subject: String = "Request for access from " + AppConfiguration.getDisplayName
               val body = views.html.spaces.requestemail(user, id.toString, s.name)
 
-              for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+              for (requestReceiver <- spaces.getUsersInSpace(s.id, None)) {
                 spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
                   case Some(aRole) => {
                     if (aRole.permissions.contains(Permission.EditSpace.toString)) {
