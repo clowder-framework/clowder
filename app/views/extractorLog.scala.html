@@ -1,0 +1,30 @@
+@(extractorName: String, logs:List[String], size:Integer)(implicit user: Option[models.User])
+
+@main("Extractors"){
+    <div class="page-header">
+        <h1>Logs for @extractorName </h1>
+    </div>
+    @if(size == 0) {
+        <div class="row">
+            <div class="col-sm-8">
+                No Logs found.
+            </div>
+        </div>
+    }else{
+        <div class="container" >
+            <div class="row-fluid" >
+                <div>
+                    <table id='tablec'  style="table-layout: fixed;width: 100%" cellpadding="10"  cellspacing="0" border="1">
+                        <tbody>
+                        @for(log <- logs){
+                            <tr>
+                                <td>@log</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}

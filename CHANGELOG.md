@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
   disable and enable triggers. 
+- Add endpoint and view page for the extractor metrics.
+- Add endpoint and view page to view a extractor's log from graylog.
+- Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
 
 ## 1.11.1 - 2020-09-29
 
