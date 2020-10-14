@@ -74,8 +74,8 @@ case class ExtractorDetail(
  * @param bibtex bibtext formatted citation of relevant papers
  * @param maturity indicates whether this extractor is ready for public consumption
  *             * For example: "Development" (default), "Staging", or "Production"
- * @param defaultLabels the categorization labels that were imported by default
- *             * For example: "Development" (default), "Staging", or "Production"
+ * @param defaultLabels the categorization label names that were imported by default
+ *             * For example: "Image", "Video", "Audio", etc
  * @param process events that should trigger this extractor to process
  * @param categories list of categories that apply to the extractor
  * @param parameters JSON schema representing allowed parameters
