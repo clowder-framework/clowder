@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-- Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in faster downloads and less CPU usage at the cost of slightly more memory use.
+- Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
+  faster downloads and less CPU usage at the cost of slightly more memory use.
+- Add endpoint and view page for the extractor metrics.
+- Add endpoint and view page to view a extractor's log from graylog.
+- Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
+
+## 1.11.2 - 2020-10-13
+
+### Fixed
+- Clowder healthcheck was not correct, resulting in docker-compose never thinking it was healthy. This could also result 
+  in traefik not setting up the routes.
 
 ## 1.11.1 - 2020-09-29
 
