@@ -20,8 +20,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.11.1 - 2020-09-29
 
+**_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
+of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
+
 ### Added
-- Added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
+- added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
+- added support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been
+added to search API now that those data are properly compared.
 
 ### Fixed
 - Fixed health check script when using custom path prefix.
