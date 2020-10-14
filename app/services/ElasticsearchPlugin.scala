@@ -41,6 +41,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+  val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
   val queue: ElasticsearchQueue = DI.injector.getInstance(classOf[ElasticsearchQueue])
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
@@ -808,7 +809,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         builder.startObject().startObject("exists").field("field", key).endObject().endObject()
       })
 
-      // If user is superadmin or there is no user, no filters applied
+      // Apply appropriate permissions filters based on user/superadmin
       user match {
         case Some(u) => {
           if (!u.superAdminMode) {
@@ -826,7 +827,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           }
         }
         case None => {
-          // Metadata search is not publicly accessible so this shouldn't happen, no filter
+          // Metadata search is not publicly accessible so this shouldn't happen, public filter
+          builder.startObject.startObject("bool").startArray("should")
+
+          // TODO: Does this behave properly with public spaces?
+          spaces.list.foreach(ps => {
+            builder.startObject().startObject("match").field("child_of", ps.id.stringify).endObject().endObject()
+          })
+
+          builder.endArray().endObject().endObject()
         }
       }
 
@@ -969,7 +978,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       }
     })
 
-    // If user is superadmin or there is no user, no filters applied
+    // Apply appropriate permissions filters based on user/superadmin
     user match {
       case Some(u) => {
         if (!u.superAdminMode) {
@@ -993,7 +1002,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
       case None => {
-        // Calling this with no user should only happen internally (e.g. listTags) so no filter
+        // Metadata search is not publicly accessible so this shouldn't happen, public filter
+        builder.startObject.startObject("bool").startArray("should")
+
+        // TODO: Does this behave properly with public spaces?
+        spaces.list.foreach(ps => {
+          builder.startObject().startObject("match").field("child_of", ps.id.stringify).endObject().endObject()
+        })
+
+        builder.endArray().endObject().endObject()
       }
     }
 
