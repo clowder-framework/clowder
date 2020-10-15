@@ -1256,11 +1256,17 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
                 case None => {}
                 case Some(eInfo) => {
                   // Create (if needed) and assign default labels
-                  eInfo.defaultLabels.foreach(labelName => {
+                  eInfo.defaultLabels.foreach(labelStr => {
+                    val segments = labelStr.split("/")
+                    val (labelName, labelCategory) = if (segments.length > 1) {
+                      (segments(1), segments(0))
+                    } else {
+                      (segments(0), "Other")
+                    }
                     extractorsService.getExtractorsLabel(labelName) match {
                       case None => {
-                        // Label does not exist - create then assign it
-                        val createdLabel = extractorsService.createExtractorsLabel(labelName, Some("Default"), List[String](eInfo.name))
+                        // Label does not exist - create and assign it
+                        val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
                       }
                       case Some(lbl) => {
                         // Label already exists, assign it

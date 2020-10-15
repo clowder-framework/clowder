@@ -477,11 +477,17 @@ class Extractions @Inject()(
         extractors.updateExtractorInfo(info) match {
           case Some(u) => {
             // Create/assign any default labels for this extractor
-            u.defaultLabels.foreach(labelName => {
+            u.defaultLabels.foreach(labelStr => {
+              val segments = labelStr.split("/")
+              val (labelName, labelCategory) = if (segments.length > 1) {
+                (segments(1), segments(0))
+              } else {
+                (segments(0), "Other")
+              }
               extractors.getExtractorsLabel(labelName) match {
                 case None => {
-                  // Label does not exist - create then assign it
-                  val createdLabel = extractors.createExtractorsLabel(labelName, Some("Default"), List[String](u.name))
+                  // Label does not exist - create and assign it
+                  val createdLabel = extractors.createExtractorsLabel(labelName, Some(labelCategory), List[String](u.name))
                 }
                 case Some(lbl) => {
                   // Label already exists, assign it
