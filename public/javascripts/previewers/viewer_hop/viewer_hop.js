@@ -11,6 +11,8 @@
   The Cyprus Institute
 
   + 09/14/20 (cc): Created.
+  + 10/14/20 (cc): Changing the source of the 3DHOP files
+                   and load them online
 
 ****************************************************************/
 
@@ -46,21 +48,7 @@
 
   // add 3dhop.css to previewer
 
-  $(useTab).append('<link rel="stylesheet" type="text/css" href="' + previewer + '/hop/stylesheet/3dhop.css">');
-
-  // scripts  holds all the  3dhop files
-
-  var scripts = ["spidergl.js", "presenter.js", "nexus.js", "ply.js", "trackball_sphere.js",
-    "trackball_turntable.js", "trackball_turntable_pan.js", "trackball_pantilt.js", "init.js"];
-
-  // load 3dhop into the current tab
-
-  for (index = 0; index < scripts.length; index++) {
-    var s = document.createElement("script");
-    s.type = "text/javascript";
-    s.src = previewer + "/hop/js/" + scripts[index];
-    $(useTab).append(s);
-  }
+  $(useTab).append('<link rel="stylesheet" type="text/css" href="http://vcg.isti.cnr.it/3dhop/distribution/stylesheet/3dhop.css">');
 
   // load various 3dhop attributes (such as the background image) for 3dhop
 
@@ -78,20 +66,22 @@
     id: 'toolbar'
   }));
 
-  $("#toolbar").append("<img id='home' title='Home'  src='" + previewer + "/hop/skins/dark/home.png'/><br/>");
-  $("#toolbar").append("<img id='zoomin' title='Zoom In'  src='" + previewer + "/hop/skins/dark/zoomin.png'/><br/>");
-  $("#toolbar").append("<img id='zoomout' title='Zoom Out'  src='" + previewer + "/hop/skins/dark/zoomout.png'/><br/>");
-  $("#toolbar").append("<img id='light_on' title='Disable Light Control'  src='" + previewer + "/hop/skins/dark/lightcontrol_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='light' title='Enable Light Control'  src='" + previewer + "/hop/skins/dark/lightcontrol.png'/><br/>");
+  $("#toolbar").append("<img id='home' title='Home'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/home.png'/><br/>");
 
-  $("#toolbar").append("<img id='measure_on' title='Disable Measure Tool'  src='" + previewer + "/hop/skins/dark/measure_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='measure' title='Enable Measure Tool'  src='" + previewer + "/hop/skins/dark/measure.png'/><br/>");
+  $("#toolbar").append("<img id='zoomin' title='Zoom In'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/zoomin.png'/><br/>");
+  $("#toolbar").append("<img id='zoomout' title='Zoom Out'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/zoomout.png'/><br/>");
 
-  $("#toolbar").append("<img id='pick_on' title='Disable PickPoint Mode'  src='" + previewer + "/hop/skins/dark/pick_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='pick' title='Enable PickPoint Mode'  src='" + previewer + "/hop/skins/dark/pick.png'/><br/>");
+  $("#toolbar").append("<img id='light_on' title='Disable Light Control'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/lightcontrol_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='light' title='Enable Light Control'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/lightcontrol.png'/><br/>");
 
-  $("#toolbar").append("<img id='full_on' title='Exit Full Screen'  src='" + previewer + "/hop/skins/dark/full_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='full' title='Full Screen'  src='" + previewer + "/hop/skins/dark/full.png'/>");
+  $("#toolbar").append("<img id='measure_on' title='Disable Measure Tool'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/measure_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='measure' title='Enable Measure Tool'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/measure.png'/><br/>");
+
+  $("#toolbar").append("<img id='pick_on' title='Disable PickPoint Mode'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/pick_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='pick' title='Enable PickPoint Mode'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/pick.png'/><br/>");
+
+  $("#toolbar").append("<img id='full_on' title='Exit Full Screen'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/full_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='full' title='Full Screen'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/full.png'/>");
 
   $('#3dhop').append($('<div/>', {
     id: 'measure-box',
@@ -129,23 +119,85 @@
 
   $("#3dhop").append($('<canvas/>', {
     id: 'draw-canvas',
-    style: 'background-image: url("' + previewer + '/hop/skins/backgrounds/black.jpg")'
+    style: 'background-image: url("http://vcg.isti.cnr.it/3dhop/distribution/skins/backgrounds/dark.jpg")'
   }));
 
-  $(document).ready(function () {
-    init3dhop();
+  // scripts  holds all the  3dhop files                                                                        
 
-    setup3dhop(referenceUrl, fileType);
+  var scripts = ["spidergl.js", "nexus.js", "ply.js", "trackball_sphere.js",
+    "trackball_turntable.js", "trackball_pantilt.js", "trackball_turntable_pan.js", "init.js", "presenter.js"];
 
-    resizeCanvas(640, 480);
+  // append the http address where the files are located
 
-    moveMeasurementbox(70, 243);
-    movePickpointbox(70, 301);
+  for (index = 0; index < scripts.length; index++) {
+    scripts[index] = "http://vcg.isti.cnr.it/3dhop/distribution/js/" + scripts[index];
+  }
 
-    //moveToolbar(20, 20);
+  // load 3dhop into the current tab   (old version)                                                                         
+
+  /******for (index = 0; index < scripts.length; index++) {                                                            
+       var s = document.createElement("script");                                                                   
+       s.type = "text/javascript";                                                                                 
+       //s.src = previewer + "/hop/js/" + scripts[index];                                                            
+       s.src = scripts[index];
+       $(useTab).append(s); 
+     }             
+
+  $(document).ready(function () {                                                                                                     
+   init3dhop();                                                                                                                        
+                                                                                                                                       
+   setup3dhop(referenceUrl, fileType);                                                                                                 
+                                                                                                                                       
+   resizeCanvas(640, 480);                                                                                                             
+                                                                                                                                       
+   moveMeasurementbox(70, 243);                                                                                                        
+   movePickpointbox(70, 301);                                                                                                          
+                                                                                                                                       
+   //moveToolbar(20, 20);                                                                                                              
+ });*****/
+
+  $.getScript(scripts[0], function () {
+    $.getScript(scripts[1], function () {
+      $.getScript(scripts[2], function () {
+        $.getScript(scripts[3], function () {
+          $.getScript(scripts[4], function () {
+            $.getScript(scripts[5], function () {
+              $.getScript(scripts[6], function () {
+                $.getScript(scripts[7], function () {
+                  $.getScript(scripts[8], function () {
+
+                    init3dhop();
+
+                    setup3dhop(referenceUrl, fileType);
+
+                    resizeCanvas(640, 480);
+
+                    moveMeasurementbox(70, 243);
+                    movePickpointbox(70, 301);
+
+                  })
+                })
+              })
+            })
+          })
+        })
+      })
+    })
   });
 
 }(jQuery, Configuration));
+
+function getScripts(scripts, callback) {
+
+  var progress = 0;
+
+  scripts.forEach(function (script) {
+    //alert(script);
+    $.getScript(script, function () {
+      if (++progress == scripts.length) callback();
+    });
+  });
+}
 
 var presenter = null;
 
@@ -207,4 +259,3 @@ function onEndPick(point) {
   var z = point[2].toFixed(2);
   $('#pickpoint-output').html("[ " + x + " , " + y + " , " + z + " ]");
 }
-
