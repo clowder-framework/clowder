@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   of Elasticsearch from the Admin menu or by `POST /api/reindex`.
 
 ### Added
+- Add log settings to application.conf
 - Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
   faster downloads and less CPU usage at the cost of slightly more memory use.
 - Support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been 
