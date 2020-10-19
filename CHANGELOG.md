@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- fix the mismatch extractor name and extractor service name in log query.
+
 ### Added
 - Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
   disable and enable triggers. 
