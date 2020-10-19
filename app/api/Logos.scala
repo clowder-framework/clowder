@@ -15,6 +15,8 @@ import scala.concurrent.Future
 
 class Logos @Inject()(logos: LogoService) extends ApiController {
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   def list(path: Option[String], name: Option[String]) = AuthenticatedAction { implicit request =>
     Ok(toJson(logos.list(path, name)))
   }
@@ -102,7 +104,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   def downloadId(id: UUID, file: Option[String]) = Action.async { implicit request =>
     logos.getBytes(id) match {
       case Some((inputStream, filename, contentType, contentLength)) =>
-        Future(Ok.chunked(Enumerator.fromStream(inputStream))
+        Future(Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
           .withHeaders(CONTENT_TYPE -> contentType))
       case None => {
         file match {
