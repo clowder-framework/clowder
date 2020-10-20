@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   of Elasticsearch from the Admin menu or by `POST /api/reindex`.
 
 ### Added
-- Add log settings to application.conf
 - Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
   faster downloads and less CPU usage at the cost of slightly more memory use.
 - Support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been 
@@ -22,7 +21,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   disable and enable triggers.
 
 ### Fixed
-- Fix the mismatch extractor name and extractor service name in log query.
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
 - Search results were hardcoded to be in batches of 2.
 
