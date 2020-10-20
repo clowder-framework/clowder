@@ -1635,8 +1635,11 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getMetrics(): Iterator[Dataset] = {
-    Dataset.find(MongoDBObject("trash" -> false)).toIterator
+  def getIterator(space: Option[UUID]): Iterator[Dataset] = {
+    space match {
+      case Some(spid) => Dataset.find(MongoDBObject("trash" -> false, "spaces" -> new ObjectId(spid.stringify))).toIterator
+      case None => Dataset.find(MongoDBObject("trash" -> false)).toIterator
+    }
   }
 }
 

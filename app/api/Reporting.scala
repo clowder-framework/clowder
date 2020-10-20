@@ -65,7 +65,7 @@ class Reporting @Inject()(selections: SelectionService,
   def datasetMetrics() = ServerAdminAction { implicit request =>
     Logger.debug("Generating dataset metrics report")
 
-    val results = datasets.getMetrics()
+    val results = datasets.getIterator(None)
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
@@ -139,7 +139,7 @@ class Reporting @Inject()(selections: SelectionService,
     collections.getMetrics().foreach(coll => {
       contents += _buildCollectionRow(coll, true)
     })
-    datasets.getMetrics().foreach(ds => {
+    datasets.getIterator(None).foreach(ds => {
       contents += _buildDatasetRow(ds, true)
     })
     files.getFileIterator().foreach(f => {
@@ -393,8 +393,11 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
-  def fileStorage() = ServerAdminAction { implicit request =>
-    val results = files.getFileIterator()
+  def spaceStorage(id: UUID) = ServerAdminAction { implicit request =>
+    // Iterate over the files of every dataset in the space
+    val results = datasets.getIterator(Some(id))
+
+    Logger.info("Starting on "+id.stringify)
 
     var headerRow = true
     val enum = Enumerator.generateM({
@@ -409,35 +412,28 @@ class Reporting @Inject()(selections: SelectionService,
         scala.concurrent.blocking {
           if (results.hasNext) {
             try {
-              // build next row of storage report
-              val f = results.next
-              var contents = ""
+              val ds = results.next
+              Logger.info("Dataset "+ds.id.stringify)
 
-              // Parent datasets, collections & spaces are sublists within the columns
-              val parent_datasets = datasets.findByFileIdAllContain(f.id)
-              var ds_list = ""
+              // Each file in the dataset inherits same parent info from dataset
+              val ds_list = ds.id.stringify
               var coll_list = ""
               var space_list = ""
               val space_ids: ListBuffer[UUID] = ListBuffer.empty
-              var i = 1
               var j = 1
               var k = 1
-              parent_datasets.foreach(ds => {
-                ds_list += (if (i>1) ", " else "") + ds.id
-                ds.collections.foreach(coll => {
-                  if (!coll_list.contains(coll.uuid)) {
-                    coll_list += (if (j>1) ", " else "") + coll.uuid
-                    j += 1
-                  }
-                })
-                ds.spaces.foreach(sp => {
-                  if (!space_list.contains(sp.uuid)) {
-                    space_list += (if (k>1) ", " else "") + sp.uuid
-                    space_ids += sp
-                    k += 1
-                  }
-                })
-                i += 1
+              ds.collections.foreach(coll => {
+                if (!coll_list.contains(coll.uuid)) {
+                  coll_list += (if (j>1) ", " else "") + coll.uuid
+                  j += 1
+                }
+              })
+              ds.spaces.foreach(sp => {
+                if (!space_list.contains(sp.uuid)) {
+                  space_list += (if (k>1) ", " else "") + sp.uuid
+                  space_ids += sp
+                  k += 1
+                }
               })
 
               // Get admin and owner of space(s)
@@ -456,25 +452,28 @@ class Reporting @Inject()(selections: SelectionService,
 
               })
 
-              contents += "\""+f.contentType+"\","
-              contents += "\""+f.id.toString+"\","
-              contents += "\""+f.filename+"\","
-              contents += "\""+f.author.fullName+"\","
-              contents += "\""+f.author.email.getOrElse("")+"\","
-              contents += "\""+f.author.id+"\","
-              contents += (f.length/1000).toInt.toString+","
-              contents += dateFormat.format(f.uploadDate)+","
-              contents += "\""+f.loader_id+"\","
-              contents += "\""+ds_list+"\","
-              contents += "\""+coll_list+"\","
-              contents += "\""+space_list+"\""
-              contents += "\""+space_owner_list+"\""
-              contents += "\""+space_admin_list+"\""
-              contents += "\n"
+              var contents = ""
 
-
-
-              Some(_buildFileRow(results.next).getBytes("UTF-8"))
+              files.get(ds.files).found.foreach(f => {
+                // build next row of storage report
+                contents += "\""+f.contentType+"\","
+                contents += "\""+f.id.toString+"\","
+                contents += "\""+f.filename+"\","
+                contents += "\""+f.author.fullName+"\","
+                contents += "\""+f.author.email.getOrElse("")+"\","
+                contents += "\""+f.author.id+"\","
+                contents += (f.length/1000).toInt.toString+","
+                contents += dateFormat.format(f.uploadDate)+","
+                contents += "\""+f.loader_id+"\","
+                contents += "\""+ds_list+"\","
+                contents += "\""+coll_list+"\","
+                contents += "\""+space_list+"\""
+                contents += "\""+space_owner_list+"\""
+                contents += "\""+space_admin_list+"\""
+                contents += "\n"
+              })
+              // Submit all file rows for this dataset at once
+              Some(contents.getBytes("UTF-8"))
             }
             catch {
               case _ => Some("".getBytes("UTF-8"))
@@ -489,7 +488,7 @@ class Reporting @Inject()(selections: SelectionService,
 
     Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
       "Content-Type" -> "text/csv",
-      "Content-Disposition" -> "attachment; filename=FileMetrics.csv"
+      "Content-Disposition" -> ("attachment; filename=SpaceStorage"+id.stringify+".csv")
     )
   }
 }

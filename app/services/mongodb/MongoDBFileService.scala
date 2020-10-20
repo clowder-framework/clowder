@@ -50,6 +50,7 @@ import org.bson.types.ObjectId
 class MongoDBFileService @Inject() (
   datasets: DatasetService,
   collections: CollectionService,
+  spaces: SpaceService,
   sections: SectionService,
   comments: CommentService,
   previews: PreviewService,
