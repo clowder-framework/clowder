@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   disable and enable triggers.
 
 ### Fixed
+- Remove secretKey from extractor log.
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
 - Search results were hardcoded to be in batches of 2.
 

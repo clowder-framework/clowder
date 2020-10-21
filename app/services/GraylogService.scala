@@ -49,7 +49,18 @@ class GraylogService @Inject() extends LogService {
           val messagesjsonValue = responseJsonValue.get("messages")
           messagesjsonValue.foreach(elem => {
             val elemMap = elem.asInstanceOf[java.util.HashMap[String, java.util.HashMap[String, String]]]
-            val message: String = elemMap.get("message").get("message")
+            var message: String = elemMap.get("message").get("message")
+
+            val secretKeyIndex: Int = message.indexOf("'secretKey':")
+            val secretKeyLen: Int = "'secretKey':".length()
+            if(secretKeyIndex >= 0) {
+              val prev: String = message.substring(0, secretKeyIndex)
+              val sub: String = message.substring(secretKeyIndex+secretKeyLen)
+              val secretValueIndex: Int = sub.indexOf("',")
+              val suffix: String = sub.substring(secretValueIndex+"',".length())
+              message = prev+suffix
+            }
+
             val keyIndex: Int = message.indexOf("key=")
             keyIndex match {
               case -1 => {
