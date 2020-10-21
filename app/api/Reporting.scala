@@ -449,11 +449,9 @@ class Reporting @Inject()(selections: SelectionService,
                   space_admin_list += (if (m>1) ", " else "") + spadmin.id.uuid
                   m += 1
                 })
-
               })
 
               var contents = ""
-
               files.get(ds.files).found.foreach(f => {
                 // build next row of storage report
                 contents += "\""+f.contentType+"\","
@@ -467,8 +465,8 @@ class Reporting @Inject()(selections: SelectionService,
                 contents += "\""+f.loader_id+"\","
                 contents += "\""+ds_list+"\","
                 contents += "\""+coll_list+"\","
-                contents += "\""+space_list+"\""
-                contents += "\""+space_owner_list+"\""
+                contents += "\""+space_list+"\","
+                contents += "\""+space_owner_list+"\","
                 contents += "\""+space_admin_list+"\""
                 contents += "\n"
               })
