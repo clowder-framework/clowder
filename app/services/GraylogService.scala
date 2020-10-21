@@ -48,9 +48,10 @@ class GraylogService @Inject() extends LogService {
           val responseJsonValue = JsonUtil.parseJSON(responseJson).asInstanceOf[java.util.LinkedHashMap[String, java.util.LinkedList[java.util.LinkedHashMap[String, String]]]]
           val messagesjsonValue = responseJsonValue.get("messages")
           messagesjsonValue.foreach(elem => {
+            var message: String = ""
             try {
               val elemMap = elem.asInstanceOf[java.util.HashMap[String, java.util.HashMap[String, String]]]
-              var message: String = elemMap.get("message").get("message")
+              message = elemMap.get("message").get("message")
 
               val secretKeyIndex: Int = message.indexOf("'secretKey':")
               val secretKeyLen: Int = "'secretKey':".length()
