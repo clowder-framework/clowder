@@ -53,11 +53,13 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
                     CONTENT_TYPE -> contentType
                   )
                 ),
+                body = Chunked(Source.unfoldAsync(inputStream) { currStream => {
                   val buffer = new Array[Byte](chunkSize)
                   val bytesRead = scala.concurrent.blocking {
                     currStream.read(buffer)
                   }
                   val chunk = bytesRead match {
+                    case -1 => {
                       currStream.close()
                       Some(byteArrayOutputStream.toByteArray)
                     }
@@ -72,9 +74,11 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
           case None => {
             val sourceResponse = Source.unfoldAsync(inputStream) { currStream => {
               val buffer = new Array[Byte](chunkSize)
+              val bytesRead = scala.concurrent.blocking {
                 currStream.read(buffer)
               }
               val chunk = bytesRead match {
+                case -1 => {
                   currStream.close()
                   Some(byteArrayOutputStream.toByteArray)
                 }
