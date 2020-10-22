@@ -52,7 +52,8 @@ class  Datasets @Inject()(
   adminsNotifierService: AdminsNotifierService,
   searches: SearchService,
   extractionBusService: ExtractionBusService,
-  configuration: Configuration) extends ApiController {
+  configuration: Configuration,
+  messages: Messages) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -2191,7 +2192,7 @@ class  Datasets @Inject()(
 
   def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
-    val spaceTitle: String = Messages("space.title")
+    val spaceTitle: String = messages("space.title")
 
     datasets.get(id) match {
       case Some(dataset) => {

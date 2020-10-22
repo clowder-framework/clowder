@@ -1,26 +1,20 @@
 package api
 
-import java.io.{BufferedReader, FileInputStream, FileReader}
-import javax.inject.{Inject, Singleton}
+import java.io.{ByteArrayOutputStream, FileInputStream}
 
-import models.{ResourceRef, ThreeDAnnotation, UUID}
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import javax.inject.{Inject, Singleton}
+import models.{Preview, ResourceRef, ThreeDAnnotation, UUID}
 import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
+import play.api.http.HttpChunk.Chunk
+import play.api.http.HttpEntity.Chunked
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
-import com.mongodb.casbah.Imports._
-import org.bson.types.ObjectId
-import play.api.libs.json.JsObject
-import com.mongodb.WriteConcern
-import models.{Preview, UUID, ThreeDAnnotation}
-import play.api.libs.json.JsValue
-import play.api.libs.concurrent.Execution.Implicits._
-import java.io.BufferedReader
-import java.io.FileReader
-import javax.inject.{Inject, Singleton}
-import services.{TileService, PreviewService}
+import services.{PreviewService, TileService}
 import util.FileUtils
+
+import scala.concurrent.Future
 
 /**
  * Files and datasets previews.
@@ -55,8 +49,10 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    */
   def download(id: UUID) =
     PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
-        previews.getBlob(id) match {
+      val chunkSize = 1024*1024
+      val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
 
+        previews.getBlob(id) match {
           case Some((inputStream, filename, contentType, contentLength)) => {
             request.headers.get(RANGE) match {
               case Some(value) => {
@@ -79,12 +75,41 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                           CONTENT_TYPE -> contentType
                         )
                       ),
-                      body = Enumerator.fromStream(inputStream)
+                      body = Chunked(Source.unfoldAsync(inputStream) { currStream => {
+                        val buffer = new Array[Byte](chunkSize)
+                        val bytesRead = scala.concurrent.blocking {
+                          currStream.read(buffer)
+                        }
+                        val chunk = bytesRead match {
+                          case -1 => {
+                            currStream.close()
+                            Some(byteArrayOutputStream.toByteArray)
+                          }
+                          case read => Some(byteArrayOutputStream.toByteArray)
+                        }
+                        byteArrayOutputStream.reset()
+                        Future.successful(Some((currStream, Chunk(ByteString.fromArray(chunk.get)))))
+                      }}, Some(contentType))
                     )
                 }
               }
               case None => {
-                Ok.chunked(Enumerator.fromStream(inputStream))
+                val sourceResponse = Source.unfoldAsync(inputStream) { currStream => {
+                  val buffer = new Array[Byte](chunkSize)
+                  val bytesRead = scala.concurrent.blocking {
+                    currStream.read(buffer)
+                  }
+                  val chunk = bytesRead match {
+                    case -1 => {
+                      currStream.close()
+                      Some(byteArrayOutputStream.toByteArray)
+                    }
+                    case read => Some(byteArrayOutputStream.toByteArray)
+                  }
+                  byteArrayOutputStream.reset()
+                  Future.successful(Some((currStream, chunk.get)))
+                }}
+                Ok.chunked(sourceResponse)
                   .withHeaders(CONTENT_TYPE -> contentType)
                   .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 
@@ -192,7 +217,9 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Find tile for given preview, level and filename (row and column).
    */
   def getTile(dzi_id_dir: String, level: String, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, UUID(dzi_id_dir.replaceAll("_files", ""))))) { implicit request =>
-        val dzi_id = dzi_id_dir.replaceAll("_files", "")
+    val chunkSize = 1024*1024
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val dzi_id = dzi_id_dir.replaceAll("_files", "")
         tiles.findTile(UUID(dzi_id), filename, level) match {
           case Some(tile) => {
 
@@ -220,12 +247,41 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
                               CONTENT_TYPE -> contentType
                             )
                           ),
-                          body = Enumerator.fromStream(inputStream)
+                          body = Chunked(Source.unfoldAsync(inputStream) { currStream => {
+                            val buffer = new Array[Byte](chunkSize)
+                            val bytesRead = scala.concurrent.blocking {
+                              currStream.read(buffer)
+                            }
+                            val chunk = bytesRead match {
+                              case -1 => {
+                                currStream.close()
+                                Some(byteArrayOutputStream.toByteArray)
+                              }
+                              case read => Some(byteArrayOutputStream.toByteArray)
+                            }
+                            byteArrayOutputStream.reset()
+                            Future.successful(Some((currStream, Chunk(ByteString.fromArray(chunk.get)))))
+                          }}, Some(contentType))
                         )
                     }
                   }
                   case None => {
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    val sourceResponse = Source.unfoldAsync(inputStream) { currStream => {
+                      val buffer = new Array[Byte](chunkSize)
+                      val bytesRead = scala.concurrent.blocking {
+                        currStream.read(buffer)
+                      }
+                      val chunk = bytesRead match {
+                        case -1 => {
+                          currStream.close()
+                          Some(byteArrayOutputStream.toByteArray)
+                        }
+                        case read => Some(byteArrayOutputStream.toByteArray)
+                      }
+                      byteArrayOutputStream.reset()
+                      Future.successful(Some((currStream, chunk.get)))
+                    }}
+                    Ok.chunked(sourceResponse)
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(tilename, request.headers.get("user-agent").getOrElse(""))))
 

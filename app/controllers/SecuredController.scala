@@ -24,6 +24,7 @@ import scala.concurrent.Future
 trait SecuredController extends BaseController with play.api.i18n.I18nSupport {
 
   val userservice = DI.injector.getInstance(classOf[services.UserService])
+  val messages = DI.injector.getInstance(classOf[Messages])
 
   /** get user if logged in */
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest, AnyContent] {
@@ -149,7 +150,7 @@ trait SecuredController extends BaseController with play.api.i18n.I18nSupport {
       }
 
       case Some(ResourceRef(ResourceRef.space, id)) => {
-        val spaceTitle: String = Messages("space.title")
+        val spaceTitle: String = messages("space.title")
         val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
         spaces.get(id) match {
           case None => Future.successful(BadRequest(views.html.notFound(spaceTitle + " does not exist.")(user)))

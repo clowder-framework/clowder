@@ -2,19 +2,19 @@ package api
 
 import java.net.{URL, URLEncoder}
 import java.util.Date
+
 import javax.inject.{Inject, Singleton}
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import org.apache.commons.lang.WordUtils
 import play.api.Logger
 import play.api.libs.json.Json._
-import play.api.libs.json._
+import play.api.libs.json.{JsLookupResult, JsValue, _}
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSResponse
 import play.api.mvc.Result
-import play.api.libs.json.JsValue
-
 import api.Permission.Permission
 import controllers.Utils
 import services._
@@ -613,14 +613,14 @@ class Metadata @Inject() (
           if (response.status >= 200 && response.status < 300 || response.status == 304) {
             val people = (response.json \ ("persons")).as[List[JsObject]]
             Ok(Json.toJson(people.map { t =>
-              val fName = t \ ("givenName")
-              val lName = t \ ("familyName")
+              val fName = (t \ ("givenName")).get
+              val lName = (t \ ("familyName")).get
               val name = JsString(fName.as[String] + " " + lName.as[String])
-              val email = t \ ("email") match {
-                case JsString(_) => t \ ("email")
+              val email = (t \ ("email")).get match {
+                case JsString(_) => (t \ ("email")).get.asInstanceOf[JsString]
                 case _ => JsString("")
               }
-              Map("name" -> name, "@id" -> t \ ("@id"), "email" -> email)
+              Map("name" -> name, "@id" -> (t \ ("@id")).get, "email" -> email)
 
             }.filter((x) => {
               if (term.length == 0) {

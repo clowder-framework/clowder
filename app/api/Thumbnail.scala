@@ -1,18 +1,22 @@
 package api
 
 
-import java.io.FileInputStream
-import javax.inject.{Inject, Singleton}
+import java.io.{ByteArrayOutputStream, FileInputStream, InputStream}
 
+import akka.util.ByteString
+import akka.stream.scaladsl.Source
+import javax.inject.{Inject, Singleton}
 import models.{ResourceRef, Thumbnail, UUID}
 import play.api.Logger
-import play.api.libs.iteratee.Enumerator
+import play.api.http.HttpChunk.Chunk
+import play.api.http.HttpEntity.Chunked
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json._
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Controller
+import play.api.mvc.{Controller, ResponseHeader, Result}
 import services.ThumbnailService
 import util.FileUtils
+
+import scala.concurrent.Future
 
 
 @Singleton
@@ -27,6 +31,8 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
   }
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
+    val chunkSize = 1024*1024
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -37,7 +43,6 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
             }
             range match { case (start,end) =>
               inputStream.skip(start)
-              import play.api.mvc.{ ResponseHeader, Result }
               Result(
                 header = ResponseHeader(PARTIAL_CONTENT,
                   Map(
@@ -48,13 +53,37 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
                     CONTENT_TYPE -> contentType
                   )
                 ),
-                body = Enumerator.fromStream(inputStream)
+                  val buffer = new Array[Byte](chunkSize)
+                  val bytesRead = scala.concurrent.blocking {
+                    currStream.read(buffer)
+                  }
+                  val chunk = bytesRead match {
+                      currStream.close()
+                      Some(byteArrayOutputStream.toByteArray)
+                    }
+                    case read => Some(byteArrayOutputStream.toByteArray)
+                  }
+                  byteArrayOutputStream.reset()
+                  Future.successful(Some((currStream, Chunk(ByteString.fromArray(chunk.get)))))
+                }}, Some(contentType))
               )
             }
           }
           case None => {
-            Ok.chunked(Enumerator.fromStream(inputStream))
-              .withHeaders(CONTENT_TYPE -> contentType)
+            val sourceResponse = Source.unfoldAsync(inputStream) { currStream => {
+              val buffer = new Array[Byte](chunkSize)
+                currStream.read(buffer)
+              }
+              val chunk = bytesRead match {
+                  currStream.close()
+                  Some(byteArrayOutputStream.toByteArray)
+                }
+                case read => Some(byteArrayOutputStream.toByteArray)
+              }
+              byteArrayOutputStream.reset()
+              Future.successful(Some((currStream, chunk.get)))
+            }}
+            Ok.chunked(sourceResponse).withHeaders(CONTENT_TYPE -> contentType)
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
           }
         }

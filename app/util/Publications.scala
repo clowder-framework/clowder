@@ -2,12 +2,10 @@ package util
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSResponse
-
-
 import models._
 import services.{DI, SpaceService}
 
@@ -17,10 +15,11 @@ import services.{DI, SpaceService}
  */
 object Publications {
     val WS: WSClient =  DI.injector.getInstance(classOf[WSClient])
+    val config: Configuration = DI.injector.getInstance(classOf[Configuration])
       
     def getPublications(space: String, spaces: SpaceService) = {
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-    val endpoint = play.Play.application().configuration().getString("publishData.list.uri").replaceAll("/$", "")
+    val endpoint = config.get[String]("publishData.list.uri").replaceAll("/$", "")
     Logger.debug(endpoint)
     val futureResponse = WS.url(endpoint).get()
     var publishDataList: List[Map[String, String]] = List.empty

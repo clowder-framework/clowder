@@ -36,12 +36,13 @@ class CurationObjects @Inject() (
   metadatas: MetadataService,
   extractionBusService: ExtractionBusService,
   configuration: Configuration,
-  WS: WSClient) extends SecuredController {
+  WS: WSClient,
+  messages: Messages) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc., parsed from conf/messages
    */
-  val spaceTitle: String = Messages("space.title")
+  val spaceTitle: String = messages("space.title")
 
   def newCO(datasetId: UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user

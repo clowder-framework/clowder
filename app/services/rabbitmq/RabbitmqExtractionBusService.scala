@@ -754,7 +754,7 @@ class RabbitmqExtractionBusService @Inject() (
   // ----------------------------------------------------------------------
   // RABBITMQ MANAGEMENT ENDPOINTS
   // ----------------------------------------------------------------------
-  def getRestEndPoint(path: String): Future[] = {
+  def getRestEndPoint(path: String): Future[WSResponse] = {
     connect
 
     restURL match {

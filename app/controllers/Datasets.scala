@@ -32,14 +32,15 @@ class Datasets @Inject() (
     folders: FolderService,
     metadata: MetadataService,
     events: EventService,
-    selections: SelectionService) extends SecuredController {
+    selections: SelectionService,
+    messages: Messages) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
   /**
    * String name of the Space such as 'Project space' etc., from conf/messages
    */
-  val spaceTitle: String = Messages("space.title")
+  val spaceTitle: String = messages("space.title")
 
   /**
    * Display the page that allows users to create new datasets
@@ -613,11 +614,12 @@ class Datasets @Inject() (
   def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int, space: Option[String], filter: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId)))(parse.json) { implicit request =>
     implicit val user = request.user
     val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
-    val sortOrder: String =
+    val sortOrder: String = {
       request.cookies.get("sort-order") match {
         case Some(cookie) => cookie.value
         case None => "dateN" //If there is no cookie, and an order was not passed in, the view will choose its default
       }
+    }
 
     datasets.get(datasetId) match {
       case Some(dataset) => {

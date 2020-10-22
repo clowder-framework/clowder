@@ -23,12 +23,13 @@ import play.api.i18n.Messages
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService,
                             appConfig: AppConfigurationService, selections: SelectionService,
-                            adminsNotifierService: AdminsNotifierService, search: SearchService) extends SecuredController {
+                            adminsNotifierService: AdminsNotifierService, search: SearchService,
+                            messages: Messages) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc. parsed from conf/messages
    */
-  val spaceTitle: String = Messages("space.title")
+  val spaceTitle: String = messages("space.title")
 
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
@@ -85,7 +86,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     user match {
       case Some(clowderUser) => {
 
-        val title: Option[String] = Some(Messages("following.title", Messages("collections.title")))
+        val title: Option[String] = Some(messages("following.title", messages("collections.title")))
         val collectionList = new ListBuffer[Collection]()
         val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
         val collectionIdsToUse = collectionIds.slice(index * limit, (index + 1) * limit)
@@ -154,7 +155,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         Logger.error(s"space with id $space doesn't exist.")
         BadRequest(views.html.notFound("Space " + space + " not found."))
       } else {
-        var title: Option[String] = Some(Messages("resource.in.title", Messages("collections.title"), spaceTitle, routes.Spaces.getSpace(spaceResource.get.id), spaceResource.get.name))
+        var title: Option[String] = Some(messages("resource.in.title", messages("collections.title"), spaceTitle, routes.Spaces.getSpace(spaceResource.get.id), spaceResource.get.name))
 
         if (!Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
           BadRequest(views.html.notAuthorized("You are not authorized to access the " + spaceTitle + ".", spaceResource.get.name, "space"))
@@ -232,19 +233,19 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case Some(s) => Some(s.name)
       case None => None
     }
-    var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("collections.title")))
+    var title: Option[String] = Some(messages("list.title", messages("collections.title")))
 
     val collectionList = person match {
       case Some(p) => {
         space match {
           case Some(s) if (collectionSpace.isDefined) => {
-            title = Some(Messages("owner.in.resource.title", p.fullName, Messages("collections.title"), spaceTitle, routes.Spaces.getSpace(collectionSpace.get.id), collectionSpace.get.name))
+            title = Some(messages("owner.in.resource.title", p.fullName, messages("collections.title"), spaceTitle, routes.Spaces.getSpace(collectionSpace.get.id), collectionSpace.get.name))
           }
           case _ => {
             if (showTrash){
-              title = Some(Messages("owner.title", p.fullName, Messages("collections.trashtitle")))
+              title = Some(messages("owner.title", p.fullName, messages("collections.trashtitle")))
             } else {
-              title = Some(Messages("owner.title", p.fullName, Messages("collections.title")))
+              title = Some(messages("owner.title", p.fullName, messages("collections.title")))
             }
           }
         }
@@ -265,7 +266,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case None => {
         space match {
           case Some(s)  if(collectionSpace.isDefined) => {
-            title = Some(Messages("resource.in.title", Messages("collections.title"), spaceTitle, routes.Spaces.getSpace(collectionSpace.get.id), collectionSpace.get.name))
+            title = Some(messages("resource.in.title", messages("collections.title"), spaceTitle, routes.Spaces.getSpace(collectionSpace.get.id), collectionSpace.get.name))
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
@@ -367,13 +368,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         Some(mode)
       }
     if(!showPublic) {
-      title = Some(Messages("you.title", Messages("collections.title")))
+      title = Some(messages("you.title", messages("collections.title")))
     }
     //Pass the viewMode into the view
     space match {
         //space id is not correct
       case Some(s) if collectionSpace.isEmpty =>{
-        NotFound(views.html.notFound(Messages("space.title")  + " not found."))
+        NotFound(views.html.notFound(messages("space.title")  + " not found."))
       }
         // view the list of collection in a space that you should not access
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
@@ -603,7 +604,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
 
       }
-      case None => Logger.error("Error getting "+ Messages("collection.title") + " " + id); BadRequest(Messages("collection.title") + " not found")
+      case None => Logger.error("Error getting "+ messages("collection.title") + " " + id); BadRequest(messages("collection.title") + " not found")
     }
   }
 
@@ -623,7 +624,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         Ok(views.html.collections.childCollections(decodedChildCollections.toList, collection, prev, next))
       }
-      case None => Logger.error("Error getting" + Messages("collection.title")  + " " + id); BadRequest(Messages("collection.title") + " not found")
+      case None => Logger.error("Error getting" + messages("collection.title")  + " " + id); BadRequest(messages("collection.title") + " not found")
     }
   }
 
@@ -687,8 +688,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           Ok(views.html.collectionPreviews(collection_id.toString, previewsByCol, Previewers.findCollectionPreviewers))
         }
         case None => {
-          Logger.error("Error getting " + Messages("collection.title")  + " " + collection_id);
-          BadRequest(Messages("collection.title") + " not found")
+          Logger.error("Error getting " + messages("collection.title")  + " " + collection_id);
+          BadRequest(messages("collection.title") + " not found")
         }
       }
   }
@@ -709,16 +710,16 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
 
     val parentCollection = collections.get(UUID(parentCollectionId))
-    var title: Option[String] = Some(Messages("collections.title"))
+    var title: Option[String] = Some(messages("collections.title"))
 
     val collectionList = person match {
       case Some(p) => {
         parentCollection match {
           case Some(parent) => {
-            title = Some(Messages("owner.in.resource.title", p.fullName, Messages("collections.title"),  Messages("collection.parent.title"), routes.Collections.collection(parent.id), parent.name))
+            title = Some(messages("owner.in.resource.title", p.fullName, messages("collections.title"),  messages("collection.parent.title"), routes.Collections.collection(parent.id), parent.name))
           }
           case None => {
-            title = Some(Messages("owner.title", p.fullName, Messages("collections.title")))
+            title = Some(messages("owner.title", p.fullName, messages("collections.title")))
           }
         }
         if (date != "")
@@ -729,7 +730,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case None => {
         space match {
           case Some(s) => {
-            title = Some(Messages("resource.in.title", Messages("collections.title"), Messages("collection.parent.title"), routes.Collections.collection(parentCollection.get.id), parentCollection.get.name))
+            title = Some(messages("resource.in.title", messages("collections.title"), messages("collection.parent.title"), routes.Collections.collection(parentCollection.get.id), parentCollection.get.name))
             if (date != "")
               (collections.listSpace(date, nextPage, limit, s)).filter(_.parent_collection_ids.contains(parentCollectionId) == true)
             else

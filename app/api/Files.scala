@@ -45,7 +45,8 @@ class Files @Inject()(
   extractionBusService: ExtractionBusService,
   versusService: VersusService,
   searches: SearchService,
-  configuration: Configuration) extends ApiController {
+  configuration: Configuration,
+  messages: Messages) extends ApiController {
 
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
@@ -1592,7 +1593,7 @@ class Files @Inject()(
 
   def users(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     implicit val user = request.user
-    val spaceTitle: String = Messages("space.title")
+    val spaceTitle: String = messages("space.title")
 
     var userList: List[User] = List.empty
     files.get(id) match {

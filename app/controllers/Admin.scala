@@ -1,11 +1,9 @@
 package controllers
 
-import javax.inject.{Inject, Singleton}
-
 import api.{Permission, _}
+import javax.inject.{Inject, Singleton}
 import models.{Role, UUID, VersusIndexTypeName}
-import play.api.Logger
-import play.api.Play.current
+import play.api.{Configuration, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
 import play.api.libs.concurrent.Execution.Implicits._
@@ -20,7 +18,8 @@ import scala.concurrent.Future
  * Administration pages.
  */
 @Singleton
-class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService, metadataService: MetadataService, versusService: VersusService) extends SecuredController {
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService, metadataService: MetadataService,
+                       versusService: VersusServic, configuration: Configuration) extends SecuredController {
 
   def customize = ServerAdminAction { implicit request =>
     val theme = AppConfiguration.getTheme
@@ -393,8 +392,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   def users() = ServerAdminAction { implicit request =>
     implicit val user = request.user
 
-    val configAdmins = play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").toList
-    val users = userService.list.sortWith(_.lastName.toLowerCase() < _.lastName.toLowerCase())
+    val configAdmins = configuration.get[String]("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").toList
+    val users = userService.list.sortWith(_.lastName.getOrElse("").toLowerCase() < _.lastName.getOrElse("").toLowerCase())
     Ok(views.html.admin.users(configAdmins, users))
   }
 }

@@ -1,17 +1,11 @@
 package controllers
 
 import java.net.URL
-import javax.inject.{Inject, Singleton}
 
-import api.Permission
-import api.Permission._
-import play.api.{Logger, Play, Routes}
-import play.api.mvc.Action
+import javax.inject.{Inject, Singleton}
+import models.{Event, UUID, UserStatus}
+import play.api.{Configuration, Logger, Play}
 import services._
-import models.{Event, UUID, User, UserStatus}
-import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.Play.current
 
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
@@ -22,7 +16,8 @@ import scala.collection.mutable.ListBuffer
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
                              spaces: SpaceService, events: EventService, comments: CommentService,
-                             sections: SectionService, users: UserService, selections: SelectionService) extends SecuredController {
+                             sections: SectionService, users: UserService, selections: SelectionService,
+                            configuration: Configuration) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    *
@@ -96,7 +91,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   	implicit val user = request.user
 
     var newsfeedEvents = List.empty[Event]
-    if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
+    if (!configuration.get[Boolean]("clowder.disable.events")) {
       newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
       newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
       if (user.isDefined) {
@@ -111,7 +106,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       }
       case Some(clowderUser) if !(clowderUser.status==UserStatus.Inactive) => {
         newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
-        if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
+        if (configuration.get[Boolean]("showCommentOnHomepage"))
+          newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
         newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)

@@ -105,7 +105,7 @@ object Permission extends Enumeration {
   var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewSensor, ViewGeoStream,
     ViewMetadata, ViewSection, ViewSpace, ViewTags, ViewUser , ViewVocabulary, ViewVocabularyTerm)
 
-  if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
+  if(configuration.get[Boolean]("allowAnonymousDownload")) {
      READONLY += DownloadFiles
   }
 
