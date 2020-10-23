@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ExtractorInfo, Folder, ResourceRef, UUID, Extraction}
+import models.{Extraction, ExtractorInfo, Folder, ResourceRef, UUID}
 import play.api.mvc.Controller
 import api.Permission
 import javax.inject.{Inject, Singleton}
@@ -13,6 +13,8 @@ import java.util.{Calendar, Date}
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import java.util.Calendar
+
+import play.api.libs.json.Json
 
 /**
  * Information about extractors.
@@ -56,11 +58,19 @@ class Extractors  @Inject() (extractions: ExtractionService,
     // Filter extractors by the trigger type if necessary
     var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
 
-    request.getQueryString("processTriggerSearchFilter") match {
-      case Some("file/*") => runningExtractors = runningExtractors.filter(re => re.process.file.length > 0)
-      case Some("dataset/*") => runningExtractors = runningExtractors.filter(re => re.process.dataset.length > 0)
-      case Some("metadata/*") => runningExtractors = runningExtractors.filter(re => re.process.metadata.length > 0)
+    val triggerMatches: List[ExtractorInfo] = request.getQueryString("processTriggerSearchFilter") match {
+      case None => { List[ExtractorInfo]() ++ runningExtractors }
+      case Some("file/*") => runningExtractors.filter(re => re.process.file.length > 0)
+      case Some("dataset/*") => runningExtractors.filter(re => re.process.dataset.length > 0)
+      case Some("metadata/*") => runningExtractors.filter(re => re.process.metadata.length > 0)
+    }
+    val genericMatches: List[ExtractorInfo] = request.getQueryString("genericSearchFilter") match {
+      case None => { List[ExtractorInfo]() ++ runningExtractors }
+      case Some(query) => runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
+    }
+    request.getQueryString("genericSearchFilter") match {
       case None => {}
+      case Some(query) => runningExtractors = runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
     }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
@@ -74,7 +84,10 @@ class Extractors  @Inject() (extractions: ExtractionService,
       }
     }
 
-    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, categorizedLabels))
+    // TODO: OR => union, AND => intersect
+    val filtered = triggerMatches.toSet.intersect(genericMatches.toSet)
+
+    Ok(views.html.updateExtractors(filtered.toList, selectedExtractors, groups, categorizedLabels))
   }
 
   def manageLabels = ServerAdminAction { implicit request =>

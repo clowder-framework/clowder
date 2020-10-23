@@ -23,7 +23,7 @@
         </div>
     }
 
-    <form class="form-horizontal">
+    <form class="form-horizontal" id="searchFiltersForm">  <!-- id="labelsForm"> -->
         <!-- TODO: Label search filters -->
         @if(showOptional("labelSection")) {
             <fieldset class="labels-border">
@@ -44,8 +44,8 @@
                             <div class="control-group">
                                 <div class="btn-group" data-toggle="buttons">
                                 @for(label <- catLabels) {
-                                    <button onclick="submitFilters('@label.name', this)" id="label-@label.name" role="button" class="btn btn-primary label-filter-btn">
-                                        <input type="checkbox" autocomplete="off" checked> @label.name
+                                    <button onclick="submitFilters('@label.name', this)" id="label-@label.name" name="label-@label.name" role="button" class="btn btn-primary label-filter-btn">
+                                        <input type="checkbox" autocomplete="off" name="label-@label.name" checked> @label.name
                                     </button>
                                 }
                                 </div>
@@ -55,7 +55,9 @@
                 </div>
             </fieldset>
         }
+    </form>
 
+    <form class="form-horizontal" id="searchFiltersForm">
         <!-- TODO: Other search filters -->
         @if(showOptional("filterSection")) {
             <fieldset class="filters-border">
@@ -64,10 +66,10 @@
                     <div class="row">
                         <div class="col-sm-5">
 
-                            <!-- TODO: Generic search filter -->
+                            <!-- Generic search filter -->
                             <div class="form-group">
                                 <div class="col-sm-12">
-                                    <input type="text" class="form-control" id="genericSearchFilter" placeholder="Search for extractors...">
+                                    <input type="text" class="form-control" id="genericSearchFilter" name="genericSearchFilter" placeholder="Search for extractor name, contributors, etc...">
                                 </div>
                             </div>
 
@@ -75,7 +77,7 @@
                             <div class="form-group">
                                 <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                 <div class="col-sm-9">
-                                    <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="submitFilters(null, this)">
+                                    <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter">
                                         <option>file/*</option>
                                         <option>dataset/*</option>
                                         <option>metadata/*</option>
@@ -125,8 +127,6 @@
                             </div>
                         </div>
                     </div>
-
-
                 </div>
             </fieldset>
         }
@@ -347,27 +347,36 @@
     <script>
             function submitFilters(labelName, context) {
                 // Grab existing query string values
-                var currentParams = new URLSearchParams(window.location.search);
-                var targets = context.formAction.split('@routes.Extractors.selectExtractors()');
+                const currentParams = new URLSearchParams(window.location.search);
+                const targets = context.formAction.split('@routes.Extractors.selectExtractors()');
 
                 // If same filter selected twice, de-select it
-                var currentLabel = currentParams.get('labelFilter');
-                var newLabelName = labelName === currentLabel ? null : (labelName || currentLabel);
+                const currentLabel = currentParams.get('labelFilter');
+                const newLabelName = labelName === currentLabel ? null : (labelName || currentLabel);
 
-                // Set new query strings parameters based on form value
-                var newParams = new URLSearchParams(targets[1]);
+                // Set new label query strings parameter based on selected label
+                const newParams = new URLSearchParams(targets.length > 1 ? targets[1] : '');
                 newLabelName ? newParams.set('labelFilter', newLabelName) : newParams.delete('labelFilter');
 
+                // Set all other query strings parameters based on form values
                 window.location.search = newParams.toString();
             }
 
             $('document').ready(function () {
                 var params = new URLSearchParams(window.location.search);
-                var processTriggerParam = "processTriggerSearchFilter"
-                if (params.has(processTriggerParam)) {
-                    $(processTriggerParam).val(params.get(processTriggerParam));
-                }
+                var genericSearchParam = "genericSearchFilter";
+                var processTriggerParam = "processTriggerSearchFilter";
                 var labelParam = "labelFilter"
+
+                if (params.has(genericSearchParam)) {
+                    var query = params.get(genericSearchParam);
+                    $('#' + genericSearchParam).val(query);
+                }
+                if (params.has(processTriggerParam)) {
+                    var trigger = params.get(processTriggerParam)
+                    $('#' + processTriggerParam).val(trigger);
+                }
+
                 if (params.has(labelParam)) {
                     // If we have a label param, uncheck all other labels
                     $('.label-filter-btn').removeClass("btn-primary");
