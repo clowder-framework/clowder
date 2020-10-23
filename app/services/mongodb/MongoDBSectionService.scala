@@ -93,7 +93,7 @@ class MongoDBSectionService @Inject() (comments: CommentService,
 
   def findByTag(tag: String, user: Option[User]): List[Section] = {
     var filter = MongoDBObject("tags.name" -> tag)
-    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+    if(!(config.get[String]("permissions") == "public")){
       filter = buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)
     }
     SectionDAO.find(filter).toList
