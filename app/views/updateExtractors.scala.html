@@ -1,5 +1,5 @@
 @(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
-        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->false, "ratings"->false))(implicit user: Option[models.User])
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
@@ -67,7 +67,7 @@
                             <!-- TODO: Generic search filter -->
                             <div class="form-group">
                                 <div class="col-sm-12">
-                                    <input type="text" class="form-control" id="genericSearchFilter" placeholder="Search for extractors...">
+                                    <input type="text" class="form-control" id="genericSearchFilter" name="genericSearchFilter" placeholder="Search for extractors...">
                                 </div>
                             </div>
 
@@ -76,6 +76,7 @@
                                 <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                 <div class="col-sm-9">
                                     <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="this.form.submit()">
+                                        <option></option>
                                         <option>file/*</option>
                                         <option>dataset/*</option>
                                         <option>metadata/*</option>
@@ -91,9 +92,7 @@
                                 <label for="spaceSearchFilter" class="col-sm-4 control-label">Within Space:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="spaceSearchFilter" id="spaceSearchFilter">
-                                        <option>Space A</option>
-                                        <option>Space B</option>
-                                        <option>Space C</option>
+                                        <option></option>
                                     </select>
                                 </div>
                             </div>
@@ -102,11 +101,7 @@
                             <div class="form-group">
                                 <label for="metadataSearchFilter" class="col-sm-4 control-label">Produces Metadata:</label>
                                 <div class="col-sm-8">
-                                    <select class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
-                                        <option>Key 1</option>
-                                        <option>Key 2</option>
-                                        <option>Key 3</option>
-                                    </select>
+                                    <input class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
                                 </div>
                             </div>
                         </div>
@@ -346,13 +341,36 @@
 
     @if(showOptional("filterSection")) {
         <script>
-                $('document').ready(function () {
-                    var params = new URLSearchParams(window.location.search);
-                    var targetParameter = "processTriggerSearchFilter"
+            $('document').ready(function () {
+                // Autocomplete on space box
+                var selector = "#metadataSearchFilter"
+                $(selector).autocomplete({
+                    delay: 300,
+                    source: function(request, response) {
+                        $.ajax({
+                            url: jsRoutes.api.Metadata.getAutocompleteName(request.term).url,
+                            success: function(data) {
+                                console.log(data)
+                                response(data)
+                            }
+                        })
+                    },
+                    select: function(event, ui) {
+                        this.value = ui.item.value;
+                        this.form.submit();
+                    }
+                });
+
+                // Populate boxes from URL params
+                var params = new URLSearchParams(window.location.search);
+                var targetParameters = ["genericSearchFilter", "processTriggerSearchFilter", "spaceSearchFilter", "metadataSearchFilter"];
+                for (idx in targetParameters) {
+                    var targetParameter = targetParameters[idx];
                     if (params.has(targetParameter)) {
                         document.getElementById(targetParameter).value = params.get(targetParameter);
                     }
-                });
+                }
+            });
         </script>
     }
 }

@@ -53,14 +53,47 @@ class Extractors  @Inject() (extractions: ExtractionService,
     */
   def selectExtractors() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    // Filter extractors by the trigger type if necessary
+
+    // Filter extractors by user filters necessary
     var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
+
+    request.getQueryString("genericSearchFilter") match {
+      case Some(extractorname) => {
+        if (extractorname.length > 0)
+          runningExtractors = runningExtractors.filter(re => re.name.contains(extractorname))
+      }
+      case _ => {
+        Logger.info("Missing generic search filter: "+request.getQueryString("genericSearchFilter").toString)
+      }
+    }
+
+    // TODO: Autocomplete on text field from dynamically generated list of distinct triggers
     request.getQueryString("processTriggerSearchFilter") match {
       case Some("file/*") => runningExtractors = runningExtractors.filter(re => re.process.file.length > 0)
       case Some("dataset/*") => runningExtractors = runningExtractors.filter(re => re.process.dataset.length > 0)
       case Some("metadata/*") => runningExtractors = runningExtractors.filter(re => re.process.metadata.length > 0)
-      case None => {}
+      case Some(filt) if filt.length > 0 => {
+        // TODO: Need to figure out how to match these dynamically from autocomplete list above
+      }
+      case _ => {}
     }
+
+    // For the specified space id, remove all extractors not in the list
+    request.getQueryString("spaceSearchFilter") match {
+      case Some(spaceid) if spaceid.length > 0 => {
+        // TODO: Wire it up so users see SpaceName but we pass ID... append (ID) to duplicate space names
+        val extractornames = spaces.getAllExtractors(UUID(spaceid))
+        //runningExtractors = runningExtractors.filter(re => extractornames.contains(re.name))
+      }
+      case _ => {}
+    }
+
+    // TODO: Where do we store this information (which key it makes) if at all?
+    request.getQueryString("metadataSearchFilter") match {
+      case Some(metafield) if metafield.length > 0 => {}
+      case _ => {}
+    }
+
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
     Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
