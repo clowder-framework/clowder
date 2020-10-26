@@ -55,39 +55,64 @@ class Extractors  @Inject() (extractions: ExtractionService,
     */
   def selectExtractors() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    // Filter extractors by the trigger type if necessary
-    var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
 
-    val triggerMatches: List[ExtractorInfo] = request.getQueryString("processTriggerSearchFilter") match {
-      case None => { List[ExtractorInfo]() ++ runningExtractors }
-      case Some("file/*") => runningExtractors.filter(re => re.process.file.length > 0)
-      case Some("dataset/*") => runningExtractors.filter(re => re.process.dataset.length > 0)
-      case Some("metadata/*") => runningExtractors.filter(re => re.process.metadata.length > 0)
-    }
-    val genericMatches: List[ExtractorInfo] = request.getQueryString("genericSearchFilter") match {
-      case None => { List[ExtractorInfo]() ++ runningExtractors }
-      case Some(query) => runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
-    }
-    request.getQueryString("genericSearchFilter") match {
-      case None => {}
-      case Some(query) => runningExtractors = runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
-    }
+    // Filter extractors by user filters necessary
+    var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
     val allLabels = extractorService.listExtractorsLabels()
     val categorizedLabels = allLabels.groupBy(_.category.getOrElse("Other"))
-    request.getQueryString("labelFilter") match {
-      case None => {}
-      case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
-        case None => {}
-        case Some(label) => runningExtractors = runningExtractors.filter(re => label.extractors.contains(re.name))
-      }
+
+    // TODO: Autocomplete on text field from dynamically generated list of distinct triggers
+    val triggerMatches: List[ExtractorInfo] = request.getQueryString("processTriggerSearchFilter") match {
+      case Some("file/*") => runningExtractors.filter(re => re.process.file.length > 0)
+      case Some("dataset/*") => runningExtractors.filter(re => re.process.dataset.length > 0)
+      case Some("metadata/*") => runningExtractors.filter(re => re.process.metadata.length > 0)
+      /*case Some(filt) => {
+        // TODO: Need to figure out how to effectively search the ProcessTriggers structure
+      }*/
+      case _ => runningExtractors
     }
 
-    // TODO: OR => union, AND => intersect
-    val filtered = triggerMatches.toSet.intersect(genericMatches.toSet)
+    // Stringify full resource to perform simple search for user's query
+    val genericMatches: List[ExtractorInfo] = request.getQueryString("genericSearchFilter") match {
+      case Some(query) => runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
+      case _ => runningExtractors
+    }
 
-    Ok(views.html.updateExtractors(filtered.toList, selectedExtractors, groups, categorizedLabels))
+    // For the specified space id, remove all extractors not in the list
+    val spaceMatches: List[ExtractorInfo] = request.getQueryString("spaceSearchFilter") match {
+      case Some(spaceid) if spaceid.length > 0 => {
+        // TODO: Wire it up so users see SpaceName but we pass ID... append (ID) to duplicate space names
+        val extractornames = spaces.getAllExtractors(UUID(spaceid))
+        runningExtractors.filter(re => extractornames.contains(re.name))
+      }
+      case _ => runningExtractors
+    }
+
+    // TODO: Where do we store this information (which key it makes) if at all?
+    val metadataMatches: List[ExtractorInfo] = request.getQueryString("metadataSearchFilter") match {
+      case Some(metafield) if metafield.length > 0 => {
+        runningExtractors
+      }
+      case _ => runningExtractors
+    }
+
+    // Filter based on selected label
+    val labelMatches: List[ExtractorInfo] = request.getQueryString("labelFilter") match {
+      case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
+        case Some(label) => runningExtractors.filter(re => label.extractors.contains(re.name))
+        case _ => runningExtractors
+      }
+      case _ => runningExtractors
+    }
+
+    val matches: List[ExtractorInfo] = request.getQueryString("matching") match {
+      case Some("any") => triggerMatches.toSet.union(genericMatches.toSet).union(spaceMatches.toSet).union(metadataMatches.toSet).intersect(labelMatches.toSet).toList
+      case _ => triggerMatches.toSet.intersect(genericMatches.toSet).intersect(spaceMatches.toSet).intersect(metadataMatches.toSet).intersect(labelMatches.toSet).toList
+    }
+
+    Ok(views.html.updateExtractors(matches, selectedExtractors, groups, categorizedLabels))
   }
 
   def manageLabels = ServerAdminAction { implicit request =>

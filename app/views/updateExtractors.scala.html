@@ -78,6 +78,7 @@
                                 <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                 <div class="col-sm-9">
                                     <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter">
+                                        <option></option>
                                         <option>file/*</option>
                                         <option>dataset/*</option>
                                         <option>metadata/*</option>
@@ -93,6 +94,7 @@
                                 <label for="spaceSearchFilter" class="col-sm-4 control-label">Within Space:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="spaceSearchFilter" id="spaceSearchFilter">
+                                        <option></option>
                                         <option>Space A</option>
                                         <option>Space B</option>
                                         <option>Space C</option>
@@ -105,6 +107,7 @@
                                 <label for="metadataSearchFilter" class="col-sm-4 control-label">Produces Metadata:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
+                                        <option></option>
                                         <option>Key 1</option>
                                         <option>Key 2</option>
                                         <option>Key 3</option>
@@ -117,12 +120,12 @@
                         <div class="col-sm-2">
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="matching" id="matchAny" autocomplete="off" checked> Match ANY filter
+                                    <input type="radio" name="matching" id="matchAny" autocomplete="off" checked value="any" onchange="submitFilters(null, this)"> Match ANY filter
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="matching" id="matchAll" autocomplete="off"> Match ALL filters
+                                    <input type="radio" name="matching" id="matchAll" autocomplete="off" value="all" onchange="submitFilters(null, this)"> Match ALL filters
                                 </label>
                             </div>
                         </div>
@@ -364,17 +367,13 @@
 
             $('document').ready(function () {
                 var params = new URLSearchParams(window.location.search);
-                var genericSearchParam = "genericSearchFilter";
-                var processTriggerParam = "processTriggerSearchFilter";
                 var labelParam = "labelFilter"
-
-                if (params.has(genericSearchParam)) {
-                    var query = params.get(genericSearchParam);
-                    $('#' + genericSearchParam).val(query);
-                }
-                if (params.has(processTriggerParam)) {
-                    var trigger = params.get(processTriggerParam)
-                    $('#' + processTriggerParam).val(trigger);
+                var targetParameters = ["genericSearchFilter", "processTriggerSearchFilter", "spaceSearchFilter","metadataSearchFilter"];
+                for (let idx in targetParameters) {
+                    var targetParameter = targetParameters[idx];
+                    if (params.has(targetParameter)) {
+                        document.getElementById(targetParameter).value = params.get(targetParameter);
+                    }
                 }
 
                 if (params.has(labelParam)) {
