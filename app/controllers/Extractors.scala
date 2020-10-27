@@ -159,10 +159,12 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
     Logger.debug("average: " + average)
     // get at the number of ``SUBMITTED'' submission in last week.
-    val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
-    Logger.debug("lastweek submitted: " + lastweeksubmitted.size)
+    val lastweekevents = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
+    val lastweeksubmitted = lastweekevents.map(evt => evt.job_id).distinct.length
+    Logger.debug("lastweek submitted: " + lastweeksubmitted)
     // get at the number of ``SUBMITTED'' submission in last month.
-    val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
+    val lastmonthevents = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
+    val lastmonthsubmitted = lastmonthevents.map(evt => evt.job_id).distinct.length
 
     // calculate the last 10 execution average time in the time range of last month between ``SUBMITTED'' and ``DONE''.
     // get at most 10 ``DONE'' submission from last month.
@@ -190,7 +192,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastTenAverage.toString, lastweeksubmitted.size, lastmonthsubmitted.size))
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastTenAverage.toString, lastweeksubmitted, lastmonthsubmitted))
       case None => InternalServerError("Extractor Info not found: " + extractorName)
     }
   }
