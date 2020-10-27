@@ -48,17 +48,33 @@ class GraylogService @Inject() extends LogService {
           val responseJsonValue = JsonUtil.parseJSON(responseJson).asInstanceOf[java.util.LinkedHashMap[String, java.util.LinkedList[java.util.LinkedHashMap[String, String]]]]
           val messagesjsonValue = responseJsonValue.get("messages")
           messagesjsonValue.foreach(elem => {
-            val elemMap = elem.asInstanceOf[java.util.HashMap[String, java.util.HashMap[String, String]]]
-            val message: String = elemMap.get("message").get("message")
-            val keyIndex: Int = message.indexOf("key=")
-            keyIndex match {
-              case -1 => {
-                logs = logs :+ message
+            var message: String = ""
+            try {
+              val elemMap = elem.asInstanceOf[java.util.HashMap[String, java.util.HashMap[String, String]]]
+              message = elemMap.get("message").get("message")
+
+              val secretKeyIndex: Int = message.indexOf("'secretKey':")
+              val secretKeyLen: Int = "'secretKey':".length()
+              if (secretKeyIndex >= 0) {
+                val prev: String = message.substring(0, secretKeyIndex)
+                val sub: String = message.substring(secretKeyIndex + secretKeyLen)
+                val secretValueIndex: Int = sub.indexOf("',")
+                val suffix: String = sub.substring(secretValueIndex + "',".length())
+                message = prev + suffix
               }
-              case _  => {
-                val filterMessage: String = message.substring(0, keyIndex)
-                logs = logs :+ filterMessage
+
+              val keyIndex: Int = message.indexOf("key=")
+              keyIndex match {
+                case -1 => {
+                  logs = logs :+ message
+                }
+                case _ => {
+                  val filterMessage: String = message.substring(0, keyIndex)
+                  logs = logs :+ filterMessage
+                }
               }
+            } catch {
+              case e: Exception => Logger.warn(s"Exception: '$message'")
             }
           }
           )
