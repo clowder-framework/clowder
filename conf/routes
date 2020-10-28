@@ -744,12 +744,12 @@ DELETE         /api/relations/:id                                               
 # REPORTING API
 # ----------------------------------------------------------------------
 GET            /api/reports/metrics                                                     @api.Reporting.allMetrics()
-GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics()
-GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics()
+GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics(since: Option[String] ?= None, until: Option[String] ?= None)
+GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics(since: Option[String] ?= None, until: Option[String] ?= None)
 GET            /api/reports/metrics/collections                                         @api.Reporting.collectionMetrics()
 GET            /api/reports/metrics/spaces                                              @api.Reporting.spaceMetrics()
 GET            /api/reports/metrics/users                                               @api.Reporting.userMetrics()
-GET            /api/reports/storage/spaces/:id                                          @api.Reporting.spaceStorage(id: UUID)
+GET            /api/reports/storage/spaces/:id                                          @api.Reporting.spaceStorage(id: UUID, since: Option[String] ?= None, until: Option[String] ?= None)
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS

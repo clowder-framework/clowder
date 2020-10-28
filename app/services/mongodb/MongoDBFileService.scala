@@ -1215,8 +1215,18 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getFileIterator(): Iterator[File] = {
-    FileDAO.find(MongoDBObject()).toIterator
+  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[File] = {
+    var query = MongoDBObject()
+    space.foreach(spid => {
+      // If space is specified, we have to get that association from datasets for now
+      val dsresults = datasets.getIterator(space, None, None) // ignore time filters (no bearing on files)
+      while (dsresults.hasNext) {
+        query += ("child_of" -> new ObjectId(dsresults.next.id.stringify))
+      }
+    })
+    since.foreach(t => query = query ++ ("uploadDate" $gte Parsers.fromISO8601(t)))
+    until.foreach(t => query = query ++ ("uploadDate" $lte Parsers.fromISO8601(t)))
+    FileDAO.find(query)
   }
 }
 

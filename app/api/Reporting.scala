@@ -12,6 +12,7 @@ import java.util.{Date, TimeZone}
 
 import services._
 import models.{Collection, Dataset, File, ProjectSpace, UUID, User, UserStatus}
+import util.Parsers
 
 import scala.collection.mutable.ListBuffer
 
@@ -29,10 +30,10 @@ class Reporting @Inject()(selections: SelectionService,
   val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
   dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
 
-  def fileMetrics() = ServerAdminAction { implicit request =>
+  def fileMetrics(since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
     Logger.debug("Generating file metrics report")
 
-    val results = files.getFileIterator()
+    val results = files.getIterator(None, since, until)
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
@@ -62,10 +63,10 @@ class Reporting @Inject()(selections: SelectionService,
     )
   }
 
-  def datasetMetrics() = ServerAdminAction { implicit request =>
+  def datasetMetrics(since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
     Logger.debug("Generating dataset metrics report")
 
-    val results = datasets.getIterator(None)
+    val results = datasets.getIterator(None, since, until)
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
@@ -139,10 +140,10 @@ class Reporting @Inject()(selections: SelectionService,
     collections.getMetrics().foreach(coll => {
       contents += _buildCollectionRow(coll, true)
     })
-    datasets.getIterator(None).foreach(ds => {
+    datasets.getIterator(None, None, None).foreach(ds => {
       contents += _buildDatasetRow(ds, true)
     })
-    files.getFileIterator().foreach(f => {
+    files.getIterator(None, None, None).foreach(f => {
       contents += _buildFileRow(f)
     })
 
@@ -393,18 +394,13 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
-  def spaceStorage(id: UUID) = ServerAdminAction { implicit request =>
+  def spaceStorage(id: UUID, since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
     // Iterate over the files of every dataset in the space
-    val results = datasets.getIterator(Some(id))
-
-    Logger.info("Starting on "+id.stringify)
+    val results = datasets.getIterator(Some(id), None, None) // TODO: Can't use time filters here if user intends files
 
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
-        // upload size, file type, dataset, collection, space, upload user, admin and owner of space (Business unit user belongs to on upload).
-
-        // TODO: How should this look if the datasets are in multiple spaces? associate owner with space ID somehow? separate rows?
         val header = "file_type,id,name,owner,owner_email,owner_id,size_kb,uploaded,location,parent_datasets,parent_collections,parent_spaces,space_owners,space_admins\n"
         headerRow = false
         Some(header.getBytes("UTF-8"))
@@ -413,7 +409,6 @@ class Reporting @Inject()(selections: SelectionService,
           if (results.hasNext) {
             try {
               val ds = results.next
-              Logger.info("Dataset "+ds.id.stringify)
 
               // Each file in the dataset inherits same parent info from dataset
               val ds_list = ds.id.stringify
@@ -453,22 +448,38 @@ class Reporting @Inject()(selections: SelectionService,
 
               var contents = ""
               files.get(ds.files).found.foreach(f => {
-                // build next row of storage report
-                contents += "\""+f.contentType+"\","
-                contents += "\""+f.id.toString+"\","
-                contents += "\""+f.filename+"\","
-                contents += "\""+f.author.fullName+"\","
-                contents += "\""+f.author.email.getOrElse("")+"\","
-                contents += "\""+f.author.id+"\","
-                contents += (f.length/1000).toInt.toString+","
-                contents += dateFormat.format(f.uploadDate)+","
-                contents += "\""+f.loader_id+"\","
-                contents += "\""+ds_list+"\","
-                contents += "\""+coll_list+"\","
-                contents += "\""+space_list+"\","
-                contents += "\""+space_owner_list+"\","
-                contents += "\""+space_admin_list+"\""
-                contents += "\n"
+                // TODO: Need to redesign File model because this is gonna be so slow...
+                val sinceOK = {
+                  since match {
+                    case None => true
+                    case Some(t) => (Parsers.fromISO8601(t).before(f.uploadDate))
+                  }
+                }
+                val untilOK = {
+                  until match {
+                    case None => true
+                    case Some(t) => (Parsers.fromISO8601(t).after(f.uploadDate))
+                  }
+                }
+
+                if (sinceOK && untilOK) {
+                  // build next row of storage report
+                  contents += "\""+f.contentType+"\","
+                  contents += "\""+f.id.toString+"\","
+                  contents += "\""+f.filename+"\","
+                  contents += "\""+f.author.fullName+"\","
+                  contents += "\""+f.author.email.getOrElse("")+"\","
+                  contents += "\""+f.author.id+"\","
+                  contents += (f.length/1000).toInt.toString+","
+                  contents += dateFormat.format(f.uploadDate)+","
+                  contents += "\""+f.loader_id+"\","
+                  contents += "\""+ds_list+"\","
+                  contents += "\""+coll_list+"\","
+                  contents += "\""+space_list+"\","
+                  contents += "\""+space_owner_list+"\","
+                  contents += "\""+space_admin_list+"\""
+                  contents += "\n"
+                }
               })
               // Submit all file rows for this dataset at once
               Some(contents.getBytes("UTF-8"))
