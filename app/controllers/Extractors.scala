@@ -64,6 +64,12 @@ class Extractors  @Inject() (extractions: ExtractionService,
     val allLabels = extractorService.listExtractorsLabels()
     val categorizedLabels = allLabels.groupBy(_.category.getOrElse("Other"))
 
+    // Default value for unmatched filter
+    val defaultValue: List[ExtractorInfo] = request.getQueryString("matching") match {
+      case Some("all") => runningExtractors
+      case _ => List[ExtractorInfo]()
+    }
+
     // TODO: Autocomplete on text field from dynamically generated list of distinct triggers
     val triggerMatches: List[ExtractorInfo] = request.getQueryString("processTriggerSearchFilter") match {
       case Some("file/*") => runningExtractors.filter(re => re.process.file.length > 0)
@@ -72,7 +78,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
       /*case Some(filt) => {
         // TODO: Need to figure out how to effectively search the ProcessTriggers structure
       }*/
-      case _ => runningExtractors
+      case _ => defaultValue
     }
 
     // Stringify full resource to perform simple search for user's query
@@ -88,10 +94,10 @@ class Extractors  @Inject() (extractions: ExtractionService,
         // TODO: Wire it up so users see SpaceName but we pass ID... append (ID) to duplicate space names
         spaces.getAllExtractors(UUID(spaceid)) match {
           case Some(spaceExtractors) => runningExtractors.filter(re => spaceExtractors.enabled.contains(re.name))
-          case _ => runningExtractors
+          case _ => List[ExtractorInfo]()
         }
       }
-      case _ => runningExtractors
+      case _ => defaultValue
     }
 
     // Fetch metadata contexts from ExtractorInfo
@@ -123,20 +129,20 @@ class Extractors  @Inject() (extractions: ExtractionService,
           ret
         })
       }
-      case _ => runningExtractors
+      case _ => defaultValue
     }
 
     // Filter based on selected label
     val labelMatches: List[ExtractorInfo] = request.getQueryString("labelFilter") match {
       case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
         case Some(label) => runningExtractors.filter(re => label.extractors.contains(re.name))
-        case _ => runningExtractors
+        case _ => defaultValue
       }
-      case _ => runningExtractors
+      case _ => defaultValue
     }
 
     val matches: List[ExtractorInfo] = request.getQueryString("matching") match {
-      case Some("any") => triggerMatches.toSet.union(genericMatches.toSet).union(spaceMatches.toSet).union(metadataMatches.toSet).intersect(labelMatches.toSet).toList
+      case Some("any") => triggerMatches.toSet.union(genericMatches.toSet).union(spaceMatches.toSet).union(metadataMatches.toSet).union(labelMatches.toSet).toList
       case _ => triggerMatches.toSet.intersect(genericMatches.toSet).intersect(spaceMatches.toSet).intersect(metadataMatches.toSet).intersect(labelMatches.toSet).toList
     }
 
