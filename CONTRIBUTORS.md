@@ -21,6 +21,7 @@ Following is a list of contributors in alphabetical order:
 - Max Burnette
 - Michal Ondrejcek
 - Michelle Pitcel
+- Mike Bobak
 - Mike Lambert
 - Nicholas Tenczar
 - Nishant Nayudu
