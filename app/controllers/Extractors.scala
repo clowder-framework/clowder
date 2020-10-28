@@ -87,7 +87,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
       case Some(spaceid) if spaceid.length > 0 => {
         // TODO: Wire it up so users see SpaceName but we pass ID... append (ID) to duplicate space names
         spaces.getAllExtractors(UUID(spaceid)) match {
-          case Some(spaceExtractors) => unningExtractors.filter(re => spaceExtractors.enabled.contains(re.name))
+          case Some(spaceExtractors) => runningExtractors.filter(re => spaceExtractors.enabled.contains(re.name))
           case _ => runningExtractors
         }
       }
