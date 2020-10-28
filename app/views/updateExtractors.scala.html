@@ -1,4 +1,4 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup], labelCategories: Map[String, List[ExtractorsLabel]],
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup], labelCategories: Map[String, List[ExtractorsLabel]], allSpaces: List[ProjectSpace], allMetadata: Map[String, String],
         showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
@@ -93,9 +93,9 @@
                                 <div class="col-sm-8">
                                     <select class="form-control" name="spaceSearchFilter" id="spaceSearchFilter">
                                         <option></option>
-                                        <option>Space A</option>
-                                        <option>Space B</option>
-                                        <option>Space C</option>
+                                        @for(space <- allSpaces) {
+                                            <option value="@space.id">@space.name</option>
+                                        }
                                     </select>
                                 </div>
                             </div>
@@ -106,9 +106,9 @@
                                 <div class="col-sm-8">
                                     <select class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
                                         <option></option>
-                                        <option>Key 1</option>
-                                        <option>Key 2</option>
-                                        <option>Key 3</option>
+                                        @for((key, value) <- allMetadata) {
+                                            <option>@key</option>
+                                        }
                                     </select>
                                 </div>
                             </div>

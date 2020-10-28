@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import java.util.Calendar
 
+import api.Permission.Permission
 import play.api.libs.json.Json
 
 /**
@@ -80,20 +81,47 @@ class Extractors  @Inject() (extractions: ExtractionService,
       case _ => runningExtractors
     }
 
-    // For the specified space id, remove all extractors not in the list
+    // For the chosen space id, remove any extractor that is not enabled extractors for that space
+    val allSpaces = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, false, false, false, false)
     val spaceMatches: List[ExtractorInfo] = request.getQueryString("spaceSearchFilter") match {
       case Some(spaceid) if spaceid.length > 0 => {
         // TODO: Wire it up so users see SpaceName but we pass ID... append (ID) to duplicate space names
-        val extractornames = spaces.getAllExtractors(UUID(spaceid))
-        runningExtractors.filter(re => extractornames.contains(re.name))
+        spaces.getAllExtractors(UUID(spaceid)) match {
+          case Some(spaceExtractors) => unningExtractors.filter(re => spaceExtractors.enabled.contains(re.name))
+          case _ => runningExtractors
+        }
       }
       case _ => runningExtractors
     }
 
-    // TODO: Where do we store this information (which key it makes) if at all?
+    // Fetch metadata contexts from ExtractorInfo
+    var allMetadata = Map[String, String]()
+    runningExtractors.foreach(re => {
+      val currentContexts: List[Map[String, String]] = re.contexts.as[List[Map[String,String]]]
+      currentContexts.foreach((contextMap) => {
+        contextMap.foreach(entry => {
+          val key = entry._1
+          val value = entry._2
+          allMetadata = allMetadata ++ Map[String, String](key -> value)
+        })
+      })
+    })
     val metadataMatches: List[ExtractorInfo] = request.getQueryString("metadataSearchFilter") match {
       case Some(metafield) if metafield.length > 0 => {
-        runningExtractors
+        runningExtractors.filter(re => {
+          var ret = false
+          val extractorContexts = re.contexts.as[List[Map[String,String]]]
+          extractorContexts.takeWhile(_ => !ret).foreach((context) => {
+            context.takeWhile(_ => !ret).foreach(entry => {
+              val key = entry._1
+              val value = entry._2
+              if (key == metafield) {
+                ret = true
+              }
+            })
+          })
+          ret
+        })
       }
       case _ => runningExtractors
     }
@@ -112,7 +140,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
       case _ => triggerMatches.toSet.intersect(genericMatches.toSet).intersect(spaceMatches.toSet).intersect(metadataMatches.toSet).intersect(labelMatches.toSet).toList
     }
 
-    Ok(views.html.updateExtractors(matches, selectedExtractors, groups, categorizedLabels))
+    Ok(views.html.updateExtractors(matches, selectedExtractors, groups, categorizedLabels, allSpaces, allMetadata))
   }
 
   def manageLabels = ServerAdminAction { implicit request =>
