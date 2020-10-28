@@ -84,7 +84,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     // Stringify full resource to perform simple search for user's query
     val genericMatches: List[ExtractorInfo] = request.getQueryString("genericSearchFilter") match {
       case Some(query) => runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
-      case _ => runningExtractors
+      case _ => defaultValue
     }
 
     // For the chosen space id, remove any extractor that is not enabled extractors for that space
