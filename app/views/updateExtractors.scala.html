@@ -23,8 +23,8 @@
         </div>
     }
 
-    <form class="form-horizontal" id="searchFiltersForm">  <!-- id="labelsForm"> -->
-        <!-- TODO: Label search filters -->
+    <div class="form-horizontal" id="searchFiltersForm">
+        <!-- Label search filter -->
         @if(showOptional("labelSection")) {
             <fieldset class="labels-border">
                 <legend class="labels-border">Labels</legend>
@@ -44,7 +44,7 @@
                             <div class="control-group">
                                 <div class="btn-group" data-toggle="buttons">
                                 @for(label <- catLabels) {
-                                    <button onclick="submitFilters('@label.name', this)" id="label-@label.name" name="label-@label.name" role="button" class="btn btn-primary label-filter-btn">
+                                    <button type="button" onclick="submitFilters('@label.name')" id="label-@label.name" name="label-@label.name" role="button" class="btn btn-primary label-filter-btn">
                                         <input type="checkbox" autocomplete="off" name="label-@label.name" checked> @label.name
                                     </button>
                                 }
@@ -55,9 +55,7 @@
                 </div>
             </fieldset>
         }
-    </form>
 
-    <form class="form-horizontal" id="searchFiltersForm">
         <!-- TODO: Other search filters -->
         @if(showOptional("filterSection")) {
             <fieldset class="filters-border">
@@ -116,24 +114,33 @@
                             </div>
                         </div>
 
-                        <!-- TODO: Match ALL/ANY filter radio buttons -->
+                        <!-- Match ALL/ANY filter radio buttons -->
                         <div class="col-sm-2">
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="matching" id="matchAny" autocomplete="off" checked value="any" onchange="submitFilters(null, this)"> Match ANY filter
-                                </label>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="matching" id="matchAny" autocomplete="off" checked value="any"> Match ANY filter
+                                        </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="matching" id="matchAll" autocomplete="off" value="all"> Match ALL filters
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="matching" id="matchAll" autocomplete="off" value="all" onchange="submitFilters(null, this)"> Match ALL filters
-                                </label>
+                            <div class="row" style="margin-top:12px">
+                                <div class="col-sm-12">
+                                    <button type="submit" class="btn btn-sm btn-primary" onclick="submitFilters(null)"><span class="glyphicon glyphicon-search"></span> Search</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </fieldset>
         }
-    </form>
+    </div>
 
     <div class="row top-padding">
         <div class="col-xs-12">
@@ -348,18 +355,59 @@
     </div>
 
     <script>
-            function submitFilters(labelName, context) {
+            function submitFilters(labelName) {
                 // Grab existing query string values
                 const currentParams = new URLSearchParams(window.location.search);
-                const targets = context.formAction.split('@routes.Extractors.selectExtractors()');
 
                 // If same filter selected twice, de-select it
-                const currentLabel = currentParams.get('labelFilter');
+                const currentLabel =  currentParams.get('labelFilter');
                 const newLabelName = labelName === currentLabel ? null : (labelName || currentLabel);
+                const newGenericSearch = $('#genericSearchFilter').val();
+                const newProcessTrigger = $('#processTriggerSearchFilter').val();
+                const newSpace = $('#spaceSearchFilter').val();
+                const newMetadata = $('#metadataSearchFilter').val();
 
-                // Set new label query strings parameter based on selected label
-                const newParams = new URLSearchParams(targets.length > 1 ? targets[1] : '');
-                newLabelName ? newParams.set('labelFilter', newLabelName) : newParams.delete('labelFilter');
+                // Set new label query strings parameter based on new filters
+                const newParams = new URLSearchParams();
+                if (newLabelName && newLabelName != "") {
+                    newParams.set('labelFilter', newLabelName);
+                } else {
+                    newParams.delete('labelFilter');
+                }
+
+                if (newGenericSearch && newGenericSearch != "") {
+                    newParams.set('genericSearchFilter', newGenericSearch);
+                } else {
+                    newParams.delete('genericSearchFilter');
+                }
+
+                if (newProcessTrigger && newProcessTrigger != "") {
+                    newParams.set('processTriggerSearchFilter', newProcessTrigger);
+                } else {
+                    newParams.delete('processTriggerSearchFilter');
+                }
+
+                if (newSpace && newSpace != "") {
+                    newParams.set('spaceSearchFilter', newSpace);
+                } else {
+                    newParams.delete('spaceSearchFilter');
+                }
+
+                if (newMetadata && newMetadata != "") {
+                    newParams.set('metadataSearchFilter', newMetadata);
+                } else {
+                    newParams.delete('metadataSearchFilter');
+                }
+
+                // Set filter matching ANY / ALL
+                if ($('#matchAll').prop('checked')) {
+                    newParams.set('matching', 'all');
+                } else if ($('#matchAny').prop('checked')) {
+                    newParams.set('matching', 'any');
+                } else {
+                    // This should never be possible - one radio should always be checked
+                    newParams.delete('matching');
+                }
 
                 // Set all other query strings parameters based on form values
                 window.location.search = newParams.toString();
@@ -373,6 +421,15 @@
                     var targetParameter = targetParameters[idx];
                     if (params.has(targetParameter)) {
                         document.getElementById(targetParameter).value = params.get(targetParameter);
+                    }
+                }
+
+                if (params.has("matching")) {
+                    const matching = params.get("matching");
+                    if (matching === "all") {
+                        $('#matchAll').prop('checked', true).trigger("click");
+                    } else if (matching === "any") {
+                        $('#matchAny').prop('checked', true).trigger("click");
                     }
                 }
 
