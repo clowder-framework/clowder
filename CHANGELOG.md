@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add endpoint and view page for the extractor metrics.
 - Add endpoint and view page to view a extractor's log from graylog.
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
+- Add a new storage report for auditing user storage usage on a space basis.
+- The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
 
 ## 1.11.2 - 2020-10-13
 
