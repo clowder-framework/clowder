@@ -2,14 +2,19 @@ package api
 
 import api.Permission._
 import play.api.libs.iteratee.Enumerator
+
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import play.api.Logger
 import javax.inject.Inject
-import java.util.{TimeZone, Date}
+import java.util.{Date, TimeZone}
+
 import services._
-import models.{File, Dataset, Collection, ProjectSpace, User, UserStatus}
+import models.{Collection, Dataset, File, ProjectSpace, UUID, User, UserStatus}
+import org.apache.commons.lang3.Range.between
+
+import scala.collection.mutable.{ListBuffer, Map => MutaMap}
 
 
 /**
@@ -20,7 +25,8 @@ class Reporting @Inject()(selections: SelectionService,
                           files: FileService,
                           collections: CollectionService,
                           spaces: SpaceService,
-                          users: UserService) extends Controller with ApiController {
+                          users: UserService,
+                          extractions: ExtractionService) extends Controller with ApiController {
 
   val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
   dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
@@ -389,4 +395,92 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
+  def extractorUsage(since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
+    Logger.debug("Generating extraction metrics report")
+
+    // Keep a map for each user ID, to a map of JobIDs to (extractor/first time/last time) and diff
+    val userJobDurations: MutaMap[UUID, MutaMap[UUID, (String, Date, Date)]] = MutaMap.empty
+
+    val results = extractions.getIterator(since, until)
+    while (results.hasNext) {
+      val event = results.next
+
+      // TODO: worth trying to salvage records pre-job ID?
+      if (event.job_id.isDefined) {
+        // TODO: Need to improve differentiation of resources here. Dataset IDs are also listed.
+        files.get(event.file_id).foreach(f => {
+          // Do we already have data for this user?
+          userJobDurations.get(f.author.id) match {
+            case Some(userRecord) => {
+              // Do we already have events from this job? If so, compare dates
+              var modified = false
+              var earliest = new Date()
+              var latest = new Date()
+              userRecord.get(event.job_id.get) match {
+                case Some(timeRange) => {
+                  earliest = timeRange._2
+                  latest = timeRange._3
+                  if (event.start.before(earliest)) {
+                    earliest = event.start
+                    modified = true
+                  }
+                  if (event.start.after(latest)) {
+                    latest = event.start
+                    modified = true
+                  }
+                }
+                case None => {
+                  // create a new record for this job id
+                  earliest = event.start
+                  latest = event.start
+                  modified = true
+                }
+              }
+
+              if (modified) {
+                userRecord(event.job_id.get) = (event.extractor_id, earliest, latest)
+                userJobDurations(f.author.id) = userRecord
+              }
+            }
+            case None => userJobDurations(f.author.id) = MutaMap(event.job_id.get -> (event.extractor_id, event.start, event.start))
+          }
+        })
+      }
+    }
+
+    var headerRow = true
+    val enum = Enumerator.generateM({
+      val chunk = if (headerRow) {
+        val header = "userid,extractorid,jobid,duration\n"
+        headerRow = false
+        Some(header.getBytes("UTF-8"))
+      } else {
+        var content = ""
+
+        val keyiter = userJobDurations.keysIterator
+        scala.concurrent.blocking {
+          val userid = keyiter.next
+          val jobs = userJobDurations.get(userid).get
+          jobs.keys.foreach(jid => {
+            val job = jobs.get(jid).get
+            val job_duration = (job._3.getTime - job._2.getTime)
+
+            content += userid.stringify+","
+            content += job._1+","
+            content += jid+","
+            content += job_duration+"\n"
+          })
+
+          Some(content.getBytes("UTF-8"))
+        }
+      }
+
+      Future(chunk)
+    })
+
+    Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
+      "Content-Type" -> "text/csv",
+      "Content-Disposition" -> "attachment; filename=ExtractorMetrics.csv"
+    )
+  }
 }

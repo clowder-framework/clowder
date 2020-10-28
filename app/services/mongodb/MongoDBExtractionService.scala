@@ -3,7 +3,7 @@ package services.mongodb
 import java.text.SimpleDateFormat
 
 import services.ExtractionService
-import models.{UUID, Extraction, ExtractionGroup, ResourceRef}
+import models.{Extraction, ExtractionGroup, ResourceRef, UUID}
 import org.bson.types.ObjectId
 import play.api.Play.current
 import com.novus.salat.dao.ModelCompanion
@@ -11,9 +11,11 @@ import com.novus.salat.dao.SalatDAO
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date
+
 import play.api.Logger
 import models.WebPageResource
 import com.mongodb.casbah.Imports._
+import util.Parsers
 
 /**
  * Use MongoDB to store extractions
@@ -35,6 +37,13 @@ class MongoDBExtractionService extends ExtractionService {
 
   def get(msgId: UUID): Option[Extraction] = {
     Extraction.findOne(MongoDBObject("id" -> new ObjectId(msgId.stringify)))
+  }
+
+  def getIterator(since: Option[String], until: Option[String]): Iterator[Extraction] = {
+    var query = MongoDBObject()
+    since.foreach(t => query = query ++ ("start" $gte Parsers.fromISO8601(t)))
+    until.foreach(t => query = query ++ ("start" $lte Parsers.fromISO8601(t)))
+    Extraction.find(query).toIterator
   }
 
   def findById(resource: ResourceRef): List[Extraction] = {
