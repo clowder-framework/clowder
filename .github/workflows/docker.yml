@@ -65,8 +65,12 @@ jobs:
       # calculate some variables that are used later
       - name: github branch
         run: |
-          BRANCH=${GITHUB_REF##*/}
-          echo "::set-env name=GITHUB_BRANCH::${BRANCH}"
+          if [ "${{ github.event.release.target_commitish }}" != "" ]; then
+            BRANCH="${{ github.event.release.target_commitish }}"
+          else
+            BRANCH=${GITHUB_REF##*/}
+          fi
+          echo "GITHUB_BRANCH=${BRANCH}" >> $GITHUB_ENV
           if [ "$BRANCH" == "master" ]; then
             version="$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
             tags="latest"
@@ -76,14 +80,14 @@ jobs:
               tags="${tags},${version}"
               version=${version%.*}
             done
-            echo "::set-env name=CLOWDER_VERSION::$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
-            echo "::set-env name=CLOWDER_TAGS::${tags}"
+            echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
+            echo "CLOWDER_TAGS=${tags}" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
-            echo "::set-env name=CLOWDER_VERSION::develop"
-            echo "::set-env name=CLOWDER_TAGS::develop"
+            echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
+            echo "CLOWDER_TAGS=develop" >> $GITHUB_ENV
           else 
-            echo "::set-env name=CLOWDER_VERSION::testing"
-            echo "::set-env name=CLOWDER_TAGS::"
+            echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
+            echo "CLOWDER_TAGS=" >> $GITHUB_ENV
           fi
 
       # build the docker image, this will always run to make sure
