@@ -29,7 +29,8 @@ class GraylogService @Inject() extends LogService {
     val username = playConfig.getString("clowder.log.username")
     val password = playConfig.getString("clowder.log.password")
     val prefix = playConfig.getString("clowder.log.extractorNamePrefix")
-    val query: String = "application_name:" + prefix + extractorName + "*"
+    val extractorRename: String = extractorName.replaceAll("[.]", "_")
+    val query: String = "application_name:" + prefix + extractorRename + "*"
     val queryEncode: String = URLEncoder.encode(query, "UTF-8")
     val queryUrl: String = serviceEndpoint + "/api/search/universal/relative?query=" + queryEncode
     Logger.debug(s"queryUrl - $queryUrl")
