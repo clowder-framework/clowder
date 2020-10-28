@@ -20,7 +20,7 @@ case class Extraction(
   status: String = "N/A",
   start: Date,
   end: Option[Date],
-  user_id: UUID
+  user_id: UUID = User.anonymous.id
 )
 
 /**
