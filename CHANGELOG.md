@@ -4,35 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
-
-### Added
-- Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
-  disable and enable triggers. 
-- Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
-  faster downloads and less CPU usage at the cost of slightly more memory use.
-- Add endpoint and view page for the extractor metrics.
-- Add endpoint and view page to view a extractor's log from graylog.
-- Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
+## Unreleased
 
 ### Fixed
 - Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)
+
+## 1.12.0 - 2020-10-19
+**_Warning:_**
+- This update modifies the MongoDB schema. Make sure to start the application with `-DMONGOUPDATE=1`.
+- This update modifies information stored in Elasticsearch used for text based searching. Make sure to initiate a reindex 
+  of Elasticsearch from the Admin menu or by `POST /api/reindex`.
+
+### Added
+- Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
+  faster downloads and less CPU usage at the cost of slightly more memory use.
+- Support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been 
+  added to search API now that those data are properly compared.
+- Global extractors page now shows more information, including submission metrics, logs (using Graylog), job history and
+  extractors maturity.
+- Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
+  disable and enable triggers.
+
+### Fixed
+- Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
+- Search results were hardcoded to be in batches of 2.
 
 ## 1.11.2 - 2020-10-13
 
 ### Fixed
 - Clowder healthcheck was not correct, resulting in docker-compose never thinking it was healthy. This could also result 
-  in traefik not setting up the routes.
+  in traefik not setting up the routes. 
 
 ## 1.11.1 - 2020-09-29
 
-**_Warning:_ This update modifies information stored in Elasticsearch used for text based searching. To take advantage 
-of these changes a reindex of Elasticsearch is required. A reindex can be started by an admin from the Admin menu.**
-
 ### Added
-- added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
-- added support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been
-added to search API now that those data are properly compared.
+- Added healtz endpoint that is cheap and quick to return, useful for kubernetes live/ready checks.
 
 ### Fixed
 - Fixed health check script when using custom path prefix.
@@ -59,6 +65,7 @@ added to search API now that those data are properly compared.
 - Escape colon characters on search values for search box and advanced search to allow those values in a search.
 - Typesafe now only offers https access. [#49](https://github.com/clowder-framework/clowder/issues/49)
 - If uploading files by url > 2147483647 it would fail. [#54](https://github.com/clowder-framework/clowder/issues/54)
+
 
 ## 1.10.1 - 2020-07-16
 
