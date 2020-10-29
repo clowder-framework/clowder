@@ -41,6 +41,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+  val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
   val queue: ElasticsearchQueue = DI.injector.getInstance(classOf[ElasticsearchQueue])
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
@@ -119,7 +120,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
-  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int], user: Option[User]): ElasticsearchResult = {
+  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int],
+             permitted: List[UUID], user: Option[User]): ElasticsearchResult = {
     /** Each item in query list has properties:
       *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
       *   "operator":       type of query for this term, e.g. '=='
@@ -127,7 +129,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "extractor_key":  name of extractor component only, e.g. 'extractors.wordCount'
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
-    val queryObj = prepareElasticJsonQuery(query, grouping)
+    val queryObj = prepareElasticJsonQuery(query, grouping, permitted, user)
     accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
   }
 
@@ -759,7 +761,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Convert list of search term JsValues into an Elasticsearch-ready JSON query object **/
-  def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
+  def prepareElasticJsonQuery(query: List[JsValue], grouping: String, permitted: List[UUID], user: Option[User]): XContentBuilder = {
     /** OPERATORS
       *  :   contains (partial match)
       *  ==  equals (exact match)
@@ -804,6 +806,36 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val key = (jv \ "field_key").toString.replace("\"","")
         builder.startObject().startObject("exists").field("field", key).endObject().endObject()
       })
+
+      // Apply appropriate permissions filters based on user/superadmin
+      user match {
+        case Some(u) => {
+          if (!u.superAdminMode) {
+            builder.startObject.startObject("bool").startArray("should")
+
+            // Restrict to spaces the user is permitted access to
+            permitted.foreach(ps => {
+              builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
+            })
+
+            // Also include anything the user owns
+            builder.startObject().startObject("match").field("creator", u.id.stringify).endObject().endObject()
+
+            builder.endArray().endObject().endObject()
+          }
+        }
+        case None => {
+          // Metadata search is not publicly accessible so this shouldn't happen, public filter
+          builder.startObject.startObject("bool").startArray("should")
+
+          // TODO: Does this behave properly with public spaces?
+          spaces.list.foreach(ps => {
+            builder.startObject().startObject("match").field("child_of", ps.id.stringify).endObject().endObject()
+          })
+
+          builder.endArray().endObject().endObject()
+        }
+      }
 
       builder.endArray()
     }
@@ -943,7 +975,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       }
     })
 
-    // If user is superadmin or there is no user, no filters applied
+    // Apply appropriate permissions filters based on user/superadmin
     user match {
       case Some(u) => {
         if (!u.superAdminMode) {
@@ -967,7 +999,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
       case None => {
-        // Calling this with no user should only happen internally (e.g. listTags) so no filter
+        // Metadata search is not publicly accessible so this shouldn't happen, public filter
+        builder.startObject.startObject("bool").startArray("should")
+
+        // TODO: Does this behave properly with public spaces?
+        spaces.list.foreach(ps => {
+          builder.startObject().startObject("match").field("child_of", ps.id.stringify).endObject().endObject()
+        })
+
+        builder.endArray().endObject().endObject()
       }
     }
 
