@@ -4297,6 +4297,65 @@ paths:
           description: Not found
           content: {}
 
+  /extractors/labels:
+    post:
+      tags:
+        - extractions
+      summary: Create a new extractor label in the database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractorsLabel'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+
+  /extractors/labels/{id}:
+    put:
+      tags:
+        - extractions
+      summary: Updates an extractor label in the database
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractorsLabel'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+    delete:
+      tags:
+        - extractions
+      summary: Deletes an extractor label from the database
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+
   /extractions/{id}/status:
     get:
       tags:
@@ -5552,6 +5611,24 @@ components:
             - by
         allowDownload:
           type: string
+    ExtractorsLabel:
+      type: object
+      description: An arbitrary text label on which users can filter the Extractor Catalog
+      properties:
+        id:
+          type: string
+          example: "5b8e969d5e0e8690971ee23e"
+        name:
+          type: string
+          example: "Image"
+        category:
+          type: string
+          example: "Type"
+        extractors:
+          type: array
+          example: ["ncsa.image.preview", "ncsa.image.metadata"]
+          items:
+            type: string
 
   ##############################################################################
   # Parameters                                                                 #
