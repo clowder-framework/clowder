@@ -55,6 +55,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     // Filter extractors by the trigger type if necessary
     var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
+
     request.getQueryString("processTriggerSearchFilter") match {
       case Some("file/*") => runningExtractors = runningExtractors.filter(re => re.process.file.length > 0)
       case Some("dataset/*") => runningExtractors = runningExtractors.filter(re => re.process.dataset.length > 0)
@@ -63,7 +64,26 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
-    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
+    val allLabels = extractorService.listExtractorsLabels()
+    val categorizedLabels = allLabels.groupBy(_.category.getOrElse("Other"))
+    request.getQueryString("labelFilter") match {
+      case None => {}
+      case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
+        case None => {}
+        case Some(label) => runningExtractors = runningExtractors.filter(re => label.extractors.contains(re.name))
+      }
+    }
+
+    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, categorizedLabels))
+  }
+
+  def manageLabels = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val categories = List[String]("EXTRACT")
+    val extractors = extractorService.listExtractorsInfo(categories)
+    val labels = extractorService.listExtractorsLabels()
+
+    Ok(views.html.extractorLabels(labels, extractors))
   }
 
   /**
@@ -107,7 +127,10 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorDetails(extractor))
+      case Some(extractor) => {
+        val labels = extractorService.getLabelsForExtractor(extractor.name)
+        Ok(views.html.extractorDetails(extractor, labels))
+      }
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
   }

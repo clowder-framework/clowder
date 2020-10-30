@@ -3,8 +3,8 @@ package api
 import java.io.{FileInputStream, InputStream}
 import java.net.URL
 import java.util.Calendar
-import javax.inject.Inject
 
+import javax.inject.Inject
 import controllers.Utils
 import fileutils.FilesUtils
 import models._
@@ -475,7 +475,32 @@ class Extractions @Inject()(
       },
       info => {
         extractors.updateExtractorInfo(info) match {
-          case Some(u) => Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+          case Some(u) => {
+            // Create/assign any default labels for this extractor
+            u.defaultLabels.foreach(labelStr => {
+              val segments = labelStr.split("/")
+              val (labelName, labelCategory) = if (segments.length > 1) {
+                (segments(1), segments(0))
+              } else {
+                (segments(0), "Other")
+              }
+              extractors.getExtractorsLabel(labelName) match {
+                case None => {
+                  // Label does not exist - create and assign it
+                  val createdLabel = extractors.createExtractorsLabel(labelName, Some(labelCategory), List[String](u.name))
+                }
+                case Some(lbl) => {
+                  // Label already exists, assign it
+                  if (!lbl.extractors.contains(u.name)) {
+                    val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](u.name))
+                    val updatedLabel = extractors.updateExtractorsLabel(label)
+                  }
+                }
+              }
+            })
+
+            Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+          }
           case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
         }
       }
@@ -674,4 +699,71 @@ class Extractions @Inject()(
     Ok(toJson("added new event"))
   }
 
+  def createExtractorsLabel() = ServerAdminAction(parse.json) { implicit request =>
+    // Fetch parameters from request body
+    val (name, category, assignedExtractors) = parseExtractorsLabel(request)
+
+    // Validate that name is not empty
+    if (name.isEmpty) {
+      BadRequest("Label Name cannot be empty")
+    } else {
+      // Validate that name is unique
+      extractors.getExtractorsLabel(name) match {
+        case Some(lbl) => Conflict("Label name is already in use: " + lbl.name)
+        case None => {
+          // Create the new label
+          val label = extractors.createExtractorsLabel(name, category, assignedExtractors)
+          Ok(Json.toJson(label))
+        }
+      }
+    }
+  }
+
+  def updateExtractorsLabel(id: UUID) = ServerAdminAction(parse.json) { implicit request =>
+    // Fetch parameters from request body
+    val (name, category, assignedExtractors) = parseExtractorsLabel(request)
+
+    // Validate that name is not empty
+    if (name.isEmpty) {
+      BadRequest("Label Name cannot be empty")
+    } else {
+      // Validate that name is still unique
+      extractors.getExtractorsLabel(name) match {
+        case Some(lbl) => {
+          // Exclude current id (in case name hasn't changed)
+          if (lbl.id != id) {
+            Conflict("Label name is already in use: " + lbl.name)
+          } else {
+            // Update the label
+            val updatedLabel = extractors.updateExtractorsLabel(ExtractorsLabel(id, name, category, assignedExtractors))
+            Ok(Json.toJson(updatedLabel))
+          }
+        }
+        case None => {
+          // Update the label
+          val updatedLabel = extractors.updateExtractorsLabel(ExtractorsLabel(id, name, category, assignedExtractors))
+          Ok(Json.toJson(updatedLabel))
+        }
+      }
+    }
+  }
+
+  def deleteExtractorsLabel(id: UUID) = ServerAdminAction { implicit request =>
+    // Fetch existing label
+    extractors.getExtractorsLabel(id) match {
+      case Some(lbl) => {
+        val deleted = extractors.deleteExtractorsLabel(lbl)
+        Ok(Json.toJson(deleted))
+      }
+      case None => BadRequest("Failed to delete label: " + id)
+    }
+  }
+
+  def parseExtractorsLabel(request: UserRequest[JsValue]): (String, Option[String], List[String]) = {
+    val name = (request.body \ "name").as[String]
+    val category = (request.body \ "category").asOpt[String]
+    val assignedExtractors = (request.body \ "extractors").as[List[String]]
+
+    (name, category, assignedExtractors)
+  }
 }

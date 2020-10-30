@@ -1257,7 +1257,34 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
               }
             }
             case None => {
-              extractorsService.updateExtractorInfo(info)
+              extractorsService.updateExtractorInfo(info) match {
+                case None => {}
+                case Some(eInfo) => {
+                  // Create (if needed) and assign default labels
+                  eInfo.defaultLabels.foreach(labelStr => {
+                    val segments = labelStr.split("/")
+                    val (labelName, labelCategory) = if (segments.length > 1) {
+                      (segments(1), segments(0))
+                    } else {
+                      (segments(0), "Other")
+                    }
+                    extractorsService.getExtractorsLabel(labelName) match {
+                      case None => {
+                        // Label does not exist - create and assign it
+                        val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
+                      }
+                      case Some(lbl) => {
+                        // Label already exists, assign it
+                        if (!lbl.extractors.contains(eInfo.name)) {
+                          val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
+                          val updatedLabel = extractorsService.updateExtractorsLabel(label)
+                        }
+                      }
+                    }
+                  })
+                }
+              }
+
               Logger.info(s"New extractor ${info.name} registered from heartbeat")
             }
           }
