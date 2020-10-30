@@ -291,12 +291,28 @@ object SearchUtils {
     var results = ListBuffer.empty[JsValue]
 
     // Use bulk Mongo queries to get many resources at once
-    val filesList = files.get(Permission.checkPermissions(user, Permission.ViewFile,
-      response.results.filter(_.resourceType == 'file)).approved.map(_.id)).found
-    val datasetsList = datasets.get(Permission.checkPermissions(user, Permission.ViewDataset,
-      response.results.filter(_.resourceType == 'dataset)).approved.map(_.id)).found
-    val collectionsList = collections.get(Permission.checkPermissions(user, Permission.ViewCollection,
-      response.results.filter(_.resourceType == 'collection)).approved.map(_.id)).found
+    val superAdmin = user match {
+      case Some(u) => u.superAdminMode
+      case None => false
+    }
+
+    val filesList = if (superAdmin)
+      files.get(response.results.filter(_.resourceType == 'file).map(_.id)).found
+    else
+      files.get(Permission.checkPermissions(user, Permission.ViewFile,
+        response.results.filter(_.resourceType == 'file)).approved.map(_.id)).found
+
+    val datasetsList = if (superAdmin)
+      datasets.get(response.results.filter(_.resourceType == 'dataset).map(_.id)).found
+    else
+      datasets.get(Permission.checkPermissions(user, Permission.ViewDataset,
+        response.results.filter(_.resourceType == 'dataset)).approved.map(_.id)).found
+
+    val collectionsList = if (superAdmin)
+      collections.get(response.results.filter(_.resourceType == 'collection).map(_.id)).found
+    else
+      collections.get(Permission.checkPermissions(user, Permission.ViewCollection,
+        response.results.filter(_.resourceType == 'collection)).approved.map(_.id)).found
 
     // Now reorganize the separate lists back into Elasticsearch score order
     for (resource <- response.results) {

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
 - The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
 
+### Fixed
+- Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)
+
 ## 1.12.0 - 2020-10-19
 **_Warning:_**
 - This update modifies the MongoDB schema. Make sure to start the application with `-DMONGOUPDATE=1`.
@@ -30,7 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
 - Search results were hardcoded to be in batches of 2.
 
-# 1.11.2 - 2020-10-13
+## 1.11.2 - 2020-10-13
 
 ### Fixed
 - Clowder healthcheck was not correct, resulting in docker-compose never thinking it was healthy. This could also result 
