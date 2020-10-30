@@ -440,7 +440,7 @@ class Reporting @Inject()(selections: SelectionService,
               spaces.get(space_ids.toList).found.foreach(sp => {
                 space_owner_list += (if (l>1) ", " else "") + sp.creator.uuid
                 l += 1
-                spaces.getUsersInSpace(sp.id, Some("admin")).foreach(spadmin => {
+                spaces.getUsersInSpace(sp.id, Some("Admin")).foreach(spadmin => {
                   space_admin_list += (if (m>1) ", " else "") + spadmin.id.uuid
                   m += 1
                 })
