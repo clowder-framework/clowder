@@ -4,16 +4,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
-
-### Added
-- Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
-- Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
-- The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
-
-### Fixed
-- Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)
-
 ## 1.12.0 - 2020-10-19
 **_Warning:_**
 - This update modifies the MongoDB schema. Make sure to start the application with `-DMONGOUPDATE=1`.
@@ -21,18 +11,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   of Elasticsearch from the Admin menu or by `POST /api/reindex`.
 
 ### Added
-- Ability to set chunksize for clowder when downloading files. This is changed to 1MB from 8KB. This will result in 
-  faster downloads and less CPU usage at the cost of slightly more memory use.
-- Support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been 
-  added to search API now that those data are properly compared.
 - Global extractors page now shows more information, including submission metrics, logs (using Graylog), job history and
-  extractors maturity.
+  extractors maturity. Extractors can be grouped using labels. User can filter list of extractors by labels, space, trigger
+  and metadata key.
 - Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
   disable and enable triggers.
+- Ability to set chunksize when downloading files. Set defult to 1MB from 8KB. This will result in faster downloads and 
+  less CPU usage at the cost of slightly more memory use.
+- Support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been 
+  added to search API now that they can be compared properly.
+- Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
+- Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
+- The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
 
 ### Fixed
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
 - Search results were hardcoded to be in batches of 2.
+- Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)
 
 ## 1.11.2 - 2020-10-13
 
