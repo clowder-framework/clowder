@@ -642,7 +642,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         // Setup userList, add all users of all spaces associated with the collection
         collection.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
-            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId, None) ::: userList
             case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No $spaceTitle found for collection $id.");
           }
         }
@@ -653,7 +653,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         collection.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => {
-              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId, None)
               if (usersInCurrSpace.nonEmpty) {
 
                 usersInCurrSpace.foreach { usr =>

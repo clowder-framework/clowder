@@ -325,7 +325,7 @@ class MongoDBSpaceService @Inject() (
           users.unfollowResource(follower, ResourceRef(ResourceRef.space, id))
         }
         //Remove all users from the space.
-        val spaceUsers = getUsersInSpace(id)
+        val spaceUsers = getUsersInSpace(id, None)
         for(usr <- spaceUsers){
           removeUser(usr.id, id)
         }
@@ -556,8 +556,8 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getUsersInSpace(spaceId: UUID): List[User] = {
-      val retList = users.listUsersInSpace(spaceId)
+  def getUsersInSpace(spaceId: UUID, role: Option[String]): List[User] = {
+      val retList = users.listUsersInSpace(spaceId, role)
       retList
   }
 
