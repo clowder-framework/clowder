@@ -1,8 +1,3 @@
-# Added 2020-11-02
-
-- Added `mimetype.nxz=model/nxz` and `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
-- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files
-
 # Change Log
 All notable changes to this project will be documented in this file.
 
@@ -28,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
 - Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
 - The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
+- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files. Added `mimetype.nxz=model/nxz` and 
+  `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
 
 ### Fixed
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
