@@ -1,3 +1,8 @@
+# Added 2020-11-02
+
+- Added `mimetype.nxz=model/nxz` and `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
+- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files
+
 # Change Log
 All notable changes to this project will be documented in this file.
 
