@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## [Unreleased]
+
+### Added
+- Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
+- Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
+- The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
 
 ### Fixed
 - Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)

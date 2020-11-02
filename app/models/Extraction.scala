@@ -19,7 +19,9 @@ case class Extraction(
   extractor_id: String,
   status: String = "N/A",
   start: Date,
-  end: Option[Date])
+  end: Option[Date],
+  user_id: UUID = User.anonymous.id
+)
 
 /**
  * Currently running extractor name

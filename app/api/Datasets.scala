@@ -2751,7 +2751,7 @@ class  Datasets @Inject()(
         // Setup userList, add all users of all spaces associated with the dataset
         dataset.spaces.foreach { spaceId =>
           spaces.get(spaceId) match {
-            case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaces.getUsersInSpace(spaceId, None) ::: userList
             case None => NotFound(s"Error: No $spaceTitle found for $id.")
           }
         }
