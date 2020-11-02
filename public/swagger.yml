@@ -4861,7 +4861,18 @@ paths:
       summary: Download usage metrics report for files as CSV.
       description: |
         Download usage metrics report for files as a CSV file.
-        Must be a server admin to access the report.
+        Must be a server admin to access the report. Supports ISO8601 date range filters.
+      parameters:
+        - name: since
+          in: path
+          required: false
+          schema:
+            type: string
+        - name: until
+          in: path
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: A CSV with usage metrics
@@ -4881,7 +4892,18 @@ paths:
       summary: Download usage metrics report for datasets as CSV.
       description: |
         Download usage metrics report for datasets as a CSV file.
-        Must be a server admin to access the report.
+        Must be a server admin to access the report. Supports ISO8601 date range filters.
+      parameters:
+       - name: since
+         in: path
+         required: false
+         schema:
+           type: string
+       - name: until
+         in: path
+         required: false
+         schema:
+           type: string
       responses:
         200:
           description: A CSV with usage metrics
@@ -4902,6 +4924,42 @@ paths:
       description: |
         Download usage metrics report for collections as a CSV file.
         Must be a server admin to access the report.
+      responses:
+        200:
+          description: A CSV with usage metrics
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Not authorized
+          content: {}
+
+  /reports/storage/spaces/{id}:
+    get:
+      tags:
+        - reporting
+      summary: Download storage metrics report for spaces as CSV.
+      description: |
+        Download storage metrics report for files in a space as a CSV file.
+        Must be a server admin to access the report. Supports ISO8601 date range filters.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: since
+          in: path
+          required: false
+          schema:
+            type: string
+        - name: until
+          in: path
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: A CSV with usage metrics
