@@ -62,11 +62,13 @@ securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
 
 #Search help text
-help.search.toggle=Search Syntax
+help.search.toggle=Search Syntax Help
+help.search.overview4=When searching for extractor-generated metadata, the entire extractor path with periods replaced as underscores must be included as a prefix.
+help.search.overview6=e.g.: "https://mysite_com/clowder/extractors/my_extractor.field"<20
 help.search.overview1=If the term or metadata field contains spaces or colons, use double quotes to enclose the phrase.
 help.search.overview2=You can use * as a wildcard character.
 help.search.overview3=Case does not matter unless noted.
-help.search.overview5=(Elasticsearch regular expression syntax help)
+help.search.overview5=When searching date fields, the date formats must match (YYYY-MM-DD will not match YYYY/MM/DD)
 help.search.col1=field
 help.search.col2=example
 help.search.allfields=name, description, creator name, and tag

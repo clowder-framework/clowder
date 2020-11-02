@@ -1,4 +1,4 @@
-@(extractor: ExtractorInfo)(implicit user: Option[models.User])
+@(extractor: ExtractorInfo, labels: List[ExtractorsLabel])(implicit user: Option[models.User])
 @import api.Permission
 
 @main("Extractor Details") {
@@ -11,8 +11,8 @@
     </style>
 
     <ol class="breadcrumb">
-        <li><span class="glyphicon glyphicon-fullscreen"></span> Extractors</li>
-        <li><span class="glyphicon glyphicon-retweet"></span> @extractor.name</li>
+        <li><span class="glyphicon glyphicon-fullscreen"></span> <a href="@routes.Extractors.selectExtractors()">Extractor Catalog</a></li>
+        <li><span class="glyphicon glyphicon-search"></span> @extractor.name</li>
     </ol>
 
     <div class="page-header"><h1>Extractor Details</h1></div>
@@ -163,6 +163,26 @@
                             </fieldset>
                         </div>
                     }
+                    </div>
+                }
+
+                @if(!labels.isEmpty) {
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <fieldset>
+                                <legend>Labels</legend>
+                                @if(Permission.checkServerAdmin(user)) {
+                                    <a href="@routes.Extractors.manageLabels" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
+                                        <span class="glyphicon glyphicon-wrench"></span> Manage
+                                    </a>
+                                }
+                                <ul>
+                                @for(label <- labels) {
+                                    <li>@label.name</li>
+                                }
+                                </ul>
+                            </fieldset>
+                        </div>
                     </div>
                 }
             </form>

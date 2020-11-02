@@ -54,6 +54,8 @@ class Files @Inject()(
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.debug("GET file with id " + id)
     files.get(id) match {
@@ -128,14 +130,14 @@ class Files @Inject()(
                               CONTENT_TYPE -> contentType
                             )
                           ),
-                          body = Enumerator.fromStream(inputStream)
+                          body = Enumerator.fromStream(inputStream, chunksize)
                         )
                     }
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
 
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
                   }
@@ -189,12 +191,12 @@ class Files @Inject()(
                         CONTENT_TYPE -> contentType
                       )
                     ),
-                    body = Enumerator.fromStream(inputStream)
+                    body = Enumerator.fromStream(inputStream, chunksize)
                   )
               }
             }
             case None => {
-              Ok.chunked(Enumerator.fromStream(inputStream))
+              Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                 .withHeaders(CONTENT_TYPE -> contentType)
                 .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
             }
@@ -669,7 +671,7 @@ class Files @Inject()(
       case true => {
         current.plugin[RDFExportService].get.getRDFUserMetadataFile(id.stringify, mappingNumber) match {
           case Some(resultFile) => {
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile), chunksize))
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
           }
@@ -936,13 +938,13 @@ class Files @Inject()(
                           CONTENT_TYPE -> contentType
                         )
                       ),
-                      body = Enumerator.fromStream(inputStream)
+                      body = Enumerator.fromStream(inputStream, chunksize)
                     )
                 }
               }
               case None => {
                 //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!
-                Ok.chunked(Enumerator.fromStream(inputStream))
+                Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                   .withHeaders(CONTENT_TYPE -> contentType)
                   .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 
@@ -989,13 +991,13 @@ class Files @Inject()(
                           CONTENT_TYPE -> contentType
                         )
                       ),
-                      body = Enumerator.fromStream(inputStream)
+                      body = Enumerator.fromStream(inputStream, chunksize)
                     )
                 }
               }
               case None => {
                 //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!
-                Ok.chunked(Enumerator.fromStream(inputStream))
+                Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                   .withHeaders(CONTENT_TYPE -> contentType)
                   //.withHeaders(CONTENT_LENGTH -> contentLength.toString)
                   .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
@@ -1830,7 +1832,7 @@ class Files @Inject()(
         datasets.findByFileIdDirectlyContain(id).foreach(dataset => {
           dataset.spaces.foreach { spaceId =>
             spaces.get(spaceId) match {
-              case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
+              case Some(spc) => userList = spaces.getUsersInSpace(spaceId, None) ::: userList
               case None => NotFound(s"Error: No $spaceTitle found for $id.")
             }
           }

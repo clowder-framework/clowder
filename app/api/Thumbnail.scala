@@ -18,6 +18,8 @@ import util.FileUtils
 @Singleton
 class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller with ApiController {
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   /**
    * List all files.
    */
@@ -48,12 +50,12 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
                     CONTENT_TYPE -> contentType
                   )
                 ),
-                body = Enumerator.fromStream(inputStream)
+                body = Enumerator.fromStream(inputStream, chunksize)
               )
             }
           }
           case None => {
-            Ok.chunked(Enumerator.fromStream(inputStream))
+            Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
               .withHeaders(CONTENT_TYPE -> contentType)
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
           }

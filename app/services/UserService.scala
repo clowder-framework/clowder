@@ -179,10 +179,11 @@ trait UserService  {
    * List the users that are associated with a specific space.
    * 
    * @param spaceId The identifier of the space to build a list of users for
-   * 
+   * @param role    The role of the user in the space (optional filter)
+   *
    * @return A list of users that are associated with a space
    */
-  def listUsersInSpace(spaceId: UUID): List[User]
+  def listUsersInSpace(spaceId: UUID, role: Option[String]): List[User]
 
   /**
    * List user roles.
