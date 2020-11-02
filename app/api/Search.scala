@@ -26,9 +26,7 @@ class Search @Inject() (
   /** Search using a simple text string with filters */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
-        //   from: Option[Int], size: Option[Int], page: Option[Int]) = PermissionAction(Permission.ViewDataset) { implicit request =>
-             from: Option[Int], size: Option[Int], page: Option[Int]) = PrivateServerAction { implicit request =>
-        //   from: Option[Int], size: Option[Int], page: Option[Int]) = PrivateServerAction(Permission.ViewDataset) { implicit request =>
+             from: Option[Int], size: Option[Int], page: Option[Int]) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         // If from is specified, use it. Otherwise use page * size of page if possible, otherwise use 0.
