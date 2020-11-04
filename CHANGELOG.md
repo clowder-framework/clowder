@@ -4,10 +4,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.12.0 - 2020-10-19
+**_Warning:_**
+- This update modifies the MongoDB schema. Make sure to start the application with `-DMONGOUPDATE=1`.
+- This update modifies information stored in Elasticsearch used for text based searching. Make sure to initiate a reindex 
+  of Elasticsearch from the Admin menu or by `POST /api/reindex`.
+
+### Added
+- Global extractors page now shows more information, including submission metrics, logs (using Graylog), job history and
+  extractors maturity. Extractors can be grouped using labels. User can filter list of extractors by labels, space, trigger
+  and metadata key.
+- Users have more refined options to set extractors triggers at the space level. They can now follow global settings, 
+  disable and enable triggers.
+- Ability to set chunksize when downloading files. Set defult to 1MB from 8KB. This will result in faster downloads and 
+  less CPU usage at the cost of slightly more memory use.
+- Support for parsing of Date and Numeric data in new metadata fields. New search operators <, >, <=, >= have been 
+  added to search API now that they can be compared properly.
+- Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
+- Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
+- The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
+- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files. Added `mimetype.nxz=model/nxz` and 
+  `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
+
+### Fixed
+- Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
+- Search results were hardcoded to be in batches of 2.
+- Fixed permissions checks on search results for search interfaces that would cause misleading counts. [#60](https://github.com/clowder-framework/clowder/issues/60)
+
 ## 1.11.2 - 2020-10-13
 
 ### Fixed
-- Clowder healthcheck was not correct, resulting in docker-compose never thinking it was healthy. This could also result in traefik not setting up the routes. 
+- Clowder healthcheck was not correct, resulting in docker-compose never thinking it was healthy. This could also result 
+  in traefik not setting up the routes. 
 
 ## 1.11.1 - 2020-09-29
 
@@ -39,6 +67,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Escape colon characters on search values for search box and advanced search to allow those values in a search.
 - Typesafe now only offers https access. [#49](https://github.com/clowder-framework/clowder/issues/49)
 - If uploading files by url > 2147483647 it would fail. [#54](https://github.com/clowder-framework/clowder/issues/54)
+
 
 ## 1.10.1 - 2020-07-16
 

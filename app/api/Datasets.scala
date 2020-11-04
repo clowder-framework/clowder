@@ -55,6 +55,8 @@ class  Datasets @Inject()(
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
+
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(d) => Ok(toJson(d))
@@ -1833,7 +1835,7 @@ class  Datasets @Inject()(
       case true => {
         current.plugin[RDFExportService].get.getRDFUserMetadataDataset(id.toString, mappingNumber) match{
           case Some(resultFile) =>{
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile), chunksize))
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
           }
@@ -2749,7 +2751,7 @@ class  Datasets @Inject()(
         // Setup userList, add all users of all spaces associated with the dataset
         dataset.spaces.foreach { spaceId =>
           spaces.get(spaceId) match {
-            case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaces.getUsersInSpace(spaceId, None) ::: userList
             case None => NotFound(s"Error: No $spaceTitle found for $id.")
           }
         }

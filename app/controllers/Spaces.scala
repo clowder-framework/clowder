@@ -96,10 +96,15 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         case Some(s) => {
           // get list of registered extractors
           val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo(List.empty)
-          // get list of extractors registered with a specific space
-          val selectedExtractors: List[String] = spaces.getAllExtractors(id)
+          // list of extractors enabled globally
           val globalSelections: List[String] = extractors.getEnabledExtractors()
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, globalSelections, id, s.name))
+          // get list of extractors registered with a specific space
+          val selectedExtractors: Option[ExtractorsForSpace] = spaces.getAllExtractors(id)
+          val (enabledInSpace, disabledInSpace) = spaces.getAllExtractors(id) match {
+            case Some(extractorsForSpace) => (extractorsForSpace.enabled, extractorsForSpace.disabled)
+            case None => (List.empty[String], List.empty[String])
+          }
+          Ok(views.html.spaces.updateExtractors(runningExtractors, enabledInSpace, disabledInSpace, globalSelections, id, s.name))
         }
         case None => InternalServerError(spaceTitle + " not found")
       }
@@ -111,7 +116,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
   def updateExtractors(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id)))(parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
-      //form contains space id and list of extractors.
+      // form contains space id and list of extractors.
       var space_id: String = ""
       var extractors: List[String] = Nil
 
@@ -120,17 +125,36 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         Logger.error("space id not defined")
         BadRequest(spaceTitle + " id not defined")
       } else {
-        //space id passed as hidden parameter
+        // space id passed as hidden parameter
         space_id = dataParts("space_id").head
         spaces.get(new UUID(space_id)) match {
           case Some(existing_space) => {
-            //1. remove entry with extractors for this space from mongo
+            // FIXME by splitting the operation in two separate queries we run into transaction issues if there is
+            //  a hickup between the two. We should try to do the two db queries in one.
+
+            // 1. remove entry with extractors for this space from mongo
             spaces.deleteAllExtractors(existing_space.id)
-            //2. if extractors are selected, add them
-            if (dataParts.isDefinedAt("extractors")) {
-              extractors = dataParts("extractors").toList
-              extractors.map(spaces.addExtractor(existing_space.id, _))
+            // 2. if extractors are selected, add them
+            val prefix = "extractors-"
+            extractors = dataParts.keysIterator.filter(_.startsWith(prefix)).toList
+            extractors.foreach { extractor =>
+              // get the first entry and ignore all others (there should only be one)
+              val name = extractor.substring(prefix.length)
+              val value = dataParts(extractor)(0)
+              if (value.equals("default")) {
+                spaces.setDefaultExtractor(existing_space.id, name)
+              } else if (value.equals("enabled")) {
+                spaces.enableExtractor(existing_space.id, name)
+               } else if (value.equals("disabled")) {
+                spaces.disableExtractor(existing_space.id, name)
+              } else {
+                Logger.error("Wrong value for update space extractor form")
+              }
             }
+//            if (dataParts.isDefinedAt("extractors-override")) {
+//              extractors = dataParts("extractors-override").toList
+//              extractors.map(spaces.disableExtractor(existing_space.id, _))
+//            }
             Redirect(routes.Spaces.getSpace(new UUID(space_id)))
           }
           case None => {
@@ -153,7 +177,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
         val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
         val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
-        val usersInSpace = spaces.getUsersInSpace(id)
+        val usersInSpace = spaces.getUsersInSpace(id, None)
         var curationObjectsInSpace: List[CurationObject] = List()
         var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
         creator match {
@@ -226,7 +250,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
       case Some(s) => {
         val creator = users.findById(s.creator)
         var creatorActual: User = null
-        val usersInSpace = spaces.getUsersInSpace(id)
+        val usersInSpace = spaces.getUsersInSpace(id, None)
         var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
         creator match {
           case Some(theCreator) => {
@@ -352,7 +376,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
               val subject: String = "Request for access from " + AppConfiguration.getDisplayName
               val body = views.html.spaces.requestemail(user, id.toString, s.name)
 
-              for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+              for (requestReceiver <- spaces.getUsersInSpace(s.id, None)) {
                 spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
                   case Some(aRole) => {
                     if (aRole.permissions.contains(Permission.EditSpace.toString)) {
