@@ -1,4 +1,4 @@
-@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String, amplitudeConfig: (String, String, String))(implicit user: Option[models.User])
 @main("Customize") {
     <div class="page-header">
         <h1>Customize</h1>
@@ -49,7 +49,26 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="googleAnalytics">Google Analytics Code</label>
-                    <input class="form-control" id="googleAnalytics" name="googleAnalytics" type="text" value="@(googleAnalytics)"></input>
+                    <input class="form-control" id="googleAnalytics" name="googleAnalytics" type="text" value="@(googleAnalytics)" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="amplitudeProject">Amplitude Project Code</label>
+                    <input class="form-control" id="amplitudeProject" name="amplitudeProject" type="text" value="@(amplitudeConfig._1)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="amplitudeApiKey">Amplitude API Key</label>
+                    <input class="form-control" id="amplitudeApiKey" name="amplitudeApiKey" type="text" value="@(amplitudeConfig._2)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="amplitudeSecretKey">Amplitude Secret Key</label>
+                    <input class="form-control" id="amplitudeSecretKey" name="amplitudeSecretKey" type="text" value="@(amplitudeConfig._3)" />
                 </div>
             </div>
         </div>
@@ -101,13 +120,22 @@
             var theme = $("#themeSelect").val().trim();
             var googleAnalytics = $("#googleAnalytics").val().trim();
 
+            var amplitudeProject = $("#amplitudeProject").val().trim();
+            var amplitudeApiKey = $("#amplitudeApiKey").val().trim();
+            var amplitudeSecretKey = $("#amplitudeSecretKey").val().trim();
+
             $.ajax({
                 url:  "@api.routes.Admin.updateConfiguration",
                 data: JSON.stringify({
                     displayName: displayName,
                     welcomeMessage: welcomeMessage,
                     theme: theme,
-                    googleAnalytics: googleAnalytics
+                    googleAnalytics: googleAnalytics,
+                    amplitude: {
+                        projectid: amplitudeProject,
+                        apikey: amplitudeApiKey,
+                        secretkey: amplitudeSecretKey
+                    }
                 }),
                 type: "POST",
                 contentType: "application/json"

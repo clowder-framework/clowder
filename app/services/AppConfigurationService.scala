@@ -116,8 +116,24 @@ object AppConfiguration {
   /** Set the google analytics code */
   def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
 
-  /** Get the welcome message */
+  /** Get the google analytics code */
   def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Amplitude clickstream/analytics configuration */
+  def setAmplitudeClickstreamConfig(ampProject: String, ampApiKey: String, ampSecretKey: String) = {
+    appConfig.setProperty("amplitude.projectid", ampProject)
+    appConfig.setProperty("amplitude.apikey", ampApiKey)
+    appConfig.setProperty("amplitude.secretkey", ampSecretKey)
+  }
+
+  /** Get the Amplitude clickstream/analytics configuration */
+  def getAmplitudeClickstreamConfig: (String, String, String) = {
+    (appConfig.getProperty("amplitude.projectid", ""),
+      appConfig.getProperty("amplitude.apikey", ""),
+      appConfig.getProperty("amplitude.secretkey", ""))
+  }
 
   // ----------------------------------------------------------------------
 

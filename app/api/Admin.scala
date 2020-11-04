@@ -80,6 +80,15 @@ class Admin @Inject() (userService: UserService,
     getValueString(request.body, "sensor").foreach(AppConfiguration.setSensorTitle(_))
     getValueString(request.body, "parameters").foreach(AppConfiguration.setParametersTitle(_))
     getValueString(request.body, "parameter").foreach(AppConfiguration.setParameterTitle(_))
+
+    (request.body \ "amplitude" \ "projectid",
+      request.body \ "amplitude" \ "apikey",
+      request.body \ "amplitude" \ "secretkey") match {
+        case (p: JsString, a: JsString, s: JsString) =>
+          AppConfiguration.setAmplitudeClickstreamConfig(p.value, a.value, s.value)
+        case (_, _, _) => None
+    }
+
     getValueString(request.body, "tosText").foreach { tos =>
       events.addEvent(Event(request.user.get, event_type = EventType.TOS_UPDATE.toString))
       AppConfiguration.setTermsOfServicesText(tos)
