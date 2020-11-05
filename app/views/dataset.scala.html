@@ -269,16 +269,11 @@
 
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
-										@if(dataset.files.nonEmpty) {
-                    <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
-										} else {
-                    <li role="presentation"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
-                    <li role="presentation" class="active"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
-										}
-                    <li role="presentation"><a href="#tab-extractions" role="tab" data-toggle="tab">Extractions </a></li>
-                    <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
-                    <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
+                    <li role="presentation"><a href="#tab-files" id="files" role="tab" data-toggle="tab">Files </a></li>
+                    <li role="presentation"><a href="#tab-metadata" id="metadata" role="tab" data-toggle="tab">Metadata </a></li>
+                    <li role="presentation"><a href="#tab-extractions" id="extractions" role="tab" data-toggle="tab">Extractions </a></li>
+                    <li role="presentation"><a href="#tab-visua" id="visua" role="tab" data-toggle="tab">Visualizations</a></li>
+                    <li role="presentation"><a href="#tab-comments" id="comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     @if(relatedDataset.size > 0) {
                         <li role="relation"><a href="#tab-relations" role="tab" data-toggle="tab">Related</a></li>
                     }
@@ -826,5 +821,13 @@
         }
 
     </script>
+    <script type="text/javascript">
+					  var hash = $(location).attr('hash');
+						if(hash.empty) {
+								if(dataset.files.empty && dataset.m.nonEmpty) $(location).attr('hash', 'metadata')
+								else $(location).attr('hash', 'files')
+						}
+					  $(hash).click()
+	  </script>
 }
 
