@@ -362,15 +362,16 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     var enabledExtractors = new ListBuffer[String]()
     var disabledExtractors = new ListBuffer[String]()
     dataset.spaces.map(space => {
-      val extractors = spacesService.getAllExtractors(space)
-      enabledExtractors.appendAll(extractors.get.enabled.flatMap { exId =>
-        extractorsService.getExtractorInfo(exId).filter(exInfo =>
-          containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
-      })
-      disabledExtractors.appendAll(extractors.get.disabled.flatMap { exId =>
-        extractorsService.getExtractorInfo(exId).filter(exInfo =>
-          containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
-      })
+      spacesService.getAllExtractors(space).foreach { extractors =>
+        enabledExtractors.appendAll(extractors.enabled.flatMap { exId =>
+          extractorsService.getExtractorInfo(exId).filter(exInfo =>
+            containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+        })
+        disabledExtractors.appendAll(extractors.disabled.flatMap { exId =>
+          extractorsService.getExtractorInfo(exId).filter(exInfo =>
+            containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+        })
+      }
     })
     (enabledExtractors.toList, disabledExtractors.toList)
   }
