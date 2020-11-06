@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.12.1 - 2020-11-05
 
 ### Fixed
-- Error uploading to spaces that did not have extractors enabled/disabled (personel spaces)
+- Error uploading to spaces that did not have extractors enabled/disabled (personel spaces).
+- If extractor does not have any parameters, there would be an error message in the console of the browser.
+- If the extractor did not have a user_id it would create an error and not record the event.
 
 ### Changed
 - Docker Images are now pushed to [github container registry](https://github.com/orgs/clowder-framework/packages)
