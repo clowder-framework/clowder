@@ -1205,7 +1205,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       Logger.debug("Received extractor status: " + statusBody)
       val json = Json.parse(statusBody)
       val file_id = UUID((json \ "file_id").as[String])
-      val user_id = UUID((json \ "user_id").as[String])
+      val user_id = (json \ "user_id").asOpt[String].fold(User.anonymous.id)(s => UUID(s))
       val job_id: Option[UUID] = (json \ "job_id").asOpt[String] match {
         case Some(jid) => { Some(UUID(jid)) }
         case None => { None }
