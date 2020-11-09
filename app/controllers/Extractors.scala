@@ -350,6 +350,27 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
   }
 
+  def submitSelectedExtractions(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, ds_id))) { implicit request =>
+    implicit val user = request.user
+    val all_extractors = extractorService.listExtractorsInfo(List("EXTRACT", "CONVERT"))
+    val extractors = all_extractors.filter(!_.process.file.isEmpty)
+    datasets.get(ds_id) match {
+      case Some(dataset) => {
+        val allDecodedDatasets = List(dataset)
+        val decodedSpacesContaining = ListBuffer.empty[models.ProjectSpace]
+        dataset.spaces.map{ sp =>
+          spaces.get(sp) match {
+            case Some(s) => decodedSpacesContaining += Utils.decodeSpaceElements(s)
+            case None => Logger.error("Dataset "+dataset.id.stringify+" space not found: "+sp.stringify)
+          }
+        }
+        //Ok(views.html.extractions.submitFileExtraction(extractors, file, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList))
+        Ok("ok")
+      }
+      case None => InternalServerError("Dataset not found")
+    }
+  }
+
   def submitDatasetExtraction(ds_id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, ds_id))) { implicit request =>
     implicit val user = request.user
     val all_extractors = extractorService.listExtractorsInfo(List("EXTRACT", "CONVERT"))

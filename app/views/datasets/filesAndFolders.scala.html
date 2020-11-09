@@ -55,6 +55,7 @@
         </td>
         <td width="20%" >
             <div id="selected-count-box">Marked Files (<b>0</b>)</div>
+            <div
         </td>
         <td width="30%">
             <label class="sortchoice" for="js-sort-single">Sort By:
@@ -81,7 +82,6 @@
         var selected = $.cookie('selected-files-@dataset.id');
         if (selected) {
             var fileUUIDs = selected.split(',');
-            //$('#selected-count-box').html('Marked Files (<b>'+fileUUIDs.length+'</b>)')
             $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
                     'data-toggle="dropdown" aria-expanded="false"> Marked Files (<b>'+fileUUIDs.length+'</b>)' +
                     '<b class="caret"></b></a><ul class="dropdown-menu">' +
@@ -89,7 +89,9 @@
                     '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
                     '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     *@
+                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-check"/>&nbsp;Select All</a></li>' +
                     '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
+                    '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit All</a></li>' +
                     '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
                     '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
                     '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
@@ -167,6 +169,16 @@
         var selected = $.cookie('selected-files-@dataset.id');
         if (selected) {
             window.open(jsRoutes.api.Datasets.downloadPartial('@dataset.id', selected).url, '_blank');
+        } else {
+            notify("No files selected.")
+        }
+    }
+
+    // Submit selected files to extractor
+    function submitMarked() {
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            window.open("@routes.Extractors.submitSelectedExtractions(dataset.id).url");
         } else {
             notify("No files selected.")
         }

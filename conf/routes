@@ -728,6 +728,7 @@ POST           /api/comment/:id/editComment                                     
 # SELECTIONS API
 # ----------------------------------------------------------------------
 GET            /selected                                                                @controllers.Selected.get
+GET            /selected/submit/:ds_id                                                  @controllers.Extractors.submitSelectedExtractions(ds_id: UUID)
 GET            /api/selected                                                            @api.Selected.get
 POST           /api/selected                                                            @api.Selected.add
 POST           /api/selected/remove                                                     @api.Selected.remove
