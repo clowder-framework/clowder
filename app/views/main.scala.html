@@ -42,8 +42,7 @@
       <script src="../../assets/js/respond.min.js"></script>
     <![endif]-->
 
-    <!-- Format: (Project ID, API Key, Secret Key) -->
-    @if(AppConfiguration.getAmplitudeClickstreamConfig._1 != "") {
+    @if(AppConfiguration.getAmplitudeApiKey != "") {
         <script type="text/javascript">
                 (function(e,t){var n=e.amplitude||{_q:[],_iq:{}};var r=t.createElement("script")
 ;r.type="text/javascript"
@@ -69,7 +68,7 @@
 ;if(!n._iq.hasOwnProperty(e)){n._iq[e]={_q:[]};v(n._iq[e])}return n._iq[e]}
 ;e.amplitude=n})(window,document);
 
-                amplitude.getInstance().init('@AppConfiguration.getAmplitudeClickstreamConfig._2');
+                amplitude.getInstance().init("@AppConfiguration.getAmplitudeApiKey");
         </script>
     }
 </head>

@@ -30,7 +30,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
       AppConfiguration.getGoogleAnalytics,
-      AppConfiguration.getAmplitudeClickstreamConfig))
+      AppConfiguration.getAmplitudeApiKey))
   }
 
   def tos = ServerAdminAction { implicit request =>

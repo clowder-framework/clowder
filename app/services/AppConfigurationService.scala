@@ -122,17 +122,13 @@ object AppConfiguration {
   // ----------------------------------------------------------------------
 
   /** Set the Amplitude clickstream/analytics configuration */
-  def setAmplitudeClickstreamConfig(ampProject: String, ampApiKey: String, ampSecretKey: String) = {
-    appConfig.setProperty("amplitude.projectid", ampProject)
+  def setAmplitudeApiKey(ampApiKey: String) = {
     appConfig.setProperty("amplitude.apikey", ampApiKey)
-    appConfig.setProperty("amplitude.secretkey", ampSecretKey)
   }
 
   /** Get the Amplitude clickstream/analytics configuration */
-  def getAmplitudeClickstreamConfig: (String, String, String) = {
-    (appConfig.getProperty("amplitude.projectid", ""),
-      appConfig.getProperty("amplitude.apikey", ""),
-      appConfig.getProperty("amplitude.secretkey", ""))
+  def getAmplitudeApiKey: String = {
+    appConfig.getProperty("amplitude.apikey", "")
   }
 
   // ----------------------------------------------------------------------
