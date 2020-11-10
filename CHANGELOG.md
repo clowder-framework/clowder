@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Changed
+- Datasets and collections in the trash are no longer indexed for discovery in search services.
+
 ## 1.12.1 - 2020-11-05
 
 ### Fixed

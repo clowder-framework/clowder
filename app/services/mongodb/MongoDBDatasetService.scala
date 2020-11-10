@@ -1412,7 +1412,7 @@ class MongoDBDatasetService @Inject() (
 
   def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
-    Dataset.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(d => {
+    Dataset.dao.collection.find(MongoDBObject("trash" -> false), MongoDBObject("_id" -> 1)).foreach(d => {
       index(new UUID(d.get("_id").toString), idx)
     })
   }
