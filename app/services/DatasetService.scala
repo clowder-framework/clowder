@@ -385,4 +385,5 @@ trait DatasetService {
 
   def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[Dataset]
 
+  def getTrashedIds(): List[UUID]
 }

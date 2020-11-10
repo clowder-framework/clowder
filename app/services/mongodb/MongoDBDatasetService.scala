@@ -1648,6 +1648,16 @@ class MongoDBDatasetService @Inject() (
     until.foreach(t => query = query ++ ("created" $lte Parsers.fromISO8601(t)))
     Dataset.find(query)
   }
+
+  // Get a list of all trashed dataset and file ids for comparison
+  def getTrashedIds(): List[UUID] = {
+    val trashedIds = ListBuffer[UUID]()
+    Dataset.find(MongoDBObject("trash" -> true)).map(ds => {
+      ds.files.foreach(fid => trashedIds += fid)
+      trashedIds += ds.id
+    })
+    trashedIds.toList
+  }
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
