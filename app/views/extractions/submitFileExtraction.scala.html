@@ -114,7 +114,9 @@
                     "resource_id": '@file.id',
                     "resource_name": '@file.filename',
                     "author_id": '@file.author.id',
-                    "author_name": '@file.author.fullName'
+                    "author_name": '@file.author.fullName',
+                    "submitter_id": '@user.get.id',
+                    "submitter_name": '@user.get.getMiniUser.fullName'
                 });
             }
 

@@ -78,7 +78,9 @@
                     "resource_id": '@ds.id',
                     "resource_name": '@ds.name',
                     "author_id": '@ds.author.id',
-                    "author_name": '@ds.author.fullName'
+                    "author_name": '@ds.author.fullName',
+                    "submitter_id": '@user.get.id',
+                    "submitter_name": '@user.get.getMiniUser.fullName'
                 });
             }
 
