@@ -200,11 +200,12 @@ trait SpaceService {
    * Retrieve the users that are associated with a specific space.
    *
    * @param spaceId The identifier of the space to retrieve user data from
+   * @param role    The role of the user in the space (optional filter)
    *
    * @return A list that contains all of the users that are associated with a specific space
    *
    */
-  def getUsersInSpace(spaceId: UUID): List[User]
+  def getUsersInSpace(spaceId: UUID, role: Option[String]): List[User]
 
   /**
    * Retrieve the role associated to a user for a given space.

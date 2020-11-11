@@ -108,3 +108,61 @@ function changeMaturity(extractorName, newMaturity) {
 
     return false;
 }
+
+
+// Saves a new or existing label
+function saveExtractorsLabel(label) {
+    let request;
+    if (label.id) {    // Update existing label
+        console.log('Saving label updates:', label);
+        request = jsRoutes.api.Extractions.updateExtractorsLabel(label.id).ajax({
+            data: JSON.stringify(label),
+            type: 'PUT',
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+    } else {    // Create new label
+        console.log("Creating new label:", label);
+        request = jsRoutes.api.Extractions.createExtractorsLabel().ajax({
+            data: JSON.stringify(label),
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+    }
+
+    request.done(function (response, textStatus, jqXHR){
+        notify("Label has been updated", "success");
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var operation = label.id ? "update" : "create";
+        var specificError = jqXHR.responseText;
+        var msg = "Failed to " + operation + " label: " + specificError;
+        notify(msg, "error");
+    });
+
+    return request;
+}
+
+// Delete label by id
+function deleteExtractorsLabel(id) {
+    console.log('Deleting label:', id);
+    let request = jsRoutes.api.Extractions.deleteExtractorsLabel(id).ajax({
+        type: 'DELETE'
+    });
+
+    request.done(function (response, textStatus, jqXHR){
+        notify("Label has been deleted", "success");
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var specificError = jqXHR.responseText;
+        var msg = "Failed to delete label: " + specificError
+        notify(msg, "error");
+    });
+
+    return request;
+}
