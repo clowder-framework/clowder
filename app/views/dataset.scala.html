@@ -29,12 +29,14 @@
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
     @if(AppConfiguration.getAmplitudeApiKey != "") {
         <script>
-                amplitude.getInstance().logEvent("pageload", {
-                    "view": "dataset",
+                amplitude.getInstance().logEvent("view_resource", {
+                    "type": "dataset",
                     "resource_id": '@dataset.id',
                     "resource_name": '@dataset.name',
                     "author_id": '@dataset.author.id',
-                    "author_name": '@dataset.author.fullName'
+                    "author_name": '@dataset.author.fullName',
+                    "viewer_id": '@user.get.id',
+                    "viewer_name": '@user.get.getMiniUser.fullName'
                 });
         </script>
     }
