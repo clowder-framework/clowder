@@ -22,10 +22,22 @@
 @import api.Permission
 @import play.api.Play.current
 @import _root_.util.Formatters._
+@import services.AppConfiguration
 
 @main(dataset.name) {
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/glyphicon-animations.css")">
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+    @if(AppConfiguration.getAmplitudeApiKey != "") {
+        <script>
+                amplitude.getInstance().logEvent("pageload", {
+                    "view": "dataset",
+                    "resource_id": '@dataset.id',
+                    "resource_name": '@dataset.name',
+                    "author_id": '@dataset.author.id',
+                    "author_name": '@dataset.author.fullName'
+                });
+        </script>
+    }
     <script type="text/javascript">
         var spaceId = "@currentSpace";
         var descLabel = "@Messages("dataset.description")";
