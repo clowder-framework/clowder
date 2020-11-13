@@ -3,8 +3,8 @@ package services.mongodb
 import java.io._
 import java.text.SimpleDateFormat
 import java.util.{ArrayList, Date}
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import Transformation.LidoToCidocConvertion
 import util.{Formatters, Parsers}
 import api.Permission
@@ -1635,8 +1635,18 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getMetrics(): Iterator[Dataset] = {
-    Dataset.find(MongoDBObject("trash" -> false)).toIterator
+  /**
+   * Get an Iterator over Datasets to process large result sets
+   * @param space - limit to datasets in specific space
+   * @param since - include only datasets created after a certain date
+   * @param until - include only datasets created before a certain date
+   */
+  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[Dataset] = {
+    var query = MongoDBObject("trash" -> false)
+    space.foreach(spid => query += ("spaces" -> new ObjectId(spid.stringify)))
+    since.foreach(t => query = query ++ ("created" $gte Parsers.fromISO8601(t)))
+    until.foreach(t => query = query ++ ("created" $lte Parsers.fromISO8601(t)))
+    Dataset.find(query)
   }
 }
 

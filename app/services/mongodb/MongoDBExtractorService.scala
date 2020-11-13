@@ -13,6 +13,8 @@ import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
 
+import org.bson.types.ObjectId
+
 @Singleton
 class MongoDBExtractorService extends ExtractorService {
 
@@ -213,8 +215,47 @@ class MongoDBExtractorService extends ExtractorService {
       case None => {
         Logger.info("No extractor found with name: " + extractorName)
       }
-
     }
+  }
+
+  def listExtractorsLabels(): List[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findAll().toList
+  }
+
+  def getExtractorsLabel(name: String): Option[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findOne(MongoDBObject("name" -> name))
+  }
+
+  def getExtractorsLabel(id: UUID): Option[ExtractorsLabel] = {
+    ExtractorsLabelDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+  }
+
+  def createExtractorsLabel(name: String, category: Option[String], assignedExtractors: List[String]): ExtractorsLabel = {
+    updateExtractorsLabel(ExtractorsLabel(UUID.generate, name, category, assignedExtractors))
+  }
+
+  def updateExtractorsLabel(updated: ExtractorsLabel): ExtractorsLabel = {
+    ExtractorsLabelDAO.save(updated, WriteConcern.Safe)
+    updated
+  }
+
+  def deleteExtractorsLabel(label: ExtractorsLabel): ExtractorsLabel = {
+    ExtractorsLabelDAO.remove(label)
+    label
+  }
+
+  def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel] = {
+    var results = List[ExtractorsLabel]()
+    ExtractorInfoDAO.findOne(MongoDBObject("name"->extractorName)) match {
+      case Some(info) => {
+        ExtractorsLabelDAO.findAll().foreach(label => {
+          if (label.extractors.contains(extractorName)) {
+            results = results ++ List[ExtractorsLabel](label)
+          }
+        })
+      }
+    }
+    results
   }
 }
 
@@ -256,6 +297,13 @@ object ExtractorInfoDAO extends ModelCompanion[ExtractorInfo, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[ExtractorInfo, ObjectId](collection = x.collection("extractors.info")) {}
+  }
+}
+
+object ExtractorsLabelDAO extends ModelCompanion[ExtractorsLabel, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[ExtractorsLabel, ObjectId](collection = x.collection("extractors.labels")) {}
   }
 }
 
