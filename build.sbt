@@ -2,11 +2,12 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 //  .settings(
     name := "clowder"
 
-    scalaVersion := "2.11.12"
+    scalaVersion := "2.12.13"
 
 //    TwirlKeys.useOldParser in Compile := true
 
     routesImport += "models._"
+
     routesImport += "Binders._"
 
     resolvers += "dice.repository" at "https://raw.github.com/DICE-UNC/DICE-Maven/master/releases"
@@ -74,7 +75,21 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
       // Official AWS Java SDK
       "com.amazonaws" % "aws-java-sdk-bom" % "1.11.106",
 
-      "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106"
+      "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106",
+
+      // Silhouette
+      "com.mohiva" %% "play-silhouette" % "5.0.0",
+      "com.mohiva" %% "play-silhouette-password-bcrypt" % "5.0.0",
+      "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
+      "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
+      "org.webjars" %% "webjars-play" % "2.6.1",
+      "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery"),
+      "org.webjars" % "jquery" % "3.2.1",
+      "net.codingwell" %% "scala-guice" % "4.1.0",
+      "com.iheart" %% "ficus" % "1.4.1",
+      "com.enragedginger" %% "akka-quartz-scheduler" % "1.6.1-akka-2.5.x",
+      "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
+      "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % "test"
     )
 
     scalacOptions ++= Seq(

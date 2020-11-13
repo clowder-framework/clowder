@@ -1,7 +1,12 @@
 package api
 
 import javax.inject.Inject
-
+import com.mohiva.play.silhouette.api.Authenticator.Implicits._
+import com.mohiva.play.silhouette.api._
+import com.mohiva.play.silhouette.api.exceptions.ProviderException
+import com.mohiva.play.silhouette.api.util.{Clock, Credentials}
+import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
+import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import models.User
 import play.api.Play._
@@ -30,7 +35,7 @@ class Status @Inject()(spaces: SpaceService,
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
-  def status = UserAction(needActive=false) { implicit request =>
+  def status = silhouette.SecuredAction(WithProvider[DefaultEnv#A](CredentialsProvider.ID)) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts(request.user),

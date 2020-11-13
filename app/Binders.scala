@@ -1,3 +1,5 @@
+import java.util.{UUID => JavaUUID}
+
 import models.UUID
 import play.api.mvc._
 import org.bson.types.ObjectId
@@ -65,5 +67,18 @@ object Binders {
         Some(Left(s"Cannot parse parameter $key"))
     }
     override def unbind(key: String, uuid: UUID): String = uuid.stringify
+  }
+
+  /**
+   * A `java.util.UUID` bindable.
+   */
+  implicit object UUIDPathBindable extends PathBindable[JavaUUID] {
+    def bind(key: String, value: String) = try {
+      Right(JavaUUID.fromString(value))
+    } catch {
+      case _: Exception => Left("Cannot parse parameter '" + key + "' with value '" + value + "' as UUID")
+    }
+
+    def unbind(key: String, value: JavaUUID): String = value.toString
   }
 }
