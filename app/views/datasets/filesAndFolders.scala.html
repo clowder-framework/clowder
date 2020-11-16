@@ -178,7 +178,7 @@
     function submitMarked() {
         var selected = $.cookie('selected-files-@dataset.id');
         if (selected) {
-            window.open("@routes.Extractors.submitSelectedExtractions(dataset.id).url");
+            window.open("@routes.Extractors.submitSelectedExtractions(dataset.id).url", "_self");
         } else {
             notify("No files selected.")
         }

@@ -1,43 +1,17 @@
-@(extractors: List[ExtractorInfo], ds: Dataset, folderHierarchy: List[Folder], spaces:List[ProjectSpace])(implicit user: Option[models.User])
+@(extractors: List[ExtractorInfo], ds: Dataset)(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import play.api.libs.json._
 
 @main("Extractions") {
     <ol class="breadcrumb">
-        @if(spaces.length == 1 ) {
-            <li><span class="glyphicon glyphicon-hdd"></span> <a href="@routes.Spaces.getSpace(spaces.head.id)" title="@spaces.head.name"> @Html(ellipsize(spaces.head.name, 18))</a></li>
-
-        } else {
-            @if(spaces.length > 1) {
-                <li>
-                    <span class="dropdown">
-                        <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="true">
-                            <span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
-                        @spaces.map{ s =>
-                            <li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
-                        }
-                        </ul>
-
-                    </span>
-                </li>
-            } else {
-                <li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(ds.author.id)"> @ds.author.fullName</a></li>
-            }
-        }
+        <li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(ds.author.id)"> @ds.author.fullName</a></li>
         <li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
-
-        @folderHierarchy.map { fd =>
-            <li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(ds.id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a></li>
-        }
-        <li><span class="glyphicon glyphicon-fullscreen"></span> Submit Selections for Extraction</li>
+        <li><span class="glyphicon glyphicon-fullscreen"></span> Marked Files</li>
 
     </ol>
     <div class="row">
-        <div class="col-xs-12">
-            <h1>Submit selected files for extraction</h1>
+        <div id="submission_header" class="col-xs-12">
+            <h1>Submit marked files for extraction</h1>
         </div>
     </div>
     <div class="row">
@@ -85,24 +59,26 @@
         </div>
     </div>
     <script type="text/javascript">
-            function disableSubmit(btn) {
-                btn.attr('disabled', true);
-                btn.addClass('disabled');
-                btn.removeClass('btn-primary');
-                btn.addClass('btn-success');
-                btn.html('Submitted');
-            }
+        function disableSubmit(btn) {
+            btn.attr('disabled', true);
+            btn.addClass('disabled');
+            btn.removeClass('btn-primary');
+            btn.addClass('btn-success');
+            btn.html('Submitted');
+        }
 
-            function enableSubmit(btn) {
-                btn.html('Submit');
-                btn.removeClass('disabled');
-                btn.removeClass('btn-success');
-                btn.addClass('btn-primary');
-                btn.attr('disabled', false);
-            }
+        function enableSubmit(btn) {
+            btn.html('Submit');
+            btn.removeClass('disabled');
+            btn.removeClass('btn-success');
+            btn.addClass('btn-primary');
+            btn.attr('disabled', false);
+        }
 
         function submit(extractor_name, textbox_id, file_id, submit_id) {
             var clickedBtn = $('#' + submit_id);
+
+            var selected = $.cookie('selected-files-@ds.id');
 
             // Throttle submissions to one every 3 seconds
             disableSubmit(clickedBtn);
@@ -113,7 +89,7 @@
             var params = $('#'+textbox_id).jsonFormValue();
             if (params === "") params = "{}";
             var dataBody = {'extractor': extractor_name, 'parameters': params};
-            var request = jsRoutes.api.Extractions.submitFileToExtractor(file_id).ajax({
+            var request = jsRoutes.api.Extractions.submitFilesToExtractor("@ds.id", selected).ajax({
                 data: JSON.stringify(dataBody),
                 type: 'POST',
                 contentType: "application/json",
@@ -127,6 +103,14 @@
                 console.error("The following error occured: " + textStatus, errorThrown);
             });
         }
+
+        $(document).ready(function() {
+            var selected = $.cookie('selected-files-@ds.id');
+            if (selected) {
+                var fileUUIDs = selected.split(',');
+                $('#submission_header')[0].innerHTML = "<h1>Submit "+fileUUIDs.length+" marked files for extraction</h1>"
+            }
+        });
     </script>
 }
 

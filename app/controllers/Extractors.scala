@@ -364,8 +364,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
             case None => Logger.error("Dataset "+dataset.id.stringify+" space not found: "+sp.stringify)
           }
         }
-        //Ok(views.html.extractions.submitFileExtraction(extractors, file, folderHierarchy.reverse.toList, decodedSpacesContaining.toList, allDecodedDatasets.toList))
-        Ok("ok")
+        Ok(views.html.extractions.submitSelectedExtraction(extractors, dataset))
       }
       case None => InternalServerError("Dataset not found")
     }
