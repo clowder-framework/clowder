@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Changed
+- /api/reindex admin endpoint no longer deletes and swaps a temporary index, but reindexes in-place.
+
 ## 1.11.1 - 2020-09-29
 
 ### Added
