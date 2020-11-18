@@ -88,12 +88,12 @@
                     '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
                     '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     *@
-                    '<li><a onclick="markAllFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Select All</a></li>' +
-                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
-                    '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit All</a></li>' +
-                    '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
-                    '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
-                    '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
+                    '<li><a onclick="markAllFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark All</a></li>' +
+                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
+                    '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
+                    '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag</a></li>' +
+                    '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete</a></li>' +
+                    '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Unmark All</a></li></ul>' +
                     '</div>')
         } else {
             $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
@@ -104,11 +104,11 @@
                     '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     *@
                     '<li><a onclick="markAllFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark All</a></li>' +
-                    //'<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
-                    //'<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit All</a></li>' +
-                    //'<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
-                    //'<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
-                    //'<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
+                    //'<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
+                    //'<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
+                    //'<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag</a></li>' +
+                    //'<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete</a></li>' +
+                    //'<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Unmark All</a></li></ul>' +
                     '</div>')
         }
     }
@@ -333,7 +333,7 @@
             if ($("a[data-id='" + file_id + "'] span.glyphicon").hasClass('glyphicon-plus')) {
                 addFileToMarked(file_id)
             } else {
-                remoxveFileFromMarked(file_id);
+                removeFileFromMarked(file_id);
 
             }
         });
