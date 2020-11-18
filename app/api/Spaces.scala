@@ -451,7 +451,7 @@ class Spaces @Inject()(spaces: SpaceService,
       aResult match {
         case aMap: JsSuccess[Map[String, String]] => {
           //Set up a map of existing users to check against
-          val existingUsers = spaces.getUsersInSpace(spaceId)
+          val existingUsers = spaces.getUsersInSpace(spaceId, None)
           var existUserRole: Map[String, String] = Map.empty
           for (aUser <- existingUsers) {
             spaces.getRoleForUserInSpace(spaceId, aUser.id) match {
@@ -527,8 +527,8 @@ class Spaces @Inject()(spaces: SpaceService,
                   case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
                 }
               }
-              if(space.userCount != spaces.getUsersInSpace(space.id).length){
-                spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id).length)
+              if(space.userCount != spaces.getUsersInSpace(space.id, None).length){
+                spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id, None).length)
               }
 
               Ok(Json.obj("status" -> "success"))
@@ -699,7 +699,7 @@ class Spaces @Inject()(spaces: SpaceService,
               }
             }
 
-            userService.listUsersInSpace(s.id).map { member =>
+            userService.listUsersInSpace(s.id, None).map { member =>
               val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
               Mail.sendEmail("Space Status update", request.user, member, theHtml)
             }

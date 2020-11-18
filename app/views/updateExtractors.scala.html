@@ -1,5 +1,5 @@
-@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup],
-        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->false, "filterSection"->false, "ratings"->false))(implicit user: Option[models.User])
+@(runningExtractors: List[ExtractorInfo], selectedExtractors: List[String], groups: Map[String, ExtractionGroup], labelCategories: Map[String, List[ExtractorsLabel]], allSpaces: List[ProjectSpace], allMetadata: Map[String, String],
+        showOptional: Map[String,Boolean] = Map("additionalInfo"->false, "processTriggers"->false, "labelSection"->true, "filterSection"->true, "ratings"->false))(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import helper._
 @import api.Permission
@@ -23,35 +23,35 @@
         </div>
     }
 
-    <form class="form-horizontal">
-        <!-- TODO: Label search filters -->
+    <div class="form-horizontal" id="searchFiltersForm">
+        <!-- Label search filter -->
         @if(showOptional("labelSection")) {
             <fieldset class="labels-border">
                 <legend class="labels-border">Labels</legend>
 
-                <!-- TODO: Link to Extractor Labels view iff user is server admin -->
+                <!-- Link to Extractor Labels view iff user is server admin -->
                 @if(Permission.checkServerAdmin(user)) {
-                    <a href="#" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
+                    <a href="@routes.Extractors.manageLabels" style="margin-top:-3.0em;" class="btn btn-default btn-xs pull-right">
                         <span class="glyphicon glyphicon-wrench"></span> Manage
                     </a>
                 }
 
-                <div class="control-group">
-                    <!-- TODO: Show checkbox for each label, enabled by default -->
-                    <!-- TODO: Group labels together by Category (e.g. Type, Group, Other, etc) -->
-                    <div class="btn-group" data-toggle="buttons">
-
-                        <!-- Disguised checkboxes as buttons -->
-                        <label class="btn btn-primary active">
-                            <input type="checkbox" autocomplete="off" checked> Image
-                        </label>
-                        <label class="btn btn-primary active">
-                            <input type="checkbox" autocomplete="off" checked> Video
-                        </label>
-                        <label class="btn btn-primary active">
-                            <input type="checkbox" autocomplete="off" checked> Audio
-                        </label>
-                    </div>
+                <div class="row">
+                    <!-- Disguised checkboxes as buttons -->
+                    @for((categoryName, catLabels) <- labelCategories) {
+                        <div class="col-sm-4">
+                            <strong>@categoryName</strong>
+                            <div class="control-group">
+                                <div class="btn-group" data-toggle="buttons">
+                                @for(label <- catLabels) {
+                                    <button type="button" onclick="submitFilters('@label.name')" id="label-@label.name" name="label-@label.name" role="button" class="btn btn-primary label-filter-btn">
+                                        <input type="checkbox" autocomplete="off" name="label-@label.name" checked> @label.name
+                                    </button>
+                                }
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </fieldset>
         }
@@ -64,18 +64,19 @@
                     <div class="row">
                         <div class="col-sm-5">
 
-                            <!-- TODO: Generic search filter -->
+                            <!-- Generic search filter -->
                             <div class="form-group">
                                 <div class="col-sm-12">
-                                    <input type="text" class="form-control" id="genericSearchFilter" placeholder="Search for extractors...">
+                                    <input type="text" class="form-control" id="genericSearchFilter" name="genericSearchFilter" placeholder="Search for extractor name, contributors, etc...">
                                 </div>
                             </div>
 
-                            <!-- TODO: Process trigger search filter -->
+                            <!-- Process trigger search filter -->
                             <div class="form-group">
                                 <label for="processTriggerSearchFilter" class="col-sm-3 control-label">Triggers On:</label>
                                 <div class="col-sm-9">
-                                    <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter" onchange="this.form.submit()">
+                                    <select class="form-control" name="processTriggerSearchFilter" id="processTriggerSearchFilter">
+                                        <option></option>
                                         <option>file/*</option>
                                         <option>dataset/*</option>
                                         <option>metadata/*</option>
@@ -91,9 +92,10 @@
                                 <label for="spaceSearchFilter" class="col-sm-4 control-label">Within Space:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="spaceSearchFilter" id="spaceSearchFilter">
-                                        <option>Space A</option>
-                                        <option>Space B</option>
-                                        <option>Space C</option>
+                                        <option></option>
+                                        @for(space <- allSpaces) {
+                                            <option value="@space.id">@space.name</option>
+                                        }
                                     </select>
                                 </div>
                             </div>
@@ -103,34 +105,42 @@
                                 <label for="metadataSearchFilter" class="col-sm-4 control-label">Produces Metadata:</label>
                                 <div class="col-sm-8">
                                     <select class="form-control" name="metadataSearchFilter" id="metadataSearchFilter">
-                                        <option>Key 1</option>
-                                        <option>Key 2</option>
-                                        <option>Key 3</option>
+                                        <option></option>
+                                        @for((key, value) <- allMetadata) {
+                                            <option>@key</option>
+                                        }
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TODO: Match ALL/ANY filter radio buttons -->
+                        <!-- Match ALL/ANY filter radio buttons -->
                         <div class="col-sm-2">
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="matching" id="matchAny" autocomplete="off" checked> Match ANY filter
-                                </label>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="matching" id="matchAny" autocomplete="off" checked value="any"> Match ANY filter
+                                        </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="matching" id="matchAll" autocomplete="off" value="all"> Match ALL filters
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="matching" id="matchAll" autocomplete="off"> Match ALL filters
-                                </label>
+                            <div class="row" style="margin-top:12px">
+                                <div class="col-sm-12">
+                                    <button type="submit" class="btn btn-sm btn-primary" onclick="submitFilters(null)"><span class="glyphicon glyphicon-search"></span> Search</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-
                 </div>
             </fieldset>
         }
-    </form>
+    </div>
 
     <div class="row top-padding">
         <div class="col-xs-12">
@@ -344,15 +354,95 @@
         </div>
     </div>
 
-    @if(showOptional("filterSection")) {
-        <script>
-                $('document').ready(function () {
-                    var params = new URLSearchParams(window.location.search);
-                    var targetParameter = "processTriggerSearchFilter"
+    <script>
+            function submitFilters(labelName) {
+                // Grab existing query string values
+                const currentParams = new URLSearchParams(window.location.search);
+
+                // If same filter selected twice, de-select it
+                const currentLabel =  currentParams.get('labelFilter');
+                const newLabelName = labelName === currentLabel ? null : (labelName || currentLabel);
+                const newGenericSearch = $('#genericSearchFilter').val();
+                const newProcessTrigger = $('#processTriggerSearchFilter').val();
+                const newSpace = $('#spaceSearchFilter').val();
+                const newMetadata = $('#metadataSearchFilter').val();
+
+                // Set new label query strings parameter based on new filters
+                const newParams = new URLSearchParams();
+                if (newLabelName && newLabelName != "") {
+                    newParams.set('labelFilter', newLabelName);
+                } else {
+                    newParams.delete('labelFilter');
+                }
+
+                if (newGenericSearch && newGenericSearch != "") {
+                    newParams.set('genericSearchFilter', newGenericSearch);
+                } else {
+                    newParams.delete('genericSearchFilter');
+                }
+
+                if (newProcessTrigger && newProcessTrigger != "") {
+                    newParams.set('processTriggerSearchFilter', newProcessTrigger);
+                } else {
+                    newParams.delete('processTriggerSearchFilter');
+                }
+
+                if (newSpace && newSpace != "") {
+                    newParams.set('spaceSearchFilter', newSpace);
+                } else {
+                    newParams.delete('spaceSearchFilter');
+                }
+
+                if (newMetadata && newMetadata != "") {
+                    newParams.set('metadataSearchFilter', newMetadata);
+                } else {
+                    newParams.delete('metadataSearchFilter');
+                }
+
+                // Set filter matching ANY / ALL
+                if ($('#matchAll').prop('checked')) {
+                    newParams.set('matching', 'all');
+                } else if ($('#matchAny').prop('checked')) {
+                    newParams.set('matching', 'any');
+                } else {
+                    // This should never be possible - one radio should always be checked
+                    newParams.delete('matching');
+                }
+
+                // Set all other query strings parameters based on form values
+                window.location.search = newParams.toString();
+            }
+
+            $('document').ready(function () {
+                var params = new URLSearchParams(window.location.search);
+                var labelParam = "labelFilter"
+                var targetParameters = ["genericSearchFilter", "processTriggerSearchFilter", "spaceSearchFilter","metadataSearchFilter"];
+                for (let idx in targetParameters) {
+                    var targetParameter = targetParameters[idx];
                     if (params.has(targetParameter)) {
                         document.getElementById(targetParameter).value = params.get(targetParameter);
                     }
-                });
-        </script>
-    }
+                }
+
+                if (params.has("matching")) {
+                    const matching = params.get("matching");
+                    if (matching === "all") {
+                        $('#matchAll').prop('checked', true).trigger("click");
+                    } else if (matching === "any") {
+                        $('#matchAny').prop('checked', true).trigger("click");
+                    }
+                }
+
+                if (params.has(labelParam)) {
+                    // If we have a label param, uncheck all other labels
+                    $('.label-filter-btn').removeClass("btn-primary");
+                    $('.label-filter-btn').addClass("btn-default");
+
+                    // Check only the label in the query string
+                    var labelName = params.get(labelParam);
+                    $('#label-' + labelName).removeClass("btn-default");
+                    $('#label-' + labelName).addClass("btn-primary");
+                }
+            });
+    </script>
 }

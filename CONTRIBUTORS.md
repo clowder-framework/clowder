@@ -8,6 +8,7 @@ Following is a list of contributors in alphabetical order:
 - Brock Angelo
 - Chen Wang
 - Chris Navarro
+- Chrysovalantis Constantinou
 - Constantinos Sophocleous
 - Gene Roeder
 - Gregory Jansen

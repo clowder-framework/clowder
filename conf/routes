@@ -179,6 +179,7 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 # EXTRACTORS
 # ----------------------------------------------------------------------
+GET            /extractors/labels                                                       @controllers.Extractors.manageLabels()
 GET            /extractors/:extractorName                                               @controllers.Extractors.showExtractorInfo(extractorName)
 GET            /extractors/:extractorName/metrics                                       @controllers.Extractors.showExtractorMetrics(extractorName)
 GET            /extractors/:extractorName/logs                                          @controllers.Extractors.showExtractorLog(extractorName)
@@ -423,6 +424,10 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+POST           /api/extractors/labels                                                   @api.Extractions.createExtractorsLabel()
+PUT            /api/extractors/labels/:id                                               @api.Extractions.updateExtractorsLabel(id: UUID)
+DELETE         /api/extractors/labels/:id                                               @api.Extractions.deleteExtractorsLabel(id: UUID)
+
 
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
 POST           /api/datasets/:ds_id/extractions                                         @api.Extractions.submitDatasetToExtractor(ds_id: UUID)
@@ -744,12 +749,14 @@ DELETE         /api/relations/:id                                               
 # REPORTING API
 # ----------------------------------------------------------------------
 GET            /api/reports/metrics                                                     @api.Reporting.allMetrics()
-GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics()
-GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics()
+GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics(since: Option[String] ?= None, until: Option[String] ?= None)
+GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics(since: Option[String] ?= None, until: Option[String] ?= None)
 GET            /api/reports/metrics/collections                                         @api.Reporting.collectionMetrics()
 GET            /api/reports/metrics/spaces                                              @api.Reporting.spaceMetrics()
 GET            /api/reports/metrics/users                                               @api.Reporting.userMetrics()
+GET            /api/reports/storage/spaces/:id                                          @api.Reporting.spaceStorage(id: UUID, since: Option[String] ?= None, until: Option[String] ?= None)
 GET            /api/reports/metrics/extractors                                          @api.Reporting.extractorUsage(since: Option[String] ?= None, until: Option[String] ?= None)
+
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS

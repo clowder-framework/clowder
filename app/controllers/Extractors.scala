@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ExtractorInfo, Folder, ResourceRef, UUID, Extraction}
+import models.{Extraction, ExtractorInfo, Folder, ResourceRef, UUID}
 import play.api.mvc.Controller
 import api.Permission
 import javax.inject.{Inject, Singleton}
@@ -13,6 +13,9 @@ import java.util.{Calendar, Date}
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import java.util.Calendar
+
+import api.Permission.Permission
+import play.api.libs.json.Json
 
 /**
  * Information about extractors.
@@ -53,17 +56,120 @@ class Extractors  @Inject() (extractions: ExtractionService,
     */
   def selectExtractors() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    // Filter extractors by the trigger type if necessary
+
+    // Filter extractors by user filters necessary
     var runningExtractors: List[ExtractorInfo] = extractorService.listExtractorsInfo(List.empty)
-    request.getQueryString("processTriggerSearchFilter") match {
-      case Some("file/*") => runningExtractors = runningExtractors.filter(re => re.process.file.length > 0)
-      case Some("dataset/*") => runningExtractors = runningExtractors.filter(re => re.process.dataset.length > 0)
-      case Some("metadata/*") => runningExtractors = runningExtractors.filter(re => re.process.metadata.length > 0)
-      case None => {}
-    }
     val selectedExtractors: List[String] = extractorService.getEnabledExtractors()
     val groups = extractions.groupByType(extractions.findAll())
-    Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups))
+    val allLabels = extractorService.listExtractorsLabels()
+    val categorizedLabels = allLabels.groupBy(_.category.getOrElse("Other"))
+    val allSpaces = spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, false, false, false, false)
+
+    // Fetch metadata contexts from ExtractorInfo
+    var allMetadata = Map[String, String]()
+    runningExtractors.foreach(re => {
+      val currentContexts: List[Map[String, String]] = re.contexts.as[List[Map[String,String]]]
+      currentContexts.foreach((contextMap) => {
+        contextMap.foreach(entry => {
+          val key = entry._1
+          val value = entry._2
+          allMetadata = allMetadata ++ Map[String, String](key -> value)
+        })
+      })
+    })
+
+    val labelSearch = request.getQueryString("labelFilter").getOrElse("")
+    val genericSearch = request.getQueryString("genericSearchFilter").getOrElse("")
+    val metadataSearch = request.getQueryString("metadataSearchFilter").getOrElse("")
+    val spaceSearch = request.getQueryString("spaceSearchFilter").getOrElse("")
+    val processTriggerSearch = request.getQueryString("processTriggerSearchFilter").getOrElse("")
+
+    // Short-circuit for no filters => return the full list
+    if (labelSearch.isEmpty && genericSearch.isEmpty && metadataSearch.isEmpty && spaceSearch.isEmpty && processTriggerSearch.isEmpty) {
+      Ok(views.html.updateExtractors(runningExtractors, selectedExtractors, groups, categorizedLabels, allSpaces, allMetadata))
+    } else {
+      // Default value for unmatched filter - important for ANY vs ALL
+      // Returning the full list by default in part of an ANY (OR) query will always return the full list
+      val defaultValue: List[ExtractorInfo] = request.getQueryString("matching") match {
+        case Some("any") => List[ExtractorInfo]()
+        case _ => runningExtractors
+      }
+
+      // TODO: Autocomplete on text field from dynamically generated list of distinct triggers
+      val triggerMatches: List[ExtractorInfo] = request.getQueryString("processTriggerSearchFilter") match {
+        case Some("file/*") => runningExtractors.filter(re => re.process.file.length > 0)
+        case Some("dataset/*") => runningExtractors.filter(re => re.process.dataset.length > 0)
+        case Some("metadata/*") => runningExtractors.filter(re => re.process.metadata.length > 0)
+        /*case Some(filt) if (filt.length > 0) => {
+          // TODO: Need to figure out how to effectively search the ProcessTriggers structure
+        }*/
+        case _ => defaultValue
+      }
+
+      // Stringify full resource to perform simple search for user's query
+      val genericMatches: List[ExtractorInfo] = request.getQueryString("genericSearchFilter") match {
+        case Some(query) => runningExtractors.filter(re => Json.toJson(re).toString.contains(query))
+        case _ => defaultValue
+      }
+
+      // For the chosen space id, remove any extractor that is not enabled extractors for that space
+      val spaceMatches: List[ExtractorInfo] = request.getQueryString("spaceSearchFilter") match {
+        case Some(spaceid) if spaceid.length > 0 => {
+          // TODO: Wire it up so users see SpaceName but we pass ID... append (ID) to duplicate space names
+          spaces.getAllExtractors(UUID(spaceid)) match {
+            case Some(spaceExtractors) => runningExtractors.filter(re => spaceExtractors.enabled.contains(re.name))
+            case _ => List[ExtractorInfo]()
+          }
+        }
+        case _ => defaultValue
+      }
+
+      // Match metadata contexts from ExtractorInfo
+      val metadataMatches: List[ExtractorInfo] = request.getQueryString("metadataSearchFilter") match {
+        case Some(metafield) if metafield.length > 0 => {
+          runningExtractors.filter(re => {
+            var ret = false
+            val extractorContexts = re.contexts.as[List[Map[String,String]]]
+            extractorContexts.takeWhile(_ => !ret).foreach((context) => {
+              context.takeWhile(_ => !ret).foreach(entry => {
+                val key = entry._1
+                val value = entry._2
+                if (key == metafield) {
+                  ret = true
+                }
+              })
+            })
+            ret
+          })
+        }
+        case _ => defaultValue
+      }
+
+      // Filter based on selected label
+      val labelMatches: List[ExtractorInfo] = request.getQueryString("labelFilter") match {
+        case Some(lblName) => allLabels.find(lbl => lblName == lbl.name) match {
+          case Some(label) => runningExtractors.filter(re => label.extractors.contains(re.name))
+          case _ => defaultValue
+        }
+        case _ => defaultValue
+      }
+
+      val matches: List[ExtractorInfo] = request.getQueryString("matching") match {
+        case Some("any") => triggerMatches.toSet.union(genericMatches.toSet).union(spaceMatches.toSet).union(metadataMatches.toSet).union(labelMatches.toSet).toList
+        case _ => triggerMatches.toSet.intersect(genericMatches.toSet).intersect(spaceMatches.toSet).intersect(metadataMatches.toSet).intersect(labelMatches.toSet).toList
+      }
+
+      Ok(views.html.updateExtractors(matches, selectedExtractors, groups, categorizedLabels, allSpaces, allMetadata))
+    }
+  }
+
+  def manageLabels = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val categories = List[String]("EXTRACT")
+    val extractors = extractorService.listExtractorsInfo(categories)
+    val labels = extractorService.listExtractorsLabels()
+
+    Ok(views.html.extractorLabels(labels, extractors))
   }
 
   /**
@@ -107,7 +213,10 @@ class Extractors  @Inject() (extractions: ExtractionService,
     implicit val user = request.user
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorDetails(extractor))
+      case Some(extractor) => {
+        val labels = extractorService.getLabelsForExtractor(extractor.name)
+        Ok(views.html.extractorDetails(extractor, labels))
+      }
       case None => InternalServerError("Extractor not found: " + extractorName)
     }
   }
@@ -159,10 +268,12 @@ class Extractors  @Inject() (extractions: ExtractionService,
     }
     Logger.debug("average: " + average)
     // get at the number of ``SUBMITTED'' submission in last week.
-    val lastweeksubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
-    Logger.debug("lastweek submitted: " + lastweeksubmitted.size)
+    val lastweekevents = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", last7daydate, 0)
+    val lastweeksubmitted = lastweekevents.map(evt => evt.job_id).distinct.length
+    Logger.debug("lastweek submitted: " + lastweeksubmitted)
     // get at the number of ``SUBMITTED'' submission in last month.
-    val lastmonthsubmitted = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
+    val lastmonthevents = extractions.findByExtractorIDBefore(extractorName, "SUBMITTED", lastmonthdate, 0)
+    val lastmonthsubmitted = lastmonthevents.map(evt => evt.job_id).distinct.length
 
     // calculate the last 10 execution average time in the time range of last month between ``SUBMITTED'' and ``DONE''.
     // get at most 10 ``DONE'' submission from last month.
@@ -190,7 +301,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
 
     val targetExtractor = extractorService.listExtractorsInfo(List.empty).find(p => p.name == extractorName)
     targetExtractor match {
-      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastTenAverage.toString, lastweeksubmitted.size, lastmonthsubmitted.size))
+      case Some(extractor) => Ok(views.html.extractorMetrics(extractorName, average.toString, lastTenAverage.toString, lastweeksubmitted, lastmonthsubmitted))
       case None => InternalServerError("Extractor Info not found: " + extractorName)
     }
   }

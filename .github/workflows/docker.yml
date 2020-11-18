@@ -93,36 +93,44 @@ jobs:
       # build the docker image, this will always run to make sure
       # the Dockerfile still works.
       - name: Build image
-        run: |
-          docker build \
-            --build-arg BRANCH=${GITHUB_BRANCH} \
-            --build-arg VERSION=${CLOWDER_VERSION} \
-            --build-arg BUILDNUMBER=${{ github.run_number }} \
-            --build-arg GITSHA1=${{ github.sha  }} \
-            --tag image ${{ matrix.FOLDER }}
-
-      # this will publish to the actor (person) github packages
-      - name: Publish to GitHub
-        if: github.event_name == 'push'
-        uses: elgohr/Publish-Docker-Github-Action@2.18
+        uses: elgohr/Publish-Docker-Github-Action@2.22
         env:
           BRANCH: ${{ env.GITHUB_BRANCH }}
           VERSION: ${{ env.CLOWDER_VERSION }}
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
         with:
-          name: ${{ github.repository_owner }}/clowder/${{ matrix.IMAGE }}
+          registry: docker.pkg.github.com
+          name: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.IMAGE }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           context: ${{ matrix.FOLDER }}
+          tags: "${{ env.TAGS }}"
+          buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+          no_push: true
+
+      # this will publish to github container registry
+      - name: Publish to GitHub
+        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
+        uses: elgohr/Publish-Docker-Github-Action@2.22
+        env:
+          BRANCH: ${{ env.GITHUB_BRANCH }}
+          VERSION: ${{ env.CLOWDER_VERSION }}
+          BUILDNUMBER: ${{ github.run_number }}
+          GITSHA1: ${{ github.sha  }}
+        with:
+          registry: ghcr.io
+          name: ${{ github.repository_owner }}/${{ matrix.IMAGE }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_PASSWORD }}
+          context: ${{ matrix.FOLDER }}
           tags: "${{ env.CLOWDER_TAGS }}"
-          registry: docker.pkg.github.com
           buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
 
       # this will publish to the clowder dockerhub repo
       - name: Publish to Docker Hub
-        if: github.event_name == 'push' && github.repository == env.MASTER_REPO
-        uses: elgohr/Publish-Docker-Github-Action@2.18
+        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
+        uses: elgohr/Publish-Docker-Github-Action@2.22
         env:
           BRANCH: ${{ env.GITHUB_BRANCH }}
           VERSION: ${{ env.CLOWDER_VERSION }}
