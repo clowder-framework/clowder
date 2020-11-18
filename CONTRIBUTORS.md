@@ -8,6 +8,7 @@ Following is a list of contributors in alphabetical order:
 - Brock Angelo
 - Chen Wang
 - Chris Navarro
+- Chrysovalantis Constantinou
 - Constantinos Sophocleous
 - Gene Roeder
 - Gregory Jansen
@@ -21,6 +22,7 @@ Following is a list of contributors in alphabetical order:
 - Max Burnette
 - Michal Ondrejcek
 - Michelle Pitcel
+- Mike Bobak
 - Mike Lambert
 - Nicholas Tenczar
 - Nishant Nayudu

@@ -205,10 +205,10 @@
                         "<option value='=='>equals</option>" +
                         "<option value='!='>does not equal</option>" +
                         "<option value=':'>contains</option>" +
-                        //"<option value='>'>greater than</option>" +
-                        //"<option value='<'>less than</option>" +
-                        //"<option value='>='>greater or equal to</option>" +
-                        //"<option value='<='>less or equal to</option>" +
+                        "<option value='>'>greater than</option>" +
+                        "<option value='<'>less than</option>" +
+                        "<option value='>='>greater or equal to</option>" +
+                        "<option value='<='>less or equal to</option>" +
                     "</select></div>" +
                     <!-- VALUE FIELD -->
                     "<div class='form-group col-lg-4 col-md-4'>" +
@@ -464,16 +464,26 @@
                 count += resp.scanned_size;
                 searching = false;
 
-                // Correctly increment skipped count
+                // Correctly increment skipped count if we are missing results but have no more pages
                 if (resp.count != resp.total_size) {
                     if (resp.size > 0) {
                         if (resp.total_size < resp.scanned_size)
                             skipped_count += (resp.total_size - resp.count);
-                        else
+                        else if (resp.total_size > (resp.from+resp.count)) // last page case
                             skipped_count += (resp.scanned_size - resp.count);
                     } else if (resp.hasOwnProperty('next') || resp.total_size == resp.scanned_size) {
+                        // We got size zero result, but ES reports there should be some in total_size
                         skipped_count += resp.total_size
                     }
+                }
+
+                $('#resultstitle').html('<h3>Results</h3>');
+
+                // Convert results into displayed list
+                if (from_count > 0) {
+                    parseSearchResults(resp, status, err, false)
+                } else {
+                    parseSearchResults(resp, status, err)
                 }
 
                 if (resp.count == 0) {
@@ -482,16 +492,8 @@
                         $('#resultsfooter').append("<i><b>All results displayed (omitted "+skipped_count+" results due to insufficient permissions).</b></i>");
                     else
                         $('#resultsfooter').append("<i><b>All results displayed.</b></i>");
+
                     $('#resultsfooter').append("<br/>&nbsp;<br/>")
-                }
-
-                $('#resultstitle').html('<h3>Results ('+resp.total_size+')</h3>');
-
-                // Convert results into displayed list
-                if (from_count > 0) {
-                    parseSearchResults(resp, status, err, false)
-                } else {
-                    parseSearchResults(resp, status, err)
                 }
             });
 

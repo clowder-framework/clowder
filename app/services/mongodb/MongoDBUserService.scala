@@ -342,12 +342,18 @@ class MongoDBUserService @Inject() (
    * Implementation of the UserService trait.
    *
    */
-  def listUsersInSpace(spaceId: UUID): List[User] = {
+  def listUsersInSpace(spaceId: UUID, role: Option[String]): List[User] = {
       val retList: ListBuffer[User] = ListBuffer.empty
       for (aUser <- UserDAO.dao.find(MongoDBObject())) {
          for (aSpaceAndRole <- aUser.spaceandrole) {
              if (aSpaceAndRole.spaceId == spaceId) {
-                 retList += aUser
+               // If role filter was specified, must match
+               role match {
+                 case None => retList += aUser
+                 case Some(r) => if (aSpaceAndRole.role.name == r)
+                   retList += aUser
+               }
+
              }
          }
       }

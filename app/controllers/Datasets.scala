@@ -786,7 +786,7 @@ class Datasets @Inject() (
         // Setup userList, add all users of all spaces associated with the dataset
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
-            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId, None) ::: userList
             case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for $Messages('dataset.title') $id.")
           }
         }
@@ -797,7 +797,7 @@ class Datasets @Inject() (
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => {
-              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId, None)
               if (usersInCurrSpace.nonEmpty) {
 
                 usersInCurrSpace.foreach { usr =>

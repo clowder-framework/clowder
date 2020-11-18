@@ -20,6 +20,8 @@ trait ExtractionService {
 
   def findById(resource: ResourceRef): List[Extraction]
 
+  def findByExtractorIDBefore(extractorID: String, status: String, date: String, limit: Int): List[Extraction]
+
   def insert(extraction: Extraction): Option[ObjectId]
   
   def getExtractorList(fileId:UUID): collection.mutable.Map[String,String]

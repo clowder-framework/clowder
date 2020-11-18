@@ -9,7 +9,7 @@ info:
     Clowder is a customizable and scalable data management system to support any
     data format and multiple research domains. It is under active development
     and deployed for a variety of research projects.
-  version: 1.11.1
+  version: 1.12.1
   termsOfService: https://clowder.ncsa.illinois.edu/clowder/tos
   contact:
     name: Clowder
@@ -4293,6 +4293,68 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          description: Not found
+          content: {}
+
+  /extractors/labels:
+    post:
+      tags:
+        - extractions
+      summary: Create a new extractor label in the database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractorsLabel'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+
+  /extractors/labels/{id}:
+    put:
+      tags:
+        - extractions
+      summary: Updates an extractor label in the database
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractorsLabel'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+    delete:
+      tags:
+        - extractions
+      summary: Deletes an extractor label from the database
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
 
   /extractions/{id}/status:
     get:
@@ -4858,7 +4920,18 @@ paths:
       summary: Download usage metrics report for files as CSV.
       description: |
         Download usage metrics report for files as a CSV file.
-        Must be a server admin to access the report.
+        Must be a server admin to access the report. Supports ISO8601 date range filters.
+      parameters:
+        - name: since
+          in: path
+          required: false
+          schema:
+            type: string
+        - name: until
+          in: path
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: A CSV with usage metrics
@@ -4878,7 +4951,18 @@ paths:
       summary: Download usage metrics report for datasets as CSV.
       description: |
         Download usage metrics report for datasets as a CSV file.
-        Must be a server admin to access the report.
+        Must be a server admin to access the report. Supports ISO8601 date range filters.
+      parameters:
+       - name: since
+         in: path
+         required: false
+         schema:
+           type: string
+       - name: until
+         in: path
+         required: false
+         schema:
+           type: string
       responses:
         200:
           description: A CSV with usage metrics
@@ -4899,6 +4983,42 @@ paths:
       description: |
         Download usage metrics report for collections as a CSV file.
         Must be a server admin to access the report.
+      responses:
+        200:
+          description: A CSV with usage metrics
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Not authorized
+          content: {}
+
+  /reports/storage/spaces/{id}:
+    get:
+      tags:
+        - reporting
+      summary: Download storage metrics report for spaces as CSV.
+      description: |
+        Download storage metrics report for files in a space as a CSV file.
+        Must be a server admin to access the report. Supports ISO8601 date range filters.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: since
+          in: path
+          required: false
+          schema:
+            type: string
+        - name: until
+          in: path
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: A CSV with usage metrics
@@ -5549,6 +5669,24 @@ components:
             - by
         allowDownload:
           type: string
+    ExtractorsLabel:
+      type: object
+      description: An arbitrary text label on which users can filter the Extractor Catalog
+      properties:
+        id:
+          type: string
+          example: "5b8e969d5e0e8690971ee23e"
+        name:
+          type: string
+          example: "Image"
+        category:
+          type: string
+          example: "Type"
+        extractors:
+          type: array
+          example: ["ncsa.image.preview", "ncsa.image.metadata"]
+          items:
+            type: string
 
   ##############################################################################
   # Parameters                                                                 #
