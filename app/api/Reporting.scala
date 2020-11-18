@@ -515,6 +515,41 @@ class Reporting @Inject()(selections: SelectionService,
 
       // TODO: worth trying to salvage records pre-job ID?
       if (event.job_id.isDefined) {
+        userJobDurations.get(event.user_id) {
+          case Some(userRecord) => {
+            // Do we already have events from this job? If so, compare dates
+            var modified = false
+            var earliest = new Date()
+            var latest = new Date()
+            userRecord.get(event.job_id.get) match {
+              case Some(timeRange) => {
+                earliest = timeRange._2
+                latest = timeRange._3
+                if (event.start.before(earliest)) {
+                  earliest = event.start
+                  modified = true
+                }
+                if (event.start.after(latest)) {
+                  latest = event.start
+                  modified = true
+                }
+              }
+              case None => {
+                // create a new record for this job id
+                earliest = event.start
+                latest = event.start
+                modified = true
+              }
+            }
+
+            if (modified) {
+              userRecord(event.job_id.get) = (event.extractor_id, earliest, latest)
+              userJobDurations(event.user_id) = userRecord
+            }
+          }
+          case None => userJobDurations(event.user_id) = MutaMap(event.job_id.get -> (event.extractor_id, event.start, event.start))
+        }
+
         // TODO: Need to improve differentiation of resources here. Dataset IDs are also listed.
         files.get(event.file_id).foreach(f => {
           // Do we already have data for this user?
