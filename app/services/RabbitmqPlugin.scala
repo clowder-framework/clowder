@@ -631,6 +631,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
+    manualFileSubmissionEvent(file, datasetId, job_id, host, requestAPIKey)
     job_id
   }
 
@@ -654,9 +655,42 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     val msg = ExtractorMessage(id, datasetId, job_id, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
       "", apiKey, "extractors." + queue, source, "submitted", None)
     extractWorkQueue(msg)
+    manualDatasetSubmissionEvent(datasetId, job_id, host, requestAPIKey)
     job_id
   }
 
+  def manualFileSubmissionEvent(file: File, datasetId: UUID, jobId: Option[UUID], host: String, requestAPIKey: Option[String]): Unit = {
+    val routingKey = s"$exchange.file.submitted"
+    Logger.info(s"Sending message $routingKey from $host")
+    val apiKey = requestAPIKey.getOrElse(globalAPIKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val prettyJobID = if (jobId.isDefined) jobId.get.stringify else "unknown"
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename), "job_id" -> JsString(prettyJobID))))
+    val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+
+    val target = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq("job_id" -> JsString(prettyJobID))))
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+    val (id, job_id) = postSubmissionEvent(file.id, routingKey, user.id)
+    val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, routingKey, Map.empty, file.length.toString, datasetId,
+      "", apiKey, routingKey, source, "submitted", Some(target))
+    extractWorkQueue(msg)
+  }
+
+  def manualDatasetSubmissionEvent(datasetId: UUID, jobId: Option[UUID], host: String, requestAPIKey: Option[String]): Unit = {
+    val routingKey = s"$exchange.dataset.submitted"
+    Logger.info(s"Sending message $routingKey from $host")
+    val apiKey = requestAPIKey.getOrElse(globalAPIKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val prettyJobID = if (jobId.isDefined) jobId.get.stringify else "unknown"
+    val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq("job_id" -> JsString(prettyJobID))))
+
+    val target = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq("job_id" -> JsString(prettyJobID))))
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+    val (id, job_id) = postSubmissionEvent(datasetId, routingKey, user.id)
+    val msg = ExtractorMessage(id, datasetId, job_id, notifies, datasetId, host, routingKey, Map.empty, 0.toString, datasetId,
+      "", apiKey, routingKey, source, "submitted", Some(target))
+    extractWorkQueue(msg)
+  }
 
   /**
     * Metadata added to a resource (file or dataset).
