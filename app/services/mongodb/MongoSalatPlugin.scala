@@ -448,6 +448,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates extractors enabled and disabled in a space
     updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
+
+    // Updates users for old extraction events that didn't have them
+    updateMongo("assign-extraction-event-users", assignUsersToExtractionEvents)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1686,4 +1689,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     print("DONE")
   }
 
+  private def assignUsersToExtractionEvents() = {
+
+  }
 }
