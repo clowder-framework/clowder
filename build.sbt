@@ -2,7 +2,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 //  .settings(
     name := "clowder"
 
-    scalaVersion := "2.12.13"
+    scalaVersion := "2.12.3"
 
 //    TwirlKeys.useOldParser in Compile := true
 
@@ -10,7 +10,13 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
     routesImport += "Binders._"
 
+    resolvers += Resolver.jcenterRepo
+
     resolvers += "dice.repository" at "https://raw.github.com/DICE-UNC/DICE-Maven/master/releases"
+
+    resolvers += "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+
+    resolvers in ThisBuild += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
     libraryDependencies ++= Seq(
       guice,
@@ -22,7 +28,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
       "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3" % Test,
 
 
-      "ws.securesocial" %% "securesocial" % "3.0-M8",
+      //"ws.securesocial" %% "securesocial" % "3.0-M8",
       "com.unboundid" % "unboundid-ldapsdk" % "4.0.1",
 
       // messagebus
@@ -87,9 +93,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
       "org.webjars" % "jquery" % "3.2.1",
       "net.codingwell" %% "scala-guice" % "4.1.0",
       "com.iheart" %% "ficus" % "1.4.1",
-      "com.enragedginger" %% "akka-quartz-scheduler" % "1.6.1-akka-2.5.x",
-      "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
-      "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % "test"
+      //"com.enragedginger" %% "akka-quartz-scheduler" % "1.6.1-akka-2.5.x",
+      //"com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
+      //"com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % "test"
     )
 
     scalacOptions ++= Seq(

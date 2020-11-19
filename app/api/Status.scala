@@ -2,10 +2,10 @@ package api
 
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
-import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.util.{Clock, Credentials}
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import models.User
@@ -27,7 +27,8 @@ class Status @Inject()(spaces: SpaceService,
                        appConfig: AppConfigurationService,
                        extractors: ExtractorService,
                        versusService: VersusService,
-                       searches: SearchService) extends ApiController {
+                       searches: SearchService,
+                       silhouette: Silhouette[DefaultEnv]) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
 
