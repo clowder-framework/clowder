@@ -15,6 +15,7 @@ import services._
 import services.mongodb.MongoSalatPlugin
 
 import scala.collection.mutable
+import util.silhouette.auth.{DefaultEnv, WithProvider}
 
 /**
  * class that contains all status/version information about clowder.
@@ -37,6 +38,9 @@ class Status @Inject()(spaces: SpaceService,
   }
 
   def status = silhouette.SecuredAction(WithProvider[DefaultEnv#A](CredentialsProvider.ID)) { implicit request =>
+
+    // TODO: silo has request.identity as user - do we need a better Env?
+    // https://www.silhouette.rocks/docs/environment
 
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
