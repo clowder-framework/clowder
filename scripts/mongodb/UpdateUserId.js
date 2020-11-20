@@ -6,9 +6,8 @@ If found, it gets the author._id for use as the user_id. If an author id is foun
 an update to the extractions collection is made by adding user_id: author._id. 
 ***/
 
-let authorID = null;
-
 db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
+    let authorID = null;
     // Looping through each extraction where user_id doesn't exist...
     // Look up file_id in uploads.files, get author.id if found
     let foundFile = db.uploads.files.findOne({"_id": ext.file_id})
@@ -18,9 +17,9 @@ db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
 
     // if not found in uploads.files, look up file_id in datasets, get author.id if found
     if (foundFile == null || authorID == null) {
-        let findAuthorInDatasets = db.datasets.findOne({"files": {$in: [ext.file_id]}});
-        if (findAuthorInDatasets != null) {
-            authorID = findAuthorInDatasets.author._id;
+        let foundAuthorInDatasets = db.datasets.findOne({"files": {$in: [ext.file_id]}});
+        if (foundAuthorInDatasets != null) {
+            authorID = foundAuthorInDatasets.author._id;
         }
     }
     if (authorID != null) {
