@@ -362,15 +362,16 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     var enabledExtractors = new ListBuffer[String]()
     var disabledExtractors = new ListBuffer[String]()
     dataset.spaces.map(space => {
-      val extractors = spacesService.getAllExtractors(space)
-      enabledExtractors.appendAll(extractors.get.enabled.flatMap { exId =>
-        extractorsService.getExtractorInfo(exId).filter(exInfo =>
-          containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
-      })
-      disabledExtractors.appendAll(extractors.get.disabled.flatMap { exId =>
-        extractorsService.getExtractorInfo(exId).filter(exInfo =>
-          containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
-      })
+      spacesService.getAllExtractors(space).foreach { extractors =>
+        enabledExtractors.appendAll(extractors.enabled.flatMap { exId =>
+          extractorsService.getExtractorInfo(exId).filter(exInfo =>
+            containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+        })
+        disabledExtractors.appendAll(extractors.disabled.flatMap { exId =>
+          extractorsService.getExtractorInfo(exId).filter(exInfo =>
+            containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
+        })
+      }
     })
     (enabledExtractors.toList, disabledExtractors.toList)
   }
@@ -1204,7 +1205,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
       Logger.debug("Received extractor status: " + statusBody)
       val json = Json.parse(statusBody)
       val file_id = UUID((json \ "file_id").as[String])
-      val user_id = UUID((json \ "user_id").as[String])
+      val user_id = (json \ "user_id").asOpt[String].fold(User.anonymous.id)(s => UUID(s))
       val job_id: Option[UUID] = (json \ "job_id").asOpt[String] match {
         case Some(jid) => { Some(UUID(jid)) }
         case None => { None }

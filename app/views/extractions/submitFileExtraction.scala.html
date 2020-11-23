@@ -81,7 +81,9 @@
                         <script>
                                 var params = JSON.parse("@Json.stringify(e.parameters)".replace(/&quot;/g, "\""));
                                 var selector = "#@(e.name.replaceAll("\\.", "_"))_parameters";
-                                $(selector).jsonForm(params);
+                                if (Object.keys(params).length != 0) {
+                                    $(selector).jsonForm(params);
+                                }
                         </script>
                     }
                 </tbody>
