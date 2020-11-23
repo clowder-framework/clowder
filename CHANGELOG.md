@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Added support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
+
 ### Fixed
 - An extractor with file matching set to `*/*` (all file types) would mistakenly send out dataset events.
 
