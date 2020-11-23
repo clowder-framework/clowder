@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- An extractor with file matching set to `*/*` (all file types) would mistakenly send out dataset events.
 
 ## 1.12.2 - 2020-11-19
 
