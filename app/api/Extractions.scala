@@ -22,6 +22,7 @@ import services._
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
+import scala.util.parsing.json.JSONObject
 
 
 /**
@@ -582,6 +583,81 @@ class Extractions @Inject()(
         }
       case None =>
         Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
+  }
+
+  def submitFilesToExtractor(ds_id: UUID, file_ids: String)= PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
+    ds_id)))(parse.json) { implicit request =>
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) => {
+        var results = Map[String, String]()
+        files.get(file_ids.split(",").map(fid => UUID(fid)).toList).found.foreach(fi => {
+          createFileSubmission(request, fi) match {
+            case Some(jobid) => results += (fi.id.stringify -> jobid.stringify)
+            case None => Logger.error("File not submitted: "+fi.id)
+          }
+        })
+        Ok(Json.obj("status" -> "success", "jobs" -> results))
+      }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
+  }
+
+  private def createFileSubmission(request: UserRequest[JsValue], file: File): Option[UUID] = {
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) => {
+        val id = file.id
+        val fileType = file.contentType
+        val idAndFlags = ""
+
+        // check that the file is ready for processing
+        if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
+          // parameters for execution
+          val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+
+          // Log request
+          val clientIP = request.remoteAddress
+          val serverIP = request.host
+          dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+
+          val extra = Map("filename" -> file.filename,
+            "parameters" -> parameters,
+            "action" -> "manual-submission")
+          val showPreviews = file.showPreviews
+
+          val newFlags = if (showPreviews.equals("FileLevel"))
+            idAndFlags + "+filelevelshowpreviews"
+          else if (showPreviews.equals("None"))
+            idAndFlags + "+nopreviews"
+          else
+            idAndFlags
+
+          val originalId = if (!file.isIntermediate) {
+            file.id.toString()
+          } else {
+            idAndFlags
+          }
+
+          var datasetId: UUID = null
+          // search datasets containning this file, either directly under dataset or indirectly.
+          val datasetslists:List[Dataset] = datasets.findByFileIdAllContain(file.id)
+          // Note, we assume only at most one dataset will contain a given file.
+          if (0 != datasetslists.length) {
+            datasetId = datasetslists.head.id
+          }
+          // if extractor_id is not specified default to execution of all extractors matching mime type
+          (request.body \ "extractor").asOpt[String] match {
+            case Some(extractorId) => p.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
+                datasetId, newFlags, request.apiKey, request.user)
+            case None => p.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+          }
+        } else None
+      }
+      case None => {
+        Logger.error("RabbitMQ disabled.")
+        None
+      }
     }
   }
 
