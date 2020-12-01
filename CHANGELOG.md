@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Added support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
+- Ability to submit multiple selected files within a dataset to an extractor.
 
 ## 1.12.2 - 2020-11-19
 
