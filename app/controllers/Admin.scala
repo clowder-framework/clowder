@@ -29,7 +29,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.admin.customize(theme,
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
-      AppConfiguration.getGoogleAnalytics))
+      AppConfiguration.getGoogleAnalytics,
+      AppConfiguration.getAmplitudeApiKey))
   }
 
   def tos = ServerAdminAction { implicit request =>
