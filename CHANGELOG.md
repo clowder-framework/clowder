@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.12.3 - 2020-12-01
+
+### Added
+- UpdateUserId.js to scripts/updates. This code adds user_id to each document in extractions collection in mongodb. 
+- user_id is taken from author id in uploads.files if exists, else it taken from author id in datasets collection. 
 
 ## 1.12.2 - 2020-11-19
 
