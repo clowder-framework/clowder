@@ -4,15 +4,13 @@ import api.Permission.Permission
 import models.{ClowderUser, ResourceRef, User, UserStatus}
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
-import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Logger
 import play.api.mvc._
-import play.api.mvc.Results.Unauthorized
-import play.api.mvc.{ControllerComponents => controllerComponents}
-import securesocial.core.providers.UsernamePasswordProvider
-import securesocial.core.SecureSocial
 import services.{AppConfiguration, DI}
+import com.mohiva.play.silhouette.api.{Authenticator, Identity, Silhouette}
+import util.silhouette.auth.ClowderEnv
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
@@ -29,9 +27,10 @@ import scala.concurrent.Future
 trait ApiController extends InjectedController {
 
   val userservice = DI.injector.getInstance(classOf[services.UserService])
+  val silhouette = DI.injector.getInstance(classOf[Silhouette[ClowderEnv]])
 
   /** get user if logged in */
-  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest, AnyContentAsJson] {
+  def UserAction(needActive: Boolean) = silhouette.SecuredAction[ClowderEnv, AnyContentAsJson] {
     def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
@@ -63,7 +62,7 @@ trait ApiController extends InjectedController {
   }
 
   /** call code iff user is logged in */
-  def AuthenticatedAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
+  def AuthenticatedAction =  new silhouette.SecuredAction[ClowderEnv, AnyContentAsJson] {
     def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
@@ -128,7 +127,7 @@ trait ApiController extends InjectedController {
   }
 
   /** Return user based on request object */
-  def getUser[A](request: Request[A]): UserRequest[A] = {
+  def getUser[A](request: Request[A]): UserRequest[A] = silhouette.SecuredAction {
     // API will check for the user in the following order:
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     // 2) basic auth, this allows you to call the api with your username/password

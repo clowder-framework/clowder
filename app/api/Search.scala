@@ -2,20 +2,17 @@ package api
 
 import api.Permission._
 import javax.inject.{Inject, Singleton}
+import services._
 import models._
 import play.Logger
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsValue, Json}
-import services._
 import util.SearchResult
 
 import scala.collection.mutable.{HashMap, ListBuffer}
 
 @Singleton
 class Search @Inject() (
-   files: FileService,
-   datasets: DatasetService,
-   collections: CollectionService,
    previews: PreviewService,
    queries: MultimediaQueryService,
    spaces: SpaceService,

@@ -1,22 +1,18 @@
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
-//  .settings(
+
     name := "clowder"
 
     scalaVersion := "2.12.3"
-
-//    TwirlKeys.useOldParser in Compile := true
 
     routesImport += "models._"
 
     routesImport += "Binders._"
 
-    resolvers += Resolver.jcenterRepo
-
     resolvers += "dice.repository" at "https://raw.github.com/DICE-UNC/DICE-Maven/master/releases"
 
-    resolvers += "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+    resolvers += Resolver.jcenterRepo
 
-    resolvers in ThisBuild += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+    resolvers += "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
     libraryDependencies ++= Seq(
       guice,

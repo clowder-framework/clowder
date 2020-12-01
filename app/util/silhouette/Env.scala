@@ -7,7 +7,11 @@ import models.User
 /**
  * The default env.
  */
-trait DefaultEnv extends Env {
+trait ClowderEnv extends Env {
   type I = User
   type A = CookieAuthenticator
+
+  def authenticatorFromRequest(request) = {
+
+  }
 }

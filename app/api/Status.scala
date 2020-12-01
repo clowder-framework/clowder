@@ -1,35 +1,23 @@
 package api
 
-import javax.inject.Inject
-import com.mohiva.play.silhouette.api.Authenticator.Implicits._
-import com.mohiva.play.silhouette.api.exceptions.ProviderException
-import com.mohiva.play.silhouette.api.util.{Clock, Credentials}
-import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers._
-import play.api.Logger
+import javax.inject.Inject
 import models.User
-import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
 import services._
 import services.mongodb.MongoSalatPlugin
+import util.silhouette.auth.ClowderEnv
 
 import scala.collection.mutable
-import util.silhouette.auth.{DefaultEnv, WithProvider}
 
 /**
  * class that contains all status/version information about clowder.
  */
-class Status @Inject()(spaces: SpaceService,
-                       collections: CollectionService,
-                       datasets: DatasetService,
-                       files: FileService,
-                       users: UserService,
-                       appConfig: AppConfigurationService,
+class Status @Inject()(appConfig: AppConfigurationService,
                        extractors: ExtractorService,
-                       versusService: VersusService,
+                       mongo: MongoSalatPlugin,
                        searches: SearchService,
-                       silhouette: Silhouette[DefaultEnv]) extends ApiController {
+                       silhouette: Silhouette[ClowderEnv]) extends ApiController {
   val jsontrue = Json.toJson(true)
   val jsonfalse = Json.toJson(false)
 
@@ -37,14 +25,10 @@ class Status @Inject()(spaces: SpaceService,
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
-  def status = silhouette.SecuredAction(WithProvider[DefaultEnv#A](CredentialsProvider.ID)) { implicit request =>
-
-    // TODO: silo has request.identity as user - do we need a better Env?
-    // https://www.silhouette.rocks/docs/environment
-
+  def status = silhouette.SecuredAction { implicit request =>
     Ok(Json.obj("version" -> getVersionInfo,
-      "counts" -> getCounts(request.user),
-      "plugins" -> getPlugins(request.user),
+      "counts" -> getCounts(Some(request.identity: User)),
+      "plugins" -> getPlugins(Some(request.identity: User)),
       "extractors" -> Json.toJson(extractors.getExtractorNames(List.empty))))
   }
 
@@ -59,38 +43,12 @@ class Status @Inject()(spaces: SpaceService,
       result.put("elasticsearch", Json.obj("status" -> "disconnected"))
     }
 
-    current.plugins foreach {
-      // mongo
-      case p: MongoSalatPlugin => {
-        result.put("mongo", if (Permission.checkServerAdmin(user)) {
-              Json.obj("uri" -> p.mongoURI.toString(),
-                "updates" -> appConfig.getProperty[List[String]]("mongodb.updates", List.empty[String]))
-            } else {
-              jsontrue
-            })
-      }
-
-      // versus
-        result.put("versus", if (Permission.checkServerAdmin(user)) {
-          Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
-        } else {
-          jsontrue
-        })
-
-      case p => {
-        val name = p.getClass.getName
-        if (name.startsWith("services.")) {
-          val status = if (p.enabled) {
-            "enabled"
-          } else {
-            "disabled"
-          }
-          result.put(p.getClass.getName, Json.obj("status" -> status))
-        } else {
-          Logger.debug(s"Ignoring ${name} plugin")
-        }
-      }
-    }
+    result.put("mongo", if (Permission.checkServerAdmin(user)) {
+      Json.obj("uri" -> mongo.mongoURI.toString(),
+        "updates" -> appConfig.getProperty[List[String]]("mongodb.updates", List.empty[String]))
+    } else {
+      jsontrue
+    })
 
     Json.toJson(result.toMap[String, JsValue])
   }

@@ -4,9 +4,11 @@ package models
 import java.security.MessageDigest
 import java.util.Date
 
-import play.api.libs.json.Json
-import securesocial.core._
+import com.mohiva.play.silhouette.api.{Authenticator, Identity}
 import _root_.services.DI
+import com.mohiva.play.silhouette.api.services.AuthenticatorService
+import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticator
+import play.api.libs.json.Json
 
 
 object UserStatus extends Enumeration {
@@ -18,8 +20,17 @@ object UserStatus extends Enumeration {
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
  */
-trait User extends BasicProfile {
+trait User extends Identity {
   def id: UUID
+
+  def firstName: Option[String]
+  def lastName: Option[String]
+  def fullName: Option[String]
+  def email: Option[String]
+  def avatarUrl: Option[String]
+  def authMethod: Authenticator
+  def providerId: String
+
   def status: UserStatus.Value
   def profile: Option[Profile]
   def friends: Option[List[String]]
@@ -30,6 +41,7 @@ trait User extends BasicProfile {
   def repositoryPreferences: Map[String,Any]
   def termsOfServices: Option[UserTermsOfServices]
   def lastLogin: Option[Date]
+
   // One can only be superAdmin iff you are a serveradmin
   def superAdminMode: Boolean
 
@@ -104,7 +116,7 @@ object User {
     lastName= Some("User"),
     fullName= Some("Anonymous User"),
     email=None,
-    authMethod=AuthenticationMethod("SystemUser"),
+    authMethod=AuthenticatorService[DummyAuthenticator],
     status=UserStatus.Admin,
     termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
@@ -124,10 +136,8 @@ case class ClowderUser (
   lastName: Option[String],
   fullName: Option[String],
   email: Option[String],
-  authMethod: AuthenticationMethod,
+  authMethod: Authenticator,
   avatarUrl: Option[String] = None,
-  oAuth2Info: Option[OAuth2Info] = None,
-  passwordInfo: Option[PasswordInfo] = None,
 
   // should user be active
   status: UserStatus.Value = UserStatus.Inactive,
