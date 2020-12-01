@@ -434,14 +434,6 @@ line-height: 1.5;
                 var field_id = context.val();
                 var field_type = context.data("type");
                 var space_id = context.attr("space_id");
-                /*console.log('Metadata field (' + field_label + '):', {
-                    'Context': context,
-                    'Label: ': field_label,
-                    'Field Description: ': field_description,
-                    'Field ID: ': field_id,
-                    'Field Type: ': field_type,
-                    'Space ID: ': space_id
-                });*/
                 // Create the template and HTML content.
                 var template_map =
                         {"string": "add_metadata_string",
@@ -454,11 +446,11 @@ line-height: 1.5;
                             "wkt": "add_metadata_wktlocation"
                         };
                 if (field_type === null || typeof(field_type) === "undefined") {
-                    //console.log("Unsupported field_type encountered: ", field_type)
+                    console.log("Unsupported field_type encountered: ", field_type)
                     // Return true here is equivalent to "continue"
                     return true;
                 } else if (field_id.indexOf("https") !== -1) {
-                    //console.log("Unsupported field_id encountered: ", field_id)
+                    console.log("Unsupported field_id encountered: ", field_id)
                     // Return true here is equivalent to "continue"
                     return true;
                 }
