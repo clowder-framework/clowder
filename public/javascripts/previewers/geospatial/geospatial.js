@@ -6,6 +6,11 @@
 
 	console.log("geospatial data previewer for " + initialID);
 
+	var hideTab = function() {
+		var tabHeader = $(`a[href^="${initialTab}"]`);
+		tabHeader.hide();
+	};
+
 	var defaultOpacity = 0.8;
 	// retrieve the metadata
 	var metadataApiUrl = jsRoutes.api.Files.getTechnicalMetadataJSON(initialID).url;
@@ -18,14 +23,10 @@
 	request
 			.done(function(data) {
 
-				// if there are no tehcnical metadata or no wms metadata
+				// if there are no technical metadata or no wms metadata
 				// then return
-				if (data == null)
-					return;
-				if (data == undefined)
-					return;
-				if (data.length == 0)
-					return;
+				if (data == null || data == undefined || data.length == 0)
+					return hideTab();
 
                 // search the metadata index which contains geospatial metadata
                 var geoMetadataIndex = -1;
@@ -41,7 +42,7 @@
 
                 // if it couldn't find the index, return
                 if (geoMetadataIndex == -1)
-                    return;
+                    return hideTab();
 
 				console.log("Updating tab " + initialTab);
 
@@ -60,7 +61,7 @@
 									// add layer opacity control
 									$(initialTab).append(
 											"<div id='layer-opacity-control'><label>Layer Opacity: </label><input id='opacity' type='range' min='0' max='1' value='"+defaultOpacity+"' step='0.01' style='width:200px;' /></div>");
-									
+
 									// drawing the map
 									console.log("ol3js loaded");
 
@@ -111,7 +112,7 @@
 										wmsLayer.setOpacity($(this).val());
 									});
 
-									
+
 									// create map object
 									var map = new ol.Map({
 										target : 'map'
@@ -135,16 +136,18 @@
 
 									// zoom into the layer extent
 									map.setView(view);
-									
+
 									// fix for MMDB-1617
 									// force to redraw the map
-									// TODO the dom selector needs to select the current selector instead of this selection 
+									// TODO the dom selector needs to select the current selector instead of this selection
 									$('a[data-toggle="tab"]').on(
 											'shown.bs.tab', function(e) {
 												map.updateSize()
 									});
 								});
 
+			}).fail(function() {
+				hideTab();
 			});
 
 }(jQuery, Configuration));

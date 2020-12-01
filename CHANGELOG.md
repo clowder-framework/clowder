@@ -4,11 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
 ## Unreleased
 
 ### Added
 - Added support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
 - Ability to submit multiple selected files within a dataset to an extractor.
+
+### Fixed
+- GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
 
 ## 1.12.2 - 2020-11-19
 
