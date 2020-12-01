@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Added support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
+- Ability to submit multiple selected files within a dataset to an extractor.
+
 ### Fixed
 - GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
+
+## 1.12.2 - 2020-11-19
+
+### Changed
+- /api/reindex admin endpoint no longer deletes and swaps a temporary index, but reindexes in-place.
 
 ## 1.12.1 - 2020-11-05
 

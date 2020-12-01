@@ -1,18 +1,23 @@
 @(extractors: List[ExtractorInfo], ds: Dataset)(implicit user: Option[models.User])
+@import _root_.util.Formatters._
 @import play.api.libs.json._
-@import services.AppConfiguration
 
 @main("Extractions") {
+    <ol class="breadcrumb">
+        <li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(ds.author.id)"> @ds.author.fullName</a></li>
+        <li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
+        <li><span class="glyphicon glyphicon-fullscreen"></span> Marked Files</li>
+
+    </ol>
     <div class="row">
-        <div class="col-xs-12">
-            <h1>Submit dataset for extraction</h1>
+        <div id="submission_header" class="col-xs-12">
+            <h1>Submit marked files for extraction</h1>
         </div>
     </div>
     <div class="row">
         <div class="col-xs-12">
-            <p>Submit this dataset to a specific extractor below by providing parameters and clicking
+            <p>Submit these files to a specific extractor below by providing parameters and clicking
                 the submit button. Some parameters may be left empty.</p>
-            <p>Dataset name: <a href="@routes.Datasets.dataset(ds.id)">@ds.name</a></p>
         </div>
     </div>
     <div class="row">
@@ -38,13 +43,15 @@
                             <td>
                                 <form id="@(e.name.replaceAll("\\.", "_"))_parameters"></form>
                             </td>
-                            <td><button id="@e.id" class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_parameters','@ds.id', '@e.id')">Submit</button></td>
+                            <td><button id="@e.id" class="btn btn-primary" onclick="submit('@e.name','@(e.name.replaceAll("\\.", "_"))_parameters','@ds.id','@e.id')">Submit</button></td>
                         </tr>
 
                         <script>
                                 var params = JSON.parse("@Json.stringify(e.parameters)".replace(/&quot;/g, "\""));
                                 var selector = "#@(e.name.replaceAll("\\.", "_"))_parameters";
-                                $(selector).jsonForm(params);
+                                if (Object.keys(params).length != 0) {
+                                    $(selector).jsonForm(params);
+                                }
                         </script>
                     }
                 </tbody>
@@ -68,21 +75,10 @@
             btn.attr('disabled', false);
         }
 
-        function submit(extractor_name, textbox_id, ds_id, submit_id) {
+        function submit(extractor_name, textbox_id, file_id, submit_id) {
             var clickedBtn = $('#' + submit_id);
 
-            @if(AppConfiguration.getAmplitudeApiKey != "") {
-                amplitude.getInstance().logEvent("extraction", {
-                    "view": "dataset",
-                    "extractor_name": extractor_name,
-                    "resource_id": '@ds.id',
-                    "resource_name": '@ds.name',
-                    "author_id": '@ds.author.id',
-                    "author_name": '@ds.author.fullName',
-                    "submitter_id": '@user.get.id',
-                    "submitter_name": '@user.get.getMiniUser.fullName'
-                });
-            }
+            var selected = $.cookie('selected-files-@ds.id');
 
             // Throttle submissions to one every 3 seconds
             disableSubmit(clickedBtn);
@@ -93,7 +89,7 @@
             var params = $('#'+textbox_id).jsonFormValue();
             if (params === "") params = "{}";
             var dataBody = {'extractor': extractor_name, 'parameters': params};
-            var request = jsRoutes.api.Extractions.submitDatasetToExtractor(ds_id).ajax({
+            var request = jsRoutes.api.Extractions.submitFilesToExtractor("@ds.id", selected).ajax({
                 data: JSON.stringify(dataBody),
                 type: 'POST',
                 contentType: "application/json",
@@ -107,6 +103,14 @@
                 console.error("The following error occured: " + textStatus, errorThrown);
             });
         }
+
+        $(document).ready(function() {
+            var selected = $.cookie('selected-files-@ds.id');
+            if (selected) {
+                var fileUUIDs = selected.split(',');
+                $('#submission_header')[0].innerHTML = "<h1>Submit "+fileUUIDs.length+" marked files for extraction</h1>"
+            }
+        });
     </script>
 }
 
