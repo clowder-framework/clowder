@@ -80,6 +80,8 @@ class Admin @Inject() (userService: UserService,
     getValueString(request.body, "sensor").foreach(AppConfiguration.setSensorTitle(_))
     getValueString(request.body, "parameters").foreach(AppConfiguration.setParametersTitle(_))
     getValueString(request.body, "parameter").foreach(AppConfiguration.setParameterTitle(_))
+    getValueString(request.body, "amplitudeApikey").foreach(AppConfiguration.setAmplitudeApiKey(_))
+
     getValueString(request.body, "tosText").foreach { tos =>
       events.addEvent(Event(request.user.get, event_type = EventType.TOS_UPDATE.toString))
       AppConfiguration.setTermsOfServicesText(tos)
