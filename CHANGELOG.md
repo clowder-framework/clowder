@@ -15,8 +15,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
-
-### Fixed
 - An extractor with file matching set to `*/*` (all file types) would mistakenly send out dataset events.
 
 ## 1.12.2 - 2020-11-19
