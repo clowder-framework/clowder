@@ -18,7 +18,7 @@ trait SectionService {
 
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) : List[Tag]
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def removeTags(id: UUID, tags: List[String])
 
   def findByFileId(fileId: UUID): List[Section]
 

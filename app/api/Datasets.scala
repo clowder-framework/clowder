@@ -1395,8 +1395,6 @@ class  Datasets @Inject()(
 
     val error_str = tagCheck.error_str
     val not_found = tagCheck.not_found
-    val userOpt = tagCheck.userOpt
-    val extractorOpt = tagCheck.extractorOpt
     val tags = tagCheck.tags
 
     // Now the real work: removing the tags.
@@ -1404,9 +1402,9 @@ class  Datasets @Inject()(
       // Clean up leading, trailing and multiple contiguous white spaces.
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
-        case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_File => files.removeTags(id, tagsCleaned)
         case TagCheck_Dataset => {
-          datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.removeTags(id, tagsCleaned)
           datasets.get(id) match {
             case Some(dataset) => {
               events.addObjectEvent(request.user, id, dataset.name, EventType.REMOVE_TAGS_DATASET.toString)
@@ -1416,7 +1414,7 @@ class  Datasets @Inject()(
 
         }
 
-        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(id, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
     } else {
