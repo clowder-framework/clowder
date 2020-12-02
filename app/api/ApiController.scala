@@ -1,13 +1,15 @@
 package api
 
 import api.Permission.Permission
+import com.mohiva.play.silhouette.api.actions.{SecuredActionBuilder, SecuredRequestHandlerBuilder}
 import models.{ClowderUser, ResourceRef, User, UserStatus}
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.mvc._
 import services.{AppConfiguration, DI}
-import com.mohiva.play.silhouette.api.{Authenticator, Identity, Silhouette}
+import com.mohiva.play.silhouette.api.{Authenticator, Environment, HandlerResult, Identity, Silhouette}
+import play.api.libs.json.Json
 import util.silhouette.auth.ClowderEnv
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,9 +32,11 @@ trait ApiController extends InjectedController {
   val silhouette = DI.injector.getInstance(classOf[Silhouette[ClowderEnv]])
 
   /** get user if logged in */
-  def UserAction(needActive: Boolean) = silhouette.SecuredAction[ClowderEnv, AnyContentAsJson] {
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest, AnyContentAsJson] {
     def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
+
     def executionContext = controllerComponents.executionContext
+
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -62,7 +66,7 @@ trait ApiController extends InjectedController {
   }
 
   /** call code iff user is logged in */
-  def AuthenticatedAction =  new silhouette.SecuredAction[ClowderEnv, AnyContentAsJson] {
+  def AuthenticatedAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
     def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
@@ -91,11 +95,63 @@ trait ApiController extends InjectedController {
     }
   }
 
+  /**
+   * An example for a secured request handler.
+   */
+  def securedRequestHandler = Action.async { implicit request =>
+    silhouette.SecuredRequestHandler { securedRequest =>
+      Future.successful(HandlerResult(Ok, Some(securedRequest.identity)))
+    }.map {
+      case HandlerResult(r, Some(user)) => Ok(Json.toJson(user.getMiniUser))
+      case HandlerResult(r, None) => Unauthorized
+    }
+  }
+
+  // we implemented our own ActionBuilder.
+  // silhouette has SecuredActionBuilders, so we must implement that instead.
+  // these require a SecuredRequestHandlerBuilder & BodyParser.
+  // is logic below in SecuredRequestHandlerBuilder?
+
+  /**
+   * An example for a secured request handler.
+   */
+  def NewPermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None)
+  = Action.async { implicit request =>
+    silhouette.SecuredRequestHandler { securedRequest =>
+      securedRequest.identity.id
+      val userRequest = getUser(request)
+      userRequest.user match {
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) =>
+          Future.successful(HandlerResult(Unauthorized, Some("Terms of Service not accepted")))
+        case Some(u) if (u.status == UserStatus.Inactive) =>
+          Future.successful(HandlerResult(Unauthorized, Some("Account is not activated")))
+        case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) =>
+          Future.successful(HandlerResult(Ok, Some(userRequest)))
+        case Some(u) => {
+          affectedResource match {
+            case Some(resource) if Permission.checkOwner(u, resource) =>
+              Future.successful(HandlerResult(Ok, Some(userRequest)))
+            case _ =>
+              Future.successful(HandlerResult(Unauthorized))
+          }
+        }
+        case None if Permission.checkPermission(userRequest.user, permission, resourceRef) =>
+          Future.successful(HandlerResult(Ok, Some(userRequest)))
+        case _ => Future.successful(HandlerResult(Unauthorized))
+      }
+    }.map {
+      case HandlerResult(Ok, Some(userRequest)) => Ok((userRequest)
+      case HandlerResult(r, Some(userRequest)) => Ok((userRequest)
+      case HandlerResult(r, None) => Unauthorized
+    }
+  }
+
   /** call code iff user has right permission for resource */
-  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None,
-                       affectedResource: Option[ResourceRef] = None) = new ActionBuilder[UserRequest, AnyContentAsJson] {
-    def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
-    def executionContext = controllerComponents.executionContext
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None):
+  SecuredActionBuilder[ClowderEnv, AnyContent] = {
+  //SecuredActionBuilder[ClowderEnv, AnyContent] = new SecuredActionBuilder[ClowderEnv, AnyContentAsJson](new SecuredRequestHandlerBuilder {
+    //def executionContext = controllerComponents.executionContext
+    //def environment = Environment[ClowderEnv]
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
@@ -106,7 +162,7 @@ trait ApiController extends InjectedController {
           affectedResource match {
             case Some(resource) if Permission.checkOwner(u, resource) => block(userRequest)
             case _ => Future.successful(Unauthorized("Not authorized"))
-           }
+          }
         }
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
@@ -118,7 +174,7 @@ trait ApiController extends InjectedController {
    * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
    * code around but we don't want users to have access to it.
    */
-  def DisabledAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
+  def DisabledAction = new SecuredActionBuilder[ClowderEnv, AnyContent] {
     def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
@@ -127,7 +183,7 @@ trait ApiController extends InjectedController {
   }
 
   /** Return user based on request object */
-  def getUser[A](request: Request[A]): UserRequest[A] = silhouette.SecuredAction {
+  def getUser[A](request: Request[A]): UserRequest[A] = {
     // API will check for the user in the following order:
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     // 2) basic auth, this allows you to call the api with your username/password
@@ -141,7 +197,7 @@ trait ApiController extends InjectedController {
       case _: Throwable => false
     }
 
-    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
+    /** 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
       authenticator <- SecureSocial.authenticatorFromRequest(request);
       identity <- userservice.find(authenticator.identityId)
@@ -161,12 +217,13 @@ trait ApiController extends InjectedController {
         case None =>
           return UserRequest(None, request, None)
       }
-    }
+    }*/
 
-    // 2) basic auth, this allows you to call the api with your username/password
+    /** 2) basic auth, this allows you to call the api with your username/password
     request.headers.get("Authorization").foreach { authHeader =>
       val header = new String(Base64.decodeBase64(authHeader.slice(6, authHeader.length).getBytes))
       val credentials = header.split(":")
+      findByEmailAndProvider
 
       UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
         val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
@@ -187,7 +244,7 @@ trait ApiController extends InjectedController {
           }
         }
       }
-    }
+    }*/
 
     // 3) X-API-Key, header Authorization is user API key
     request.headers.get("X-API-Key").foreach { apiKey =>
