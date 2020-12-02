@@ -88,7 +88,7 @@
                     '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
                     '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     *@
-                    '<li><a onclick="markAllFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark All</a></li>' +
+                    '<li><a onclick="markVisibleFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark Visible</a></li>' +
                     '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
                     @if(play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
                         '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
@@ -105,7 +105,7 @@
                     '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
                     '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     *@
-                    '<li><a onclick="markAllFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark All</a></li>' +
+                    '<li><a onclick="markVisibleFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark Visible</a></li>' +
                     //'<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
                     //'<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
                     //'<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag</a></li>' +
@@ -115,9 +115,8 @@
         }
     }
 
-    function markAllFiles() {
-        var selected = "@{dataset.files.mkString(",")}";
-        console.log(selected)
+    function markVisibleFiles() {
+        var selected = "@{fileList.map(f => f.id.stringify).mkString(",")}";
         $.cookie('selected-files-@dataset.id', selected);
         var fileUUIDs = selected.split(',');
         for (idx in fileUUIDs) {
@@ -331,7 +330,6 @@
     $(document).ready(function() {
         $('.fileselect').click(function() {
             var file_id = $(this).data("id");
-
             if ($("a[data-id='" + file_id + "'] span.glyphicon").hasClass('glyphicon-plus')) {
                 addFileToMarked(file_id)
             } else {
