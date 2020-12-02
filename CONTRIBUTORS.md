@@ -21,6 +21,7 @@ Following is a list of contributors in alphabetical order:
 - Mario Felarca
 - Max Burnette
 - Michal Ondrejcek
+- Michael Johnson
 - Michelle Pitcel
 - Mike Bobak
 - Mike Lambert
