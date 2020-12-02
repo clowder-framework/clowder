@@ -253,7 +253,7 @@ trait DatasetService {
   /** Queue a dataset to be indexed in Elasticsearch. */
   def index(id: UUID, idx: Option[String] = None)
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def removeTags(id: UUID, tags: List[String])
 
   def removeTag(id: UUID, tagId: UUID)
 

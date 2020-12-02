@@ -519,8 +519,8 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags)
     val file = get(id).get
     val existingTags = file.tags.map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)

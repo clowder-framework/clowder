@@ -1072,8 +1072,8 @@ class MongoDBDatasetService @Inject() (
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in dataset " + id + " : " + tags )
     val dataset = get(id).get
     val existingTags = dataset.tags.map(_.name)
     Logger.debug("existingTags before user and extractor filtering: " + existingTags.toString)
