@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
-- Editor can now delete tags on files, datasets
+- Editor can now delete tags on files, datasets and sections.
+- An extractor with file matching set to `*/*` (all file types) would mistakenly send out dataset events.
 
 ## 1.12.2 - 2020-11-19
 
