@@ -5,6 +5,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## 1.13.0 - 2020-12-02
+
+### Added
+- Ability to submit multiple selected files within a dataset to an extractor.
+- Support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
+- UpdateUserId.js to scripts/updates. This code adds user_id to each document in extractions collection in mongodb. 
+  user_id is taken from author id in uploads.files if exists, else it taken from author id in datasets collection.
+
+### Fixed
+- An extractor with file matching set to `*/*` (all file types) would incorrectly send out dataset events.
+- Space Editors can now delete tags on files, datasets and sections.
+- GeospatialViewer previewer no longer shows if file does not contain geospatial layers.
+
 ## 1.12.2 - 2020-11-19
 
 ### Changed
