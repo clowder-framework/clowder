@@ -3,6 +3,10 @@ package api
 import java.net.URL
 import java.util.Date
 
+import services._
+import services.s3.S3ByteStorageService
+import models._
+
 import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils}
 import com.mongodb.casbah.Imports._
 import javax.inject.Inject
@@ -17,9 +21,6 @@ import akka.stream.scaladsl.StreamConverters
 import play.api.http.HttpEntity
 
 import controllers.{Previewers, Utils}
-import models._
-import services._
-import services.s3.S3ByteStorageService
 
 
 /**
@@ -52,10 +53,7 @@ class Files @Inject()(
     Logger.debug("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
-        val serveradmin = request.user match {
-          case Some(u) => (u.status == UserStatus.Admin)
-          case None => false
-        }
+        val serveradmin = request.identity.status == UserStatus.Admin
         Ok(jsonFile(file, serveradmin))
       }
       case None => {
@@ -160,9 +158,8 @@ class Files @Inject()(
     * Download query used by Versus
     *
     */
-  def downloadquery(id: UUID) =
-    PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-      queries.get(id) match {
+  def downloadquery(id: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    queries.get(id) match {
         case Some((inputStream, filename, contentType, contentLength)) => {
           request.headers.get(RANGE) match {
             case Some(value) => {

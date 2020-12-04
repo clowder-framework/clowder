@@ -8,12 +8,14 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.mvc._
 import services.{AppConfiguration, DI}
-import com.mohiva.play.silhouette.api.{Authenticator, Environment, HandlerResult, Identity, Silhouette}
+import com.mohiva.play.silhouette.api.{Authenticator, Authorization, Environment, HandlerResult, Identity, Silhouette}
+import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.libs.json.Json
 import util.silhouette.auth.ClowderEnv
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 
 /**
  * Action builders check permissions in API calls. When creating a new endpoint, pick one of the actions defined below.
@@ -95,30 +97,9 @@ trait ApiController extends InjectedController {
     }
   }
 
-  /**
-   * An example for a secured request handler.
-   */
-  def securedRequestHandler = Action.async { implicit request =>
-    silhouette.SecuredRequestHandler { securedRequest =>
-      Future.successful(HandlerResult(Ok, Some(securedRequest.identity)))
-    }.map {
-      case HandlerResult(r, Some(user)) => Ok(Json.toJson(user.getMiniUser))
-      case HandlerResult(r, None) => Unauthorized
-    }
-  }
-
-  // we implemented our own ActionBuilder.
-  // silhouette has SecuredActionBuilders, so we must implement that instead.
-  // these require a SecuredRequestHandlerBuilder & BodyParser.
-  // is logic below in SecuredRequestHandlerBuilder?
-
-  /**
-   * An example for a secured request handler.
-   */
-  def NewPermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None)
-  = Action.async { implicit request =>
-    silhouette.SecuredRequestHandler { securedRequest =>
-      securedRequest.identity.id
+  case class PermissionAuthorization(permission: Permission.Value, resourceRef: Option[ResourceRef], affectedResource: Option[ResourceRef] = None) extends Authorization[User, CookieAuthenticator] {
+    def isAuthorized[B](user: User, authenticator: CookieAuthenticator) (
+      implicit request: Request[B]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) =>
@@ -132,49 +113,27 @@ trait ApiController extends InjectedController {
             case Some(resource) if Permission.checkOwner(u, resource) =>
               Future.successful(HandlerResult(Ok, Some(userRequest)))
             case _ =>
-              Future.successful(HandlerResult(Unauthorized))
+              Future.successful(HandlerResult[AnyContent](Unauthorized))
           }
         }
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) =>
           Future.successful(HandlerResult(Ok, Some(userRequest)))
         case _ => Future.successful(HandlerResult(Unauthorized))
       }
-    }.map {
-      case HandlerResult(Ok, Some(userRequest)) => Ok((userRequest)
-      case HandlerResult(r, Some(userRequest)) => Ok((userRequest)
-      case HandlerResult(r, None) => Unauthorized
+      Future.successful(true)
     }
   }
 
   /** call code iff user has right permission for resource */
-  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None):
-  SecuredActionBuilder[ClowderEnv, AnyContent] = {
-  //SecuredActionBuilder[ClowderEnv, AnyContent] = new SecuredActionBuilder[ClowderEnv, AnyContentAsJson](new SecuredRequestHandlerBuilder {
-    //def executionContext = controllerComponents.executionContext
-    //def environment = Environment[ClowderEnv]
-    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
-      val userRequest = getUser(request)
-      userRequest.user match {
-        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
-        case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
-        case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
-        case Some(u) => {
-          affectedResource match {
-            case Some(resource) if Permission.checkOwner(u, resource) => block(userRequest)
-            case _ => Future.successful(Unauthorized("Not authorized"))
-          }
-        }
-        case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
-        case _ => Future.successful(Unauthorized("Not authorized"))
-      }
-    }
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None) = {
+    silhouette.SecuredAction(PermissionAuthorization(permission, resourceRef))
   }
 
   /**
    * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
    * code around but we don't want users to have access to it.
    */
-  def DisabledAction = new SecuredActionBuilder[ClowderEnv, AnyContent] {
+  def DisabledAction = new ActionBuilder[UserRequest, AnyContentAsJson] {
     def parser = controllerComponents.parsers.json.map(AnyContentAsJson(_))
     def executionContext = controllerComponents.executionContext
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
