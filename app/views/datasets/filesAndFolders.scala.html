@@ -249,6 +249,8 @@
 
     function tagMarked() {
         var tag = $('#bulk-tag-selector')[0].value;
+        console.log(tag);
+        console.log('tag marked');
         if (tag.length > 0) {
             var selected = $.cookie('selected-files-@dataset.id');
             if (selected) {
@@ -316,6 +318,26 @@
         updateSelectedFileCount();
     }
 
+    function addFileToSelected(file_id) {
+        console.log('adding file to selected', file_id);
+        var request = jsRoutes.api.Selected.add().ajax({
+            data: JSON.stringify({"file":file_id}),
+            type: 'POST',
+            contentType: "application/json"
+        });
+
+        request.done(function (response, textStatus, jqXHR){
+            console.log('file selected, the response is', response)
+            console.log("file " + file_id + " selected");
+            updateSelectedCount(response.selected_count)
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: "+ textStatus, errorThrown);
+            window.location = "../login"; // FIXME hardcoded
+        });
+    }
+
     function removeFileFromMarked(file_id) {
         var selected = $.cookie('selected-files-@dataset.id');
         if (selected && selected.indexOf(file_id) > -1) {
@@ -328,15 +350,43 @@
         updateSelectedFileCount();
     }
 
+    function removeFileFromSelected(file_id) {
+        console.log('removing file from selected', file_id);
+        var request = jsRoutes.api.Selected.remove().ajax({
+            data: JSON.stringify({"file":file_id}),
+            type: 'POST',
+            contentType: "application/json"
+        });
+
+        request.done(function (response, textStatus, jqXHR){
+            console.log(response)
+            console.log("dataset " + file_id + " unselected");
+            updateSelectedCount(response.selected_count)
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: "+ textStatus, errorThrown);
+            window.location = "../login"; // FIXME hardcoded
+        });
+    }
+
     $(document).ready(function() {
         $('.fileselect').click(function() {
+
             var file_id = $(this).data("id");
 
+
+            // TODO add to selected here
+
+
             if ($("a[data-id='" + file_id + "'] span.glyphicon").hasClass('glyphicon-plus')) {
+                console.log('clicked fileselect', file_id, 'adding to marked');
                 addFileToMarked(file_id)
+                addFileToSelected(file_id)
             } else {
                 removeFileFromMarked(file_id);
-
+                removeFileFromSelected(file_id)
+                console.log('clicked fileselect', file_id, 'removing from marked');
             }
         });
 

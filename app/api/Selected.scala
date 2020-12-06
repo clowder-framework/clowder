@@ -54,8 +54,24 @@ class Selected @Inject()(selections: SelectionService,
         }
 	    }
 	    case None => {
-	    	Logger.error("no dataset specified")
-	    	BadRequest
+        request.body.\("file").asOpt[String] match {
+          case Some(file) => {
+            request.user match {
+              case Some(user) => {
+                selections.addFile(UUID(file), user.email.get)
+                Ok(toJson(Map("selected_count"->selections.get(user.email.get).length)))
+              }
+              case None => {
+                Logger.error("No user specified")
+                BadRequest
+              }
+            }
+          }
+          case None => {
+            Logger.error("no dataset or file specified")
+            BadRequest
+          }
+        }
 	    }
     }
   }
@@ -73,8 +89,22 @@ class Selected @Inject()(selections: SelectionService,
         }
 	    }
 	    case None => {
-	    	Logger.error("no dataset specified")
-	    	BadRequest
+        request.body.\("file").asOpt[String] match {
+          case Some(file) => {
+            request.user match {
+              case Some(user) => {
+                selections.removeFile(UUID(file), user.email.get)
+                Ok(toJson(Map("selected_count"->selections.get(user.email.get).length)))
+              }
+              case None => {
+                BadRequest
+              }
+            }
+          }
+          case None => {
+            BadRequest
+          }
+        }
 	    }
     }
   }

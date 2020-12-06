@@ -1,6 +1,6 @@
 $(function() {
     $('.select').click(function() {
-
+        console.log('clicked select');
         var dataset_id = $(this).data("id");
 
         if ($("a[data-id='"+dataset_id+"'] span.glyphicon").hasClass('glyphicon-plus')) {

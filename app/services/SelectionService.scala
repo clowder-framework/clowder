@@ -11,6 +11,10 @@ trait SelectionService {
 
   def remove(dataset: UUID, user: String)
 
+  def addFile(fileId: UUID, user: String)
+
+  def removeFile(fileId: UUID, user: String)
+
   def get(user: String): List[Dataset]
 
   def deleteAll(user: String)
