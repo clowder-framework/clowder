@@ -9,7 +9,7 @@ import play.api.Play._
 import scala.Some
 import com.mongodb.casbah.commons.MongoDBObject
 import play.api.Logger
-import models.{Dataset, Selected, UUID}
+import models.{Dataset, File, Selected, UUID}
 import org.bson.types.ObjectId
 import services.mongodb.MongoContext.context
 
@@ -68,9 +68,18 @@ class MongoDBSelectionService @Inject() (datasets: DatasetService, files: FileSe
   def get(user: String): List[Dataset] = {
     SelectedDAO.findOne(MongoDBObject("user"->user)) match {
       case Some(selected) => {
-        var selectedFiles = files.get(selected.files.map(UUID(_))).found
         var selectedDatasets = datasets.get(selected.datasets.map(UUID(_))).found
         selectedDatasets
+      }
+      case None => List.empty
+    }
+  }
+
+  def getFiles(user: String) : List[File] = {
+    SelectedDAO.findOne(MongoDBObject("user"->user)) match {
+      case Some(selected) => {
+        var selectedFiles = files.get(selected.files.map(UUID(_))).found
+        selectedFiles
       }
       case None => List.empty
     }

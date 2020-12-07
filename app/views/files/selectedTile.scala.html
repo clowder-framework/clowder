@@ -1,0 +1,54 @@
+@(file: models.File, space: Option[String], classes:String, isFollowing: Boolean, isSpace: Boolean, redirect: Call, selected: Boolean)(implicit user: Option[models.User])
+@import api.Permission
+@import play.api.i18n.Messages
+<div class="post-box @classes" id="@file.id-tile">
+    <div class="panel panel-default file-panel">
+        @if(user.isDefined) {
+            @if(selected) {
+                <a href="javascript: void(0)" title="Click to deselect file" class="pull-right select" data-id="@file.id">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </a>
+            } else {
+                <a href="javascript: void(0)" title="Click to select file" class="pull-right select" data-id="@file.id">
+                    <span class="glyphicon glyphicon-plus"></span>
+                </a>
+            }
+        }
+        <div class="panel-body">
+            @if(!file.thumbnail_id.isEmpty){
+                <a href="@(routes.Files.file(file.id,space))">
+                    <img class="img-responsive fit-in-space tiled-image" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
+                </a>
+            }
+            <div class="caption break-word">
+                <h4><a href="@(routes.Files.file(file.id, space))">@Html(file.filename)</a></h4>
+                <p class='abstractsummary'>@Html(file.description.replace("\n", "<br>"))</p>
+            </div>
+        </div>
+            <!-- Dataset Info -->
+        <ul class="list-group">
+            <li class="list-group-item file-panel-footer">
+@*                <span class="glyphicon glyphicon-folder-close" title="@dataset.folders.size folders"></span> @dataset.folders.size*@
+@*                <span class="glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size*@
+                <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                <span class="glyphicon glyphicon-eye-open" title="@file.stats.views views"></span> @file.stats.views
+                <span class="glyphicon glyphicon-circle-arrow-down" title="@file.stats.downloads downloads"></span> @file.stats.downloads
+            </li>
+        </ul>
+        @if(isFollowing){
+            <ul class="list-group center-margin">
+            @user match {
+                case Some(viewer) => {
+                    <a id="followButton" type="button" class="btn-link" data-toggle="button" autocomplete="off" objectType="file" objectId="@file.id.stringify">
+                    @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                        <span class='glyphicon glyphicon-star-empty'></span>  Unfollow
+                    } else {
+                        <span class='glyphicon glyphicon-star'></span> Follow
+                    }
+                    </a>
+                }
+            }
+            </ul>
+        }
+    </div>
+</div>

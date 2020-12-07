@@ -1,4 +1,4 @@
-@(selectedDatasets: scala.collection.mutable.ListBuffer[Dataset])(implicit ident: Option[securesocial.core.Identity], user: Option[models.User])
+@(selectedDatasets: scala.collection.mutable.ListBuffer[Dataset],selectedFiles: scala.collection.mutable.ListBuffer[File])(implicit ident: Option[securesocial.core.Identity], user: Option[models.User])
 
 @import api.Permission
 
@@ -54,6 +54,13 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 		<h2>Selected Datasets</h2>
 		@for(d <- selectedDatasets) {
 			@datasets.tile(d, None, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Application.index(), true)
+		}
+
+	</div>
+	<div class="col-md-12">
+		<h2>Selected Files</h2>
+		@for(f <- selectedFiles) {
+			@files.selectedTile(f, None, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Application.index(), true)
 		}
 	</div>
 	<!-- TODO: Old code for drag+drop relationship modification; revisit eventually -->

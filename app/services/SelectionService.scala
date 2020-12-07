@@ -1,6 +1,6 @@
 package services
 
-import models.{UUID, Dataset}
+import models.{Dataset, File, UUID}
 
 /**
  * Service for adding & removing user selections, as well as downloading/deleting selected datasets.
@@ -16,6 +16,8 @@ trait SelectionService {
   def removeFile(fileId: UUID, user: String)
 
   def get(user: String): List[Dataset]
+
+  def getFiles(user: String) : List[File]
 
   def deleteAll(user: String)
 
