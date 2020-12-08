@@ -10,7 +10,7 @@
 <div class="page-header">
 	<h1>Selections</h1>
 	<div id="select-count">
-		You currently have <b>@selectedDatasets.length</b> dataset(s) selected.
+		You currently have <b>@selectedDatasets.length</b> dataset(s) selected and <b>@selectedFiles.length</b> files selected.
 	</div>
 </div>
 
@@ -20,7 +20,7 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 	<div class="row">
 		<div class="col-xs-12">
 			<hr/>
-				@if(selectedDatasets.length==0) {
+				@if(selectedDatasets.length==0 && selectedFiles.length == 0) {
 					<a id='download-url' href="#" onclick="downloadAllSelections();"
 					class="btn btn-link disabled" title="Download all selected files as zip" role="button">
 						<span class="glyphicon glyphicon-download-alt"></span> Download All</a>

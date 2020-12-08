@@ -36,7 +36,7 @@ class Selected @Inject()(selections: SelectionService,
       case Some(user) => {
         val sels = selections.get(user.email.get).map(d => {d.id.stringify})
         val selectedFiles = selections.getFiles(user.email.get).map(f => {f.id.stringify})
-        Ok(toJson(sels))
+        Ok(toJson(sels ++ selectedFiles))
       }
       case None => Ok(toJson(Map("success"->"false", "msg"->"User not logged in")))
     }
@@ -133,6 +133,10 @@ class Selected @Inject()(selections: SelectionService,
         selections.get(user.email.get).map(d => {
           datasets.removeDataset(d.id, Utils.baseUrl(request), request.apiKey, request.user)
           selections.remove(d.id, user.email.get)
+        })
+        selections.getFiles(user.email.get).map(f => {
+          files.removeFile(f.id, Utils.baseUrl(request), request.apiKey, request.user)
+          selections.remove(f.id, user.email.get)
         })
         Ok(toJson(Map("sucess"->"true")))
       }

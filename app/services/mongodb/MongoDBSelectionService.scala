@@ -61,7 +61,7 @@ class MongoDBSelectionService @Inject() (datasets: DatasetService, files: FileSe
   def removeFile(fileId: UUID, user: String) {
     Logger.debug("Removing files " + fileId + " from user selection " + user)
     val query = MongoDBObject("user" -> user)
-    val update = $pull("datasets" -> fileId.stringify)
+    val update = $pull("files" -> fileId.stringify)
     SelectedDAO.dao.collection.update(query, update, upsert=true)
   }
 
