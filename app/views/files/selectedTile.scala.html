@@ -5,11 +5,11 @@
     <div class="panel panel-default file-panel">
         @if(user.isDefined) {
             @if(selected) {
-                <a href="javascript: void(0)" title="Click to deselect file" class="pull-right select" data-id="@file.id">
+                <a href="javascript: void(0)" title="Click to deselect file" class="pull-right select-file" data-id="@file.id">
                     <span class="glyphicon glyphicon-ok"></span>
                 </a>
             } else {
-                <a href="javascript: void(0)" title="Click to select file" class="pull-right select" data-id="@file.id">
+                <a href="javascript: void(0)" title="Click to select file" class="pull-right select-file" data-id="@file.id">
                     <span class="glyphicon glyphicon-plus"></span>
                 </a>
             }
