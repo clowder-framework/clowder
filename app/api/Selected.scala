@@ -19,6 +19,9 @@ import util.FileUtils
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.concurrent.Execution.Implicits._
 
+import scala.::
+import scala.collection.mutable.ListBuffer
+
 /**
  * Selected items.
  */
@@ -149,10 +152,33 @@ class Selected @Inject()(selections: SelectionService,
       case Some(user) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
         val selected = selections.get(user.email.get)
-        Ok.chunked(enumeratorFromSelected(selected,1024*1024,bagit,Some(user))).withHeaders(
-          "Content-Type" -> "application/zip",
-          "Content-Disposition" -> (FileUtils.encodeAttachment("Selected Datasets.zip", request.headers.get("user-agent").getOrElse("")))
-        )
+        val selectedFiles = selections.getFiles(user.email.get)
+
+        val datasetsPartialFiles = scala.collection.mutable.HashMap.empty[UUID, ListBuffer[UUID]]
+
+        for (f <- selectedFiles)  {
+          val datasetContains = datasets.findByFileIdDirectlyContain(f.id)
+          if (datasetContains.length == 1){
+            var datasetContainingFile: Dataset = datasetContains(0)
+            var datasetIdContainingFile : UUID = datasetContainingFile.id
+            var previousEntry = datasetsPartialFiles.get(datasetIdContainingFile)
+            previousEntry match {
+              case Some(l) => {
+                var newEntry = l += f.id
+                datasetsPartialFiles(datasetIdContainingFile) = newEntry
+              }
+              case None => {
+                datasetsPartialFiles(datasetIdContainingFile) = ListBuffer(f.id)
+              }
+            }
+            Logger.info("has previous entry or not")
+          }
+        }
+        Ok(toJson("not ready"))
+//        Ok.chunked(enumeratorFromSelected(selected,1024*1024,bagit,Some(user))).withHeaders(
+//          "Content-Type" -> "application/zip",
+//          "Content-Disposition" -> (FileUtils.encodeAttachment("Selected Datasets.zip", request.headers.get("user-agent").getOrElse("")))
+//        )
       }
       case None => NotFound
     }
