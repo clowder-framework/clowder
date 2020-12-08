@@ -223,6 +223,11 @@ class Selected @Inject()(selections: SelectionService,
           events.addObjectEvent(request.user, d.id, d.name, EventType.ADD_TAGS_DATASET.toString)
           datasets.index(d.id)
         })
+        selections.getFiles(user.email.get).map(f => {
+          files.addTags(f.id, Some(user.id.toString()), None, tags)
+          events.addObjectEvent(request.user, f.id, f.filename, EventType.ADD_TAGS_FILE.toString)
+          files.index(f.id)
+        })
         Ok(toJson(Map("sucess"->"true")))
       }
     }
