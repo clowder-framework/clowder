@@ -900,6 +900,30 @@
                 });
 
                 function downloadFile() {
+                	@if(AppConfiguration.getAmplitudeApiKey() == "") {
+						var event = {
+							"type": "file",
+							"resource_id": @file.id,
+							"resource_name": @file.filename,
+							"author_id": '@file.author.id',
+							"author_name": '@file.author.fullName',
+							"downloader_id": "anonymous",
+							"downloader_name": "anonymous",
+							"length": @file.length,
+						};
+
+						@user match {
+							// User logged in
+							case Some(u) => {
+								event.downloader_id = @u.id;
+								event.downloader_name = @u.fullName;
+							}
+							// User not logged in, use "anonymous" (default)
+							case None => {}
+						}
+
+						amplitude.logEvent("resource_download", event);
+					}
 					if ("@file.status"=="ARCHIVED") {
 						var emailForm = "@routes.Application.email("Accessing archived file "+file.id, "Please contact me about accessing the archived file.")";
 						window.open(emailForm, "_blank");
