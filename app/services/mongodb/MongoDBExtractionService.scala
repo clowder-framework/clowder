@@ -39,8 +39,9 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.findOne(MongoDBObject("id" -> new ObjectId(msgId.stringify)))
   }
 
-  def getIterator(since: Option[String], until: Option[String]): Iterator[Extraction] = {
+  def getIterator(userRequired: Boolean, since: Option[String], until: Option[String]): Iterator[Extraction] = {
     var query = MongoDBObject()
+    if (userRequired) query ++ ("user_id" $exists true)
     since.foreach(t => query = query ++ ("start" $gte Parsers.fromISO8601(t)))
     until.foreach(t => query = query ++ ("start" $lte Parsers.fromISO8601(t)))
     Extraction.find(query).toIterator

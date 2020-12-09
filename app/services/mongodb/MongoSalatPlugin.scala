@@ -449,9 +449,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates extractors enabled and disabled in a space
     updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
-
-    // Updates users for old extraction events that didn't have them
-    updateMongo("assign-extraction-event-users", assignUsersToExtractionEvents)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1688,45 +1685,5 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         $unset("extractors"))
     }
     print("DONE")
-  }
-
-  private def assignUsersToExtractionEvents() = {
-    val jobIds = MutaMap[UUID, List[UUID]]()
-    collection("extractions").foreach { extobj =>
-      val ext = extobj.asInstanceOf[Extraction]
-
-      /**
-       * TODO: Worth handling extractions without a job_id?
-       *
-       * for each extraction with a job_id...
-       *    generate map of job_id -> resource_id, List(extraction_id)
-       * for each job_id in map...
-       *    get user from file or dataset if found
-       */
-      if (ext.job_id.isDefined) {
-        if (ext.user_id == User.anonymous.id) {
-          if (jobIds.contains(ext.job_id.get)) {
-
-          } else {
-            // Try to get user information from file, or dataset record
-            val userid: Option[UUID] = collection("uploads.files").findOne(MongoDBObject("_id" -> ext.file_id)) match {
-              case Some(fi) => fi.asInstanceOf[File].author.id
-              case None => {
-                collection("datasets").findOne(MongoDBObject("_id" -> ext.file_id)) match {
-                  case Some(ds) => ds.asInstanceOf[Dataset].author.id
-                  case None => None
-                }
-              }
-            }
-            // If we found a user, add it to all records with that job_id
-            if (userid.isDefined) {
-              collection("extractions").update(
-                MongoDBObject("job_id" -> ext.id),
-                MongoDBObject("$set" -> MongoDBObject("user_id" -> userid.get)), upsert = false, multi = true)
-            }
-          }
-        }
-      }
-
   }
 }

@@ -11,7 +11,7 @@ import javax.inject.Inject
 import java.util.{Date, TimeZone}
 
 import services._
-import models.{Collection, Dataset, File, ProjectSpace, UUID, User, UserStatus}
+import models.{Collection, Dataset, File, ProjectSpace, UUID, User, UserStatus, ExtractionJob}
 
 import org.apache.commons.lang3.Range.between
 import scala.collection.mutable.{ListBuffer, Map => MutaMap}
@@ -503,117 +503,168 @@ class Reporting @Inject()(selections: SelectionService,
     )
   }
 
+  private def determineJobType(jobMsg: String): String = {
+    if (jobMsg == "SUBMITTED")
+      "queue"
+    else if (jobMsg.indexOf("Started processing") > -1)
+      "work"
+    else
+      "work"  // TODO: better option? Not all extractors send "Started processing"
+  }
+
   def extractorUsage(since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
     Logger.debug("Generating extraction metrics report")
 
-    // Keep a map for each user ID, to a map of JobIDs to (extractor/first time/last time) and diff
-    val userJobDurations: MutaMap[UUID, MutaMap[UUID, (String, Date, Date)]] = MutaMap.empty
+    /** This mapping is used to aggregate jobs.
+     * A job is considered some countable extraction duration. It has a jobType so
+     * we can attempt to differentiate "time in queue" from "time being processed".
+     *
+     * jobLookup: [
+     *  UserID -> [
+     *    UniqueJobKey -> {
+     *      jobs: [ list of jobs identical to current_job below ]
+     *      current_job: {
+     *        target      event.file_id (but can be a dataset ID or metadata ID in reality)
+     *        targetType  file/dataset/metadata
+     *        extractor   extractor id (e.g. ncsa.file.digest)
+     *        spaceId     id of space containing target
+     *        jobId       official job_id, if available
+     *        jobType     is this a queue event or an actual work event on a node? see determineJobType()
+     *        lastStatus  most recent event.status for the job
+     *        start       earliest event.start time from events in this job (event.end is often blank)
+     *        end         latest event.start time from events in this job (event.end is often blank)
+     *
+     *      }
+     *    }
+     */
+    val jobLookup: MutaMap[UUID,
+      MutaMap[String, (List[ExtractionJob], Option[ExtractionJob])]] = MutaMap.empty
 
-    val results = extractions.getIterator(since, until)
+    val results = extractions.getIterator(true, since, until)
     while (results.hasNext) {
       val event = results.next
 
-      // TODO: worth trying to salvage records pre-job ID?
-      if (event.job_id.isDefined) {
-        userJobDurations.get(event.user_id) {
-          case Some(userRecord) => {
-            // Do we already have events from this job? If so, compare dates
-            var modified = false
-            var earliest = new Date()
-            var latest = new Date()
-            userRecord.get(event.job_id.get) match {
-              case Some(timeRange) => {
-                earliest = timeRange._2
-                latest = timeRange._3
-                if (event.start.before(earliest)) {
-                  earliest = event.start
-                  modified = true
-                }
-                if (event.start.after(latest)) {
-                  latest = event.start
-                  modified = true
-                }
-              }
-              case None => {
-                // create a new record for this job id
-                earliest = event.start
-                latest = event.start
-                modified = true
-              }
-            }
+      // Collect info to associate this event with a job if possible
+      val jobId = event.job_id match {
+        case Some(jid) => jid.stringify
+        case None => ""
+      }
+      val jobType = determineJobType(event.status)
+      val uniqueKey = event.file_id + " - " + event.extractor_id
 
-            if (modified) {
-              userRecord(event.job_id.get) = (event.extractor_id, earliest, latest)
-              userJobDurations(event.user_id) = userRecord
+      // Add user and uniqueKey if they don't exist yet
+      if (!jobLookup.get(event.user_id).isDefined)
+        jobLookup(event.user_id) = MutaMap.empty
+      if (!jobLookup.get(event.user_id).get.get(uniqueKey).isDefined)
+        jobLookup(event.user_id)(uniqueKey) = (List.empty, None)
+
+      // If we don't have an ongoing job, or it's not same jobType, start a new ongoing job
+      var jobList    = jobLookup(event.user_id)(uniqueKey)._1
+      val currentJob = jobLookup(event.user_id)(uniqueKey)._2
+      val newJobBeginning = currentJob match {
+        case Some(currJob) => currJob.jobType == jobType
+        case None => true
+      }
+
+      if (newJobBeginning) {
+        // Determine parent details for new job - quick dataset check first, then file search
+        var spaces = ""
+        var resourceType = "file"
+        val parentDatasets = datasets.findByFileIdAllContain(event.file_id)
+        if (parentDatasets.length > 0) {
+          parentDatasets.foreach(ds => {
+            spaces = ds.spaces.mkString(",")
+            resourceType = "file"
+          })
+        } else {
+          datasets.get(event.file_id) match {
+            case Some(ds) => {
+              spaces = ds.spaces.mkString(",")
+              resourceType = "dataset"
             }
+            case None => {}
           }
-          case None => userJobDurations(event.user_id) = MutaMap(event.job_id.get -> (event.extractor_id, event.start, event.start))
         }
 
-        // TODO: Need to improve differentiation of resources here. Dataset IDs are also listed.
-        files.get(event.file_id).foreach(f => {
-          // Do we already have data for this user?
-          userJobDurations.get(f.author.id) match {
-            case Some(userRecord) => {
-              // Do we already have events from this job? If so, compare dates
-              var modified = false
-              var earliest = new Date()
-              var latest = new Date()
-              userRecord.get(event.job_id.get) match {
-                case Some(timeRange) => {
-                  earliest = timeRange._2
-                  latest = timeRange._3
-                  if (event.start.before(earliest)) {
-                    earliest = event.start
-                    modified = true
-                  }
-                  if (event.start.after(latest)) {
-                    latest = event.start
-                    modified = true
-                  }
-                }
-                case None => {
-                  // create a new record for this job id
-                  earliest = event.start
-                  latest = event.start
-                  modified = true
-                }
-              }
-
-              if (modified) {
-                userRecord(event.job_id.get) = (event.extractor_id, earliest, latest)
-                userJobDurations(f.author.id) = userRecord
-              }
-            }
-            case None => userJobDurations(f.author.id) = MutaMap(event.job_id.get -> (event.extractor_id, event.start, event.start))
-          }
-        })
+        // Push current job to jobs list and make new one
+        if (currentJob.isDefined)
+          jobList = jobList ++ currentJob
+        val newJob = ExtractionJob(
+          event.file_id.stringify,
+          resourceType,
+          event.extractor_id,
+          spaces, jobId,
+          jobType,
+          event.status,
+          event.start,
+          event.start
+        )
+        jobLookup(event.user_id)(uniqueKey) = (jobList, Some(newJob))
+      } else {
+        var updated = false
+        var endTime = currentJob.get.end
+        var status = currentJob.get.lastStatus
+        if (endTime.before(event.start)) {
+          endTime = event.start
+          updated = true
+        }
+        if (status != "DONE") {
+          status = event.status
+          updated = true
+        }
+        if (updated) {
+          jobLookup(event.user_id)(uniqueKey) = (jobList,
+            Some(currentJob.get.copy(lastStatus=status, end=endTime)))
+        }
       }
     }
 
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
-        val header = "userid,extractorid,jobid,duration\n"
+        val headers = List("userid", "username", "email", "resource_id", "resource_type", "space_id", "extractor", "job_id", "job_type", "last_status", "start", "end", "duration_ms")
+        val header = "\""+headers.mkString("\",\"")+"\"\n"
         headerRow = false
         Some(header.getBytes("UTF-8"))
       } else {
-        var content = ""
-
-        val keyiter = userJobDurations.keysIterator
+        val keyiter = jobLookup.keysIterator
         scala.concurrent.blocking {
+          var content = ""
           val userid = keyiter.next
-          val jobs = userJobDurations.get(userid).get
-          jobs.keys.foreach(jid => {
-            val job = jobs.get(jid).get
-            val job_duration = (job._3.getTime - job._2.getTime)
 
-            content += userid.stringify+","
-            content += job._1+","
-            content += jid+","
-            content += job_duration+"\n"
+          // Get pretty user info
+          var username = ""
+          var email = ""
+          users.get(userid) match {
+            case Some(u) => {
+              username = u.fullName
+              email = u.email.getOrElse("")
+            }
+            case None => {}
+          }
+
+          jobLookup.get(userid).get.keys.foreach(jobkey => {
+            val jobHistory = jobLookup.get(userid).get.get(jobkey).get
+            val jobList = jobHistory._1
+            jobList.foreach(job => {
+              val duration = (job.end.getTime - job.start.getTime);
+              if (duration > 0) {
+                val row = List(
+                  job.target,
+                  job.targetType,
+                  job.extractor,
+                  job.spaces,
+                  job.jobId,
+                  job.jobType,
+                  job.lastStatus,
+                  job.start,
+                  job.end,
+                  duration
+                )
+                content += "\""+row.mkString("\",\"")+"\"\n"
+              }
+            })
           })
-
           Some(content.getBytes("UTF-8"))
         }
       }
