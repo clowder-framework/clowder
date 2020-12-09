@@ -589,83 +589,70 @@ class Reporting @Inject()(selections: SelectionService,
         // Push current job to jobs list and make new one
         if (currentJob.isDefined)
           jobList = jobList ++ currentJob
-        val newJob = ExtractionJob(
-          event.file_id.stringify,
-          resourceType,
-          event.extractor_id,
-          spaces, jobId,
-          jobType,
-          event.status,
-          event.start,
-          event.start
-        )
+        val newJob = ExtractionJob(event.file_id.stringify, resourceType, event.extractor_id, spaces, jobId, jobType,
+          event.status, event.start, event.start)
         jobLookup(event.user_id)(uniqueKey) = (jobList, Some(newJob))
       } else {
-        var updated = false
-        var endTime = currentJob.get.end
+        // Don't overwrite DONE as final message in case we have small differences in timing of last extractor msg
         var status = currentJob.get.lastStatus
-        if (endTime.before(event.start)) {
-          endTime = event.start
-          updated = true
-        }
-        if (status != "DONE") {
-          status = event.status
-          updated = true
-        }
-        if (updated) {
-          jobLookup(event.user_id)(uniqueKey) = (jobList,
-            Some(currentJob.get.copy(lastStatus=status, end=endTime)))
-        }
+        if (status != "DONE") status = event.status
+        jobLookup(event.user_id)(uniqueKey) = (jobList, Some(currentJob.get.copy(lastStatus=status, end=event.start)))
       }
     }
 
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
-        val headers = List("userid", "username", "email", "resource_id", "resource_type", "space_id", "extractor", "job_id", "job_type", "last_status", "start", "end", "duration_ms")
+        val headers = List("userid", "username", "email", "resource_id", "resource_type", "space_id", "extractor",
+          "job_id", "job_type", "last_status", "start", "end", "duration_ms")
         val header = "\""+headers.mkString("\",\"")+"\"\n"
         headerRow = false
         Some(header.getBytes("UTF-8"))
       } else {
         val keyiter = jobLookup.keysIterator
         scala.concurrent.blocking {
-          var content = ""
-          val userid = keyiter.next
+          if (keyiter.hasNext) {
+            val userid = keyiter.next
 
-          // Get pretty user info
-          var username = ""
-          var email = ""
-          users.get(userid) match {
-            case Some(u) => {
-              username = u.fullName
-              email = u.email.getOrElse("")
+            // Get pretty user info
+            var username = ""
+            var email = ""
+            users.get(userid) match {
+              case Some(u) => {
+                username = u.fullName
+                email = u.email.getOrElse("")
+              }
+              case None => {}
             }
-            case None => {}
-          }
 
-          jobLookup.get(userid).get.keys.foreach(jobkey => {
-            val jobHistory = jobLookup.get(userid).get.get(jobkey).get
-            val jobList = jobHistory._1
-            jobList.foreach(job => {
-              val duration = (job.end.getTime - job.start.getTime);
-              if (duration > 0) {
-                val row = List(
-                  job.target,
-                  job.targetType,
-                  job.extractor,
-                  job.spaces,
-                  job.jobId,
-                  job.jobType,
-                  job.lastStatus,
-                  job.start,
-                  job.end,
-                  duration
-                )
-                content += "\""+row.mkString("\",\"")+"\"\n"
+            var content = ""
+            val userRecords = jobLookup(userid)
+            userRecords.keysIterator.foreach(jobkey => {
+              val jobHistory = userRecords(jobkey)
+              val jobList = jobHistory._1
+              val currJob = jobHistory._2
+              jobList.foreach(job => {
+                val duration = (job.end.getTime - job.start.getTime)
+                val row = List(job.target, job.targetType, job.extractor, job.spaces, job.jobId, job.jobType,
+                  job.lastStatus, job.start, job.end, duration)
+                if (duration > 0)
+                  content += "\""+row.mkString("\",\"")+"\"\n"
+              })
+              // current job if it was never "closed" and pushed to the jobList (most common case)
+              currJob match {
+                case Some(job) => {
+                  val duration = (job.end.getTime - job.start.getTime)
+                  val row = List(job.target, job.targetType, job.extractor, job.spaces, job.jobId, job.jobType,
+                    job.lastStatus, job.start, job.end, duration)
+                  if (duration > 0)
+                    content += "\""+row.mkString("\",\"")+"\"\n"
+                }
+                case None => {}
               }
             })
-          })
-          Some(content.getBytes("UTF-8"))
+            Some(content.getBytes("UTF-8"))
+          }
+          else None
         }
       }
       Future(chunk)
