@@ -728,6 +728,7 @@ POST           /api/comment/:id/editComment                                     
 # SELECTIONS API
 # ----------------------------------------------------------------------
 GET            /selected                                                                @controllers.Selected.get
+GET            /datasets/submit/:ds_id                                                  @controllers.Extractors.submitSelectedExtractions(ds_id: UUID)
 GET            /api/selected                                                            @api.Selected.get
 POST           /api/selected                                                            @api.Selected.add
 POST           /api/selected/remove                                                     @api.Selected.remove
@@ -735,6 +736,7 @@ DELETE         /api/selected/files                                              
 GET            /api/selected/files                                                      @api.Selected.downloadAll
 POST           /api/selected/clear                                                      @api.Selected.clearAll
 POST           /api/selected/tag                                                        @api.Selected.tagAll(tags: List[String])
+POST           /api/selected/submit/:ds_id/:file_ids                                    @api.Extractions.submitFilesToExtractor(ds_id: UUID, file_ids: String)
 
 # ----------------------------------------------------------------------
 # RELATIONS API
