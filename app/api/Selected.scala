@@ -1,26 +1,21 @@
 package api
 
+import Iterators.SelectedIterator
+import controllers.Utils
+import models.{Dataset, EventType, UUID, User}
+import play.api.Logger
+import play.api.Play.current
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.Json._
+import play.api.mvc.Controller
+import services._
+
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.util.zip.ZipOutputStream
-
-import Iterators.SelectedIterator
-import controllers.Utils
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.Controller
-import play.api.libs.json.Json._
-import play.api.Logger
-import play.api.Play.current
 import javax.inject.Inject
-import services._
-import models.{Dataset, EventType, UUID, User}
-import util.FileUtils
-
-import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.concurrent.Execution.Implicits._
-
-import scala.::
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Selected items.
@@ -154,12 +149,15 @@ class Selected @Inject()(selections: SelectionService,
         val selected = selections.get(user.email.get)
         val selectedFiles = selections.getFiles(user.email.get)
 
+        var datasetsPartialFilesList : ListBuffer[Dataset] = ListBuffer.empty[Dataset]
         val datasetsPartialFiles = scala.collection.mutable.HashMap.empty[UUID, ListBuffer[UUID]]
 
         for (f <- selectedFiles)  {
           val datasetContains = datasets.findByFileIdDirectlyContain(f.id)
+          datasetsPartialFilesList += datasetContains(0)
           if (datasetContains.length == 1){
             var datasetContainingFile: Dataset = datasetContains(0)
+            datasetsPartialFilesList += datasetContainingFile
             var datasetIdContainingFile : UUID = datasetContainingFile.id
             var previousEntry = datasetsPartialFiles.get(datasetIdContainingFile)
             previousEntry match {
