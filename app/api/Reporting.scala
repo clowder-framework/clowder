@@ -584,9 +584,9 @@ class Reporting @Inject()(selections: SelectionService,
           }
         }
 
-        // Push current job to jobs list and make new one
+        // Push current job to jobs list (saying it ended at start of next stage) and make new job entry
         if (currentJob.isDefined) {
-          jobList = jobList ::: List(currentJob.get)
+          jobList = jobList ::: List(currentJob.get.copy(end=event.start))
         }
         val newJob = ExtractionJob(event.file_id.stringify, resourceType, event.extractor_id, spaces, jobId, jobType, 1,
           event.status, event.start, event.start)
