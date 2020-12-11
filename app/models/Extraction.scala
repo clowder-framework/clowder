@@ -31,6 +31,7 @@ case class ExtractionJob(
   spaces: String,
   jobId: String,
   jobType: String,
+  statusCount: Int,
   lastStatus: String,
   start: Date,
   end: Date

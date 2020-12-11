@@ -38,7 +38,7 @@ db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
                 "$set": {
                     "user_id": authorID
                 }
-            });
+            }, {"multi": true});
         }
         else {
             // Update user_id for entry in extractions database

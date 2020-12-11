@@ -506,10 +506,8 @@ class Reporting @Inject()(selections: SelectionService,
   private def determineJobType(jobMsg: String): String = {
     if (jobMsg == "SUBMITTED")
       "queue"
-    else if (jobMsg.indexOf("Started processing") > -1)
-      "work"
     else
-      "work"  // TODO: better option? Not all extractors send "Started processing"
+      "work" // TODO: Better solution?
   }
 
   def extractorUsage(since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
@@ -540,7 +538,7 @@ class Reporting @Inject()(selections: SelectionService,
     val jobLookup: MutaMap[UUID,
       MutaMap[String, (List[ExtractionJob], Option[ExtractionJob])]] = MutaMap.empty
 
-    val results = extractions.getIterator(true, since, until)
+    val results = extractions.getIterator(true, since, until, None)
     while (results.hasNext) {
       val event = results.next
 
@@ -562,7 +560,7 @@ class Reporting @Inject()(selections: SelectionService,
       var jobList    = jobLookup(event.user_id)(uniqueKey)._1
       val currentJob = jobLookup(event.user_id)(uniqueKey)._2
       val newJobBeginning = currentJob match {
-        case Some(currJob) => currJob.jobType == jobType
+        case Some(currJob) => currJob.jobType != jobType
         case None => true
       }
 
@@ -587,29 +585,31 @@ class Reporting @Inject()(selections: SelectionService,
         }
 
         // Push current job to jobs list and make new one
-        if (currentJob.isDefined)
-          jobList = jobList ++ currentJob
-        val newJob = ExtractionJob(event.file_id.stringify, resourceType, event.extractor_id, spaces, jobId, jobType,
+        if (currentJob.isDefined) {
+          jobList = jobList ::: List(currentJob.get)
+        }
+        val newJob = ExtractionJob(event.file_id.stringify, resourceType, event.extractor_id, spaces, jobId, jobType, 1,
           event.status, event.start, event.start)
         jobLookup(event.user_id)(uniqueKey) = (jobList, Some(newJob))
       } else {
         // Don't overwrite DONE as final message in case we have small differences in timing of last extractor msg
         var status = currentJob.get.lastStatus
         if (status != "DONE") status = event.status
-        jobLookup(event.user_id)(uniqueKey) = (jobList, Some(currentJob.get.copy(lastStatus=status, end=event.start)))
+        val updatedJob = currentJob.get.copy(statusCount=currentJob.get.statusCount+1, lastStatus=event.status, end=event.start)
+        jobLookup(event.user_id)(uniqueKey) = (jobList, Some(updatedJob))
       }
     }
 
     var headerRow = true
+    val keyiter = jobLookup.keysIterator
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
         val headers = List("userid", "username", "email", "resource_id", "resource_type", "space_id", "extractor",
-          "job_id", "job_type", "last_status", "start", "end", "duration_ms")
+          "job_id", "job_type", "status_count", "last_status", "start", "end", "duration_ms")
         val header = "\""+headers.mkString("\",\"")+"\"\n"
         headerRow = false
         Some(header.getBytes("UTF-8"))
       } else {
-        val keyiter = jobLookup.keysIterator
         scala.concurrent.blocking {
           if (keyiter.hasNext) {
             val userid = keyiter.next
@@ -633,8 +633,8 @@ class Reporting @Inject()(selections: SelectionService,
               val currJob = jobHistory._2
               jobList.foreach(job => {
                 val duration = (job.end.getTime - job.start.getTime)
-                val row = List(job.target, job.targetType, job.extractor, job.spaces, job.jobId, job.jobType,
-                  job.lastStatus, job.start, job.end, duration)
+                val row = List(userid.stringify, username, email, job.target, job.targetType, job.spaces, job.extractor,
+                  job.jobId, job.jobType, job.statusCount, job.lastStatus, job.start, job.end, duration)
                 if (duration > 0)
                   content += "\""+row.mkString("\",\"")+"\"\n"
               })
@@ -642,8 +642,8 @@ class Reporting @Inject()(selections: SelectionService,
               currJob match {
                 case Some(job) => {
                   val duration = (job.end.getTime - job.start.getTime)
-                  val row = List(job.target, job.targetType, job.extractor, job.spaces, job.jobId, job.jobType,
-                    job.lastStatus, job.start, job.end, duration)
+                  val row = List(userid.stringify, username, email, job.target, job.targetType, job.spaces, job.extractor,
+                    job.jobId, job.jobType, job.statusCount, job.lastStatus, job.start, job.end, duration)
                   if (duration > 0)
                     content += "\""+row.mkString("\",\"")+"\"\n"
                 }
