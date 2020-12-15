@@ -4995,18 +4995,18 @@ paths:
           description: Not authorized
           content: {}
 
-  /reports/storage/spaces/{id}:
+  /reports/storage/spaces:
     get:
       tags:
         - reporting
       summary: Download storage metrics report for spaces as CSV.
       description: |
-        Download storage metrics report for files in a space as a CSV file.
+        Download storage metrics report for files in a space as a CSV file. Space id is optional parameter.
         Must be a server admin to access the report. Supports ISO8601 date range filters.
       parameters:
-        - name: id
+        - name: space
           in: path
-          required: true
+          required: false
           schema:
             type: string
         - name: since

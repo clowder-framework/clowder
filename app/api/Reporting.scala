@@ -394,9 +394,9 @@ class Reporting @Inject()(selections: SelectionService,
     return contents
   }
 
-  def spaceStorage(id: UUID, since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
+  def spaceStorage(space: Option[String], since: Option[String], until: Option[String]) = ServerAdminAction { implicit request =>
     // Iterate over the files of every dataset in the space
-    val results = datasets.getIterator(Some(id), None, None) // TODO: Can't use time filters here if user intends files
+    val results = datasets.getIterator(space, None, None) // TODO: Can't use time filters here if user intends files
 
     var headerRow = true
     val enum = Enumerator.generateM({
@@ -495,9 +495,13 @@ class Reporting @Inject()(selections: SelectionService,
       Future(chunk)
     })
 
+    val filename = space match {
+      case Some(spid) => "SpaceStorage_"+spid+".csv"
+      case None => "SpaceStorage.csv"
+    }
     Ok.chunked(enum.andThen(Enumerator.eof)).withHeaders(
       "Content-Type" -> "text/csv",
-      "Content-Disposition" -> ("attachment; filename=SpaceStorage"+id.stringify+".csv")
+      "Content-Disposition" -> ("attachment; filename="+filename)
     )
   }
 }

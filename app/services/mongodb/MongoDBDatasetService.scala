@@ -1641,9 +1641,9 @@ class MongoDBDatasetService @Inject() (
    * @param since - include only datasets created after a certain date
    * @param until - include only datasets created before a certain date
    */
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[Dataset] = {
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[Dataset] = {
     var query = MongoDBObject("trash" -> false)
-    space.foreach(spid => query += ("spaces" -> new ObjectId(spid.stringify)))
+    space.foreach(spid => query += ("spaces" -> new ObjectId(spid)))
     since.foreach(t => query = query ++ ("created" $gte Parsers.fromISO8601(t)))
     until.foreach(t => query = query ++ ("created" $lte Parsers.fromISO8601(t)))
     Dataset.find(query)

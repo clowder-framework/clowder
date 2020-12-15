@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   user_id is taken from author id in uploads.files if exists, else it taken from author id in datasets collection.
 - Ability to submit multiple selected files within a dataset to an extractor.
 
+### Changed
+- api/reports/storage/spaces endpoint now accepts a space parameter for ID rather than requiring a space filter.
+
 ### Fixed
 - GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
 - Editor can now delete tags on files, datasets and sections.
