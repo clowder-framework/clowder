@@ -4,7 +4,7 @@ package models
 import java.security.MessageDigest
 import java.util.Date
 
-import com.mohiva.play.silhouette.api.{Authenticator, Identity}
+import com.mohiva.play.silhouette.api.{Authenticator, Identity, LoginInfo}
 import _root_.services.DI
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticator
@@ -34,10 +34,10 @@ trait User extends Identity {
   def status: UserStatus.Value
   def profile: Option[Profile]
   def friends: Option[List[String]]
-  def followedEntities: List[TypedID]
+  def followedEntities: List[String]
   def followers: List[UUID]
   def viewed: Option[List[UUID]]
-  def spaceandrole: List[UserSpaceAndRole]
+  def spaceandrole: List[String]
   def repositoryPreferences: Map[String,Any]
   def termsOfServices: Option[UserTermsOfServices]
   def lastLogin: Option[Date]
@@ -77,10 +77,6 @@ trait User extends Identity {
       .toLowerCase
   }
 
-  def getFollowedObjectList(objectType : String) : List[TypedID] = {
-    followedEntities.filter { x => x.objectType == objectType }
-  }
-
   /**
   * return MiniUser constructed from the user model
   */
@@ -116,7 +112,7 @@ object User {
     lastName= Some("User"),
     fullName= Some("Anonymous User"),
     email=None,
-    authMethod=AuthenticatorService[DummyAuthenticator],
+    authMethod=new DummyAuthenticator(new LoginInfo("","")),
     status=UserStatus.Admin,
     termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
@@ -149,7 +145,7 @@ case class ClowderUser (
   profile: Option[Profile] = None,
 
   // following
-  followedEntities: List[TypedID] = List.empty,
+  followedEntities: List[String] = List.empty,
   followers: List[UUID] = List.empty,
   friends: Option[List[String]] = None,
 
@@ -157,7 +153,7 @@ case class ClowderUser (
   viewed: Option[List[UUID]] = None,
 
   // spaces
-  spaceandrole: List[UserSpaceAndRole] = List.empty,
+  spaceandrole: List[String] = List.empty,
 
   //staging area
   repositoryPreferences: Map[String,Any] = Map.empty,

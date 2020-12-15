@@ -7,7 +7,7 @@ import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
 import play.api.mvc._
-import services.{AppConfiguration, DI}
+import services.DI
 import com.mohiva.play.silhouette.api.{Authenticator, Authorization, Environment, HandlerResult, Identity, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.libs.json.Json
@@ -30,7 +30,6 @@ import scala.concurrent.Future
  */
 trait ApiController extends InjectedController {
 
-  val userservice = DI.injector.getInstance(classOf[services.UserService])
   val silhouette = DI.injector.getInstance(classOf[Silhouette[ClowderEnv]])
 
   /** get user if logged in */
@@ -42,7 +41,6 @@ trait ApiController extends InjectedController {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
         case Some(u) if needActive && (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case _ => block(userRequest)
       }
@@ -58,7 +56,6 @@ trait ApiController extends InjectedController {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
         case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
@@ -74,7 +71,6 @@ trait ApiController extends InjectedController {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
         case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) => block(userRequest)
         case None => Future.successful(Unauthorized("Not authorized"))
@@ -89,7 +85,6 @@ trait ApiController extends InjectedController {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
         case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
@@ -102,12 +97,8 @@ trait ApiController extends InjectedController {
       implicit request: Request[B]) = {
       val userRequest = getUser(request)
       userRequest.user match {
-        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) =>
-          Future.successful(HandlerResult(Unauthorized, Some("Terms of Service not accepted")))
         case Some(u) if (u.status == UserStatus.Inactive) =>
           Future.successful(HandlerResult(Unauthorized, Some("Account is not activated")))
-        case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) =>
-          Future.successful(HandlerResult(Ok, Some(userRequest)))
         case Some(u) => {
           affectedResource match {
             case Some(resource) if Permission.checkOwner(u, resource) =>
@@ -116,8 +107,6 @@ trait ApiController extends InjectedController {
               Future.successful(HandlerResult[AnyContent](Unauthorized))
           }
         }
-        case None if Permission.checkPermission(userRequest.user, permission, resourceRef) =>
-          Future.successful(HandlerResult(Ok, Some(userRequest)))
         case _ => Future.successful(HandlerResult(Unauthorized))
       }
       Future.successful(true)
@@ -205,37 +194,13 @@ trait ApiController extends InjectedController {
       }
     }*/
 
-    // 3) X-API-Key, header Authorization is user API key
-    request.headers.get("X-API-Key").foreach { apiKey =>
-      userservice.findByKey(apiKey) match {
-        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
-          return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request, Some(apiKey))
-        }
-        case Some(u) => {
-          return UserRequest(Some(u), request, Some(apiKey))
-        }
-        case None => Logger.debug(s"key ${apiKey} not associated with a user.")
-      }
-    }
-
     // 4) check api key, either the global one in the config file or the user key in the database
     request.queryString.get("key").foreach { key =>
-      val userservice = DI.injector.getInstance(classOf[services.UserService])
-      val commkey = AppConfiguration.appConfig.getProperty[String]("commKey")
+      val commkey = "r1ek3rs"
       key.foreach { realkey =>
         // check to see if this is the global key
         if (realkey == commkey) {
           return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request, Some(realkey))
-        }
-        // check to see if this is a key for a specific user
-        userservice.findByKey(realkey) match {
-          case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => {
-            return UserRequest(Some(u.copy(superAdminMode = superAdmin)), request, Some(realkey))
-          }
-          case Some(u) => {
-            return UserRequest(Some(u), request, Some(realkey))
-          }
-          case None => Logger.debug(s"key ${realkey} not associated with a user.")
         }
       }
     }
