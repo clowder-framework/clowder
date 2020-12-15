@@ -9,6 +9,7 @@ import _root_.services.DI
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticator
 import play.api.libs.json.Json
+import scala.language.implicitConversions
 
 
 object UserStatus extends Enumeration {

@@ -4,6 +4,7 @@ import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.libs.json._
 import salat.transformers.CustomTransformer
+import scala.language.implicitConversions
 
 /**
  * Wrapper for system IDs. Currently defaults to MongoDB ObjectId, but should be made generic in the future.
