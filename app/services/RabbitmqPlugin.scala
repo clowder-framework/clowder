@@ -341,14 +341,28 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Query list of global extractors for those enabled and filter by operation.
-    */
-  private def getGlobalExtractorsByOperation(operation: String): List[String] = {
+   * Given a list of extractor ids, an operation and a resource type return the list of extractor ids that match.
+   *
+   * TODO Should operation and resourceType be combined?
+   *
+   * @param extractorIds list of extractors to filter
+   * @param operation the extraction even to filter on
+   * @param resourceType the type of resource to check
+   * @return filtered list of extractors
+   */
+  private def getMatchingExtractors(extractorIds: List[String], operation: String, resourceType: ResourceType.Value): List[String] = {
     extractorsService.getEnabledExtractors().flatMap(exId =>
       extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-      containsOperation(exInfo.process.dataset, operation) ||
-        containsOperation(exInfo.process.file, operation) ||
-        containsOperation(exInfo.process.metadata, operation)
+        resourceType match {
+          case ResourceType.dataset =>
+            containsOperation(exInfo.process.dataset, operation)
+          case ResourceType.file =>
+            containsOperation(exInfo.process.file, operation)
+          case ResourceType.metadata =>
+            containsOperation(exInfo.process.metadata, operation)
+          case _ =>
+            false
+        }
     ).map(_.name)
   }
 
@@ -358,19 +372,13 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     * @param operation The dataset operation requested.
     * @return A list of extractors IDs.
     */
-  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String): (List[String], List[String]) = {
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String, resourceType: ResourceType.Value): (List[String], List[String]) = {
     var enabledExtractors = new ListBuffer[String]()
     var disabledExtractors = new ListBuffer[String]()
     dataset.spaces.map(space => {
       spacesService.getAllExtractors(space).foreach { extractors =>
-        enabledExtractors.appendAll(extractors.enabled.flatMap { exId =>
-          extractorsService.getExtractorInfo(exId).filter(exInfo =>
-            containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
-        })
-        disabledExtractors.appendAll(extractors.disabled.flatMap { exId =>
-          extractorsService.getExtractorInfo(exId).filter(exInfo =>
-            containsOperation(exInfo.process.dataset, operation) || containsOperation(exInfo.process.file, operation)).map(_.name)
-        })
+        enabledExtractors.appendAll(getMatchingExtractors(extractors.enabled, operation, resourceType))
+        disabledExtractors.appendAll(getMatchingExtractors(extractors.disabled, operation, resourceType))
       }
     })
     (enabledExtractors.toList, disabledExtractors.toList)
@@ -412,18 +420,19 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   private def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
     // drop the first fragment from the routing key and replace characters to create operation id
     val fragments = routingKey.split('.')
-    val operation =
+    val (resourceType, operation) =
       if (fragments(1) == "dataset")
-        fragments(2) + "." + fragments(3)
+        (ResourceType.dataset, fragments(2) + "." + fragments(3))
       else if (fragments(1) == "metadata")
-        fragments(2) + "." + fragments(3)
+        (ResourceType.metadata, fragments(2) + "." + fragments(3))
       else if (fragments(1) == "file")
-        fragments(2) + "/" + fragments(3)
-      else ""
+        (ResourceType.file, fragments(2) + "/" + fragments(3))
+      else
+        return Set.empty[String]
     // get extractors enabled at the global level
-    val globalExtractors = getGlobalExtractorsByOperation(operation)
+    val globalExtractors = getMatchingExtractors(extractorsService.getEnabledExtractors(), operation, resourceType)
     // get extractors enabled/disabled at the space level
-    val (enabledExtractors, disabledExtractors) = getSpaceExtractorsByOperation(dataset, operation)
+    val (enabledExtractors, disabledExtractors) = getSpaceExtractorsByOperation(dataset, operation, resourceType)
     // get queues based on RabbitMQ bindings (old method).
     val queuesFromBindings = getQueuesFromBindings(routingKey)
     // take the union of queues so that we publish to a specific queue only once

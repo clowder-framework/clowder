@@ -149,8 +149,6 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
 
     val error_str = tagCheck.error_str
     val not_found = tagCheck.not_found
-    val userOpt = tagCheck.userOpt
-    val extractorOpt = tagCheck.extractorOpt
     val tags = tagCheck.tags
 
     // Now the real work: removing the tags.
@@ -158,9 +156,9 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
       // Clean up leading, trailing and multiple contiguous white spaces.
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
-        case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_File => files.removeTags(id, tagsCleaned)
+        case TagCheck_Dataset => datasets.removeTags(id, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(id, tagsCleaned)
       }
     }
     (not_found, error_str)
