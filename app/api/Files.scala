@@ -1,14 +1,8 @@
 package api
 
-import scala.annotation.tailrec
-import java.io.FileInputStream
-import java.net.{URL, URLEncoder}
-
-import javax.inject.Inject
-import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils, SearchUtils}
+import _root_.util._
 import com.mongodb.casbah.Imports._
-import controllers.Previewers
+import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
 import play.api.Logger
@@ -18,16 +12,15 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.mvc.{Action, ResponseHeader, Result, SimpleResult}
+import play.api.mvc.{ResponseHeader, SimpleResult}
 import services._
-
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
-import java.text.SimpleDateFormat
-import java.util.Date
-
-import controllers.Utils
 import services.s3.S3ByteStorageService
+
+import java.io.FileInputStream
+import java.net.URL
+import java.util.Date
+import javax.inject.Inject
+import scala.annotation.tailrec
 
 /**
  * Json API for files.
@@ -1623,6 +1616,26 @@ class Files @Inject()(
     }
   }
 
+  def bulkDeleteFiles() = PrivateServerAction (parse.json) {implicit request=>
+    request.user match {
+      case Some(user) => {
+        val fileIds = request.body.\("fileIds").asOpt[List[String]].getOrElse(List.empty[String])
+        if (fileIds.isEmpty){
+          BadRequest("No file ids supplied")
+        } else {
+          for (fileId <- fileIds){
+            if (UUID.isValid(fileId)){
+              files.removeFile(UUID(fileId),Utils.baseUrl(request), request.apiKey, request.user)
+            }
+          }
+        }
+        Ok(toJson("Done"))
+      }
+      case None => {
+        BadRequest("No user supplied")
+      }
+    }
+  }
 
   def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
