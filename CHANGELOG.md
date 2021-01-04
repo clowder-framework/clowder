@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - UpdateUserId.js to scripts/updates. This code adds user_id to each document in extractions collection in mongodb. 
   user_id is taken from author id in uploads.files if exists, else it taken from author id in datasets collection.
 - Ability to submit multiple selected files within a dataset to an extractor.
-
+- api route for bulk delete files
 ### Fixed
 - GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
 - Editor can now delete tags on files, datasets and sections.
