@@ -403,6 +403,7 @@ POST           /api/files/:id/comment                                           
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/tags                                                      @api.Files.getTags(id: UUID)
 POST           /api/files/:id/tags                                                      @api.Files.addTags(id: UUID)
+POST           /api/files/bulkAddTags                                                   @api.Files.bulkAddTags()
 # deprecrated use DELETE
 POST           /api/files/:id/tags/remove                                               @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/tags/remove_all                                           @api.Files.removeAllTags(id: UUID)

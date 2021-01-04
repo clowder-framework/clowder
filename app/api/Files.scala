@@ -1,14 +1,8 @@
 package api
 
-import scala.annotation.tailrec
-import java.io.FileInputStream
-import java.net.{URL, URLEncoder}
-
-import javax.inject.Inject
-import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils, SearchUtils}
+import _root_.util._
 import com.mongodb.casbah.Imports._
-import controllers.Previewers
+import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
 import play.api.Logger
@@ -18,16 +12,15 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.mvc.{Action, ResponseHeader, Result, SimpleResult}
+import play.api.mvc.{ResponseHeader, SimpleResult}
 import services._
-
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
-import java.text.SimpleDateFormat
-import java.util.Date
-
-import controllers.Utils
 import services.s3.S3ByteStorageService
+
+import java.io.FileInputStream
+import java.net.URL
+import java.util.Date
+import javax.inject.Inject
+import scala.annotation.tailrec
 
 /**
  * Json API for files.
@@ -1285,6 +1278,29 @@ class Files @Inject()(
     val theResponse = addTagsHelper(TagCheck_File, id, request)
     files.index(id)
     theResponse
+  }
+
+  /**
+   * REST endpoint: POST: Adds tags to a file.
+   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
+   * so will be added.
+   */
+  def bulkAddTags() = AuthenticatedAction (parse.json) { implicit request =>
+    val fileIds = (request.body \ "fileIds").asOpt[List[String]].getOrElse(List.empty[String])
+    if (fileIds.isEmpty){
+      BadRequest("No file ids supplied")
+    } else {
+      for (fileId <- fileIds) {
+        files.get(UUID(fileId)) match {
+          case Some(f) => {
+            addTagsHelper(TagCheck_File, f.id, request)
+          }
+          case None => Logger.error("No file with id : " + fileId)
+        }
+      }
+      Ok(toJson("added tags"))
+    }
   }
 
   /**
