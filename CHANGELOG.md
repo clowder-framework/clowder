@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - api/reports/storage/spaces endpoint now accepts a space parameter for ID rather than requiring a space filter.
+- Datasets and collections in the trash are no longer indexed for discovery in search services.
 
 ## 1.13.0 - 2020-12-02
 
@@ -39,7 +40,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Docker Images are now pushed to [github container registry](https://github.com/orgs/clowder-framework/packages)
-
 
 ## 1.12.0 - 2020-10-19
 **_Warning:_**

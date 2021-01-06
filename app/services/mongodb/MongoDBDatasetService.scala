@@ -1412,7 +1412,7 @@ class MongoDBDatasetService @Inject() (
 
   def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
-    Dataset.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(d => {
+    Dataset.dao.collection.find(MongoDBObject("trash" -> false), MongoDBObject("_id" -> 1)).foreach(d => {
       index(new UUID(d.get("_id").toString), idx)
     })
   }
@@ -1647,6 +1647,16 @@ class MongoDBDatasetService @Inject() (
     since.foreach(t => query = query ++ ("created" $gte Parsers.fromISO8601(t)))
     until.foreach(t => query = query ++ ("created" $lte Parsers.fromISO8601(t)))
     Dataset.find(query)
+  }
+
+  // Get a list of all trashed dataset and file ids for comparison
+  def getTrashedIds(): List[UUID] = {
+    val trashedIds = ListBuffer[UUID]()
+    Dataset.find(MongoDBObject("trash" -> true)).map(ds => {
+      ds.files.foreach(fid => trashedIds += fid)
+      trashedIds += ds.id
+    })
+    trashedIds.toList
   }
 }
 
