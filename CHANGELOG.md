@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user.
 
 ## 1.13.0 - 2020-12-02
 
@@ -32,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Docker Images are now pushed to [github container registry](https://github.com/orgs/clowder-framework/packages)
+
 
 ## 1.12.0 - 2020-10-19
 **_Warning:_**

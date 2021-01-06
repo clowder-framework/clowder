@@ -18,6 +18,8 @@ trait ExtractionService {
 
   def get(msgId: UUID): Option[Extraction]
 
+  def getIterator(userRequired: Boolean, since: Option[String], until: Option[String], user: Option[UUID]): Iterator[Extraction]
+
   def findById(resource: ResourceRef): List[Extraction]
 
   def findByExtractorIDBefore(extractorID: String, status: String, date: String, limit: Int): List[Extraction]
