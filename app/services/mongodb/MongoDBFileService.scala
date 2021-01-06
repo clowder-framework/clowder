@@ -522,10 +522,10 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags)
     val file = get(id).get
-    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = file.tags.map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map {
@@ -1218,7 +1218,7 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[File] = {
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File] = {
     var query = MongoDBObject()
     space.foreach(spid => {
       // If space is specified, we have to get that association from datasets for now

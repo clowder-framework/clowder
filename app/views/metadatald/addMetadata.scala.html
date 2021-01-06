@@ -434,14 +434,6 @@ line-height: 1.5;
                 var field_id = context.val();
                 var field_type = context.data("type");
                 var space_id = context.attr("space_id");
-                console.log('Metadata field (' + field_label + '):', {
-                    'Context': context,
-                    'Label: ': field_label,
-                    'Field Description: ': field_description,
-                    'Field ID: ': field_id,
-                    'Field Type: ': field_type,
-                    'Space ID: ': space_id
-                });
                 // Create the template and HTML content.
                 var template_map =
                         {"string": "add_metadata_string",

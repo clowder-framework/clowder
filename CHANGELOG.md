@@ -6,8 +6,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user.
+
 ### Changed
+- api/reports/storage/spaces endpoint now accepts a space parameter for ID rather than requiring a space filter.
 - Datasets and collections in the trash are no longer indexed for discovery in search services.
+
+## 1.13.0 - 2020-12-02
+
+### Added
+- Ability to submit multiple selected files within a dataset to an extractor.
+- Support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
+- UpdateUserId.js to scripts/updates. This code adds user_id to each document in extractions collection in mongodb. 
+  user_id is taken from author id in uploads.files if exists, else it taken from author id in datasets collection.
+
+### Fixed
+- An extractor with file matching set to `*/*` (all file types) would incorrectly send out dataset events.
+- Space Editors can now delete tags on files, datasets and sections.
+- GeospatialViewer previewer no longer shows if file does not contain geospatial layers.
+
+## 1.12.2 - 2020-11-19
+
+### Changed
+- /api/reindex admin endpoint no longer deletes and swaps a temporary index, but reindexes in-place.
 
 ## 1.12.1 - 2020-11-05
 

@@ -153,7 +153,7 @@ trait FileService {
 
   def isInDataset(file: File, dataset: Dataset): Boolean
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def removeTags(id: UUID, tags: List[String])
 
   def addMetadata(fileId: UUID, metadata: JsValue)
 
@@ -246,6 +246,6 @@ trait FileService {
 
   def incrementDownloads(id: UUID, user: Option[User])
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[File]
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File]
 
 }

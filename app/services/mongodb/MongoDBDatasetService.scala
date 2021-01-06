@@ -1072,10 +1072,10 @@ class MongoDBDatasetService @Inject() (
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in dataset " + id + " : " + tags )
     val dataset = get(id).get
-    val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = dataset.tags.map(_.name)
     Logger.debug("existingTags before user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map {
@@ -1641,9 +1641,9 @@ class MongoDBDatasetService @Inject() (
    * @param since - include only datasets created after a certain date
    * @param until - include only datasets created before a certain date
    */
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[Dataset] = {
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[Dataset] = {
     var query = MongoDBObject("trash" -> false)
-    space.foreach(spid => query += ("spaces" -> new ObjectId(spid.stringify)))
+    space.foreach(spid => query += ("spaces" -> new ObjectId(spid)))
     since.foreach(t => query = query ++ ("created" $gte Parsers.fromISO8601(t)))
     until.foreach(t => query = query ++ ("created" $lte Parsers.fromISO8601(t)))
     Dataset.find(query)
