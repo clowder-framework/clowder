@@ -27,6 +27,12 @@ db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
         let foundAuthorInDatasets = db.datasets.findOne({"files": {$in: [ext.file_id]}});
         if (foundAuthorInDatasets != null) {
             authorID = foundAuthorInDatasets.author._id;
+        } else {
+            // Check if extraction is on a dataset
+            let foundAuthorInDatasets = db.datasets.findOne({"_id": ext.file_id});
+            if (foundAuthorInDatasets != null) {
+                authorID = foundAuthorInDatasets.author._id;
+            }
         }
     }
     if (authorID != null) {

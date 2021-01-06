@@ -64,6 +64,7 @@ db.extractions.find({"user_id":{$exists: 1}}).forEach(function(ext) {
                 "space_id": spaceid,
                 "job_id": jobid,
                 "job_type": jobtype,
+                "status_count": 1,
                 "last_status": ext.status,
                 "start": ext.start,
                 "end": ext.start
@@ -80,6 +81,7 @@ db.extractions.find({"user_id":{$exists: 1}}).forEach(function(ext) {
                     "space_id": spaceid,
                     "job_id": jobid,
                     "job_type": jobtype,
+                    "status_count": 1,
                     "last_status": ext.status,
                     "start": ext.start,
                     "end": ext.start
@@ -92,6 +94,7 @@ db.extractions.find({"user_id":{$exists: 1}}).forEach(function(ext) {
                 // If we have a DONE message already, avoid Python millisecond truncation issues by ignoring later ones
                 let status = lookup[userid][uniquekey]["current_job"]["last_status"];
                 if (status != "DONE") lookup[userid][uniquekey]["current_job"]["last_status"] = ext.status;
+                lookup[userid][uniquekey]["current_job"]["status_count"] += 1;
             }
         }
     }
@@ -107,7 +110,8 @@ function clean(str) {
     }
 }
 
-print("\""+["userid", "username", "email", "resource_id", "resource_type", "space_id", "extractor", "job_id", "job_type", "last_status", "start", "end", "duration_ms"].join("\",\"")+"\"")
+print("\""+["userid", "username", "email", "resource_id", "resource_type", "space_id", "extractor",
+    "job_id", "job_type", "status_count", "last_status", "start", "end", "duration_ms"].join("\",\"")+"\"")
 for (userid in lookup) {
     // get user info
     let username = "";
@@ -130,10 +134,12 @@ for (userid in lookup) {
             let start = joblist[i]["start"];
             let end = joblist[i]["end"];
             let type = joblist[i]["job_type"];
+            let count = joblist[i]["status_count"];
             let status = joblist[i]["last_status"];
             let duration = (end - start);
             if (duration > 0)
-                print("\""+[clean(userid), username, email, resource, restype, clean(spids), extractor, clean(jobid), type, status, start, end, duration].join("\",\"")+"\"")
+                print("\""+[clean(userid), username, email, resource, restype, clean(spids), extractor,
+                    clean(jobid), type, count, status, start, end, duration].join("\",\"")+"\"")
         };
 
         // Get final current_job as well
@@ -144,9 +150,11 @@ for (userid in lookup) {
         let start = job["start"];
         let end = job["end"];
         let type = job["job_type"];
+        let count = job["status_count"];
         let status = job["last_status"];
         let duration = (end - start);
         if (duration > 0)
-            print("\""+[clean(userid), username, email, resource, restype, clean(spids), extractor, clean(jobid), type, status, start, end, duration].join("\",\"")+"\"")
+            print("\""+[clean(userid), username, email, resource, restype, clean(spids), extractor,
+                clean(jobid), type, count, status, start, end, duration].join("\",\"")+"\"")
     }
 }
