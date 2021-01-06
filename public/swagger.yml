@@ -5005,17 +5005,17 @@ paths:
         Must be a server admin to access the report. Supports ISO8601 date range filters.
       parameters:
         - name: space
-          in: path
+          in: query
           required: false
           schema:
             type: string
         - name: since
-          in: path
+          in: query
           required: false
           schema:
             type: string
         - name: until
-          in: path
+          in: query
           required: false
           schema:
             type: string
