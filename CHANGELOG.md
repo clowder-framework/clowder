@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user.
 
 ### Changed
-- api/reports/storage/spaces endpoint now accepts a space parameter for ID rather than requiring a space filter.
+- `api/reports/storage/spaces` endpoint now accepts a space parameter for ID rather than requiring a space filter.
 - Datasets and collections in the trash are no longer indexed for discovery in search services.
 
 ## 1.13.0 - 2020-12-02
