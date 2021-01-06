@@ -757,6 +757,8 @@ GET            /api/reports/metrics/collections                                 
 GET            /api/reports/metrics/spaces                                              @api.Reporting.spaceMetrics()
 GET            /api/reports/metrics/users                                               @api.Reporting.userMetrics()
 GET            /api/reports/storage/spaces                                              @api.Reporting.spaceStorage(space: Option[String] ?= None, since: Option[String] ?= None, until: Option[String] ?= None)
+GET            /api/reports/metrics/extractors                                          @api.Reporting.extractorUsage(since: Option[String] ?= None, until: Option[String] ?= None)
+
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS
