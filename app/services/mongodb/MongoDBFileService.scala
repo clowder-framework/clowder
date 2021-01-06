@@ -1215,7 +1215,7 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[File] = {
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File] = {
     var query = MongoDBObject()
     space.foreach(spid => {
       // If space is specified, we have to get that association from datasets for now
