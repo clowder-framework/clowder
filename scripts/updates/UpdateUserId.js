@@ -6,13 +6,19 @@ If found, it gets the author._id for use as the user_id. If an author id is foun
 an update to the extractions collection is made by adding user_id: author._id. 
 ***/
 
+// To filter by time, include another clause in find eg: "start": {"$gte": ISODate("2020-01-01T00:00:00Z")}
 db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
     let authorID = null;
     // Looping through each extraction where user_id doesn't exist,
     // if file_id found in uploads.files, get author._id
-    let foundFile = db.uploads.files.findOne({"_id": ext.file_id})
+    let foundFile = db.uploads.files.findOne({"_id": ext.file_id});
     if (foundFile != null) {
         authorID = foundFile.author._id;
+    } else {
+        let foundFile = db.uploads.findOne({"_id": ext.file_id});
+        if (foundFile != null) {
+            authorID = foundFile.author._id;
+        }
     }
 
     // If file not found in uploads.files or if author._id doesn't exist,
@@ -21,6 +27,12 @@ db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
         let foundAuthorInDatasets = db.datasets.findOne({"files": {$in: [ext.file_id]}});
         if (foundAuthorInDatasets != null) {
             authorID = foundAuthorInDatasets.author._id;
+        } else {
+            // Check if extraction is on a dataset
+            let foundAuthorInDatasets = db.datasets.findOne({"_id": ext.file_id});
+            if (foundAuthorInDatasets != null) {
+                authorID = foundAuthorInDatasets.author._id;
+            }
         }
     }
     if (authorID != null) {
@@ -32,7 +44,7 @@ db.extractions.find({"user_id":{$exists: 0}}).forEach(function(ext) {
                 "$set": {
                     "user_id": authorID
                 }
-            });
+            }, {"multi": true});
         }
         else {
             // Update user_id for entry in extractions database

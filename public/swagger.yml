@@ -9,7 +9,7 @@ info:
     Clowder is a customizable and scalable data management system to support any
     data format and multiple research domains. It is under active development
     and deployed for a variety of research projects.
-  version: 1.13.0
+  version: 1.14.0
   termsOfService: https://clowder.ncsa.illinois.edu/clowder/tos
   contact:
     name: Clowder
@@ -4995,27 +4995,27 @@ paths:
           description: Not authorized
           content: {}
 
-  /reports/storage/spaces/{id}:
+  /reports/storage/spaces:
     get:
       tags:
         - reporting
       summary: Download storage metrics report for spaces as CSV.
       description: |
-        Download storage metrics report for files in a space as a CSV file.
+        Download storage metrics report for files in a space as a CSV file. Space id is optional parameter.
         Must be a server admin to access the report. Supports ISO8601 date range filters.
       parameters:
-        - name: id
-          in: path
-          required: true
+        - name: space
+          in: query
+          required: false
           schema:
             type: string
         - name: since
-          in: path
+          in: query
           required: false
           schema:
             type: string
         - name: until
-          in: path
+          in: query
           required: false
           schema:
             type: string

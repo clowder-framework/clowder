@@ -326,8 +326,11 @@ class MongoDBFileService @Inject() (
 
   def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
+    val trashedIds = datasets.getTrashedIds()
     FileDAO.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(f => {
-      index(new UUID(f.get("_id").toString), idx)
+      val fid = new UUID(f.get("_id").toString)
+      if (!trashedIds.contains(fid))
+        index(fid, idx)
     })
   }
 
@@ -1215,7 +1218,7 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[File] = {
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File] = {
     var query = MongoDBObject()
     space.foreach(spid => {
       // If space is specified, we have to get that association from datasets for now

@@ -23,6 +23,20 @@ case class Extraction(
   user_id: UUID = User.anonymous.id
 )
 
+// Used in extraction report aggregation
+case class ExtractionJob(
+  target: String,
+  targetType: String,
+  extractor: String,
+  spaces: String,
+  jobId: String,
+  jobType: String,
+  statusCount: Int,
+  lastStatus: String,
+  start: Date,
+  end: Date
+)
+
 /**
  * Currently running extractor name
  */
