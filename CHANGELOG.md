@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.14.0 - 2021-01-07
 
 ### Added
-- Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user.
+- Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user. Database administrators
+  can use `scripts/updates/UpdateUserId.js` to assign user IDs to older extraction event records based on resource ownership
+  in order to improve the accuracy of the report for older data.
 
 ### Changed
 - `api/reports/storage/spaces` endpoint now accepts a space parameter for ID rather than requiring a space filter.
