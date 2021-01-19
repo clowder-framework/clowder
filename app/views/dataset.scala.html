@@ -23,11 +23,34 @@
 @import play.api.Play.current
 @import _root_.util.Formatters._
 @import services.AppConfiguration
+@import services.EventSinkService
+@import services.DI
 
+    @*
+
+
+    val eventSinkService: EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
+    eventSinkService.logEvent("view_resource", {
+    "type": "dataset",
+    "resource_id": '@dataset.id',
+    "resource_name": '@dataset.name',
+    "author_id": '@dataset.author.id',
+    "author_name": '@dataset.author.fullName',
+    "viewer_id": '@user.get.id',
+    "viewer_name": '@user.get.getMiniUser.fullName'
+    })
+    *@
 @main(dataset.name) {
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/glyphicon-animations.css")">
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+
     @if(AppConfiguration.getAmplitudeApiKey != "") {
+        @{
+            val eventSinkService: EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
+            eventSinkService.logDatasetViewEvent(dataset, user)
+        }
+
+        @*
         <script>
                 amplitude.getInstance().logEvent("view_resource", {
                     "type": "dataset",
@@ -39,6 +62,7 @@
                     "viewer_name": '@user.get.getMiniUser.fullName'
                 });
         </script>
+        *@
     }
     <script type="text/javascript">
         var spaceId = "@currentSpace";
