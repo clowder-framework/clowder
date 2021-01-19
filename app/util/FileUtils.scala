@@ -39,6 +39,7 @@ object FileUtils {
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
+  lazy val routing : ExtractorRoutingService = DI.injector.getInstance(classOf[ExtractorRoutingService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -762,9 +763,7 @@ object FileUtils {
 
     // send file to rabbitmq for processing
     if (runExtractors) {
-      current.plugin[RabbitmqPlugin].foreach { p =>
-        p.fileCreated(file, dataset, clowderurl, apiKey)
-      }
+      routing.fileCreated(file, dataset, clowderurl, apiKey)
     }
 
     // index the file

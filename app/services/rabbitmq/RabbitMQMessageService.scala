@@ -1,12 +1,13 @@
 package services
 
 import java.io.IOException
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
-import com.rabbitmq.client.{Channel, DefaultConsumer, Envelope, QueueingConsumer}
+import com.rabbitmq.client.{Channel, Connection, ConnectionFactory, DefaultConsumer, Envelope, QueueingConsumer}
 import models._
 import play.api.Logger
 import play.api.Play.current
@@ -15,24 +16,167 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.{Response, WS}
 import play.libs.Akka
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 import scala.util.Try
 
 /**
  * Send/get messages from a message bus
  */
 
-trait MessageService {
-  var extractQueue: Option[ActorRef] = None
+trait RabbitMQMessageService extends MessageService {
+  var channel: Option[Channel] = None
+  var connection: Option[Connection] = None
+  var factory: Option[ConnectionFactory] = None
+
+  var cancellationQueue: Option[ActorRef] = None
+  var event_filter: Option[ActorRef] = None
+  var extractorsHeartbeats: Option[ActorRef] = None
+
+  var bindings = List.empty[Binding]
+
+  val cancellationDownloadQueueName: String = "clowder.jobs.temp"
+
+  var restURL: Option[String] = None
+
+  var vhost: String = ""
+  var username: String = ""
+  var password: String = ""
+  var rabbitmquri: String = ""
+  var exchange: String = ""
+  var mgmtPort: String = ""
+
+  /** Open connection to broker. **/
+  def connect(): Boolean = {
+    if (channel.isDefined) return true
+    if (!factory.isDefined) return true
+
+    val configuration = play.api.Play.configuration
+
+    try {
+      val protocol = if (factory.get.isSSL) "https://" else "http://"
+      restURL = Some(protocol + factory.get.getHost +  ":" + mgmtPort)
+      vhost = URLEncoder.encode(factory.get.getVirtualHost)
+      username = factory.get.getUsername
+      password = factory.get.getPassword
+
+      connection = Some(factory.get.newConnection())
+      channel = Some(connection.get.createChannel())
+
+      Logger.debug("vhost: "+ vhost)
+
+      // setup exchange if provided
+      if (exchange != "") {
+        channel.get.exchangeDeclare(exchange, "topic", true)
+      }
+
+      // create an anonymous queue for replies
+      val replyQueueName = channel.get.queueDeclare().getQueue
+      Logger.debug("Reply queue name: " + replyQueueName)
+
+      // get bindings stored in broker
+      val queueBindingsFuture = getQueuesNamesForAnExchange(exchange)
+      import scala.concurrent.ExecutionContext.Implicits.global
+      queueBindingsFuture map { x =>
+        implicit val bindingsReader = Json.reads[Binding]
+        bindings = x.json.as[List[Binding]]
+        Logger.debug("Bindings successufully retrieved")
+      }
+      Await.result(queueBindingsFuture, 5000 millis)
+
+      // Start actor to listen for extractor status messages
+      Logger.info("Starting extraction status receiver")
+      event_filter = Some(Akka.system.actorOf(
+        Props(new EventFilter(channel.get, replyQueueName)),
+        name = "EventFilter"
+      ))
+      Logger.debug("Initializing a MsgConsumer for the EventFilter")
+      channel.get.basicConsume(
+        replyQueueName,
+        false, // do not auto ack
+        "event_filter", // tagging the consumer is important if you want to stop it later
+        new MsgConsumer(channel.get, event_filter.get)
+      )
+
+      // Start actor to listen to extractor heartbeats
+      Logger.info("Starting extractor heartbeat listener")
+      // create fanout exchange if it doesn't already exist
+      channel.get.exchangeDeclare("extractors", "fanout", true)
+      // anonymous queue
+      val heartbeatsQueue = channel.get.queueDeclare().getQueue
+      // bind queue to exchange
+      channel.get.queueBind(heartbeatsQueue, "extractors", "*")
+      extractorsHeartbeats = Some(Akka.system.actorOf(
+        Props(new ExtractorsHeartbeats(channel.get, heartbeatsQueue)), name = "ExtractorsHeartbeats"
+      ))
+      Logger.debug("Initializing a MsgConsumer for the ExtractorsHeartbeats")
+      channel.get.basicConsume(
+        heartbeatsQueue,
+        false, // do not auto ack
+        "ExtractorsHeartbeats", // tagging the consumer is important if you want to stop it later
+        new MsgConsumer(channel.get, extractorsHeartbeats.get)
+      )
+
+      // Setup Actor to submit new extractions to broker
+      extractQueue = Some(Akka.system.actorOf(Props(new PublishDirectActor(channel = channel.get,
+        replyQueueName = replyQueueName))))
+
+      // Setup cancellation queue. Pop messages from extraction queue until we find the one we want to cancel.
+      // Store messages in the extraction queue temporarely in this queue.
+      try {
+        val cancellationSearchTimeout: Long = configuration.getString("submission.cancellation.search.timeout").getOrElse("500").toLong
+        // create cancellation download queue to hold pending rabbitmq message
+        channel.get.queueDeclare(cancellationDownloadQueueName, true, false, false, null)
+        // Actor to connect to a rabbitmq queue to cancel the pending request
+        cancellationQueue = Some(Akka.system.actorOf(Props(new PendingRequestCancellationActor(exchange, connection, cancellationDownloadQueueName, cancellationSearchTimeout))))
+        // connect to cancellation download queue to re-dispatch the residual pending requests to their target rabbitmq queues.
+        val redispatch_cancellation_requests_channel: Channel = connection.get.createChannel()
+        val cancellationQueueConsumer: QueueingConsumer = new QueueingConsumer(redispatch_cancellation_requests_channel)
+        val cancellationQueueConsumerTag: String = redispatch_cancellation_requests_channel.basicConsume(cancellationDownloadQueueName, false, cancellationQueueConsumer)
+        resubmitPendingRequests(cancellationQueueConsumer, redispatch_cancellation_requests_channel, cancellationSearchTimeout)
+        redispatch_cancellation_requests_channel.basicCancel(cancellationQueueConsumerTag)
+        redispatch_cancellation_requests_channel.close()
+      } catch {
+        case e: Exception => {
+          Logger.error(s"[CANCELLATION] failed to re-dispatch residual requests from $cancellationDownloadQueueName", e)
+        }
+      }
+      true
+    } catch {
+      case t: Throwable => {
+        Logger.error("Error connecting to rabbitmq broker", t)
+        close()
+        false
+      }
+    }
+  }
 
   /** Close connection to broker. **/
   def close()
 
   /** Submit a message to default broker. */
-  def submit(message: ExtractorMessage)
+  def submit(message: ExtractorMessage) = {
+    extractWorkQueue(message)
+  }
 
   /** Submit a message to broker. */
-  def submit(exchange: String, routing_key: String, message: JsValue)
+  def submit(exchange: String, routing_key: String, message: JsValue) = {
+
+  }
+
+  /**
+   * Submit and Extractor message to the extraction queue. This is the low level call used by public methods in this
+   * class.
+   * @param message a model representing the JSON message to send to the queue
+   */
+  private def extractWorkQueue(message: ExtractorMessage) = {
+    Logger.debug(s"Publishing $message directly to queue ${message.queue}")
+    connect
+    extractQueue match {
+      case Some(x) => x ! message
+      case None => Logger.warn("Could not send message over RabbitMQ")
+    }
+  }
 
   def getRestEndPoint(path: String): Future[Response]
 
@@ -55,10 +199,6 @@ trait MessageService {
    * Get Channel list from rabbitmq broker
    */
   def getChannelsList: Future[Response]
-
-  def getExchange: String = play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
-
-  def getGlobalKey: String = play.api.Play.configuration.getString("commKey").getOrElse("")
 
   /**
    * Get queue details for a given queue

@@ -2,7 +2,7 @@ package services
 
 import models.{Dataset, File, Preview, ResourceRef, ResourceType, TempFile, UUID, User}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsObject, JsString, JsValue}
 
 import scala.collection.mutable.ListBuffer
 
@@ -30,6 +30,24 @@ trait ExtractorRoutingService {
    * @return true if matches any existing recorder. otherwise, false.
    */
   def containsOperation(operations: List[String], operation: String): Boolean
+
+  /**
+   * a helper function to get user email address from user's request api key.
+   * @param requestAPIKey user request apikey
+   * @return a list of email address
+   */
+  def getEmailNotificationEmailList(requestAPIKey: Option[String]): List[String] = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+
+    (for {
+      apiKey <- requestAPIKey
+      user <- userService.findByKey(apiKey)
+      email <- user.email
+    } yield {
+      Logger.debug(s"[getEmailNotificationEmailList] $email")
+      List[String](email)
+    }).getOrElse(List[String]())
+  }
 
   /**
    * Given a list of extractor ids, an operation and a resource type return the list of extractor ids that match.
@@ -100,7 +118,39 @@ trait ExtractorRoutingService {
    * @param dataset the dataset the file belongs to
    * @param host the Clowder host URL for sharing extractors across instances
    */
-  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String]): Option[UUID]
+  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String]): Option[UUID] = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = messages.getExchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
+    val extraInfo = Map("filename" -> file.filename)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    var jobId: Option[UUID] = None
+    dataset match {
+      case Some(d) => {
+        getQueues(d, routingKey, file.contentType).foreach { queue =>
+          val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+
+          val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+          val (id, job_id) = postSubmissionEvent(file.id, queue, user.id)
+
+          val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString,
+            d.id, "", apiKey, routingKey, source, "created", None)
+          messages.submit(msg)
+          jobId = job_id
+        }
+        jobId
+      }
+      case None => {
+        Logger.debug("RabbitMQPlugin: No dataset associated with this file")
+        None
+      }
+    }
+  }
 
   /**
    * Send message when a new file is uploaded to the system. This is the same as the method above but
@@ -108,7 +158,23 @@ trait ExtractorRoutingService {
    * @param file the file that was just uploaded
    * @param host the Clowder host URL for sharing extractors across instances
    */
-  def fileCreated(file: TempFile, host: String, requestAPIKey: Option[String])
+  def fileCreated(file: TempFile, host: String, requestAPIKey: Option[String]): Unit = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = messages.getExchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
+    val extraInfo = Map("filename" -> file.filename)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+    val (id, job_id) = postSubmissionEvent(file.id, routingKey, user.id)
+    val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
+      "", apiKey, routingKey, source, "created", None)
+    messages.submit(msg)
+  }
 
   /**
    * Send message when a file is added to a dataset. Use both old method using topic queues and new method using work

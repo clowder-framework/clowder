@@ -51,6 +51,7 @@ class Files @Inject()(
   folders: FolderService,
   spaces: SpaceService,
   userService: UserService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
@@ -611,10 +612,7 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        current.plugin[RabbitmqPlugin].foreach {
-          // FIXME dataset not available?
-          _.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
-        }
+        routing.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
 
         Ok(toJson(Map("id" -> id.stringify)))
 

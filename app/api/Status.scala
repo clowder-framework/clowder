@@ -69,22 +69,6 @@ class Status @Inject()(spaces: SpaceService,
         })
       }
 
-      // rabbitmq
-      case p: RabbitmqPlugin => {
-        val status = if (p.connect) {
-          "connected"
-        } else {
-          "disconnected"
-        }
-        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
-          Json.obj("uri" -> p.rabbitmquri,
-            "exchange" -> p.exchange,
-            "status" -> status)
-        } else {
-          Json.obj("status" -> status)
-        })
-      }
-
       // geostream
       case p: PostgresPlugin => {
         val status = if (p.conn != null) {

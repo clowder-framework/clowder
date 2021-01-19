@@ -295,20 +295,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Submit and Extractor message to the extraction queue. This is the low level call used by public methods in this
-    * class.
-    * @param message a model representing the JSON message to send to the queue
-    */
-  private def extractWorkQueue(message: ExtractorMessage) = {
-    Logger.debug(s"Publishing $message directly to queue ${message.queue}")
-    connect
-    extractQueue match {
-      case Some(x) => x ! message
-      case None => Logger.warn("Could not send message over RabbitMQ")
-    }
-  }
-
-  /**
     * Escape various characters in content type when creating a routing key
     * @param contentType original content type in standar form, for example text/csv
     * @return escaped routing key
