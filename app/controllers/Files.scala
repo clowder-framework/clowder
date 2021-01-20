@@ -982,9 +982,7 @@ class Files @Inject() (
               _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
             }
 
-            current.plugin[RabbitmqPlugin].foreach {
-              _.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
-            }
+            routing.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
