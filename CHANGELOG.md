@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 Google will no longer work as login provider, we are working on this issue #157
 
+If non local accounts are used the count can be wrong. Use the [fixcounts](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
+script to fix this.
+
 ### Fixed
 - Error logging in with orcid due to changed URL #91
 - Fixed error in url for twitter login
