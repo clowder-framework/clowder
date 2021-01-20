@@ -1,6 +1,6 @@
 package services
 
-import models.{Collection, Dataset, File, User}
+import models.{Collection, Dataset, ExtractorInfo, File, User}
 
 import java.net.URI
 import java.time.Instant
@@ -38,12 +38,8 @@ class EventSinkService {
     Logger.info("Message submitted to event sink exchange: " + Json.stringify(metadata))
   }
 
-  def logFileUploadEvent(file: Any) = {
-    Logger.warn("Hey there")
-  }
-
   /** Log an event when user views a dataset */
-  def logDatasetViewEvent(dataset: Dataset, user: Option[User]) = {
+  def logDatasetViewEvent(dataset: Dataset, viewer: Option[User]) = {
     Logger.info("User viewed a dataset: " + dataset.id.stringify)
     logEvent("view_resource", Json.obj(
       "type" -> "dataset",
@@ -51,13 +47,13 @@ class EventSinkService {
       "resource_name" -> dataset.name,
       "author_id" -> dataset.author.id,
       "author_name" -> dataset.author.fullName,
-      "viewer_id" -> user.get.id,
-      "viewer_name" -> user.get.getMiniUser.fullName
+      "viewer_id" -> viewer.get.id,
+      "viewer_name" -> viewer.get.getMiniUser.fullName
     ))
   }
 
   /** Log an event when user views a file */
-  def logFileViewEvent(file: File, user: Option[User]) = {
+  def logFileViewEvent(file: File, viewer: Option[User]) = {
     Logger.info("User viewed a file: " + file.id.stringify)
     logEvent("view_resource", Json.obj(
       "type" -> "file",
@@ -65,13 +61,13 @@ class EventSinkService {
       "resource_name" -> file.filename,
       "author_id" -> file.author.id,
       "author_name" -> file.author.fullName,
-      "viewer_id" -> user.get.id,
-      "viewer_name" -> user.get.getMiniUser.fullName
+      "viewer_id" -> viewer.get.id,
+      "viewer_name" -> viewer.get.getMiniUser.fullName
     ))
   }
 
   /** Log an event when user views a collection */
-  def logCollectionViewEvent(collection: Collection, user: Option[User]) = {
+  def logCollectionViewEvent(collection: Collection, viewer: Option[User]) = {
     Logger.info("User viewed a file: " + collection.id.stringify)
     logEvent("view_resource", Json.obj(
       "type" -> "collection",
@@ -79,9 +75,30 @@ class EventSinkService {
       "resource_name" -> collection.name,
       "author_id" -> collection.author.id,
       "author_name" -> collection.author.fullName,
-      "viewer_id" -> user.get.id,
-      "viewer_name" -> user.get.getMiniUser.fullName
+      "viewer_id" -> viewer.get.id,
+      "viewer_name" -> viewer.get.getMiniUser.fullName
     ))
+  }
+
+  /** TBD - Not Currently Implemented */
+  def logSubmitFileToExtractorEvent(file: File, extractor: ExtractorInfo, submitter: Option[User]) = {
+
+  }
+
+  def logSubmitDatasetToExtractorEvent(dataset: Dataset, extractor: ExtractorInfo, submitter: Option[User]) = {
+
+  }
+
+  def logFileUploadEvent(file: File, uploader: Option[User]) = {
+
+  }
+
+  def logFileDownloadEvent(file: File, downloader: Option[User]) = {
+
+  }
+
+  def logDatasetDownloadEvent(dataset: Dataset, downloader: Option[User]) = {
+
   }
 }
 
