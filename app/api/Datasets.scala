@@ -52,6 +52,7 @@ class  Datasets @Inject()(
   relations: RelationService,
   userService: UserService,
   thumbnailService : ThumbnailService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends ApiController {
 
@@ -606,9 +607,7 @@ class  Datasets @Inject()(
         val mdMap = metadata.getExtractionSummary
 
         //send RabbitMQ message
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-        }
+        routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -655,9 +654,7 @@ class  Datasets @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                }
+                routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
                 events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -739,10 +736,8 @@ class  Datasets @Inject()(
         }
 
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          routing.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
         }
 
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))

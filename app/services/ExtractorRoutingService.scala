@@ -2,7 +2,7 @@ package services
 
 import models.{Dataset, File, Preview, ResourceRef, ResourceType, TempFile, UUID, User}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
 
 import scala.collection.mutable.ListBuffer
 
@@ -30,6 +30,24 @@ trait ExtractorRoutingService {
    * @return true if matches any existing recorder. otherwise, false.
    */
   def containsOperation(operations: List[String], operation: String): Boolean
+
+  /**
+   * a helper function to get user email address from user's request api key.
+   * @param requestAPIKey user request apikey
+   * @return a list of email address
+   */
+  def getEmailNotificationEmailList(requestAPIKey: Option[String]): List[String] = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+
+    (for {
+      apiKey <- requestAPIKey
+      user <- userService.findByKey(apiKey)
+      email <- user.email
+    } yield {
+      Logger.debug(s"[getEmailNotificationEmailList] $email")
+      List[String](email)
+    }).getOrElse(List[String]())
+  }
 
   /**
    * Given a list of extractor ids, an operation and a resource type return the list of extractor ids that match.
@@ -100,7 +118,39 @@ trait ExtractorRoutingService {
    * @param dataset the dataset the file belongs to
    * @param host the Clowder host URL for sharing extractors across instances
    */
-  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String]): Option[UUID]
+  def fileCreated(file: File, dataset: Option[Dataset], host: String, requestAPIKey: Option[String]): Option[UUID] = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = messages.getExchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
+    val extraInfo = Map("filename" -> file.filename)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    var jobId: Option[UUID] = None
+    dataset match {
+      case Some(d) => {
+        getQueues(d, routingKey, file.contentType).foreach { queue =>
+          val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+
+          val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+          val (id, job_id) = postSubmissionEvent(file.id, queue, user.id)
+
+          val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString,
+            d.id, "", apiKey, routingKey, source, "created", None)
+          messages.submit(msg)
+          jobId = job_id
+        }
+        jobId
+      }
+      case None => {
+        Logger.debug("RabbitMQPlugin: No dataset associated with this file")
+        None
+      }
+    }
+  }
 
   /**
    * Send message when a new file is uploaded to the system. This is the same as the method above but
@@ -108,7 +158,23 @@ trait ExtractorRoutingService {
    * @param file the file that was just uploaded
    * @param host the Clowder host URL for sharing extractors across instances
    */
-  def fileCreated(file: TempFile, host: String, requestAPIKey: Option[String])
+  def fileCreated(file: TempFile, host: String, requestAPIKey: Option[String]): Unit = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = messages.getExchange + "." + "file." + contentTypeToRoutingKey(file.contentType)
+    val extraInfo = Map("filename" -> file.filename)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+    val (id, job_id) = postSubmissionEvent(file.id, routingKey, user.id)
+    val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, routingKey, extraInfo, file.length.toString, null,
+      "", apiKey, routingKey, source, "created", None)
+    messages.submit(msg)
+  }
 
   /**
    * Send message when a file is added to a dataset. Use both old method using topic queues and new method using work
@@ -117,7 +183,29 @@ trait ExtractorRoutingService {
    * @param dataset the dataset it was added to
    * @param host the Clowder host URL for sharing extractors across instances
    */
-  def fileAddedToDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String])
+  def fileAddedToDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String]): Unit = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = s"${messages.getExchange}.dataset.file.added"
+    Logger.debug(s"Sending message $routingKey from $host")
+    val queues = getQueues(dataset, routingKey, file.contentType)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    queues.foreach{ extractorId =>
+      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+      val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
+
+      val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+      val (id, job_id) = postSubmissionEvent(file.id, extractorId, user.id)
+
+      val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+        "", apiKey, routingKey, source, "added", Some(target))
+      messages.submit(msg)
+    }
+  }
 
   /**
    * Send message when a group of files is added to a dataset via UI.
@@ -126,7 +214,31 @@ trait ExtractorRoutingService {
    * @param dataset the dataset it was added to
    * @param host the Clowder host URL for sharing extractors across instances
    */
-  def fileSetAddedToDataset(dataset: Dataset, filelist: List[File], host: String, requestAPIKey: Option[String])
+  def fileSetAddedToDataset(dataset: Dataset, filelist: List[File], host: String, requestAPIKey: Option[String]): Unit = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = s"${messages.getExchange}.dataset.files.added"
+    Logger.debug(s"Sending message $routingKey from $host")
+    val queues = getQueues(dataset, routingKey, "")
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val sourceExtra = JsObject((Seq("filenames" -> JsArray(filelist.map(f=>JsString(f.filename)).toSeq))))
+    val msgExtra = Map("filenames" -> filelist.map(f=>f.filename))
+    queues.foreach{ extractorId =>
+      val source = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, sourceExtra)
+
+      val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+      val (id, job_id) = postSubmissionEvent(dataset.id, extractorId, user.id)
+
+      var totalsize: Long = 0
+      filelist.map(f => totalsize += f.length)
+      val msg = ExtractorMessage(id, dataset.id, job_id, notifies, dataset.id, host, extractorId, msgExtra, totalsize.toString, dataset.id,
+        "", apiKey, routingKey, source, "added", None)
+      messages.submit(msg)
+    }
+  }
 
   /**
    * Send message when file is removed from a dataset and deleted.
@@ -134,7 +246,27 @@ trait ExtractorRoutingService {
    * @param dataset
    * @param host
    */
-  def fileRemovedFromDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String])
+  def fileRemovedFromDataset(file: File, dataset: Dataset, host: String, requestAPIKey: Option[String]): Unit = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = s"${messages.getExchange}.dataset.file.removed"
+    Logger.debug(s"Sending message $routingKey from $host")
+    val queues = getQueues(dataset, routingKey, file.contentType)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    queues.foreach{ extractorId =>
+      val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
+      val target = Entity(ResourceRef(ResourceRef.dataset, dataset.id), None, JsObject(Seq.empty))
+
+      val notifies = getEmailNotificationEmailList(requestAPIKey)
+      val (id, job_id) = postSubmissionEvent(file.id, extractorId, user.id)
+      val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, extractorId, Map.empty, file.length.toString, dataset.id,
+        "", apiKey, routingKey, source, "removed", Some(target))
+      messages.submit(msg)
+    }
+  }
 
   /**
    * An existing file was manually submitted to the extraction bus by a user.
@@ -147,7 +279,21 @@ trait ExtractorRoutingService {
    * @param newFlags
    */
   def submitFileManually(originalId: UUID, file: File, host: String, queue: String, extraInfo: Map[String, Any],
-                         datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): Option[UUID]
+                         datasetId: UUID, newFlags: String, requestAPIKey: Option[String], user: Option[User]): Option[UUID] = {
+    Logger.debug(s"Sending message to $queue from $host with extraInfo $extraInfo")
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val apiKey = getApiKey(requestAPIKey, user)
+    val sourceExtra = JsObject((Seq("filename" -> JsString(file.filename))))
+    val source = Entity(ResourceRef(ResourceRef.file, originalId), Some(file.contentType), sourceExtra)
+
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+    val (id, job_id) = postSubmissionEvent(file.id, queue, user.getOrElse(User.anonymous).id)
+    val msg = ExtractorMessage(id, file.id, job_id, notifies, file.id, host, queue, extraInfo, file.length.toString, datasetId,
+      "", apiKey, "extractors." + queue, source, "submitted", None)
+    messages.submit(msg)
+    job_id
+  }
 
   /**
    * An existing dataset was manually submitted to the extraction bus by a user.
@@ -158,7 +304,21 @@ trait ExtractorRoutingService {
    * @param newFlags
    */
   def submitDatasetManually(host: String, queue: String, extraInfo: Map[String, Any], datasetId: UUID, newFlags: String,
-                            requestAPIKey: Option[String], user: Option[User]): Option[UUID]
+                            requestAPIKey: Option[String], user: Option[User]): Option[UUID] = {
+    Logger.debug(s"Sending message $queue from $host with extraInfo $extraInfo")
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val apiKey = getApiKey(requestAPIKey, user)
+    val source = Entity(ResourceRef(ResourceRef.dataset, datasetId), None, JsObject(Seq.empty))
+
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+    val (id, job_id) = postSubmissionEvent(datasetId, queue, user.getOrElse(User.anonymous).id)
+    val msg = ExtractorMessage(id, datasetId, job_id, notifies, datasetId, host, queue, extraInfo, 0.toString, datasetId,
+      "", apiKey, "extractors." + queue, source, "submitted", None)
+    messages.submit(msg)
+    job_id
+  }
 
   /**
    * Metadata added to a resource (file or dataset).
@@ -168,7 +328,53 @@ trait ExtractorRoutingService {
    */
   // FIXME check if extractor is enabled in space or global
   def metadataAddedToResource(metadataId: UUID, resourceRef: ResourceRef, extraInfo: Map[String, Any], host: String,
-                              requestAPIKey: Option[String], user: Option[User])
+                              requestAPIKey: Option[String], user: Option[User]): Unit = {
+    val datasetService = DI.injector.getInstance(classOf[DatasetService])
+    val files = DI.injector.getInstance(classOf[FileService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = s"${messages.getExchange}.metadata.added.${resourceRef.resourceType.name}"
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    val apiKey = getApiKey(requestAPIKey, user)
+
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+    resourceRef.resourceType match {
+      // metadata added to dataset
+      case ResourceRef.dataset =>
+        datasetService.get(resourceRef.id) match {
+          case Some(dataset) =>
+            getQueues(dataset, routingKey, "").foreach { extractorId =>
+              val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
+              val target = Entity(resourceRef, None, JsObject(Seq.empty))
+
+              val (id, job_id) = postSubmissionEvent(resourceRef.id, extractorId, user.getOrElse(User.anonymous).id)
+              val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+                "", apiKey, routingKey, source, "added", Some(target))
+              messages.submit(msg)
+            }
+          case None =>
+            Logger.error(s"Resource ${resourceRef.id} of type ${resourceRef.resourceType} not found.")
+        }
+      // metadata added to file
+      case ResourceRef.file =>
+        val datasets = datasetService.findByFileIdAllContain(resourceRef.id)
+        val fileType = files.get(resourceRef.id) match { case Some(f)=> f.contentType case None => ""}
+        datasets.foreach { dataset =>
+          getQueues(dataset, routingKey, fileType).foreach { extractorId =>
+            val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
+            val target = Entity(resourceRef, None, JsObject(Seq.empty))
+
+            val (id, job_id) = postSubmissionEvent(resourceRef.id, extractorId, user.getOrElse(User.anonymous).id)
+            val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+              "", apiKey, routingKey, source, "added", Some(target))
+            messages.submit(msg)
+          }
+        }
+      case _ =>
+        Logger.error(s"Unrecognized resource type ${resourceRef.resourceType} when sending out metadata added event.")
+    }
+  }
 
   /**
    * Metadata removed from a resource (file or dataset).
@@ -176,7 +382,55 @@ trait ExtractorRoutingService {
    * @param host
    */
   // FIXME check if extractor is enabled in space or global
-  def metadataRemovedFromResource(metadataId: UUID, resourceRef: ResourceRef, host: String, requestAPIKey: Option[String], user: Option[User])
+  def metadataRemovedFromResource(metadataId: UUID, resourceRef: ResourceRef, host: String, requestAPIKey: Option[String], user: Option[User]): Unit = {
+    val datasetService = DI.injector.getInstance(classOf[DatasetService])
+    val files = DI.injector.getInstance(classOf[FileService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = s"${messages.getExchange}.metadata.removed.${resourceRef.resourceType.name}"
+    val apiKey = getApiKey(requestAPIKey, user)
+    val extraInfo = Map[String, Any](
+      "resourceType"->resourceRef.resourceType.name,
+      "resourceId"->resourceRef.id.toString)
+    Logger.debug(s"Sending message $routingKey from $host with extraInfo $extraInfo")
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+    resourceRef.resourceType match {
+      // metadata added to dataset
+      case ResourceRef.dataset =>
+        datasetService.get(resourceRef.id) match {
+          case Some(dataset) =>
+            getQueues(dataset, routingKey, "").foreach { extractorId =>
+              val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
+              val target = Entity(resourceRef, None, JsObject(Seq.empty))
+
+              val (id, job_id) = postSubmissionEvent(resourceRef.id, extractorId, user.getOrElse(User.anonymous).id)
+              val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, resourceRef.id,
+                "", apiKey, routingKey, source, "removed", Some(target))
+              messages.submit(msg)
+            }
+          case None =>
+            Logger.error(s"Resource ${resourceRef.id} of type ${resourceRef.resourceType} not found.")
+        }
+      // metadata added to file
+      case ResourceRef.file =>
+        val datasets = datasetService.findByFileIdAllContain(resourceRef.id)
+        val fileType = files.get(resourceRef.id) match { case Some(f)=> f.contentType case None => ""}
+        datasets.foreach { dataset =>
+          getQueues(dataset, routingKey, fileType).foreach { extractorId =>
+            val source = Entity(ResourceRef(ResourceRef.metadata, metadataId), None, JsObject(Seq.empty))
+            val target = Entity(resourceRef, None, JsObject(Seq.empty))
+
+            val (id, job_id) = postSubmissionEvent(resourceRef.id, extractorId, user.getOrElse(User.anonymous).id)
+            val msg = ExtractorMessage(id, resourceRef.id, job_id, notifies, resourceRef.id, host, extractorId, extraInfo, 0.toString, null,
+              "", apiKey, routingKey, source, "removed", Some(target))
+            messages.submit(msg)
+          }
+        }
+      case _ =>
+        Logger.error(s"Unrecognized resource type ${resourceRef.resourceType} when sending out metadata added event.")
+    }
+  }
 
   /**
    * File upladed for multimedia query. Not a common used feature.
@@ -185,7 +439,25 @@ trait ExtractorRoutingService {
    * @param length
    * @param host
    */
-  def multimediaQuery(tempFileId: UUID, contentType: String, length: String, host: String, requestAPIKey: Option[String])
+  def multimediaQuery(tempFileId: UUID, contentType: String, length: String, host: String, requestAPIKey: Option[String]): Unit = {
+    //key needs to contain 'query' when uploading a query
+    //since the thumbnail extractor during processing will need to upload to correct mongo collection.
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = messages.getExchange +".query." + contentType.replace("/", ".")
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    Logger.debug(s"Sending message $routingKey from $host")
+
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+    val source = Entity(ResourceRef(ResourceRef.file, tempFileId), Some(contentType), JsObject(Seq.empty))
+
+    val (id, job_id) = postSubmissionEvent(tempFileId, routingKey, user.id)
+    val msg = ExtractorMessage(id, tempFileId, job_id, notifies, tempFileId, host, routingKey, Map.empty[String, Any], length, null,
+      "", apiKey, routingKey, source, "created", None)
+    messages.submit(msg)
+  }
 
   /**
    * Preview creted for section.
@@ -193,6 +465,22 @@ trait ExtractorRoutingService {
    * @param sectionId
    * @param host
    */
-  def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String, requestAPIKey: Option[String])
+  def submitSectionPreviewManually(preview: Preview, sectionId: UUID, host: String, requestAPIKey: Option[String]): Unit = {
+    val userService = DI.injector.getInstance(classOf[UserService])
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    val routingKey = messages.getExchange + ".index."+ contentTypeToRoutingKey(preview.contentType)
+    val apiKey = requestAPIKey.getOrElse(messages.getGlobalKey)
+    val user = userService.findByKey(apiKey).getOrElse(User.anonymous)
+    val extraInfo = Map("section_id"->sectionId)
+    val source = Entity(ResourceRef(ResourceRef.preview, preview.id), None, JsObject(Seq.empty))
+    val target = Entity(ResourceRef(ResourceRef.section, sectionId), None, JsObject(Seq.empty))
+    val notifies = getEmailNotificationEmailList(requestAPIKey)
+
+    val (id, job_id) = postSubmissionEvent(sectionId, routingKey, user.id)
+    val msg = ExtractorMessage(id, sectionId, job_id, notifies, sectionId, host, routingKey, extraInfo, 0.toString, null,
+      "", apiKey, routingKey, source, "added", Some(target))
+    messages.submit(msg)
+  }
 
 }
