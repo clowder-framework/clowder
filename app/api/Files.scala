@@ -290,10 +290,8 @@ class Files @Inject()(
           val mdMap = metadata.getExtractionSummary
 
           //send RabbitMQ message
-          current.plugin[RabbitmqPlugin].foreach { p =>
-            p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
-              request.apiKey, request.user)
-          }
+          routing.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
+            request.apiKey, request.user)
 
           // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
 
@@ -347,9 +345,7 @@ class Files @Inject()(
             val mdMap = metadata.getExtractionSummary
 
             //send RabbitMQ message
-            current.plugin[RabbitmqPlugin].foreach { p =>
-              p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-            }
+            routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
             events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
 
@@ -409,10 +405,8 @@ class Files @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
                     request.apiKey, request.user)
-                }
 
                 files.index(f.id)
               })
@@ -481,11 +475,9 @@ class Files @Inject()(
             request.apiKey, request.user)
         }
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
-              request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          routing.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
+            request.apiKey, request.user)
         }
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
       }
@@ -612,7 +604,7 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        routing.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
+        routing.fileCreated(theFile, None, Utils.baseUrl(request).toString, request.apiKey)
 
         Ok(toJson(Map("id" -> id.stringify)))
 
@@ -1627,10 +1619,8 @@ class Files @Inject()(
       case Some(file) => {
         events.addObjectEvent(request.user, file.id, file.filename, EventType.DELETE_FILE.toString)
         // notify rabbitmq
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          datasets.findByFileIdAllContain(file.id).foreach { ds =>
-            p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
-          }
+        datasets.findByFileIdAllContain(file.id).foreach { ds =>
+          routing.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
         }
 
         //this stmt has to be before files.removeFile
@@ -1947,10 +1937,8 @@ class Files @Inject()(
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
-        datasetId, newFlags, apiKey, user)
-    }
+    routing.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+      datasetId, newFlags, apiKey, user)
     Logger.info("Sent archive request for file " + id)
   }
 }

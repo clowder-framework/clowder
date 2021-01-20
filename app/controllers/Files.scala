@@ -465,7 +465,7 @@ class Files @Inject() (
                   }
                 }
                 // submit for extraction
-                routing.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
+                routing.fileCreated(f, None, Utils.baseUrl(request).toString, request.apiKey)
 
                 /** *** Inserting DTS Requests   **/
                 val clientIP = request.remoteAddress
@@ -605,7 +605,7 @@ class Files @Inject() (
               val extra = Map("filename" -> f.filename)
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
               /****************************/
-              routing.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
+              routing.fileCreated(f, None, Utils.baseUrl(request).toString, request.apiKey)
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -1215,7 +1215,7 @@ class Files @Inject() (
                     }
 
                     // notify extractors that a file has been uploaded and added to a dataset
-                    routing.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
+                    routing.fileCreated(f, Some(dataset), Utils.baseUrl(request).toString, request.apiKey)
                     routing.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
 
                     // add file to RDF triple store if triple store is used

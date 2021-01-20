@@ -94,7 +94,7 @@ class Extractions @Inject()(
                     appConfig.incrementCount('files, 1)
                     appConfig.incrementCount('bytes, f.length)
                     // notify extractors
-                    routing.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
+                    routing.fileCreated(f, None, Utils.baseUrl(request).toString, request.apiKey)
                     /*--- Insert DTS Requests  ---*/
                     val clientIP = request.remoteAddress
                     val serverIP = request.host
@@ -134,7 +134,7 @@ class Extractions @Inject()(
       files.get(id) match {
         case Some(file) => {
           // FIXME dataset not available?
-          routing.fileCreated(file, None, Utils.baseUrl(request), request.apiKey) match {
+          routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
             case Some(jobId) => {
               Ok(Json.obj("status" -> "OK", "job_id" -> jobId))
             }
@@ -547,7 +547,7 @@ class Extractions @Inject()(
                 datasetId, newFlags, request.apiKey, request.user)
               Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
             case None => {
-              p.fileCreated(file, None, Utils.baseUrl(request), request.apiKey) match {
+              routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
                 case Some(job_id) => {
                   Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
                 }
@@ -630,7 +630,7 @@ class Extractions @Inject()(
       (request.body \ "extractor").asOpt[String] match {
         case Some(extractorId) => routing.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
             datasetId, newFlags, request.apiKey, request.user)
-        case None => routing.fileCreated(file, None, Utils.baseUrl(request), request.apiKey)
+        case None => routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey)
       }
     } else None
   }
@@ -738,10 +738,9 @@ class Extractions @Inject()(
         )
         if (missingfile)
           BadRequest(toJson("Not all files found"))
-        else
-          current.plugin[RabbitmqPlugin].foreach {
-            _.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request), request.apiKey)
-          }
+        else {
+          routing.fileSetAddedToDataset(ds, filelist.toList, Utils.baseUrl(request).toString, request.apiKey)
+        }
       }
       case None => BadRequest(toJson("Dataset "+datasetid+" not found"))
     }

@@ -536,9 +536,7 @@ object FileUtils {
       val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
-      current.plugin[RabbitmqPlugin].foreach { p =>
-        p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
-      }
+      routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
     }
   }
 
@@ -787,9 +785,7 @@ object FileUtils {
     dataset.foreach{ds =>
 
       if (runExtractors) {
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.fileAddedToDataset(file, ds, clowderurl, apiKey)
-        }
+        routing.fileAddedToDataset(file, ds, clowderurl, apiKey)
       }
 
       // index dataset
