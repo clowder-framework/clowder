@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+Google will no longer work as login provider, we are working on this issue #157
+
+### Fixed
+- Error logging in with orcid due to changed URL #91
+- Fixed error in url for twitter login
+- Count of users is not correct if using anything else but local accounts #136
+
 ## 1.14.0 - 2021-01-07
 
 ### Added
