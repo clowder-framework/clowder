@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- Files were not properly reindexed when the Move button was used to move a file into or out of a folder in a dataset. 
+  This has been fixed.
+
 ## 1.14.0 - 2021-01-07
 
 ### Added
