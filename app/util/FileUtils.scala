@@ -661,12 +661,18 @@ object FileUtils {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
-            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
-            files.save(fixedfile)
+            // if header's content type is application/octet-stream leave content type as the one based on file name,
+            // otherwise replace with value from header.
+            val fixedFile = if (conn.getContentType == play.api.http.ContentTypes.BINARY) {
+              f.copy(loader = loader, loader_id = loader_id, length = length)
+            } else {
+              f.copy(contentType = conn.getContentType, loader = loader, loader_id = loader_id, length = length)
+            }
+            files.save(fixedFile)
             appConfig.incrementCount('files, 1)
             appConfig.incrementCount('bytes, f.length)
             Logger.debug("Uploading Completed")
-            Some(fixedfile)
+            Some(fixedFile)
           }
           case None => {
             Logger.error(s"File $loader_id was not found anymore")
