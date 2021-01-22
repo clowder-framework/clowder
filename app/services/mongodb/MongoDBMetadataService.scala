@@ -13,7 +13,7 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, ExtractorRoutingService, FileService, FolderService, MetadataService, RabbitmqPlugin}
+import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, ExtractorRoutingService, FileService, FolderService, MetadataService}
 import api.{Permission, UserRequest}
 import controllers.Utils
 

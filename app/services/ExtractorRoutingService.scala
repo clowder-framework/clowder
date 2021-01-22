@@ -1,6 +1,6 @@
 package services
 
-import models.{Dataset, File, Preview, ResourceRef, ResourceType, TempFile, UUID, User}
+import models.{Dataset, Extraction, File, Preview, ResourceRef, ResourceType, TempFile, UUID, User}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
 
@@ -10,14 +10,15 @@ import scala.collection.mutable.ListBuffer
  * Determine automated extraction messages to send based on Clowder events such as file upload.
  */
 
-trait ExtractorRoutingService {
+class ExtractorRoutingService {
 
   /**
    * Escape various characters in content type when creating a routing key
    * @param contentType original content type in standar form, for example text/csv
    * @return escaped routing key
    */
-  def contentTypeToRoutingKey(contentType: String)
+  def contentTypeToRoutingKey(contentType: String) =
+    contentType.replace(".", "_").replace("/", ".")
 
   /**
    * Check if given operation matches any existing records cached in ExtractorInfo.
@@ -29,7 +30,19 @@ trait ExtractorRoutingService {
    * @param operation dataset operation like "file.added" or mimetype of files, like "image/bmp"
    * @return true if matches any existing recorder. otherwise, false.
    */
-  def containsOperation(operations: List[String], operation: String): Boolean
+  def containsOperation(operations: List[String], operation: String): Boolean = {
+    val optypes: Array[String] = operation.split("[/.]")
+    (optypes.length == 2) && {
+      val opmaintype: String = optypes(0)
+      val opsubtype: String = optypes(1)
+      operations.exists {
+        elem => {
+          val types: Array[String] = elem.split("[/.]")
+          (types.length == 2 && (types(0) == "*" || types(0) == opmaintype) && (types(1) == "*" || types(1) == opsubtype))
+        }
+      }
+    }
+  }
 
   /**
    * a helper function to get user email address from user's request api key.
@@ -59,7 +72,23 @@ trait ExtractorRoutingService {
    * @param resourceType the type of resource to check
    * @return filtered list of extractors
    */
-  def getMatchingExtractors(extractorIds: List[String], operation: String, resourceType: ResourceType.Value): List[String]
+  private def getMatchingExtractors(extractorIds: List[String], operation: String, resourceType: ResourceType.Value): List[String] = {
+    val extractorsService = DI.injector.getInstance(classOf[ExtractorService])
+
+    extractorsService.getEnabledExtractors().flatMap(exId =>
+      extractorsService.getExtractorInfo(exId)).filter(exInfo =>
+      resourceType match {
+        case ResourceType.dataset =>
+          containsOperation(exInfo.process.dataset, operation)
+        case ResourceType.file =>
+          containsOperation(exInfo.process.file, operation)
+        case ResourceType.metadata =>
+          containsOperation(exInfo.process.metadata, operation)
+        case _ =>
+          false
+      }
+    ).map(_.name)
+  }
 
   /**
    * Find all extractors enabled/disabled for the space the dataset belongs and the matched operation.
@@ -67,7 +96,19 @@ trait ExtractorRoutingService {
    * @param operation The dataset operation requested.
    * @return A list of extractors IDs.
    */
-  def getSpaceExtractorsByOperation(dataset: Dataset, operation: String, resourceType: ResourceType.Value): (List[String], List[String])
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String, resourceType: ResourceType.Value): (List[String], List[String]) = {
+    val spacesService = DI.injector.getInstance(classOf[SpaceService])
+
+    var enabledExtractors = new ListBuffer[String]()
+    var disabledExtractors = new ListBuffer[String]()
+    dataset.spaces.map(space => {
+      spacesService.getAllExtractors(space).foreach { extractors =>
+        enabledExtractors.appendAll(getMatchingExtractors(extractors.enabled, operation, resourceType))
+        disabledExtractors.appendAll(getMatchingExtractors(extractors.disabled, operation, resourceType))
+      }
+    })
+    (enabledExtractors.toList, disabledExtractors.toList)
+  }
 
   /**
    * Query the list of bindings loaded at startup for which binding matches the routing key and extract the destination
@@ -82,7 +123,18 @@ trait ExtractorRoutingService {
    * @param routingKey The binding routing key.
    * @return The list of queue matching the routing key.
    */
-  def getQueuesFromBindings(routingKey: String): List[String]
+  private def getQueuesFromBindings(routingKey: String): List[String] = {
+    val messages = DI.injector.getInstance(classOf[MessageService])
+
+    // While the routing key includes the instance name the rabbitmq bindings has a *.
+    // TODO this code could be improved by having less options in how routes and keys are represented
+    val fragments = routingKey.split('.')
+    val key1 = "*."+fragments.slice(1,fragments.size).mkString(".")
+    val key2 = "*."+fragments.slice(1,fragments.size - 1).mkString(".") + ".#"
+    val key3 = "*."+fragments(1)+".#"
+    val key4 = "*."+fragments.slice(1,fragments.size).mkString(".") + ".#"
+    messages.bindings.filter(x => Set(key1, key2, key3, key4).contains(x.routing_key)).map(_.destination)
+  }
 
   /**
    * Establish which queues a message should be sent to based on which extractors are enabled for a space/instance
@@ -93,14 +145,50 @@ trait ExtractorRoutingService {
    * @param contentType the content type of the file in the case of a file
    * @return a set of unique rabbitmq queues
    */
-  def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String]
+  private def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
+    val extractorsService = DI.injector.getInstance(classOf[ExtractorService])
+
+    // drop the first fragment from the routing key and replace characters to create operation id
+    val fragments = routingKey.split('.')
+    val (resourceType, operation) =
+      if (fragments(1) == "dataset")
+        (ResourceType.dataset, fragments(2) + "." + fragments(3))
+      else if (fragments(1) == "metadata")
+        (ResourceType.metadata, fragments(2) + "." + fragments(3))
+      else if (fragments(1) == "file")
+        (ResourceType.file, fragments(2) + "/" + fragments(3))
+      else
+        return Set.empty[String]
+    // get extractors enabled at the global level
+    val globalExtractors = getMatchingExtractors(extractorsService.getEnabledExtractors(), operation, resourceType)
+    // get extractors enabled/disabled at the space level
+    val (enabledExtractors, disabledExtractors) = getSpaceExtractorsByOperation(dataset, operation, resourceType)
+    // get queues based on RabbitMQ bindings (old method).
+    val queuesFromBindings = getQueuesFromBindings(routingKey)
+    // take the union of queues so that we publish to a specific queue only once
+    val selected = (globalExtractors.toSet -- disabledExtractors.toSet) union enabledExtractors.toSet union queuesFromBindings.toSet
+    Logger.debug("Extractors selected for submission: " + selected)
+    selected
+  }
 
   /**
    * Post the event of SUBMITTED
    * @param file_id the UUID of file
    * @param extractor_id the extractor queue name to be submitted
    */
-  def postSubmissionEvent(file_id: UUID, extractor_id: String, user_id: UUID): (UUID, Option[UUID])
+  def postSubmissionEvent(file_id: UUID, extractor_id: String, user_id: UUID): (UUID, Option[UUID]) = {
+    val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
+
+    import java.text.SimpleDateFormat
+    val dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX")
+    val submittedDateConvert = new java.util.Date()
+    val job_id = Some(UUID.generate())
+    extractions.insert(Extraction(UUID.generate(), file_id, job_id, extractor_id, "SUBMITTED", submittedDateConvert, None, user_id)) match {
+      case Some(objectid) => (UUID(objectid.toString), job_id)
+      case None => (UUID(""), job_id)
+    }
+  }
+
 
   /** Return the API key to use in the submission. If the one in the key is not set in the request then get the default
    * extraction key for the user. If the user is not defined default to the global key.
@@ -110,7 +198,17 @@ trait ExtractorRoutingService {
    * @param user the user from the request
    * @return the API key to use
    */
-  def getApiKey(requestAPIKey: Option[String], user: Option[User]): String
+  def getApiKey(requestAPIKey: Option[String], user: Option[User]): String = {
+    val userService: UserService = DI.injector.getInstance(classOf[UserService])
+    val messages: MessageService = DI.injector.getInstance(classOf[MessageService])
+
+    if (requestAPIKey.isDefined)
+      requestAPIKey.get
+    else if (user.isDefined)
+      userService.getExtractionApiKey(user.get.identityId).key
+    else
+      messages.getGlobalKey
+  }
 
   /**
    * Publish to the proper queues when a new file is uploaded to the system.

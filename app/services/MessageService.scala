@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import akka.actor.{Actor, ActorRef, Props}
 import com.ning.http.client.Realm.AuthScheme
 import com.rabbitmq.client.AMQP.BasicProperties
-import com.rabbitmq.client.{Channel, DefaultConsumer, Envelope, QueueingConsumer}
+import com.rabbitmq.client.{Channel, Connection, DefaultConsumer, Envelope, QueueingConsumer}
 import models._
 import play.api.Logger
 import play.api.Play.current
@@ -19,11 +19,64 @@ import scala.concurrent.Future
 import scala.util.Try
 
 /**
+ * Despite the `fileId` be named as such, it is currently serialized as `id` and used as the id of any resource in
+ * question. So this will be the preview id in the case of messages operating on a preview, it will be the dataset
+ * id in the case of dataset messages (yes there is also `datasetId`, pyclowder2 checks that the two are the same.
+ * FIXME make optional fields Option[UUID]
+ * FIXME rename fileId to id and add a resourceType field (dataset, file, preview, etc.)
+ * TODO drop `intermediateId` or figure out how it works and use accordingly
+ * @param fileId this should only be used as
+ * @param intermediateId
+ * @param host
+ * @param queue
+ * @param metadata
+ * @param fileSize
+ * @param datasetId
+ * @param flags
+ * @param secretKey
+ */
+case class ExtractorMessage(
+                             msgid: UUID,
+                             fileId: UUID,
+                             jobId: Option[UUID],
+                             notifies: List[String],
+                             intermediateId: UUID,
+                             host: String,
+                             queue: String,
+                             metadata: Map[String, Any],
+                             fileSize: String,
+                             datasetId: UUID = null,
+                             flags: String = "",
+                             secretKey: String,
+                             // new fields
+                             routing_key: String,
+                             source: Entity,
+                             activity: String,
+                             target: Option[Entity]
+                           )
+
+// TODO add other optional fields
+case class Entity(
+                   id: ResourceRef,
+                   mimeType: Option[String],
+                   extra: JsObject
+                 )
+
+case class CancellationMessage(id: UUID, queueName: String, msgid: UUID)
+
+object Entity {
+  implicit val implicitEntityWrites = Json.format[Entity]
+}
+
+
+/**
  * Send/get messages from a message bus
  */
 
 trait MessageService {
   var extractQueue: Option[ActorRef] = None
+  var cancellationQueue: Option[ActorRef] = None
+  var bindings = List.empty[Binding]
 
   /** Close connection to broker. **/
   def close()
@@ -33,8 +86,6 @@ trait MessageService {
 
   /** Submit a message to broker. */
   def submit(exchange: String, routing_key: String, message: JsValue)
-
-  def getRestEndPoint(path: String): Future[Response]
 
   /**
    * Get the exchange list for a given host
@@ -52,37 +103,20 @@ trait MessageService {
   def getBindings: Future[Response]
 
   /**
-   * Get Channel list from rabbitmq broker
+   * Get queue details for a given queue
    */
-  def getChannelsList: Future[Response]
+  def getQueueDetails(qname: String): Future[Response]
 
   def getExchange: String = play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
 
   def getGlobalKey: String = play.api.Play.configuration.getString("commKey").getOrElse("")
 
   /**
-   * Get queue details for a given queue
-   */
-  def getQueueDetails(qname: String): Future[Response]
-
-  /**
    * Get queue bindings for a given host and queue from rabbitmq broker
    */
   def getQueueBindings(qname: String): Future[Response]
 
-  /**
-   * Get Channel information from rabbitmq broker for given channel id 'cid'
-   */
-  def getChannelInfo(cid: String): Future[Response]
-
   def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID)
-
-  /**
-   * a helper function to get user email address from user's request api key.
-   * @param requestAPIKey user request apikey
-   * @return a list of email address
-   */
-  def getEmailNotificationEmailList(requestAPIKey: Option[String]): List[String]
 
   /**
    * loop through the queue and dispatch the message via the routing key.
@@ -94,6 +128,7 @@ trait MessageService {
   def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long)
 
 }
+
 
 /**
  * Send message on specified channel directly to a queue and tells receiver to reply
@@ -165,9 +200,8 @@ class PublishDirectActor(channel: Channel, replyQueueName: String) extends Actor
       } catch {
         case e: Exception => {
           Logger.error("Error connecting to rabbitmq broker", e)
-          current.plugin[RabbitmqPlugin].foreach {
-            _.close()
-          }
+          val messages: MessageService = DI.injector.getInstance(classOf[MessageService])
+          messages.close
         }
       }
     }
