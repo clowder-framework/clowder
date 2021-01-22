@@ -76,6 +76,7 @@ object Entity {
 trait MessageService {
   var extractQueue: Option[ActorRef] = None
   var cancellationQueue: Option[ActorRef] = None
+  var bindings = List.empty[Binding]
 
   /** Close connection to broker. **/
   def close()

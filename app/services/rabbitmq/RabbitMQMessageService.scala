@@ -32,8 +32,6 @@ class RabbitMQMessageService extends MessageService {
   var event_filter: Option[ActorRef] = None
   var extractorsHeartbeats: Option[ActorRef] = None
 
-  var bindings = List.empty[Binding]
-
   val cancellationDownloadQueueName: String = "clowder.jobs.temp"
 
   var restURL: Option[String] = None
