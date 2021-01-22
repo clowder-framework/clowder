@@ -34,6 +34,7 @@ class Extractions @Inject()(
   extractions: ExtractionService,
   dtsrequests: ExtractionRequestsService,
   extractors: ExtractorService,
+  messages: MessageService,
   routing: ExtractorRoutingService,
   appConfig: AppConfigurationService) extends ApiController {
 
@@ -162,38 +163,29 @@ class Extractions @Inject()(
    * returns: a list of status of all extractors responsible for extractions on the file and the final status of extraction job
    */
   def checkExtractorsStatus(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
-      current.plugin[RabbitmqPlugin] match {
-
-        case Some(plugin) => {
-          files.get(id) match {
-            case Some(file) => {
-              //Get the list of extractors processing the file 
-              val l = extractions.getExtractorList(file.id) map {
-                elist =>
-                  (elist._1, elist._2)
-              }
-              //Get the bindings
-              var blist = plugin.getBindings
-              for {
-                rkeyResponse <- blist
-              } yield {
-                val status = computeStatus(rkeyResponse, file, l)
-                l += "Status" -> status
-                Logger.debug(" CheckStatus: l.toString : " + l.toString)
-                Ok(toJson(l.toMap))
-              } //end of yield
-
-            } //end of some file
-            case None => {
-              Future(Ok("no file"))
-            }
-          } //end of match file
+    files.get(id) match {
+      case Some(file) => {
+        //Get the list of extractors processing the file
+        val l = extractions.getExtractorList(file.id) map {
+          elist =>
+            (elist._1, elist._2)
         }
+        //Get the bindings
+        var blist = messages.getBindings
+        for {
+          rkeyResponse <- blist
+        } yield {
+          val status = computeStatus(rkeyResponse, file, l)
+          l += "Status" -> status
+          Logger.debug(" CheckStatus: l.toString : " + l.toString)
+          Ok(toJson(l.toMap))
+        } //end of yield
 
-        case None => {
-          Future(Ok("No Rabbitmq Service"))
-        }
+      } //end of some file
+      case None => {
+        Future(Ok("no file"))
       }
+    } //end of match file
   }
 
   /**
@@ -204,101 +196,84 @@ class Extractions @Inject()(
    *
    */
   def fetch(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
-      current.plugin[RabbitmqPlugin] match {
+    if (UUID.isValid(id.stringify)) {
+      files.get(id) match {
+        case Some(file) => {
+          Logger.debug("Getting extract info for file with id " + id)
 
-        case Some(plugin) => {
-          if (UUID.isValid(id.stringify)) {
-            files.get(id) match {
-              case Some(file) => {
-                Logger.debug("Getting extract info for file with id " + id)
-
-                val l = extractions.getExtractorList(file.id) map {
-                  elist => (elist._1, elist._2)
-                }
-
-                var blist = plugin.getBindings
-
-                for {
-                  rkeyResponse <- blist
-                } yield {
-
-                  val status = computeStatus(rkeyResponse, file, l)
-                  val jtags = FileOP.extractTags(file)
-                  val jpreviews = FileOP.extractPreviews(id)
-                  val vdescriptors = files.getVersusMetadata(id) match {
-                    case Some(vd) => api.routes.Files.getVersusMetadataJSON(id).toString
-                    case None => ""
-                  }
-
-                  Logger.debug("jtags: " + jtags.toString)
-                  Logger.debug("jpreviews: " + jpreviews.toString)
-
-                  Ok(Json.obj("file_id" -> id.stringify, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors url" -> vdescriptors))
-                } //end of yield
-
-              } //end of some file
-              case None => {
-                val error_str = "The file with id " + id + " is not found."
-                Logger.error(error_str)
-                Future(NotFound(toJson(error_str)))
-              }
-            } //end of match file
-          } else {
-            val error_str = "The given id " + id + " is not a valid ObjectId."
-            Logger.error(error_str)
-            Future(BadRequest(Json.toJson(error_str)))
+          val l = extractions.getExtractorList(file.id) map {
+            elist => (elist._1, elist._2)
           }
 
-        }
+          var blist = messages.getBindings
 
+          for {
+            rkeyResponse <- blist
+          } yield {
+
+            val status = computeStatus(rkeyResponse, file, l)
+            val jtags = FileOP.extractTags(file)
+            val jpreviews = FileOP.extractPreviews(id)
+            val vdescriptors = files.getVersusMetadata(id) match {
+              case Some(vd) => api.routes.Files.getVersusMetadataJSON(id).toString
+              case None => ""
+            }
+
+            Logger.debug("jtags: " + jtags.toString)
+            Logger.debug("jpreviews: " + jpreviews.toString)
+
+            Ok(Json.obj("file_id" -> id.stringify, "filename" -> file.filename, "Status" -> status, "tags" -> jtags, "previews" -> jpreviews, "versus descriptors url" -> vdescriptors))
+          } //end of yield
+
+        } //end of some file
         case None => {
-          Future(Ok("No Rabbitmq Service"))
+          val error_str = "The file with id " + id + " is not found."
+          Logger.error(error_str)
+          Future(NotFound(toJson(error_str)))
         }
-      }
+      } //end of match file
+    } else {
+      val error_str = "The given id " + id + " is not a valid ObjectId."
+      Logger.error(error_str)
+      Future(BadRequest(Json.toJson(error_str)))
+    }
   }
 
   def checkExtractionsStatuses(id: models.UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
       request.user match {
         case Some(user) => {
-          current.plugin[RabbitmqPlugin] match {
-            case Some(plugin) => {
-              Logger.debug("Inside Extraction Checkstatuses")
-              val mapIdUrl = extractions.getWebPageResource(id)
-              val listStatus = for {
-                (fid, url) <- mapIdUrl
-              } yield {
-                  Logger.debug("[checkExtractionsStatuses]---fid---" + fid)
-                  val statuses = files.get(UUID(fid)) match {
-                    case Some(file) => {
-                      //Get the list of extractors processing the file
-                      val l = extractions.getExtractorList(file.id)
-                      //Get the bindings
-                      val blist = plugin.getBindings
-                      val fstatus = for {
-                        rkeyResponse <- blist
-                      } yield {
-                          val status = computeStatus(rkeyResponse, file, l)
-                          Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
-                          Map("id" -> file.id.toString, "status" -> status)
-                        } //end of yield
-                      fstatus
-                    } //end of some file
-                    case None => {
-                      Future((Map("id" -> id.toString, "status" -> "No File Id found")))
-                    }
-                  } //end of match file
-                  statuses
-                } //end of outer yield
-              for {
-                ls <- scala.concurrent.Future.sequence(listStatus)
-              } yield {
-                Logger.debug("[checkExtractionsStatuses]: list statuses" + ls)
-                Ok(toJson(ls))
-              }
-            } //rabbitmq plugin
-            case None => {
-              Future(Ok(toJson(Map("No Rabbitmq Service" -> ""))))
-            }
+          Logger.debug("Inside Extraction Checkstatuses")
+          val mapIdUrl = extractions.getWebPageResource(id)
+          val listStatus = for {
+            (fid, url) <- mapIdUrl
+          } yield {
+              Logger.debug("[checkExtractionsStatuses]---fid---" + fid)
+              val statuses = files.get(UUID(fid)) match {
+                case Some(file) => {
+                  //Get the list of extractors processing the file
+                  val l = extractions.getExtractorList(file.id)
+                  //Get the bindings
+                  val blist = messages.getBindings
+                  val fstatus = for {
+                    rkeyResponse <- blist
+                  } yield {
+                      val status = computeStatus(rkeyResponse, file, l)
+                      Logger.debug(" [checkExtractionsStatuses]: l.toString : " + l.toString)
+                      Map("id" -> file.id.toString, "status" -> status)
+                    } //end of yield
+                  fstatus
+                } //end of some file
+                case None => {
+                  Future((Map("id" -> id.toString, "status" -> "No File Id found")))
+                }
+              } //end of match file
+              statuses
+            } //end of outer yield
+          for {
+            ls <- scala.concurrent.Future.sequence(listStatus)
+          } yield {
+            Logger.debug("[checkExtractionsStatuses]: list statuses" + ls)
+            Ok(toJson(ls))
           }
         } //end of match user
         case None => Future(BadRequest(toJson(Map("request" -> "Not authorized."))))
@@ -570,20 +545,14 @@ class Extractions @Inject()(
 
   def submitFilesToExtractor(ds_id: UUID, file_ids: String)= PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
     ds_id)))(parse.json) { implicit request =>
-    current.plugin[RabbitmqPlugin] match {
-      case Some(p) => {
-        var results = Map[String, String]()
-        files.get(file_ids.split(",").map(fid => UUID(fid)).toList).found.foreach(fi => {
-          createFileSubmission(request, fi) match {
-            case Some(jobid) => results += (fi.id.stringify -> jobid.stringify)
-            case None => Logger.error("File not submitted: "+fi.id)
-          }
-        })
-        Ok(Json.obj("status" -> "success", "jobs" -> results))
-      }
-      case None =>
-        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
-    }
+      var results = Map[String, String]()
+      files.get(file_ids.split(",").map(fid => UUID(fid)).toList).found.foreach(fi => {
+        createFileSubmission(request, fi) match {
+          case Some(jobid) => results += (fi.id.stringify -> jobid.stringify)
+          case None => Logger.error("File not submitted: "+fi.id)
+        }
+      })
+      Ok(Json.obj("status" -> "success", "jobs" -> results))
   }
 
   private def createFileSubmission(request: UserRequest[JsValue], file: File): Option[UUID] = {
@@ -639,33 +608,28 @@ class Extractions @Inject()(
     ds_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting dataset for extraction with body $request.body")
     // send file to rabbitmq for processing
-    current.plugin[RabbitmqPlugin] match {
-      case Some(p) =>
-        datasets.get(ds_id) match {
-          case Some(ds) => {
-            val id = ds.id
-            val host = Utils.baseUrl(request)
+    datasets.get(ds_id) match {
+      case Some(ds) => {
+        val id = ds.id
+        val host = Utils.baseUrl(request)
 
-            // if extractor_id is not specified default to execution of all extractors matching mime type
-            val key = (request.body \ "extractor").asOpt[String] match {
-              case Some(extractorId) => extractorId
-              case None => "unknown." + "dataset"
-            }
-            // parameters for execution
-            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
-
-            val extra = Map("datasetname" -> ds.name,
-              "parameters" -> parameters.toString,
-              "action" -> "manual-submission")
-
-            val job_id = p.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
-            Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
-          }
-          case None =>
-            BadRequest(toJson(Map("request" -> "Dataset not found")))
+        // if extractor_id is not specified default to execution of all extractors matching mime type
+        val key = (request.body \ "extractor").asOpt[String] match {
+          case Some(extractorId) => extractorId
+          case None => "unknown." + "dataset"
         }
+        // parameters for execution
+        val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+
+        val extra = Map("datasetname" -> ds.name,
+          "parameters" -> parameters.toString,
+          "action" -> "manual-submission")
+
+        val job_id = routing.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
+        Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
+      }
       case None =>
-        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+        BadRequest(toJson(Map("request" -> "Dataset not found")))
     }
   }
 
@@ -678,54 +642,43 @@ class Extractions @Inject()(
     file_id)))(parse.json) { implicit request =>
     Logger.debug(s"Cancel file submitted extraction with body $request.body")
     // send file to rabbitmq for processing
-    current.plugin[RabbitmqPlugin] match {
-      case Some(p) =>
-        files.get(file_id) match {
-          case Some(file) => {
-            // check that the file is ready for processing
-            if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
-              (request.body \ "extractor").asOpt[String] match {
-                case Some(extractorId) => {
-                  p.cancelPendingSubmission(file_id, extractorId, msg_id)
-                  Ok(Json.obj("status" -> "OK"))
-                }
-                case None =>
-                  BadRequest(toJson(Map("request" -> "extractor field not found")))
-              }
-            } else {
-              Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
+    files.get(file_id) match {
+      case Some(file) => {
+        // check that the file is ready for processing
+        if (file.status.equals(models.FileStatus.PROCESSED.toString)) {
+          (request.body \ "extractor").asOpt[String] match {
+            case Some(extractorId) => {
+              messages.cancelPendingSubmission(file_id, extractorId, msg_id)
+              Ok(Json.obj("status" -> "OK"))
             }
+            case None =>
+              BadRequest(toJson(Map("request" -> "extractor field not found")))
           }
-          case None =>
-            BadRequest(toJson(Map("request" -> "File not found")))
+        } else {
+          Conflict(toJson(Map("status" -> "error", "msg" -> "File is not ready. Please wait and try again.")))
         }
+      }
       case None =>
-        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+        BadRequest(toJson(Map("request" -> "File not found")))
     }
   }
 
   def cancelDatasetExtractionSubmission(ds_id: models.UUID, msg_id: UUID)= PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset,
     ds_id)))(parse.json)  { implicit request =>
     Logger.debug(s"Cancel dataset submitted extraction with body $request.body")
-    current.plugin[RabbitmqPlugin] match {
-      case Some(p) =>
-        datasets.get(ds_id) match {
-          case Some(ds) => {
-            (request.body \ "extractor").asOpt[String] match {
-              case Some(extractorId) => {
-                p.cancelPendingSubmission(ds_id, extractorId, msg_id)
-                Ok(Json.obj("status" -> "OK"))
-              }
-              case None => BadRequest(toJson(Map("request" -> "extractor field not found")))
-            }
+    datasets.get(ds_id) match {
+      case Some(ds) => {
+        (request.body \ "extractor").asOpt[String] match {
+          case Some(extractorId) => {
+            messages.cancelPendingSubmission(ds_id, extractorId, msg_id)
+            Ok(Json.obj("status" -> "OK"))
           }
-          case None =>
-            BadRequest(toJson(Map("request" -> "File not found")))
+          case None => BadRequest(toJson(Map("request" -> "extractor field not found")))
         }
+      }
       case None =>
-        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+        BadRequest(toJson(Map("request" -> "File not found")))
     }
-
   }
 
   def addNewFilesetEvent(datasetid: String, fileids: List[String]) = AuthenticatedAction {implicit request =>

@@ -269,8 +269,7 @@
                         </div>
                     }
                     @*show ``submit for extraction'' link*@
-                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
-                            && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined && !dataset.trash) {
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
                             <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit for extraction
                         </a>
