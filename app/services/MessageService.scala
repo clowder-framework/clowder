@@ -101,6 +101,11 @@ trait MessageService {
    */
   def getBindings: Future[Response]
 
+  /**
+   * Get queue details for a given queue
+   */
+  def getQueueDetails(qname: String): Future[Response]
+
   def getExchange: String = play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
 
   def getGlobalKey: String = play.api.Play.configuration.getString("commKey").getOrElse("")
