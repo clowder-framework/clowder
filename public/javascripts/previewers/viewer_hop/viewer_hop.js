@@ -3,7 +3,7 @@
 
   Loads the 3DHOP library and uses methods and functions to 
   load 3D models in point cloud (*.ply) and nexus (*.nxz) form
-   into a clowder repository.   
+  into a clowder repository.   
  
   Language: JavaScript
   
@@ -16,6 +16,45 @@
   + 01/08/21 (cc): Loading libraries from https
 
 ****************************************************************/
+
+
+/****************************************************************
+  Wish list:
+
+  1) Become able to upload zip files into clowder which will be 
+  automatically unzipped. Subsequntly, the files they contain will be acce-
+  ssible to the previewer. This is necessary for PLY files which come 
+  with a texture file. (NEXUS files are standalone files and their
+  texture is incorporated into the file)
+
+  2) Become able to load a PLY file with a texture. Two approaches
+  can be followed: 
+    i) Look inside the source code of the file
+    "presenter.js", and specifically lines 2494, 1462, and 1482 (this
+    is the line where the texture is loaded), and check whether we can
+    somehow modify that code. Since the file "presenter.js" is loaded
+    online, we must find a way to write a function of our own which will
+    call the existing function, and then modify it as needed (since I don't
+    know how to do this, you can come up with other ideas of your own of
+    course :))
+
+    ii) There is a tool which converts PLY files and their texture into 
+    a NEXUS file. Marissia knows about this tool and you can look it up here:
+    https://3dhop.net/index.php. Also, you can check 3DHOP's GitHub here:
+    https://github.com/cnr-isti-vclab/3DHOP. I think the tool is for windows machines
+    though, but we can ask them for a Linux version? Maybe?
+
+  3) Become able to compose multiple PLY/NEXUS files into a scene.
+
+  4) Neat up the messy code below, especially lines 197-224.
+
+  Note: You can come up with your own ideas about how to attack these issues, add your own
+  items in the wish list, and whenever you make changes to the code, you can add them on the 
+  top like I do. Example: adding something + 01/24/21 (cc) Added smthg. removing smthg 
+  - 01/24/21 (cc) Removed smthg. (Your initials are mt).
+
+****************************************************************/
+
 
 (function ($, Configuration) {
   let useTab = Configuration.tab;
@@ -52,8 +91,6 @@
   $(useTab).append('<link rel="stylesheet" type="text/css" href = "https://3dhop.net/distribution/latest/stylesheet/3dhop.css">');
 
   // load various 3dhop attributes (such as the background image) for 3dhop
-
-  //alert("Hello");
 
   $(useTab).append($('<div/>', {
     id: '3dhop',
