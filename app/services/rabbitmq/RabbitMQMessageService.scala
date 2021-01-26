@@ -3,6 +3,7 @@ package services
 import java.io.IOException
 import java.net.{URI, URLEncoder}
 import java.text.SimpleDateFormat
+import javax.inject.Singleton
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import com.ning.http.client.Realm.AuthScheme
@@ -24,6 +25,7 @@ import scala.util.Try
  * Send/get messages from a message bus
  */
 
+@Singleton
 class RabbitMQMessageService extends MessageService {
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
