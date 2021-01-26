@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- When adding a file to a dataset by URL, prioritize the URL `content-type` header over the file content type established
+  by looking at the file name extension.
+
 ## 1.14.0 - 2021-01-07
 
 ### Added
