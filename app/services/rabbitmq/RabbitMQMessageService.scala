@@ -29,7 +29,7 @@ import scala.util.Try
 class RabbitMQMessageService extends MessageService {
   var channel: Option[Channel] = None
   var connection: Option[Connection] = None
-  var factory: Option[ConnectionFactory] = None
+  var factory: Option[ConnectionFactory] = Some(new ConnectionFactory())
 
   var event_filter: Option[ActorRef] = None
   var extractorsHeartbeats: Option[ActorRef] = None
