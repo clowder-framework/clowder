@@ -54,7 +54,8 @@ class  Datasets @Inject()(
   thumbnailService : ThumbnailService,
   routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  sinkService: EventSinkService) extends ApiController {
 
   lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
@@ -2495,8 +2496,10 @@ class  Datasets @Inject()(
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
-        if (tracking)
+        if (tracking) {
           datasets.incrementDownloads(id, user)
+          sinkService.logDatasetDownloadEvent(dataset, user)
+        }
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array

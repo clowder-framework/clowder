@@ -53,7 +53,8 @@ class Files @Inject()(
   userService: UserService,
   routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  sinkService: EventSinkService) extends ApiController {
 
   lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
@@ -108,8 +109,10 @@ class Files @Inject()(
               case Some((inputStream, filename, contentType, contentLength)) => {
 
                 // Increment download count if tracking is enabled
-                if (tracking)
+                if (tracking) {
                   files.incrementDownloads(id, user)
+                  sinkService.logFileDownloadEvent(file, user)
+                }
 
                 request.headers.get(RANGE) match {
                   case Some(value) => {
@@ -137,7 +140,7 @@ class Files @Inject()(
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
-
+                    sinkService.logFileDownloadEvent(file, user)
                     Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
