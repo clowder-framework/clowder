@@ -50,31 +50,31 @@ services:
   # ----------------------------------------------------------------------
 
   # main clowder application
-  clowder:
-    image: clowder/clowder:${CLOWDER_VERSION:-latest}
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - mongo
-    environment:
-      - CLOWDER_ADMINS=${CLOWDER_ADMINS:-admin@example.com}
-      - CLOWDER_REGISTER=${CLOWDER_REGISTER:-false}
-      - CLOWDER_CONTEXT=${CLOWDER_CONTEXT:-/}
-      - CLOWDER_SSL=${CLOWDER_SSL:-false}
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
-      - RABBITMQ_CLOWDERURL=${RABBITMQ_CLOWDERURL:-http://clowder:9000}
-      - SMTP_MOCK=${SMTP_MOCK:-true}
-      - SMTP_SERVER=${SMTP_SERVER:-smtp}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=clowder"
-      - "traefik.port=9000"
-      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefix: ${CLOWDER_CONTEXT:-/}"
-    volumes:
-      - clowder-custom:/home/clowder/custom
-      - clowder-data:/home/clowder/data
+  # clowder:
+  #   image: clowder/clowder:${CLOWDER_VERSION:-latest}
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - mongo
+  #   environment:
+  #     - CLOWDER_ADMINS=${CLOWDER_ADMINS:-admin@example.com}
+  #     - CLOWDER_REGISTER=${CLOWDER_REGISTER:-false}
+  #     - CLOWDER_CONTEXT=${CLOWDER_CONTEXT:-/}
+  #     - CLOWDER_SSL=${CLOWDER_SSL:-false}
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+  #     - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
+  #     - RABBITMQ_CLOWDERURL=${RABBITMQ_CLOWDERURL:-http://clowder:9000}
+  #     - SMTP_MOCK=${SMTP_MOCK:-true}
+  #     - SMTP_SERVER=${SMTP_SERVER:-smtp}
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.backend=clowder"
+  #     - "traefik.port=9000"
+  #     - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefix: ${CLOWDER_CONTEXT:-/}"
+  #   volumes:
+  #     - clowder-custom:/home/clowder/custom
+  #     - clowder-data:/home/clowder/data
 
   # ----------------------------------------------------------------------
   # CLOWDER DEPENDENCIES
@@ -86,6 +86,8 @@ services:
     restart: unless-stopped
     networks:
       - clowder
+    ports:
+      - 27017:27017
     volumes:
       - mongo:/data/db
 
