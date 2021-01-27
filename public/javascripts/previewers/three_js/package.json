@@ -1,0 +1,6 @@
+{
+  "name": "Three-JS",
+  "main": "viewer_three.js",
+  "file": true,
+  "contentType": [ "application/octet-stream"]
+}
