@@ -78,34 +78,51 @@ trait MessageService {
   var cancellationQueue: Option[ActorRef] = None
   var bindings = List.empty[Binding]
 
+  // Basic message when service is disabled
+  private def noop = {
+    Logger.info("No message service enabled.")
+  }
+
   /** Close connection to broker. **/
-  def close()
+  def close() = noop
 
   /** Submit a message to default broker. */
-  def submit(message: ExtractorMessage)
+  def submit(message: ExtractorMessage)= noop
 
   /** Submit a message to broker. */
-  def submit(exchange: String, routing_key: String, message: JsValue)
+  def submit(exchange: String, routing_key: String, message: JsValue) = noop
 
   /**
    * Get the exchange list for a given host
    */
-  def getExchanges : Future[Response]
+  def getExchanges: Future[Response] = {
+    noop
+    Future.failed(new Exception("No message service enabled."))
+  }
 
   /**
    * get list of queues attached to an exchange
    */
-  def getQueuesNamesForAnExchange(exchange: String): Future[Response]
+  def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
+    noop
+    Future.failed(new Exception("No message service enabled."))
+  }
 
   /**
    * Get the binding lists (lists of routing keys) from the rabbitmq broker
    */
-  def getBindings: Future[Response]
+  def getBindings: Future[Response] = {
+    noop
+    Future.failed(new Exception("No message service enabled."))
+  }
 
   /**
    * Get queue details for a given queue
    */
-  def getQueueDetails(qname: String): Future[Response]
+  def getQueueDetails(qname: String): Future[Response] = {
+    noop
+    Future.failed(new Exception("No message service enabled."))
+  }
 
   def getExchange: String = play.api.Play.configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
 
@@ -114,9 +131,12 @@ trait MessageService {
   /**
    * Get queue bindings for a given host and queue from rabbitmq broker
    */
-  def getQueueBindings(qname: String): Future[Response]
+  def getQueueBindings(qname: String): Future[Response] = {
+    noop
+    Future.failed(new Exception("No message service enabled."))
+  }
 
-  def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID)
+  def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID) = noop
 
   /**
    * loop through the queue and dispatch the message via the routing key.
@@ -125,7 +145,7 @@ trait MessageService {
    * @param channel                    the channel connecting to the rabbitmq
    * @param cancellationSearchTimeout  the timeout of downloading the requests from the rabbitmq
    */
-  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long)
+  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long) = noop
 
 }
 

@@ -166,7 +166,7 @@ class RabbitMQMessageService extends MessageService {
   }
 
   /** Close connection to broker. **/
-  def close() {
+  override def close() {
     Logger.debug("Closing connection")
     restURL = None
     vhost = ""
@@ -209,12 +209,12 @@ class RabbitMQMessageService extends MessageService {
   }
 
   /** Submit a message to default broker. */
-  def submit(message: ExtractorMessage) = {
+  override def submit(message: ExtractorMessage) = {
     extractWorkQueue(message)
   }
 
   /** Submit a message to broker. */
-  def submit(exchange: String, routing_key: String, message: JsValue) = {
+  override def submit(exchange: String, routing_key: String, message: JsValue) = {
 
   }
 
@@ -251,7 +251,7 @@ class RabbitMQMessageService extends MessageService {
   /**
    * Get the exchange list for a given host
    */
-  def getExchanges : Future[Response] = {
+  override def getExchanges : Future[Response] = {
     connect
     getRestEndPoint("/api/exchanges/" + vhost )
   }
@@ -259,7 +259,7 @@ class RabbitMQMessageService extends MessageService {
   /**
    * get list of queues attached to an exchange
    */
-  def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
+  override def getQueuesNamesForAnExchange(exchange: String): Future[Response] = {
     connect
     getRestEndPoint("/api/exchanges/"+ vhost +"/"+ exchange +"/bindings/source")
   }
@@ -267,7 +267,7 @@ class RabbitMQMessageService extends MessageService {
   /**
    * Get the binding lists (lists of routing keys) from the rabbitmq broker
    */
-  def getBindings: Future[Response] = {
+  override def getBindings: Future[Response] = {
     getRestEndPoint("/api/bindings")
   }
 
@@ -281,7 +281,7 @@ class RabbitMQMessageService extends MessageService {
   /**
    * Get queue details for a given queue
    */
-  def getQueueDetails(qname: String): Future[Response] = {
+  override def getQueueDetails(qname: String): Future[Response] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname)
   }
@@ -289,7 +289,7 @@ class RabbitMQMessageService extends MessageService {
   /**
    * Get queue bindings for a given host and queue from rabbitmq broker
    */
-  def getQueueBindings(qname: String): Future[Response] = {
+  override def getQueueBindings(qname: String): Future[Response] = {
     connect
     getRestEndPoint("/api/queues/" + vhost + "/" + qname + "/bindings")
   }
@@ -301,7 +301,7 @@ class RabbitMQMessageService extends MessageService {
     getRestEndPoint("/api/channels/" + cid)
   }
 
-  def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID): Unit = {
+  override def cancelPendingSubmission(id: UUID, queueName: String, msg_id: UUID): Unit = {
     connect
     cancellationQueue match {
       case Some(x) => x ! new CancellationMessage(id, queueName, msg_id)
@@ -334,7 +334,7 @@ class RabbitMQMessageService extends MessageService {
    * @param channel                    the channel connecting to the rabbitmq
    * @param cancellationSearchTimeout  the timeout of downloading the requests from the rabbitmq
    */
-  def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long) = {
+  override def resubmitPendingRequests(cancellationQueueConsumer: QueueingConsumer, channel: Channel, cancellationSearchTimeout: Long) = {
     var loop = true
     while( loop ) {
       val delivery: QueueingConsumer.Delivery = cancellationQueueConsumer.nextDelivery(cancellationSearchTimeout)
