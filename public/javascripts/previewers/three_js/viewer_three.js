@@ -163,8 +163,11 @@ function init() {
 
     // Here is where we import the 3D model.
 
+    // For now we save it in the clowder installation,
+    // inside the folder public/javascripts/previewers/three_js/models
+
     let loader = new THREE.GLTFLoader();
-    let filepath = "/assets/javascripts/previewers/three_js/models/car/scene.gltf";
+    let filepath = "/assets/javascripts/previewers/three_js/models/scene.gltf";
 
     // This is the loader function. I don't understand all the details
 
@@ -182,7 +185,7 @@ function init() {
         animate();
     });
 
-    // Here we initialize the renderer which puts everything together as I understand now.
+    // Here we initialize the renderer which puts everything together as my understanding is for now.
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
