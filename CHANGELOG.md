@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Files were not properly reindexed when the Move button was used to move a file into or out of a folder in a dataset. 
   This has been fixed.
+- When adding a file to a dataset by URL, prioritize the URL `content-type` header over the file content type established
+  by looking at the file name extension.
 
 ## 1.14.0 - 2021-01-07
 
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - `api/reports/storage/spaces` endpoint now accepts a space parameter for ID rather than requiring a space filter.
 - Datasets and collections in the trash are no longer indexed for discovery in search services.
+- Switched to loading the 3DHOP libraries used by `viewer_hop.js` from http://vcg.isti.cnr.it/3dhop/distribution to https://3dhop.net/distribution. The new server is a safer https server.
 
 ## 1.13.0 - 2020-12-02
 
@@ -68,8 +71,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
 - Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
 - The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
-- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files. Added `mimetype.nxz=model/nxz` and 
-  `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
+- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files. Added `mimetype.nxz=model/nxz` and `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
 
 ### Fixed
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)
