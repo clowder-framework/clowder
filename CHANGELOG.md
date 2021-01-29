@@ -6,9 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+Google will no longer work as login provider, we are working on this issue #157.
+
+If non local accounts are used the count can be wrong. Use the [fixcounts](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
+script to fix this.
+
 ### Fixed
+- Error logging in with orcid due to changed URL #91
+- Fixed error in url for twitter login
+- Count of users is not correct if using anything else but local accounts #136
 - Files were not properly reindexed when the Move button was used to move a file into or out of a folder in a dataset. 
-  This has been fixed.
 - When adding a file to a dataset by URL, prioritize the URL `content-type` header over the file content type established
   by looking at the file name extension.
 

@@ -10,11 +10,11 @@ import securesocial.core.providers.UsernamePasswordProvider
 
 class SecureSocialEventListener(app: play.api.Application) extends EventListener {
   override def id: String = "SecureSocialEventListener"
+  lazy val userService: UserService = DI.injector.getInstance(classOf[UserService])
+  lazy val spaceService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+  lazy val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   def onEvent(event: Event, request: RequestHeader, session: Session): Option[Session] = {
-    val userService: UserService = DI.injector.getInstance(classOf[UserService])
-    val spaceService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
-
     event match {
       case e: SignUpEvent => {
         userService.findByIdentity(event.user) match {
@@ -40,6 +40,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
               val subject = s"[${AppConfiguration.getDisplayName}] new user signup"
               val body = views.html.emails.userSignup(user)(request)
               util.Mail.sendEmailAdmins(subject, Some(user), body)
+              appConfig.incrementCount('users, 1)
             }
             user.email match {
               case Some(e) => spaceService.processInvitation(e)
