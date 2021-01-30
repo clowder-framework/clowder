@@ -128,7 +128,7 @@ let previewerHeight = 480;
 
 function init() {
     // Here is where I tell the program to create a window inside clowder and
-    // show everything there
+    // show everything within that window.
 
     container = document.getElementById(Configuration.tab.replace("#",""));
 
@@ -146,20 +146,8 @@ function init() {
     camera = new THREE.PerspectiveCamera( 70, previewerWidth/previewerHeight, 1, 1000 );
     camera.position.z = 40;
 
-    // Here is where we load the texture. The texture is like having a naked vase, and put something
-    // to "dress" it if that makes sense.
-
-    //const texture = new THREE.TextureLoader().load('/assets/javascripts/previewers/three_js/models/little_witch_academia/textures/BROWN_baseColor.png' );
-
-    //const texture = new THREE.TextureLoader().setPath('/assets/javascripts/previewers/three_js/models/little_witch_academia/');
-    // const text1 = texture.load('OCZKI_baseColor.png');
-    // const text2 = texture.load('Blue_dress.003_baseColor.png');
-    // const text3 = texture.load('material_baseColor.png');
-    // const text4 = texture.load('Wosy2_baseColor.png');
-    // const text5 = texture.load('material_2_baseColor.png');
-    // const text6 = texture.load('BROWN_baseColor.png');
-
-
+    // Here is where we load the texture.
+    
     // Here is where we import the 3D model.
 
     // For now we save it in the clowder installation,
