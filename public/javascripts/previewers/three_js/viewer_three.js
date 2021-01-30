@@ -72,17 +72,20 @@
 
     // This is a trick I use to make the console.log function to work
 
-    console.log = console.log || function(message) { alert(message);};
+    //console.log = console.log || function(message) { alert(message);};
 
-    console.warn = console.warn || function(message) { alert(message);};
+    //console.warn = console.warn || function(message) { alert(message);};
 
-    console.error = console.error || function(message) { alert(message);};
+    //console.error = console.error || function(message) { alert(message);};
 
     // scripts is an array containing three library files which are found under
     // the js folder. We use various functions from those library files
-    // to laod our model.
+    // to load our model.
 
-    let scripts =["three.min.js", "GLTFLloader.js", "OrbitControls.js"];
+    // These libraries can be found online and eventually we should load
+    // them from there
+
+    let scripts =["three.min.js", "GLTFLloader_git.js", "OrbitControls.js"];
 
     // We use the for loop to load the files into our program
 
