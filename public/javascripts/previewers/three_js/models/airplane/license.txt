@@ -1,0 +1,11 @@
+Model Information:
+* title:	Breguet Br 1050 Alizé
+* source:	https://sketchfab.com/3d-models/breguet-br-1050-alize-64ca1b6dfd8a4e4f864d94adb4b3cb86
+* author:	helijah (https://sketchfab.com/helijah)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Breguet Br 1050 Alizé" (https://sketchfab.com/3d-models/breguet-br-1050-alize-64ca1b6dfd8a4e4f864d94adb4b3cb86) by helijah (https://sketchfab.com/helijah) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

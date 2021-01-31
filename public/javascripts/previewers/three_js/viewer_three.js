@@ -72,11 +72,11 @@
 
     // This is a trick I use to make the console.log function to work
 
-    //console.log = console.log || function(message) { alert(message);};
+    console.log = console.log || function(message) { alert(message);};
 
-    //console.warn = console.warn || function(message) { alert(message);};
+    console.warn = console.warn || function(message) { alert(message);};
 
-    //console.error = console.error || function(message) { alert(message);};
+    console.error = console.error || function(message) { alert(message);};
 
     // scripts is an array containing three library files which are found under
     // the js folder. We use various functions from those library files
@@ -85,7 +85,8 @@
     // These libraries can be found online and eventually we should load
     // them from there
 
-    let scripts =["three.min.js", "GLTFLloader_git.js", "OrbitControls.js"];
+    let scripts =["three.min.new.js", "inflate.min.js",
+        "GLTFLloader.new.js", "OrbitControls.new.js", "FBXLoader.new.js"];
 
     // We use the for loop to load the files into our program
 
@@ -156,18 +157,22 @@ function init() {
     // For now we save it in the clowder installation,
     // inside the folder public/javascripts/previewers/three_js/models
 
-    let loader = new THREE.GLTFLoader();
-    let filepath = "/assets/javascripts/previewers/three_js/models/scene.gltf";
+    //let loader = new THREE.GLTFLoader();
+    //let filepath = "/assets/javascripts/previewers/three_js/models/airplane/scene.gltf";
+    let loader = new THREE.FBXLoader();
+    let filepath = "/assets/javascripts/previewers/three_js/models/free-1972-datsun-240k-gt/source/datsun240k.fbx";
 
     // This is the loader function. I don't understand all the details
 
-    loader.load(filepath, function (gltf) {
+    loader.load(filepath, function (obj) {
 
-        let model = gltf.scene;
+        // For the GLTF loader you need to add obj.scene to the scene
 
-        //model.children[0].scale.set(0.1, 0.1, 0.1);
+        //scene.add(obj.scene);
 
-        scene.add(model);
+        // For the FBX loader you need to add the obj itself.
+
+        scene.add(obj);
 
         let light = new THREE.AmbientLight( 0xffffff );
         scene.add( light );
