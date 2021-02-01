@@ -4,20 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.14.1 - 2021-02-02
 
-Google will no longer work as login provider, we are working on this issue #157.
-
-If non local accounts are used the count can be wrong. Use the [fixcounts](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
+- Google will no longer work as login provider, we are working on this issue [#157](https://github.com/clowder-framework/clowder/issues/157).
+- If non local accounts are used the count can be wrong. Use the [fixcounts](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
 script to fix this.
 
 ### Fixed
-- Error logging in with orcid due to changed URL #91
-- Fixed error in url for twitter login
-- Count of users is not correct if using anything else but local accounts #136
+- Error logging in with Orcid due to changed URL. [#91](https://github.com/clowder-framework/clowder/issues/91)
+- Fixed error in url for Twitter login.
+- Users count was not correct if using anything else but local accounts. [#136](https://github.com/clowder-framework/clowder/issues/136)
 - Files were not properly reindexed when the Move button was used to move a file into or out of a folder in a dataset. 
 - When adding a file to a dataset by URL, prioritize the URL `content-type` header over the file content type established
-  by looking at the file name extension.
+  by looking at the file name extension. [#139](https://github.com/clowder-framework/clowder/issues/139)
 - Wrap words across lines to stay within interface elements. [#160](https://github.com/clowder-framework/clowder/issues/160)
 
 ## 1.14.0 - 2021-01-07
