@@ -4,7 +4,7 @@ package models
 import java.security.MessageDigest
 import java.util.Date
 
-import com.mohiva.play.silhouette.api.{Authenticator, Identity}
+import com.mohiva.play.silhouette.api.{Authenticator, Identity, LoginInfo}
 import _root_.services.DI
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticator
@@ -116,7 +116,7 @@ object User {
     lastName= Some("User"),
     fullName= Some("Anonymous User"),
     email=None,
-    authMethod=AuthenticatorService[DummyAuthenticator],
+    authMethod=new DummyAuthenticator(new LoginInfo("dummy", "dummy")),
     status=UserStatus.Admin,
     termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser

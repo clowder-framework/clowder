@@ -11,7 +11,5 @@ trait ClowderEnv extends Env {
   type I = User
   type A = CookieAuthenticator
 
-  def authenticatorFromRequest(request) = {
-
-  }
+  //def authenticatorFromRequest(request) = {}
 }

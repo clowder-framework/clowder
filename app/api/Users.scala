@@ -5,9 +5,9 @@ import play.api.Configuration
 import play.api.libs.json._
 import play.api.Play.current
 import services.UserService
-import models._
 import services._
-import play.api.{Logger, Configuration}
+import models.{services, _}
+import play.api.{Configuration, Logger}
 
 /**
  * API to interact with the users.

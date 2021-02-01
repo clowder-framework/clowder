@@ -4,14 +4,14 @@ import java.net.URI
 
 import controllers.Utils
 import javax.inject.{Inject, Singleton}
-import models._
+import services._
+import models.{services, _}
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.util.EntityUtils
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsResult, Json, _}
 import play.api.{Configuration, Logger}
-import services._
 
 /**
  * Manipulates publication requests curation objects.

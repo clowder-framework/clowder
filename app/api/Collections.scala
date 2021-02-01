@@ -19,9 +19,8 @@ import Iterators.CollectionIterator
 import akka.NotUsed
 import api.Permission.Permission
 import controllers.Utils
-import models._
 import services._
-
+import models.{services, _}
 
 
 
@@ -44,34 +43,30 @@ class Collections @Inject() (datasets: DatasetService,
     (request.body \ "name").asOpt[String].map { name =>
 
       var c : Collection = null
-      implicit val user = request.user
-      user match {
-        case Some(identity) => {
-          val description = (request.body \ "description").asOpt[String].getOrElse("")
-          (request.body \ "space").asOpt[String] match {
-            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, stats = new Statistics())
-            case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
+      implicit val user = Some(request.identity)
 
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), stats = new Statistics())
-            } else {
-              BadRequest(toJson("Bad space = " + space))
-            }
-          }
+      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      (request.body \ "space").asOpt[String] match {
+        case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = request.identity, stats = new Statistics())
+        case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
 
-          collections.insert(c) match {
-            case Some(id) => {
-              appConfig.incrementCount('collections, 1)
-              spaces.get(c.spaces).found.foreach(s => {
-                spaces.addCollection(c.id, s.id, user)
-                collections.addToRootSpaces(c.id, s.id)
-                events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
-              })
-              Ok(toJson(Map("id" -> id)))
-            }
-            case None => Ok(toJson(Map("status" -> "error")))
-          }
+          c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = request.identity, spaces = List(UUID(space)), stats = new Statistics())
+        } else {
+          BadRequest(toJson("Bad space = " + space))
         }
-        case None => InternalServerError("User Not found")
+      }
+
+      collections.insert(c) match {
+        case Some(id) => {
+          appConfig.incrementCount('collections, 1)
+          spaces.get(c.spaces).found.foreach(s => {
+            spaces.addCollection(c.id, s.id, user)
+            collections.addToRootSpaces(c.id, s.id)
+            events.addSourceEvent(user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
+          })
+          Ok(toJson(Map("id" -> id)))
+        }
+        case None => Ok(toJson(Map("status" -> "error")))
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
@@ -84,9 +79,9 @@ class Collections @Inject() (datasets: DatasetService,
             datasets.get(datasetId) match {
               case Some(dataset) => {
                 if (configuration.get[Boolean]("addDatasetToCollectionSpace")) {
-                  collections.addDatasetToCollectionSpaces(collection, dataset, request.user)
+                  collections.addDatasetToCollectionSpaces(collection, dataset, Some(request.identity))
                 }
-                events.addSourceEvent(request.user, dataset.id, dataset.name, collection.id, collection.name, EventType.ATTACH_DATASET_COLLECTION.toString)
+                events.addSourceEvent(Some(request.identity), dataset.id, dataset.name, collection.id, collection.name, EventType.ATTACH_DATASET_COLLECTION.toString)
               }
               case None =>
             }
@@ -126,7 +121,7 @@ class Collections @Inject() (datasets: DatasetService,
         case Some(collection) => {
           datasets.get(datasetId) match {
             case Some(dataset) => {
-              events.addSourceEvent(request.user, dataset.id, dataset.name, collection.id, collection.name, EventType.REMOVE_DATASET_COLLECTION.toString)
+              events.addSourceEvent(Some(request.identity), dataset.id, dataset.name, collection.id, collection.name, EventType.REMOVE_DATASET_COLLECTION.toString)
             }
             case None =>
           }
@@ -147,12 +142,12 @@ class Collections @Inject() (datasets: DatasetService,
       case Some(collection) => {
         val useTrash = configuration.get[Boolean]("useTrash")
         if (!useTrash || (useTrash && collection.trash)){
-          events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
+          events.addObjectEvent(Some(request.identity) , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collectionId)
-          adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
+          adminsNotifierService.sendAdminsNotification(Utils.baseUrl(request).toString,"Collection","removed",collection.id.stringify, collection.name)
         } else {
           collections.addToTrash(collectionId, Some(new Date()))
-          events.addObjectEvent(request.user, collectionId, collection.name, "move_collection_trash")
+          events.addObjectEvent(Some(request.identity), collectionId, collection.name, "move_collection_trash")
           Ok(toJson(Map("status" -> "success")))
         }
       }
@@ -162,19 +157,14 @@ class Collections @Inject() (datasets: DatasetService,
   }
 
   def restoreCollection(collectionId : UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) {implicit request=>
-    implicit val user = request.user
-    user match {
-      case Some(u) => {
-        collections.get(collectionId) match {
-          case Some(col) => {
-            collections.restoreFromTrash(collectionId, None)
-            events.addObjectEvent(user, collectionId, col.name, "restore_collection_trash")
-            Ok(toJson(Map("status" -> "success")))
-          }
-          case None => InternalServerError("Update Access failed")
-        }
+    implicit val user = Some(request.identity)
+    collections.get(collectionId) match {
+      case Some(col) => {
+        collections.restoreFromTrash(collectionId, None)
+        events.addObjectEvent(user, collectionId, col.name, "restore_collection_trash")
+        Ok(toJson(Map("status" -> "success")))
       }
-      case None => BadRequest("No user supplied")
+      case None => InternalServerError("Update Access failed")
     }
   }
 
@@ -347,7 +337,7 @@ class Collections @Inject() (datasets: DatasetService,
 
   def updateCollectionName(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
     implicit request =>
-      implicit val user = request.user
+      implicit val user = Some(request.identity)
       if (UUID.isValid(id.stringify)) {
         var name: String = null
         val aResult = (request.body \ "name").validate[String]
@@ -374,7 +364,7 @@ class Collections @Inject() (datasets: DatasetService,
 
   def updateCollectionDescription(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
     implicit request =>
-      implicit val user = request.user
+      implicit val user = Some(request.identity)
       if (UUID.isValid(id.stringify)) {
         var description: String = null
         val aResult = (request.body \ "description").validate[String]
@@ -513,13 +503,13 @@ class Collections @Inject() (datasets: DatasetService,
   }
 
   def attachSubCollection(collectionId: UUID, subCollectionId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    collections.addSubCollection(collectionId, subCollectionId, request.user) match {
+    collections.addSubCollection(collectionId, subCollectionId, Some(request.identity)) match {
       case Success(_) => {
         collections.get(collectionId) match {
           case Some(collection) => {
             collections.get(subCollectionId) match {
               case Some(sub_collection) => {
-                events.addSourceEvent(request.user, sub_collection.id, sub_collection.name, collection.id, collection.name, "add_sub_collection")
+                events.addSourceEvent(Some(request.identity), sub_collection.id, sub_collection.name, collection.id, collection.name, "add_sub_collection")
                 Ok(jsonCollection(collection))
               }
               case None => InternalServerError
@@ -535,57 +525,52 @@ class Collections @Inject() (datasets: DatasetService,
   def createCollectionWithParent() = PermissionAction(Permission.CreateCollection) (parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map{ name =>
       var c : Collection = null
-      implicit val user = request.user
+      implicit val user = Some(request.identity)
 
-      user match {
-        case Some(identity) => {
-          val description = (request.body \ "description").asOpt[String].getOrElse("")
-          (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity, root_spaces = List.empty, stats = new Statistics())
-            case Some(space) => if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)), stats = new Statistics())
-            } else {
-              BadRequest(toJson("Bad space = " + space))
-            }
+      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      (request.body \ "space").asOpt[String] match {
+        case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = request.identity, root_spaces = List.empty, stats = new Statistics())
+        case Some(space) => if (spaces.get(UUID(space)).isDefined) {
+          c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = request.identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)), stats = new Statistics())
+        } else {
+          BadRequest(toJson("Bad space = " + space))
+        }
+      }
+
+      collections.insert(c) match {
+        case Some(id) => {
+          appConfig.incrementCount('collections, 1)
+          c.spaces.map{ spaceId =>
+            spaces.get(spaceId)}.flatten.map{ s =>
+            spaces.addCollection(c.id, s.id, user)
+            collections.addToRootSpaces(c.id, s.id)
+            events.addSourceEvent(user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
           }
 
-          collections.insert(c) match {
-            case Some(id) => {
-              appConfig.incrementCount('collections, 1)
-              c.spaces.map{ spaceId =>
-                spaces.get(spaceId)}.flatten.map{ s =>
-                  spaces.addCollection(c.id, s.id, request.user)
-                  collections.addToRootSpaces(c.id, s.id)
-                  events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
-              }
-
-              //do stuff with parent here
-              (request.body \"parentId").asOpt[String] match {
-                case Some(parentId) => {
-                  collections.get(UUID(parentId)) match {
-                    case Some(parentCollection) => {
-                      collections.addSubCollection(UUID(parentId), UUID(id), user) match {
-                        case Success(_) => {
-                          Ok(toJson(Map("id" -> id)))
-                        }
-                      }
-                    }
-                    case None => {
-                      Ok(toJson("No collection with parentId found"))
+          //do stuff with parent here
+          (request.body \"parentId").asOpt[String] match {
+            case Some(parentId) => {
+              collections.get(UUID(parentId)) match {
+                case Some(parentCollection) => {
+                  collections.addSubCollection(UUID(parentId), UUID(id), user) match {
+                    case Success(_) => {
+                      Ok(toJson(Map("id" -> id)))
                     }
                   }
                 }
                 case None => {
-                  Ok(toJson("No parentId supplied"))
+                  Ok(toJson("No collection with parentId found"))
                 }
-
               }
-              Ok(toJson(Map("id" -> id)))
             }
-            case None => Ok(toJson(Map("status" -> "error")))
+            case None => {
+              Ok(toJson("No parentId supplied"))
+            }
+
           }
+          Ok(toJson(Map("id" -> id)))
         }
-        case None => InternalServerError("User Not found")
+        case None => Ok(toJson(Map("status" -> "error")))
       }
 
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
@@ -599,7 +584,7 @@ class Collections @Inject() (datasets: DatasetService,
           case Some(collection) => {
             collections.get(subCollectionId) match {
               case Some(sub_collection) => {
-                events.addSourceEvent(request.user, sub_collection.id, sub_collection.name, collection.id, collection.name, "remove_subcollection")
+                events.addSourceEvent(Some(request.identity), sub_collection.id, sub_collection.name, collection.id, collection.name, "remove_subcollection")
               }
             }
           }
@@ -617,9 +602,9 @@ class Collections @Inject() (datasets: DatasetService,
     Logger.debug("changing the value of the root flag")
     (collections.get(collectionId), spaces.get(spaceId)) match {
       case (Some(collection), Some(space)) => {
-        spaces.addCollection(collectionId, spaceId, request.user)
+        spaces.addCollection(collectionId, spaceId, Some(request.identity))
         collections.addToRootSpaces(collectionId, spaceId)
-        events.addSourceEvent(request.user, collection.id, collection.name, space.id, space.name, EventType.ADD_COLLECTION_SPACE.toString)
+        events.addSourceEvent(Some(request.identity), collection.id, collection.name, space.id, space.name, EventType.ADD_COLLECTION_SPACE.toString)
         Ok(jsonCollection(collection))
       } case (None, _) => {
         Logger.error("Error getting collection  " + collectionId)
@@ -649,28 +634,23 @@ class Collections @Inject() (datasets: DatasetService,
   }
 
   def getRootCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true, true,false); if collections.hasRoot(collection)  )
+    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection), Some(request.identity),true, true,false); if collections.hasRoot(collection)  )
       yield jsonCollection(collection)
 
     Ok(toJson(root_collections_list))
   }
 
   def getAllCollections(limit : Int, showAll: Boolean) = PermissionAction(Permission.ViewCollection) { implicit request =>
-    val all_collections_list = request.user match {
-      case Some(usr) => {
-        for (collection <- collections.listAllCollections(usr, showAll, limit))
-          yield jsonCollection(collection)
-      }
-      case None => List.empty
-    }
+    val all_collections_list = for (collection <- collections.listAllCollections(request.identity, showAll, limit))
+      yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
   }
 
   def getTopLevelCollections() = PermissionAction(Permission.ViewCollection){ implicit request =>
-    implicit val user = request.user
+    implicit val user = Some(request.identity)
     val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
     val limit = count.toInt
-    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true, true,false); if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty))
+    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection), user,true, true,false); if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty))
       yield jsonCollection(collection)
     Ok(toJson(top_level_collections))
   }
@@ -737,24 +717,17 @@ class Collections @Inject() (datasets: DatasetService,
   }
 
   def removeFromSpaceAllowed(collectionId: UUID , spaceId : UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val user = request.user
-    user match {
-      case Some(identity) => {
-        val hasParentInSpace = collections.hasParentInSpace(collectionId, spaceId)
-        Ok(toJson(!(hasParentInSpace)))
-      }
-      case None => Ok(toJson(false))
-    }
+    val hasParentInSpace = collections.hasParentInSpace(collectionId, spaceId)
+    Ok(toJson(!hasParentInSpace))
   }
 
   def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
-    implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {
         val bagit = configuration.get[Boolean]("downloadCollectionBagit")
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(streamCollection(collection,1024*1024, compression, bagit, user)).withHeaders(
+        Ok.chunked(streamCollection(collection,1024*1024, compression, bagit, Some(request.identity))).withHeaders(
           "Content-Type" -> "application/zip",
           "Content-Disposition" -> ("attachment; filename=\"" + collection.name+ ".zip\"")
         )
