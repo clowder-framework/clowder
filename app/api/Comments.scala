@@ -27,36 +27,31 @@ class Comments @Inject()(datasets: DatasetService,
       Logger.trace("Adding comment")
       comments.get(id) match {          
         case Some(parent) => {
-          request.user match {
-            case Some(identity) => {
-              request.body.\("text").asOpt[String] match {
-                case Some(text) => {
-                  val comment = Comment(comment_id = Some(id),
-                                        author = identity,
-                                        text = text,
-                                        posted = new Date(),
-                                        dataset_id = parent.dataset_id,
-                                        file_id = parent.file_id,
-                                        section_id = parent.section_id)
-                  comments.insert(comment)
-                  if (parent.dataset_id.isDefined) {
-                    datasets.get(parent.dataset_id.get) match {
-                      case Some(dataset) => {
-                        searches.index(dataset, false, None)
-                      }
-                      case None => Logger.error("Dataset not found: " + id)
-                    }
-                  }
-                  Ok(comment.id.toString())
-                }
-                case None => {
-                  Logger.error("no text specified.")
-                  BadRequest
-                }
-              }
-            }
-            case None => BadRequest
-          }
+					request.body.\("text").asOpt[String] match {
+						case Some(text) => {
+							val comment = Comment(comment_id = Some(id),
+								author = request.identity,
+								text = text,
+								posted = new Date(),
+								dataset_id = parent.dataset_id,
+								file_id = parent.file_id,
+								section_id = parent.section_id)
+							comments.insert(comment)
+							if (parent.dataset_id.isDefined) {
+								datasets.get(parent.dataset_id.get) match {
+									case Some(dataset) => {
+										searches.index(dataset, false, None)
+									}
+									case None => Logger.error("Dataset not found: " + id)
+								}
+							}
+							Ok(comment.id.toString())
+						}
+						case None => {
+							Logger.error("no text specified.")
+							BadRequest
+						}
+					}
         }
         case None => BadRequest
       }
@@ -76,43 +71,34 @@ class Comments @Inject()(datasets: DatasetService,
    *  
    */
   def removeComment(id: UUID) = PermissionAction(Permission.DeleteComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
-	  request.user match {
-		  case Some(identity) => {
-			  var commentId: UUID = id        
-					  if (UUID.isValid(commentId.stringify)) {
-	
-						  Logger.debug(s"removeComment from file with id  $commentId.")
-						  //Check to make sure user email matches the comment email						  
-						  comments.get(commentId) match {
-						       case Some(theComment) => {
-						             //Check to make sure the user is the same as the author, otherwise, they 
-						             //shouldn't be able to delete the comment.
-						             if (identity.email == theComment.author.email) {
-						                 comments.removeComment(commentId)
-						                 Ok(Json.obj("status" -> "success"))
-						             }
-						             else {
-						                 Logger.error(s"Only the ${Messages("owner").toLowerCase()} can delete the comment.")
-						                 BadRequest(toJson(s"Only ${Messages("owner").toLowerCase()} can delete the comment."))
-						             }
-						       }						       
-						       case None => {
-						             //Really shouldn't happen
-						             BadRequest(toJson("Error getting the comment."))
-						       }
-						  }						  						  
-					  } 
-					  else {
-						  Logger.error(s"The given id $commentId is not a valid ObjectId.")
-						  BadRequest(toJson(s"The given id $commentId is not a valid ObjectId."))
-					  }
-		  }
-		  case None => {
-		       //This case shouldn't happen, as there are checks to prevent this API from being 
-		       //called without an Identity
-		       BadRequest
-		  }
-	  }
+		var commentId: UUID = id
+		if (UUID.isValid(commentId.stringify)) {
+
+			Logger.debug(s"removeComment from file with id  $commentId.")
+			//Check to make sure user email matches the comment email
+			comments.get(commentId) match {
+				case Some(theComment) => {
+					//Check to make sure the user is the same as the author, otherwise, they
+					//shouldn't be able to delete the comment.
+					if (request.identity.email == theComment.author.email) {
+						comments.removeComment(commentId)
+						Ok(Json.obj("status" -> "success"))
+					}
+					else {
+						Logger.error(s"Only the ${Messages("owner").toLowerCase()} can delete the comment.")
+						BadRequest(toJson(s"Only ${Messages("owner").toLowerCase()} can delete the comment."))
+					}
+				}
+				case None => {
+					//Really shouldn't happen
+					BadRequest(toJson("Error getting the comment."))
+				}
+			}
+		}
+		else {
+			Logger.error(s"The given id $commentId is not a valid ObjectId.")
+			BadRequest(toJson(s"The given id $commentId is not a valid ObjectId."))
+		}
   }
   //End, remove comment code
   
@@ -132,60 +118,51 @@ class Comments @Inject()(datasets: DatasetService,
    *  
    */
   def editComment(id: UUID) = PermissionAction(Permission.EditComment, Some(ResourceRef(ResourceRef.comment, id)))(parse.json) { implicit request =>
-	  request.user match {
-	       case Some(identity) => {
-	    	   var commentId: UUID = id        
-	    	   if (UUID.isValid(commentId.stringify)) {
-	    		   Logger.debug(s"editComment from file with id  $commentId.")
-	    	       
-	    		   comments.get(commentId) match {
-	    		         case Some(theComment) => {
-	    		             //Make sure that the author of the comment is the one editing it
-	    		             if (identity.email == theComment.author.email) {
-	    		            	 //Set up the vars we are looking for
-	    		            	 var commentText: String = null;
+		var commentId: UUID = id
+		if (UUID.isValid(commentId.stringify)) {
+			Logger.debug(s"editComment from file with id  $commentId.")
 
-	    		             	 var aResult: JsResult[String] = (request.body \ "commentText").validate[String]
+			comments.get(commentId) match {
+				case Some(theComment) => {
+					//Make sure that the author of the comment is the one editing it
+					if (request.identity.email == theComment.author.email) {
+						//Set up the vars we are looking for
+						var commentText: String = null;
 
-	    		             	 // Pattern matching
-	    		             	 aResult match {
-	    		             	 	case s: JsSuccess[String] => {
-	    		             	 		commentText = s.get
-	    		             	 	}
-	    		             	 	case e: JsError => {
-	    		             	 		Logger.error("Errors: " + JsError.toJson(e).toString())
-	    		             	 		BadRequest(toJson(s"description data is missing."))
-	    		             	 	}                            
-	    		                 }
+						var aResult: JsResult[String] = (request.body \ "commentText").validate[String]
 
-	    		                 Logger.debug(s"editComment from file with id  $commentId.")
+						// Pattern matching
+						aResult match {
+							case s: JsSuccess[String] => {
+								commentText = s.get
+							}
+							case e: JsError => {
+								Logger.error("Errors: " + JsError.toJson(e).toString())
+								BadRequest(toJson(s"description data is missing."))
+							}
+						}
 
-	    		                 comments.editComment(commentId, commentText)
-	    		                 events.addObjectEvent(request.user, commentId, commentText, EventType.EDIT_COMMENT.toString)
-	    		                 Ok(Json.obj("status" -> "success"))
-	    		             }
-	    		             else {
-	    		                 Logger.error(s"Only the ${Messages("owner").toLowerCase()} can edit the comment.")
-	    		                 BadRequest(toJson(s"Only ${Messages("owner").toLowerCase()} can edit the comment."))
-	    		             }
-	    		         }
-	    		         case None => {
-	    		             //Shouldn't happen
-	    		             BadRequest(toJson("Error getting the comment"))
-	    		         }
-	    		   }
-	    	   } 
-	    	   else {
-	    		   Logger.error(s"The given id $commentId is not a valid ObjectId.")
-	    		   BadRequest(toJson(s"The given id $commentId is not a valid ObjectId."))
-	    	   }
-	       }
-	       case None => {
-	    	   //This case shouldn't happen, as there are checks to prevent this API from being 
-	    	   //called without an Identity
-	    	   BadRequest
-	       }
-	  }
+						Logger.debug(s"editComment from file with id  $commentId.")
+
+						comments.editComment(commentId, commentText)
+						events.addObjectEvent(Some(request.identity), commentId, commentText, EventType.EDIT_COMMENT.toString)
+						Ok(Json.obj("status" -> "success"))
+					}
+					else {
+						Logger.error(s"Only the ${Messages("owner").toLowerCase()} can edit the comment.")
+						BadRequest(toJson(s"Only ${Messages("owner").toLowerCase()} can edit the comment."))
+					}
+				}
+				case None => {
+					//Shouldn't happen
+					BadRequest(toJson("Error getting the comment"))
+				}
+			}
+		}
+		else {
+			Logger.error(s"The given id $commentId is not a valid ObjectId.")
+			BadRequest(toJson(s"The given id $commentId is not a valid ObjectId."))
+		}
   }
   //End, remove comment code
 
