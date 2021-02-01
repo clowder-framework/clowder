@@ -218,60 +218,55 @@ class MongoDBFileService @Inject() (
     *
     */
   def autoArchiveCandidateFiles() = {
-    val timeout = configuration(play.api.Play.current).getInt("archiveAutoAfterDaysInactive")
-    timeout match {
-      case None => Logger.info("No archival auto inactivity timeout set - skipping auto archival loop.")
-      case Some(days) => {
-        if (days == 0) {
-          Logger.info("Archival auto inactivity timeout set to 0 - skipping auto archival loop.")
+    val days = config.get[Int]("archiveAutoAfterDaysInactive")
+    if (days <= 0) {
+      Logger.info("Archival auto inactivity timeout set to 0 - skipping auto archival loop.")
+    } else {
+      // DEBUG ONLY: query for files that were uploaded within the past hour
+      val archiveDebug = config.get[Boolean]("archiveDebug")
+      val oneHourAgo = LocalDateTime.now.minusHours(1).toString + "-00:00"
+
+      // Query for files that haven't been accessed for at least this many days
+      val daysAgo = LocalDateTime.now.minusDays(days).toString + "-00:00"
+      val notDownloadedWithinTimeout = if (archiveDebug) {
+        ("stats.last_downloaded" $gte Parsers.fromISO8601(oneHourAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
+      } else {
+        ("stats.last_downloaded" $lt Parsers.fromISO8601(daysAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
+      }
+
+      // Include files that have never been downloaded, but make sure they are old enough
+      val neverDownloaded = if (archiveDebug) {
+        ("stats.downloads" $eq 0) ++ ("uploadDate" $gte Parsers.fromISO8601(oneHourAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
+      } else {
+        ("stats.downloads" $eq 0) ++ ("uploadDate" $lt Parsers.fromISO8601(daysAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
+      }
+
+      // TODO: How to get host / apiKey / admin internally without a request?
+      val host = config.get[String]("clowder.rabbitmq.clowderurl")
+      val adminApiKey = config.get[String]("commKey")
+      val adminUser = Option(userService.getAdmins.head)
+      val params = JsObject(Seq.empty[(String, JsValue)]) + FileService.ARCHIVE_PARAMETER
+
+      // Submit our queries and determine the union
+      val ndFiles = FileDAO.find(neverDownloaded).toList
+      val ndwtoFiles = FileDAO.find(notDownloadedWithinTimeout).toList
+      val matchingFiles = ndFiles.union(ndwtoFiles)
+      Logger.info("Archival candidates found: " + matchingFiles.length)
+
+      // Exclude candidates that do not exceed our minimum file size threshold
+      val minSize = config.get[Long]("archiveMinimumStorageSize")
+
+      // Loop all candidate files and submit each one for archival
+      for (file <- matchingFiles) {
+        if (file.length > minSize) {
+          Logger.debug("Submitting file " + file.id + " for archival")
+          submitArchivalOperation(file, file.id, host, params, Some(adminApiKey), adminUser)
         } else {
-          // DEBUG ONLY: query for files that were uploaded within the past hour
-          val archiveDebug = configuration(play.api.Play.current).getBoolean("archiveDebug").getOrElse(false)
-          val oneHourAgo = LocalDateTime.now.minusHours(1).toString + "-00:00"
-
-          // Query for files that haven't been accessed for at least this many days
-          val daysAgo = LocalDateTime.now.minusDays(days).toString + "-00:00"
-          val notDownloadedWithinTimeout = if (archiveDebug) {
-            ("stats.last_downloaded" $gte Parsers.fromISO8601(oneHourAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          } else {
-            ("stats.last_downloaded" $lt Parsers.fromISO8601(daysAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          }
-
-          // Include files that have never been downloaded, but make sure they are old enough
-          val neverDownloaded = if (archiveDebug) {
-            ("stats.downloads" $eq 0) ++ ("uploadDate" $gte Parsers.fromISO8601(oneHourAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          } else {
-            ("stats.downloads" $eq 0) ++ ("uploadDate" $lt Parsers.fromISO8601(daysAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          }
-
-          // TODO: How to get host / apiKey / admin internally without a request?
-          val host = configuration(play.api.Play.current).getString("clowder.rabbitmq.clowderurl").getOrElse("http://localhost:9000")
-          val adminApiKey = configuration(play.api.Play.current).getString("commKey")
-          val adminUser = Option(userService.getAdmins.head)
-          val params = JsObject(Seq.empty[(String, JsValue)]) + FileService.ARCHIVE_PARAMETER
-
-          // Submit our queries and determine the union
-          val ndFiles = FileDAO.find(neverDownloaded).toList
-          val ndwtoFiles = FileDAO.find(notDownloadedWithinTimeout).toList
-          val matchingFiles = ndFiles.union(ndwtoFiles)
-          Logger.info("Archival candidates found: " + matchingFiles.length)
-
-          // Exclude candidates that do not exceed our minimum file size threshold
-          val minSize = configuration(play.api.Play.current).getLong("archiveMinimumStorageSize").getOrElse(1000000L)
-
-          // Loop all candidate files and submit each one for archival
-          for (file <- matchingFiles) {
-            if (file.length > minSize) {
-              Logger.debug("Submitting file " + file.id + " for archival")
-              submitArchivalOperation(file, file.id, host, params, adminApiKey, adminUser)
-            } else {
-              Logger.debug("Skipping file " + file.id + ": below threshold (" +
-                file.length.toString + " B < " + minSize.toString + " B)")
-            }
-          }
-          Logger.info("Auto archival loop completed successfully")
+          Logger.debug("Skipping file " + file.id + ": below threshold (" +
+            file.length.toString + " B < " + minSize.toString + " B)")
         }
       }
+      Logger.info("Auto archival loop completed successfully")
     }
   }
 
@@ -610,7 +605,7 @@ class MongoDBFileService @Inject() (
         MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
       }
     }
-    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+    if(!(config.get[String]("permissions") == "public")) {
       filter = buildTagFilter(user) ++ filter
     }
     val order = if (reverse) {

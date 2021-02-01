@@ -13,7 +13,8 @@ import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
 import com.mongodb.util.JSON
 import javax.inject.{Inject, Singleton}
 import jsonutils.JsonUtil
-import models.{File, _}
+import services._
+import models.{File, services, _}
 import org.bson.types.ObjectId
 import org.json.JSONObject
 import play.api.Play._
@@ -22,7 +23,6 @@ import play.api.libs.json.Json._
 import play.api.{Configuration, Logger}
 import salat.dao.{ModelCompanion, SalatDAO}
 import salat.global.ctx
-import services._
 import util.{Formatters, Parsers}
 
 import scala.annotation.tailrec

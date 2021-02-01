@@ -7,12 +7,12 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import javax.inject.{Inject, Singleton}
-import models.{Preview, _}
+import services._
+import models.{Preview, services, _}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue}
 import salat.dao.{ModelCompanion, SalatDAO}
 import services.mongodb.MongoContext.context
-import services._
 import util.FileUtils
 
 import scala.collection.JavaConverters._

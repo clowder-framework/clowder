@@ -4,7 +4,6 @@ import com.mongodb.util.JSON
 import org.elasticsearch.action.search.SearchResponse
 import play.api.Logger
 import play.api.Play._
-import models._
 import salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
@@ -14,6 +13,7 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.{ContextLDService, CurationService, DI, DatasetService, ExtractionBusService, ExtractorMessage, FileService, FolderService, MetadataService, SearchService}
+import models._
 import api.{Permission, UserRequest}
 import controllers.Utils
 

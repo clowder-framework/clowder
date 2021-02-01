@@ -1,24 +1,22 @@
 package controllers
 
 import java.net.URL
-import java.util.{ Calendar, Date }
-import javax.inject.Inject
+import java.util.{Calendar, Date}
 
+import javax.inject.Inject
 import api.Permission
 import api.Permission._
-import models._
-import play.api.{ Logger, Play }
-import play.api.data.Forms._
-import play.api.data.{ Form, Forms }
 import services._
-import securesocial.core.providers.{ Token, UsernamePasswordProvider }
+import models.{services, _}
+import play.api.{Logger, Play}
+import play.api.data.Forms._
+import play.api.data.{Form, Forms}
 import org.joda.time.DateTime
 import play.api.i18n.Messages
 import services.AppConfiguration
-import util.{ Formatters, Mail, Publications }
-
+import util.{Formatters, Mail, Publications}
 import scala.collection.immutable.List
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 
 /**

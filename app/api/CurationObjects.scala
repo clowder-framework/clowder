@@ -244,40 +244,34 @@ class CurationObjects @Inject()(datasets: DatasetService,
   }
 
   def findMatchmakingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))(parse.json) { implicit request =>
-    implicit val user = request.user
-    user match {
-      case Some(usr) => {
-        curations.get(curationId) match {
-          case Some(c) => {
-            val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
-            values match {
-              case aMap: JsSuccess[Map[String, String]] => {
-                val userPreferences: Map[String, String] = aMap.get
-                userService.updateRepositoryPreferences(usr.id, userPreferences)
-                val mmResp = curationObjectController.callMatchmaker(c, user)
-                if ( mmResp.size > 0) {
-                  Ok(toJson(mmResp))
-                } else {
-                  InternalServerError("No response from matchmaker")
-                }
-              }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toJson(e).toString())
-                BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
-              }
+    curations.get(curationId) match {
+      case Some(c) => {
+        val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
+        values match {
+          case aMap: JsSuccess[Map[String, String]] => {
+            val userPreferences: Map[String, String] = aMap.get
+            userService.updateRepositoryPreferences(request.identity.id, userPreferences)
+            val mmResp = curationObjectController.callMatchmaker(c, Some(request.identity))
+            if ( mmResp.size > 0) {
+              Ok(toJson(mmResp))
+            } else {
+              InternalServerError("No response from matchmaker")
             }
           }
-          case None => InternalServerError("Publication Request Not found")
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toJson(e).toString())
+            BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
+          }
         }
       }
-      case None => InternalServerError("User not found")
+      case None => InternalServerError("Publication Request Not found")
     }
 
   }
 
   def retractCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
-      implicit val user = request.user
+      implicit val user = Some(request.identity)
       curations.get(curationId) match {
         case Some(c) => {
           val endpoint = configuration.get[String]("stagingarea.uri").replaceAll("/$","")
@@ -301,7 +295,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   def getCurationFiles(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
-      implicit val user = request.user
+      implicit val user = Some(request.identity)
       curations.get(curationId) match {
         case Some(c) => {
           Ok(toJson(Map("cf" -> curations.getCurationFiles(curations.getAllCurationFileIds(c.id)))))
@@ -320,7 +314,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             } else {
               curations.removeCurationFile("folder", parentId, curationFileId)
             }
-            curations.deleteCurationFile(curationFileId, Utils.baseUrl(request), request.apiKey, request.user)
+            curations.deleteCurationFile(curationFileId, Utils.baseUrl(request), request.apiKey, Some(request.identity))
             Ok(toJson("Success"))
           }
           case _ => InternalServerError("Cannot modify Publication Request")
@@ -340,7 +334,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             } else {
               curations.removeCurationFolder("folder", parentId, curationFolderId)
             }
-            curations.deleteCurationFolder(curationFolderId, Utils.baseUrl(request), request.apiKey, request.user)
+            curations.deleteCurationFolder(curationFolderId, Utils.baseUrl(request), request.apiKey, request.identity)
             Ok(toJson("Success"))
           }
           case _ => InternalServerError("Cannot modify Publication Request")
@@ -423,7 +417,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
   }
 
   def getMetadataDefinitions(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.curationObject, id))) { implicit request =>
-    implicit val user = request.user
+    implicit val user = request.identity
     curations.get(id) match {
       case Some(curationObject) => {
         val metadataDefinitions  = metadatas.getDefinitions(Some(curationObject.space))
@@ -434,7 +428,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
   }
 
   def getMetadataDefinitionsByFile(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.curationFile, id))) { implicit request =>
-    implicit val user = request.user
+    implicit val user = request.identity
     curations.getCurationByCurationFile(id) match {
       case Some(curationObject) => {
         val metadataDefinitions = metadatas.getDefinitions(Some(curationObject.space))

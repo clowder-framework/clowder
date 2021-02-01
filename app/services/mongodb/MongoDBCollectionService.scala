@@ -8,18 +8,18 @@ import api.Permission.Permission
 import salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
-import models._
+import services._
+import models.{services, _}
 import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.bson.types.ObjectId
 import play.api.Logger
-import util.{Formatters}
+import util.Formatters
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-import services._
 import javax.inject.{Inject, Singleton}
 
 import scala.util.Failure

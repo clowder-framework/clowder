@@ -32,26 +32,15 @@ class ContextLD @Inject() (
   }
 
   def addContext() = PermissionAction(Permission.EditMetadata)(parse.json) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        val context = request.body.\("@context")
-        val contextName = request.body.\("context_name")
-        val contextId = contextlds.addContext(contextName.as[JsString], context.get)
-        Ok(toJson(Map("id" -> contextId.toString)))
-      }
-      case None => BadRequest(toJson("Not authorized."))
-    }
+    val context = request.body.\("@context")
+    val contextName = request.body.\("context_name")
+    val contextId = contextlds.addContext(contextName.as[JsString], context.get)
+    Ok(toJson(Map("id" -> contextId.toString)))
   }
 
   def removeById(id: models.UUID) = PermissionAction(Permission.EditMetadata) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        Logger.debug("remove context: " + id)
-        contextlds.removeContext(id)
-        Ok("The context " + id + " has been removed")
-
-      }
-      case None => BadRequest("Not authorized.")
-    }
+    Logger.debug("remove context: " + id)
+    contextlds.removeContext(id)
+    Ok("The context " + id + " has been removed")
   }
 }

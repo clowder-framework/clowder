@@ -9,17 +9,14 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import javax.inject.Inject
-import models.{Role, UserSpaceAndRole, _}
 import org.bson.types.ObjectId
 import play.api.Play.current
 import play.api.{Application, Configuration, Logger}
 import salat._
 import salat.dao.{ModelCompanion, SalatDAO}
-import securesocial.core.{AuthenticationMethod, BasicProfile}
-import securesocial.core.providers.MailToken
-import securesocial.core.services.SaveMode
 import services._
 import services.mongodb.MongoContext.context
+import models.{Role, UserSpaceAndRole, _}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future

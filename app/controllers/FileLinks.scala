@@ -7,11 +7,11 @@ import java.util.Date
 import akka.stream.scaladsl.Source
 import api.Permission
 import javax.inject.Inject
-import models._
+import services.{FileLinkService, FileService}
+import models.{services, _}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{ResponseHeader, Result}
-import services.{FileLinkService, FileService}
 import util.FileUtils
 
 import scala.concurrent.Future

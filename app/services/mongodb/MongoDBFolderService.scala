@@ -1,8 +1,8 @@
 package services.mongodb
 
-import models._
-import play.api.Logger
 import services._
+import models.{services, _}
+import play.api.Logger
 import play.api.Play.current
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._

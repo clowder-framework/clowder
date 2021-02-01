@@ -1,12 +1,12 @@
 package services.mongodb
 
 import com.mongodb.casbah.Imports._
-import models._
 import org.bson.types.ObjectId
 import play.api.libs.json.{JsObject, Json}
 import salat.dao.SalatDAO
 import services.mongodb.MongoContext.context
 import services.{DI, QueueService}
+import models._
 
 
 /**

@@ -8,7 +8,8 @@ import collection.JavaConversions._
 import api.UserRequest
 import controllers.Utils
 import fileutils.FilesUtils
-import models._
+import services._
+import models.{services, _}
 import org.apache.commons.codec.digest.DigestUtils
 import play.api.Logger
 import play.api.Play._
@@ -16,12 +17,10 @@ import play.api.libs.Files
 import play.api.libs.json._
 import play.api.mvc.MultipartFormData
 import play.libs.Akka
-import services._
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-
 import javax.mail.internet.MimeUtility
 import java.net.URLEncoder
 
