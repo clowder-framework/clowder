@@ -18,6 +18,7 @@ script to fix this.
 - Files were not properly reindexed when the Move button was used to move a file into or out of a folder in a dataset. 
 - When adding a file to a dataset by URL, prioritize the URL `content-type` header over the file content type established
   by looking at the file name extension.
+- Wrap words across lines to stay within interface elements. [#160](https://github.com/clowder-framework/clowder/issues/160)
 
 ## 1.14.0 - 2021-01-07
 
