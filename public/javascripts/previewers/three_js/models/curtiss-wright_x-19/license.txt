@@ -1,0 +1,11 @@
+Model Information:
+* title:	Curtiss-Wright X-19
+* source:	https://sketchfab.com/3d-models/curtiss-wright-x-19-d649b7b5887c4815b069ad503b3ebbbb
+* author:	helijah (https://sketchfab.com/helijah)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Curtiss-Wright X-19" (https://sketchfab.com/3d-models/curtiss-wright-x-19-d649b7b5887c4815b069ad503b3ebbbb) by helijah (https://sketchfab.com/helijah) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
