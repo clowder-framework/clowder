@@ -40,6 +40,7 @@ object FileUtils {
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
   lazy val routing : ExtractorRoutingService = DI.injector.getInstance(classOf[ExtractorRoutingService])
+  lazy val sinkService : EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -376,6 +377,7 @@ object FileUtils {
         saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
           processFileBytes(fixedfile, f.ref.file, dataset)
           files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+          sinkService.logFileUploadEvent(fixedfile, dataset, Option(user))
           processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
           processDataset(file, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
           files.setStatus(fixedfile.id, FileStatus.PROCESSED)
