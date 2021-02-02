@@ -302,6 +302,8 @@ class Folders @Inject() (
                           if(oldFolder.files.contains(fileId)) {
                             folders.removeFile(oldFolder.id, fileId)
                             folders.addFile(newFolder.id, fileId)
+                            files.index(fileId)
+                            datasets.index(datasetId)
                             Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
                           } else {
                             BadRequest("Failed to move file. The file with id: " + file.id.stringify + " isn't in folder with id: " + oldFolder.id.stringify  )
@@ -315,6 +317,8 @@ class Folders @Inject() (
                       if(dataset.files.contains(fileId)) {
                         folders.addFile(newFolder.id, fileId)
                         datasets.removeFile(datasetId, fileId)
+                        files.index(fileId)
+                        datasets.index(datasetId)
                         Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
                       } else {
                         BadRequest("Failed to move file. The file with id: " + file.id.stringify + "Isn't in dataset with id: " + dataset.id.stringify  )
@@ -353,6 +357,8 @@ class Folders @Inject() (
                 if(folder.files.contains(fileId)) {
                   datasets.addFile(datasetId, file)
                   folders.removeFile(oldFolderId, fileId)
+                  files.index(fileId)
+                  datasets.index(datasetId)
                   Ok(toJson(Map("status" -> "success", "fileName"-> file.filename )))
                 } else {
                   BadRequest("The file you are trying to move isn't in the folder you are moving it from.")
