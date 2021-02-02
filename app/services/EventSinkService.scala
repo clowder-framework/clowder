@@ -8,19 +8,38 @@ import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.json.{JsValue, Json}
 
+object EventSinkService {
+  val EXCHANGE_NAME_CONFIG_KEY = "eventsink.exchangename"
+  val QUEUE_NAME_CONFIG_KEY = "eventsink.queuename"
+
+  val EXCHANGE_NAME_DEFAULT_VALUE = "clowder.metrics"
+  val QUEUE_NAME_DEFAULT_VALUE = "event.sink"
+
+  // TODO: Make sure these match the real config key names
+  val AMPLITUDE_CONFIG_KEY = "amplitude.apikey"
+  val GA_CONFIG_KEY = "google.analytics"
+  val INFLUX_AUTH_CONFIG_KEY = "influx.uri"
+  val MONGO_AUTH_CONFIG_KEY = "mongo.uri"
+}
+
 class EventSinkService {
   val messageService: MessageService = DI.injector.getInstance(classOf[MessageService])
   val userService: UserService = DI.injector.getInstance(classOf[UserService])
+  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+  // Fetch directly from config on demand
+  def getGoogleAnalytics(): String = Play.configuration.getString(EventSinkService.GA_CONFIG_KEY).getOrElse("")
+  def getAmplitudeApiKey(): String = Play.configuration.getString(EventSinkService.AMPLITUDE_CONFIG_KEY).getOrElse("")
+  def getMongoAuth(): String = Play.configuration.getString(EventSinkService.AMPLITUDE_CONFIG_KEY).getOrElse("")
+  def getInfluxAuth(): String = Play.configuration.getString(EventSinkService.INFLUX_AUTH_CONFIG_KEY).getOrElse("")
 
   /** Event Sink exchange name in RabbitMQ */
-  lazy val exchangeName = {
-    Play.configuration.getString("eventsink.exchangename").getOrElse("clowder.metrics")
-  }
+  val exchangeName = Play.configuration.getString(EventSinkService.EXCHANGE_NAME_CONFIG_KEY)
+    .getOrElse(EventSinkService.EXCHANGE_NAME_DEFAULT_VALUE)
 
   /** Event Sink queue name in RabbitMQ */
-  lazy val queueName = {
-    Play.configuration.getString("eventsink.queuename").getOrElse("event.sink")
-  }
+  val queueName = Play.configuration.getString(EventSinkService.QUEUE_NAME_CONFIG_KEY)
+    .getOrElse(EventSinkService.QUEUE_NAME_DEFAULT_VALUE)
 
   def logEvent(category: String, metadata: JsValue) = {
     Logger.info("eventsink.exchangename=" + exchangeName)
@@ -30,6 +49,17 @@ class EventSinkService {
 
     //val message = EventSinkMessage(Instant.now().getEpochSecond, category, metadata)
     messageService.submit(exchangeName, queueName, metadata)
+  }
+
+  // TODO: Call this when admin changes configuration via the UI
+  def syncAuthInfo() = {
+    Logger.info("Synchronizing event sink consumer auth")
+    logEvent("auth_sync", Json.obj(
+      "amplitude" -> getAmplitudeApiKey(),
+      "google_analytics" -> getGoogleAnalytics(),
+      "influx" -> getInfluxAuth(),
+      "mongo" -> getMongoAuth()
+    ))
   }
 
   /** Log an event when user views a dataset */
@@ -154,6 +184,7 @@ class EventSinkService {
   }
 
   def logSubmitSelectionToExtractorEvent(dataset: Dataset, extractor: ExtractorInfo, submitter: Option[User]) = {
+    // TODO: Is this a real case? Is this needed?
     logEvent("extraction", Json.obj(
       "type" -> "selection",
       "extractor_name" -> extractor.name,
@@ -166,17 +197,29 @@ class EventSinkService {
     ))
   }
 
-  def logFileUploadEvent(file: File, dataset:Dataset, uploader: Option[User]) = {
-    logEvent("upload", Json.obj(
-      "dataset_id" -> dataset.id,
-      "dataset_name" -> dataset.name,
-      "dataset_author_name" -> dataset.author.fullName,
-      "dataset_author_id" -> dataset.author.id,
-      "uploader_id" -> uploader.get.id,
-      "uploader_name" -> uploader.get.getMiniUser.fullName,
-      "filename" -> file.filename,
-      "length" -> file.length
-    ))
+  def logFileUploadEvent(file: File, dataset: Option[Dataset], uploader: Option[User]) = {
+    dataset match {
+      case Some(d) => {
+        logEvent("upload", Json.obj(
+          "dataset_id" -> d.id,
+          "dataset_name" -> d.name,
+          "dataset_author_name" -> d.author.fullName,
+          "dataset_author_id" -> d.author.id,
+          "uploader_id" -> uploader.get.id,
+          "uploader_name" -> uploader.get.getMiniUser.fullName,
+          "filename" -> file.filename,
+          "length" -> file.length
+        ))
+      }
+      case None => {
+        logEvent("upload", Json.obj(
+          "uploader_id" -> uploader.get.id,
+          "uploader_name" -> uploader.get.getMiniUser.fullName,
+          "filename" -> file.filename,
+          "length" -> file.length
+        ))
+      }
+    }
   }
 
   def logFileDownloadEvent(file: File, /*dataset: Dataset,*/ downloader: Option[User]) = {
@@ -186,6 +229,8 @@ class EventSinkService {
       "dataset_author_name" -> dataset.author.fullName,
       "dataset_author_id" -> dataset.author.id,*/
       "type" -> "file",
+      "uploader_id" -> file.author.id,
+      "uploader_name" -> file.author.fullName,
       "downloader_id" -> downloader.get.id,
       "downloader_name" -> downloader.get.getMiniUser.fullName,
       "filename" -> file.filename,
