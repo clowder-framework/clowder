@@ -109,18 +109,6 @@
 
         function submit(extractor_name, textbox_id, file_id, submit_id) {
             var clickedBtn = $('#' + submit_id);
-            @if(AppConfiguration.getAmplitudeApiKey != "") {
-                amplitude.getInstance().logEvent("extraction", {
-                    "view": "file",
-                    "extractor_name": extractor_name,
-                    "resource_id": '@file.id',
-                    "resource_name": '@file.filename',
-                    "author_id": '@file.author.id',
-                    "author_name": '@file.author.fullName',
-                    "submitter_id": '@user.get.id',
-                    "submitter_name": '@user.get.getMiniUser.fullName'
-                });
-            }
 
             // Throttle submissions to one every 3 seconds
             disableSubmit(clickedBtn);

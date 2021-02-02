@@ -71,19 +71,6 @@
         function submit(extractor_name, textbox_id, ds_id, submit_id) {
             var clickedBtn = $('#' + submit_id);
 
-            @if(AppConfiguration.getAmplitudeApiKey != "") {
-                amplitude.getInstance().logEvent("extraction", {
-                    "view": "dataset",
-                    "extractor_name": extractor_name,
-                    "resource_id": '@ds.id',
-                    "resource_name": '@ds.name',
-                    "author_id": '@ds.author.id',
-                    "author_name": '@ds.author.fullName',
-                    "submitter_id": '@user.get.id',
-                    "submitter_name": '@user.get.getMiniUser.fullName'
-                });
-            }
-
             // Throttle submissions to one every 3 seconds
             disableSubmit(clickedBtn);
             setTimeout(function() {
