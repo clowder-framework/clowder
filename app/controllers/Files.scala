@@ -52,7 +52,8 @@ class Files @Inject() (
   spaces: SpaceService,
   folders: FolderService,
   routing: ExtractorRoutingService,
-  appConfig: AppConfigurationService) extends SecuredController {
+  appConfig: AppConfigurationService,
+  sinkService: EventSinkService) extends SecuredController {
 
   lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
@@ -277,6 +278,7 @@ class Files @Inject() (
             // Increment view count for file
             val (view_count, view_date) = files.incrementViews(id, user)
 
+            sinkService.logFileViewEvent(file, user)
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
@@ -707,6 +709,7 @@ class Files @Inject() (
             files.getBytes(id) match {
               case Some((inputStream, filename, contentType, contentLength)) => {
                 files.incrementDownloads(id, user)
+                sinkService.logFileDownloadEvent(file, user)
 
                 request.headers.get(RANGE) match {
                   case Some(value) => {
