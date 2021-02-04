@@ -61,9 +61,13 @@
     let referenceUrl = Configuration.url;
     let previewer = Configuration.previewer;
 
+
+
     let fileName = $('#file-name-title').text().trim();
     let fileNameExtension = fileName.substr(fileName.length - 3);
     let fileType;
+
+    alert(fileName);
 
     // This is a trick I use to make the console.log function to work
 
@@ -95,7 +99,7 @@
     // to run your program
 
      $(document).ready(function(){
-         init();
+         init(referenceUrl);
          animate();
      });
 
@@ -149,8 +153,9 @@ function init() {
     scene.add( grid );
 
     // model
+
     const loader = new THREE.FBXLoader();
-    loader.load( '/assets/javascripts/previewers/three_js/models/samba/Samba_Dancing.fbx', function ( object ) {
+    loader.load( '/assets/javascripts/previewers/three_js/models/character/Thriller_Part_3.fbx', function ( object ) {
 
         mixer = new THREE.AnimationMixer( object );
 
