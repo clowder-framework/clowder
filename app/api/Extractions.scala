@@ -36,7 +36,8 @@ class Extractions @Inject()(
   extractors: ExtractorService,
   messages: MessageService,
   routing: ExtractorRoutingService,
-  appConfig: AppConfigurationService) extends ApiController {
+  appConfig: AppConfigurationService,
+  sink: EventSinkService) extends ApiController {
 
   /**
    * Uploads file for extraction and returns a file id ; It does not index the file.
@@ -520,6 +521,7 @@ class Extractions @Inject()(
             case Some(extractorId) =>
               val job_id = routing.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
+              sink.logSubmitFileToExtractorEvent(file, extractorId, request.user)
               Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
             case None => {
               routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
@@ -626,6 +628,7 @@ class Extractions @Inject()(
           "action" -> "manual-submission")
 
         val job_id = routing.submitDatasetManually(host, key, extra, ds_id, "", request.apiKey, request.user)
+        sink.logSubmitDatasetToExtractorEvent(ds, key, request.user)
         Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
       }
       case None =>

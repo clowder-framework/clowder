@@ -157,10 +157,10 @@ class EventSinkService {
     }
   }
 
-  def logSubmitFileToExtractorEvent(file: File, extractor: ExtractorInfo, submitter: Option[User]) = {
+  def logSubmitFileToExtractorEvent(file: File, extractorName: String, submitter: Option[User]) = {
     logEvent("extraction", Json.obj(
       "type" -> "file",
-      "extractor_name" -> extractor.name,
+      "extractor_name" -> extractorName,
       "resource_id" -> file.id,
       "resource_name" -> file.filename,
       "author_id" -> file.author.id,
@@ -170,10 +170,10 @@ class EventSinkService {
     ))
   }
 
-  def logSubmitDatasetToExtractorEvent(dataset: Dataset, extractor: ExtractorInfo, submitter: Option[User]) = {
+  def logSubmitDatasetToExtractorEvent(dataset: Dataset, extractorName: String, submitter: Option[User]) = {
     logEvent("extraction", Json.obj(
       "type" -> "dataset",
-      "extractor_name" -> extractor.name,
+      "extractor_name" -> extractorName,
       "resource_id" -> dataset.id,
       "resource_name" -> dataset.name,
       "author_id" -> dataset.author.id,
@@ -183,11 +183,11 @@ class EventSinkService {
     ))
   }
 
-  def logSubmitSelectionToExtractorEvent(dataset: Dataset, extractor: ExtractorInfo, submitter: Option[User]) = {
+  def logSubmitSelectionToExtractorEvent(dataset: Dataset, extractorName: String, submitter: Option[User]) = {
     // TODO: Is this a real case? Is this needed?
     logEvent("extraction", Json.obj(
       "type" -> "selection",
-      "extractor_name" -> extractor.name,
+      "extractor_name" -> extractorName,
       "resource_id" -> dataset.id,
       "resource_name" -> dataset.name,
       "author_id" -> dataset.author.id,

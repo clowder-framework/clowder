@@ -1942,6 +1942,7 @@ class Files @Inject()(
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
     routing.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
       datasetId, newFlags, apiKey, user)
+    sinkService.logSubmitFileToExtractorEvent(file, extractorId, user)
     Logger.info("Sent archive request for file " + id)
   }
 }
