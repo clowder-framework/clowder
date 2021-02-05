@@ -243,7 +243,7 @@
 			<div class="row">
 				<div id="file-name-div" class="file-title-div col-xs-12">
 					<div id="prf-file-name" class="text-left inline">
-						<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
+						<h1 id="file-name-title" class="inline break-word"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div id="h-edit-file" class="hiddencomplete">
 								<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">

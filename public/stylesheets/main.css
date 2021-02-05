@@ -579,6 +579,10 @@ p.error, span.error {
 	border-bottom: 1px solid #E1E1E8;
 }
 
+.space-title {
+	word-wrap: break-word;
+}
+
 .space-col-right {
 	padding-left: 50px;
 }
