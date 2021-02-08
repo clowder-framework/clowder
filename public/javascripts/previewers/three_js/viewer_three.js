@@ -11,6 +11,8 @@
  *
  * + 11/03/20 (cc): Created.
  * + 11/21/20 (cc): Code development started
+ * + 02/08/21 (cc): Ability to load from url added.
+ *                  First functional version
 
 ****************************************************************/
 
