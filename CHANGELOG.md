@@ -23,6 +23,7 @@ script to fix this.
 ## 1.14.0 - 2021-01-07
 
 ### Added
+- Added a previewer for FBX files.
 - Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user. Database administrators
   can use `scripts/updates/UpdateUserId.js` to assign user IDs to older extraction event records based on resource ownership
   in order to improve the accuracy of the report for older data.
