@@ -155,6 +155,13 @@ function init(urlAddress) {
 
     const loader = new THREE.FBXLoader();
 
+    // Added on 11/02/2021
+
+    let  desiredScale = 240;
+    let scaleV3 = new THREE.Vector3().setScalar(desiredScale);
+
+    //
+
     loader.setPath(urlAddress);
 
     loader.load( '', function ( object ) {
@@ -163,6 +170,29 @@ function init(urlAddress) {
 
         const action = mixer.clipAction( object.animations[ 0 ] );
         action.play();
+
+
+
+        // Added on 11/02/2021
+
+        let box = new THREE.Box3();
+        box.setFromObject(object);
+
+        let size = new THREE.Vector3();
+        box.getSize(size);
+
+        let center = new THREE.Vector3();
+        box.getCenter(center);
+
+        let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
+        let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
+
+
+        object.scale.setScalar(scale);
+        object.position.sub(center.multiplyScalar(scale/10));
+
+
+        //
 
         object.traverse( function ( child ) {
 
