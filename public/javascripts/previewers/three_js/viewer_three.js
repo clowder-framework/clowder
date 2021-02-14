@@ -90,7 +90,7 @@
 
     // We use the for loop to load the files into our program
 
-    for (index = 0; index < scripts.length; index++) {
+    for (let index = 0; index < scripts.length; index++) {
         let s = document.createElement("script");
         s.type = "text/javascript";
         s.src = previewer + "/js/" + scripts[index];
@@ -155,9 +155,7 @@ function init(urlAddress) {
 
     const loader = new THREE.FBXLoader();
 
-    // Added on 11/02/2021
-
-    let  desiredScale = 240;
+    let desiredScale = 320;
     let scaleV3 = new THREE.Vector3().setScalar(desiredScale);
 
     //
@@ -166,31 +164,29 @@ function init(urlAddress) {
 
     loader.load( '', function ( object ) {
 
-        mixer = new THREE.AnimationMixer( object );
+        if( object.animations[ 0 ] ) {
+            mixer = new THREE.AnimationMixer( object );
 
-        const action = mixer.clipAction( object.animations[ 0 ] );
-        action.play();
+            const action = mixer.clipAction( object.animations[ 0 ] );
+            action.play();
+        }
 
+        //
 
-
-        // Added on 11/02/2021
-
-        let box = new THREE.Box3();
-        box.setFromObject(object);
-
-        let size = new THREE.Vector3();
-        box.getSize(size);
-
-        let center = new THREE.Vector3();
-        box.getCenter(center);
-
-        let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
-        let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
-
-
-        object.scale.setScalar(scale);
-        object.position.sub(center.multiplyScalar(scale/10));
-
+        // let box = new THREE.Box3();
+        // box.setFromObject(object);
+        //
+        // let size = new THREE.Vector3();
+        // box.getSize(size);
+        //
+        // let center = new THREE.Vector3();
+        // box.getCenter(center);
+        //
+        // let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
+        // let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
+        //
+        // object.scale.setScalar(scale);
+        // object.position.sub(center.multiplyScalar( scale ));
 
         //
 
