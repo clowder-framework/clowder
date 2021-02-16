@@ -740,6 +740,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           val cleaned = if (!value.startsWith("metadata.")) "metadata."+value else value
           builder.startObject().startObject("bool").startArray("must_not").startObject()
             .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
+        } else if (key == "created") {
+          // This field expects timezone, so YYYY-MM-DD must be handled specially (couldn't get /d ES syntax to parse)
+          if (value.length == 10)
+            builder.startObject.startObject("range").startObject(key)
+              .field("gte", value+"T00:00:00.000Z").field("lte", value+"T23:59:59.999Z").endObject.endObject.endObject
+          else
+            builder.startObject.startObject("range").startObject(key)
+              .field("gte", value).field("lte", value).endObject.endObject.endObject
         } else {
           val cleaned = value.replace(":", "\\:") // Colons have special meaning in query_string
           builder.startObject().startObject("query_string").field("default_field", key)
@@ -901,7 +909,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
-    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
+    val official_terms = List("name", "creator", "created", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
 
     // Create list of (key, operator, value) for passing to builder
     val terms = ListBuffer[(String, String, String)]()
@@ -932,6 +940,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else if (mt == "in") currkey = "child_of"
         else if (mt == "contains") currkey = "parent_of"
         else if (mt == "creator") currkey = "creator_name"
+        else if (mt == "created") {
+          currkey = "created"
+        }
         else if (mt == "email") currkey = "creator_email"
         else if (!official_terms.contains(mt)) currkey = "metadata."+mt
         else
