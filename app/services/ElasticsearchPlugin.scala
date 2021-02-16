@@ -724,12 +724,35 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Create appropriate search object based on operator */
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    // TODO: Other date fields may need handling like this? ES always appends 00:00:00 if missing, breaking some things
+    val startdate = if (value.length == 10) value+"T00:00:00.000Z" else value
+    val enddate   = if (value.length == 10) value+"T23:59:59.999Z" else value
     operator match {
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
-      case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
-      case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
-      case "<=" => builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
-      case ">=" => builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
+      case "<" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("lt", startdate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
+      }
+      case ">" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("gt", enddate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      }
+      case "<=" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("lte", enddate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
+      }
+      case ">=" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("gte", startdate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
+      }
       case ":" => {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
@@ -741,13 +764,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           builder.startObject().startObject("bool").startArray("must_not").startObject()
             .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
         } else if (key == "created") {
-          // This field expects timezone, so YYYY-MM-DD must be handled specially (couldn't get /d ES syntax to parse)
-          if (value.length == 10)
-            builder.startObject.startObject("range").startObject(key)
-              .field("gte", value+"T00:00:00.000Z").field("lte", value+"T23:59:59.999Z").endObject.endObject.endObject
-          else
-            builder.startObject.startObject("range").startObject(key)
-              .field("gte", value).field("lte", value).endObject.endObject.endObject
+          builder.startObject.startObject("range").startObject(key).field("gte", startdate).field("lte", enddate).endObject.endObject.endObject
         } else {
           val cleaned = value.replace(":", "\\:") // Colons have special meaning in query_string
           builder.startObject().startObject("query_string").field("default_field", key)
