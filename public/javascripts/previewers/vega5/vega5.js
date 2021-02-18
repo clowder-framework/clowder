@@ -16,21 +16,18 @@
                     // Load data, vega, and vega-lite scripts if `Vega` specs exist in the file metadata
                     $.when(
                         $.getScript("https://cdn.jsdelivr.net/npm/vega@5"),
-                        $.getScript("https://cdn.jsdelivr.net/npm/vega-lite@4"),
-                        $.getJSON(Configuration.url).then(function (data) {
-                            return data;
-                        })
-                    ).then(function (_, _, data) {
+                        $.getScript("https://cdn.jsdelivr.net/npm/vega-lite@4")
+                    ).then(function () {
                         // vega-embed must be loaded after vega and vega-lite
                         $.getScript("https://cdn.jsdelivr.net/npm/vega-embed@6").then(function () {
+                            // Set the file url as data source
                             if (vegaSpecs["$schema"].indexOf("vega-lite") > -1) {
                                 // Vega Lite only accepts one source of data, so we set the JSON data directly as source.
-                                vegaSpecs.data = {values: data};
+                                vegaSpecs.data.url = Configuration.url;
                             } else {
                                 // Vega expects a list of data sources.
-                                // The previewer expects the first item to be an object in the following form: {"name": "<data-source-name>", ...}.
-                                // It then sets the JSON data as values of the first data source.
-                                vegaSpecs.data[0].values = data
+                                // The previewer expects the first item to be used as data source for the uploaded file.
+                                vegaSpecs.data[0].url = Configuration.url;
                             }
 
                             try {
