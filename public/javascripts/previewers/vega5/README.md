@@ -9,7 +9,7 @@ specs from the metadata
 
 > Note: Currently, this previewer only works with JSON and CSV data. Check out the examples on [Vega website](https://vega.github.io/vega/examples/) to see how data can be structured.
 
-This previewer is only for files. After uploading your data json or csv file, add `Vega5` to its metadata and set its value to
+This previewer is only for files. After uploading your data json or csv file, add `vega5-spec` to its metadata and set its value to
 the specs you want to use for visualization.
 
 You need to include a complete and valid vega specs. The only attribute you can omit in the specs is `data.url`

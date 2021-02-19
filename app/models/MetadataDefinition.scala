@@ -97,7 +97,7 @@ object MetadataDefinition {
             "uri":"http://geojson.org/geojson-spec.html",
             "type":"wkt"}"""),
         Json.parse("""
-          {"label":"Vega5",
+          {"label":"vega5-spec",
            "description": "Visualization specs for Vega v5 or Vega Lite v4",
            "uri":"https://vega.github.io/schema/",
            "type":"string"}""")

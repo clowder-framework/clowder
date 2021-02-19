@@ -4,11 +4,11 @@
         $.getJSON("/api/files/" + Configuration.id + "/metadata.jsonld")
             .then(function (metadata) {
                 var vegaMetadata = metadata.find(function (d) {
-                    return !!d.content.Vega5;
+                    return !!d.content["vega5-spec"];
                 });
                 if (vegaMetadata) {
                     try {
-                        var vegaSpecs = JSON.parse(vegaMetadata.content.Vega5);
+                        var vegaSpecs = JSON.parse(vegaMetadata.content["vega5-spec"]);
                     } catch {
                         $(Configuration.tab).append('<div>Invalid JSON is provided for Vega specs</div>');
                         return;
