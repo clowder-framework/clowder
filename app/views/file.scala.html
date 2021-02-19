@@ -282,6 +282,23 @@
 					}
 				</div>
 			</div>
+			@if(file.status == "CREATED") {
+				<div class="alert alert-warning">
+					<div class="row">
+						<div class="col-sm-11">
+							<strong>Warning!</strong>
+							This file is still in transit, so the file bytes are not yet available.
+							<p>You can still attach metadata and comments below.</p>
+						</div>
+						<div class="col-sm-1">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+					</div>
+
+				</div>
+			}
 			@for((f, pvs) <- previews) {
 				<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 					<div class="col-md-12">
