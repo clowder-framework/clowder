@@ -330,13 +330,19 @@
 					<div class="col-md-12">
 						<hr/>
 						<div class="btn-group" role="group" aria-label="...">
-							@if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-								<button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+							@if(file.status == "CREATED") {
+								<!-- if 'disabled' title is not visible -->
+								<button type="button" class="btn btn-link disabled" title="Please wait for the file to finish processing."> <span class="glyphicon glyphicon-save"></span>
 									Download </button>
 							} else {
+								@if(!Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
 									<!-- if 'disabled' title is not visible -->
-								<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
-									Download </button>
+									<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
+										Download </button>
+								} else {
+									<button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+										Download </button>
+								}
 							}
 							@if( play.Play.application().configuration().getBoolean("archiveEnabled")) {
 								@if( Permission.checkPermission(Permission.ArchiveFile, ResourceRef(ResourceRef.file, file.id))) {
