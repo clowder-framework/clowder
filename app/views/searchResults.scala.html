@@ -107,8 +107,8 @@
             </div>
             <div id="resultheader"><h3>Results</h3></div>
             <div id="resultlist"></div>
-            <div id="resultsfooter" style="text-align:center"></div>
         </div>
+        <div id="resultsfooter" style="text-align:center"></div>
     </div>
 
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
@@ -135,28 +135,26 @@
                 $('#tile-view-btn').addClass("btn-primary").removeClass("btn-link");
                 $('#list-view-btn').addClass("btn-link").removeClass("btn-primary");
 
-                $.cookie('view-mode', 'tile', { path: '/search' });
+                $.cookie('view-mode', 'tile', { path: '/' });
                 if (viewMode != 'tile'){
                     viewMode = "tile";
-                    console.log("setting tile " + $.cookie('view-mode'));
-                    // update view if needed
-                    if (searchResult != null) {
-                        updateResults(searchResult, true);
-                    }
+                    // not ideal, but searchResult always empty
+                    // console.log("setting list " + $.cookie('view-mode'));
+                    // if (searchResult) {
+                    //     updateResults(searchResult, true);
+                    // }
+                    performNewSearch();
                 }
             });
             $('#list-view-btn').click(function() {
                 $('#tile-view-btn').addClass("btn-link").removeClass("btn-primary");
                 $('#list-view-btn').addClass("btn-primary").removeClass("btn-link");
                 //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
-                $.cookie("view-mode", "list", { path: '/search' });
+                $.cookie("view-mode", "list", { path: '/' });
                 
                 if(viewMode != 'list'){
                     viewMode = "list";
-                    console.log("setting list " + $.cookie('view-mode'));
-                    if (searchResult != null) {
-                        updateResults(searchResult, true);
-                    }
+                    performNewSearch();
                 }
             });
         });
