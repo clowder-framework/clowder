@@ -12,6 +12,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
   override def id: String = "SecureSocialEventListener"
   lazy val userService: UserService = DI.injector.getInstance(classOf[UserService])
   lazy val spaceService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+  lazy val sinkService: EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
   lazy val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   def onEvent(event: Event, request: RequestHeader, session: Session): Option[Session] = {
@@ -27,6 +28,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
               case None => Logger.debug("No email found for user "+user.id.stringify)
             }
             userService.updateUserField(user.id, "lastLogin", new Date())
+            sinkService.logUserSignupEvent(user)
           }
           case None => {
             Logger.error(s"Could not find user ${event.user.fullName} in database")
@@ -47,6 +49,7 @@ class SecureSocialEventListener(app: play.api.Application) extends EventListener
               case None => Logger.debug("No email found for user "+user.id.stringify)
             }
             userService.updateUserField(user.id, "lastLogin", new Date())
+            sinkService.logUserLoginEvent(user)
           }
           case None => {
             Logger.error(s"Could not find user ${event.user.fullName} in database")
