@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## unreleased 2021-02-25
+
+- Bugfix. When space created through api the creator was not added to space as admin. Fixed.
+
 ## 1.14.1 - 2021-02-02
 
 - Google will no longer work as login provider, we are working on this issue [#157](https://github.com/clowder-framework/clowder/issues/157).
