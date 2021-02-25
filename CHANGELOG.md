@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## unreleased 2021-02-25
+## Fixed 2021-02-25
 
-- Bugfix. When space created through api the creator was not added to space as admin. Fixed.
+- When space created through api the creator was not added to space as admin [#179](https://github.com/clowder-framework/clowder/issues/179).
 
 ## 1.14.1 - 2021-02-02
 
