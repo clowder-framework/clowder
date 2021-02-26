@@ -90,9 +90,7 @@
                     *@
                     '<li><a onclick="markVisibleFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark Visible</a></li>' +
                     '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
-                    @if(play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
-                        '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
-                    }
+                    '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
                     '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag</a></li>' +
                     '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete</a></li>' +
                     '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Unmark All</a></li></ul>' +
