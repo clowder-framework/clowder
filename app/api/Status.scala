@@ -125,6 +125,15 @@ class Status @Inject()(spaces: SpaceService,
       }
     }
 
+    // messageService
+    // FIXME change key `rabbitmq` to something more generic like `messageService`. Keeping as is for backward compatibility.
+    val messageService: MessageService = DI.injector.getInstance(classOf[MessageService])
+    if (Permission.checkServerAdmin(user)) {
+      result.put("rabbitmq", messageService.getInfo(true))
+    } else {
+      result.put("rabbitmq", messageService.getInfo(false))
+    }
+
     Json.toJson(result.toMap[String, JsValue])
   }
 

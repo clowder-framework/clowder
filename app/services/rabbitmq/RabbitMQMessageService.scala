@@ -45,6 +45,21 @@ class RabbitMQMessageService extends MessageService {
   var exchange: String = ""
   var mgmtPort: String = ""
 
+  def getInfo(isServerAdmin: Boolean): JsObject = {
+    val status = if (connect()) {
+      "connected"
+    } else {
+      "disconnected"
+    }
+    if (isServerAdmin) {
+      return Json.obj("uri" -> rabbitmquri,
+        "exchange" -> exchange,
+        "status" -> status)
+    } else {
+      return Json.obj("status" -> status)
+    }
+  }
+
   /** Open connection to broker. **/
   def connect(): Boolean = {
     if (channel.isDefined) return true

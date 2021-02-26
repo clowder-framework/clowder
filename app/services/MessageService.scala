@@ -83,6 +83,13 @@ trait MessageService {
     Logger.info("No message service enabled.")
   }
 
+  /**
+   * Get information about the service such as if it is connected and connection parameters.
+   * @param isServerAdmin if the current user is a server admin (show more info)
+   * @return JSONObject
+   */
+  def getInfo(isServerAdmin: Boolean): JsObject
+
   /** Close connection to broker. **/
   def close() = noop
 
