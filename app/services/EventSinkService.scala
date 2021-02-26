@@ -48,7 +48,7 @@ class EventSinkService {
     Logger.info("Submitting message to event sink exchange: " + Json.stringify(metadata))
 
     //val message = EventSinkMessage(Instant.now().getEpochSecond, category, metadata)
-    messageService.submit(exchangeName, queueName, metadata)
+    messageService.submit(exchangeName, queueName, metadata, "fanout")
   }
 
   // TODO: Call this when admin changes configuration via the UI

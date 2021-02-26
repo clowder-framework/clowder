@@ -89,8 +89,8 @@ trait MessageService {
   /** Submit a message to default broker. */
   def submit(message: ExtractorMessage)= noop
 
-  /** Submit a message to broker. */
-  def submit(exchange: String, routing_key: String, message: JsValue) = noop
+  /** Submit a message to broker of a specific type. */
+  def submit(exchange: String, routing_key: String, message: JsValue, exchange_type: String) = noop
 
   /**
    * Get the exchange list for a given host
