@@ -127,7 +127,6 @@ of the blueimp jQuery File Upload library. An open source project located here: 
 <!-- The template to display files available for download -->
 <script id="template-download" type="text/x-tmpl">
     {% for (var i=0, file; file=o.files[i]; i++) { %}
-        {% logEvent(file.size); %}
         <tr class="template-download fade">
             {% if (file.deleteUrl) { %}
             <td>
