@@ -69,22 +69,6 @@ class Status @Inject()(spaces: SpaceService,
         })
       }
 
-      // rabbitmq
-      case p: RabbitmqPlugin => {
-        val status = if (p.connect) {
-          "connected"
-        } else {
-          "disconnected"
-        }
-        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
-          Json.obj("uri" -> p.rabbitmquri,
-            "exchange" -> p.exchange,
-            "status" -> status)
-        } else {
-          Json.obj("status" -> status)
-        })
-      }
-
       // geostream
       case p: PostgresPlugin => {
         val status = if (p.conn != null) {
@@ -139,6 +123,15 @@ class Status @Inject()(spaces: SpaceService,
           Logger.debug(s"Ignoring ${name} plugin")
         }
       }
+    }
+
+    // messageService
+    // FIXME change key `rabbitmq` to something more generic like `messageService`. Keeping as is for backward compatibility.
+    val messageService: MessageService = DI.injector.getInstance(classOf[MessageService])
+    if (Permission.checkServerAdmin(user)) {
+      result.put("rabbitmq", messageService.getInfo(true))
+    } else {
+      result.put("rabbitmq", messageService.getInfo(false))
     }
 
     Json.toJson(result.toMap[String, JsValue])

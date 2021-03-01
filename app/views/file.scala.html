@@ -72,20 +72,6 @@
 	<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/files/datasets.js")" type="text/javascript"></script>
-	@if(AppConfiguration.getAmplitudeApiKey != "") {
-		<script>
-				amplitude.getInstance().logEvent("view_resource", {
-					"type": "file",
-					"resource_id": '@file.id',
-					"resource_name": '@file.filename',
-					"author_id": '@file.author.id',
-					"author_name": '@file.author.fullName',
-					"viewer_id": '@user.get.id',
-					"viewer_name": '@user.get.getMiniUser.fullName',
-					"length": @file.length
-				});
-		</script>
-	}
 
 	<script>
 			var spaceId = "@spaceId";
@@ -282,6 +268,23 @@
 					}
 				</div>
 			</div>
+			@if(file.status == "CREATED") {
+				<div class="alert alert-warning">
+					<div class="row">
+						<div class="col-sm-11">
+							<strong>Warning!</strong>
+							This file is still in transit, so the file bytes are not yet available.
+							<p>You can still attach metadata and comments below.</p>
+						</div>
+						<div class="col-sm-1">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+					</div>
+
+				</div>
+			}
 			@for((f, pvs) <- previews) {
 				<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 					<div class="col-md-12">
@@ -330,13 +333,19 @@
 					<div class="col-md-12">
 						<hr/>
 						<div class="btn-group" role="group" aria-label="...">
-							@if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-								<button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+							@if(file.status == "CREATED") {
+								<!-- if 'disabled' title is not visible -->
+								<button type="button" class="btn btn-link disabled" title="Please wait for the file to finish processing."> <span class="glyphicon glyphicon-save"></span>
 									Download </button>
 							} else {
+								@if(!Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
 									<!-- if 'disabled' title is not visible -->
-								<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
-									Download </button>
+									<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
+										Download </button>
+								} else {
+									<button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+										Download </button>
+								}
 							}
 							@if( play.Play.application().configuration().getBoolean("archiveEnabled")) {
 								@if( Permission.checkPermission(Permission.ArchiveFile, ResourceRef(ResourceRef.file, file.id))) {
@@ -402,8 +411,7 @@
 							objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 							</button>
 						}
-                        @if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))
-                                && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                        @if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
                             <a href="@routes.Extractors.submitFileExtraction(UUID(id))" class="btn btn-link" >
                                 <span class="glyphicon glyphicon-send"></span>
                                 Submit for extraction
