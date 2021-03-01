@@ -27,7 +27,7 @@ class EventSinkService {
   val userService: UserService = DI.injector.getInstance(classOf[UserService])
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
-  // Fetch directly from config on demand
+  // UNUSED: Fetch directly from config on demand
   def getGoogleAnalytics(): String = Play.configuration.getString(EventSinkService.GA_CONFIG_KEY).getOrElse("")
   def getAmplitudeApiKey(): String = Play.configuration.getString(EventSinkService.AMPLITUDE_CONFIG_KEY).getOrElse("")
   def getMongoAuth(): String = Play.configuration.getString(EventSinkService.AMPLITUDE_CONFIG_KEY).getOrElse("")
@@ -51,14 +51,23 @@ class EventSinkService {
     messageService.submit(exchangeName, queueName, metadata, "fanout")
   }
 
-  // TODO: Call this when admin changes configuration via the UI
-  def syncAuthInfo() = {
-    Logger.info("Synchronizing event sink consumer auth")
-    logEvent("auth_sync", Json.obj(
-      "amplitude" -> getAmplitudeApiKey(),
-      "google_analytics" -> getGoogleAnalytics(),
-      "influx" -> getInfluxAuth(),
-      "mongo" -> getMongoAuth()
+  /** Log an event when user signs up */
+  def logUserSignupEvent(user: User) = {
+    Logger.info("New user signed up: " + user.id.stringify)
+    logEvent("user_activity", Json.obj(
+      "type" -> "signup",
+      "user_id" -> user.id,
+      "user_name" -> user.fullName
+    ))
+  }
+
+  /** Log an event when user logs in */
+  def logUserLoginEvent(user: User) = {
+    Logger.info("User logged in: " + user.id.stringify)
+    logEvent("user_activity", Json.obj(
+      "type" -> "login",
+      "user_id" -> user.id,
+      "user_name" -> user.fullName
     ))
   }
 
