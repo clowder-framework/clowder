@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- Clowder will no longer offer a Download button for a file until it has been PROCESSED.
+
 ### Changed
 - `/api/me` will now return some of the same information as response headers.
 
