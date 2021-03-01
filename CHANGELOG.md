@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Added a new `created` search option for filtering by upload/creation date of resource.
+
 ### Fixed
 - Clowder will no longer offer a Download button for a file until it has been PROCESSED.
 
