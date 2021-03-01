@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Clowder will no longer offer a Download button for a file until it has been PROCESSED.
 
+### Changed
+- `/api/me` will now return some of the same information as response headers.
+
 ## 1.14.1 - 2021-02-02
 
 - Google will no longer work as login provider, we are working on this issue [#157](https://github.com/clowder-framework/clowder/issues/157).
