@@ -75,6 +75,7 @@ help.search.allfields=name, description, creator name, and tag
 help.search.regex1=get anything with "trees" or "streetcars" in basic fields
 help.search.name=searches file, {0} or {1} names
 help.search.creator=creator name
+help.search.created=date of upload/creation
 help.search.email=creator email address
 help.search.resource_type=can be file, {0} or {1}
 help.search.tag=filter search results by specific tags

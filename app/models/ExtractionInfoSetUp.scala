@@ -1,15 +1,14 @@
 package models
 
 import play.api.Play.current
-import services.RabbitmqPlugin
+import services.{DI, ExtractionRequestsService, ExtractorService, MessageService}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsObject
 import play.api.Logger
-import services.ExtractorService
-import services.DI
+
 import scala.concurrent.Future
-import services.ExtractionRequestsService
 import java.net.InetAddress
+
 import play.api.libs.ws.Response
 
 /**
@@ -19,6 +18,7 @@ import play.api.libs.ws.Response
 object ExtractionInfoSetUp {
 val extractors: ExtractorService =  DI.injector.getInstance(classOf[ExtractorService])
 val dtsrequests:ExtractionRequestsService=DI.injector.getInstance(classOf[ExtractionRequestsService])
+val messages:MessageService=DI.injector.getInstance(classOf[MessageService])
 
 /*
  * Updates DTS extraction request
@@ -37,41 +37,33 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    */
   def updateExtractorsInfo() = {
     Logger.trace("updateExtractorsInfo[invoked]")
-    val updateStatus = current.plugin[RabbitmqPlugin] match {
-      case Some(plugin) => {
-        val configuration = play.api.Play.configuration
-        val exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
-        if (exchange != "") {
-          Logger.debug("Exchange is not an empty string: " + exchange)
-          updateAndGetStatus(plugin, exchange)
-        } else {
-          Future(Future("DONE"))
-        }
-      } //end of case match
-      case None => {
-        Future(Future("DONE"))
-      }
-    } //end of match
-    updateStatus
+    val configuration = play.api.Play.configuration
+    val exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
+    if (exchange != "") {
+      Logger.debug("Exchange is not an empty string: " + exchange)
+      updateAndGetStatus(exchange)
+    } else {
+      Future(Future("DONE"))
+    }
   }
 
   /**
    * Obtains the queues' details attached to an exchange
    * updates the currently running extractors list, ips of the extractors, supported input types, number of extractors instances running
    */
-  def updateAndGetStatus(plugin: services.RabbitmqPlugin, exchange: String) = {
-    var qDetailsFuture = getQDetailsFutures(plugin, exchange) /* Obtains queues's details as Futures of the List of responses*/
+  def updateAndGetStatus(exchange: String) = {
+    var qDetailsFuture = getQDetailsFutures(exchange) /* Obtains queues's details as Futures of the List of responses*/
     extractors.dropAllExtractorStatusCollection()
     var status = for {
       qDetailsFutureResponses <- qDetailsFuture
       qDetailsResponses <- qDetailsFutureResponses
     } yield {
       var exDetails = List[ExtractorDetail]()
-      var finalQList = updateInfoAndGetQueuesList(plugin, qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
+      var finalQList = updateInfoAndGetQueuesList(qDetailsResponses) /* updates the extractor details and ips list and obtains the list of currently running extractors*/
       Logger.debug("finalQueue List : " + finalQList)
       extractors.insertExtractorNames(finalQList)
       var ListOfFuturesRoutingKeys = finalQList.map {
-        qn => getAllRoutingKeysForQueue(plugin, qn, exchange)
+        qn => getAllRoutingKeysForQueue(qn, exchange)
       } //end of qlist map
       var updateInputTypeStatus = for {
         routingKeysLists <- scala.concurrent.Future.sequence(ListOfFuturesRoutingKeys)
@@ -95,9 +87,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   /**
    *  Obtains the queues' names attached to an exchange where source is the exchange and destination is the queue
    */ 
-  def getQDetailsFutures(plugin: services.RabbitmqPlugin, exchange: String) = {
+  def getQDetailsFutures(exchange: String) = {
     for {
-      qNamesResponse <- plugin.getQueuesNamesForAnExchange(exchange)
+      qNamesResponse <- messages.getQueuesNamesForAnExchange(exchange)
     } yield {
       var qNameRKList = List[(String, String)]()
       Logger.trace("qNamesResponse: " + qNamesResponse.json)
@@ -113,7 +105,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
       var qdetailsListFuture = for {
         (qname, rk) <- qNameRKList
       } yield {
-        plugin.getQueueDetails(qname) // get the complete queue details and its consumer details
+        messages.getQueueDetails(qname) // get the complete queue details and its consumer details
       }
       var qdetailsFutureList = scala.concurrent.Future.sequence(qdetailsListFuture)
       qdetailsFutureList
@@ -125,7 +117,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    *           currently running extractors list
    *           servers IPs where extractors are running
    */
-  def updateInfoAndGetQueuesList(plugin: services.RabbitmqPlugin, qDetailsResponses: List[Response]) = {
+  def updateInfoAndGetQueuesList(qDetailsResponses: List[Response]) = {
     var exDetails = List[ExtractorDetail]()
     var qlistResult = List[String]()
     var ipsList = List[String]()
@@ -179,9 +171,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
   /**
    * Gets all routing keys for a given queue
    */
-  def getAllRoutingKeysForQueue(plugin: services.RabbitmqPlugin, qname: String, exchange: String) = {
+  def getAllRoutingKeysForQueue(qname: String, exchange: String) = {
     for {
-      qbindingResponse <- plugin.getQueueBindings(qname)
+      qbindingResponse <- messages.getQueueBindings(qname)
     } yield {
       val qbindingjson = qbindingResponse.json
       val qbindingList = qbindingjson.as[List[JsObject]]
@@ -200,9 +192,9 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
    * Get all exchanges for a given virtual host 
    * TODO : It will be used for multiple exchanges attached to a virtual host in Future
    */
- def getExchangesFutureList(plugin: services.RabbitmqPlugin): Future[List[String]] = {
+ def getExchangesFutureList(): Future[List[String]] = {
     for {
-      exResponse <- plugin.getExchanges
+      exResponse <- messages.getExchanges
     } yield {
       val exjsonlist = exResponse.json.as[List[JsObject]]
       var exlist = List[String]()

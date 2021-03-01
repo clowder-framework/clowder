@@ -4,9 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Fixed 2021-02-25
+## Unreleased
 
+### Added
+- Added a new `created` search option for filtering by upload/creation date of resource.
+
+### Fixed
+- Clowder will no longer offer a Download button for a file until it has been PROCESSED.
 - When space created through api the creator was not added to space as admin [#179](https://github.com/clowder-framework/clowder/issues/179).
+
+### Changed
+- `/api/me` will now return some of the same information as response headers.
 
 ## 1.14.1 - 2021-02-02
 
