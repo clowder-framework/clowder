@@ -1,7 +1,7 @@
 (function ($, Configuration) {
     $(document).ready(function () {
         // Get file metadata
-        $.getJSON("/api/files/" + Configuration.id + "/metadata.jsonld")
+        $.getJSON(jsRoutes.api.Files.getMetadataJsonLD(Configuration.id).url)
             .then(function (metadata) {
                 var vegaMetadata = metadata.find(function (d) {
                     return !!d.content["vega5-spec"];
