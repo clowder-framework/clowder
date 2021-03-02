@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
+- Added previewer for Vega v5
 - Added a new `created` search option for filtering by upload/creation date of resource.
 
 ### Fixed
