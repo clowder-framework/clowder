@@ -24,7 +24,15 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    */
   def getUser() = AuthenticatedAction { implicit request =>
       request.user match {
-          case Some(identity) => Ok(userToJSON(identity))
+          case Some(identity) => {
+            Ok(userToJSON(identity)).withHeaders(
+              "X-User-ID" -> identity.id.stringify,
+              "X-User-FirstName" -> identity.firstName,
+              "X-User-LastName" -> identity.lastName,
+              "X-User-FullName" -> identity.fullName,
+              "X-User-Email" -> identity.email.getOrElse("")
+            )
+          }
           case None => Unauthorized("Not authenticated")
       }
   }

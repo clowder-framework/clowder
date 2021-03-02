@@ -52,8 +52,10 @@ class  Datasets @Inject()(
   relations: RelationService,
   userService: UserService,
   thumbnailService : ThumbnailService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  sinkService: EventSinkService) extends ApiController {
 
   lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
@@ -606,9 +608,7 @@ class  Datasets @Inject()(
         val mdMap = metadata.getExtractionSummary
 
         //send RabbitMQ message
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-        }
+        routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -655,9 +655,7 @@ class  Datasets @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                }
+                routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
                 events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -739,10 +737,8 @@ class  Datasets @Inject()(
         }
 
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          routing.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
         }
 
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
@@ -2500,8 +2496,10 @@ class  Datasets @Inject()(
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
-        if (tracking)
+        if (tracking) {
           datasets.incrementDownloads(id, user)
+          sinkService.logDatasetDownloadEvent(dataset, user)
+        }
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array

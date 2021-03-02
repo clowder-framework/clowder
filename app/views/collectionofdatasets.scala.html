@@ -34,19 +34,7 @@
 <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 <script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
-@if(AppConfiguration.getAmplitudeApiKey != "") {
-	<script>
-			amplitude.getInstance().logEvent("view_resource", {
-				"type": "collection",
-				"resource_id": '@collection.id',
-				"resource_name": '@collection.name',
-				"author_id": '@collection.author.id',
-				"author_name": '@collection.author.fullName',
-				"viewer_id": '@user.get.id',
-				"viewer_name": '@user.get.getMiniUser.fullName'
-			});
-	</script>
-}
+
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8">

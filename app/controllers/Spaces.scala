@@ -49,7 +49,7 @@ case class spaceInviteData(
   message: Option[String])
 
 class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService,
-  extractors: ExtractorService, datasets: DatasetService, collections: CollectionService, selections: SelectionService) extends SecuredController {
+  extractors: ExtractorService, datasets: DatasetService, collections: CollectionService, selections: SelectionService, sinkService: EventSinkService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -223,6 +223,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           case Some(plugin) => Publications.getPublications(s.id.toString, spaces)
           case None => List.empty
         }
+        sinkService.logSpaceViewEvent(s, user)
         Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))

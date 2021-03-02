@@ -724,12 +724,35 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Create appropriate search object based on operator */
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    // TODO: Other date fields may need handling like this? ES always appends 00:00:00 if missing, breaking some things
+    val startdate = if (value.length == 10) value+"T00:00:00.000Z" else value
+    val enddate   = if (value.length == 10) value+"T23:59:59.999Z" else value
     operator match {
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
-      case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
-      case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
-      case "<=" => builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
-      case ">=" => builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
+      case "<" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("lt", startdate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
+      }
+      case ">" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("gt", enddate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      }
+      case "<=" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("lte", enddate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
+      }
+      case ">=" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("gte", startdate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
+      }
       case ":" => {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
@@ -740,6 +763,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           val cleaned = if (!value.startsWith("metadata.")) "metadata."+value else value
           builder.startObject().startObject("bool").startArray("must_not").startObject()
             .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
+        } else if (key == "created") {
+          builder.startObject.startObject("range").startObject(key).field("gte", startdate).field("lte", enddate).endObject.endObject.endObject
         } else {
           val cleaned = value.replace(":", "\\:") // Colons have special meaning in query_string
           builder.startObject().startObject("query_string").field("default_field", key)
@@ -901,7 +926,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
-    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
+    val official_terms = List("name", "creator", "created", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
 
     // Create list of (key, operator, value) for passing to builder
     val terms = ListBuffer[(String, String, String)]()
@@ -932,6 +957,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else if (mt == "in") currkey = "child_of"
         else if (mt == "contains") currkey = "parent_of"
         else if (mt == "creator") currkey = "creator_name"
+        else if (mt == "created") {
+          currkey = "created"
+        }
         else if (mt == "email") currkey = "creator_email"
         else if (!official_terms.contains(mt)) currkey = "metadata."+mt
         else
