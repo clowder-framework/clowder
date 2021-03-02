@@ -310,6 +310,7 @@ POST           /api/admin/users                                                 
 POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
 POST           /api/reindex                                                             @api.Admin.reindex
+POST           /api/deleteindex                                                         @api.Admin.deleteIndex
 POST           /api/admin/configuration                                                 @api.Admin.updateConfiguration
 
 #----------------------------------------------------------------------

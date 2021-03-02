@@ -259,8 +259,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val response = client match {
       case Some(x) => {
         Logger.debug("Searching Elasticsearch: " + queryObj.string())
+
+        // Exclude _sort fields in response object
+        var sortFilter = jsonBuilder().startObject().startArray("exclude").value("*._sort").endArray().endObject()
+
         var responsePrep = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+          .setSource(sortFilter)
           .setQuery(queryObj)
 
         responsePrep = responsePrep.setFrom(from.getOrElse(0))
@@ -276,7 +281,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         sort match {
           case Some(x) => responsePrep = responsePrep.addSort(x, searchOrder)
           case None => order match {
-            case Some(o) => responsePrep = responsePrep.addSort("name", searchOrder)
+            case Some(o) => responsePrep = responsePrep.addSort("name._sort", searchOrder)
             case None => {}
           }
         }
@@ -309,8 +314,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               .field("type", "custom")
               .field("tokenizer", "uax_url_email")
             .endObject()
-          .endObject()
-        .endObject()
+          .endObject().startObject("normalizer")
+            .startObject("case_insensitive")
+              .field("filter", "lowercase")
+            .endObject()
+          .endObject().endObject()
         .startObject("index")
           .startObject("mapping")
             .field("ignore_malformed", true)
@@ -716,16 +724,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
 
-    /** SUPPORTING SORT FIELDS, ADD A .RAW SUBFIELD
-     * https://stackoverflow.com/questions/34493947/elasticsearch-is-not-sorting-the-results
-     * https://discuss.elastic.co/t/how-to-create-dynamic-template-for-nested-objects/187310
-     * https://github.com/elastic/elasticsearch/issues/16945
-     */
+    // TODO: With Elastic 6.8+ we can use "normalizer": "case_insensitive" for _sort fields
 
     """{"clowder_object": {
           |"numeric_detection": true,
           |"properties": {
-            |"name": {"type": "string"},
+            |"name": {"type": "string", "fields": {
+            |     "_sort": {"type":"string", "index": "not_analyzed"}}},
             |"description": {"type": "string"},
             |"resource_type": {"type": "string", "include_in_all": false},
             |"child_of": {"type": "string", "include_in_all": false},
