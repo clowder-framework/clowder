@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- Added previewer for Vega v5
+- Added previewer for Vega v5.
 - Added a new `created` search option for filtering by upload/creation date of resource.
+- `EventSinkService` to track user activity. All events are published to the message queue. Multiple consumers are 
+  available in [event-sink-consumers](https://github.com/clowder-framework/event-sink-consumers).
 
 ### Fixed
 - Clowder will no longer offer a Download button for a file until it has been PROCESSED.
@@ -16,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - `/api/me` will now return some of the same information as response headers.
+- `RabbitMQPlugin` has been split into `ExtractorRoutingService` and `MessageService` to isolate the rabbitmq code from 
+  the extraction code.
 
 ## 1.14.1 - 2021-02-02
 
