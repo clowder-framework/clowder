@@ -289,25 +289,30 @@ class  Datasets @Inject()(
             // Check each file in the zip looking for known filenames
             while (entries.hasMoreElements()) {
               val entry = entries.nextElement()
-              entry.getName match {
+              val entryName = entry.getName
+              val inDataDir = entryName.startsWith("data/") || entryName.contains("/data/")
+              entryName match {
                 // TODO: case "metadata/clowder.xml" => mainXML = Some(entry) // overrides datacite.xml
-                case "metadata/datacite.xml" => if (!mainXML.isDefined) mainXML = Some(entry)
-                case "data/_dataset_metadata.json" => dsMeta = Some(entry)
-                case path if (path.startsWith("data/") && path.endsWith("/_info.json")) => dsInfo = Some(entry)
-                case path if (path.startsWith("data/") && path.endsWith("_info.json")) => {
+                case path if path.endsWith("metadata/datacite.xml") => if (!mainXML.isDefined) mainXML = Some(entry)
+                case path if inDataDir && path.endsWith("data/_dataset_metadata.json") => dsMeta = Some(entry)
+                case path if inDataDir && path.endsWith("/_info.json") => dsInfo = Some(entry)
+                case path if inDataDir && path.endsWith("_info.json") => {
                   val filename = path.split("/").last.replace("_info.json", "")
                   fileInfos += (filename -> entry)
                 }
-                case path if (path.startsWith("data/") && path.endsWith("_metadata.json")) => {
+                case path if inDataDir && path.endsWith("_metadata.json") => {
                   val filename = path.split("/").last.replace("_metadata.json", "")
                   fileMetas += (filename -> entry)
                 }
-                case path if (path.startsWith("data/")) => {
+                case path if inDataDir && !path.endsWith("/") => {
                   val filename = path.split("/").last
-                  val foldername = path.replace("data/", "").replace(filename, "")
-                  fileBytes += (filename-> entry)
-                  fileFolds += (filename -> foldername)
-                  distinctFolders.append(foldername)
+                  if (filename != "data") {
+                    val folderstart = if (path.startsWith("data/")) {5} else {path.indexOf("/data/")+6}
+                    val foldername = path.substring(folderstart).replace(filename, "")
+                    fileBytes += (filename -> entry)
+                    fileFolds += (filename -> foldername)
+                    distinctFolders.append(foldername)
+                  }
                 }
                 case _ => {}
               }
@@ -361,7 +366,8 @@ class  Datasets @Inject()(
 
                     // Add files to corresponding folders (if any files fail, the whole upload should fail)
                     var criticalFail: Option[String] = None
-                    fileInfos.keys.foreach(filename => {
+                    val filenames = if (fileInfos.toList.length > 0) fileInfos.keys else fileBytes.keys
+                    filenames.foreach(filename => {
                       if (criticalFail.isEmpty) {
                         fileBytes.get(filename) match {
                           case Some(bytes) => {
