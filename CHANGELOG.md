@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.15.0 - 2021-03-03
 
 ### Added
-- Added previewer for Vega v5.
-- Added a new `created` search option for filtering by upload/creation date of resource.
+- CSV/JSON previewer using [Vega](https://vega.github.io/).
+- Previewer for FBX files.
+- `created` search option for filtering by upload/creation date of resource.
 - `EventSinkService` to track user activity. All events are published to the message queue. Multiple consumers are 
   available in [event-sink-consumers](https://github.com/clowder-framework/event-sink-consumers).
 
@@ -17,7 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When space created through api the creator was not added to space as admin [#179](https://github.com/clowder-framework/clowder/issues/179).
 
 ### Changed
-- `/api/me` will now return some of the same information as response headers.
+- `/api/me` will now return some of the same information as response headers. Can be used by other services to single 
+  sign on when running on same host.
 - `RabbitMQPlugin` has been split into `ExtractorRoutingService` and `MessageService` to isolate the rabbitmq code from 
   the extraction code.
 
@@ -39,7 +41,6 @@ script to fix this.
 ## 1.14.0 - 2021-01-07
 
 ### Added
-- Added a previewer for FBX files.
 - Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user. Database administrators
   can use `scripts/updates/UpdateUserId.js` to assign user IDs to older extraction event records based on resource ownership
   in order to improve the accuracy of the report for older data.
