@@ -22,6 +22,7 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
   implicit val miniUserWrites = Json.writes[MiniUser]
   implicit val fileLinkReads = Json.reads[FileLink]
   implicit val fileLinkWrites = Json.writes[FileLink]
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
   /**
     * Share the bytes of a file using a special link. Anyone with the link will be able to download this file
@@ -91,14 +92,14 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
                               CONTENT_TYPE -> contentType
                             )
                           ),
-                          body = Enumerator.fromStream(inputStream)
+                          body = Enumerator.fromStream(inputStream, chunksize)
                         )
                     }
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
 
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
                   }

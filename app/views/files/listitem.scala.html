@@ -23,7 +23,7 @@
             </div>
 
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h3><a href="@(routes.Files.file(file.id, dataset, space, folder))">@file.filename</a></h3>
+                <h3><a href="@(routes.Files.file(file.id, dataset, space, folder))" class="break-word">@file.filename</a></h3>
                 <div class="row">
                     <div class="col-md-8 col-lg-8 col-sm-8">
                         <ul class="list-unstyled">
@@ -55,18 +55,26 @@
                     </div>
                     <div class="col-md-4 col-lg-4 col-sm-4">
                         <ul class="list-unstyled">
-                            @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                            @if( file.status == "CREATED" ) {
                                 <li>
-                                    <button id="downloadButton" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-link" title="Download and enjoy this file.">
-                                        <span class="glyphicon glyphicon-save"></span> Download
-                                    </button>
-                                </li>
-                            } else {
-                                <li>
-                                    <div class="inline" title="No permission to download the file">
-                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-save"></span> Download</button>
+                                    <div class="inline" title="Please wait for the file to finish processing.">
+                                        <button class="btn btn-link disabled"><span class="glyphicon glyphicon-save"></span> Download</button>
                                     </div>
                                 </li>
+                            } else {
+                                @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                                    <li>
+                                        <button id="downloadButton" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-link" title="Download and enjoy this file.">
+                                            <span class="glyphicon glyphicon-save"></span> Download
+                                        </button>
+                                    </li>
+                                } else {
+                                    <li>
+                                        <div class="inline" title="No permission to download the file">
+                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-save"></span> Download</button>
+                                        </div>
+                                    </li>
+                                }
                             }
 
                             @user match {

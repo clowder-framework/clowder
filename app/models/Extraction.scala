@@ -1,10 +1,13 @@
 package models
 
 import java.net.URL
-import java.util.Date
-import play.api.libs.json._
-import play.api.libs.json.Reads._
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Date, TimeZone}
+
+import util.Parsers
 import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 
 /**
  * Status information about extractors and extractions.
@@ -16,7 +19,23 @@ case class Extraction(
   extractor_id: String,
   status: String = "N/A",
   start: Date,
-  end: Option[Date])
+  end: Option[Date],
+  user_id: UUID = User.anonymous.id
+)
+
+// Used in extraction report aggregation
+case class ExtractionJob(
+  target: String,
+  targetType: String,
+  extractor: String,
+  spaces: String,
+  jobId: String,
+  jobType: String,
+  statusCount: Int,
+  lastStatus: String,
+  start: Date,
+  end: Date
+)
 
 /**
  * Currently running extractor name
@@ -69,6 +88,10 @@ case class ExtractorDetail(
  * @param external_services external services used by the extractor
  * @param libraries libraries on which the code depends
  * @param bibtex bibtext formatted citation of relevant papers
+ * @param maturity indicates whether this extractor is ready for public consumption
+ *             * For example: "Development" (default), "Staging", or "Production"
+ * @param defaultLabels the categorization label names that were imported by default
+ *             * For example: "Image", "Video", "Audio", etc
  * @param process events that should trigger this extractor to process
  * @param categories list of categories that apply to the extractor
  * @param parameters JSON schema representing allowed parameters
@@ -81,7 +104,7 @@ case class ExtractorInfo(
   id: UUID,
   name: String,
   version: String,
-  updated: Date,
+  updated: Date = Calendar.getInstance().getTime,
   description: String,
   author: String,
   contributors: List[String],
@@ -90,6 +113,8 @@ case class ExtractorInfo(
   external_services: List[String],
   libraries: List[String],
   bibtex: List[String],
+  maturity: String = "Development",
+  defaultLabels: List[String] = List[String](),
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
   parameters: JsValue = JsObject(Seq())
@@ -120,16 +145,19 @@ object ExtractorInfo {
     def reads(json: JsValue): JsResult[URL] = JsSuccess(new URL(json.toString()))
     def writes(url: URL): JsValue = Json.toJson(url.toExternalForm)
   }
+
   implicit val dateFormat = new Format[Date] {
     def reads(json: JsValue): JsResult[Date] = JsSuccess(json.as[Date])
-    def writes(date: Date): JsValue = Json.toJson(date.toString)
+    def writes(date: Date): JsValue = Json.toJson(Parsers.toISO8601(date))
   }
+
   implicit val extractorInfoWrites = Json.writes[ExtractorInfo]
+
   implicit val extractorInfoReads: Reads[ExtractorInfo] = (
     (JsPath \ "id").read[UUID].orElse(Reads.pure(UUID.generate())) and
       (JsPath \ "name").read[String] and
       (JsPath \ "version").read[String] and
-      (JsPath \ "updated").read[Date].orElse(Reads.pure((new Date()))) and
+      Reads.pure(Calendar.getInstance().getTime) and
       (JsPath \ "description").read[String] and
       (JsPath \ "author").read[String] and
       (JsPath \ "contributors").read[List[String]].orElse(Reads.pure(List.empty)) and
@@ -138,6 +166,8 @@ object ExtractorInfo {
       (JsPath \ "external_services").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "libraries").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "bibtex").read[List[String]].orElse(Reads.pure(List.empty)) and
+      (JsPath \ "maturity").read[String].orElse(Reads.pure("Development")) and
+      (JsPath \ "labels").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
@@ -177,3 +207,27 @@ case class ExtractionGroup(
                           latestMsg: String,
                           allMsgs: Map[UUID, List[Extraction]]
                           )
+
+case class ExtractorsLabel(
+                            id: UUID,
+                            name: String,
+                            category: Option[String],
+                            extractors: List[String]
+                         )
+
+object ExtractorsLabel {
+  implicit val writes = new Writes[ExtractorsLabel] {
+    def writes(label: ExtractorsLabel) = Json.obj(
+      "id" -> label.id,
+      "name" -> label.name,
+      "category" -> label.category,
+      "extractors" -> label.extractors
+    )
+  }
+  implicit val reads = (
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "category").readNullable[String] and
+      (JsPath \ "extractors").read[List[String]].orElse(Reads.pure(List.empty))
+    )(ExtractorsLabel.apply _)
+}

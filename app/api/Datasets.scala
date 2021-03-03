@@ -54,8 +54,13 @@ class  Datasets @Inject()(
   folders: FolderService,
   relations: RelationService,
   userService: UserService,
+  thumbnailService : ThumbnailService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  sinkService: EventSinkService) extends ApiController {
+
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
@@ -855,9 +860,7 @@ class  Datasets @Inject()(
         val mdMap = metadata.getExtractionSummary
 
         //send RabbitMQ message
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-        }
+        routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -904,9 +907,7 @@ class  Datasets @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                }
+                routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
                 events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
@@ -987,10 +988,8 @@ class  Datasets @Inject()(
         }
 
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          routing.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.dataset, id), Utils.baseUrl(request), request.apiKey, request.user)
         }
 
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
@@ -1642,8 +1641,6 @@ class  Datasets @Inject()(
 
     val error_str = tagCheck.error_str
     val not_found = tagCheck.not_found
-    val userOpt = tagCheck.userOpt
-    val extractorOpt = tagCheck.extractorOpt
     val tags = tagCheck.tags
 
     // Now the real work: removing the tags.
@@ -1651,9 +1648,9 @@ class  Datasets @Inject()(
       // Clean up leading, trailing and multiple contiguous white spaces.
       val tagsCleaned = tags.get.map(_.trim().replaceAll("\\s+", " "))
       (obj_type) match {
-        case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_File => files.removeTags(id, tagsCleaned)
         case TagCheck_Dataset => {
-          datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+          datasets.removeTags(id, tagsCleaned)
           datasets.get(id) match {
             case Some(dataset) => {
               events.addObjectEvent(request.user, id, dataset.name, EventType.REMOVE_TAGS_DATASET.toString)
@@ -1663,7 +1660,7 @@ class  Datasets @Inject()(
 
         }
 
-        case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
+        case TagCheck_Section => sections.removeTags(id, tagsCleaned)
       }
       Ok(Json.obj("status" -> "success"))
     } else {
@@ -2082,7 +2079,7 @@ class  Datasets @Inject()(
       case true => {
         current.plugin[RDFExportService].get.getRDFUserMetadataDataset(id.toString, mappingNumber) match{
           case Some(resultFile) =>{
-            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile)))
+            Ok.chunked(Enumerator.fromStream(new FileInputStream(resultFile), chunksize))
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
           }
@@ -2789,8 +2786,10 @@ class  Datasets @Inject()(
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
-        if (tracking)
+        if (tracking) {
           datasets.incrementDownloads(id, user)
+          sinkService.logDatasetDownloadEvent(dataset, user)
+        }
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
@@ -3037,7 +3036,7 @@ class  Datasets @Inject()(
         // Setup userList, add all users of all spaces associated with the dataset
         dataset.spaces.foreach { spaceId =>
           spaces.get(spaceId) match {
-            case Some(spc) => userList = spaces.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaces.getUsersInSpace(spaceId, None) ::: userList
             case None => NotFound(s"Error: No $spaceTitle found for $id.")
           }
         }

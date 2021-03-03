@@ -33,7 +33,8 @@ class Datasets @Inject() (
     folders: FolderService,
     metadata: MetadataService,
     events: EventService,
-    selections: SelectionService) extends SecuredController {
+    selections: SelectionService,
+    sinkService: EventSinkService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -615,7 +616,7 @@ class Datasets @Inject() (
         val relatedThings = relations.findRelationships(dataset.id.stringify, ResourceType.dataset, ResourceType.dataset)
         val relatedDatasets = for(r <- relatedThings) yield NodeDataset(datasets.get(UUID(r.target.id)).get, r.rdfType)
 
-
+        sinkService.logDatasetViewEvent(dataset, user)
         // view_data is passed as tuple in dataset case only, because template is at limit of 22 parameters
         Ok(views.html.dataset(dataset, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
@@ -786,7 +787,7 @@ class Datasets @Inject() (
         // Setup userList, add all users of all spaces associated with the dataset
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
-            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId, None) ::: userList
             case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for $Messages('dataset.title') $id.")
           }
         }
@@ -797,7 +798,7 @@ class Datasets @Inject() (
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => {
-              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId, None)
               if (usersInCurrSpace.nonEmpty) {
 
                 usersInCurrSpace.foreach { usr =>

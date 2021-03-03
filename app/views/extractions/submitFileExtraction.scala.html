@@ -1,6 +1,7 @@
 @(extractors: List[ExtractorInfo], file: File, folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset])(implicit user: Option[models.User])
 @import _root_.util.Formatters._
 @import play.api.libs.json._
+@import services.AppConfiguration
 
 @main("Extractions") {
     <ol class="breadcrumb">
@@ -80,7 +81,9 @@
                         <script>
                                 var params = JSON.parse("@Json.stringify(e.parameters)".replace(/&quot;/g, "\""));
                                 var selector = "#@(e.name.replaceAll("\\.", "_"))_parameters";
-                                $(selector).jsonForm(params);
+                                if (Object.keys(params).length != 0) {
+                                    $(selector).jsonForm(params);
+                                }
                         </script>
                     }
                 </tbody>

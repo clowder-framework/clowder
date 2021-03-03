@@ -3,7 +3,7 @@
 	"extractor": "https://clowder.ncsa.illinois.edu/contexts/extractor#",
 	"id":"extractor/internal_id",
 	"name": {"@id": "extractor:extractor/id", "@type": "@id"},
-	"version": "extractor:version"
+	"version": "extractor:version",
 	"created_at": {
 	      "@id": "extractor:updated",
 	      "@type": "http://www.w3.org/2001/XMLSchema#dateTime"

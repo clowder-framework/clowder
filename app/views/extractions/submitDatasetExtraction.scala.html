@@ -1,5 +1,6 @@
 @(extractors: List[ExtractorInfo], ds: Dataset)(implicit user: Option[models.User])
 @import play.api.libs.json._
+@import services.AppConfiguration
 
 @main("Extractions") {
     <div class="row">

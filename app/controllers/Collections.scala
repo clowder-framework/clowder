@@ -22,7 +22,7 @@ import play.api.i18n.Messages
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService,
-                            appConfig: AppConfigurationService, selections: SelectionService) extends SecuredController {
+                            appConfig: AppConfigurationService, selections: SelectionService, sinkService: EventSinkService) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc. parsed from conf/messages
@@ -562,7 +562,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           // Increment view count for collection
           val (view_count, view_date) = collections.incrementViews(id, user)
-
+          sinkService.logCollectionViewEvent(collection, user)
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
             Some(decodedParentCollections.toList),dCollection, filteredPreviewers, Some(collectionSpaces_canRemove),
             prevd,nextd, prevcc, nextcc, limit, canAddToParent, userSelections, view_count, view_date))
@@ -642,7 +642,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         // Setup userList, add all users of all spaces associated with the collection
         collection.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
-            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId, None) ::: userList
             case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No $spaceTitle found for collection $id.");
           }
         }
@@ -653,7 +653,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         collection.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => {
-              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId, None)
               if (usersInCurrSpace.nonEmpty) {
 
                 usersInCurrSpace.foreach { usr =>

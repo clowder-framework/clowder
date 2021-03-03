@@ -31,8 +31,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
    * @param path the path minus the slash
    * @return moved permanently to path without /
    */
-  def untrail(path: String) = Action {
-    MovedPermanently("/" + path)
+  def untrail(path: String) = Action { implicit request =>
+    MovedPermanently(s"${Utils.baseUrl(request, false)}/${path}")
   }
 
   def swaggerUI = Action { implicit request =>
@@ -263,6 +263,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Ok("")
    }
 
+  def healthz() = Action { implicit request =>
+    Ok("healthy")
+  }
+
   /**
    * Bookmarklet
    */
@@ -349,6 +353,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.users,
         api.routes.javascript.Datasets.restoreDataset,
         api.routes.javascript.Datasets.emptyTrash,
+        api.routes.javascript.Extractions.submitFilesToExtractor,
         api.routes.javascript.Files.download,
         api.routes.javascript.Files.archive,
         api.routes.javascript.Files.sendArchiveRequest,
@@ -489,7 +494,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Extractions.submitDatasetToExtractor,
         api.routes.javascript.Extractions.cancelFileExtractionSubmission,
         api.routes.javascript.Extractions.cancelDatasetExtractionSubmission,
+        api.routes.javascript.Extractions.addExtractorInfo,
+        api.routes.javascript.Extractions.getExtractorInfo,
         api.routes.javascript.Extractions.deleteExtractor,
+        api.routes.javascript.Extractions.createExtractorsLabel,
+        api.routes.javascript.Extractions.updateExtractorsLabel,
+        api.routes.javascript.Extractions.deleteExtractorsLabel,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -517,6 +527,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Collections.newCollectionWithParent,
         controllers.routes.javascript.Spaces.stagingArea,
         controllers.routes.javascript.Extractors.selectExtractors,
+        controllers.routes.javascript.Extractors.manageLabels,
+        controllers.routes.javascript.Extractors.showJobHistory,
+        controllers.routes.javascript.Extractors.submitSelectedExtractions,
         controllers.routes.javascript.CurationObjects.submit,
         controllers.routes.javascript.CurationObjects.getCurationObject,
         controllers.routes.javascript.CurationObjects.getUpdatedFilesAndFolders,

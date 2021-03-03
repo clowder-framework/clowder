@@ -7,6 +7,13 @@
 
 #OPTIONS       /*path                                                                   @controllers.Application.options(path)
 OPTIONS        /*path                                                                   api.ApiHelp.options(path)
+
+# operations are applied in this order, to prevent untrail from removing
+# the trailing / at the end of the /api/proxy calls it is placed before
+# the untrail call
+GET            /api/proxy/:endpoint_key                                                 @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
+GET            /api/proxy/:endpoint_key/                                                @api.Proxy.get(endpoint_key: String, pathSuffix: String = "")
+GET            /api/proxy/:endpoint_key/*pathSuffix                                     @api.Proxy.get(endpoint_key: String, pathSuffix: String)
 GET            /*path/                                                                  @controllers.Application.untrail(path: String)
 
 # ----------------------------------------------------------------------
@@ -17,6 +24,7 @@ GET            /                                                                
 GET            /about                                                                   @controllers.Application.about
 GET            /tos                                                                     @controllers.Application.tos(redirect: Option[String] ?= None)
 GET            /email                                                                   @controllers.Application.email(subject: String ?= "", body: String ?= "")
+GET            /healthz                                                                 @controllers.Application.healthz()
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
@@ -171,7 +179,11 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 # EXTRACTORS
 # ----------------------------------------------------------------------
+GET            /extractors/labels                                                       @controllers.Extractors.manageLabels()
 GET            /extractors/:extractorName                                               @controllers.Extractors.showExtractorInfo(extractorName)
+GET            /extractors/:extractorName/metrics                                       @controllers.Extractors.showExtractorMetrics(extractorName)
+GET            /extractors/:extractorName/logs                                          @controllers.Extractors.showExtractorLog(extractorName)
+GET            /extractors/:extractorName/history                                       @controllers.Extractors.showJobHistory(extractorName)
 
 
 # ----------------------------------------------------------------------
@@ -412,6 +424,10 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+POST           /api/extractors/labels                                                   @api.Extractions.createExtractorsLabel()
+PUT            /api/extractors/labels/:id                                               @api.Extractions.updateExtractorsLabel(id: UUID)
+DELETE         /api/extractors/labels/:id                                               @api.Extractions.deleteExtractorsLabel(id: UUID)
+
 
 POST           /api/files/:file_id/extractions                                          @api.Extractions.submitFileToExtractor(file_id: UUID)
 POST           /api/datasets/:ds_id/extractions                                         @api.Extractions.submitDatasetToExtractor(ds_id: UUID)
@@ -713,6 +729,7 @@ POST           /api/comment/:id/editComment                                     
 # SELECTIONS API
 # ----------------------------------------------------------------------
 GET            /selected                                                                @controllers.Selected.get
+GET            /datasets/submit/:ds_id                                                  @controllers.Extractors.submitSelectedExtractions(ds_id: UUID)
 GET            /api/selected                                                            @api.Selected.get
 POST           /api/selected                                                            @api.Selected.add
 POST           /api/selected/remove                                                     @api.Selected.remove
@@ -720,6 +737,7 @@ DELETE         /api/selected/files                                              
 GET            /api/selected/files                                                      @api.Selected.downloadAll
 POST           /api/selected/clear                                                      @api.Selected.clearAll
 POST           /api/selected/tag                                                        @api.Selected.tagAll(tags: List[String])
+POST           /api/selected/submit/:ds_id/:file_ids                                    @api.Extractions.submitFilesToExtractor(ds_id: UUID, file_ids: String)
 
 # ----------------------------------------------------------------------
 # RELATIONS API
@@ -734,11 +752,14 @@ DELETE         /api/relations/:id                                               
 # REPORTING API
 # ----------------------------------------------------------------------
 GET            /api/reports/metrics                                                     @api.Reporting.allMetrics()
-GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics()
-GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics()
+GET            /api/reports/metrics/files                                               @api.Reporting.fileMetrics(since: Option[String] ?= None, until: Option[String] ?= None)
+GET            /api/reports/metrics/datasets                                            @api.Reporting.datasetMetrics(since: Option[String] ?= None, until: Option[String] ?= None)
 GET            /api/reports/metrics/collections                                         @api.Reporting.collectionMetrics()
 GET            /api/reports/metrics/spaces                                              @api.Reporting.spaceMetrics()
 GET            /api/reports/metrics/users                                               @api.Reporting.userMetrics()
+GET            /api/reports/storage/spaces                                              @api.Reporting.spaceStorage(space: Option[String] ?= None, since: Option[String] ?= None, until: Option[String] ?= None)
+GET            /api/reports/metrics/extractors                                          @api.Reporting.extractorUsage(since: Option[String] ?= None, until: Option[String] ?= None)
+
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS
@@ -860,17 +881,14 @@ DELETE       /api/standardvocab/:id                                             
 # PROXY API
 # ----------------------------------------------------------------------
 
-GET         /api/proxy/:endpoint_key                                                        @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
-GET         /api/proxy/:endpoint_key/                                                       @api.Proxy.get(endpoint_key: String, pathSuffix: String = null)
-GET         /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.get(endpoint_key: String, pathSuffix: String)
 POST        /api/proxy/:endpoint_key                                                        @api.Proxy.post(endpoint_key: String, pathSuffix: String = null)
-POST        /api/proxy/:endpoint_key/                                                       @api.Proxy.post(endpoint_key: String, pathSuffix: String = null)
+POST        /api/proxy/:endpoint_key/                                                       @api.Proxy.post(endpoint_key: String, pathSuffix: String = "")
 POST        /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.post(endpoint_key: String, pathSuffix: String)
 PUT         /api/proxy/:endpoint_key                                                        @api.Proxy.put(endpoint_key: String, pathSuffix: String = null)
-PUT         /api/proxy/:endpoint_key/                                                       @api.Proxy.put(endpoint_key: String, pathSuffix: String = null)
+PUT         /api/proxy/:endpoint_key/                                                       @api.Proxy.put(endpoint_key: String, pathSuffix: String = "")
 PUT         /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.put(endpoint_key: String, pathSuffix: String)
 DELETE      /api/proxy/:endpoint_key                                                        @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
-DELETE      /api/proxy/:endpoint_key/                                                       @api.Proxy.delete(endpoint_key: String, pathSuffix: String = null)
+DELETE      /api/proxy/:endpoint_key/                                                       @api.Proxy.delete(endpoint_key: String, pathSuffix: String = "")
 DELETE      /api/proxy/:endpoint_key/*pathSuffix                                            @api.Proxy.delete(endpoint_key: String, pathSuffix: String)
 
 # ----------------------------------------------------------------------

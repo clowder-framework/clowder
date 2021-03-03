@@ -13,6 +13,7 @@
 @import api.Permission
 @import _root_.util.FileUtils
 @import _root_.util.Formatters._
+@import services.AppConfiguration
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
@@ -170,7 +171,7 @@
 										aria-haspopup="true" aria-expanded="true">
 											<span class="glyphicon glyphicon-hdd"></span> <span class="caret"></span>
 										</button>
-										<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+										<ul class="dropdown-menu" aria-labelledby="dropdown_space_list">
 										@spaces.map{ s =>
 											<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-hdd"></span> @Html(ellipsize(s.name, 18))</a></li>
 										}
@@ -242,7 +243,7 @@
 			<div class="row">
 				<div id="file-name-div" class="file-title-div col-xs-12">
 					<div id="prf-file-name" class="text-left inline">
-						<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
+						<h1 id="file-name-title" class="inline break-word"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div id="h-edit-file" class="hiddencomplete">
 								<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
@@ -267,6 +268,23 @@
 					}
 				</div>
 			</div>
+			@if(file.status == "CREATED") {
+				<div class="alert alert-warning">
+					<div class="row">
+						<div class="col-sm-11">
+							<strong>Warning!</strong>
+							This file is still in transit, so the file bytes are not yet available.
+							<p>You can still attach metadata and comments below.</p>
+						</div>
+						<div class="col-sm-1">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+					</div>
+
+				</div>
+			}
 			@for((f, pvs) <- previews) {
 				<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 					<div class="col-md-12">
@@ -315,13 +333,19 @@
 					<div class="col-md-12">
 						<hr/>
 						<div class="btn-group" role="group" aria-label="...">
-							@if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-								<button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+							@if(file.status == "CREATED") {
+								<!-- if 'disabled' title is not visible -->
+								<button type="button" class="btn btn-link disabled" title="Please wait for the file to finish processing."> <span class="glyphicon glyphicon-save"></span>
 									Download </button>
 							} else {
+								@if(!Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
 									<!-- if 'disabled' title is not visible -->
-								<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
-									Download </button>
+									<button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
+										Download </button>
+								} else {
+									<button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+										Download </button>
+								}
 							}
 							@if( play.Play.application().configuration().getBoolean("archiveEnabled")) {
 								@if( Permission.checkPermission(Permission.ArchiveFile, ResourceRef(ResourceRef.file, file.id))) {
@@ -387,8 +411,7 @@
 							objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 							</button>
 						}
-                        @if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))
-                                && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined) {
+                        @if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
                             <a href="@routes.Extractors.submitFileExtraction(UUID(id))" class="btn btn-link" >
                                 <span class="glyphicon glyphicon-send"></span>
                                 Submit for extraction

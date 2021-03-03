@@ -51,7 +51,11 @@ class Files @Inject() (
   contextLDService: ContextLDService,
   spaces: SpaceService,
   folders: FolderService,
-  appConfig: AppConfigurationService) extends SecuredController {
+  routing: ExtractorRoutingService,
+  appConfig: AppConfigurationService,
+  sinkService: EventSinkService) extends SecuredController {
+
+  lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
   /**
    * Upload form.
@@ -274,6 +278,7 @@ class Files @Inject() (
             // Increment view count for file
             val (view_count, view_date) = files.incrementViews(id, user)
 
+            sinkService.logFileViewEvent(file, user)
             //passing None as the last parameter (list of output formats)
             Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
               extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
@@ -462,10 +467,7 @@ class Files @Inject() (
                   }
                 }
                 // submit for extraction
-                current.plugin[RabbitmqPlugin].foreach {
-                  // FIXME dataset not available?
-                  _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
-                }
+                routing.fileCreated(f, None, Utils.baseUrl(request).toString, request.apiKey)
 
                 /** *** Inserting DTS Requests   **/
                 val clientIP = request.remoteAddress
@@ -605,10 +607,7 @@ class Files @Inject() (
               val extra = Map("filename" -> f.filename)
               dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
               /****************************/
-	            current.plugin[RabbitmqPlugin].foreach{
-                // FIXME dataset not available?
-                _.fileCreated(f, None, Utils.baseUrl(request), request.apiKey)
-              }
+              routing.fileCreated(f, None, Utils.baseUrl(request).toString, request.apiKey)
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
@@ -710,6 +709,7 @@ class Files @Inject() (
             files.getBytes(id) match {
               case Some((inputStream, filename, contentType, contentLength)) => {
                 files.incrementDownloads(id, user)
+                sinkService.logFileDownloadEvent(file, user)
 
                 request.headers.get(RANGE) match {
                   case Some(value) => {
@@ -731,14 +731,14 @@ class Files @Inject() (
                                                   CONTENT_TYPE -> contentType
                                                   )
                                           ),
-                                          body = Enumerator.fromStream(inputStream)
+                                          body = Enumerator.fromStream(inputStream, chunksize)
                                   )
                     }
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
 
-                    Ok.chunked(Enumerator.fromStream(inputStream))
+                    Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
                   }
@@ -832,7 +832,7 @@ class Files @Inject() (
                       }.map {
                         x =>
                           //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
-                          Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName)))
+                          Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName), chunksize))
                             .withHeaders(CONTENT_TYPE -> "some-content-Type")
                             .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(outputFileName, request.headers.get("user-agent").getOrElse(""))))
                       }.recover {
@@ -894,12 +894,12 @@ class Files @Inject() (
 	                    CONTENT_TYPE -> contentType
 	                  )
 	                ),
-	                body = Enumerator.fromStream(inputStream)
+	                body = Enumerator.fromStream(inputStream, chunksize)
 	              )
             }
           }
           case None => {
-            Ok.chunked(Enumerator.fromStream(inputStream))
+            Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
               .withHeaders(CONTENT_TYPE -> contentType)
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, request.headers.get("user-agent").getOrElse(""))))
 
@@ -985,9 +985,7 @@ class Files @Inject() (
               _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
             }
 
-            current.plugin[RabbitmqPlugin].foreach {
-              _.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
-            }
+            routing.multimediaQuery(f.id, f.contentType, f.length.toString, Utils.baseUrl(request), request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1082,9 +1080,7 @@ class Files @Inject() (
             val id = f.id
             val extra = Map("filename" -> f.filename, "action" -> "upload")
 
-            current.plugin[RabbitmqPlugin].foreach {
-              _.fileCreated(f, host, request.apiKey)
-            }
+            routing.fileCreated(f, host, request.apiKey)
 
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -1220,10 +1216,8 @@ class Files @Inject() (
                     }
 
                     // notify extractors that a file has been uploaded and added to a dataset
-                    current.plugin[RabbitmqPlugin].foreach { rabbitMQ =>
-                      rabbitMQ.fileCreated(f, Some(dataset), Utils.baseUrl(request), request.apiKey)
-                      rabbitMQ.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
-                    }
+                    routing.fileCreated(f, Some(dataset), Utils.baseUrl(request).toString, request.apiKey)
+                    routing.fileAddedToDataset(f, dataset, Utils.baseUrl(request), request.apiKey)
 
                     // add file to RDF triple store if triple store is used
                     if (fileType.equals("application/xml") || fileType.equals("text/xml")) {

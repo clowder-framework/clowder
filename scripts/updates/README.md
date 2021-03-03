@@ -9,6 +9,8 @@ are named with the actual name of the update .js
 - update-avatar-url-to-https.js
 
 
-MISCALANOUS SCRIPTS:
+MISCELLANEOUS SCRIPTS:
 
-fix-counts.js: script to redo the counts in clowder
+- fix-counts.js: script to redo the counts in clowder
+
+- UpdateUserId.js: Adds user_id to documents in extractions collection in clowder mongo db. Uses author id in uploads.files if exists, else it takes the author id from datasets collection. Usage: mongo clowder UpdateUserId.js

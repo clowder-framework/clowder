@@ -95,7 +95,12 @@ object MetadataDefinition {
         Json.parse("""
           {"label":"GeoJSON",
             "uri":"http://geojson.org/geojson-spec.html",
-            "type":"wkt"}""")
+            "type":"wkt"}"""),
+        Json.parse("""
+          {"label":"vega5-spec",
+           "description": "Visualization specs for Vega v5 or Vega Lite v4",
+           "uri":"https://vega.github.io/schema/",
+           "type":"string"}""")
       )
     // Add the default definitions, do not update if they already exist.
     if(metadataService.getDefinitions().size == 0) {

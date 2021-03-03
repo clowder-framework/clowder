@@ -41,6 +41,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+  val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
   val queue: ElasticsearchQueue = DI.injector.getInstance(classOf[ElasticsearchQueue])
   var client: Option[TransportClient] = None
   val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
@@ -49,8 +50,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
   val maxResults = play.api.Play.configuration.getInt("elasticsearchSettings.maxResults").getOrElse(240)
 
-  // TODO: Removed gt lt gte lte operators until numeric_detection can be enabled on the dynamic mapper
-  val mustOperators = List("==", ":") // "<=", ">=", "<", ">", ":")
+  val mustOperators = List("==", "<=", ">=", "<", ">", ":")
   val mustNotOperators = List("!=")
 
 
@@ -120,7 +120,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
-  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int], user: Option[User]): ElasticsearchResult = {
+  def search(query: List[JsValue], grouping: String, from: Option[Int], size: Option[Int],
+             permitted: List[UUID], user: Option[User]): ElasticsearchResult = {
     /** Each item in query list has properties:
       *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
       *   "operator":       type of query for this term, e.g. '=='
@@ -128,7 +129,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "extractor_key":  name of extractor component only, e.g. 'extractors.wordCount'
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
-    val queryObj = prepareElasticJsonQuery(query, grouping)
+    val queryObj = prepareElasticJsonQuery(query, grouping, permitted, user)
     accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
   }
 
@@ -696,9 +697,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * as strings for datatypes besides Objects. In the future, this could
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
-    // TODO: Enable "numeric_detection": true alongside date_detection
     """{"clowder_object": {
-          |"date_detection": false,
+          |"numeric_detection": true,
           |"properties": {
             |"name": {"type": "string"},
             |"description": {"type": "string"},
@@ -724,12 +724,35 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Create appropriate search object based on operator */
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    // TODO: Other date fields may need handling like this? ES always appends 00:00:00 if missing, breaking some things
+    val startdate = if (value.length == 10) value+"T00:00:00.000Z" else value
+    val enddate   = if (value.length == 10) value+"T23:59:59.999Z" else value
     operator match {
       case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
-      case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
-      case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
-      case "<=" => builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
-      case ">=" => builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
+      case "<" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("lt", startdate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
+      }
+      case ">" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("gt", enddate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
+      }
+      case "<=" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("lte", enddate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("lte", value).endObject().endObject().endObject()
+      }
+      case ">=" => {
+        if (key=="created")
+          builder.startObject().startObject("range").startObject(key).field("gte", startdate).endObject().endObject().endObject()
+        else
+          builder.startObject().startObject("range").startObject(key).field("gte", value).endObject().endObject().endObject()
+      }
       case ":" => {
         if (key == "_all")
           builder.startObject().startObject("regexp").field("_all", wrapRegex(value)).endObject().endObject()
@@ -740,6 +763,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           val cleaned = if (!value.startsWith("metadata.")) "metadata."+value else value
           builder.startObject().startObject("bool").startArray("must_not").startObject()
             .startObject("exists").field("field", cleaned).endObject().endObject().endArray().endObject().endObject()
+        } else if (key == "created") {
+          builder.startObject.startObject("range").startObject(key).field("gte", startdate).field("lte", enddate).endObject.endObject.endObject
         } else {
           val cleaned = value.replace(":", "\\:") // Colons have special meaning in query_string
           builder.startObject().startObject("query_string").field("default_field", key)
@@ -761,7 +786,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Convert list of search term JsValues into an Elasticsearch-ready JSON query object **/
-  def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
+  def prepareElasticJsonQuery(query: List[JsValue], grouping: String, permitted: List[UUID], user: Option[User]): XContentBuilder = {
     /** OPERATORS
       *  :   contains (partial match)
       *  ==  equals (exact match)
@@ -807,6 +832,36 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         builder.startObject().startObject("exists").field("field", key).endObject().endObject()
       })
 
+      // Apply appropriate permissions filters based on user/superadmin
+      user match {
+        case Some(u) => {
+          if (!u.superAdminMode) {
+            builder.startObject.startObject("bool").startArray("should")
+
+            // Restrict to spaces the user is permitted access to
+            permitted.foreach(ps => {
+              builder.startObject().startObject("match").field("child_of", ps.stringify).endObject().endObject()
+            })
+
+            // Also include anything the user owns
+            builder.startObject().startObject("match").field("creator", u.id.stringify).endObject().endObject()
+
+            builder.endArray().endObject().endObject()
+          }
+        }
+        case None => {
+          // Metadata search is not publicly accessible so this shouldn't happen, public filter
+          builder.startObject.startObject("bool").startArray("should")
+
+          // TODO: Does this behave properly with public spaces?
+          spaces.list.foreach(ps => {
+            builder.startObject().startObject("match").field("child_of", ps.id.stringify).endObject().endObject()
+          })
+
+          builder.endArray().endObject().endObject()
+        }
+      }
+
       builder.endArray()
     }
 
@@ -847,8 +902,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     // Use regex to split string into a list, preserving quoted phrases as single value
     val matches = ListBuffer[String]()
-    val m = Pattern.compile("([^\":= ]+|\".+?\")").matcher(query)
-    //val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
+    val m = Pattern.compile("([^\":=<> ]+|\".+?\")").matcher(query)
     while (m.find()) {
       var mat = m.group(1).replace("\"", "").replace("__", " ").trim
       if (mat.length>0) {
@@ -872,7 +926,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
 
     // If a term is specified that isn't in this list, it's assumed to be a metadata field
-    val official_terms = List("name", "creator", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
+    val official_terms = List("name", "creator", "created", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
 
     // Create list of (key, operator, value) for passing to builder
     val terms = ListBuffer[(String, String, String)]()
@@ -903,6 +957,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else if (mt == "in") currkey = "child_of"
         else if (mt == "contains") currkey = "parent_of"
         else if (mt == "creator") currkey = "creator_name"
+        else if (mt == "created") {
+          currkey = "created"
+        }
         else if (mt == "email") currkey = "creator_email"
         else if (!official_terms.contains(mt)) currkey = "metadata."+mt
         else
@@ -946,7 +1003,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       }
     })
 
-    // If user is superadmin or there is no user, no filters applied
+    // Apply appropriate permissions filters based on user/superadmin
     user match {
       case Some(u) => {
         if (!u.superAdminMode) {
@@ -970,7 +1027,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
       case None => {
-        // Calling this with no user should only happen internally (e.g. listTags) so no filter
+        // Metadata search is not publicly accessible so this shouldn't happen, public filter
+        builder.startObject.startObject("bool").startArray("should")
+
+        // TODO: Does this behave properly with public spaces?
+        spaces.list.foreach(ps => {
+          builder.startObject().startObject("match").field("child_of", ps.id.stringify).endObject().endObject()
+        })
+
+        builder.endArray().endObject().endObject()
       }
     }
 

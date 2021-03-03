@@ -3,8 +3,8 @@ package services.mongodb
 import java.io._
 import java.text.SimpleDateFormat
 import java.util.{ArrayList, Date}
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import Transformation.LidoToCidocConvertion
 import util.{Formatters, Parsers}
 import api.Permission
@@ -1072,10 +1072,10 @@ class MongoDBDatasetService @Inject() (
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in dataset " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in dataset " + id + " : " + tags )
     val dataset = get(id).get
-    val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = dataset.tags.map(_.name)
     Logger.debug("existingTags before user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map {
@@ -1412,7 +1412,7 @@ class MongoDBDatasetService @Inject() (
 
   def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
-    Dataset.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(d => {
+    Dataset.dao.collection.find(MongoDBObject("trash" -> false), MongoDBObject("_id" -> 1)).foreach(d => {
       index(new UUID(d.get("_id").toString), idx)
     })
   }
@@ -1635,8 +1635,28 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getMetrics(): Iterator[Dataset] = {
-    Dataset.find(MongoDBObject("trash" -> false)).toIterator
+  /**
+   * Get an Iterator over Datasets to process large result sets
+   * @param space - limit to datasets in specific space
+   * @param since - include only datasets created after a certain date
+   * @param until - include only datasets created before a certain date
+   */
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[Dataset] = {
+    var query = MongoDBObject("trash" -> false)
+    space.foreach(spid => query += ("spaces" -> new ObjectId(spid)))
+    since.foreach(t => query = query ++ ("created" $gte Parsers.fromISO8601(t)))
+    until.foreach(t => query = query ++ ("created" $lte Parsers.fromISO8601(t)))
+    Dataset.find(query)
+  }
+
+  // Get a list of all trashed dataset and file ids for comparison
+  def getTrashedIds(): List[UUID] = {
+    val trashedIds = ListBuffer[UUID]()
+    Dataset.find(MongoDBObject("trash" -> true)).map(ds => {
+      ds.files.foreach(fid => trashedIds += fid)
+      trashedIds += ds.id
+    })
+    trashedIds.toList
   }
 }
 

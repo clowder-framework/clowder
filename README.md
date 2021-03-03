@@ -56,7 +56,7 @@ use this file to setup Let's Encrypt, or tell clowder to use different security 
 ## Initializing Clowder
 
 Once clowder has started you will need to create an account. This account can be created using a docker
-container. You can start it with `docker run -ti --rm --network clowder-clowder clowder/mongo-init`. The
+container. You can start it with `docker run -ti --rm --network clowder_clowder clowder/mongo-init`. The
 container will ask for an email address, name, password as well as if this user should be admin (true).
 Once the container finishes running, you can login to clowder. 
 

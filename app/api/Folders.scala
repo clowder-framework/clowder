@@ -23,7 +23,8 @@ class Folders @Inject() (
   folders: FolderService,
   datasets: DatasetService,
   files: FileService,
-  events: EventService) extends ApiController {
+  events: EventService,
+  routing: ExtractorRoutingService) extends ApiController {
 
   def createFolder(parentDatasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
     Logger.debug("--- API Creating new folder ---- ")
@@ -158,10 +159,8 @@ class Folders @Inject() (
         files.get(folder.files).found.foreach(file => {
           // notify rabbitmq
           Logger.debug(s"[subfilesDeletionRabbitmqNotification] rabbitmq delete event of fileid ${file.id} under folderid $folderId")
-          current.plugin[RabbitmqPlugin].foreach { p =>
-            datasets.findByFileIdAllContain(file.id).foreach { ds =>
-              p.fileRemovedFromDataset(file, ds, host, requestAPIKey)
-            }
+          datasets.findByFileIdAllContain(file.id).foreach { ds =>
+            routing.fileRemovedFromDataset(file, ds, host, requestAPIKey)
           }
         })
         folder.folders.map {
@@ -302,6 +301,8 @@ class Folders @Inject() (
                           if(oldFolder.files.contains(fileId)) {
                             folders.removeFile(oldFolder.id, fileId)
                             folders.addFile(newFolder.id, fileId)
+                            files.index(fileId)
+                            datasets.index(datasetId)
                             Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
                           } else {
                             BadRequest("Failed to move file. The file with id: " + file.id.stringify + " isn't in folder with id: " + oldFolder.id.stringify  )
@@ -315,6 +316,8 @@ class Folders @Inject() (
                       if(dataset.files.contains(fileId)) {
                         folders.addFile(newFolder.id, fileId)
                         datasets.removeFile(datasetId, fileId)
+                        files.index(fileId)
+                        datasets.index(datasetId)
                         Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
                       } else {
                         BadRequest("Failed to move file. The file with id: " + file.id.stringify + "Isn't in dataset with id: " + dataset.id.stringify  )
@@ -353,6 +356,8 @@ class Folders @Inject() (
                 if(folder.files.contains(fileId)) {
                   datasets.addFile(datasetId, file)
                   folders.removeFile(oldFolderId, fileId)
+                  files.index(fileId)
+                  datasets.index(datasetId)
                   Ok(toJson(Map("status" -> "success", "fileName"-> file.filename )))
                 } else {
                   BadRequest("The file you are trying to move isn't in the folder you are moving it from.")

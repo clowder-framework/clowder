@@ -81,7 +81,6 @@
         var selected = $.cookie('selected-files-@dataset.id');
         if (selected) {
             var fileUUIDs = selected.split(',');
-            //$('#selected-count-box').html('Marked Files (<b>'+fileUUIDs.length+'</b>)')
             $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
                     'data-toggle="dropdown" aria-expanded="false"> Marked Files (<b>'+fileUUIDs.length+'</b>)' +
                     '<b class="caret"></b></a><ul class="dropdown-menu">' +
@@ -89,14 +88,41 @@
                     '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
                     '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
                     *@
-                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download All</a></li>' +
-                    '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag All</a></li>' +
-                    '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete All</a></li>' +
-                    '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Clear All</a></li></ul>' +
+                    '<li><a onclick="markVisibleFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark Visible</a></li>' +
+                    '<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
+                    '<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
+                    '<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag</a></li>' +
+                    '<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete</a></li>' +
+                    '<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Unmark All</a></li></ul>' +
                     '</div>')
         } else {
-            $('#selected-count-box').html('Marked Files (<b>0</b>)')
+            $('#selected-count-box').html('<div class="dropdown"><a href="#" class="dropdown-toggle" ' +
+                    'data-toggle="dropdown" aria-expanded="false"> Marked Files (<b>0</b>)' +
+                    '<b class="caret"></b></a><ul class="dropdown-menu">' +
+                    @* TODO: Need better solution than cookies to support 'Show Only Marked' request
+                    '<li><a onclick="showOnlyMarked();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show Only Marked</a></li>' +
+                    '<li><a onclick="showAllFiles();"><span class="glyphicon glyphicon-ok"/>&nbsp;Show All Files</a></li>' +
+                    *@
+                    '<li><a onclick="markVisibleFiles();"><span class="glyphicon glyphicon-check"/>&nbsp;Mark Visible</a></li>' +
+                    //'<li><a onclick="downloadMarked();"><span class="glyphicon glyphicon-download-alt"/>&nbsp;Download</a></li>' +
+                    //'<li><a onclick="submitMarked();"><span class="glyphicon glyphicon-send"/>&nbsp;Submit</a></li>' +
+                    //'<li><a onclick="confirmTagMarked();"><span class="glyphicon glyphicon-tag"/>&nbsp;Tag</a></li>' +
+                    //'<li><a onclick="confirmDeleteMarked();"><span class="glyphicon glyphicon-trash"/>&nbsp;Delete</a></li>' +
+                    //'<li><a onclick="clearMarked();"><span class="glyphicon glyphicon-erase"/>&nbsp;Unmark All</a></li></ul>' +
+                    '</div>')
         }
+    }
+
+    function markVisibleFiles() {
+        var selected = "@{fileList.map(f => f.id.stringify).mkString(",")}";
+        $.cookie('selected-files-@dataset.id', selected);
+        var fileUUIDs = selected.split(',');
+        for (idx in fileUUIDs) {
+            file_id = fileUUIDs[idx];
+            $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-plus');
+            $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-ok');
+        }
+        updateSelectedFileCount();
     }
 
     function confirmDeleteMarked() {
@@ -167,6 +193,16 @@
         var selected = $.cookie('selected-files-@dataset.id');
         if (selected) {
             window.open(jsRoutes.api.Datasets.downloadPartial('@dataset.id', selected).url, '_blank');
+        } else {
+            notify("No files selected.")
+        }
+    }
+
+    // Submit selected files to extractor
+    function submitMarked() {
+        var selected = $.cookie('selected-files-@dataset.id');
+        if (selected) {
+            window.open("@routes.Extractors.submitSelectedExtractions(dataset.id).url", "_self");
         } else {
             notify("No files selected.")
         }
@@ -292,7 +328,6 @@
     $(document).ready(function() {
         $('.fileselect').click(function() {
             var file_id = $(this).data("id");
-
             if ($("a[data-id='" + file_id + "'] span.glyphicon").hasClass('glyphicon-plus')) {
                 addFileToMarked(file_id)
             } else {
@@ -310,8 +345,8 @@
                 $("a[data-id='"+file_id+"'] span.glyphicon").removeClass('glyphicon-plus');
                 $("a[data-id='"+file_id+"'] span.glyphicon").addClass('glyphicon-ok');
             }
-            updateSelectedFileCount();
         }
+        updateSelectedFileCount();
     });
 </script>
 

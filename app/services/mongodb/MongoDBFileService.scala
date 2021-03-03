@@ -50,6 +50,7 @@ import org.bson.types.ObjectId
 class MongoDBFileService @Inject() (
   datasets: DatasetService,
   collections: CollectionService,
+  spaces: SpaceService,
   sections: SectionService,
   comments: CommentService,
   previews: PreviewService,
@@ -61,6 +62,7 @@ class MongoDBFileService @Inject() (
   folders: FolderService,
   metadatas: MetadataService,
   events: EventService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends FileService {
 
@@ -189,15 +191,9 @@ class MongoDBFileService @Inject() (
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    val plugins = current.plugin[RabbitmqPlugin]
-    plugins.foreach { p =>
-      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
-        datasetId, newFlags, apiKey, user)
-      Logger.info("Sent archive request for file " + id)
-    }
-    if (plugins.isEmpty) {
-      Logger.warn("RabbitMQ plugin not detected: archival may be disabled")
-    }
+    routing.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+      datasetId, newFlags, apiKey, user)
+    Logger.info("Sent archive request for file " + id)
   }
 
   /**
@@ -325,8 +321,11 @@ class MongoDBFileService @Inject() (
 
   def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
+    val trashedIds = datasets.getTrashedIds()
     FileDAO.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(f => {
-      index(new UUID(f.get("_id").toString), idx)
+      val fid = new UUID(f.get("_id").toString)
+      if (!trashedIds.contains(fid))
+        index(fid, idx)
     })
   }
 
@@ -518,10 +517,10 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags)
     val file = get(id).get
-    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = file.tags.map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map {
@@ -1214,8 +1213,18 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getMetrics(): Iterator[File] = {
-    FileDAO.find(MongoDBObject()).toIterator
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File] = {
+    var query = MongoDBObject()
+    space.foreach(spid => {
+      // If space is specified, we have to get that association from datasets for now
+      val dsresults = datasets.getIterator(space, None, None) // ignore time filters (no bearing on files)
+      while (dsresults.hasNext) {
+        query += ("child_of" -> new ObjectId(dsresults.next.id.stringify))
+      }
+    })
+    since.foreach(t => query = query ++ ("uploadDate" $gte Parsers.fromISO8601(t)))
+    until.foreach(t => query = query ++ ("uploadDate" $lte Parsers.fromISO8601(t)))
+    FileDAO.find(query)
   }
 }
 

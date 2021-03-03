@@ -1,5 +1,6 @@
 Following is a list of contributors in alphabetical order:
 
+- Aaraj Habib
 - Ashwini Vaidya
 - Avinash Kumar
 - Ben Galewsky
@@ -7,6 +8,7 @@ Following is a list of contributors in alphabetical order:
 - Brock Angelo
 - Chen Wang
 - Chris Navarro
+- Chrysovalantis Constantinou
 - Constantinos Sophocleous
 - Gene Roeder
 - Gregory Jansen
@@ -14,12 +16,15 @@ Following is a list of contributors in alphabetical order:
 - Inna Zharnitsky
 - Jim Myers
 - Jong Lee
+- Kaveh Karimi-Asli
 - Kenton McHenry
 - Luigi Marini
 - Mario Felarca
 - Max Burnette
 - Michal Ondrejcek
+- Michael Johnson
 - Michelle Pitcel
+- Mike Bobak
 - Mike Lambert
 - Nicholas Tenczar
 - Nishant Nayudu

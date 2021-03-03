@@ -1,7 +1,9 @@
 package services.mongodb
 
+import java.text.SimpleDateFormat
+
 import services.ExtractionService
-import models.{UUID, Extraction, ExtractionGroup, ResourceRef}
+import models.{Extraction, ExtractionGroup, ResourceRef, UUID}
 import org.bson.types.ObjectId
 import play.api.Play.current
 import com.novus.salat.dao.ModelCompanion
@@ -9,9 +11,11 @@ import com.novus.salat.dao.SalatDAO
 import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date
+
 import play.api.Logger
 import models.WebPageResource
 import com.mongodb.casbah.Imports._
+import util.Parsers
 
 /**
  * Use MongoDB to store extractions
@@ -35,8 +39,23 @@ class MongoDBExtractionService extends ExtractionService {
     Extraction.findOne(MongoDBObject("id" -> new ObjectId(msgId.stringify)))
   }
 
+  def getIterator(userRequired: Boolean, since: Option[String], until: Option[String], user: Option[UUID]): Iterator[Extraction] = {
+    var query = MongoDBObject()
+    if (userRequired) query = query ++ ("user_id" $exists true)
+    since.foreach(t => query = query ++ ("start" $gte Parsers.fromISO8601(t)))
+    until.foreach(t => query = query ++ ("start" $lte Parsers.fromISO8601(t)))
+    user.foreach(uid => query = query ++ ("user_id" -> new ObjectId(uid.stringify)))
+    Extraction.find(query).toIterator
+  }
+
   def findById(resource: ResourceRef): List[Extraction] = {
     Extraction.find(MongoDBObject("file_id" -> new ObjectId(resource.id.stringify))).toList
+  }
+
+  def findByExtractorIDBefore(extractorID: String, status: String, date: String, limit: Int): List[Extraction] = {
+    val order = MongoDBObject("start"-> -1 )
+    val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
+    Extraction.find($and("extractor_id" $eq extractorID, "status" $eq status, "start" $gte sinceDate)).sort(order).limit(limit).toList
   }
 
   def insert(extraction: Extraction): Option[ObjectId] = {
@@ -141,7 +160,7 @@ class MongoDBExtractionService extends ExtractionService {
       }
 
     }
-    groupings
+    groupings.withDefaultValue(ExtractionGroup("N / A", "N / A", "N / A", Map()))
   }
 }
 

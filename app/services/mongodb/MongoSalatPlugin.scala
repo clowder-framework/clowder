@@ -26,6 +26,7 @@ import services.filesystem.DiskByteStorageService
 import services.{AppConfigurationService, ByteStorageService, DI, MetadataService}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.{Map => MutaMap}
 
 /**
  * Mongo Salat service.
@@ -141,6 +142,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("extractions").ensureIndex(MongoDBObject("file_id" -> 1))
 
     collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
+    collection("folders").ensureIndex(MongoDBObject("files" -> 1))
 
     collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
@@ -444,6 +446,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates permissions for the admin Role
     updateMongo("update-admin-role", updateAdminRole)
+
+    // Updates extractors enabled and disabled in a space
+    updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1667,4 +1672,18 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def updateSpaceExtractorsSelection(): Unit = {
+    collection("spaces.extractors").foreach { space =>
+      val enabled = space.getAsOrElse[MongoDBList]("extractors", MongoDBList.empty)
+
+      collection("spaces.extractors").update(
+        MongoDBObject("_id" -> space.get("_id")),
+        MongoDBObject("$set" -> MongoDBObject("enabled" -> enabled)), upsert = false, multi = false)
+
+      collection("spaces.extractors").update(
+        MongoDBObject("_id" -> space.get("_id")),
+        $unset("extractors"))
+    }
+    print("DONE")
+  }
 }

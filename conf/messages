@@ -12,7 +12,7 @@ trial.title = Trial {0}
 owner.label=Owner
 owner.title = {0}''s {1}
 owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
-resource.in.title= {0} in {1} <a href="{2}">{3}</a>
+resource.in.title= {0} in {1} <a href="{2}" class="break-word">{3}</a>
 list.title= {0}
 
 # Basic terms
@@ -62,17 +62,20 @@ securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
 
 #Search help text
-help.search.toggle=Search Syntax
+help.search.toggle=Search Syntax Help
+help.search.overview4=When searching for extractor-generated metadata, the entire extractor path with periods replaced as underscores must be included as a prefix.
+help.search.overview6=e.g.: "https://mysite_com/clowder/extractors/my_extractor.field"<20
 help.search.overview1=If the term or metadata field contains spaces or colons, use double quotes to enclose the phrase.
 help.search.overview2=You can use * as a wildcard character.
 help.search.overview3=Case does not matter unless noted.
-help.search.overview5=(Elasticsearch regular expression syntax help)
+help.search.overview5=When searching date fields, the date formats must match (YYYY-MM-DD will not match YYYY/MM/DD)
 help.search.col1=field
 help.search.col2=example
 help.search.allfields=name, description, creator name, and tag
 help.search.regex1=get anything with "trees" or "streetcars" in basic fields
 help.search.name=searches file, {0} or {1} names
 help.search.creator=creator name
+help.search.created=date of upload/creation
 help.search.email=creator email address
 help.search.resource_type=can be file, {0} or {1}
 help.search.tag=filter search results by specific tags

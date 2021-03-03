@@ -1,23 +1,18 @@
 package api
 
-import java.util.Date
-import javax.inject.Inject
 import api.Permission.Permission
+import controllers.Utils
 import models._
 import play.api.Logger
-import controllers.Utils
 import play.api.Play._
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
-import play.api.libs.json.Json.toJson
+import play.api.i18n.Messages
+import play.api.libs.json.{JsError, JsResult, JsSuccess, Json}
+import play.api.libs.json.Json.{toJson, _}
 import services._
 import util.Mail
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
-import play.api.i18n.Messages
 
-import scala.util.Try
+import java.util.Date
+import javax.inject.Inject
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -51,6 +46,13 @@ class Spaces @Inject()(spaces: SpaceService,
           case Some(id) => {
             appConfig.incrementCount('spaces, 1)
             events.addObjectEvent(request.user, c.id, c.name, "create_space")
+            userService.findRoleByName("Admin") match {
+              case Some(realRole) => {
+                spaces.addUser(userId, realRole, UUID(id))
+              }
+              case None => Logger.info("No admin role found")
+
+            }
             Ok(toJson(Map("id" -> id)))
           }
           case None => Ok(toJson(Map("status" -> "error")))
@@ -451,7 +453,7 @@ class Spaces @Inject()(spaces: SpaceService,
       aResult match {
         case aMap: JsSuccess[Map[String, String]] => {
           //Set up a map of existing users to check against
-          val existingUsers = spaces.getUsersInSpace(spaceId)
+          val existingUsers = spaces.getUsersInSpace(spaceId, None)
           var existUserRole: Map[String, String] = Map.empty
           for (aUser <- existingUsers) {
             spaces.getRoleForUserInSpace(spaceId, aUser.id) match {
@@ -527,8 +529,8 @@ class Spaces @Inject()(spaces: SpaceService,
                   case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
                 }
               }
-              if(space.userCount != spaces.getUsersInSpace(space.id).length){
-                spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id).length)
+              if(space.userCount != spaces.getUsersInSpace(space.id, None).length){
+                spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id, None).length)
               }
 
               Ok(Json.obj("status" -> "success"))
@@ -699,7 +701,7 @@ class Spaces @Inject()(spaces: SpaceService,
               }
             }
 
-            userService.listUsersInSpace(s.id).map { member =>
+            userService.listUsersInSpace(s.id, None).map { member =>
               val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
               Mail.sendEmail("Space Status update", request.user, member, theHtml)
             }
