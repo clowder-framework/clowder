@@ -39,6 +39,7 @@ import play.api.Play._
 import com.mongodb.casbah.Imports._
 import models.FileStatus.FileStatus
 import org.bson.types.ObjectId
+import api.Permission
 
 
 /**
@@ -817,6 +818,21 @@ class MongoDBFileService @Inject() (
         if(!file.isIntermediate){
           val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
           for(fileDataset <- fileDatasets){
+            val datasetSpaces : List[UUID] = fileDataset.spaces
+            var canDeleteFile = false
+            if (file.author.id == user.get.id ) {
+              canDeleteFile = true
+            }
+            for (currentSpace <- datasetSpaces) {
+              userService.getUserRoleInSpace(user.get.id, currentSpace) match {
+                case Some(role) => {
+                  if (role.permissions.contains(Permission.DeleteFile)){
+                    canDeleteFile = true
+                  }
+                }
+                case None =>
+              }
+            }
             datasets.removeFile(fileDataset.id, id)
             if(!file.xmlMetadata.isEmpty){
               datasets.index(fileDataset.id)
