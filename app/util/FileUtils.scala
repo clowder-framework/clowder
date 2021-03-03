@@ -353,9 +353,7 @@ object FileUtils {
   }
 
   // process a file from a bagit zipfile upload
-  def processBagFile(filename: String, user: User, dataset: Dataset, folderId: Option[String]): Option[File] = {
-    val file = new JFile(filename)
-
+  def processBagFile(file: java.io.File, filename: String, user: User, dataset: Dataset, folderId: Option[String]): Option[File] = {
     // Save file bytes
     ByteStorageService.save(file, "uploads") match {
       case Some((loader_id, loader, length)) => {

@@ -30,6 +30,8 @@ import controllers.Utils.https
 import org.json.simple.{JSONArray, JSONObject => SimpleJSONObject}
 import org.json.simple.parser.JSONParser
 import play.api.libs.Files
+import play.api.libs.Files.TemporaryFile
+import scalax.file.Path.createTempFile
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.{ListBuffer, Map => MutaMap}
@@ -381,7 +383,8 @@ class  Datasets @Inject()(
 
                             // Unzip file to temporary location
                             val is = bag.getInputStream(bytes)
-                            val outstream = new FileOutputStream(filename)
+                            val outfile = createTempFile(suffix=filename).jfile
+                            val outstream = new FileOutputStream(outfile)
                             val buffer = new Array[Byte](1024)
                             var chunk = is.read(buffer);
                             while (chunk > 0) {
@@ -390,7 +393,7 @@ class  Datasets @Inject()(
                             }
                             outstream.close()
 
-                            val newfile = FileUtils.processBagFile(filename, user.get, ds, folderId)
+                            val newfile = FileUtils.processBagFile(outfile, filename, user.get, ds, folderId)
                             newfile match {
                               case Some(nf) => {
                                 // Add file metadata if necessary
