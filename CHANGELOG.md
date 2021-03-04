@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `RabbitMQPlugin` has been split into `ExtractorRoutingService` and `MessageService` to isolate the rabbitmq code from 
   the extraction code.
 
+### Removed
+- the toolserver is no longer build as part of clowder since it is no longer maintained. We are working on a
+  newer version that will be included in future versions of clowder.
+
 ## 1.14.1 - 2021-02-02
 
 - Google will no longer work as login provider, we are working on this issue [#157](https://github.com/clowder-framework/clowder/issues/157).
