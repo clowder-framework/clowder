@@ -13,7 +13,7 @@ import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, FileService, FolderService, MetadataService, RabbitmqPlugin}
+import services.{ContextLDService, CurationService, DatasetService, ElasticsearchPlugin, ExtractorMessage, ExtractorRoutingService, FileService, FolderService, MetadataService}
 import api.{Permission, UserRequest}
 import controllers.Utils
 
@@ -22,7 +22,7 @@ import controllers.Utils
  */
 @Singleton
 class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService,
-  folders: FolderService, curations: CurationService) extends MetadataService {
+  folders: FolderService, curations: CurationService, routing: ExtractorRoutingService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -143,10 +143,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
 
     // send extractor message after attached to resource
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      metadataDocs.foreach { m =>
-        p.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
-      }
+    metadataDocs.foreach { m =>
+      routing.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
     }
 
     metadataDocs.map(m => m.id)
@@ -170,10 +168,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
 
     // send extractor message after attached to resource
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      metadataDocs.foreach { m =>
-        p.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
-      }
+    metadataDocs.foreach { m =>
+      routing.metadataRemovedFromResource(m.id, resourceRef, host, apiKey, user)
     }
 
     metadataDocs.map(m => m.id)

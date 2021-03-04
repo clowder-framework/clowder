@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.15.0 - 2021-03-03
+
+### Added
+- CSV/JSON previewer using [Vega](https://vega.github.io/).
+- Previewer for FBX files.
+- `created` search option for filtering by upload/creation date of resource.
+- `EventSinkService` to track user activity. All events are published to the message queue. Multiple consumers are 
+  available in [event-sink-consumers](https://github.com/clowder-framework/event-sink-consumers).
+
+### Fixed
+- Clowder will no longer offer a Download button for a file until it has been PROCESSED.
+- When space created through api the creator was not added to space as admin [#179](https://github.com/clowder-framework/clowder/issues/179).
+
+### Changed
+- `/api/me` will now return some of the same information as response headers. Can be used by other services to single 
+  sign on when running on same host.
+- `RabbitMQPlugin` has been split into `ExtractorRoutingService` and `MessageService` to isolate the rabbitmq code from 
+  the extraction code.
+
+### Removed
+- the toolserver is no longer build as part of clowder since it is no longer maintained. We are working on a
+  newer version that will be included in future versions of clowder.
+
 ## 1.14.1 - 2021-02-02
 
 - Google will no longer work as login provider, we are working on this issue [#157](https://github.com/clowder-framework/clowder/issues/157).

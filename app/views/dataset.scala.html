@@ -23,23 +23,13 @@
 @import play.api.Play.current
 @import _root_.util.Formatters._
 @import services.AppConfiguration
+@import services.EventSinkService
+@import services.DI
 
 @main(dataset.name) {
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/glyphicon-animations.css")">
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
-    @if(AppConfiguration.getAmplitudeApiKey != "") {
-        <script>
-                amplitude.getInstance().logEvent("view_resource", {
-                    "type": "dataset",
-                    "resource_id": '@dataset.id',
-                    "resource_name": '@dataset.name',
-                    "author_id": '@dataset.author.id',
-                    "author_name": '@dataset.author.fullName',
-                    "viewer_id": '@user.get.id',
-                    "viewer_name": '@user.get.getMiniUser.fullName'
-                });
-        </script>
-    }
+
     <script type="text/javascript">
         var spaceId = "@currentSpace";
         var descLabel = "@Messages("dataset.description")";
@@ -269,8 +259,7 @@
                         </div>
                     }
                     @*show ``submit for extraction'' link*@
-                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))
-                            && play.api.Play.current.plugin[services.RabbitmqPlugin].isDefined && !dataset.trash) {
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
                             <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit for extraction
                         </a>

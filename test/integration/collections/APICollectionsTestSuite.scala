@@ -24,7 +24,6 @@ class APICollectionsTestSuite extends Suites (
 {
    implicit override lazy val app: FakeApplication =
      FakeApplication(additionalConfiguration = Map("ehcacheplugin" -> "disabled", "withoutPlugins" -> List(
-    "services.RabbitmqPlugin",
     "services.VersusPlugin")))
 
 }
