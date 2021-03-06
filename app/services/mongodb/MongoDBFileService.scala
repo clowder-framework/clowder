@@ -4,23 +4,23 @@ import play.api.mvc.Request
 import services._
 import models._
 import com.mongodb.casbah.commons.{Imports, MongoDBObject}
-import java.text.SimpleDateFormat
 
+import java.text.SimpleDateFormat
 import _root_.util.{License, Parsers, SearchUtils}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
+
 import java.util.{ArrayList, Calendar}
 import java.io._
-
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
 import play.api.libs.json.{JsValue, Json}
 import com.mongodb.util.JSON
+
 import java.nio.file.{FileSystems, Files}
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
-
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
@@ -31,8 +31,8 @@ import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
 import models.File
 import play.api.libs.json.JsObject
-import java.util.Date
 
+import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
@@ -40,6 +40,7 @@ import com.mongodb.casbah.Imports._
 import models.FileStatus.FileStatus
 import org.bson.types.ObjectId
 import api.Permission
+import api.Permission.users
 
 
 /**
@@ -815,85 +816,73 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
-        var canDeleteFile = false
-        if (user.get.id == file.author.id) {
-          canDeleteFile = true
-        } else {
-          var fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
-          for (fileDataset <- fileDatasets) {
-            var datasetSpaces = fileDataset.spaces
-            for (datasetSpace <- datasetSpaces) {
-              userService.getUserRoleInSpace(user.get.id, datasetSpace) match {
-                case Some(role) => {
-                  if (role.permissions.contains(Permission.DeleteFile)){
-                    canDeleteFile = true
-                  }
+        val canUserDeleteFile = canDeleteFile(file, user)
+
+        if (canUserDeleteFile) {
+          if(!file.isIntermediate){
+            val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
+            for(fileDataset <- fileDatasets){
+              datasets.removeFile(fileDataset.id, id)
+              if(!file.xmlMetadata.isEmpty){
+                datasets.index(fileDataset.id)
+              }
+
+              if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
+                if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                  datasets.newThumbnail(fileDataset.id)
+                  collections.get(fileDataset.collections).found.foreach(collection => {
+                    if(!collection.thumbnail_id.isEmpty){
+                      if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                        collections.createThumbnail(collection.id)
+                      }
+                    }
+                  })
                 }
               }
-            }
-          }
-        }
-        if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
-          for(fileDataset <- fileDatasets){
-            datasets.removeFile(fileDataset.id, id)
-            if(!file.xmlMetadata.isEmpty){
-              datasets.index(fileDataset.id)
+
             }
 
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
-              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
-                datasets.newThumbnail(fileDataset.id)
-                collections.get(fileDataset.collections).found.foreach(collection => {
-                  if(!collection.thumbnail_id.isEmpty){
-                    if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-                      collections.createThumbnail(collection.id)
-                    }
-                  }
-                })
-		          }
+            val fileFolders = folders.findByFileId(file.id)
+            for(fileFolder <- fileFolders) {
+              folders.removeFile(fileFolder.id, file.id)
             }
-                     
+            for(section <- sections.findByFileId(file.id)){
+              sections.removeSection(section)
+            }
+            for(comment <- comments.findCommentsByFileId(id)){
+              comments.removeComment(comment)
+            }
+            for(texture <- threeD.findTexturesByFileId(file.id)){
+              ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
+            }
+            for (follower <- file.followers) {
+              userService.unfollowFile(follower, id)
+            }
           }
 
-          val fileFolders = folders.findByFileId(file.id)
-          for(fileFolder <- fileFolders) {
-            folders.removeFile(fileFolder.id, file.id)
+          // delete the actual file
+          if(isLastPointingToLoader(file.loader, file.loader_id)) {
+            for(preview <- previews.findByFileId(file.id)){
+              previews.removePreview(preview)
+            }
+            if(!file.thumbnail_id.isEmpty)
+              thumbnails.remove(UUID(file.thumbnail_id.get))
+            ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
           }
-          for(section <- sections.findByFileId(file.id)){
-            sections.removeSection(section)
+
+          import UUIDConversions._
+          FileDAO.removeById(file.id)
+          appConfig.incrementCount('files, -1)
+          appConfig.incrementCount('bytes, -file.length)
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete(id.stringify)
           }
-          for(comment <- comments.findCommentsByFileId(id)){
-            comments.removeComment(comment)
-          }
-          for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
-          }
-          for (follower <- file.followers) {
-            userService.unfollowFile(follower, id)
-          }
+
+          // finally remove metadata - if done before file is deleted, document metadataCounts won't match
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
+        } else {
+          Logger.info("User cannot delete file : " + file.id.stringify)
         }
-
-        // delete the actual file
-        if(isLastPointingToLoader(file.loader, file.loader_id)) {
-          for(preview <- previews.findByFileId(file.id)){
-            previews.removePreview(preview)
-          }
-          if(!file.thumbnail_id.isEmpty)
-            thumbnails.remove(UUID(file.thumbnail_id.get))
-          ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
-        }
-
-        import UUIDConversions._
-        FileDAO.removeById(file.id)
-        appConfig.incrementCount('files, -1)
-        appConfig.incrementCount('bytes, -file.length)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
-        }
-
-        // finally remove metadata - if done before file is deleted, document metadataCounts won't match
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
       }
       case None => Logger.debug("File not found")
     }
@@ -1246,6 +1235,18 @@ class MongoDBFileService @Inject() (
     since.foreach(t => query = query ++ ("uploadDate" $gte Parsers.fromISO8601(t)))
     until.foreach(t => query = query ++ ("uploadDate" $lte Parsers.fromISO8601(t)))
     FileDAO.find(query)
+  }
+
+  private def canDeleteFile(file: File, user: Option[User]): Boolean = {
+    datasets.findByFileIdDirectlyContain(file.id).foreach { dataset =>
+      dataset.spaces.map {
+        spaceId => for(role <- users.getUserRoleInSpace(user.get.id, spaceId)) {
+          if(role.permissions.contains(Permission.DeleteFile))
+            return true
+        }
+      }
+    }
+    false
   }
 }
 
