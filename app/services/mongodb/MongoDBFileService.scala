@@ -815,24 +815,27 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
-        if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
-          for(fileDataset <- fileDatasets){
-            val datasetSpaces : List[UUID] = fileDataset.spaces
-            var canDeleteFile = false
-            if (file.author.id == user.get.id ) {
-              canDeleteFile = true
-            }
-            for (currentSpace <- datasetSpaces) {
-              userService.getUserRoleInSpace(user.get.id, currentSpace) match {
+        var canDeleteFile = false
+        if (user.get.id == file.author.id) {
+          canDeleteFile = true
+        } else {
+          var fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
+          for (fileDataset <- fileDatasets) {
+            var datasetSpaces = fileDataset.spaces
+            for (datasetSpace <- datasetSpaces) {
+              userService.getUserRoleInSpace(user.get.id, datasetSpace) match {
                 case Some(role) => {
                   if (role.permissions.contains(Permission.DeleteFile)){
                     canDeleteFile = true
                   }
                 }
-                case None =>
               }
             }
+          }
+        }
+        if(!file.isIntermediate){
+          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
+          for(fileDataset <- fileDatasets){
             datasets.removeFile(fileDataset.id, id)
             if(!file.xmlMetadata.isEmpty){
               datasets.index(fileDataset.id)
