@@ -816,9 +816,10 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
-        val canUserDeleteFile = canDeleteFile(file, user)
+        val currentResourceRef = ResourceRef(ResourceRef.file, file.id)
+        val hasPermission = Permission.checkPermission(user.get,Permission.DeleteFile, currentResourceRef)
 
-        if (canUserDeleteFile) {
+        if (hasPermission) {
           if(!file.isIntermediate){
             val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
             for(fileDataset <- fileDatasets){
@@ -1235,18 +1236,6 @@ class MongoDBFileService @Inject() (
     since.foreach(t => query = query ++ ("uploadDate" $gte Parsers.fromISO8601(t)))
     until.foreach(t => query = query ++ ("uploadDate" $lte Parsers.fromISO8601(t)))
     FileDAO.find(query)
-  }
-
-  private def canDeleteFile(file: File, user: Option[User]): Boolean = {
-    datasets.findByFileIdDirectlyContain(file.id).foreach { dataset =>
-      dataset.spaces.map {
-        spaceId => for(role <- users.getUserRoleInSpace(user.get.id, spaceId)) {
-          if(role.permissions.contains(Permission.DeleteFile))
-            return true
-        }
-      }
-    }
-    false
   }
 }
 
