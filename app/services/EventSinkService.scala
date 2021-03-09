@@ -6,7 +6,7 @@ import java.net.URI
 import java.time.Instant
 import play.api.{Logger, Play}
 import play.api.Play.current
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 
 object EventSinkService {
   val EXCHANGE_NAME_CONFIG_KEY = "eventsink.exchangename"
@@ -14,24 +14,12 @@ object EventSinkService {
 
   val EXCHANGE_NAME_DEFAULT_VALUE = "clowder.metrics"
   val QUEUE_NAME_DEFAULT_VALUE = "event.sink"
-
-  // TODO: Make sure these match the real config key names
-  val AMPLITUDE_CONFIG_KEY = "amplitude.apikey"
-  val GA_CONFIG_KEY = "google.analytics"
-  val INFLUX_AUTH_CONFIG_KEY = "influx.uri"
-  val MONGO_AUTH_CONFIG_KEY = "mongo.uri"
 }
 
 class EventSinkService {
   val messageService: MessageService = DI.injector.getInstance(classOf[MessageService])
   val userService: UserService = DI.injector.getInstance(classOf[UserService])
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-  // UNUSED: Fetch directly from config on demand
-  def getGoogleAnalytics(): String = Play.configuration.getString(EventSinkService.GA_CONFIG_KEY).getOrElse("")
-  def getAmplitudeApiKey(): String = Play.configuration.getString(EventSinkService.AMPLITUDE_CONFIG_KEY).getOrElse("")
-  def getMongoAuth(): String = Play.configuration.getString(EventSinkService.AMPLITUDE_CONFIG_KEY).getOrElse("")
-  def getInfluxAuth(): String = Play.configuration.getString(EventSinkService.INFLUX_AUTH_CONFIG_KEY).getOrElse("")
 
   /** Event Sink exchange name in RabbitMQ */
   val exchangeName = Play.configuration.getString(EventSinkService.EXCHANGE_NAME_CONFIG_KEY)
@@ -42,18 +30,15 @@ class EventSinkService {
     .getOrElse(EventSinkService.QUEUE_NAME_DEFAULT_VALUE)
 
   def logEvent(message: JsValue) = {
-    Logger.info("eventsink.exchangename=" + exchangeName)
-    Logger.info("eventsink.queueName=" + queueName)
-
-    Logger.info("Submitting message to event sink exchange: " + Json.stringify(message))
-
-    //val message = EventSinkMessage(Instant.now().getEpochSecond, category, metadata)
-    messageService.submit(exchangeName, queueName, message, "fanout")
+    // Inject timestamp before logging the event
+    val event = message.as[JsObject] + ("created" -> Json.toJson(java.util.Date.from(Instant.now())))
+    Logger.info("Submitting message to event sink exchange: " + Json.stringify(event))
+    messageService.submit(exchangeName, queueName, event, "fanout")
   }
 
   /** Log an event when user signs up */
   def logUserSignupEvent(user: User) = {
-    Logger.info("New user signed up: " + user.id.stringify)
+    Logger.debug("New user signed up: " + user.id.stringify)
     logEvent(Json.obj(
       "category" -> "user_activity",
       "type" -> "signup",
@@ -64,7 +49,7 @@ class EventSinkService {
 
   /** Log an event when user logs in */
   def logUserLoginEvent(user: User) = {
-    Logger.info("User logged in: " + user.id.stringify)
+    Logger.debug("User logged in: " + user.id.stringify)
     logEvent(Json.obj(
       "category" -> "user_activity",
       "type" -> "login",
@@ -75,7 +60,7 @@ class EventSinkService {
 
   /** Log an event when user views a dataset */
   def logDatasetViewEvent(dataset: Dataset, viewer: Option[User]) = {
-    Logger.info("User viewed a dataset: " + dataset.id.stringify)
+    Logger.debug("User viewed a dataset: " + dataset.id.stringify)
     logEvent(Json.obj(
       "category" -> "view_resource",
       "type" -> "dataset",
@@ -90,7 +75,7 @@ class EventSinkService {
 
   /** Log an event when user views a file */
   def logFileViewEvent(file: File, viewer: Option[User]) = {
-    Logger.info("User viewed a file: " + file.id.stringify)
+    Logger.debug("User viewed a file: " + file.id.stringify)
     logEvent(Json.obj(
       "category" -> "view_resource",
       "type" -> "file",
@@ -105,7 +90,7 @@ class EventSinkService {
 
   /** Log an event when user views a collection */
   def logCollectionViewEvent(collection: Collection, viewer: Option[User]) = {
-    Logger.info("User viewed a collection: " + collection.id.stringify)
+    Logger.debug("User viewed a collection: " + collection.id.stringify)
     logEvent(Json.obj(
       "category" -> "view_resource",
       "type" -> "collection",
@@ -120,7 +105,7 @@ class EventSinkService {
 
   /** Log an event when user views a space */
   def logSpaceViewEvent(space: ProjectSpace, viewer: Option[User]) = {
-    Logger.info("User viewed a space: " + space.id.stringify)
+    Logger.debug("User viewed a space: " + space.id.stringify)
     (viewer, userService.get(space.creator)) match {
       case (Some(v), Some(author)) => {
         logEvent(Json.obj(
