@@ -277,7 +277,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           case Some("DESC") => SortOrder.DESC
           case _ => SortOrder.ASC
         }
-        // Default to name field if order is provided but no field is
+        // Default to created field if order is provided but no field is
         sort match {
           case Some("name") => responsePrep = responsePrep.addSort("name._sort", searchOrder)
           case Some(x) => responsePrep = responsePrep.addSort(x, searchOrder)
