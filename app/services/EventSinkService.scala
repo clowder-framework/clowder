@@ -80,8 +80,8 @@ class EventSinkService {
       "resource_name" -> dataset.name,
       "author_id" -> dataset.author.id,
       "author_name" -> dataset.author.fullName,
-      "viewer_id" -> viewer.get.id,
-      "viewer_name" -> viewer.get.getMiniUser.fullName
+      "viewer_id" -> viewer.getOrElse(User.anonymous).id,
+      "viewer_name" -> viewer.getOrElse(User.anonymous).getMiniUser.fullName
     ))
   }
 
@@ -94,8 +94,8 @@ class EventSinkService {
       "resource_name" -> file.filename,
       "author_id" -> file.author.id,
       "author_name" -> file.author.fullName,
-      "viewer_id" -> viewer.get.id,
-      "viewer_name" -> viewer.get.getMiniUser.fullName
+      "viewer_id" -> viewer.getOrElse(User.anonymous).id,
+      "viewer_name" -> viewer.getOrElse(User.anonymous).getMiniUser.fullName
     ))
   }
 
@@ -108,8 +108,8 @@ class EventSinkService {
       "resource_name" -> collection.name,
       "author_id" -> collection.author.id,
       "author_name" -> collection.author.fullName,
-      "viewer_id" -> viewer.get.id,
-      "viewer_name" -> viewer.get.getMiniUser.fullName
+      "viewer_id" -> viewer.getOrElse(User.anonymous).id,
+      "viewer_name" -> viewer.getOrElse(User.anonymous).getMiniUser.fullName
     ))
   }
 
@@ -135,8 +135,8 @@ class EventSinkService {
           "resource_name" -> space.name,
           "author_id" -> author.id,
           "author_name" -> author.fullName,
-          "viewer_id" -> "",
-          "viewer_name" -> "Anonymous"
+          "viewer_id" -> User.anonymous.id,
+          "viewer_name" -> User.anonymous.fullName
         ))
       }
       case (Some(v), None) => {
@@ -159,8 +159,8 @@ class EventSinkService {
           "resource_name" -> space.name,
           "author_id" -> space.creator.stringify,
           "author_name" -> "",
-          "viewer_id" -> "",
-          "viewer_name" -> "Anonymous"
+          "viewer_id" -> User.anonymous.id,
+          "viewer_name" -> User.anonymous.fullName
         ))
       }
     }
@@ -174,8 +174,8 @@ class EventSinkService {
       "resource_name" -> file.filename,
       "author_id" -> file.author.id,
       "author_name" -> file.author.fullName,
-      "submitter_id" -> submitter.get.id,
-      "submitter_name" -> submitter.get.getMiniUser.fullName
+      "submitter_id" -> submitter.getOrElse(User.anonymous).id,
+      "submitter_name" -> submitter.getOrElse(User.anonymous).getMiniUser.fullName
     ))
   }
 
@@ -187,8 +187,8 @@ class EventSinkService {
       "resource_name" -> dataset.name,
       "author_id" -> dataset.author.id,
       "author_name" -> dataset.author.fullName,
-      "submitter_id" -> submitter.get.id,
-      "submitter_name" -> submitter.get.getMiniUser.fullName
+      "submitter_id" -> submitter.getOrElse(User.anonymous).id,
+      "submitter_name" -> submitter.getOrElse(User.anonymous).getMiniUser.fullName
     ))
   }
 
@@ -201,8 +201,8 @@ class EventSinkService {
       "resource_name" -> dataset.name,
       "author_id" -> dataset.author.id,
       "author_name" -> dataset.author.fullName,
-      "submitter_id" -> submitter.get.id,
-      "submitter_name" -> submitter.get.getMiniUser.fullName
+      "submitter_id" -> submitter.getOrElse(User.anonymous).id,
+      "submitter_name" -> submitter.getOrElse(User.anonymous).getMiniUser.fullName
     ))
   }
 
@@ -214,16 +214,16 @@ class EventSinkService {
           "dataset_name" -> d.name,
           "dataset_author_name" -> d.author.fullName,
           "dataset_author_id" -> d.author.id,
-          "uploader_id" -> uploader.get.id,
-          "uploader_name" -> uploader.get.getMiniUser.fullName,
+          "uploader_id" -> uploader.getOrElse(User.anonymous).id,
+          "uploader_name" -> uploader.getOrElse(User.anonymous).getMiniUser.fullName,
           "filename" -> file.filename,
           "length" -> file.length
         ))
       }
       case None => {
         logEvent("upload", Json.obj(
-          "uploader_id" -> uploader.get.id,
-          "uploader_name" -> uploader.get.getMiniUser.fullName,
+          "uploader_id" -> uploader.getOrElse(User.anonymous).id,
+          "uploader_name" -> uploader.getOrElse(User.anonymous).getMiniUser.fullName,
           "filename" -> file.filename,
           "length" -> file.length
         ))
@@ -240,8 +240,8 @@ class EventSinkService {
       "type" -> "file",
       "uploader_id" -> file.author.id,
       "uploader_name" -> file.author.fullName,
-      "downloader_id" -> downloader.get.id,
-      "downloader_name" -> downloader.get.getMiniUser.fullName,
+      "downloader_id" -> downloader.getOrElse(User.anonymous).id,
+      "downloader_name" -> downloader.getOrElse(User.anonymous).getMiniUser.fullName,
       "filename" -> file.filename,
       "length" -> file.length
     ))
@@ -254,8 +254,8 @@ class EventSinkService {
       "dataset_name" -> dataset.name,
       "dataset_author_name" -> dataset.author.fullName,
       "dataset_author_id" -> dataset.author.id,
-      "downloader_id" -> downloader.get.id,
-      "downloader_name" -> downloader.get.getMiniUser.fullName,
+      "downloader_id" -> downloader.getOrElse(User.anonymous).id,
+      "downloader_name" -> downloader.getOrElse(User.anonymous).getMiniUser.fullName,
       "files_length" -> dataset.files.length,
       "folder_length" -> dataset.folders.length
     ))

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.15.1 - 2021-03-12
+
+### Fixed
+- Several views were throwing errors trying to access a None value in `EventSinkService` when a user was not logged in. 
+  Replaced `get()` with `getOrElse()`.
+
 ## 1.15.0 - 2021-03-03
 
 ### Added
