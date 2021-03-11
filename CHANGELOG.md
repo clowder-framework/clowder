@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Several views were throwing errors trying to access a None value in `EventSinkService` when a user was not logged in. 
   Replaced `get()` with `getOrElse()`.
+- Consolidated field names sent by the EventSinkService to maximize reuse.
+- Changed `EventSinkService` logging to debug to minimize chatter.
 
 ## 1.15.0 - 2021-03-03
 
