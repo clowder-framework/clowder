@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- Consolidated field names sent by the EventSinkService to maxaimize reuse.
+
 ## 1.15.0 - 2021-03-03
 
 ### Added
