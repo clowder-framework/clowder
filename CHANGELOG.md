@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   Replaced `get()` with `getOrElse()`.
 - Consolidated field names sent by the EventSinkService to maximize reuse.
 - Changed `EventSinkService` logging to debug to minimize chatter.
+- Don't automatically create eventsink queue and bind it to eventsink exchange. Let clients do that so that we don't 
+  have a queue for the eventsink filling up if there are no consumers.
 
 ## 1.15.0 - 2021-03-03
 
