@@ -13,7 +13,7 @@ object EventSinkService {
   val QUEUE_NAME_CONFIG_KEY = "eventsink.queuename"
 
   val EXCHANGE_NAME_DEFAULT_VALUE = "clowder.metrics"
-  val QUEUE_NAME_DEFAULT_VALUE = "event.sink"
+  val QUEUE_NAME_DEFAULT_VALUE = ""
 }
 
 class EventSinkService {
