@@ -233,6 +233,12 @@ class RabbitMQMessageService extends MessageService {
     // This probably isn't going to extract queue (use other submit() for that) so make a new broker
     val tempChannel = connection.get.createChannel()
     tempChannel.exchangeDeclare(exchange, exchange_type, true)
+    
+    // If a routing_key (queue name) was provided, ensure that the queue exists
+    if (routing_key != "") {
+      tempChannel.queueDeclare(routing_key, true, false, false, null)
+      tempChannel.queueBind(routing_key, exchange, routing_key)
+    }
     tempChannel.basicPublish(exchange, routing_key, null, message.toString.getBytes)
   }
 
