@@ -33,7 +33,11 @@ class EventSinkService {
     // Inject timestamp before logging the event
     val event = message.as[JsObject] + ("created" -> Json.toJson(java.util.Date.from(Instant.now())))
     Logger.info("Submitting message to event sink exchange: " + Json.stringify(event))
-    messageService.submit(exchangeName, queueName, event, "fanout")
+    try {
+      messageService.submit(exchangeName, queueName, event, "fanout")
+    } catch {
+      case e: Throwable => { Logger.error("Failed to submit event sink message", e) }
+    }
   }
 
   /** Log an event when user signs up */
