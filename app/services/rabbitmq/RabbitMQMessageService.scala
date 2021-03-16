@@ -230,7 +230,7 @@ class RabbitMQMessageService extends MessageService {
 
   /** Submit a message to broker. */
   override def submit(exchange: String, routing_key: String, message: JsValue, exchange_type: String = "topic") = {
-    // This probably isn't going to extract queue (use other submit() for that) so make a new broker
+    connect()
     val tempChannel = connection.get.createChannel()
     tempChannel.exchangeDeclare(exchange, exchange_type, true)
     
