@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.15.1 - 2021-03-12
+
+### Fixed
+- Several views were throwing errors trying to access a None value in `EventSinkService` when a user was not logged in. 
+  Replaced `get()` with `getOrElse()`.
+- Consolidated field names sent by the EventSinkService to maximize reuse.
+- Changed `EventSinkService` logging to debug to minimize chatter.
+- Don't automatically create eventsink queue and bind it to eventsink exchange. Let clients do that so that we don't 
+  have a queue for the eventsink filling up if there are no consumers.
+
 ## 1.15.0 - 2021-03-03
 
 ### Added
