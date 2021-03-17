@@ -204,19 +204,19 @@ class MongoDBFileService @Inject() (
     * Reads the following parameters from Clowder configuration:
     *     - archiveAutoAfterInactiveCount - timeout after which files are considered
     *         to be candidates for archival (see below)
-    *     - archiveAutoAfterInactiveUnit - time unit that should be used for the timeout (see below)
+    *     - archiveAutoAfterInactiveUnits - time unit that should be used for the timeout (see below)
     *     - archiveAutoAboveMinimumStorageSize - files below this size (in Bytes) should not be archived
     *     - clowder.rabbitmq.clowderurl - the Clowder hostname to pass to the archival extractor
     *     - commKey - the admin key to pass to the archival extractor
     *
     * Archival candidates are currently defined as follows:
     *    - file's size must be greater than `archiveAutoAboveMinimumStorageSize` Bytes
-    *    - file's age must be greater than `archiveAutoAfterInactiveCount` * `archiveAutoAfterInactiveUnit`
+    *    - file's age must be greater than `archiveAutoAfterInactiveCount` * `archiveAutoAfterInactiveUnits`
     *         (e.g. 10 days old)
     *    - AND one of the following must be true:
     *       - file has never been downloaded (0 downloads)
     *                 OR
-    *       - file has not been downloaded in the past `archiveAutoAfterInactiveCount` `archiveAutoAfterInactiveUnit`
+    *       - file has not been downloaded in the past `archiveAutoAfterInactiveCount` `archiveAutoAfterInactiveUnits`
     *
     *
     */
