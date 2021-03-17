@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Consolidated field names sent by the EventSinkService to maxaimize reuse.
+- Reworked auto-archival configuration options to make their meanings more clear.
 
 ## 1.15.0 - 2021-03-03
 
