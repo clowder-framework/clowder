@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Consolidated field names sent by the EventSinkService to maxaimize reuse.
+- Add status column to files report to indicate if files are ARCHIVED, etc.
 
 ## 1.15.0 - 2021-03-03
 
