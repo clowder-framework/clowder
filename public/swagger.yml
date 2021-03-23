@@ -151,15 +151,17 @@ paths:
           schema:
             type: integer
         - name: sort
-            in: query
-            description: A date or numeric field to sort by. If order is given but no field specified, created date is used.
-            schema:
-              type: string
+          in: query
+          description: A date or numeric field to sort by. If order is given but no field specified, created date is used.
+          schema:
+            type: string
         - name: order
-            in: query
-            description: Whether to scored in asc (ascending) or desc (descending) order. If a field is given without an order, asc is used.
-            schema:
-              type: string
+          in: query
+          description: Whether to scored in asc (ascending) or desc (descending) order. If a field is given without an order, asc is used.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
       responses:
         200:
           description: OK
