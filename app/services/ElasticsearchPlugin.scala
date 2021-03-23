@@ -279,7 +279,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
         // Default to created field if order is provided but no field is
         sort match {
-          case Some("name") => responsePrep = responsePrep.addSort("name._sort", searchOrder)
+          // case Some("name") => responsePrep = responsePrep.addSort("name._sort", searchOrder) TODO: Not yet supported
           case Some(x) => responsePrep = responsePrep.addSort(x, searchOrder)
           case None => order match {
             case Some(o) => responsePrep = responsePrep.addSort("created", searchOrder)
@@ -951,7 +951,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         matches += mat
       }
     }
-    
+
     // If a term is specified that isn't in this list, it's assumed to be a metadata field (for sorting and filtering)
     val official_terms = List("name", "creator", "created", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
 
