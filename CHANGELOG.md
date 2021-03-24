@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Added a `sort` and `order` parameter to `/api/search` endpoint that supports date and numeric field sorting. If only order is specified, created date is used. String fields are not currently supported.
+- Added a new `/api/deleteindex` admin endpoint that will queue an action to delete an Elasticsearch index (usually prior to a reindex).
+
 ## 1.15.1 - 2021-03-12
 
 ### Fixed
