@@ -16,3 +16,10 @@ This scenario includes the following steps:
 - Upload file metadata
 
 There is a 1s pause between each call. Make that shorter or disable if stress testing.
+
+To run the test from the command line use the following command:
+
+`jmeter -n -t jmeter-clowder.jmx -l jmeter-out -e -o jmeter-out-html`
+
+The file `jmeter-out` will include the status of each call. 
+The `jmeter-out-html` will include an html page with summaries and visualizations of that output.
