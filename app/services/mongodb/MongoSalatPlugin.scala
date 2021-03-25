@@ -26,6 +26,7 @@ import services.filesystem.DiskByteStorageService
 import services.{AppConfigurationService, ByteStorageService, DI, MetadataService}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.{Map => MutaMap}
 
 /**
  * Mongo Salat service.
@@ -1685,5 +1686,4 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
     print("DONE")
   }
-
 }

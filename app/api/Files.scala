@@ -44,8 +44,10 @@ class Files @Inject()(
   folders: FolderService,
   spaces: SpaceService,
   userService: UserService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  sinkService: EventSinkService) extends ApiController {
 
   lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
@@ -100,8 +102,10 @@ class Files @Inject()(
               case Some((inputStream, filename, contentType, contentLength)) => {
 
                 // Increment download count if tracking is enabled
-                if (tracking)
+                if (tracking) {
                   files.incrementDownloads(id, user)
+                  sinkService.logFileDownloadEvent(file, user)
+                }
 
                 request.headers.get(RANGE) match {
                   case Some(value) => {
@@ -129,7 +133,7 @@ class Files @Inject()(
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
-
+                    sinkService.logFileDownloadEvent(file, user)
                     Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
@@ -282,10 +286,8 @@ class Files @Inject()(
           val mdMap = metadata.getExtractionSummary
 
           //send RabbitMQ message
-          current.plugin[RabbitmqPlugin].foreach { p =>
-            p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
-              request.apiKey, request.user)
-          }
+          routing.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
+            request.apiKey, request.user)
 
           // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
 
@@ -339,9 +341,7 @@ class Files @Inject()(
             val mdMap = metadata.getExtractionSummary
 
             //send RabbitMQ message
-            current.plugin[RabbitmqPlugin].foreach { p =>
-              p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-            }
+            routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
             events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
 
@@ -401,10 +401,8 @@ class Files @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
                     request.apiKey, request.user)
-                }
 
                 files.index(f.id)
               })
@@ -473,11 +471,9 @@ class Files @Inject()(
             request.apiKey, request.user)
         }
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
-              request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          routing.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
+            request.apiKey, request.user)
         }
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
       }
@@ -604,10 +600,7 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        current.plugin[RabbitmqPlugin].foreach {
-          // FIXME dataset not available?
-          _.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
-        }
+        routing.fileCreated(theFile, None, Utils.baseUrl(request).toString, request.apiKey)
 
         Ok(toJson(Map("id" -> id.stringify)))
 
@@ -1642,10 +1635,8 @@ class Files @Inject()(
       case Some(file) => {
         events.addObjectEvent(request.user, file.id, file.filename, EventType.DELETE_FILE.toString)
         // notify rabbitmq
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          datasets.findByFileIdAllContain(file.id).foreach { ds =>
-            p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
-          }
+        datasets.findByFileIdAllContain(file.id).foreach { ds =>
+          routing.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
         }
 
         //this stmt has to be before files.removeFile
@@ -1962,10 +1953,9 @@ class Files @Inject()(
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
-        datasetId, newFlags, apiKey, user)
-    }
+    routing.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+      datasetId, newFlags, apiKey, user)
+    sinkService.logSubmitFileToExtractorEvent(file, extractorId, user)
     Logger.info("Sent archive request for file " + id)
   }
 }

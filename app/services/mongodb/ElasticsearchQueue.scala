@@ -53,6 +53,7 @@ class ElasticsearchQueue @Inject() (
             }
           }
           case "index_all" => _indexAll()
+          case "delete_index" => _deleteIndex()
           case "index_swap" => _swapIndex()
           case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
         }
@@ -63,6 +64,7 @@ class ElasticsearchQueue @Inject() (
           case "index_dataset" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
           case "index_collection" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
           case "index_all" => _indexAll()
+          case "delete_index" => _deleteIndex()
           case "index_swap" => _swapIndex()
           case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
         }
@@ -94,6 +96,12 @@ class ElasticsearchQueue @Inject() (
         datasets.indexAll()
         files.indexAll()
       }
+    })
+  }
+
+  def _deleteIndex() = {
+    current.plugin[ElasticsearchPlugin].foreach(p => {
+      p.deleteAll()
     })
   }
 

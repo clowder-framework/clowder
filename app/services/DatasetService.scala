@@ -383,6 +383,7 @@ trait DatasetService {
 
   def incrementDownloads(id: UUID, user: Option[User])
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[Dataset]
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[Dataset]
 
+  def getTrashedIds(): List[UUID]
 }

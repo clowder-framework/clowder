@@ -4,19 +4,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-
 ## Unreleased
 
 ### Added
-- Added support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
+- Added a `sort` and `order` parameter to `/api/search` endpoint that supports date and numeric field sorting. If only order is specified, created date is used. String fields are not currently supported.
+- Added a new `/api/deleteindex` admin endpoint that will queue an action to delete an Elasticsearch index (usually prior to a reindex).
+
+## 1.15.1 - 2021-03-12
+
+### Fixed
+- Several views were throwing errors trying to access a None value in `EventSinkService` when a user was not logged in. 
+  Replaced `get()` with `getOrElse()`.
+- Consolidated field names sent by the EventSinkService to maximize reuse.
+- Changed `EventSinkService` logging to debug to minimize chatter.
+- Don't automatically create eventsink queue and bind it to eventsink exchange. Let clients do that so that we don't 
+  have a queue for the eventsink filling up if there are no consumers.
+
+## 1.15.0 - 2021-03-03
+
+### Added
+- CSV/JSON previewer using [Vega](https://vega.github.io/).
+- Previewer for FBX files.
+- `created` search option for filtering by upload/creation date of resource.
+- `EventSinkService` to track user activity. All events are published to the message queue. Multiple consumers are 
+  available in [event-sink-consumers](https://github.com/clowder-framework/event-sink-consumers).
+
+### Fixed
+- Clowder will no longer offer a Download button for a file until it has been PROCESSED.
+- When space created through api the creator was not added to space as admin [#179](https://github.com/clowder-framework/clowder/issues/179).
+
+### Changed
+- `/api/me` will now return some of the same information as response headers. Can be used by other services to single 
+  sign on when running on same host.
+- `RabbitMQPlugin` has been split into `ExtractorRoutingService` and `MessageService` to isolate the rabbitmq code from 
+  the extraction code.
+
+### Removed
+- the toolserver is no longer build as part of clowder since it is no longer maintained. We are working on a
+  newer version that will be included in future versions of clowder.
+
+## 1.14.1 - 2021-02-02
+
+- Google will no longer work as login provider, we are working on this issue [#157](https://github.com/clowder-framework/clowder/issues/157).
+- If non local accounts are used the count can be wrong. Use the [fixcounts](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
+script to fix this.
+
+### Fixed
+- Error logging in with Orcid due to changed URL. [#91](https://github.com/clowder-framework/clowder/issues/91)
+- Fixed error in url for Twitter login.
+- Users count was not correct if using anything else but local accounts. [#136](https://github.com/clowder-framework/clowder/issues/136)
+- Files were not properly reindexed when the Move button was used to move a file into or out of a folder in a dataset. 
+- When adding a file to a dataset by URL, prioritize the URL `content-type` header over the file content type established
+  by looking at the file name extension. [#139](https://github.com/clowder-framework/clowder/issues/139)
+- Wrap words across lines to stay within interface elements. [#160](https://github.com/clowder-framework/clowder/issues/160)
+
+## 1.14.0 - 2021-01-07
+
+### Added
+- Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user. Database administrators
+  can use `scripts/updates/UpdateUserId.js` to assign user IDs to older extraction event records based on resource ownership
+  in order to improve the accuracy of the report for older data.
+
+### Changed
+- `api/reports/storage/spaces` endpoint now accepts a space parameter for ID rather than requiring a space filter.
+- Datasets and collections in the trash are no longer indexed for discovery in search services.
+- Switched to loading the 3DHOP libraries used by `viewer_hop.js` from http://vcg.isti.cnr.it/3dhop/distribution to https://3dhop.net/distribution. The new server is a safer https server.
+
+## 1.13.0 - 2020-12-02
+
+### Added
+- Ability to submit multiple selected files within a dataset to an extractor.
+- Support for Amplitude clickstream tracking. See Admin -> Customize to configure Amplitude apikey.
 - UpdateUserId.js to scripts/updates. This code adds user_id to each document in extractions collection in mongodb. 
   user_id is taken from author id in uploads.files if exists, else it taken from author id in datasets collection.
-- Ability to submit multiple selected files within a dataset to an extractor.
-- api route for bulk delete files
+
 ### Fixed
-- GeospatialViewer preview tab should no longer show if it does not contain any rendered data.
-- Editor can now delete tags on files, datasets and sections.
-- An extractor with file matching set to `*/*` (all file types) would mistakenly send out dataset events.
+- An extractor with file matching set to `*/*` (all file types) would incorrectly send out dataset events.
+- Space Editors can now delete tags on files, datasets and sections.
+- GeospatialViewer previewer no longer shows if file does not contain geospatial layers.
 
 ## 1.12.2 - 2020-11-19
 
@@ -52,8 +117,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Track user_id with every extraction event. [#94](https://github.com/clowder-framework/clowder/issues/94)
 - Added a new storage report at `GET api/reports/storage/spaces/:id` for auditing user storage usage on a space basis.
 - The file and dataset metrics reports also have support for since and until ISO8601 date parameters.
-- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files. Added `mimetype.nxz=model/nxz` and 
-  `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
+- Added `viewer_hop` a 3D models previewer for `*.ply` and `*.nxz` files. Added `mimetype.nxz=model/nxz` and `mimetype.NXZ=model/nxz` as new mimetypes in `conf/mimetypes.conf`
 
 ### Fixed
 - Ignore the `update` field when posting to `/api/extractors`. [#89](https://github.com/clowder-framework/clowder/issues/89)

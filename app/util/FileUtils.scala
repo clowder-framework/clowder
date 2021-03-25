@@ -39,6 +39,8 @@ object FileUtils {
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
+  lazy val routing : ExtractorRoutingService = DI.injector.getInstance(classOf[ExtractorRoutingService])
+  lazy val sinkService : EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -375,6 +377,7 @@ object FileUtils {
         saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
           processFileBytes(fixedfile, f.ref.file, dataset)
           files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+          sinkService.logFileUploadEvent(fixedfile, dataset, Option(user))
           processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
           processDataset(file, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
           files.setStatus(fixedfile.id, FileStatus.PROCESSED)
@@ -535,9 +538,7 @@ object FileUtils {
       val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
-      current.plugin[RabbitmqPlugin].foreach { p =>
-        p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
-      }
+      routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
     }
   }
 
@@ -661,12 +662,18 @@ object FileUtils {
       case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
-            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
-            files.save(fixedfile)
+            // if header's content type is application/octet-stream leave content type as the one based on file name,
+            // otherwise replace with value from header.
+            val fixedFile = if (conn.getContentType == play.api.http.ContentTypes.BINARY) {
+              f.copy(loader = loader, loader_id = loader_id, length = length)
+            } else {
+              f.copy(contentType = conn.getContentType, loader = loader, loader_id = loader_id, length = length)
+            }
+            files.save(fixedFile)
             appConfig.incrementCount('files, 1)
             appConfig.incrementCount('bytes, f.length)
             Logger.debug("Uploading Completed")
-            Some(fixedfile)
+            Some(fixedFile)
           }
           case None => {
             Logger.error(s"File $loader_id was not found anymore")
@@ -762,9 +769,7 @@ object FileUtils {
 
     // send file to rabbitmq for processing
     if (runExtractors) {
-      current.plugin[RabbitmqPlugin].foreach { p =>
-        p.fileCreated(file, dataset, clowderurl, apiKey)
-      }
+      routing.fileCreated(file, dataset, clowderurl, apiKey)
     }
 
     // index the file
@@ -788,9 +793,7 @@ object FileUtils {
     dataset.foreach{ds =>
 
       if (runExtractors) {
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.fileAddedToDataset(file, ds, clowderurl, apiKey)
-        }
+        routing.fileAddedToDataset(file, ds, clowderurl, apiKey)
       }
 
       // index dataset
