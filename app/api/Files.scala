@@ -21,6 +21,7 @@ import java.net.URL
 import java.util.Date
 import javax.inject.Inject
 import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 
 /**
  * Json API for files.
@@ -1616,13 +1617,19 @@ class Files @Inject()(
         if (fileIds.isEmpty){
           BadRequest("No file ids supplied")
         } else {
-          for (fileId <- fileIds){
-            if (UUID.isValid(fileId)){
-              files.removeFile(UUID(fileId),Utils.baseUrl(request), request.apiKey, request.user)
+          var resourceRefList: ListBuffer[ResourceRef] = ListBuffer.empty[ResourceRef]
+          for (fileId <- fileIds) {
+            if (UUID.isValid(fileId)) {
+              val current_resource_ref = ResourceRef(ResourceRef.file, UUID(fileId))
+              resourceRefList += current_resource_ref
             }
           }
+          val filesIdsCanDelete = Permission.checkPermissions(request.user, Permission.DeleteFile, resourceRefList.toList).approved.map(_.id)
+          for (id <- filesIdsCanDelete) {
+            files.removeFile(id,Utils.baseUrl(request), request.apiKey, request.user)
+          }
+          Ok(toJson(Map("status" -> "success")))
         }
-        Ok(toJson("Done"))
       }
       case None => {
         BadRequest("No user supplied")
