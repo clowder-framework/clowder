@@ -180,4 +180,10 @@ class Admin @Inject() (userService: UserService,
     if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
     else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
   }
+
+  def deleteIndex = ServerAdminAction { implicit request =>
+    val success = esqueue.queue("delete_index")
+    if (success) Ok(toJson(Map("status" -> "deindex successfully queued")))
+    else BadRequest(toJson(Map("status" -> "deindex queuing failed, Elasticsearch may be disabled")))
+  }
 }

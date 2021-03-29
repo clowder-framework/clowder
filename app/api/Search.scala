@@ -22,7 +22,7 @@ class Search @Inject() (
   /** Search using a simple text string with filters */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
-             from: Option[Int], size: Option[Int], page: Option[Int]) = PermissionAction(Permission.ViewDataset) { implicit request =>
+             from: Option[Int], size: Option[Int], page: Option[Int], sort: Option[String], order: Option[String]) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         // If from is specified, use it. Otherwise use page * size of page if possible, otherwise use 0.
@@ -42,7 +42,9 @@ class Search @Inject() (
           (spaceid match {case Some(x) => s"&spaceid=$x" case None => ""}) +
           (folderid match {case Some(x) => s"&folderid=$x" case None => ""}) +
           (field match {case Some(x) => s"&field=$x" case None => ""}) +
-          (tag match {case Some(x) => s"&tag=$x" case None => ""})
+          (tag match {case Some(x) => s"&tag=$x" case None => ""}) +
+          (sort match {case Some(x) => s"&sort=$x" case None => ""}) +
+          (order match {case Some(x) => s"&order=$x" case None => ""})
 
         // Add space filter to search here as a simple permissions check
         val superAdmin = request.user match {
@@ -54,7 +56,7 @@ class Search @Inject() (
         else
           spaces.listAccess(0, Set[Permission](Permission.ViewSpace), request.user, true, true, false, false).map(sp => sp.id)
 
-        val response = plugin.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, permitted, request.user)
+        val response = plugin.search(query, resource_type, datasetid, collectionid, spaceid, folderid, field, tag, from_index, size, sort, order, permitted, request.user)
         val result = SearchUtils.prepareSearchResponse(response, source_url, request.user)
         Ok(toJson(result))
       }
