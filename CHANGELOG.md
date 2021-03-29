@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added a `sort` and `order` parameter to `/api/search` endpoint that supports date and numeric field sorting. If only order is specified, created date is used. String fields are not currently supported.
 - Added a new `/api/deleteindex` admin endpoint that will queue an action to delete an Elasticsearch index (usually prior to a reindex).
 
+### Changed
+- Consolidated field names sent by the EventSinkService to maxaimize reuse.
+- Reworked auto-archival configuration options to make their meanings more clear.
+
 ## 1.15.1 - 2021-03-12
 
 ### Fixed
