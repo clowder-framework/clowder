@@ -288,7 +288,7 @@ class Reporting @Inject()(selections: SelectionService,
     contents += "\""+f.loader_id+"\","
     contents += "\""+ds_list+"\","
     contents += "\""+coll_list+"\","
-    contents += "\""+space_list+"\""
+    contents += "\""+space_list+"\","
     contents += "\""+f.status+"\""
     contents += "\n"
 
