@@ -6,9 +6,29 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- Remove the RabbitMQ plugin from the docker version of clowder
+
 ### Added
-- Added previewer for Vega v5.
-- Added a new `created` search option for filtering by upload/creation date of resource.
+- Added a `sort` and `order` parameter to `/api/search` endpoint that supports date and numeric field sorting. If only order is specified, created date is used. String fields are not currently supported.
+- Added a new `/api/deleteindex` admin endpoint that will queue an action to delete an Elasticsearch index (usually prior to a reindex).
+
+## 1.15.1 - 2021-03-12
+
+### Fixed
+- Several views were throwing errors trying to access a None value in `EventSinkService` when a user was not logged in. 
+  Replaced `get()` with `getOrElse()`.
+- Consolidated field names sent by the EventSinkService to maximize reuse.
+- Changed `EventSinkService` logging to debug to minimize chatter.
+- Don't automatically create eventsink queue and bind it to eventsink exchange. Let clients do that so that we don't 
+  have a queue for the eventsink filling up if there are no consumers.
+
+## 1.15.0 - 2021-03-03
+
+### Added
+- CSV/JSON previewer using [Vega](https://vega.github.io/).
+- Previewer for FBX files.
+- `created` search option for filtering by upload/creation date of resource.
 - `EventSinkService` to track user activity. All events are published to the message queue. Multiple consumers are 
   available in [event-sink-consumers](https://github.com/clowder-framework/event-sink-consumers).
 
@@ -17,9 +37,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When space created through api the creator was not added to space as admin [#179](https://github.com/clowder-framework/clowder/issues/179).
 
 ### Changed
-- `/api/me` will now return some of the same information as response headers.
+- `/api/me` will now return some of the same information as response headers. Can be used by other services to single 
+  sign on when running on same host.
 - `RabbitMQPlugin` has been split into `ExtractorRoutingService` and `MessageService` to isolate the rabbitmq code from 
   the extraction code.
+
+### Removed
+- the toolserver is no longer build as part of clowder since it is no longer maintained. We are working on a
+  newer version that will be included in future versions of clowder.
 
 ## 1.14.1 - 2021-02-02
 

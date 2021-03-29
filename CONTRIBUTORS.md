@@ -19,6 +19,7 @@ Following is a list of contributors in alphabetical order:
 - Kaveh Karimi-Asli
 - Kenton McHenry
 - Luigi Marini
+- Maria-Spyridoula Tzima
 - Mario Felarca
 - Max Burnette
 - Michal Ondrejcek
