@@ -64,21 +64,18 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     val archiveEnabled = Play.application.configuration.getBoolean("archiveEnabled", false)
     if (archiveEnabled && archivalTimer == null) {
-      val archiveDebug = Play.application.configuration.getBoolean("archiveDebug", false)
-      val interval = if (archiveDebug) { 5 minutes } else { 1 day }
+      // Set archiveAutoInterval == 0 to disable auto archiving
+      val archiveAutoInterval = Play.application.configuration.getLong("archiveAutoInterval", 0)
+      if (archiveAutoInterval > 0) {
+        val interval = FiniteDuration(archiveAutoInterval, SECONDS)
+        val archiveAutoDelay = Play.application.configuration.getLong("archiveAutoDelay", 0)
+        val delay = FiniteDuration(archiveAutoDelay, SECONDS)
 
-      // Determine time until next midnight
-      val now = ZonedDateTime.now
-      val midnight = now.truncatedTo(ChronoUnit.DAYS)
-      val sinceLastMidnight = Duration.between(midnight, now).getSeconds
-      val delay = if (archiveDebug) { 10 seconds } else {
-        (Duration.ofDays(1).getSeconds - sinceLastMidnight) seconds
-      }
-
-      Logger.info("Starting archival loop - first iteration in " + delay + ", next iteration after " + interval)
-      archivalTimer = Akka.system.scheduler.schedule(delay, interval) {
-        Logger.info("Starting auto archive process...")
-        files.autoArchiveCandidateFiles()
+        Logger.info("Starting archival loop - first iteration in " + delay + ", next iteration after " + interval)
+        archivalTimer = Akka.system.scheduler.schedule(delay, interval) {
+          Logger.info("Starting auto archive process...")
+          files.autoArchiveCandidateFiles()
+        }
       }
     }
 
