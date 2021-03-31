@@ -814,10 +814,6 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
-        val currentResourceRef = ResourceRef(ResourceRef.file, file.id)
-        val hasPermission = Permission.checkPermission(user.get,Permission.DeleteFile, currentResourceRef)
-
-        if (hasPermission) {
           if(!file.isIntermediate){
             val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
             for(fileDataset <- fileDatasets){
