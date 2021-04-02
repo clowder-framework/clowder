@@ -39,7 +39,8 @@ class Metadata @Inject() (
   curations: CurationService,
   vocabs: StandardVocabularyService,
   events: EventService,
-  spaceService: SpaceService) extends ApiController {
+  spaceService: SpaceService,
+  routing: ExtractorRoutingService) extends ApiController {
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -499,9 +500,7 @@ class Metadata @Inject() (
                         events.addObjectEvent(Some(user), resource.id, ds.name, EventType.ADD_METADATA_DATASET.toString)
                       }
                     }
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                    }
+                    routing.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                   }
                   case ResourceRef.file => {
                     files.index(resource.id)
@@ -511,9 +510,7 @@ class Metadata @Inject() (
                         events.addObjectEvent(Some(user), resource.id, f.filename, EventType.ADD_METADATA_FILE.toString)
                       }
                     }
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-                    }
+                    routing.metadataAddedToResource(metadataId, resource, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
                   }
                   case _ =>
                     Logger.error("File resource type not recognized")
@@ -556,10 +553,8 @@ class Metadata @Inject() (
                     p.delete(m.attachedTo.id.stringify)
                     files.index(m.attachedTo.id)
                   }
-                  current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
+                  routing.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request),
                       request.apiKey, request.user)
-                  }
                 }
                 case ResourceRef.dataset => {
                   current.plugin[ElasticsearchPlugin].foreach { p =>
@@ -567,9 +562,7 @@ class Metadata @Inject() (
                     p.delete(m.attachedTo.id.stringify)
                     datasets.index(m.attachedTo.id)
                   }
-                  current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
-                  }
+                  routing.metadataRemovedFromResource(id, m.attachedTo, Utils.baseUrl(request), request.apiKey, request.user)
                 }
                 case _ => {
                   Logger.error("Unknown attached resource type for metadata")

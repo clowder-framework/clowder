@@ -7,15 +7,7 @@ import play.api.test.Helpers._
 import org.mockito.Mockito.when
 import org.scalatest.mock.MockitoSugar._
 import org.mockito.Mockito.doNothing
-import services.ExtractorService
-import services.ExtractionService
-import services.ExtractionRequestsService
-import services.PreviewService
-import services.RdfSPARQLService
-import services.ThumbnailService
-import services.FileService
-import services.DatasetService
-import services.AppConfigurationService
+import services.{AppConfigurationService, DatasetService, EventSinkService, ExtractionRequestsService, ExtractionService, ExtractorRoutingService, ExtractorService, FileService, MessageService, PreviewService, RdfSPARQLService, ThumbnailService}
 import play.api.GlobalSettings
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
@@ -56,10 +48,13 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
   val mockExtractions = mock[ExtractionService]
   val mockDTS = mock[ExtractionRequestsService]
   val mockExtractors = mock[ExtractorService]
-  val mockPreviews = mock[PreviewService]
-  val mockRdf = mock[RdfSPARQLService]
-  val mockthumbnails = mock[ThumbnailService]
+  val mockMsgService = mock[MessageService]
+  val mockRouting = mock[ExtractorRoutingService]
+  //val mockPreviews = mock[PreviewService]
+  //val mockRdf = mock[RdfSPARQLService]
+  //val mockthumbnails = mock[ThumbnailService]
   val mockAppConfig = mock[AppConfigurationService]
+  val mockEventSink = mock[EventSinkService]
 
   when(mockExtractors.getExtractorNames(List.empty)).thenReturn(List("ncsa.cv.face", "ncsa.ocr"))
   when(mockExtractors.getExtractorServerIPList).thenReturn(List("dts1.ncsa.illinois.edu", "141.142.220.244"))
@@ -70,7 +65,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
 
   "The OneAppPerSuite trait for Extraction API Controller get actions" must {
      "return List of Extractors Names" in {
-      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockAppConfig)
+      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockMsgService, mockRouting, mockAppConfig, mockEventSink)
       val resultExNames = extractions_apicontroller.getExtractorNames(List.empty).apply(FakeRequest())
       contentType(resultExNames) mustEqual Some("application/json")
       contentAsString(resultExNames) must include ("Extractors")
@@ -78,7 +73,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
      }
 
     "return List of Extractors' Servers IPs/hostname" in {
-      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockAppConfig)
+      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockMsgService, mockRouting, mockAppConfig, mockEventSink)
       val resultExIPs = extractions_apicontroller.getExtractorServersIP.apply(FakeRequest())
       contentType(resultExIPs) mustEqual Some("application/json")
       contentAsString(resultExIPs) must include ("Servers")
@@ -86,7 +81,7 @@ class ExtractionAPIControllerSpec extends PlaySpec with OneAppPerSuite {
       }
 
     "return List of Extractors supported Input Types" in {
-      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockPreviews, mockRdf, mockthumbnails, mockAppConfig)
+      val extractions_apicontroller = new api.Extractions(mockfiles, mockdatasets, mockExtractions, mockDTS, mockExtractors, mockMsgService, mockRouting, mockAppConfig, mockEventSink)
       val resultExInputTypes = extractions_apicontroller.getExtractorInputTypes.apply(FakeRequest())
       contentType(resultExInputTypes) mustEqual Some("application/json")
       contentAsString(resultExInputTypes) must include ("InputTypes")
