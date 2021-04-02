@@ -1,7 +1,13 @@
+#
+#note - for each extractor, replace the following fields:
+#  - GEOSERVER_USERNAME
+#  - GEOSERVER_PASSWORD
+#  - GEOSERVER_USER
+#  - replace 'GEOSERVER_URL' with the actual ip or url for the geoserver (not 'localhost')
+
 version: "3.2"
 
 services:
-
   ncsa_geo_shp:
     image: clowder/extractors-geoshp-preview:${VERSION:-latest}
     networks:
