@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unrelease
+
+### Added
+- Log an event each time that a user archives or unarchives a file.
+
 ## 1.16.0 - 2021-03-31
 
 ### Fixed
