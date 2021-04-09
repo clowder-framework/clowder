@@ -17,24 +17,16 @@ services:
       - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
       - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
       - PROXY_ON=${PROXY_ON}
-      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_HOST=${TRAEFIK_HOST}
       - PROXY_URL=${PROXY_URL}
       - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
       - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
       - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
       - GEOSERVER_USER=${GEOSERVER_USER:-admin}
-      - GEOSERVER_URL=${GEOSERVER_URL}
+      - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
     depends_on:
       - geoserver
     restart: unless-stopped
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == worker
-      restart_policy:
-        condition: any
 
   extractor-geotiff-preview:
     image: clowder/extractors-geotiff-preview
@@ -45,24 +37,16 @@ services:
       - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
       - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
       - PROXY_ON=${PROXY_ON}
-      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_HOST=${TRAEFIK_HOST}
       - PROXY_URL=${PROXY_URL}
       - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
       - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
       - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
       - GEOSERVER_USER=${GEOSERVER_USER:-admin}
-      - GEOSERVER_URL=${GEOSERVER_URL}
+      - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
     depends_on:
       - geoserver
     restart: unless-stopped
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == worker
-      restart_policy:
-        condition: any
 
   extractor-geotiff-metadata:
     image: clowder/extractors-geotiff-metadata
@@ -73,24 +57,16 @@ services:
       - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
       - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
       - PROXY_ON=${PROXY_ON}
-      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_HOST=${TRAEFIK_HOST}
       - PROXY_URL=${PROXY_URL}
       - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
       - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
       - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
       - GEOSERVER_USER=${GEOSERVER_USER:-admin}
-      - GEOSERVER_URL=${GEOSERVER_URL}
+      - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
     depends_on:
       - geoserver
     restart: unless-stopped
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == worker
-      restart_policy:
-        condition: any
 
 networks:
   clowder:

@@ -12,7 +12,7 @@ services:
       - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
       - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
       - PROXY_ON=${PROXY_ON}
-      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_HOST=${TRAEFIK_HOST}
       - PROXY_URL=${PROXY_URL}
       - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
       - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
@@ -24,14 +24,6 @@ services:
     volumes:
       - /generated/data/mounting:/data_dir
     restart: unless-stopped
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      restart_policy:
-        condition: any
 
 networks:
   clowder:
