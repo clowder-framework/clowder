@@ -19,7 +19,7 @@
 /****************************************************************
   Wish list:
 
-  1) Become able to upload zip files into clowder which will be 
+  1) Become able to upload zip files into clowder which will be
   automatically unzipped. Subsequently, the files they contain will be
   accessible to the previewer. This is necessary for 3D models which come
   with a texture file.
@@ -45,15 +45,15 @@
 
   6) So far we are able to load FBX models using the FBX Loader. I believe we can easily
   load 3D models which come in a different format using for example the GLTFLoader. We need
-  to extract the extension of the file and depending of the type of the file, we can use the 
+  to extract the extension of the file and depending of the type of the file, we can use the
   appropriate loader. This is exactly what we are doing in viewer_hop.js lines 61-70.
 
   7) Add the option to go full screen, and add additional tools.
 
   Note: You can come up with your own ideas about how to attack these issues, add your own
-  items in the wish list, and whenever you make changes to the code, you can add them on the 
+  items in the wish list, and whenever you make changes to the code, you can add them on the
   top like I do. Example: adding something + 01/24/21 (cc) Added smthg. Removing smthg
-  - 01/24/21 (cc) Removed smthg. (Your initials are mt). Finally, once we have something 
+  - 01/24/21 (cc) Removed smthg. (Your initials are mt). Finally, once we have something
   functional, we can create a pull request with clowder and contribute our code. Also, we need
   to add you into the list of contributors. :)
 
@@ -160,9 +160,13 @@ function init(urlAddress) {
 
     //
 
-    loader.setPath(urlAddress);
+    //loader.setPath(urlAddress);
 
-    loader.load( '', function ( object ) {
+    loader.setPath("/assets/javascripts/previewers/three_js/models/chimpanzee/source/");
+
+    const texture = new THREE.TextureLoader().setPath('/assets/javascripts/previewers/three_js/models/chimpanzee/source/');
+
+    loader.load( 'bonobo3.fbx', function ( object ) {
 
         if( object.animations[ 0 ] ) {
             mixer = new THREE.AnimationMixer( object );
@@ -170,6 +174,7 @@ function init(urlAddress) {
             const action = mixer.clipAction( object.animations[ 0 ] );
             action.play();
         }
+
 
         //
 
@@ -193,10 +198,34 @@ function init(urlAddress) {
         object.traverse( function ( child ) {
 
             if ( child.isMesh ) {
-
                 child.castShadow = true;
                 child.receiveShadow = true;
 
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('EYESLP_defaultMat_BaseColor.png')});
+            }
+
+            if ( child.isMesh ) {
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('EYESLP_defaultMat_Normal.png')});
+            }
+
+            if ( child.isMesh ) {
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_AO.png')});
+            }
+            //
+            if ( child.isMesh ) {
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_BaseColor.png')});
+            }
+            //
+            if ( child.isMesh ) {
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_Metallic.png')});
+            }
+            //
+            if ( child.isMesh ) {
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_Roughness.png')});
+            }
+
+            if ( child.isMesh ) {
+                child.material = new THREE.MeshBasicMaterial({map: texture.load('Pruyebanm.jpg')});
             }
 
         } );

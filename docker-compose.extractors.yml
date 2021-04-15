@@ -9,73 +9,85 @@ services:
   # ----------------------------------------------------------------------
 
   # extract checksum
-  filedigest:
-    image: clowder/extractors-digest:latest
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+  # filedigest:
+  #   image: clowder/extractors-digest:latest
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - rabbitmq
+  #     - clowder
+  #   environment:
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
 
-  # extract preview image
-  imagepreview:
-    image: clowder/extractors-image-preview:latest
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+  # # extract preview image
+  # imagepreview:
+  #   image: clowder/extractors-image-preview:latest
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - rabbitmq
+  #     - clowder
+  #   environment:
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
 
-  # extract image metadata
-  imagemetadata:
-    image: clowder/extractors-image-metadata:latest
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+  # # extract image metadata
+  # imagemetadata:
+  #   image: clowder/extractors-image-metadata:latest
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - rabbitmq
+  #     - clowder
+  #   environment:
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
 
-  # extract preview image from audio spectrogram
-  audiopreview:
-    image: clowder/extractors-audio-preview:${CLOWDER_VERSION:-latest}
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+  # # extract preview image from audio spectrogram
+  # audiopreview:
+  #   image: clowder/extractors-audio-preview:${CLOWDER_VERSION:-latest}
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - rabbitmq
+  #     #- clowder
+  #   environment:
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
 
-  # extract pdf preview image
-  pdfpreview:
-    image: clowder/extractors-pdf-preview:${CLOWDER_VERSION:-latest}
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+  # # # extract pdf preview image
+  # pdfpreview:
+  #   image: clowder/extractors-pdf-preview:${CLOWDER_VERSION:-latest}
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - rabbitmq
+  #     #- clowder
+  #   environment:
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
 
-  # extract video preview image as well as smaller video
-  videopreview:
-    image: clowder/extractors-video-preview:${CLOWDER_VERSION:-latest}
+  # # # extract video preview image as well as smaller video
+  # videopreview:
+  #   image: clowder/extractors-video-preview:${CLOWDER_VERSION:-latest}
+  #   restart: unless-stopped
+  #   networks:
+  #     - clowder
+  #   depends_on:
+  #     - rabbitmq
+  #     #- clowder
+  #   environment:
+  #     - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+
+  # extract zip files
+  extract2folder:
+    image: clowder/extractors-extract2folder:${CLOWDER_VERSION:-latest}
     restart: unless-stopped
     networks:
       - clowder
     depends_on:
       - rabbitmq
-      - clowder
+      #- clowder
     environment:
       - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}

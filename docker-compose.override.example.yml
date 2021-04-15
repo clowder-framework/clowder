@@ -66,5 +66,5 @@ volumes:
   mongo:
     driver_opts:
       type: none
-      device: '${PWD}/volumes/mongo'
+      device: none #'${PWD}/volumes/mongo'
       o: bind
