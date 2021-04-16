@@ -1,0 +1,6 @@
+{
+  "name": "Vega 5",
+  "main": "vega5.js",
+  "file": true,
+  "contentType": ["application/json", "text/csv"]
+}
