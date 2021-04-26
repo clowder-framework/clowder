@@ -39,7 +39,7 @@ class Reporting @Inject()(selections: SelectionService,
     var headerRow = true
     val enum = Enumerator.generateM({
       val chunk = if (headerRow) {
-        val header = "type,id,name,owner,owner_id,size_kb,uploaded,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
+        val header = "type,id,name,owner,owner_id,size_kb,uploaded,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces,status\n"
         headerRow = false
         Some(header.getBytes("UTF-8"))
       } else {
@@ -137,7 +137,7 @@ class Reporting @Inject()(selections: SelectionService,
 
     // TODO: This will still fail on excessively large instances without Enumerator refactor - should we maintain this endpoint or remove?
 
-    var contents: String = "type,id,name,owner,owner_id,size_kb,uploaded/created,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces\n"
+    var contents: String = "type,id,name,owner,owner_id,size_kb,uploaded/created,views,downloads,last_viewed,last_downloaded,location,parent_datasets,parent_collections,parent_spaces,status\n"
 
     collections.getMetrics().foreach(coll => {
       contents += _buildCollectionRow(coll, true)
@@ -288,7 +288,8 @@ class Reporting @Inject()(selections: SelectionService,
     contents += "\""+f.loader_id+"\","
     contents += "\""+ds_list+"\","
     contents += "\""+coll_list+"\","
-    contents += "\""+space_list+"\""
+    contents += "\""+space_list+"\","
+    contents += "\""+f.status+"\""
     contents += "\n"
 
     return contents
@@ -343,6 +344,7 @@ class Reporting @Inject()(selections: SelectionService,
     if (returnAllColums) contents += "," // datasets do not have parent_datasets
     contents += "\""+coll_list+"\","
     contents += "\""+space_list+"\""
+    if (returnAllColums) contents += "," // datasets do not have status
     contents += "\n"
 
     return contents
@@ -391,6 +393,7 @@ class Reporting @Inject()(selections: SelectionService,
     if (returnAllColums) contents += "," // collections do not have parent_datasets
     contents += "\""+coll_list+"\","
     contents += "\""+space_list+"\""
+    if (returnAllColums) contents += "," // collections do not have status
     contents += "\n"
 
     return contents
