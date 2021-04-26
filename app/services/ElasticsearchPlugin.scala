@@ -29,6 +29,7 @@ import play.api.libs.json._
 import _root_.util.SearchUtils
 import org.apache.commons.lang.StringUtils
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest
+import org.elasticsearch.search.sort.SortOrder
 
 
 /**
@@ -130,7 +131,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
     val queryObj = prepareElasticJsonQuery(query, grouping, permitted, user)
-    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
+    // TODO: Support sorting in GUI search
+    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), None, None)
   }
 
   /**
@@ -152,8 +154,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def search(query: String, resource_type: Option[String], datasetid: Option[String], collectionid: Option[String],
              spaceid: Option[String], folderid: Option[String], field: Option[String], tag: Option[String],
-             from: Option[Int], size: Option[Int], permitted: List[UUID], user: Option[User],
-             index: String = nameOfIndex): ElasticsearchResult = {
+             from: Option[Int], size: Option[Int], sort: Option[String], order: Option[String], permitted: List[UUID],
+             user: Option[User], index: String = nameOfIndex): ElasticsearchResult = {
 
     // Convert any parameters from API into the query syntax equivalent so we can parse it all together later
     var expanded_query = query
@@ -166,16 +168,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     folderid.foreach(fid => expanded_query += s" in:$fid")
 
     val queryObj = prepareElasticJsonQuery(expanded_query.stripPrefix(" "), permitted, user)
-    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults))
+    accumulatePageResult(queryObj, user, from.getOrElse(0), size.getOrElse(maxResults), sort, order)
   }
 
   /** Perform search, check permissions, and keep searching again if page isn't filled with permitted resources */
   def accumulatePageResult(queryObj: XContentBuilder, user: Option[User], from: Int, size: Int,
-                           index: String = nameOfIndex): ElasticsearchResult = {
+                           sort: Option[String], order: Option[String], index: String = nameOfIndex): ElasticsearchResult = {
     var total_results = ListBuffer.empty[ResourceRef]
 
     // Fetch initial page & filter by permissions
-    val (results, total_size) = _search(queryObj, index, Some(from), Some(size))
+    val (results, total_size) = _search(queryObj, index, Some(from), Some(size), sort, order)
     Logger.debug(s"Found ${results.length} results with ${total_size} total")
     val filtered = checkResultPermissions(results, user)
     Logger.debug(s"Permission to see ${filtered.length} results")
@@ -187,7 +189,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var exhausted = false
     while (total_results.length < size && !exhausted) {
       Logger.debug(s"Only have ${total_results.length} total results; searching for ${size*2} more from ${new_from}")
-      val (results, total_size)  = _search(queryObj, index, Some(new_from), Some(size*2))
+      val (results, total_size)  = _search(queryObj, index, Some(new_from), Some(size*2), sort, order)
       Logger.debug(s"Found ${results.length} results with ${total_size} total")
       if (results.length == 0 || new_from+results.length == total_size) exhausted = true // No more results to find
       val filtered = checkResultPermissions(results, user)
@@ -251,17 +253,39 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /*** Execute query and return list of results and total result count as tuple */
   def _search(queryObj: XContentBuilder, index: String = nameOfIndex,
-              from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults)): (List[ResourceRef], Long) = {
+              from: Option[Int] = Some(0), size: Option[Int] = Some(maxResults),
+              sort: Option[String], order: Option[String]): (List[ResourceRef], Long) = {
     connect()
     val response = client match {
       case Some(x) => {
-        Logger.info("Searching Elasticsearch: "+queryObj.string())
+        Logger.debug("Searching Elasticsearch: " + queryObj.string())
+
+        // Exclude _sort fields in response object
+        var sortFilter = jsonBuilder().startObject().startArray("exclude").value("*._sort").endArray().endObject()
+
         var responsePrep = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+          .setSource(sortFilter)
           .setQuery(queryObj)
 
         responsePrep = responsePrep.setFrom(from.getOrElse(0))
         responsePrep = responsePrep.setSize(size.getOrElse(maxResults))
+        // Default to ascending if no order provided but a field is
+        val searchOrder = order match {
+          case Some("asc") => SortOrder.ASC
+          case Some("desc") => SortOrder.DESC
+          case Some("DESC") => SortOrder.DESC
+          case _ => SortOrder.ASC
+        }
+        // Default to created field if order is provided but no field is
+        sort match {
+          // case Some("name") => responsePrep = responsePrep.addSort("name._sort", searchOrder) TODO: Not yet supported
+          case Some(x) => responsePrep = responsePrep.addSort(x, searchOrder)
+          case None => order match {
+            case Some(o) => responsePrep = responsePrep.addSort("created", searchOrder)
+            case None => {}
+          }
+        }
 
         val response = responsePrep.setExplain(true).execute().actionGet()
         Logger.debug("Search hits: " + response.getHits().getTotalHits())
@@ -291,8 +315,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               .field("type", "custom")
               .field("tokenizer", "uax_url_email")
             .endObject()
-          .endObject()
-        .endObject()
+          .endObject().endObject()
         .startObject("index")
           .startObject("mapping")
             .field("ignore_malformed", true)
@@ -697,10 +720,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
      * as strings for datatypes besides Objects. In the future, this could
      * be removed, but only once the Search API better supports those data types (e.g. Date).
      */
+
+    // TODO: With Elastic 6.8+ we can use "normalizer": "case_insensitive" for _sort fields
+
     """{"clowder_object": {
           |"numeric_detection": true,
           |"properties": {
-            |"name": {"type": "string"},
+            |"name": {"type": "string", "fields": {
+            |     "_sort": {"type":"string", "index": "not_analyzed"}}},
             |"description": {"type": "string"},
             |"resource_type": {"type": "string", "include_in_all": false},
             |"child_of": {"type": "string", "include_in_all": false},
@@ -925,7 +952,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       }
     }
 
-    // If a term is specified that isn't in this list, it's assumed to be a metadata field
+    // If a term is specified that isn't in this list, it's assumed to be a metadata field (for sorting and filtering)
     val official_terms = List("name", "creator", "created", "email", "resource_type", "in", "contains", "tag", "exists", "missing")
 
     // Create list of (key, operator, value) for passing to builder
