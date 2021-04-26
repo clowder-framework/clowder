@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## UNRELEASED
+
+### Changed
+- Added sphinx-rtd-theme==0.5.2 as a dependency to Sphinx requirements.txt since it is not a hard dependency anymore.
+
 ## 1.16.0 - 2021-03-31
 
 ### Fixed
