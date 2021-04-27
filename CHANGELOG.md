@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Log an event each time that a user archives or unarchives a file.
+- Endpoint `/api/datasets/createfrombag` to ingest datasets in BagIt format. Includes basic dataset metadata, files,
+  folders and technical metadata. Downloading datasets now includes extra Datacite and Clowder metadata.
 
 ## 1.16.0 - 2021-03-31
 
