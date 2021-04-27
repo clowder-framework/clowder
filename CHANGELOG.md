@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unrelease
+## UNRELEASED
+
+### Changed
+- Added sphinx-rtd-theme==0.5.2 as a dependency to Sphinx requirements.txt since it is not a hard dependency anymore.
 
 ### Added
 - Log an event each time that a user archives or unarchives a file.
