@@ -1876,9 +1876,11 @@ class Files @Inject()(
   }
 
   def archive(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
         files.setStatus(id, FileStatus.ARCHIVED)
+        sinkService.logFileArchiveEvent(file, user)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
@@ -1889,9 +1891,11 @@ class Files @Inject()(
   }
 
   def unarchive(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
         files.setStatus(id, FileStatus.PROCESSED)
+        sinkService.logFileUnarchiveEvent(file, user)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
