@@ -4,14 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## UNRELEASED
+
+### Changed
+- Updated Sphinx dependencies due to security and changes in required packages.
+
+### Added
+- Log an event each time that a user archives or unarchives a file.
+
+## 1.16.0 - 2021-03-31
 
 ### Fixed
 - Remove the RabbitMQ plugin from the docker version of clowder
 
 ### Added
-- Added a `sort` and `order` parameter to `/api/search` endpoint that supports date and numeric field sorting. If only order is specified, created date is used. String fields are not currently supported.
+- Added a `sort` and `order` parameter to `/api/search` endpoint that supports date and numeric field sorting. 
+  If only order is specified, created date is used. String fields are not currently supported.
 - Added a new `/api/deleteindex` admin endpoint that will queue an action to delete an Elasticsearch index (usually prior to a reindex).
+- JMeter testing suite.
+
+### Changed
+- Consolidated field names sent by the EventSinkService to maximize reuse.
+- Add status column to files report to indicate if files are ARCHIVED, etc.
+- Reworked auto-archival configuration options to make their meanings more clear.
 
 ## 1.15.1 - 2021-03-12
 
