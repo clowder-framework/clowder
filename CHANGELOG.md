@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## UNRELEASED
 
 ### Changed
-- Added sphinx-rtd-theme==0.5.2 as a dependency to Sphinx requirements.txt since it is not a hard dependency anymore.
+- Updated Sphinx dependencies due to security and changes in required packages.
 
 ### Added
 - Log an event each time that a user archives or unarchives a file.
