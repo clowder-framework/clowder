@@ -234,14 +234,18 @@ class RabbitMQMessageService extends MessageService {
     var tempChannel: Channel = null
     try {
       tempChannel = connection.get.createChannel()
-      tempChannel.exchangeDeclare(exchange, exchange_type, true)
+      if (tempChannel != null) {
+        tempChannel.exchangeDeclare(exchange, exchange_type, true)
 
-      // If a routing_key (queue name) was provided, ensure that the queue exists
-      if (routing_key != "") {
-        tempChannel.queueDeclare(routing_key, true, false, false, null)
-        tempChannel.queueBind(routing_key, exchange, routing_key)
+        // If a routing_key (queue name) was provided, ensure that the queue exists
+        if (routing_key != "") {
+          tempChannel.queueDeclare(routing_key, true, false, false, null)
+          tempChannel.queueBind(routing_key, exchange, routing_key)
+        }
+        tempChannel.basicPublish(exchange, routing_key, null, message.toString.getBytes)
+      } else {
+        Logger.error("Error: no channels available to submit message")
       }
-      tempChannel.basicPublish(exchange, routing_key, null, message.toString.getBytes)
     } finally {
       if (tempChannel != null) {
         tempChannel.close()
