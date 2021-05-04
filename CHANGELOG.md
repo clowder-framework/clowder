@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## UNRELEASED
 
+### Fixed
+- Close channel after submitting via RabbitMQMessageService
+
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
 
