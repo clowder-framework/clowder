@@ -31,7 +31,8 @@ class Status @Inject()(spaces: SpaceService,
 
   def status = UserAction(needActive=false) { implicit request =>
 
-    Ok(Json.obj("version" -> getVersionInfo,
+    Ok(Json.obj("instance" -> AppConfiguration.getInstance,
+      "version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames(List.empty))))
