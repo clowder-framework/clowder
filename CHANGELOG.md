@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   folders and technical metadata. Downloading datasets now includes extra Datacite and Clowder metadata.
 - Endpoint /api/files/bulkRemove to delete multiple files in one call. [#12](https://github.com/clowder-framework/clowder/issues/12)
 - Log an event each time that a user archives or unarchives a file.
+- Clowder will use the same queue for responses, preventing status messages from getting lost.
 
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.

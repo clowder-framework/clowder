@@ -100,8 +100,9 @@ class RabbitMQMessageService extends MessageService {
       }
 
       // create an anonymous queue for replies
-      val replyQueueName = channel.get.queueDeclare().getQueue
-      Logger.debug("Reply queue name: " + replyQueueName)
+      val replyQueueName = s"clowder.${AppConfiguration.getInstance}"
+      channel.get.queueDeclare(replyQueueName, true, false, false, null)
+      Logger.info("Reply queue name: " + replyQueueName)
 
       // get bindings stored in broker
       val queueBindingsFuture = getQueuesNamesForAnExchange(exchange)
