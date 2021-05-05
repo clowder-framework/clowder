@@ -45,6 +45,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     val users: UserService = DI.injector.getInstance(classOf[UserService])
 
+    // get clowder unique ID
+    Logger.info(s"Starting clowder with id = ${AppConfiguration.getInstance}")
+
     // set the default ToS version
     AppConfiguration.setDefaultTermsOfServicesVersion()
 
