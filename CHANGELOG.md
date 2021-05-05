@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
-- Close channel after submitting via RabbitMQMessageService
+- Close channel after submitting events to RabbitMQMessageService.
 
 ### Added
 - Endpoint `/api/datasets/createfrombag` to ingest datasets in BagIt format. Includes basic dataset metadata, files,
   folders and technical metadata. Downloading datasets now includes extra Datacite and Clowder metadata.
-- Endpoint /api/files/bulkRemove to delete multiple files in one call. [#12](https://github.com/clowder-framework/clowder/issues/12)
+- Endpoint `/api/files/bulkRemove` to delete multiple files in one call. [#12](https://github.com/clowder-framework/clowder/issues/12)
 - Log an event each time that a user archives or unarchives a file.
-- Clowder will use the same queue for responses, preventing status messages from getting lost.
+- Persist name of message bus response queue, preventing status messages from getting lost after a reboot.
 
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
