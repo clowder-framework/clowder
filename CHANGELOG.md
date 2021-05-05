@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## UNRELEASED
+
+### Changed
+- Updated Sphinx dependencies due to security and changes in required packages.
+
+### Added
+- Log an event each time that a user archives or unarchives a file.
+- Endpoint `/api/datasets/createfrombag` to ingest datasets in BagIt format. Includes basic dataset metadata, files,
+  folders and technical metadata. Downloading datasets now includes extra Datacite and Clowder metadata.
+- Endpoint /api/files/bulkRemove to delete multiple files in one call. [#12](https://github.com/clowder-framework/clowder/issues/12)
+
 ## 1.16.0 - 2021-03-31
 
 ### Fixed

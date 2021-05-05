@@ -1,6 +1,7 @@
 package api
 
 import java.io._
+import java.io.{File => JFile}
 import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
@@ -22,13 +23,18 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.mvc.AnyContent
+import play.api.mvc.{Action, AnyContent, MultipartFormData, SimpleResult}
 import services._
 import _root_.util._
 import controllers.Utils.https
+import org.json.simple.{JSONArray, JSONObject => SimpleJSONObject}
+import org.json.simple.parser.JSONParser
+import play.api.libs.Files
+import play.api.libs.Files.TemporaryFile
+import scalax.file.Path.createTempFile
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Map => MutaMap}
 
 /**
  * Dataset API.
@@ -41,7 +47,6 @@ class  Datasets @Inject()(
   collections: CollectionService,
   sections: SectionService,
   comments: CommentService,
-  previews: PreviewService,
   extractions: ExtractionService,
   metadataService: MetadataService,
   contextService: ContextLDService,
@@ -256,6 +261,262 @@ class  Datasets @Inject()(
         case None => BadRequest(toJson("Missing parameter [file_id]"))
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  }
+
+  // Create a dataset by uploading a compliant BagIt archive
+  def createFromBag() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request: UserRequest[MultipartFormData[Files.TemporaryFile]] =>
+    Logger.info("--- API Creating new dataset from zip archive ----")
+
+    var mainXML: Option[ZipEntry] = None
+    var dsInfo: Option[ZipEntry] = None   // dataset _info.json
+    var dsMeta: Option[ZipEntry] = None   // dataset _metadata.json
+
+    val fileInfos: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> file _info.json
+    val fileBytes: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> actual file bytes
+    val fileMetas: MutaMap[String, ZipEntry] = MutaMap.empty  // filename -> file _metadata.json
+    val fileFolds: MutaMap[String, String] = MutaMap.empty    // filename -> folder (data/foo/bar/file.txt -> foo/bar/)
+    val distinctFolders: ListBuffer[String] = ListBuffer.empty
+
+    implicit val user = request.user
+
+    var outcome: SimpleResult = BadRequest("Something went wrong.")
+    user match {
+      case Some(identity) => {
+        request.body.files.foreach { f =>
+          if (f.filename.endsWith(".zip")) {
+            // TODO: Is it dangerous to blindly open uploaded zip file? Decompression bomb, malicious contents, etc?
+            val bag = new ZipFile(f.ref.file)
+            val entries = bag.entries // Need assignment to be explicit here or an infinite loop occurs
+
+            // Check each file in the zip looking for known filenames
+            while (entries.hasMoreElements()) {
+              val entry = entries.nextElement()
+              val entryName = entry.getName
+              val inDataDir = entryName.startsWith("data/") || entryName.contains("/data/")
+              entryName match {
+                // TODO: case "metadata/clowder.xml" => mainXML = Some(entry) // overrides datacite.xml
+                case path if path.endsWith("metadata/datacite.xml") => if (!mainXML.isDefined) mainXML = Some(entry)
+                case path if inDataDir && path.endsWith("data/_dataset_metadata.json") => dsMeta = Some(entry)
+                case path if inDataDir && path.endsWith("/_info.json") => dsInfo = Some(entry)
+                case path if inDataDir && path.endsWith("_info.json") => {
+                  val filename = path.split("/").last.replace("_info.json", "")
+                  fileInfos += (filename -> entry)
+                }
+                case path if inDataDir && path.endsWith("_metadata.json") => {
+                  val filename = path.split("/").last.replace("_metadata.json", "")
+                  fileMetas += (filename -> entry)
+                }
+                case path if inDataDir && !path.endsWith("/") => {
+                  val filename = path.split("/").last
+                  if (filename != "data") {
+                    val folderstart = if (path.startsWith("data/")) {5} else {path.indexOf("/data/")+6}
+                    val foldername = path.substring(folderstart).replace(filename, "")
+                    fileBytes += (filename -> entry)
+                    fileFolds += (filename -> foldername)
+                    distinctFolders.append(foldername)
+                  }
+                }
+                case _ => {}
+              }
+            }
+
+            /** LOGIC FLOW
+             * prep data from the _info.json files
+             * if any files are referenced rather than included, check links. any dead links = abort the upload
+             * create dataset
+             *   populate metadata from JSON
+             * create each file
+             *   download one by one if necessary to avoid staging too much data at once
+             *   (if any download fails, try to undo what has been done to this point and stop upload)
+             *   populate metadata from JSON
+             */
+
+            if (mainXML.isDefined) {
+              // Create dataset itself
+              val xmldata = scala.xml.XML.load(bag.getInputStream(mainXML.get))
+              var dsName: Option[String] = None
+              var dsDesc: Option[String] = None
+              (xmldata \\ "title").foreach(node => dsName = Some(node.text))
+              (xmldata \\ "description").foreach(node => dsDesc = Some(node.text))
+              val dsCreators = (xmldata \\ "creatorName").map(node => node.text)
+
+              if (dsName.isDefined) {
+                val ds = Dataset(name=dsName.get, description=dsDesc.getOrElse(""), created=new Date(), author=identity,
+                  licenseData=License.fromAppConfig(), stats=new Statistics(), creators=dsCreators.toList)
+                datasets.insert(ds) match {
+                  case Some(dsid) => {
+                    // Add dataset metadata if necessary
+                    if (dsMeta.isDefined) {
+                      val mdStream = bag.getInputStream(dsMeta.get)
+                      val datasetMeta = parseJsonFileInZip(mdStream)
+                      try {
+                        datasetMeta.asInstanceOf[JsArray].value.foreach(v => {
+                          processBagMetadataJsonLD(ResourceRef(ResourceRef.dataset, UUID(dsid)), v)
+                        })
+                      } catch {
+                        case e: Exception =>
+                          processBagMetadataJsonLD(ResourceRef(ResourceRef.dataset, UUID(dsid)), datasetMeta)
+                      }
+                    }
+
+                    // Add folders to dataset with proper nesting
+                    var folderIds: MutaMap[String, String] = MutaMap.empty
+                    distinctFolders.distinct.sorted.foreach(folderPath => {
+                      if (!(folderPath == "" || folderPath == "/"))
+                        folderIds = ensureFolderExistsInDataset(ds, folderPath, folderIds)
+                    })
+
+                    // Add files to corresponding folders (if any files fail, the whole upload should fail)
+                    var criticalFail: Option[String] = None
+                    val filenames = if (fileInfos.toList.length > 0) fileInfos.keys else fileBytes.keys
+                    filenames.foreach(filename => {
+                      if (criticalFail.isEmpty) {
+                        fileBytes.get(filename) match {
+                          case Some(bytes) => {
+
+                            // Get file metadata and folder info
+                            val folderId = fileFolds.get(filename) match {
+                              case Some(fid) if (fid != "" && fid != "/") =>
+                                folderIds.get(fid)
+                              case _ => None
+                            }
+
+                            // Unzip file to temporary location
+                            val is = bag.getInputStream(bytes)
+                            val outfile = createTempFile(suffix=filename).jfile
+                            val outstream = new FileOutputStream(outfile)
+                            val buffer = new Array[Byte](1024)
+                            var chunk = is.read(buffer);
+                            while (chunk > 0) {
+                              outstream.write(buffer, 0, chunk)
+                              chunk = is.read(buffer)
+                            }
+                            outstream.close()
+
+                            val newfile = FileUtils.processBagFile(outfile, filename, user.get, ds, folderId)
+                            newfile match {
+                              case Some(nf) => {
+                                // Add file metadata if necessary
+                                val fileMeta = fileMetas.get(filename)
+                                if (fileMeta.isDefined) {
+                                  val mdStream = bag.getInputStream(fileMeta.get)
+                                  val fMeta = parseJsonFileInZip(mdStream)
+                                  try {
+                                    fMeta.asInstanceOf[JsArray].value.foreach(v => {
+                                      processBagMetadataJsonLD(ResourceRef(ResourceRef.file, nf.id), v)
+                                    })
+                                  } catch {
+                                    case e: Exception =>
+                                      processBagMetadataJsonLD(ResourceRef(ResourceRef.file, nf.id), fMeta)
+                                  }
+                                }
+                              }
+                              case None => {
+                                Logger.error("Problem creating "+filename+" - removing dataset.")
+                                datasets.removeDataset(ds.id, request.host, request.apiKey, user)
+                                criticalFail = Some("Not all files in zip file could be proceesed ("+filename+")")
+                              }
+                            }
+                          }
+                          case None => {
+                            // TODO: Check if file has remote path to download it
+                            criticalFail = Some("Not all files found in archive ("+filename+" missing)")
+                          }
+                        }
+                      }
+                    })
+
+                    if (criticalFail.isDefined)
+                      outcome = BadRequest(criticalFail.get)
+                    else
+                      outcome = Ok("Created dataset "+ds.id.stringify)
+                  }
+                  case None => outcome = BadRequest("Error creating new dataset")
+                }
+              } else outcome = BadRequest("No dataset info found in "+mainXML.get)
+            } else outcome = BadRequest("No supported XML metadata file found.")
+          }
+        }
+      }
+      case None => outcome = BadRequest("Must provide an associated user account.")
+    }
+    outcome
+  }
+
+  // Add JSON data from a JSON-LD file into a dataset
+  private def processBagMetadataJsonLD(resource: ResourceRef, json: JsValue) = {
+    //parse request for agent/creator info
+    json.validate[Agent] match {
+      case s: JsSuccess[Agent] => {
+        // TODO: This code is similar to addMetadataJsonLD() but skips RMQ message and event - combine them cleanly?
+        val creator = s.get
+
+        // check if the context is a URL to external endpoint
+        val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+
+        // check if context is a JSON-LD document
+        val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+          .map(contextService.addContext(new JsString("context name"), _))
+
+        // when the new metadata is added
+        val createdAt = new Date()
+
+        //parse the rest of the request to create a new models.Metadata object
+        val attachedTo = resource
+        val content = (json \ "content")
+        val version = None
+        val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+          content, version)
+        metadataService.addMetadata(metadata)
+      }
+      case e: JsError => {
+        Logger.error("Error getting creator");
+      }
+    }
+  }
+
+  // Open JSON data in a zipfile as a JsValue
+  private def parseJsonFileInZip(is: InputStream): JsValue = {
+    val reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))
+    var outstr = ""
+    var line = reader.readLine
+    while (line != null) {
+      outstr += line
+      line = reader.readLine
+    }
+    Json.parse(outstr)
+  }
+
+  // Recursively create folder levels in a dataset that is being created from bag
+  private def ensureFolderExistsInDataset(dataset: Dataset, folderPath: String, folderIds: MutaMap[String, String]): MutaMap[String, String] = {
+    var updatedFolderIds = folderIds
+    folderIds.get(folderPath) match {
+      case Some(_) => {}
+      case None => {
+        // Folder still needs to be created
+        val folderLevels = folderPath.split('/')
+        val baseFolder = folderLevels.last
+        val parentFolder = folderLevels.take(folderLevels.length-1).mkString("/")
+
+        if (parentFolder.trim.length == 0) {
+          // Folder has no parent to add directly to dataset
+          val f = Folder(author=dataset.author, created=new Date(), name=baseFolder, displayName=baseFolder,
+            files=List.empty, folders=List.empty, parentId=dataset.id, parentType="dataset", parentDatasetId=dataset.id)
+          folders.insert(f)
+          datasets.addFolder(dataset.id, f.id)
+          updatedFolderIds += (folderPath -> f.id.stringify)
+        } else {
+          // Folder has parent so add to parent folder
+          updatedFolderIds = ensureFolderExistsInDataset(dataset, parentFolder, updatedFolderIds)
+          val parentId = folderIds.get(parentFolder).get
+          val f = Folder(author=dataset.author, created=new Date(), name=baseFolder, displayName=baseFolder,
+            files=List.empty, folders=List.empty, parentId=UUID(parentId), parentType="folder", parentDatasetId=dataset.id)
+          folders.insert(f)
+          folders.addSubFolder(UUID(parentId), f.id)
+        }
+      }
+    }
+    updatedFolderIds
   }
 
   /**
@@ -672,7 +933,6 @@ class  Datasets @Inject()(
         }
      }
 
-
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
@@ -870,7 +1130,6 @@ class  Datasets @Inject()(
       }
     }
   }
-
 
   private def getFilesWithinFolders(id: UUID, serveradmin: Boolean=false, max: Int = -1): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
@@ -1895,7 +2154,6 @@ class  Datasets @Inject()(
     }
   }
 
-
   def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id)  match {
       case Some(dataset) => {
@@ -2013,7 +2271,6 @@ class  Datasets @Inject()(
       }
     }
   }
-
 
   /**
     * Create a mapping for each file to their unique location
@@ -2195,6 +2452,11 @@ class  Datasets @Inject()(
                 case ("bag", "datacite.xml") => {
                   // RDA-recommended DataCite xml file
                   is = addDataCiteMetadataToZip(zip, dataset, baseURL)
+                  file_type = "clowder.xml"
+                }
+                case ("bag", "clowder.xml") => {
+                  // Clowder bespoke xml file (other instances can use to replicate the dataset)
+                  is = addClowderXMLMetadataToZip(zip, dataset, baseURL)
                   file_type = "tagmanifest-md5.txt"
                 }
                 case ("bag", "tagmanifest-md5.txt") => {
@@ -2408,7 +2670,7 @@ class  Datasets @Inject()(
     s += "<publicationYear>"+yyyy+"</publicationYear>\n"
 
     // ResourceType
-    s += "<resourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</ResourceType>\n"
+    s += "<resourceType resourceTypeGeneral=\"Dataset\">Clowder Dataset</resourceType>\n"
 
     // ---------- RECOMMENDED/OPTIONAL FIELDS ----------
 
@@ -2453,7 +2715,7 @@ class  Datasets @Inject()(
     }
 
     // RelatedIdentifier (Clowder root URL)
-    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+baseURL+"</ResourceType>\n"
+    s += "<relatedIdentifier relatedIdentifierType=\"URL\" relationType=\"isSourceOf\">"+baseURL+"</relatedIdentifier>\n"
 
     // Size (can have many)
     s += "<sizes>\n\t<size>"+dataset.files.length.toString+" files</size>\n</sizes>\n"
@@ -2474,6 +2736,44 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  private def addClowderXMLMetadataToZip(zip: ZipOutputStream, dataset: Dataset, baseURL: String): Option[InputStream] = {
+    """
+      | Generate Clowder XML format that can be used to recreate the dataset & files as accurately as possible.
+      |
+      | WILL BE RECREATED:
+      | dataset name, description, metadata & tags
+      | folders, files, file metadata & tags
+      |
+      | The files/folders/metadata are exported as files and do not need to be replicated here.
+      |
+      | WILL NOT BE RECREATED:
+      | original author, creation date (included as metadata)
+      | parent collection & space relationships
+      | extraction event history (source URL included as metadata for reference)
+    """
+    zip.putNextEntry(new ZipEntry("metadata/clowder.xml"))
+    var content = "<clowderDataset>\n"
+
+    // Top-level dataset information
+    content += s"\t<id>${dataset.id.stringify}</id>\n"
+    content += s"\t<name>${dataset.name}</name>\n"
+    content += s"\t<description>${dataset.description}</description>\n"
+    content += s"\t<tags>${dataset.tags.mkString(",")}</tags>\n"
+
+    // Original source information
+    content += s"\t<source>\n"
+    content += s"\t\t<authorId>${dataset.author.id.stringify}</authorId>\n"
+    content += s"\t\t<authorName>${dataset.author.fullName}</authorName>\n"
+    content += s"\t\t<authorEmail>${dataset.author.email.getOrElse("")}</authorEmail>\n"
+    content += s"\t\t<creators>${dataset.creators.toString}</creators>\n"
+    content += s"\t\t<created>${dataset.created.toString}</created>\n"
+    content += s"\t\t<url>$baseURL</url>\n"
+    content += s"\t</source>\n"
+
+    content += "</clowderDataset>"
+    Some(new ByteArrayInputStream(content.getBytes("UTF-8")))
+  }
+
   // List of all BagIt, xml or non-dataset files and their checksums
   private def addTagManifestMD5ToZip(md5map : Map[String,MessageDigest],zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry("tagmanifest-md5.txt"))
@@ -2486,7 +2786,6 @@ class  Datasets @Inject()(
     }
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
-
 
   def download(id: UUID, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
@@ -2733,7 +3032,6 @@ class  Datasets @Inject()(
 
     }
   }
-
 
   def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user

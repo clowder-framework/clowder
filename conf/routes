@@ -388,6 +388,7 @@ GET            /api/files/:id/blob                                              
 
 # deprecrated use DELETE
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
+POST           /api/files/bulkRemove                                                    @api.Files.bulkDeleteFiles()
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
@@ -559,6 +560,7 @@ GET            /api/datasets/canEdit                                            
 GET            /api/datasets/moveFileToDataset                                          @api.Datasets.listMoveFileToDataset(file_id: UUID, title: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
+POST           /api/datasets/createfrombag                                              @api.Datasets.createFromBag
 POST           /api/datasets/attachmultiple                                             @api.Datasets.attachMultipleFiles
 POST           /api/datasets/searchusermetadata                                         @api.Datasets.searchDatasetsUserMetadata
 POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
