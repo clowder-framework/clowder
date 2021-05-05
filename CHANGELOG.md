@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.17.0 - 2021-04-29
 
+### Fixed
+- Close channel after submitting via RabbitMQMessageService
+
 ### Added
 - Endpoint `/api/datasets/createfrombag` to ingest datasets in BagIt format. Includes basic dataset metadata, files,
   folders and technical metadata. Downloading datasets now includes extra Datacite and Clowder metadata.
