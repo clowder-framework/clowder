@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
 
+- Updated the three.js libraries for the FBX previewer
+
 ## 1.16.0 - 2021-03-31
 
 ### Fixed
