@@ -32,7 +32,7 @@ class EventSinkService {
   def logEvent(message: JsValue) = {
     // Inject timestamp before logging the event
     val event = message.as[JsObject] + ("created" -> Json.toJson(java.util.Date.from(Instant.now())))
-    Logger.info("Submitting message to event sink exchange: " + Json.stringify(event))
+    Logger.debug("Submitting message to event sink exchange: " + Json.stringify(event))
     try {
       messageService.submit(exchangeName, queueName, event, "fanout")
     } catch {
