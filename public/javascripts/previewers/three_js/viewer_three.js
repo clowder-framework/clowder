@@ -143,7 +143,11 @@ function init(urlAddress) {
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
     // ground
-    const mesh = new THREE.Mesh( new THREE.PlaneGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+    const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry( 2000, 2000 ),
+        new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } )
+    );
+
     mesh.rotation.x = - Math.PI / 2;
     mesh.receiveShadow = true;
     scene.add( mesh );
@@ -160,13 +164,13 @@ function init(urlAddress) {
 
     //
 
-    //loader.setPath(urlAddress);
+    loader.setPath(urlAddress);
 
-    loader.setPath("/assets/javascripts/previewers/three_js/models/chimpanzee/source/");
+    //loader.setPath("/assets/javascripts/previewers/three_js/models/chimpanzee/source/");
 
-    const texture = new THREE.TextureLoader().setPath('/assets/javascripts/previewers/three_js/models/chimpanzee/source/');
+    //const texture = new THREE.TextureLoader().setPath('/assets/javascripts/previewers/three_js/models/chimpanzee/source/');
 
-    loader.load( 'bonobo3.fbx', function ( object ) {
+    loader.load( '', function ( object ) {
 
         if( object.animations[ 0 ] ) {
             mixer = new THREE.AnimationMixer( object );
@@ -178,59 +182,72 @@ function init(urlAddress) {
 
         //
 
-        // let box = new THREE.Box3();
-        // box.setFromObject(object);
-        //
-        // let size = new THREE.Vector3();
-        // box.getSize(size);
-        //
-        // let center = new THREE.Vector3();
-        // box.getCenter(center);
-        //
-        // let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
-        // let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
-        //
-        // object.scale.setScalar(scale);
-        // object.position.sub(center.multiplyScalar( scale ));
+        let box = new THREE.Box3();
+        box.setFromObject(object);
+
+        let size = new THREE.Vector3();
+        box.getSize(size);
+
+        let center = new THREE.Vector3();
+        box.getCenter(center);
+
+        let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
+        let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
+
+        object.scale.setScalar(scale);
+        object.position.sub(center.multiplyScalar( scale ));
 
         //
 
-        object.traverse( function ( child ) {
+        object.traverse(function (child) {
 
-            if ( child.isMesh ) {
+            if (child.isMesh) {
+
                 child.castShadow = true;
                 child.receiveShadow = true;
 
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('EYESLP_defaultMat_BaseColor.png')});
             }
 
-            if ( child.isMesh ) {
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('EYESLP_defaultMat_Normal.png')});
-            }
+        });
 
-            if ( child.isMesh ) {
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_AO.png')});
-            }
-            //
-            if ( child.isMesh ) {
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_BaseColor.png')});
-            }
-            //
-            if ( child.isMesh ) {
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_Metallic.png')});
-            }
-            //
-            if ( child.isMesh ) {
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_Roughness.png')});
-            }
+        scene.add(object);
 
-            if ( child.isMesh ) {
-                child.material = new THREE.MeshBasicMaterial({map: texture.load('Pruyebanm.jpg')});
-            }
-
-        } );
-
-        scene.add( object );
+        // object.traverse( function ( child ) {
+        //
+        //     if ( child.isMesh ) {
+        //         child.castShadow = true;
+        //         child.receiveShadow = true;
+        //
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('EYESLP_defaultMat_BaseColor.png')});
+        //     }
+        //
+        //     if ( child.isMesh ) {
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('EYESLP_defaultMat_Normal.png')});
+        //     }
+        //
+        //     if ( child.isMesh ) {
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_AO.png')});
+        //     }
+        //     //
+        //     if ( child.isMesh ) {
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_BaseColor.png')});
+        //     }
+        //     //
+        //     if ( child.isMesh ) {
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_Metallic.png')});
+        //     }
+        //     //
+        //     if ( child.isMesh ) {
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('LOW_POLY_defaultMat_Roughness.png')});
+        //     }
+        //
+        //     if ( child.isMesh ) {
+        //         child.material = new THREE.MeshBasicMaterial({map: texture.load('Pruyebanm.jpg')});
+        //     }
+        //
+        // } );
+        //
+        // scene.add( object );
 
     } );
 
