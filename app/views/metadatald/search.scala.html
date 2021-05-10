@@ -519,7 +519,7 @@
                 var resource = response.results[i];
                 if (resource.resource_type == "dataset") {
                     var thumbnailId = (resource.thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(resource.thumbnail).url;
-                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result_tile")");
                     var html = modalTemplate(
                             {'url': jsRoutes.controllers.Datasets.dataset(resource.id).url,
                                 'name': resource.name,
@@ -531,7 +531,7 @@
                 }
                 else if (resource.resource_type == "file") {
                     var thumbnailId = (resource.thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(resource.thumbnail).url;
-                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
+                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result_tile")");
                     var html = modalTemplate({
                         'url': jsRoutes.controllers.Files.file(resource.id).url,
                         'name': resource.name,
