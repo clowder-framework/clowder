@@ -21,7 +21,7 @@
             <p>@Messages("Please enter your personal information to finish registration")</p>
         </div>
 
-        @*<form action="@securesocial.core.providers.utils.RoutesHelper.handleSignUp(token).absoluteURL(IdentityProvider.sslEnabled)"*@
+        @*<form action="@controllers.Utils.baseUrl(request)@securesocial.core.providers.utils.RoutesHelper.handleSignUp(token)"*@
       <form action = @routes.Registration.handleSignUp(token)
               class="form-horizontal"
               autocomplete= "off"

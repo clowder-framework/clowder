@@ -20,7 +20,7 @@ class Error extends SecuredController {
      * 
      */
     def authenticationRequired() = UserAction(needActive = false) { implicit request =>
-        Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You must be logged in to perform that action.")
+        Results.Redirect(controllers.Utils.baseUrl(request) + RoutesHelper.login).flashing("error" -> "You must be logged in to perform that action.")
     }
     
     /**
@@ -49,10 +49,10 @@ class Error extends SecuredController {
         }
         
         if (origUrlPresent) {
-            Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> errMsg).withSession("original-url" -> url)
+            Results.Redirect(controllers.Utils.baseUrl(request) + RoutesHelper.login).flashing("error" -> errMsg).withSession("original-url" -> url)
         }
         else {
-            Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> errMsg)
+            Results.Redirect(controllers.Utils.baseUrl(request) + RoutesHelper.login).flashing("error" -> errMsg)
         }
     }
     

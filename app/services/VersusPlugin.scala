@@ -36,7 +36,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
-    val fileUrl = api.routes.Files.download(fileid).absoluteURL(https) + key
+    val fileUrl = controllers.Utils.baseUrl(request) + api.routes.Files.download(fileid) + key
     val host = configuration.getString("versus.host").getOrElse("")
 
     val extractUrl = host + "/extract"
@@ -319,7 +319,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
-    val prevURL = api.routes.Previews.download(previewId).absoluteURL(https) + key
+    val prevURL = controllers.Utils.baseUrl(request) + api.routes.Previews.download(previewId) + key
     val host = configuration.getString("versus.host").getOrElse("")
 
     //find out what extractor created this preview
@@ -350,7 +350,7 @@ class VersusPlugin(application: Application) extends Plugin {
     //need 'blob' in fileURL
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
-    val fileURL = api.routes.Files.download(fileId).absoluteURL(https) + key
+    val fileURL = controllers.Utils.baseUrl(request) + api.routes.Files.download(fileId) + key
     //indexes that have TYPE parameter contain sections, and indexes that don't have TYPE parameter contain whole files.
     //go through all indexes and find ones that DONT'T have the TYPE param and send file for indexing in these indexes.
     for (indexList <- getIndexesAsFutureList()) {
@@ -470,7 +470,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
-    val queryStr = api.routes.Files.download(inputFileId).absoluteURL(https) + key
+    val queryStr = controllers.Utils.baseUrl(request) + api.routes.Files.download(inputFileId) + key
 
     queryIndex(queryStr, indexId)
   }
@@ -483,7 +483,7 @@ class VersusPlugin(application: Application) extends Plugin {
     val configuration = play.api.Play.configuration
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
-    val queryStr = api.routes.Files.downloadquery(newFileId).absoluteURL(https) + key
+    val queryStr = controllers.Utils.baseUrl(request) + api.routes.Files.downloadquery(newFileId) + key
     queryIndex(queryStr, indexId)
   }
 
@@ -606,7 +606,7 @@ class VersusPlugin(application: Application) extends Plugin {
     //if searching for a new file, i.e.  uploaded just now, use api/queries
     val key = "?key=" + configuration.getString("commKey").get
     val https = controllers.Utils.https(request)
-    val queryStr = api.routes.Files.downloadquery(UUID(inputFileId)).absoluteURL(https) + key
+    val queryStr = controllers.Utils.baseUrl(request) + api.routes.Files.downloadquery(UUID(inputFileId)) + key
     val responseFuture: Future[Response] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile" -> Seq(queryStr)))
 
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query

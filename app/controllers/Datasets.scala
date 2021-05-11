@@ -739,8 +739,8 @@ class Datasets @Inject() (
             Map("files" -> uploadedFiles.map(f => toJson(Map(
               "name" -> toJson(f.filename),
               "size" -> toJson(f.length),
-              "url" -> toJson(routes.Files.file(f.id).absoluteURL(Utils.https(request))),
-              "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(Utils.https(request))),
+              "url" -> toJson(controllers.Utils.baseUrl(request) + routes.Files.file(f.id)),
+              "deleteUrl" -> toJson(controllers.Utils.baseUrl(request) + api.routes.Files.removeFile(f.id)),
               "deleteType" -> toJson("POST")
             ))))
           }

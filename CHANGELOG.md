@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Can set the clowder url in configuration file [#224](https://github.com/clowder-framework/clowder/issues/224)
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed

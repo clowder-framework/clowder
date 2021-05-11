@@ -120,7 +120,7 @@ class Collections @Inject() (datasets: DatasetService,
           else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
         }
         case None => {
-          Logger.error("Error getting collection" + id)
+          Logger.error("Error getting collection " + id)
           BadRequest(toJson(s"The given collection id $id is not a valid ObjectId."))
         }
       }

@@ -99,7 +99,7 @@ object FileUtils {
     }
 
     val user = request.user.get
-    val creator_url = api.routes.Users.findById(user.id).absoluteURL(Utils.https(request))(request)
+    val creator_url = controllers.Utils.baseUrl(request) + api.routes.Users.findById(user.id)
     val creator = UserAgent(id = UUID.generate(), user = user, userId = Some(new URL(creator_url)))
 
     // Extract path information from requests for later
@@ -300,7 +300,7 @@ object FileUtils {
     }
 
     val user = request.user.get
-    val creator_url = api.routes.Users.findById(user.id).absoluteURL(Utils.https(request))(request)
+    val creator_url = controllers.Utils.baseUrl(request) + api.routes.Users.findById(user.id)
     val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
 
     // Extract path information from requests for later

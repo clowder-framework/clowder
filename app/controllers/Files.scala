@@ -646,8 +646,8 @@ class Files @Inject() (
                     Map(
                       "name" -> toJson(nameOfFile),
                       "size" -> toJson(uploadedFile.ref.file.length()),
-                      "url" -> toJson(routes.Files.file(f.id).absoluteURL(https)),
-                      "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(https)),
+                      "url" -> toJson(controllers.Utils.baseUrl(request) + routes.Files.file(f.id)),
+                      "deleteUrl" -> toJson(controllers.Utils.baseUrl(request) + api.routes.Files.removeFile(f.id)),
 	                            "deleteType" -> toJson("POST")
 	                        )
 	                    )

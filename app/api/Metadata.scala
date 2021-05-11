@@ -449,7 +449,7 @@ class Metadata @Inject() (
 
           // build creator uri
           // TODO switch to internal id and then build url when returning?
-          val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + user.id
+          val userURI = controllers.Utils.baseUrl(request) + "/api/users/" + user.id
           val creator = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
 
           val context: JsValue = (json \ "@context")

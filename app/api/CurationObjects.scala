@@ -55,15 +55,15 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
-              "Uploaded By" -> Json.toJson(userService.findById(file.author.id).map ( usr => Json.toJson(file.author.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findById(file.author.id).map ( usr => Json.toJson(file.author.fullName + ": " +  controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)))),
               "Size" -> Json.toJson(size),
               "Mimetype" -> Json.toJson(file.contentType),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "SHA512 Hash" -> Json.toJson(file.sha512),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
-              "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
-              "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
+              "Is Version Of" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Files.file(file.fileId) + "?key=" + key),
+              "similarTo" -> Json.toJson(controllers.Utils.baseUrl(request) + api.routes.Files.download(file.fileId)  + "?key=" + key)
 
             )
             if(file.tags.size > 0 ) {
@@ -83,10 +83,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
                 "License" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
                 "Label" -> Json.toJson(folder.name),
                 "Title" -> Json.toJson(folder.displayName),
-                "Uploaded By" -> Json.toJson(folder.author.fullName + ": " +  api.routes.Users.findById(folder.author.id).absoluteURL(https)),
+                "Uploaded By" -> Json.toJson(folder.author.fullName + ": " +  controllers.Utils.baseUrl(request) + api.routes.Users.findById(folder.author.id)),
                 "@id" -> Json.toJson("urn:uuid:"+folder.id),
                 "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2016/Folder")),
-                "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https) +"#folderId=" +folder.folderId),
+                "Is Version Of" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(c.datasets(0).id) +"#folderId=" +folder.folderId),
                 "Has Part" -> Json.toJson(hasPart)
               )
               tempMap
@@ -107,7 +107,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson("urn:uuid:"+comm.id),
-              "comment_author" -> Json.toJson(userService.findById(comm.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
+              "comment_author" -> Json.toJson(userService.findById(comm.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id))))
             ))
           }
           var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
@@ -220,23 +220,23 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
                   "Dataset Description" -> Json.toJson(c.description),
-                  "Uploaded By" -> Json.toJson(userService.findById(c.author.id).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
+                  "Uploaded By" -> Json.toJson(userService.findById(c.author.id).map ( usr => Json.toJson(usr.fullName + ": " + controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)))),
                   "Publication Date" -> Json.toJson(publicationDate),
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
-                  "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"),
+                  "@id" -> Json.toJson(controllers.Utils.baseUrl(request) + api.routes.CurationObjects.getCurationObjectOre(c.id) + "#aggregation"),
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
-                  "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
-                  "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
+                  "Is Version Of" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(c.datasets(0).id)),
+                  "similarTo" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(c.datasets(0).id)),
                   "aggregates" -> Json.toJson(filesJson ++ foldersJson.toList),
                   "Has Part" -> Json.toJson(hasPart),
-                  "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https))
+                  "Publishing Project"-> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Spaces.getSpace(c.space))
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Uploaded By" -> Json.toJson(userService.findById(c.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findById(c.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)))),
               "@type" -> Json.toJson("ResourceMap"),
-              "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
+              "@id" -> Json.toJson(controllers.Utils.baseUrl(request) + api.routes.CurationObjects.getCurationObjectOre(curationId))
             )
 
           Ok(Json.toJson(parsedValue))

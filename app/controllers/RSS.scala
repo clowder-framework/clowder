@@ -65,13 +65,13 @@ class RSS @Inject() (events: EventService) extends SecuredController {
         <channel>
           <title>{AppConfiguration.getDisplayName} RSS feed</title>
           <description>The latest events happening in {AppConfiguration.getDisplayName}</description>
-          <link>{routes.Application.index().absoluteURL()}</link>
+          <link>{controllers.Utils.baseUrl(request) + routes.Application.index()}</link>
           {
             for (item <- feedItems) yield {
               <item>
                 <title>Event</title>
                 <description>{item.user.fullName}{views.html.newsFeedCardEmail(item)}</description>
-                <link>{getItemLink(item).absoluteURL()}</link>
+                <link>{controllers.Utils.baseUrl(request) + getItemLink(item)}</link>
               </item>
             }
           }
@@ -97,13 +97,13 @@ class RSS @Inject() (events: EventService) extends SecuredController {
         <channel>
           <title>{AppConfiguration.getDisplayName} RSS feed</title>
           <description>The latest events happening in {AppConfiguration.getDisplayName}</description>
-          <link>{routes.Application.index().absoluteURL()}</link>
+          <link>{controllers.Utils.baseUrl(request) + routes.Application.index()}</link>
           {
           for (item <- feedItems) yield {
             <item>
               <title>Event</title>
               <description>{item.user.fullName}{views.html.newsFeedCardEmail(item)}</description>
-              <link>{getItemLink(item).absoluteURL()}</link>
+              <link>{controllers.Utils.baseUrl(request) + getItemLink(item)}</link>
             </item>
           }
           }

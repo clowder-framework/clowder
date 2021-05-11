@@ -38,7 +38,7 @@
  function updateComment(id) {
    var text = $("#editField_" + id).val();
    text = htmlEncode(text);
-   editComment(id, text, "@user.get.fullName", "@user.get.email.getOrElse("")", "@routes.Datasets.dataset(UUID(id)).absoluteURL()");
+   editComment(id, text, "@user.get.fullName", "@user.get.email.getOrElse("")", "@controllers.Utils.baseUrl(request)@routes.Datasets.dataset(UUID(id))");
    return false;
  }
 
@@ -126,11 +126,11 @@ function postComment(id, resourceType) {
                 }
                 @resourceType match {
                     case "dataset" => {
-                        emailtext += '@user.get.fullName mentioned you in a comment: @routes.Datasets.dataset(UUID(id)).absoluteURL()\n\n';
+                        emailtext += '@user.get.fullName mentioned you in a comment: @controllers.Utils.baseUrl(request)@routes.Datasets.dataset(UUID(id))\n\n';
                         jsRoutes.api.Comments.mentionInComment(mentioned.id, id, "@resourceName", "dataset", commenterId).ajax({type: 'POST'});
                     }
                     case "file" => {
-                        emailtext += '@user.get.fullName mentioned you in a comment: @routes.Files.file(UUID(id)).absoluteURL()\n\n';
+                        emailtext += '@user.get.fullName mentioned you in a comment: @controllers.Utils.baseUrl(request)@routes.Files.file(UUID(id))\n\n';
                         jsRoutes.api.Comments.mentionInComment(mentioned.id, id, "@resourceName", "file", commenterId).ajax({type: 'POST'});
                     }
                     case _ => {

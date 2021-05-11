@@ -1,6 +1,6 @@
 profile.disclaimer=Your profile information is made available to repositories when data are published to them and, at the repository’s discretion, may be included with data publications that reference you (as the uploader, creator, or contact).
 trial.space=New Spaces are in trial mode, allowing you to take advantage of all Clowder functionality except making your data public. A Clowder team member will verify your Space shortly to make these additional capabilities possible.
-verify.email.contact.link=@routes.Application.email().absoluteURL(controllers.Utils.https(request))
+verify.email.contact.link=@@controllers.Utils.baseUrl(request)@routes.Application.email()
 verify.email.content=Your team now has access to the full suite of Clowder functionality, including publishing and making your data public.
 you.title= My {0}
 home.title=My {0}

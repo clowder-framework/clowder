@@ -7,7 +7,7 @@
         @user.fullName,<br/>
         <br>
         <p>
-            Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a><br/>
+            Your account on <a href="@controllers.Utils.baseUrl(request)@routes.Application.index()" style="text-decoration: none">@AppConfiguration.getDisplayName</a><br/>
             has been
             @if(active) {
                 enabled and you can now login.

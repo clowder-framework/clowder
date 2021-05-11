@@ -443,7 +443,7 @@ class CurationObjects @Inject() (
 
   def callMatchmaker(c: CurationObject, user: Option[User])(implicit request: Request[Any]): List[MatchMakerResponse] = {
     val https = controllers.Utils.https(request)
-    val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
+    val hostUrl = controllers.Utils.baseUrl(request) + api.routes.CurationObjects.getCurationObjectOre(c.id) + "#aggregation"
     var userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map(pref => if (pref._1 != "Purpose") { pref._1 -> Json.toJson(pref._2.toString().split(",").toList) } else { pref._1 -> Json.toJson(pref._2.toString()) })).getOrElse(Map.empty)
     if (spaces.get(c.space).get.isTrial) userPrefMap += ("Purpose" -> Json.toJson("Testing-Only"))
     var userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
@@ -479,28 +479,28 @@ class CurationObjects @Inject() (
     val creator = userService.findById(c.author.id).map(usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
         case Some(oid) => oid
-        case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+        case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
       }
-      case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+      case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
 
     })
     val rightsholder = user.map(usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
         case Some(oid) => oid
-        case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+        case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
       }
-      case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+      case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
 
     })
 
     val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
     var aggregation = metadataJson.toMap ++ Map(
-      "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
+      "Identifier" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.CurationObjects.getCurationObject(c.id)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
       "Uploaded By" -> Json.toJson(creator),
-      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
-      "Publishing Project" -> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+      "similarTo" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(c.datasets(0).id)),
+      "Publishing Project" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Spaces.getSpace(c.space)),
       "Creation Date" -> Json.toJson(format.format(c.created)))
     if (metadataJson.contains("Creator")) {
       val value = c.creators ++ metadataList.filter(_.label == "Creator").map { item => item.content.as[String] }.toList
@@ -660,7 +660,7 @@ class CurationObjects @Inject() (
           }
           val key = play.api.Play.configuration.getString("commKey").getOrElse("")
           val https = controllers.Utils.https(request)
-          val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
+          val hostUrl = controllers.Utils.baseUrl(request) + api.routes.CurationObjects.getCurationObjectOre(c.id) + "?key=" + key
           val dsLicense = c.datasets(0).licenseData.m_licenseType match {
             case "license1" => "All Rights Reserved " + c.datasets(0).author.fullName
             case "license2" => "http://creativecommons.org/licenses/by-nc-nd/3.0/"
@@ -695,9 +695,9 @@ class CurationObjects @Inject() (
           val creator = Json.toJson(userService.findById(c.author.id).map(usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
-              case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+              case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
             }
-            case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+            case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
 
           }))
           if (metadataJson.contains("Abstract")) {
@@ -726,7 +726,7 @@ class CurationObjects @Inject() (
               "@type" -> Json.toJson("Aggregation"),
               "Title" -> Json.toJson(c.name),
               "Uploaded By" -> Json.toJson(creator),
-              "Publishing Project" -> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+              "Publishing Project" -> Json.toJson(controllers.Utils.baseUrl(request) + controllers.routes.Spaces.getSpace(c.space)),
               "Publishing Project Name" -> Json.toJson(spaceName),
               "Creation Date" -> Json.toJson(format.format(c.created)))
           if (metadataJson.contains("Creator")) {
@@ -742,9 +742,9 @@ class CurationObjects @Inject() (
           val rightsholder = user.map(usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
-              case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+              case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
             }
-            case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+            case None => controllers.Utils.baseUrl(request) + api.routes.Users.findById(usr.id)
 
           })
           val license = c.datasets(0).licenseData.m_licenseText
@@ -794,7 +794,7 @@ class CurationObjects @Inject() (
                   "Number of Datasets" -> Json.toJson(fileIds.length),
                   "Number of Collections" -> Json.toJson(c.datasets.length))),
               "Rights Holder" -> Json.toJson(rightsholder),
-              "Publication Callback" -> Json.toJson(api.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) + "?key=" + key),
+              "Publication Callback" -> Json.toJson(controllers.Utils.baseUrl(request) + api.routes.CurationObjects.savePublishedObject(c.id) + "?key=" + key),
               "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))))
           Logger.debug("Submitting request for publication: " + valuetoSend)
 

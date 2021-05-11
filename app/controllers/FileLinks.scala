@@ -31,7 +31,7 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
     implicit val user = request.user
     files.get(fileId) match {
       case Some(file) =>
-        val host = routes.Application.index().absoluteURL(controllers.Utils.https(request))
+        val host = controllers.Utils.baseUrl(request) + routes.Application.index()
         val links = linksService.getLinkByFileId(fileId).map(link => (createURL(host, link.id.stringify), formatDate(link.expire)))
         Ok(views.html.files.share(file, links))
       case None => {
@@ -51,7 +51,7 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
     request.user match {
       case Some(user) =>
         val link = linksService.createLink(fileId, user.getMiniUser, 7)
-        val host = routes.Application.index().absoluteURL(controllers.Utils.https(request))
+        val host = controllers.Utils.baseUrl(request) + routes.Application.index()
         Ok(Json.toJson(Map("link"->createURL(host, link.id.stringify), "expire"->formatDate(link.expire))))
       case None => {
         Logger.error(s"User not available in request.")
@@ -65,8 +65,10 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
     linksService.getLinkByLinkId(linkId) match {
       case Some(filelink) => {
         val fileid = filelink.fileId
+        Logger.info(s"fileid ${fileid}")
         files.get(fileid) match {
           case Some(file) => {
+            Logger.info(s"fileid ${fileid}")
             files.getBytes(fileid) match {
               case Some((inputStream, filename, contentType, contentLength)) => {
 
@@ -106,10 +108,14 @@ class FileLinks @Inject() (files: FileService, linksService: FileLinkService) ex
                 }
               }
               case None => {
-                Logger.error("Error getting file" + fileid)
+                Logger.error("Error getting file " + fileid)
                 NotFound
               }
             }
+          }
+          case None => {
+            Logger.error("Error getting file " + fileid)
+            NotFound
           }
         }
       }

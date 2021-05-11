@@ -30,7 +30,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def swaggerUI = Action { implicit request =>
-    val swagger = routes.Application.swagger().absoluteURL(Utils.https(request))
+    val swagger = controllers.Utils.baseUrl(request) + routes.Application.swagger()
     Redirect("http://clowder.ncsa.illinois.edu/swagger/?url=" + swagger)
   }
 
@@ -40,7 +40,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def swagger = Action  { implicit request =>
     Play.resource("/public/swagger.yml") match {
       case Some(resource) => {
-        val https = Utils.https(request)
         val clowderurl = new URL(Utils.baseUrl(request))
         val host = if (clowderurl.getPort == -1) {
           clowderurl.getHost
@@ -64,10 +63,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                 "  title: " + AppConfiguration.getDisplayName + "\n" +
                 "  description: " + AppConfiguration.getWelcomeMessage + "\n" +
                 "  version: \"" + sys.props.getOrElse("build.version", default = "0.0.0").toString + "\"\n" +
-                "  termsOfService: " + routes.Application.tos().absoluteURL(https) + "\n" +
+                "  termsOfService: " + controllers.Utils.baseUrl(request) + routes.Application.tos() + "\n" +
                 "  contact: " + "\n" +
                 "    name: " + AppConfiguration.getDisplayName + "\n" +
-                "    url: " + routes.Application.email().absoluteURL(https) + "\n"
+                "    url: " + controllers.Utils.baseUrl(request) + routes.Application.email() + "\n"
             } else if (line.startsWith("servers:")) {
               skipit = true
               "servers:\n" +

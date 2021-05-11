@@ -6,9 +6,9 @@
 
         <p>Hello @newmember,</p>
 
-        <p>You have been added by <a href="@routes.Profile.viewProfileUUID(inviter.id).absoluteURL(IdentityProvider.sslEnabled)">@inviter.fullName</a>
-            to @Messages("space.title") <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a>
-            on <a href="@routes.Application.index().absoluteURL(IdentityProvider.sslEnabled)">@services.AppConfiguration.getDisplayName</a> as @role.
+        <p>You have been added by <a href="@controllers.Utils.baseUrl(request)@routes.Profile.viewProfileUUID(inviter.id)">@inviter.fullName</a>
+            to @Messages("space.title") <a href="@controllers.Utils.baseUrl(request)@routes.Spaces.getSpace(UUID(spaceid))">@spaceName</a>
+            on <a href="@controllers.Utils.baseUrl(request)@routes.Application.index()">@services.AppConfiguration.getDisplayName</a> as @role.
         </p>
     </body>
 </html>

@@ -30,7 +30,7 @@ class LdapProvider(application: Application) extends IdentityProvider(applicatio
       val token = UUID.generate().stringify
       val userip = request.remoteAddress
       UserService.save(new Token(token, userip, DateTime.now(), DateTime.now().plusMinutes(LdapProvider.ldapServerTimeOut), false))
-      val query = Map[String, Seq[String]]("redirecturl" -> Seq[String](RoutesHelper.authenticate(id).absoluteURL()),
+      val query = Map[String, Seq[String]]("redirecturl" -> Seq[String](controllers.Utils.baseUrl(request) + RoutesHelper.authenticate(id)),
         "token" -> Seq[String](token))
       Left(Results.Redirect(LdapProvider.ldapServerURL, query))
     } else {

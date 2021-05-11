@@ -32,9 +32,9 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
 
   def signUp(token: String) = Action { implicit request =>
     if ( play.Play.application().configuration().getBoolean("enableUsernamePassword") ) {
-      Redirect(securesocial.core.providers.utils.RoutesHelper.signUp(token).absoluteURL(IdentityProvider.sslEnabled))
+      Redirect(controllers.Utils.baseUrl(request) + securesocial.core.providers.utils.RoutesHelper.signUp(token))
     } else {
-      Redirect(securesocial.core.providers.utils.RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled))
+      Redirect(controllers.Utils.baseUrl(request) + securesocial.core.providers.utils.RoutesHelper.login)
     }
   }
 

@@ -451,7 +451,7 @@ class MongoDBFileService @Inject() (
             if (isInRootNodes) {
               val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"") + 1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"") + 1))
               // TODO RK : need to make sure we know if it is https
-              var connection = "<rdf:Description rdf:about=\"" + api.routes.Files.get(id).absoluteURL(false)
+              var connection = "<rdf:Description rdf:about=\"" + controllers.Utils.baseUrl(request, false) + api.routes.Files.get(id)
               connection = connection + "\"><P129_is_about xmlns=\"http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#\" rdf:resource=\"" + theResource
               connection = connection + "\"/></rdf:Description>"
               fileWriter.write(connection)

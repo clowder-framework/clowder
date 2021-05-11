@@ -614,7 +614,7 @@ class MongoDBCollectionService @Inject() (
         }
       }
       case None => {
-        Logger.error("Error getting collection" + collectionId);
+        Logger.error("Error getting collection " + collectionId);
         Failure
       }
     }

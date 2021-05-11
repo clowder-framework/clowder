@@ -6,7 +6,7 @@
 
     <p>Hello @member,</p>
 
-    <p>Congratulations, your @services.AppConfiguration.getDisplayName @Messages("space.title") <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a> has been verified!
+    <p>Congratulations, your @services.AppConfiguration.getDisplayName @Messages("space.title") <a href="@controllers.Utils.baseUrl(request)@routes.Spaces.getSpace(UUID(spaceid))">@spaceName</a> has been verified!
       @play.api.i18n.Messages("verify.email.content")
     </p>
 

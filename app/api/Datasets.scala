@@ -604,7 +604,7 @@ class  Datasets @Inject()(
                   }
                 }
                 case None => {
-                  Logger.error("Error getting dataset" + id)
+                  Logger.error("Error getting dataset " + id)
                   BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
                 }
               }
@@ -644,7 +644,7 @@ class  Datasets @Inject()(
               }
             }
             case None => {
-              Logger.error("Error getting dataset" + dsId)
+              Logger.error("Error getting dataset " + dsId)
               BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
             }
           }
@@ -666,7 +666,7 @@ class  Datasets @Inject()(
         else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
       }
       case None => {
-        Logger.error("Error getting dataset" + id)
+        Logger.error("Error getting dataset " + id)
         BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
       }
     }
@@ -722,13 +722,13 @@ class  Datasets @Inject()(
             Ok(toJson(Map("status" -> "success")))
           }
           case None => {
-            Logger.error("Error getting file" + fileId)
+            Logger.error("Error getting file " + fileId)
             BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
           }
         }
       }
       case None => {
-        Logger.error("Error getting dataset" + dsId)
+        Logger.error("Error getting dataset " + dsId)
         BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
       }
     }
@@ -815,19 +815,19 @@ class  Datasets @Inject()(
                 Ok (toJson (Map ("status" -> "success") ) )
               }
               case None => {
-                Logger.error ("Error getting file" + fileId)
+                Logger.error ("Error getting file " + fileId)
                 BadRequest (toJson (s"The given file id $fileId is not a valid ObjectId.") )
               }
             }
           }
           case None => {
-            Logger.error ("Error getting dataset" + toDatasetId)
+            Logger.error ("Error getting dataset " + toDatasetId)
             BadRequest (toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
           }
         }
       }
       case None => {
-        Logger.error ("Error getting dataset" + datasetId)
+        Logger.error ("Error getting dataset " + datasetId)
         BadRequest (toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
       }
     }
@@ -1058,7 +1058,7 @@ class  Datasets @Inject()(
           Ok(toJson(list))
         }
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset " + id); InternalServerError
     }
   }
 
@@ -1095,7 +1095,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(list))
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset " + id); InternalServerError
     }
   }
 
@@ -1945,7 +1945,7 @@ class  Datasets @Inject()(
         Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
       }
       case None => {
-        Logger.error("Error getting dataset" + id); InternalServerError
+        Logger.error("Error getting dataset " + id); InternalServerError
       }
     }
   }
@@ -2792,7 +2792,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
-        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
+        val baseURL = controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(id)
 
         // Increment download count if tracking is enabled
         if (tracking) {
@@ -2821,7 +2821,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         val fileIDs = fileList.split(',').map(fid => new UUID(fid)).toList
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
-        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
+        val baseURL = controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(id)
 
         // Increment download count for each file
         fileIDs.foreach(fid => files.incrementDownloads(fid, user))
@@ -2846,7 +2846,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
-        val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
+        val baseURL = controllers.Utils.baseUrl(request) + controllers.routes.Datasets.dataset(id)
 
 
         // Increment download count for each file in folder
