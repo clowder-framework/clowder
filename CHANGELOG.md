@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- RabbitMQ will not use connection if None exists
+- previews returns 404 if preview is not found
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
