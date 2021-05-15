@@ -1,40 +1,34 @@
 package api
 
-import java.io._
-import java.io.{File => JFile}
-import java.net.URL
-import java.security.{DigestInputStream, MessageDigest}
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
-
+import _root_.util._
 import api.Permission.Permission
-import java.util.zip._
-
-import javax.inject.{Inject, Singleton}
+import controllers.Utils.https
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
-import play.api.Play.{configuration, current, routes}
+import play.api.Play.{configuration, current}
 import play.api.i18n.Messages
+import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.mvc.{Action, AnyContent, MultipartFormData, SimpleResult}
-import services._
-import _root_.util._
-import controllers.Utils.https
-import org.json.simple.{JSONArray, JSONObject => SimpleJSONObject}
-import org.json.simple.parser.JSONParser
-import play.api.libs.Files
-import play.api.libs.Files.TemporaryFile
+import play.api.libs.json._
+import play.api.mvc.{AnyContent, MultipartFormData, SimpleResult}
 import scalax.file.Path.createTempFile
+import services._
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.io._
+import java.net.URL
+import java.security.{DigestInputStream, MessageDigest}
+import java.text.SimpleDateFormat
+import java.util.zip._
+import java.util.{Calendar, Date}
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.{ListBuffer, Map => MutaMap}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -1134,20 +1128,54 @@ class  Datasets @Inject()(
   private def getFilesWithinFolders(id: UUID, serveradmin: Boolean=false, max: Int = -1): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
     var resultCount = 0
+    var current_folder : Option[Folder] = None
     datasets.get(id) match {
       case Some(dataset) => {
-        folders.findByParentDatasetId(id).map { folder =>
+        folders.findByParentDatasetId(id).foreach { folder =>
+          current_folder = Some(folder)
           files.get(folder.files).found.foreach(file => {
             if (max < 0 || resultCount < max) {
-              output += jsonFile(file, serveradmin)
+              output += jsonFileWithFolder(file, current_folder.get, serveradmin)
               resultCount += 1
             }
           })
+          print("done with folder")
         }
       }
       case None => Logger.error(s"Error getting dataset $id")
     }
     output.toList
+  }
+
+  def jsonFileWithFolder(file: models.File, folder: models.Folder, serverAdmin: Boolean = false) : JsValue = {
+
+    val folderMap : JsValue = Json.obj("id"->folder.id, "name"->folder.name)
+    val defaultMap : JsValue = Json.obj(
+      "id" -> file.id.toString,
+      "filename" -> file.filename,
+      "contentType" -> file.contentType,
+      "date-created" -> file.uploadDate.toString(),
+      "folders"->folderMap,
+      "size" -> file.length.toString)
+
+    // Only include filepath if using DiskByte storage and user is serverAdmin
+    val jsonMap = file.loader match {
+      case "services.filesystem.DiskByteStorageService" => {
+        if (serverAdmin)
+          Json.obj(
+            "id" -> file.id.toString,
+            "filename" -> file.filename,
+            "filepath" -> file.loader_id,
+            "contentType" -> file.contentType,
+            "date-created" -> file.uploadDate.toString(),
+            "folders"->folderMap,
+            "size" -> file.length.toString)
+        else
+          defaultMap
+      }
+      case _ => defaultMap
+    }
+    toJson(jsonMap)
   }
 
   def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
