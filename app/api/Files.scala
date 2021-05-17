@@ -1613,7 +1613,6 @@ class Files @Inject()(
   def bulkDeleteFiles() = PrivateServerAction (parse.json) {implicit request=>
     var filesToCheck : ListBuffer[String] = ListBuffer.empty[String]
     var filesNotExist : ListBuffer[String] = ListBuffer.empty[String]
-    var filesNoPermission : ListBuffer[String] = ListBuffer.empty[String]
     var filesDeleted : ListBuffer[String] = ListBuffer.empty[String]
     var filesErrorDeleted: ListBuffer[String] = ListBuffer.empty[String]
     request.user match {
