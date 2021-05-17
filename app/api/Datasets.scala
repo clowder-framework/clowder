@@ -1135,7 +1135,7 @@ class  Datasets @Inject()(
           current_folder = Some(folder)
           files.get(folder.files).found.foreach(file => {
             if (max < 0 || resultCount < max) {
-              output += jsonFileWithFolder(file, current_folder.get, serveradmin)
+              output += jsonFile(file, serveradmin, Some(folder))
               resultCount += 1
             }
           })
@@ -1147,62 +1147,65 @@ class  Datasets @Inject()(
     output.toList
   }
 
-  def jsonFileWithFolder(file: models.File, folder: models.Folder, serverAdmin: Boolean = false) : JsValue = {
 
-    val folderMap : JsValue = Json.obj("id"->folder.id, "name"->folder.name)
-    val defaultMap : JsValue = Json.obj(
-      "id" -> file.id.toString,
-      "filename" -> file.filename,
-      "contentType" -> file.contentType,
-      "date-created" -> file.uploadDate.toString(),
-      "folders"->folderMap,
-      "size" -> file.length.toString)
+  def jsonFile(file: models.File, serverAdmin: Boolean = false, folder : Option[Folder] = None): JsValue = {
+    folder match {
+      case Some(f) => {
+        val folderMap : JsValue = Json.obj("id"->f.id, "name"->f.name)
+        val defaultMap : JsValue = Json.obj(
+          "id" -> file.id.toString,
+          "filename" -> file.filename,
+          "contentType" -> file.contentType,
+          "date-created" -> file.uploadDate.toString(),
+          "folders"->folderMap,
+          "size" -> file.length.toString)
 
-    // Only include filepath if using DiskByte storage and user is serverAdmin
-    val jsonMap = file.loader match {
-      case "services.filesystem.DiskByteStorageService" => {
-        if (serverAdmin)
-          Json.obj(
-            "id" -> file.id.toString,
-            "filename" -> file.filename,
-            "filepath" -> file.loader_id,
-            "contentType" -> file.contentType,
-            "date-created" -> file.uploadDate.toString(),
-            "folders"->folderMap,
-            "size" -> file.length.toString)
-        else
-          defaultMap
+        // Only include filepath if using DiskByte storage and user is serverAdmin
+        val jsonMap = file.loader match {
+          case "services.filesystem.DiskByteStorageService" => {
+            if (serverAdmin)
+              Json.obj(
+                "id" -> file.id.toString,
+                "filename" -> file.filename,
+                "filepath" -> file.loader_id,
+                "contentType" -> file.contentType,
+                "date-created" -> file.uploadDate.toString(),
+                "folders"->folderMap,
+                "size" -> file.length.toString)
+            else
+              defaultMap
+          }
+          case _ => defaultMap
+        }
+        toJson(jsonMap)
       }
-      case _ => defaultMap
-    }
-    toJson(jsonMap)
-  }
+      case None => {
+        val defaultMap = Map(
+          "id" -> file.id.toString,
+          "filename" -> file.filename,
+          "contentType" -> file.contentType,
+          "date-created" -> file.uploadDate.toString(),
+          "size" -> file.length.toString)
 
-  def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
-    val defaultMap = Map(
-      "id" -> file.id.toString,
-      "filename" -> file.filename,
-      "contentType" -> file.contentType,
-      "date-created" -> file.uploadDate.toString(),
-      "size" -> file.length.toString)
-
-    // Only include filepath if using DiskByte storage and user is serverAdmin
-    val jsonMap = file.loader match {
-      case "services.filesystem.DiskByteStorageService" => {
-        if (serverAdmin)
-          Map(
-            "id" -> file.id.toString,
-            "filename" -> file.filename,
-            "filepath" -> file.loader_id,
-            "contentType" -> file.contentType,
-            "date-created" -> file.uploadDate.toString(),
-            "size" -> file.length.toString)
-        else
-          defaultMap
-      }
-      case _ => defaultMap
+        // Only include filepath if using DiskByte storage and user is serverAdmin
+        val jsonMap = file.loader match {
+          case "services.filesystem.DiskByteStorageService" => {
+            if (serverAdmin)
+              Map(
+                "id" -> file.id.toString,
+                "filename" -> file.filename,
+                "filepath" -> file.loader_id,
+                "contentType" -> file.contentType,
+                "date-created" -> file.uploadDate.toString(),
+                "size" -> file.length.toString)
+            else
+              defaultMap
+          }
+          case _ => defaultMap
+        }
+        toJson(jsonMap)
+        }
     }
-    toJson(jsonMap)
   }
 
   //Update Dataset Information code starts
