@@ -1611,7 +1611,7 @@ class Files @Inject()(
   }
 
   def bulkDeleteFiles() = PrivateServerAction (parse.json) {implicit request=>
-    var filesToCheck : List[String] = List.empty[String]
+    var filesToCheck : ListBuffer[String] = ListBuffer.empty[String]
     var filesNotExist : ListBuffer[String] = ListBuffer.empty[String]
     var filesNoPermission : ListBuffer[String] = ListBuffer.empty[String]
     var filesDeleted : ListBuffer[String] = ListBuffer.empty[String]
@@ -1619,7 +1619,7 @@ class Files @Inject()(
     request.user match {
       case Some(user) => {
         val fileIds = request.body.\("fileIds").asOpt[List[String]].getOrElse(List.empty[String])
-        filesToCheck = fileIds
+        filesToCheck.appendAll(fileIds)
         if (fileIds.isEmpty){
           BadRequest("No file ids supplied")
         } else {
@@ -1632,10 +1632,12 @@ class Files @Inject()(
                   resourceRefList += current_resource_ref
                 }
                 case None => {
+                  filesToCheck -= fileId
                   filesNotExist += fileId
                 }
               }
             } else {
+              filesToCheck -= fileId
               filesNotExist += fileId
             }
           }
@@ -1643,12 +1645,16 @@ class Files @Inject()(
           for (id <- filesIdsCanDelete) {
             val id_removed = files.removeFile(id,Utils.baseUrl(request), request.apiKey, request.user)
             if (id_removed == true) {
+              filesToCheck -= id.stringify
               filesDeleted += id.stringify
             } else {
+              filesToCheck -= id.stringify
               filesErrorDeleted += id.stringify
             }
           }
-          Ok(toJson(Map("status" -> "success")))
+          Ok(toJson(Map("deleted"->filesDeleted.toList, "not found"->filesNotExist.toList,
+            "error deleting"->filesErrorDeleted.toList,"no permission"->filesToCheck.toList)))
+          // Ok(toJson(Map("status" -> "success")))
         }
       }
       case None => {
