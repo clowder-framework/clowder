@@ -527,9 +527,14 @@ class Files @Inject()(
     datasets.get(dataset_id) match {
       case Some(dataset) => {
 
-        val folder = folder_id.flatMap(x => folders.get(UUID(x)))
 
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), folder, showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
+        val current_folder = if (UUID.isValid(folder_id.get)){
+          folders.get(UUID(folder_id.get))
+        } else {
+          None
+        }
+        
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), current_folder, showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
