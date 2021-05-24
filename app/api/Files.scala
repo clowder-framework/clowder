@@ -1896,6 +1896,9 @@ class Files @Inject()(
       case Some(file) => {
         files.setStatus(id, FileStatus.PROCESSED)
         sinkService.logFileUnarchiveEvent(file, user)
+
+        // Set last download time accordingly, so to avoid immediate auto-archive
+        files.incrementDownloads(id, user, false)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
