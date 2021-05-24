@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Ability to queue archive / unarchive for full datasets.
+
 ### Fixed
 - Added index for comments, will speed up index creation
 
