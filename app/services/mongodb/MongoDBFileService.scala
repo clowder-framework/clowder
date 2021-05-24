@@ -1192,7 +1192,7 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = true) = {
+  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = false) = {
     Logger.debug("updating downloads for file "+id.toString)
     val fileOp = if (dateOnly) {
       $set("stats.last_downloaded" -> new Date)
