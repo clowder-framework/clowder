@@ -523,38 +523,15 @@ class Files @Inject()(
   /**
     * Upload a file to a specific dataset
     */
-  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true, folder_id : Option[UUID]) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true, folder_id: Option[UUID]) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        folder_id match {
-          case Some(id) => {
-            folders.get(id) match {
-              case Some(folder) => {
-                val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset),Some(folder), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
-                uploadedFiles.length match {
-                  case 0 => BadRequest("No files uploaded")
-                  case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
-                  case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
-                }
-              }
-              case None => {
-                val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
-                uploadedFiles.length match {
-                  case 0 => BadRequest("No files uploaded")
-                  case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
-                  case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
-                }
-              }
-            }
-          }
-          case None => {
-            val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
-            uploadedFiles.length match {
-              case 0 => BadRequest("No files uploaded")
-              case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
-              case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
-            }
-          }
+        val folder = folder_id.flatMap(x => folders.get(x))
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), folder, showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
         }
       }
       case None => {
