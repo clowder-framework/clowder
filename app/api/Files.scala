@@ -1885,7 +1885,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
@@ -1900,7 +1900,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
@@ -1916,7 +1916,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
@@ -1932,7 +1932,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
