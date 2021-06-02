@@ -100,8 +100,9 @@ class RabbitMQMessageService extends MessageService {
       }
 
       // create an anonymous queue for replies
-      val replyQueueName = channel.get.queueDeclare().getQueue
-      Logger.debug("Reply queue name: " + replyQueueName)
+      val replyQueueName = s"clowder.${AppConfiguration.getInstance}"
+      channel.get.queueDeclare(replyQueueName, true, false, false, null)
+      Logger.info("Reply queue name: " + replyQueueName)
 
       // get bindings stored in broker
       val queueBindingsFuture = getQueuesNamesForAnExchange(exchange)
@@ -231,15 +232,26 @@ class RabbitMQMessageService extends MessageService {
   /** Submit a message to broker. */
   override def submit(exchange: String, routing_key: String, message: JsValue, exchange_type: String = "topic") = {
     connect()
-    val tempChannel = connection.get.createChannel()
-    tempChannel.exchangeDeclare(exchange, exchange_type, true)
-    
-    // If a routing_key (queue name) was provided, ensure that the queue exists
-    if (routing_key != "") {
-      tempChannel.queueDeclare(routing_key, true, false, false, null)
-      tempChannel.queueBind(routing_key, exchange, routing_key)
+    var tempChannel: Channel = null
+    try {
+      tempChannel = connection.get.createChannel()
+      if (tempChannel != null) {
+        tempChannel.exchangeDeclare(exchange, exchange_type, true)
+
+        // If a routing_key (queue name) was provided, ensure that the queue exists
+        if (routing_key != "") {
+          tempChannel.queueDeclare(routing_key, true, false, false, null)
+          tempChannel.queueBind(routing_key, exchange, routing_key)
+        }
+        tempChannel.basicPublish(exchange, routing_key, null, message.toString.getBytes)
+      } else {
+        Logger.error("Error: no channels available to submit message")
+      }
+    } finally {
+      if (tempChannel != null) {
+        tempChannel.close()
+      }
     }
-    tempChannel.basicPublish(exchange, routing_key, null, message.toString.getBytes)
   }
 
   /**

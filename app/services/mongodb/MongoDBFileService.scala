@@ -806,67 +806,67 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
     get(id) match{
       case Some(file) => {
-        if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
-          for(fileDataset <- fileDatasets){
-            datasets.removeFile(fileDataset.id, id)
-            if(!file.xmlMetadata.isEmpty){
-              datasets.index(fileDataset.id)
-            }
+          if(!file.isIntermediate){
+            val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
+            for(fileDataset <- fileDatasets){
+              datasets.removeFile(fileDataset.id, id)
+              if(!file.xmlMetadata.isEmpty){
+                datasets.index(fileDataset.id)
+              }
 
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
-              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
-                datasets.newThumbnail(fileDataset.id)
-                collections.get(fileDataset.collections).found.foreach(collection => {
-                  if(!collection.thumbnail_id.isEmpty){
-                    if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-                      collections.createThumbnail(collection.id)
+              if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
+                if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                  datasets.newThumbnail(fileDataset.id)
+                  collections.get(fileDataset.collections).found.foreach(collection => {
+                    if(!collection.thumbnail_id.isEmpty){
+                      if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                        collections.createThumbnail(collection.id)
+                      }
                     }
-                  }
-                })
-		          }
+                  })
+                }
+              }
+
             }
-                     
+
+            val fileFolders = folders.findByFileId(file.id)
+            for(fileFolder <- fileFolders) {
+              folders.removeFile(fileFolder.id, file.id)
+            }
+            for(section <- sections.findByFileId(file.id)){
+              sections.removeSection(section)
+            }
+            for(comment <- comments.findCommentsByFileId(id)){
+              comments.removeComment(comment)
+            }
+            for(texture <- threeD.findTexturesByFileId(file.id)){
+              ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
+            }
+            for (follower <- file.followers) {
+              userService.unfollowFile(follower, id)
+            }
           }
 
-          val fileFolders = folders.findByFileId(file.id)
-          for(fileFolder <- fileFolders) {
-            folders.removeFile(fileFolder.id, file.id)
+          // delete the actual file
+          if(isLastPointingToLoader(file.loader, file.loader_id)) {
+            for(preview <- previews.findByFileId(file.id)){
+              previews.removePreview(preview)
+            }
+            if(!file.thumbnail_id.isEmpty)
+              thumbnails.remove(UUID(file.thumbnail_id.get))
+            ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
           }
-          for(section <- sections.findByFileId(file.id)){
-            sections.removeSection(section)
-          }
-          for(comment <- comments.findCommentsByFileId(id)){
-            comments.removeComment(comment)
-          }
-          for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
-          }
-          for (follower <- file.followers) {
-            userService.unfollowFile(follower, id)
-          }
-        }
 
-        // delete the actual file
-        if(isLastPointingToLoader(file.loader, file.loader_id)) {
-          for(preview <- previews.findByFileId(file.id)){
-            previews.removePreview(preview)
+          import UUIDConversions._
+          FileDAO.removeById(file.id)
+          appConfig.incrementCount('files, -1)
+          appConfig.incrementCount('bytes, -file.length)
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete(id.stringify)
           }
-          if(!file.thumbnail_id.isEmpty)
-            thumbnails.remove(UUID(file.thumbnail_id.get))
-          ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
-        }
 
-        import UUIDConversions._
-        FileDAO.removeById(file.id)
-        appConfig.incrementCount('files, -1)
-        appConfig.incrementCount('bytes, -file.length)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
-        }
-
-        // finally remove metadata - if done before file is deleted, document metadataCounts won't match
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
+          // finally remove metadata - if done before file is deleted, document metadataCounts won't match
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
       }
       case None => Logger.debug("File not found")
     }

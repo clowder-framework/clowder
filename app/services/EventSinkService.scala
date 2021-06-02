@@ -32,7 +32,7 @@ class EventSinkService {
   def logEvent(message: JsValue) = {
     // Inject timestamp before logging the event
     val event = message.as[JsObject] + ("created" -> Json.toJson(java.util.Date.from(Instant.now())))
-    Logger.info("Submitting message to event sink exchange: " + Json.stringify(event))
+    Logger.debug("Submitting message to event sink exchange: " + Json.stringify(event))
     try {
       messageService.submit(exchangeName, queueName, event, "fanout")
     } catch {
@@ -259,6 +259,34 @@ class EventSinkService {
       "user_id" -> downloader.getOrElse(User.anonymous).id,
       "user_name" -> downloader.getOrElse(User.anonymous).getMiniUser.fullName,
       "size" -> (dataset.files.length + dataset.folders.length)
+    ))
+  }
+
+  def logFileArchiveEvent(file: File, archiver: Option[User]) = {
+    logEvent(Json.obj(
+      "category" -> "archive",
+      "type" -> "file",
+      "resource_id" -> file.id,
+      "resource_name" -> file.filename,
+      "author_id" -> file.author.id,
+      "author_name" -> file.author.fullName,
+      "user_id" -> archiver.get.id,
+      "user_name" -> archiver.get.getMiniUser.fullName,
+      "size" -> file.length
+    ))
+  }
+
+  def logFileUnarchiveEvent(file: File, unarchiver: Option[User]) = {
+    logEvent(Json.obj(
+      "category" -> "unarchive",
+      "type" -> "file",
+      "resource_id" -> file.id,
+      "resource_name" -> file.filename,
+      "author_id" -> file.author.id,
+      "author_name" -> file.author.fullName,
+      "user_id" -> unarchiver.get.id,
+      "user_name" -> unarchiver.get.getMiniUser.fullName,
+      "size" -> file.length
     ))
   }
 }

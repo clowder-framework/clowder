@@ -71,6 +71,18 @@ object AppConfiguration {
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   // ----------------------------------------------------------------------
+  def getInstance: String = {
+    appConfig.getProperty[String]("instance") match {
+      case Some(id) => id
+      case None => {
+        val id = scala.util.Random.alphanumeric.take(10).mkString
+        appConfig.setProperty("instance", id)
+        id
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------------
 
   /** Set the default theme */
   def setTheme(theme: String) = {

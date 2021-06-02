@@ -22,7 +22,7 @@ copyright = '2019, University of Illinois at Urbana-Champaign'
 author = 'Luigi Marini'
 
 # The full version, including alpha/beta/rc tags
-release = '1.16.0'
+release = '1.17.0'
 
 
 # -- General configuration ---------------------------------------------------
