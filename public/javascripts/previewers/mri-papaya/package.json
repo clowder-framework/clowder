@@ -1,0 +1,6 @@
+{
+	"name": "interactive_mri_viewer_for_nii_files",
+	"main": "mri-papaya.js",
+	"file": true,
+	"contentType": ["image/nii"]
+}
