@@ -1,13 +1,13 @@
 package api
 
 import javax.inject.Inject
-
-import play.api.Logger
+import play.api.{Logger, Play}
 import models.User
 import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
 import services._
 import services.mongodb.MongoSalatPlugin
+import services.s3.S3ByteStorageService
 
 import scala.collection.mutable
 
@@ -35,6 +35,7 @@ class Status @Inject()(spaces: SpaceService,
       "version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
+      "storage" -> getStorage(),
       "extractors" -> Json.toJson(extractors.getExtractorNames(List.empty))))
   }
 
@@ -136,6 +137,29 @@ class Status @Inject()(spaces: SpaceService,
     }
 
     Json.toJson(result.toMap[String, JsValue])
+  }
+
+  def getStorage(): JsValue = {
+    val config =  Play.current.configuration
+
+    ByteStorageService.storage.getClass.getName match {
+      case "services.mongodb.MongoDBByteStorage" => {
+        Json.obj("location" -> "mongo")
+      }
+      case "services.filesystem.DiskByteStorageService" => {
+        Json.obj("location" -> "disk",
+          "path" -> config.getString("clowder.diskStorage.path").getOrElse[String]("unknown"))
+      }
+      case "services.s3.S3ByteStorageService" => {
+        Json.obj("location" -> "s3",
+          "endpoint" -> config.getString(S3ByteStorageService.ServiceEndpoint).getOrElse[String]("unknown"),
+          "region" -> config.getString(S3ByteStorageService.Region).getOrElse[String]("unknown"),
+          "bucket" -> config.getString(S3ByteStorageService.BucketName).getOrElse[String]("unknown"))
+      }
+      case name => {
+        Json.obj("location" -> name)
+      }
+    }
   }
 
   def getCounts(user: Option[User]): JsValue = {

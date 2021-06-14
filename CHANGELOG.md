@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Added index for comments, will speed up index creation
+- If using S3 storage in docker, it was not reflected correctly in the docker-compose file
+
+### Added
+- Status endpoint will now show what storage is used
 
 ## 1.17.0 - 2021-04-29
 
