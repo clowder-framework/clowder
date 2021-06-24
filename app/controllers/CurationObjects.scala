@@ -39,7 +39,8 @@ class CurationObjects @Inject() (
   events: EventService,
   userService: UserService,
   metadatas: MetadataService,
-  contextService: ContextLDService) extends SecuredController {
+  contextService: ContextLDService,
+  routing: ExtractorRoutingService) extends SecuredController {
 
   /**
    * String name of the Space such as 'Project space' etc., parsed from conf/messages
@@ -163,10 +164,8 @@ class CurationObjects @Inject() (
                   val mdMap = m.getExtractionSummary
 
                   //send RabbitMQ message
-                  current.plugin[RabbitmqPlugin].foreach { p =>
-                    p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request),
+                  routing.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, f.id), mdMap, Utils.baseUrl(request),
                       request.apiKey, request.user)
-                  }
                 })
               })
 
@@ -199,10 +198,8 @@ class CurationObjects @Inject() (
                       ResourceRef(ResourceRef.curationObject, newCuration.id)))
                     val mdMap = m.getExtractionSummary
                     //send RabbitMQ message
-                    current.plugin[RabbitmqPlugin].foreach { p =>
-                      p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.dataset, dataset.id), mdMap,
+                    routing.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.dataset, dataset.id), mdMap,
                         Utils.baseUrl(request), request.apiKey, request.user)
-                    }
                   }
                 })
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
@@ -242,9 +239,7 @@ class CurationObjects @Inject() (
               val metadataId = metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = curationRef))
               val mdMap = m.getExtractionSummary
               //send RabbitMQ message
-              current.plugin[RabbitmqPlugin].foreach { p =>
-                p.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost, apiKey, user)
-              }
+              routing.metadataAddedToResource(metadataId, curationRef, mdMap, requestHost, apiKey, user)
             })
         })
 

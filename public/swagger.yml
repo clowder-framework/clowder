@@ -9,7 +9,7 @@ info:
     Clowder is a customizable and scalable data management system to support any
     data format and multiple research domains. It is under active development
     and deployed for a variety of research projects.
-  version: 1.14.1
+  version: 1.17.0
   termsOfService: https://clowder.ncsa.illinois.edu/clowder/tos
   contact:
     name: Clowder
@@ -150,6 +150,18 @@ paths:
             assuming "size" items per page.
           schema:
             type: integer
+        - name: sort
+          in: query
+          description: A date or numeric field to sort by. If order is given but no field specified, created date is used.
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: Whether to scored in asc (ascending) or desc (descending) order. If a field is given without an order, asc is used.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
       responses:
         200:
           description: OK
@@ -176,6 +188,24 @@ paths:
                   $ref: '#/components/schemas/File'
         '401':
           $ref: '#/components/responses/Disabled'
+
+  /files/bulkRemove:
+    post:
+      tags:
+        - files
+    summary: Deletes files
+    descriptions: Deletes a list of files by fileIds
+    responses:
+      '200':
+        description: Returns Status Success
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#components/parameters/fileIds'
+      '401':
+        $ref: '#components/responses/Disabled'
 
   /files/{id}:
     parameters:

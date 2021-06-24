@@ -118,6 +118,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("stats" -> 1))
 
+    collection("comments").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("comments").ensureIndex(MongoDBObject("dataset_id" -> 1))
+    collection("comments").ensureIndex(MongoDBObject("comment_id" -> 1))
+
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))

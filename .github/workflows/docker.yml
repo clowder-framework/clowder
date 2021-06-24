@@ -34,7 +34,6 @@ jobs:
       matrix:
         name:
           - clowder
-          - toolserver
           - mongo-init
           - monitor
           - check
@@ -43,10 +42,6 @@ jobs:
             FOLDER: "."
             IMAGE: clowder
             README: README.md
-          - name: toolserver
-            FOLDER: scripts/toollaunchservice
-            IMAGE: toolserver
-            README: ""
           - name: mongo-init
             FOLDER: scripts/mongo-init
             IMAGE: mongo-init

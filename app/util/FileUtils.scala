@@ -1,6 +1,6 @@
 package util
 
-import java.io.FileInputStream
+import java.io.{File => JFile}
 import java.net.URL
 import java.util.Date
 
@@ -39,6 +39,8 @@ object FileUtils {
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val previews : PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
+  lazy val routing : ExtractorRoutingService = DI.injector.getInstance(classOf[ExtractorRoutingService])
+  lazy val sinkService : EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -350,6 +352,31 @@ object FileUtils {
     uploadedFiles.toList
   }
 
+  // process a file from a bagit zipfile upload
+  def processBagFile(file: java.io.File, filename: String, user: User, dataset: Dataset, folderId: Option[String]): Option[File] = {
+    // Save file bytes
+    ByteStorageService.save(file, "uploads") match {
+      case Some((loader_id, loader, length)) => {
+        val fileobj = File(UUID.generate, loader_id, filename, filename, user, new Date(), getContentType(filename, None),
+          file.length, loader, licenseData=License.fromAppConfig, stats=new Statistics(), status=FileStatus.PROCESSED.toString)
+        files.save(fileobj)
+        appConfig.incrementCount('files, 1)
+        appConfig.incrementCount('bytes, file.length)
+
+        // Add to dataset/folder if given
+        folderId match {
+          case Some(fid) => folders.addFile(UUID(fid), fileobj.id)
+          case None => datasets.addFile(dataset.id, fileobj)
+        }
+        Some(fileobj)
+      }
+      case None => {
+        Logger.error("Unable to save file bytes to Clowder.")
+        None
+      }
+    }
+  }
+
   // process a single uploaded file
   private def processFileMultipart(f: MultipartFormData.FilePart[Files.TemporaryFile], metadata: Option[Seq[String]],
                           user: User, creator: Agent, clowderurl: String,
@@ -375,6 +402,7 @@ object FileUtils {
         saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
           processFileBytes(fixedfile, f.ref.file, dataset)
           files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+          sinkService.logFileUploadEvent(fixedfile, dataset, Option(user))
           processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
           processDataset(file, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
           files.setStatus(fixedfile.id, FileStatus.PROCESSED)
@@ -535,9 +563,7 @@ object FileUtils {
       val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
-      current.plugin[RabbitmqPlugin].foreach { p =>
-        p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
-      }
+      routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, requestHost, apiKey, user)
     }
   }
 
@@ -768,9 +794,7 @@ object FileUtils {
 
     // send file to rabbitmq for processing
     if (runExtractors) {
-      current.plugin[RabbitmqPlugin].foreach { p =>
-        p.fileCreated(file, dataset, clowderurl, apiKey)
-      }
+      routing.fileCreated(file, dataset, clowderurl, apiKey)
     }
 
     // index the file
@@ -794,9 +818,7 @@ object FileUtils {
     dataset.foreach{ds =>
 
       if (runExtractors) {
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          p.fileAddedToDataset(file, ds, clowderurl, apiKey)
-        }
+        routing.fileAddedToDataset(file, ds, clowderurl, apiKey)
       }
 
       // index dataset
