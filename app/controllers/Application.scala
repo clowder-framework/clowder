@@ -1,20 +1,14 @@
 package controllers
 
-import java.net.URL
-
-import javax.inject.{Inject, Singleton}
-import api.Permission
-import api.Permission._
-import play.api.{Logger, Play, Routes}
-import play.api.mvc.Action
-import services._
-import models.{Event, UUID, User, UserStatus}
-import org.owasp.html.Sanitizers
-import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits._
+import models.{Event, UUID, UserStatus}
 import play.api.Play.current
+import play.api.mvc.Action
+import play.api.{Logger, Play, Routes}
+import services._
 import util.Formatters.sanitizeHTML
 
+import java.net.URL
+import javax.inject.{Inject, Singleton}
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
@@ -368,6 +362,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.updateFileName,
         api.routes.javascript.Files.updateDescription,
         api.routes.javascript.Files.extract,
+        api.routes.javascript.Files.bulkDeleteFiles,
         api.routes.javascript.Files.removeFile,
         api.routes.javascript.Files.follow,
         api.routes.javascript.Files.unfollow,
