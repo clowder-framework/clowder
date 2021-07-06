@@ -35,7 +35,7 @@ class Status @Inject()(spaces: SpaceService,
       "version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
-      "storage" -> getStorage(),
+      "storage" -> getStorage(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames(List.empty))))
   }
 
@@ -139,27 +139,33 @@ class Status @Inject()(spaces: SpaceService,
     Json.toJson(result.toMap[String, JsValue])
   }
 
-  def getStorage(): JsValue = {
-    val config =  Play.current.configuration
+  def getStorage(user: Option[User]): JsValue = {
+    val config = Play.current.configuration
+    val result = new mutable.HashMap[String, String]()
 
     ByteStorageService.storage.getClass.getName match {
       case "services.mongodb.MongoDBByteStorage" => {
-        Json.obj("location" -> "mongo")
+        result.put("location", "mongo")
       }
       case "services.filesystem.DiskByteStorageService" => {
-        Json.obj("location" -> "disk",
-          "path" -> config.getString("clowder.diskStorage.path").getOrElse[String]("unknown"))
+        result.put("location", "disk")
+        if (Permission.checkServerAdmin(user)) {
+          result.put("path", config.getString("clowder.diskStorage.path").getOrElse[String]("unknown"))
+        }
       }
       case "services.s3.S3ByteStorageService" => {
-        Json.obj("location" -> "s3",
-          "endpoint" -> config.getString(S3ByteStorageService.ServiceEndpoint).getOrElse[String]("unknown"),
-          "region" -> config.getString(S3ByteStorageService.Region).getOrElse[String]("unknown"),
-          "bucket" -> config.getString(S3ByteStorageService.BucketName).getOrElse[String]("unknown"))
+        result.put("location", "s3")
+        if (Permission.checkServerAdmin(user)) {
+          result.put("endpoint", config.getString(S3ByteStorageService.ServiceEndpoint).getOrElse[String]("unknown"))
+          result.put("region", config.getString(S3ByteStorageService.Region).getOrElse[String]("unknown"))
+          result.put("bucket", config.getString(S3ByteStorageService.BucketName).getOrElse[String]("unknown"))
+        }
       }
       case name => {
-        Json.obj("location" -> name)
+        result.put("location", name)
       }
     }
+    Json.toJson(result.toMap[String, String])
   }
 
   def getCounts(user: Option[User]): JsValue = {
