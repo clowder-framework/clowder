@@ -1611,24 +1611,49 @@ class Files @Inject()(
   }
 
   def bulkDeleteFiles() = PrivateServerAction (parse.json) {implicit request=>
+    var filesToCheck : ListBuffer[String] = ListBuffer.empty[String]
+    var filesNotExist : ListBuffer[String] = ListBuffer.empty[String]
+    var filesDeleted : ListBuffer[String] = ListBuffer.empty[String]
+    var filesErrorDeleted: ListBuffer[String] = ListBuffer.empty[String]
     request.user match {
       case Some(user) => {
         val fileIds = request.body.\("fileIds").asOpt[List[String]].getOrElse(List.empty[String])
+        filesToCheck.appendAll(fileIds)
         if (fileIds.isEmpty){
           BadRequest("No file ids supplied")
         } else {
           var resourceRefList: ListBuffer[ResourceRef] = ListBuffer.empty[ResourceRef]
           for (fileId <- fileIds) {
             if (UUID.isValid(fileId)) {
-              val current_resource_ref = ResourceRef(ResourceRef.file, UUID(fileId))
-              resourceRefList += current_resource_ref
+              files.get(UUID(fileId)) match {
+                case Some(currentFile) => {
+                  val current_resource_ref = ResourceRef(ResourceRef.file, UUID(fileId))
+                  resourceRefList += current_resource_ref
+                }
+                case None => {
+                  filesToCheck -= fileId
+                  filesNotExist += fileId
+                }
+              }
+            } else {
+              filesToCheck -= fileId
+              filesNotExist += fileId
             }
           }
           val filesIdsCanDelete = Permission.checkPermissions(request.user, Permission.DeleteFile, resourceRefList.toList).approved.map(_.id)
           for (id <- filesIdsCanDelete) {
-            files.removeFile(id,Utils.baseUrl(request), request.apiKey, request.user)
+            val id_removed = files.removeFile(id,Utils.baseUrl(request), request.apiKey, request.user)
+            if (id_removed == true) {
+              filesToCheck -= id.stringify
+              filesDeleted += id.stringify
+            } else {
+              filesToCheck -= id.stringify
+              filesErrorDeleted += id.stringify
+            }
           }
-          Ok(toJson(Map("status" -> "success")))
+          Ok(toJson(Map("deleted"->filesDeleted.toList, "not found"->filesNotExist.toList,
+            "error deleting"->filesErrorDeleted.toList,"no permission"->filesToCheck.toList)))
+          // Ok(toJson(Map("status" -> "success")))
         }
       }
       case None => {

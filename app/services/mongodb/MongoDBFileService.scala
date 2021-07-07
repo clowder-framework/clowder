@@ -803,7 +803,7 @@ class MongoDBFileService @Inject() (
       false, false, WriteConcern.Safe)
   }
 
-  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]) : Boolean = {
     get(id) match{
       case Some(file) => {
           if(!file.isIntermediate){
@@ -867,8 +867,12 @@ class MongoDBFileService @Inject() (
 
           // finally remove metadata - if done before file is deleted, document metadataCounts won't match
           metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
+          true
       }
-      case None => Logger.debug("File not found")
+      case None => {
+        Logger.debug("File not found")
+        false
+      }
     }
   }
 
