@@ -3108,6 +3108,51 @@ class  Datasets @Inject()(
     }
 
   }
+
+  /**
+   * Recursively submit requests to archive the contents of the given dataset
+   * @param id dataset to archive
+   * @return
+   */
+  def queueArchival(id: UUID) = PermissionAction(Permission.ArchiveDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    val reqParams = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+    val parameters = reqParams + FileService.ARCHIVE_PARAMETER
+    datasets.get(id) match {
+      case Some(ds) => {
+        val host = Utils.baseUrl(request)
+        datasets.recursiveArchive(ds, host, parameters, request.apiKey, request.user)
+        sinkService.logDatasetArchiveEvent(ds, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting dataset " + id)
+        NotFound
+      }
+    }
+  }
+
+
+  /**
+   * Recursively submit requests to unarchive the contents of the given dataset
+   * @param id dataset to unarchive
+   * @return
+   */
+  def queueUnarchival(id: UUID) = PermissionAction(Permission.ArchiveDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    val reqParams = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+    val parameters = reqParams + FileService.UNARCHIVE_PARAMETER
+    datasets.get(id) match {
+      case Some(ds) => {
+        val host = Utils.baseUrl(request)
+        datasets.recursiveArchive(ds, host, parameters, request.apiKey, request.user)
+        sinkService.logDatasetUnarchiveEvent(ds, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting dataset " + id)
+        NotFound
+      }
+    }
+  }
 }
 
 object ActivityFound extends Exception {}

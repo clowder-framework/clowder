@@ -1885,7 +1885,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
@@ -1896,11 +1896,14 @@ class Files @Inject()(
       case Some(file) => {
         files.setStatus(id, FileStatus.PROCESSED)
         sinkService.logFileUnarchiveEvent(file, user)
+
+        // Only increment download date, to avoid immediate auto-archive
+        files.incrementDownloads(id, user, true)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
@@ -1916,7 +1919,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
@@ -1932,7 +1935,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound
       }
     }
   }
