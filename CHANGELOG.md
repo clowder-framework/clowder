@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Status endpoint will now show what storage is used
+- `GET /api/files/bulkRemove` now returns status of files deleted, not found, no permission, errors.
 
 ### Fixed
 - Docker image for mongo-init now based on python:3.7-slim reduces size
