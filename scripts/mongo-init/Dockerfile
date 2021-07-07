@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3-slim
 MAINTAINER Bing Zhang <bing@illinois.edu>
 
 # environemnt variables
