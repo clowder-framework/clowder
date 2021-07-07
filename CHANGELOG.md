@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Status endpoint will now show what storage is used
 
+### Fixed
+- Docker image for mongo-init now based on python:3.7-slim reduces size
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
