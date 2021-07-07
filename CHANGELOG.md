@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added folder and folder id to api datasets files list [#34](https://github.com/clowder-framework/clowder/issues/34)
 
 ### Fixed
+- RabbitMQ will not use connection if None exists
+- previews returns 404 if preview is not found
 - When uploading a file, it would ignore any extractors marked disabled at the space level. [#246](https://github.com/clowder-framework/clowder/issues/246)
 - Added index for comments, will speed up index creation
 - If using S3 storage in docker, it was not reflected correctly in the docker-compose file
