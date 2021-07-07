@@ -75,7 +75,7 @@ class ExtractorRoutingService {
   private def getMatchingExtractors(extractorIds: List[String], operation: String, resourceType: ResourceType.Value): List[String] = {
     val extractorsService = DI.injector.getInstance(classOf[ExtractorService])
 
-    extractorsService.getEnabledExtractors().flatMap(exId =>
+    extractorIds.flatMap(exId =>
       extractorsService.getExtractorInfo(exId)).filter(exInfo =>
       resourceType match {
         case ResourceType.dataset =>
