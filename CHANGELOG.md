@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+- Added folder and folder id to api datasets files list [#34](https://github.com/clowder-framework/clowder/issues/34)
 
 ### Fixed
 - RabbitMQ will not use connection if None exists
