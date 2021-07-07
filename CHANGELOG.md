@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When uploading a file, it would ignore any extractors marked disabled at the space level. [#246](https://github.com/clowder-framework/clowder/issues/246)
 - Added index for comments, will speed up index creation
 
+### Fixed
+- Docker image for mongo-init now based on python:3.7-slim reduces size
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
