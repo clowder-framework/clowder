@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.17.0 - 2021-07-08
+## 1.18.0 - 2021-07-08
 
 ### Added
 - Added folder and folder id to API call `GET /api/datasets/:id/files`. [#34](https://github.com/clowder-framework/clowder/issues/34)
