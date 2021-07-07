@@ -623,7 +623,8 @@ POST           /api/datasets/:parentDatasetId/newFolder                         
 PUT            /api/datasets/:id/access                                                 @api.Datasets.updateAccess(id:UUID, aceess:String ?="PRIVATE")
 POST           /api/datasets/:id/addFileEvent                                           @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
 GET            /api/datasets/:id/users                                                  @api.Datasets.users(id:UUID)
-
+POST           /api/datasets/:id/queueArchival                                          @api.Datasets.queueArchival(id: UUID)
+POST           /api/datasets/:id/queueUnarchival                                        @api.Datasets.queueUnarchival(id: UUID)
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT

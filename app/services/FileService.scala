@@ -244,7 +244,7 @@ trait FileService {
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date)
 
-  def incrementDownloads(id: UUID, user: Option[User])
+  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = false)
 
   def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File]
 

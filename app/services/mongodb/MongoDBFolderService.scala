@@ -1,15 +1,21 @@
 package services.mongodb
 
+import api.{Permission, UserRequest}
 import models._
 import play.api.Logger
 import services._
 import play.api.Play.current
+
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import controllers.Utils
 import org.bson.types.ObjectId
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json.toJson
+import play.api.mvc.{Action, AnyContent}
 import services.mongodb.MongoContext.context
 
 /**
@@ -149,6 +155,24 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
 
   def findByParentDatasetIds(parentIds: List[UUID]): List[Folder] = {
     FolderDAO.find("parentDatasetId" $in parentIds.map(x => new ObjectId(x.stringify))).toList
+  }
+
+  /**
+   * Recursively submit requests to archive or unarchive the contents of the given folder.
+   * NOTE: "parameters" includes "operation", which supports both archiving and unarchiving
+   */
+  def recursiveArchive(folder: Folder, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User]): Unit = {
+    // Archive all files in the folder
+    folder.files.foreach(fileId => files.get(fileId) match {
+      case None => Logger.error("Error getting file " + fileId)
+      case Some(file) => files.submitArchivalOperation(file, fileId, host, parameters, apiKey, user)
+    })
+
+    // Then, archive all subfolders of the folder
+    folder.folders.foreach(folderId => get(folderId) match {
+      case None => Logger.error("Error getting folder " + folderId)
+      case Some(folder) => this.recursiveArchive(folder, host, parameters, apiKey, user)
+    })
   }
 }
 

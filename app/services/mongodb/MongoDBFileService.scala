@@ -1196,16 +1196,25 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def incrementDownloads(id: UUID, user: Option[User]) = {
+  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = false) = {
     Logger.debug("updating downloads for file "+id.toString)
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+    val fileOp = if (dateOnly) {
+      $set("stats.last_downloaded" -> new Date)
+    } else {
+      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date)
+    }
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), fileOp, true, false, WriteConcern.Safe)
 
     user match {
       case Some(u) => {
         Logger.debug("updating downloads for user "+u.toString)
+        val userOp = if (dateOnly) {
+          $set("last_downloaded" -> new Date)
+        } else {
+          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date)
+        }
         FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
-          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+          userOp, true, false, WriteConcern.Safe)
       }
       case None => {}
     }
