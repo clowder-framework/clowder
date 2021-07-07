@@ -13,8 +13,10 @@
  * + 11/21/20 (cc): Code development started
  * + 02/08/21 (cc): Ability to load from url added.
  *                  First functional version
+ * + 05/08/21 (cc): Upgrading the three.js libraries
 
 ****************************************************************/
+
 
 (function ($, Configuration) {
 
@@ -22,11 +24,11 @@
     let referenceUrl = Configuration.url;
     let previewer = Configuration.previewer;
 
+    // The following variables are not needed for now
+
     //let fileName = $('#file-name-title').text().trim();
     //let fileNameExtension = fileName.substr(fileName.length - 3);
     //let fileType;
-
-    // This is a trick I use to make the console.log function to work
 
     console.log = console.log || function (message) { alert(message); };
 
@@ -38,7 +40,7 @@
 
     // We use the for loop to load the files into our program
 
-    for (index = 0; index < scripts.length; index++) {
+    for (let index = 0; index < scripts.length; index++) {
         let s = document.createElement("script");
         s.type = "text/javascript";
         s.src = previewer + "/js/" + scripts[index];
@@ -88,7 +90,11 @@ function init(urlAddress) {
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
     // ground
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
+    const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(2000, 2000),
+        new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false })
+    );
+
     mesh.rotation.x = - Math.PI / 2;
     mesh.receiveShadow = true;
     scene.add(mesh);
@@ -100,6 +106,11 @@ function init(urlAddress) {
 
     const loader = new THREE.FBXLoader();
 
+    let desiredScale = 320;
+    let scaleV3 = new THREE.Vector3().setScalar(desiredScale);
+
+    //
+
     loader.setPath(urlAddress);
 
     loader.load('', function (object) {
@@ -110,6 +121,26 @@ function init(urlAddress) {
             const action = mixer.clipAction(object.animations[0]);
             action.play();
         }
+
+
+        //
+
+        let box = new THREE.Box3();
+        box.setFromObject(object);
+
+        let size = new THREE.Vector3();
+        box.getSize(size);
+
+        let center = new THREE.Vector3();
+        box.getCenter(center);
+
+        let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
+        let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
+
+        object.scale.setScalar(scale);
+        object.position.sub(center.multiplyScalar(scale));
+
+        //
 
         object.traverse(function (child) {
 
@@ -140,7 +171,7 @@ function init(urlAddress) {
 
     // stats
     stats = new Stats();
-    //container.appendChild( stats.dom );
+    // container.appendChild( stats.dom );
 }
 
 function onWindowResize() {
@@ -149,13 +180,11 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-
 }
 
 //
 
 function animate() {
-
     requestAnimationFrame(animate);
 
     const delta = clock.getDelta();
@@ -165,6 +194,5 @@ function animate() {
     renderer.render(scene, camera);
 
     stats.update();
-
 }
 
