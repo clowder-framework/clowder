@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - RabbitMQ will not use connection if None exists
 - previews returns 404 if preview is not found
+- When uploading a file, it would ignore any extractors marked disabled at the space level. [#246](https://github.com/clowder-framework/clowder/issues/246)
+- Added index for comments, will speed up index creation
 
 ## 1.17.0 - 2021-04-29
 
