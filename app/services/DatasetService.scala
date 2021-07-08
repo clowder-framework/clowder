@@ -1,10 +1,10 @@
 package services
 
 import java.util.Date
-
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import models.{File, _}
+import play.api.libs.json.JsObject
 
 /**
  * Generic dataset service.
@@ -386,4 +386,6 @@ trait DatasetService {
   def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[Dataset]
 
   def getTrashedIds(): List[UUID]
+
+  def recursiveArchive(dataset: Dataset, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User])
 }

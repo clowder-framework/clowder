@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.18.0 - 2021-07-08
+
+### Added
+- Added folder and folder id to API call `GET /api/datasets/:id/files`. [#34](https://github.com/clowder-framework/clowder/issues/34)
+- Ability to queue archive / unarchive for full datasets.
+- API status endpoint `GET /api/status` will now show what storage type is used and for superadmins will show more 
+  information about the backend storage. 
+- `GET /api/files/bulkRemove` now returns status of files deleted, not found, no permission, or errors.
+
+### Fixed
+- When uploading a file, any extractors marked disabled at the space level would be ignored. [#246](https://github.com/clowder-framework/clowder/issues/246)
+- RabbitMQ will not use connection if it does not exist.
+- Previews returns 404 if preview is not found `GET /api/previews/:id`.
+- Added index for comments, will speed up index creation.
+- If using S3 storage in docker, it was not reflected correctly in the docker-compose file.
+- Docker image for mongo-init now based on python:3.7-slim to reduce size.
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
@@ -18,6 +35,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
+
+- Updated the three.js libraries for the FBX previewer
 
 ## 1.16.0 - 2021-03-31
 
@@ -86,6 +105,7 @@ script to fix this.
 ## 1.14.0 - 2021-01-07
 
 ### Added
+- Added a previewer for FBX files.
 - Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user. Database administrators
   can use `scripts/updates/UpdateUserId.js` to assign user IDs to older extraction event records based on resource ownership
   in order to improve the accuracy of the report for older data.

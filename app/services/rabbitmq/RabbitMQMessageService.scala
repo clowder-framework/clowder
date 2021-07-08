@@ -234,7 +234,10 @@ class RabbitMQMessageService extends MessageService {
     connect()
     var tempChannel: Channel = null
     try {
-      tempChannel = connection.get.createChannel()
+      tempChannel = connection match {
+        case Some(c) => c.createChannel()
+        case None => null
+      }
       if (tempChannel != null) {
         tempChannel.exchangeDeclare(exchange, exchange_type, true)
 
