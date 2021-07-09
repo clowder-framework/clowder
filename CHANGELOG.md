@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When uploading a file, it would ignore any extractors marked disabled at the space level. [#246](https://github.com/clowder-framework/clowder/issues/246)
 - Added index for comments, will speed up index creation
 - If using S3 storage in docker, it was not reflected correctly in the docker-compose file
+- Line breaks in welcome message breaks swagger build [#187](https://github.com/clowder-framework/clowder/issues/187)
 
 ### Added
 - Status endpoint will now show what storage is used
