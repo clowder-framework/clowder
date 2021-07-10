@@ -1,0 +1,29 @@
+<div class="panel collection-panel col-md-4 col-lg-4 col-sm-4" id="@file.id-listitem">
+    <div style="margin-left: 10px; margin-right: 10px">
+        <div class="row">
+            <div style="text-align: center">
+                {{#if thumbnail}}
+                    <a href="{{url}}">
+                        <img class="img-responsive fit-in-space"
+                             src="{{thumbnail}}"
+                             alt="Thumbnail of {{name}}">
+                    </a>
+                {{else}}
+                    <a href="{{url}}">
+                        <span class="searchicon glyphicon glyphicon-file"></span>
+                    </a>
+                {{/if}}
+            </div>
+            <div>
+                <h4><a href="{{url}}">{{name}}</a></h4>
+                <div class="row">
+                    <div class="col-md-8 col-lg-8 col-sm-8">
+                        <p>
+                            <span>{{created}}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

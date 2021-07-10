@@ -6,9 +6,11 @@
     <div class="col-md-12">
         @filesList.map { file =>
             @if(parent.resourceType == ResourceRef.folder) {
-                @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, Some(parent.id.stringify), showMove)
+                @files.tile(file, "col-lg-4 col-md-4 col-sm-4", (routes.Datasets.dataset(dsId)), false)
+                <!-- @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, Some(parent.id.stringify), showMove) -->
             } else {
-                @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, None,showMove)
+                @files.tile(file, "col-lg-4 col-md-4 col-sm-4", (routes.Datasets.dataset(dsId)), false)
+                <!-- @files.listitem(file, (routes.Datasets.dataset(dsId)), Some(dsId.stringify), space, None,showMove) -->
             }
         }
     </div>

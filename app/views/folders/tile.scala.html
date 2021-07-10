@@ -1,0 +1,60 @@
+@(folder: Folder, parentDataset: UUID, classes: String)(implicit user: Option[models.User])
+
+@import api.Permission
+<div class="post-box @classes" id="@folder.id-tile">
+    <div class="panel panel-default folder-panel">
+        <div class="pull-left">
+            <!-- <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')"> -->
+                <span class="glyphicon glyphicon-folder-close"></span>
+            <!-- </a> -->
+        </div>
+        <div class="panel-body">
+            <div id="folder-title-@folder.id">
+                <h3 id ="@folder.id-name" class="inline">
+                    <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a>
+                </h3>
+                @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                    <h3 id="h-edit-@folder.id" class="hiddencomplete">
+                        <a id="edit-@folder-id" href="javascript:updateFolderName('@parentDataset', '@folder.id')" title="Click to edit folder name">
+                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                        </a>
+                    </h3>
+                }
+            </div>
+        </div>
+
+        <ul class="list-group">
+            <li class="list-group-item folder-panel-footer">
+                <span class="glyphicon glyphicon-folder-close"></span> @folder.folders.length
+                <span class="glyphicon glyphicon-file"></span> @folder.files.length
+                @if(user.isDefined) {
+                    @if(Permission.checkPermission(Permission.RemoveResourceFromDataset, ResourceRef(ResourceRef.dataset, parentDataset))){
+                        <button onclick="confirmDeleteResource('folder','folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" title="Delete folder">
+                            <span class="glyphicon glyphicon-trash"></span></button>
+                    } else {
+                        <div class="inline" title="No permission to delete the folder">
+                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                        </div>
+                    }
+                }
+            </li>
+        </ul>
+    </div>
+</div>
+<script>
+
+    $(document).ready(function(){
+
+        @if(user.isDefined) {
+            if(@Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                 $(document).on('mouseenter', '#folder-title-@folder.id', function() {
+                    $('#h-edit-@folder.id').removeClass("hiddencomplete");
+                    $('#h-edit-@folder.id').addClass("inline");
+                 }).on('mouseleave', '#folder-title-@folder.id', function() {
+                    $('#h-edit-@folder.id').removeClass("inline");
+                    $('#h-edit-@folder.id').addClass("hiddencomplete");
+                 });
+            }
+        }
+    });
+</script>
