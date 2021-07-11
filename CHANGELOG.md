@@ -5,9 +5,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+- Added folder and folder id to api datasets files list [#34](https://github.com/clowder-framework/clowder/issues/34)
 
 ### Fixed
+- When uploading a file, it would ignore any extractors marked disabled at the space level. [#246](https://github.com/clowder-framework/clowder/issues/246)
 - Added index for comments, will speed up index creation
+- If using S3 storage in docker, it was not reflected correctly in the docker-compose file
+
+### Added
+- Status endpoint will now show what storage is used
+
+### Fixed
+- Docker image for mongo-init now based on python:3.7-slim reduces size
 
 ### Added
 - Endpoint '/api/files/uploadToDataset' now allows folder_id for uploading file to folder. [#232](https://github.com/clowder-framework/clowder/issues/232)
