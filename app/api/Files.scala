@@ -523,10 +523,16 @@ class Files @Inject()(
   /**
     * Upload a file to a specific dataset
     */
-  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true, folder_id: Option[String]) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
+        var current_folder : Option[Folder] = None
+        if (folder_id != None) {
+          if (UUID.isValid(folder_id.get)){
+            current_folder = folders.get(UUID(folder_id.get))
+          }
+        }
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), current_folder, showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
