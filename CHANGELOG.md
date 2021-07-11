@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Added index for comments, will speed up index creation
 
+### Added
+- Endpoint '/api/files/uploadToDataset' now allows folder_id for uploading file to folder. [#232](https://github.com/clowder-framework/clowder/issues/232)
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
