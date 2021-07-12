@@ -82,7 +82,7 @@ class Spaces @Inject()(spaces: SpaceService,
   def get(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     spaces.get(id) match {
       case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
-      case None => BadRequest("Space not found")
+      case None => NotFound("Space not found")
     }
   }
 
@@ -535,7 +535,7 @@ class Spaces @Inject()(spaces: SpaceService,
 
               Ok(Json.obj("status" -> "success"))
             }
-            case None => BadRequest(toJson("Errors: Could not find space"))
+            case None => NotFound(toJson("Errors: Could not find space"))
           }
         }
         case e: JsError => {

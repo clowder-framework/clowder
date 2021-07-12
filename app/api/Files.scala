@@ -156,7 +156,7 @@ class Files @Inject()(
         case None => {
           //Case where the file could not be found
           Logger.debug(s"Error getting the file with id $id.")
-          BadRequest("Invalid file ID")
+          NotFound("Invalid file ID")
         }
       }
     }
@@ -247,7 +247,7 @@ class Files @Inject()(
         }
         Ok(toJson(metadataDefinitions.toList.sortWith(_.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse(""))))
       }
-      case None => BadRequest(toJson("The requested file does not exist"))
+      case None => NotFound(toJson("The requested file does not exist"))
     }
   }
 
@@ -442,7 +442,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        BadRequest(toJson("Error getting file  " + id))
+        NotFound(toJson("Error getting file  " + id))
       }
     }
   }
@@ -480,7 +480,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        BadRequest(toJson("Error getting file  " + id))
+        NotFound(toJson("Error getting file  " + id))
       }
     }
   }
@@ -534,7 +534,7 @@ class Files @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -565,7 +565,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id)
-        BadRequest(toJson(s"The given file id $id is not a valid ObjectId."))
+        NotFound(toJson(s"The given file id $id is not a valid ObjectId."))
       }
     }
   }
@@ -607,7 +607,7 @@ class Files @Inject()(
 
       }
       case None => {
-        BadRequest(toJson("File not found."))
+        NotFound(toJson("File not found."))
       }
     }
   }
@@ -634,7 +634,7 @@ class Files @Inject()(
                 // TODO replace null with None
                 previews.attachToFile(preview_id, file_id, extractor_id, request.body)
                 Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Preview not found"))
+              case None => NotFound(toJson("Preview not found"))
             }
           }
           //If file to be previewed is not found, just delete the preview
@@ -644,7 +644,7 @@ class Files @Inject()(
                 Logger.debug("File not found. Deleting previews.files " + preview_id)
                 previews.removePreview(preview)
                 BadRequest(toJson("File not found. Preview deleted."))
-              case None => BadRequest(toJson("Preview not found"))
+              case None => NotFound(toJson("Preview not found"))
             }
           }
         }
@@ -662,7 +662,7 @@ class Files @Inject()(
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
           }
-          case None => BadRequest(toJson("File not found " + id))
+          case None => NotFound(toJson("File not found " + id))
         }
       }
       case false => {
@@ -805,10 +805,10 @@ class Files @Inject()(
               case Some(geometry) =>
                 threeD.updateGeometry(file_id, geometry_id, fields)
                 Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Geometry file not found"))
+              case None => NotFound(toJson("Geometry file not found"))
             }
           }
-          case None => BadRequest(toJson("File not found " + file_id))
+          case None => NotFound(toJson("File not found " + file_id))
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
@@ -829,10 +829,10 @@ class Files @Inject()(
                 threeD.updateTexture(file_id, texture_id, fields)
                 Ok(toJson(Map("status" -> "success")))
               }
-              case None => BadRequest(toJson("Texture file not found"))
+              case None => NotFound(toJson("Texture file not found"))
             }
           }
-          case None => BadRequest(toJson("File not found " + file_id))
+          case None => NotFound(toJson("File not found " + file_id))
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
@@ -861,10 +861,10 @@ class Files @Inject()(
             }
             Ok(toJson(Map("status" -> "success")))
           }
-          case None => BadRequest(toJson("Thumbnail not found"))
+          case None => NotFound(toJson("Thumbnail not found"))
         }
       }
-      case None => BadRequest(toJson("File not found " + file_id))
+      case None => NotFound(toJson("File not found " + file_id))
     }
   }
 
@@ -882,13 +882,13 @@ class Files @Inject()(
           }
           case None => {
             Logger.error("Thumbnail not found")
-            BadRequest(toJson("Thumbnail not found"))
+            NotFound(toJson("Thumbnail not found"))
           }
         }
       }
       case None => {
         Logger.error("File not found")
-        BadRequest(toJson("Query file not found " + query_id))
+        NotFound(toJson("Query file not found " + query_id))
       }
     }
   }
@@ -1423,13 +1423,13 @@ class Files @Inject()(
           }
           case None => {
             Logger.error("no text specified.")
-            BadRequest(toJson("no text specified."))
+            NotFound(toJson("no text specified."))
           }
         }
       }
       case None =>
         Logger.error(("No user identity found in the request, request body: " + request.body))
-        BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+        NotFound(toJson("No user identity found in the request, request body: " + request.body))
     }
   }
 
@@ -1620,7 +1620,7 @@ class Files @Inject()(
         val fileIds = request.body.\("fileIds").asOpt[List[String]].getOrElse(List.empty[String])
         filesToCheck.appendAll(fileIds)
         if (fileIds.isEmpty){
-          BadRequest("No file ids supplied")
+          NotFound("No file ids supplied")
         } else {
           var resourceRefList: ListBuffer[ResourceRef] = ListBuffer.empty[ResourceRef]
           for (fileId <- fileIds) {
@@ -1657,7 +1657,7 @@ class Files @Inject()(
         }
       }
       case None => {
-        BadRequest("No user supplied")
+        NotFound("No user supplied")
       }
     }
   }
@@ -1712,12 +1712,12 @@ class Files @Inject()(
           }
           case e: JsError => {
             Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-            BadRequest(toJson(s"description data is missing"))
+            NotFound(toJson(s"description data is missing"))
           }
         }
 
       }
-      case None => BadRequest("No file exists with that id")
+      case None => NotFound("No file exists with that id")
     }
   }
 

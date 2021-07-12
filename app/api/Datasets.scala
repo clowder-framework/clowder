@@ -61,7 +61,7 @@ class  Datasets @Inject()(
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(d) => Ok(toJson(d))
-      case None => BadRequest(toJson(s"Could not find dataset with id [${id.stringify}]"))
+      case None => NotFound(toJson(s"Could not find dataset with id [${id.stringify}]"))
     }
   }
 
@@ -203,7 +203,7 @@ class  Datasets @Inject()(
             case Some(spaceId) =>
               spaces.get(UUID(spaceId)) match {
                 case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)), stats = new Statistics())
-                case None => BadRequest(toJson("Bad space = " + spaceId))
+                case None => NotFound(toJson("Bad space = " + spaceId))
               }
           }
         }
@@ -248,11 +248,11 @@ class  Datasets @Inject()(
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
               }
-            case None => BadRequest(toJson("Bad file_id = " + file_id))
+            case None => NotFound(toJson("Bad file_id = " + file_id))
 
           }
         }
-        case None => BadRequest(toJson("Missing parameter [file_id]"))
+        case None => NotFound(toJson("Missing parameter [file_id]"))
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
@@ -956,7 +956,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(metadataDefinitions.toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )))
       }
-      case None => BadRequest(toJson("The requested dataset does not exist"))
+      case None => NotFound(toJson("The requested dataset does not exist"))
     }
   }
 
@@ -975,7 +975,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id);
-        BadRequest(toJson("Error getting dataset  " + id))
+        NotFound(toJson("Error getting dataset  " + id))
       }
     }
   }
@@ -1000,7 +1000,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id)
-        BadRequest(toJson("Error getting dataset  " + id))
+        NotFound(toJson("Error getting dataset  " + id))
       }
     }
   }
@@ -1105,7 +1105,7 @@ class  Datasets @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -1121,7 +1121,7 @@ class  Datasets @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -2051,7 +2051,7 @@ class  Datasets @Inject()(
           Ok(toJson(Map("status"->"success")))
         }
       }
-      case None => BadRequest("No dataset found with id " + id)
+      case None => NotFound("No dataset found with id " + id)
     }
   }
 
@@ -2124,7 +2124,7 @@ class  Datasets @Inject()(
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
           }
-          case None => BadRequest(toJson("Dataset not found " + id))
+          case None => NotFound(toJson("Dataset not found " + id))
         }
       }
       case _ => Ok("RDF export plugin not enabled")
@@ -2983,13 +2983,13 @@ class  Datasets @Inject()(
                     case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
                   }
                 }
-                case None => BadRequest(s"No space found with id: + $spaceId.")
+                case None => NotFound(s"No space found with id: + $spaceId.")
               }
             } else {
               BadRequest("You don't have permission to copy the dataset.")
             }
           }
-          case None => BadRequest(s"No dataset  found with id: $datasetId")
+          case None => NotFound(s"No dataset  found with id: $datasetId")
         }
       }
       case None => BadRequest("You need to be logged in to copy a dataset to a space.")
