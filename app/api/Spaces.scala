@@ -210,7 +210,7 @@ class Spaces @Inject()(spaces: SpaceService,
           case (_, _) => NotFound
         }
       }
-      case None => BadRequest("User not supplied")
+      case None => NotFound("User not supplied")
     }
   }
 
@@ -656,7 +656,7 @@ class Spaces @Inject()(spaces: SpaceService,
             }
             Ok(Json.obj("status" -> "success"))
           }
-          case None => InternalServerError("Request user not found")
+          case None => NotFound("Request user not found")
         }
       }
       case None => NotFound("Space not found")
@@ -680,7 +680,7 @@ class Spaces @Inject()(spaces: SpaceService,
             }
             Ok(Json.obj("status" -> "success"))
           }
-          case None => InternalServerError("Request user not found")
+          case None => NotFound("Request user not found")
         }
       }
       case None => NotFound("Space not found")
