@@ -64,7 +64,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id)
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -85,7 +85,7 @@ class Files @Inject()(
     PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
       datasets.getFileId(datasetId, filename) match {
         case Some(id) => Redirect(routes.Files.download(id))
-        case None => Logger.error("Error getting dataset " + datasetId); InternalServerError
+        case None => Logger.error("Error getting dataset " + datasetId); NotFound("Error getting dataset " + datasetId)
       }
     }
 
@@ -202,7 +202,7 @@ class Files @Inject()(
         }
         case None => {
           Logger.error("Error getting file" + id)
-          NotFound
+          NotFound("Error getting file" + id)
         }
       }
     }
@@ -295,7 +295,7 @@ class Files @Inject()(
           files.index(id)
           Ok(toJson(Map("status" -> "success")))
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+        case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
       }
       Ok(toJson("success"))
     }
@@ -355,7 +355,7 @@ class Files @Inject()(
           }
         }
       }
-      case None => Logger.error(s"Error getting file $id"); NotFound
+      case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
     }
   }
 
@@ -501,7 +501,7 @@ class Files @Inject()(
         }
         case None => {
           Logger.error("Error in getting file " + id)
-          NotFound
+          NotFound("Error in getting file " + id)
         }
       }
     }
@@ -679,7 +679,7 @@ class Files @Inject()(
             Ok(listJson)
           }
           case None => {
-            Logger.error("Error getting file" + id); InternalServerError
+            Logger.error("Error getting file" + id); NotFound("Error getting file" + id)
           }
         }
       }
@@ -777,7 +777,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -938,11 +938,11 @@ class Files @Inject()(
               }
             }
           }
-          case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
+          case None => Logger.error("No geometry file found: " + geometry.id); NotFound("No geometry file found")
 
         }
       }
-      case None => Logger.error("Geometry file not found"); InternalServerError
+      case None => Logger.error("Geometry file not found"); NotFound("Geometry file not found")
     }
   }
 
@@ -992,11 +992,11 @@ class Files @Inject()(
               }
             }
           }
-          case None => Logger.error("No texture file found: " + texture.id.toString()); InternalServerError("No texture found")
+          case None => Logger.error("No texture file found: " + texture.id.toString()); NotFound("No texture found")
 
         }
       }
-      case None => Logger.error("Texture file not found"); InternalServerError
+      case None => Logger.error("Texture file not found"); NotFound("Texture file not found")
     }
   }
 
@@ -1449,7 +1449,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -1526,7 +1526,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
 
@@ -1539,7 +1539,7 @@ class Files @Inject()(
         Ok(files.getXMLMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding file" + id); InternalServerError
+        Logger.error("Error finding file" + id); NotFound("Error finding file" + id)
       }
     }
   }
@@ -1550,7 +1550,7 @@ class Files @Inject()(
         Ok(files.getUserMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding file" + id); InternalServerError
+        Logger.error("Error finding file" + id); NotFound("Error finding file" + id)
       }
     }
   }
@@ -1567,7 +1567,7 @@ class Files @Inject()(
           files.updateMetadata(id, request.body, extractor_id)
           files.index(id)
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+        case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
       }
 
       Logger.debug(s"Updated metadata of file $id")
@@ -1584,7 +1584,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error finding file" + id);
-        InternalServerError
+        NotFound("Error finding file" + id)
       }
     }
   }
@@ -1605,7 +1605,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error finding file" + id);
-        InternalServerError
+        NotFound("Error finding file" + id)
       }
     }
   }
@@ -1910,7 +1910,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1928,7 +1928,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1944,7 +1944,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1960,7 +1960,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
