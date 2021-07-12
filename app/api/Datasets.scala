@@ -207,7 +207,7 @@ class  Datasets @Inject()(
               }
           }
         }
-        case None => InternalServerError("User Not found")
+        case None => NotFound("User Not found")
       }
       appConfig.incrementCount('datasets, 1)
 
@@ -252,7 +252,7 @@ class  Datasets @Inject()(
 
           }
         }
-        case None => NotFound(toJson("Missing parameter [file_id]"))
+        case None => BadRequest(toJson("Missing parameter [file_id]"))
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
@@ -556,7 +556,7 @@ class  Datasets @Inject()(
 
             }
           }
-          case None => InternalServerError("User Not found")
+          case None => NotFound("User Not found")
         }
         events.addObjectEvent(request.user, d.id, d.name, EventType.CREATE_DATASET.toString)
 
@@ -599,7 +599,7 @@ class  Datasets @Inject()(
                 }
                 case None => {
                   Logger.error("Error getting dataset" + id)
-                  BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+                  NotFound(toJson(s"The given dataset id $id is not a valid ObjectId."))
                 }
               }
 
@@ -639,7 +639,7 @@ class  Datasets @Inject()(
             }
             case None => {
               Logger.error("Error getting dataset" + dsId)
-              BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+              NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
             }
           }
 
@@ -661,7 +661,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset" + id)
-        BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        NotFound(toJson(s"The given dataset id $id is not a valid ObjectId."))
       }
     }
   }
@@ -717,13 +717,13 @@ class  Datasets @Inject()(
           }
           case None => {
             Logger.error("Error getting file" + fileId)
-            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+            NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
           }
         }
       }
       case None => {
         Logger.error("Error getting dataset" + dsId)
-        BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+        NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
       }
     }
   }
@@ -810,19 +810,19 @@ class  Datasets @Inject()(
               }
               case None => {
                 Logger.error ("Error getting file" + fileId)
-                BadRequest (toJson (s"The given file id $fileId is not a valid ObjectId.") )
+                NotFound(toJson (s"The given file id $fileId is not a valid ObjectId.") )
               }
             }
           }
           case None => {
             Logger.error ("Error getting dataset" + toDatasetId)
-            BadRequest (toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
+            NotFound(toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
           }
         }
       }
       case None => {
         Logger.error ("Error getting dataset" + datasetId)
-        BadRequest (toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
+        NotFound(toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
       }
     }
   }
@@ -870,7 +870,7 @@ class  Datasets @Inject()(
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
       }
-      case None => Logger.error(s"Error getting dataset $id"); NotFound
+      case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
     }
   }
 
@@ -923,7 +923,7 @@ class  Datasets @Inject()(
               }
             }
           }
-          case None => Logger.error(s"Error getting dataset $id"); NotFound
+          case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
         }
      }
 
@@ -1053,7 +1053,7 @@ class  Datasets @Inject()(
           Ok(toJson(list))
         }
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset" + id))
     }
   }
 
@@ -1090,7 +1090,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(list))
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset" + id))
     }
   }
 
@@ -1837,6 +1837,9 @@ class  Datasets @Inject()(
               case Some(dataset) => {
                 events.addSourceEvent(request.user, comment.id, comment.text , dataset.id, dataset.name, EventType.ADD_COMMENT_DATASET.toString)
               }
+              case None => {
+                NotFound(s"The given id $id is not a valid ObjectId.")
+              }
             }
             Ok(comment.id.toString())
           }
@@ -1846,7 +1849,7 @@ class  Datasets @Inject()(
           }
         }
       }
-      case None => BadRequest
+      case None => NotFound(toJson("User not found!"))
     }
   }
 
@@ -1916,7 +1919,7 @@ class  Datasets @Inject()(
         Ok(toJson(Map("isBeingProcessed" -> isActivity)))
       }
       case None => {
-        Logger.error(s"Error getting dataset $id"); InternalServerError
+        Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
       }
     }
   }
@@ -1977,7 +1980,7 @@ class  Datasets @Inject()(
         Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
       }
       case None => {
-        Logger.error("Error getting dataset" + id); InternalServerError
+        Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset\" + id"))
       }
     }
   }
@@ -2066,10 +2069,10 @@ class  Datasets @Inject()(
 
             Ok(toJson(Map("status" -> "success")))
           }
-          case None => InternalServerError("Update Access failed")
+          case None => NotFound(s"Update Access failed. Dataset id $id not found.")
         }
       }
-      case None => BadRequest("No user supplied")
+      case None => NotFound("User not found")
     }
   }
 
@@ -2095,7 +2098,7 @@ class  Datasets @Inject()(
         val trashDatasets = datasets.listUserTrash(user,limit)
         Ok(toJson(trashDatasets))
       }
-      case None => BadRequest("No user supplied")
+      case None => NotFound("User not found")
     }
   }
 
@@ -2165,7 +2168,7 @@ class  Datasets @Inject()(
           case Some(listJson) => {
             Ok(listJson)
           }
-          case None => Logger.error(s"Error getting dataset $id"); InternalServerError
+          case None => Logger.error(s"Error getting dataset $id");NotFound(s"Error getting dataset $id")
         }
       }
       case false => {
@@ -2182,7 +2185,7 @@ class  Datasets @Inject()(
           .map(JSONLD.jsonMetadataWithContext(_) \ "content")
         Ok(toJson(listOfMetadata))
       }
-      case None => Logger.error("Error finding dataset" + id); InternalServerError
+      case None => Logger.error("Error finding dataset" + id); NotFound("Error finding dataset" + id)
     }
   }
 
@@ -2191,7 +2194,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         Ok(datasets.getXMLMetadataJSON(id))
       }
-      case None => {Logger.error("Error finding dataset" + id); InternalServerError}
+      case None => {Logger.error("Error finding dataset" + id); NotFound("Error finding dataset" + id)}
     }
   }
 
@@ -2201,8 +2204,7 @@ class  Datasets @Inject()(
         Ok(datasets.getUserMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding dataset" + id);
-        InternalServerError
+        Logger.error("Error finding dataset" + id);NotFound("Error finding dataset" + id)
       }
 
     }
@@ -3126,7 +3128,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset " + id)
-        NotFound
+        NotFound("Error getting dataset " + id)
       }
     }
   }
@@ -3149,7 +3151,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset " + id)
-        NotFound
+        NotFound("Error getting dataset " + id)
       }
     }
   }
