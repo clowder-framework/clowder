@@ -303,14 +303,26 @@ class Spaces @Inject()(spaces: SpaceService,
 
 
   def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val datasetList = datasets.listSpace(limit, spaceId.stringify)
-    Ok(toJson(datasetList))
+    spaces.get(spaceId) match {
+      case Some(space) =>{
+        val datasetList = datasets.listSpace(limit, spaceId.stringify)
+        Ok(toJson(datasetList))
+      }
+      case None => NotFound(s"Space $spaceId not found.")
+    }
+
   }
 
 
   def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val collectionList = collectionService.listSpace(limit, spaceId.stringify)
-    Ok(toJson(collectionList))
+    spaces.get(spaceId) match {
+      case Some(space) =>  {
+        val collectionList = collectionService.listSpace(limit, spaceId.stringify)
+        Ok(toJson(collectionList))
+      }
+      case None => NotFound(s"Space $spaceId not found.")
+    }
+
   }
 
 

@@ -1845,7 +1845,7 @@ class  Datasets @Inject()(
           }
           case None => {
             Logger.error("no text specified.")
-            BadRequest
+            BadRequest("no text specified.")
           }
         }
       }
