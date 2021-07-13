@@ -64,7 +64,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id)
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -85,7 +85,7 @@ class Files @Inject()(
     PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
       datasets.getFileId(datasetId, filename) match {
         case Some(id) => Redirect(routes.Files.download(id))
-        case None => Logger.error("Error getting dataset " + datasetId); InternalServerError
+        case None => Logger.error("Error getting dataset " + datasetId); NotFound("Error getting dataset " + datasetId)
       }
     }
 
@@ -156,7 +156,7 @@ class Files @Inject()(
         case None => {
           //Case where the file could not be found
           Logger.debug(s"Error getting the file with id $id.")
-          BadRequest("Invalid file ID")
+          NotFound("Invalid file ID")
         }
       }
     }
@@ -202,7 +202,7 @@ class Files @Inject()(
         }
         case None => {
           Logger.error("Error getting file" + id)
-          NotFound
+          NotFound("Error getting file" + id)
         }
       }
     }
@@ -247,7 +247,7 @@ class Files @Inject()(
         }
         Ok(toJson(metadataDefinitions.toList.sortWith(_.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse(""))))
       }
-      case None => BadRequest(toJson("The requested file does not exist"))
+      case None => NotFound(toJson("The requested file does not exist"))
     }
   }
 
@@ -295,7 +295,7 @@ class Files @Inject()(
           files.index(id)
           Ok(toJson(Map("status" -> "success")))
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+        case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
       }
       Ok(toJson("success"))
     }
@@ -355,7 +355,7 @@ class Files @Inject()(
           }
         }
       }
-      case None => Logger.error(s"Error getting file $id"); NotFound
+      case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
     }
   }
 
@@ -442,7 +442,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        BadRequest(toJson("Error getting file  " + id))
+        NotFound(toJson("Error getting file  " + id))
       }
     }
   }
@@ -480,7 +480,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        BadRequest(toJson("Error getting file  " + id))
+        NotFound(toJson("Error getting file  " + id))
       }
     }
   }
@@ -501,7 +501,7 @@ class Files @Inject()(
         }
         case None => {
           Logger.error("Error in getting file " + id)
-          NotFound
+          NotFound("Error in getting file " + id)
         }
       }
     }
@@ -534,7 +534,7 @@ class Files @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -565,7 +565,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id)
-        BadRequest(toJson(s"The given file id $id is not a valid ObjectId."))
+        NotFound(toJson(s"The given file id $id is not a valid ObjectId."))
       }
     }
   }
@@ -607,7 +607,7 @@ class Files @Inject()(
 
       }
       case None => {
-        BadRequest(toJson("File not found."))
+        NotFound(toJson("File not found."))
       }
     }
   }
@@ -634,7 +634,7 @@ class Files @Inject()(
                 // TODO replace null with None
                 previews.attachToFile(preview_id, file_id, extractor_id, request.body)
                 Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Preview not found"))
+              case None => NotFound(toJson("Preview not found"))
             }
           }
           //If file to be previewed is not found, just delete the preview
@@ -644,7 +644,7 @@ class Files @Inject()(
                 Logger.debug("File not found. Deleting previews.files " + preview_id)
                 previews.removePreview(preview)
                 BadRequest(toJson("File not found. Preview deleted."))
-              case None => BadRequest(toJson("Preview not found"))
+              case None => NotFound(toJson("Preview not found"))
             }
           }
         }
@@ -662,7 +662,7 @@ class Files @Inject()(
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
           }
-          case None => BadRequest(toJson("File not found " + id))
+          case None => NotFound(toJson("File not found " + id))
         }
       }
       case false => {
@@ -679,7 +679,7 @@ class Files @Inject()(
             Ok(listJson)
           }
           case None => {
-            Logger.error("Error getting file" + id); InternalServerError
+            Logger.error("Error getting file" + id); NotFound("Error getting file" + id)
           }
         }
       }
@@ -777,7 +777,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -805,10 +805,10 @@ class Files @Inject()(
               case Some(geometry) =>
                 threeD.updateGeometry(file_id, geometry_id, fields)
                 Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Geometry file not found"))
+              case None => NotFound(toJson("Geometry file not found"))
             }
           }
-          case None => BadRequest(toJson("File not found " + file_id))
+          case None => NotFound(toJson("File not found " + file_id))
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
@@ -829,10 +829,10 @@ class Files @Inject()(
                 threeD.updateTexture(file_id, texture_id, fields)
                 Ok(toJson(Map("status" -> "success")))
               }
-              case None => BadRequest(toJson("Texture file not found"))
+              case None => NotFound(toJson("Texture file not found"))
             }
           }
-          case None => BadRequest(toJson("File not found " + file_id))
+          case None => NotFound(toJson("File not found " + file_id))
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
@@ -861,10 +861,10 @@ class Files @Inject()(
             }
             Ok(toJson(Map("status" -> "success")))
           }
-          case None => BadRequest(toJson("Thumbnail not found"))
+          case None => NotFound(toJson("Thumbnail not found"))
         }
       }
-      case None => BadRequest(toJson("File not found " + file_id))
+      case None => NotFound(toJson("File not found " + file_id))
     }
   }
 
@@ -882,13 +882,13 @@ class Files @Inject()(
           }
           case None => {
             Logger.error("Thumbnail not found")
-            BadRequest(toJson("Thumbnail not found"))
+            NotFound(toJson("Thumbnail not found"))
           }
         }
       }
       case None => {
         Logger.error("File not found")
-        BadRequest(toJson("Query file not found " + query_id))
+        NotFound(toJson("Query file not found " + query_id))
       }
     }
   }
@@ -938,11 +938,11 @@ class Files @Inject()(
               }
             }
           }
-          case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
+          case None => Logger.error("No geometry file found: " + geometry.id); NotFound("No geometry file found")
 
         }
       }
-      case None => Logger.error("Geometry file not found"); InternalServerError
+      case None => Logger.error("Geometry file not found"); NotFound("Geometry file not found")
     }
   }
 
@@ -992,11 +992,11 @@ class Files @Inject()(
               }
             }
           }
-          case None => Logger.error("No texture file found: " + texture.id.toString()); InternalServerError("No texture found")
+          case None => Logger.error("No texture file found: " + texture.id.toString()); NotFound("No texture found")
 
         }
       }
-      case None => Logger.error("Texture file not found"); InternalServerError
+      case None => Logger.error("Texture file not found"); NotFound("Texture file not found")
     }
   }
 
@@ -1423,13 +1423,13 @@ class Files @Inject()(
           }
           case None => {
             Logger.error("no text specified.")
-            BadRequest(toJson("no text specified."))
+            NotFound(toJson("no text specified."))
           }
         }
       }
       case None =>
         Logger.error(("No user identity found in the request, request body: " + request.body))
-        BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+        NotFound(toJson("No user identity found in the request, request body: " + request.body))
     }
   }
 
@@ -1449,7 +1449,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -1526,7 +1526,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
 
@@ -1539,7 +1539,7 @@ class Files @Inject()(
         Ok(files.getXMLMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding file" + id); InternalServerError
+        Logger.error("Error finding file" + id); NotFound("Error finding file" + id)
       }
     }
   }
@@ -1550,7 +1550,7 @@ class Files @Inject()(
         Ok(files.getUserMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding file" + id); InternalServerError
+        Logger.error("Error finding file" + id); NotFound("Error finding file" + id)
       }
     }
   }
@@ -1567,7 +1567,7 @@ class Files @Inject()(
           files.updateMetadata(id, request.body, extractor_id)
           files.index(id)
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+        case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
       }
 
       Logger.debug(s"Updated metadata of file $id")
@@ -1584,7 +1584,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error finding file" + id);
-        InternalServerError
+        NotFound("Error finding file" + id)
       }
     }
   }
@@ -1605,7 +1605,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error finding file" + id);
-        InternalServerError
+        NotFound("Error finding file" + id)
       }
     }
   }
@@ -1620,7 +1620,7 @@ class Files @Inject()(
         val fileIds = request.body.\("fileIds").asOpt[List[String]].getOrElse(List.empty[String])
         filesToCheck.appendAll(fileIds)
         if (fileIds.isEmpty){
-          BadRequest("No file ids supplied")
+          NotFound("No file ids supplied")
         } else {
           var resourceRefList: ListBuffer[ResourceRef] = ListBuffer.empty[ResourceRef]
           for (fileId <- fileIds) {
@@ -1657,7 +1657,7 @@ class Files @Inject()(
         }
       }
       case None => {
-        BadRequest("No user supplied")
+        NotFound("No user supplied")
       }
     }
   }
@@ -1712,12 +1712,12 @@ class Files @Inject()(
           }
           case e: JsError => {
             Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-            BadRequest(toJson(s"description data is missing"))
+            NotFound(toJson(s"description data is missing"))
           }
         }
 
       }
-      case None => BadRequest("No file exists with that id")
+      case None => NotFound("No file exists with that id")
     }
   }
 
@@ -1910,7 +1910,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1928,7 +1928,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1944,7 +1944,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1960,7 +1960,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        NotFound
+        NotFound("Error getting file " + id)
       }
     }
   }
