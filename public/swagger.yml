@@ -189,24 +189,6 @@ paths:
         '401':
           $ref: '#/components/responses/Disabled'
 
-  /files/bulkRemove:
-    post:
-      tags:
-        - files
-    summary: Deletes files
-    descriptions: Deletes a list of files by fileIds
-    responses:
-      '200':
-        description: Returns Status Success
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#components/parameters/fileIds'
-      '401':
-        $ref: '#components/responses/Disabled'
-
   /files/{id}:
     parameters:
       - $ref: '#/components/parameters/fileId'
@@ -277,6 +259,24 @@ paths:
           content: {}
       deprecated: true
 
+  /files/bulkRemove:
+    post:
+      tags:
+        - files
+      summary: Deletes files
+      description: Deletes a list of files by fileIds
+      responses:
+        '200':
+          description: Returns Status Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/parameters/fileId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /files/{id}/getPreviews:
     get:
       tags:
@@ -345,6 +345,104 @@ paths:
           description: OK
           content: {}
 
+  /files/{id}/paths:
+    get:
+      tags:
+        - files
+      summary: Get path to file in dataset
+      description: |
+        Return the path from the dataset down to the folder
+        containing this file id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /files/{id}/sendArchiveRequest:
+    get:
+      tags:
+        - files
+      summary: Submit this file to be archived
+      description: |
+        Submit this file to the queue to be archived.
+        This requires RabbitMQ and a compatible archival extractor to be running.
+        See https://github.com/clowder-framework/extractors-archival
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /files/{id}/archive:
+    get:
+      tags:
+        - files
+      summary: Changes a file's status to ARCHIVED
+      description: |
+        Callback that will change a file's status to ARCHIVED.
+        This is used by archival extractors and is not typically used by clients.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /files/{id}/sendUnarchiveRequest:
+    get:
+      tags:
+        - files
+      summary: Submit this file to be unarchived
+      description: |
+        Submit this file to the queue to be unarchived.
+        This requires RabbitMQ and a compatible archival extractor to be running.
+        See https://github.com/clowder-framework/extractors-archival
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /files/{id}/unarchive:
+    get:
+      tags:
+        - files
+      summary: Changes a file's status back to PROCESSED
+      description: |
+        Callback that will change a file's status back to PROCESSED.
+        This is used by archival extractors and is not typically used by clients.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+
   /files/{id}/extractions:
     post:
       tags:
@@ -374,6 +472,30 @@ paths:
               example:
                 extractor: ncsa.image.metadata
         required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+
+
+  /files/{id}/extractions/{msg_id}:
+    delete:
+      tags:
+        - files
+        - extractions
+      summary: Cancel a submitted file extraction.
+      description: Extractions for file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -538,6 +660,32 @@ paths:
           required: true
           schema:
             type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /previews:
+    post:
+      tags:
+        - files
+        - previews
+      summary: Upload a preview
+      description: Upload a preview
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - File
+              properties:
+                File:
+                  type: string
+                  description: |
+                    The preview to upload to the dataset. if no specific key is provided,
+                    will attempt to upload every file. Otherwise, only upload the specific
+                    key we were given (e.g. "File")
+                  format: binary
       responses:
         200:
           description: OK
@@ -760,8 +908,8 @@ paths:
         at once.
       parameters:
         - name: id
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
       responses:
@@ -1039,6 +1187,22 @@ paths:
           content: {}
       x-codegen-request-body-name: comment
 
+  /files/{id}/tags/remove:
+    post:
+      tags:
+        - files
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+      deprecated: true
+
   /files/{id}/tags/remove_all:
     post:
       tags:
@@ -1155,6 +1319,82 @@ paths:
         200:
           description: OK
           content: {}
+
+        ##############################################################################
+        # Metadata                                                                   #
+        ##############################################################################
+
+  /metadata.jsonld/{id}:
+    delete:
+      tags:
+        - metadata
+      summary: Delete the metadata by id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+        400:
+          description: Invalid Metadata
+          content: {}
+
+  /metadata/autocompletenames:
+    get:
+      tags:
+        - metadata
+      summary: Get set of metadata fields containing filter substring for autocomplete.
+      parameters:
+        - name: filter
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /metadata/distinctdefinitions:
+    get:
+      tags:
+        - metadata
+      summary: Get Vocabulary definitions with distinct names.
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /metadata/definitions:
+    get:
+      tags:
+        - metadata
+      summary: Get Vocabulary definitions.
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /metadata/definitions/{id}:
+    get:
+      tags:
+        - metadata
+      summary: Get Vocabulary definitions by id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
 
   ##############################################################################
   # StandardVocabulary                                                         #
@@ -1410,8 +1650,97 @@ paths:
           content: {}
 
   ##############################################################################
-  # Datasets                                                                   #
+  # DATASETS ENDPOINTS                                                         #
   ##############################################################################
+  /datasets:
+    get:
+      tags:
+        - datasets
+      summary: List all datasets the user can view
+      description: This will check for Permission.ViewDataset
+      responses:
+        200:
+          description: OK
+          content: {}
+    post:
+      tags:
+        - datasets
+      summary: Create new dataset
+      description: |
+        New dataset containing one existing file, based on values of fields in
+        attached JSON. Returns dataset id as JSON object.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - file_id
+                - name
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                space:
+                  type: string
+                file_id:
+                  type: string
+        required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /datasets/{id}:
+    get:
+      tags:
+        - datasets
+      summary: Get a specific dataset
+      description: This will return a specific dataset requested
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+    put:
+      tags:
+        - datasets
+      summary: Update a specific dataset
+      description: This will update a specific dataset requested
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+    delete:
+      tags:
+        - datasets
+      summary: Delete dataset
+      description: |
+        Cascading action (deletes all previews and metadata of the dataset and
+        all files existing only in the deleted dataset).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
 
   /datasets/{ds_id}/copyDatasetToSpace/{space_id}:
     post:
@@ -1616,6 +1945,28 @@ paths:
               example:
                 extractor: ncsa.image.metadata
         required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /datasets/{ds_id}/extractions/{msg_id}:
+    delete:
+      tags:
+        - extractions
+      summary: Cancel a submitted dataset extraction.
+      description: Extractions for dataset.
+      parameters:
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: msg_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2138,80 +2489,6 @@ paths:
           description: OK
           content: {}
 
-  /datasets:
-    get:
-      tags:
-        - datasets
-      summary: List all datasets the user can view
-      description: This will check for Permission.ViewDataset
-      responses:
-        200:
-          description: OK
-          content: {}
-    post:
-      tags:
-        - datasets
-      summary: Create new dataset
-      description: |
-        New dataset containing one existing file, based on values of fields in
-        attached JSON. Returns dataset id as JSON object.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              required:
-                - file_id
-                - name
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                space:
-                  type: string
-                file_id:
-                  type: string
-        required: true
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /datasets/{id}:
-    get:
-      tags:
-        - datasets
-      summary: Get a specific dataset
-      description: This will return a sepcific dataset requested
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-    delete:
-      tags:
-        - datasets
-      summary: Delete dataset
-      description: |
-        Cascading action (deletes all previews and metadata of the dataset and
-        all files existing only in the deleted dataset).
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
   /datasets/canEdit:
     get:
       tags:
@@ -2271,6 +2548,7 @@ paths:
         200:
           description: OK
           content: {}
+      deprecated: true
 
   /datasets/listOutsideCollection/{coll_id}:
     get:
@@ -2741,6 +3019,52 @@ paths:
           description: OK
           content: {}
 
+  /datasets/{id}/downloadPartial:
+    get:
+      tags:
+        - datasets
+      summary: Download a subset of files from a dataset
+      description: Takes dataset ID and a JSON-string representing a list of file IDs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fileList
+          in: query
+          description: ID of the files to download from the dataset
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /datasets/{id}/downloadFolder:
+    get:
+      tags:
+        - datasets
+      summary: Download a folder from a dataset
+      description: Takes dataset ID and a folder ID in that dataset and streams just that folder and sub-folders as a zip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: folderId
+          in: query
+          description: ID of the folder to download
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
   /datasets/clearOldDatasetsTrash:
     delete:
       tags:
@@ -2815,6 +3139,91 @@ paths:
           description: OK
           content: {}
       deprecated: true
+
+
+  ##############################################################################
+  # COLLECTIONS ENDPOINTS                                                      #
+  ##############################################################################
+  /collections:
+    get:
+      tags:
+        - collections
+      summary: Return a list of collections that fit the query standard and user has
+        view permission
+      description: Collections are groupings of datasets
+      parameters:
+        - name: title
+          in: query
+          description: The title/ name of colletions
+          schema:
+            type: string
+        - name: date
+          in: query
+          description: The date collection is created
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The number of collections returns, default as 12.
+          schema:
+            type: integer
+        - name: exact
+          in: query
+          schema:
+            type: boolean
+      responses:
+        401:
+          description: Not authorized
+          content: {}
+    post:
+      tags:
+        - collections
+      summary: Create a collection
+      description: Collections are groupings of datasets
+      requestBody:
+        description: The body of the POST request to create a collection.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: false
+      responses:
+        200:
+          description: OK
+          content: {}
+      x-codegen-request-body-name: collection
+
+  /collections/{coll_id}:
+    get:
+      tags:
+        - collections
+      summary: Get a specific collection
+      description: Get a specific collection
+      parameters:
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+    delete:
+      tags:
+        - collections
+      summary: Remove collection
+      description: Does not delete the individual datasets in the collection.
+      parameters:
+        - name: coll_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
 
   /collections/{coll_id}/getParentCollections:
     get:
@@ -2915,38 +3324,6 @@ paths:
           in: query
           schema:
             type: boolean
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /collections/{coll_id}:
-    get:
-      tags:
-        - collections
-      summary: Get a specific collection
-      description: Collections are groupings of datasets
-      parameters:
-        - name: coll_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-    delete:
-      tags:
-        - collections
-      summary: Remove collection
-      description: Does not delete the individual datasets in the collection.
-      parameters:
-        - name: coll_id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         200:
           description: OK
@@ -3359,55 +3736,6 @@ paths:
           description: OK
           content: {}
 
-  /collections:
-    get:
-      tags:
-        - collections
-      summary: Return a list of collections that fit the query standard and user has
-        view permission
-      description: Collections are groupings of datasets
-      parameters:
-        - name: title
-          in: query
-          description: The title/ name of colletions
-          schema:
-            type: string
-        - name: date
-          in: query
-          description: The date collection is created
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: The number of collections returns, default as 12.
-          schema:
-            type: integer
-        - name: exact
-          in: query
-          schema:
-            type: boolean
-      responses:
-        401:
-          description: Not authorized
-          content: {}
-    post:
-      tags:
-        - collections
-      summary: Create a collection
-      description: Collections are groupings of datasets
-      requestBody:
-        description: The body of the POST request to create a collection.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Collection'
-        required: false
-      responses:
-        200:
-          description: OK
-          content: {}
-      x-codegen-request-body-name: collection
-
   /collections/{coll_id}/removeFromSpaceAllowed/{space_id}:
     get:
       tags:
@@ -3592,7 +3920,7 @@ paths:
           content: {}
       deprecated: true
 
-  /collections/:coll_id/datasetsRemove/{ds_id}/{ignoreNotFound}:
+  /collections/{coll_id}/datasetsRemove/{ds_id}/{ignoreNotFound}:
     post:
       tags:
         - collections
@@ -3618,7 +3946,7 @@ paths:
           content: {}
       deprecated: true
 
-  /collections/:coll_id/remove:
+  /collections/{coll_id}/remove:
     post:
       tags:
         - collections
@@ -3634,12 +3962,30 @@ paths:
           content: {}
       deprecated: true
 
-  /collections/:coll_id/getDatasets:
-    get:
+  ##############################################################################
+  # THUMBNAILS ENDPOINTS                                                       #
+  ##############################################################################
+  /fileThumbnail:
+    post:
       tags:
-        - collections
+        - thumbnails
+      summary: Upload a thumbnail
+      description: Upload a thumbnail.
+      responses:
+        200:
+          description: OK
+          content: {}
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+  /fileThumbnail/{id}/blob:
+    post:
+      tags:
+        - thumbnails
+      summary: Download a thumbnail
+      description: Download a thumbnail.
       parameters:
-        - name: coll_id
+        - name: id
           in: path
           required: true
           schema:
@@ -3648,43 +3994,37 @@ paths:
         200:
           description: OK
           content: {}
-      deprecated: true
+        404:
+          $ref: '#/components/responses/NotFound'
 
-  /spaces:
+  /spaces/{id}:
     get:
       tags:
         - spaces
-      summary: List spaces the user can view
-      description: Retrieves information about spaces
+      summary: Get a space
+      description: Retrieves information about a space
       parameters:
-        - name: title
-          in: query
+        - name: id
+          in: path
+          required: true
           schema:
             type: string
-        - name: date
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: default as 12
-          schema:
-            type: number
       responses:
         200:
           description: OK
           content: {}
-    post:
+    delete:
       tags:
         - spaces
-      summary: Create a space
-      description: Spaces are groupings of collections and datasets.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Space'
-        required: true
+      summary: Remove a space
+      description: Does not delete the individual datasets and collections in the
+        space.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3981,39 +4321,6 @@ paths:
           description: OK
           content: {}
 
-  /spaces/{id}:
-    get:
-      tags:
-        - spaces
-      summary: Get a space
-      description: Retrieves information about a space
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-    delete:
-      tags:
-        - spaces
-      summary: Remove a space
-      description: Does not delete the individual datasets and collections in the
-        space.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
   /spaces/{id}/follow:
     post:
       tags:
@@ -4091,6 +4398,263 @@ paths:
           description: OK
           content: {}
 
+  ##############################################################################
+  # SPACE CURATION ENDPOINTS                                                   #
+  ##############################################################################
+  /spaces/curations/{id}/matchmaker:
+    post:
+      tags:
+        - curations
+      summary: Update the user repository preferences and call the matchmaker
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /spaces/curations/retract/{id}:
+    delete:
+      tags:
+        - curations
+      summary: Retract the publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /spaces/curations/{id}/folders/{curationFolderId}:
+    delete:
+      tags:
+        - curations
+      summary: Delete a folder from a publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: curationFolderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /spaces/curations/{id}/curationFile:
+    get:
+      tags:
+        - curations
+      summary: Get files in publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /spaces/curations/{id}/files/{curationFileId}:
+    delete:
+      tags:
+        - curations
+      summary: Delete a file from a publication request
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: curationFileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /curations/{curationId}/ore:
+    get:
+      tags:
+        - curations
+      summary: Get the ORE map for the proposed publication
+      description: |
+        A curation object is a request for publication that captures the state
+        of a dataset ready for publication
+      parameters:
+        - name: curationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+
+
+
+  ##############################################################################
+  # EXTRACTORS ENDPOINTS                                                       #
+  ##############################################################################
+  /extractors:
+    get:
+      tags:
+        - extractors
+      summary: Lists information about all known extractors
+      description: Extractions for Files.
+      responses:
+        200:
+          description: OK
+          content: {}
+    post:
+      tags:
+        - extractors
+      summary: Register information about an extractor
+      description: |
+        Register information about an extractor.
+        Used when an extractor starts up.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: |
+                All fields in example are required.
+                The value of repository can be single value or an array.
+              example:
+                name: test
+                version: 0.1.0
+                description: test
+                author: Yan
+                contributors: []
+                contexts: []
+                repository: []
+                external_services: []
+                libraries: []
+                bibtex: []
+                process: []
+        required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+
+  /extractors/{name}:
+    get:
+      tags:
+        - extractors
+      summary: Lists information about a specific extractor
+      description: Extractions for Files.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+        404:
+          description: Not found
+          content: {}
+
+  /extractors/labels:
+    post:
+      tags:
+        - extractors
+      summary: Create a new extractor label in the database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractorsLabel'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+
+  /extractors/labels/{id}:
+    put:
+      tags:
+        - extractors
+      summary: Updates an extractor label in the database
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractorsLabel'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+    delete:
+      tags:
+        - extractors
+      summary: Deletes an extractor label from the database
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractorsLabel'
+
+  ##############################################################################
+  # EXTRACTIONS ENDPOINTS                                                      #
+  ##############################################################################
   /extractions/servers_ips:
     get:
       tags:
@@ -4106,7 +4670,7 @@ paths:
     get:
       tags:
         - extractions
-      summary: Lists the currenlty running extractors
+      summary: Lists the currently running extractors
       description: Extractions for Files.
       responses:
         200:
@@ -4236,49 +4800,6 @@ paths:
           description: OK
           content: {}
 
-  /extractors:
-    get:
-      tags:
-        - extractions
-      summary: Lists information about all known extractors
-      description: Extractions for Files.
-      responses:
-        200:
-          description: OK
-          content: {}
-    post:
-      tags:
-        - extractions
-      summary: |
-        Register information about an extractor. Used when an extractor starts
-        up.
-      description: Extractions for Files.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              description: |
-                All fields in example are required.
-                The value of repository can be single value or an array.
-              example:
-                name: test
-                version: 0.1.0
-                description: test
-                author: Yan
-                contributors: []
-                contexts: []
-                repository: []
-                external_services: []
-                libraries: []
-                bibtex: []
-                process: []
-        required: true
-      responses:
-        200:
-          description: OK
-          content: {}
-
   /extractions/{id}/metadata:
     get:
       tags:
@@ -4307,85 +4828,6 @@ paths:
           description: OK
           content: {}
 
-  /extractors/{name}:
-    get:
-      tags:
-        - extractions
-      summary: Lists information about a specific extractor
-      description: Extractions for Files.
-      parameters:
-        - name: name
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-        404:
-          description: Not found
-          content: {}
-
-  /extractors/labels:
-    post:
-      tags:
-        - extractions
-      summary: Create a new extractor label in the database
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ExtractorsLabel'
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtractorsLabel'
-
-  /extractors/labels/{id}:
-    put:
-      tags:
-        - extractions
-      summary: Updates an extractor label in the database
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ExtractorsLabel'
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtractorsLabel'
-    delete:
-      tags:
-        - extractions
-      summary: Deletes an extractor label from the database
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtractorsLabel'
-
   /extractions/{id}/status:
     get:
       tags:
@@ -4405,173 +4847,9 @@ paths:
           description: OK
           content: {}
 
-  /thumbnails:
-    get:
-      tags:
-        - thumbnails
-      summary: List all thumbnail files
-      description: Returns list of thumbnail files and descriptions.
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /thumbnails/{id}:
-    delete:
-      tags:
-        - thumbnails
-      summary: Delete thumbnail
-      description: Remove thumbnail file from system).
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /thumbnails/{id}/blob:
-    get:
-      summary: Download a specific thumbnail image
-      description: Download a thumbnail image associated with a resource.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /clowder/spaces/curations/{id}/matchmaker:
-    post:
-      tags:
-        - curations
-      summary: Update the user repository preferences and call the matchmaker
-      description: |
-        A curation object is a request for publication that captures the state
-        of a dataset ready for publication
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /clowder/spaces/curations/retract/{id}:
-    delete:
-      tags:
-        - curations
-      summary: Retract the publication request
-      description: |
-        A curation object is a request for publication that captures the state
-        of a dataset ready for publication
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /clowder/spaces/curations/{id}/folders/{curationFolderId}:
-    delete:
-      tags:
-        - curations
-      summary: Delete a folder from a publication request
-      description: |
-        A curation object is a request for publication that captures the state
-        of a dataset ready for publication
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: curationFolderId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /clowder/spaces/curations/{id}/curationFile:
-    get:
-      tags:
-        - curations
-      summary: Get files in publication request
-      description: |
-        A curation object is a request for publication that captures the state
-        of a dataset ready for publication
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /clowder/spaces/curations/{id}/files/{curationFileId}:
-    delete:
-      tags:
-        - curations
-      summary: Delete a file from a publication request
-      description: |
-        A curation object is a request for publication that captures the state
-        of a dataset ready for publication
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: curationFileId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /curations/{curationId}/ore:
-    get:
-      tags:
-        - curations
-      summary: Get the ORE map for the proposed publication
-      description: |
-        A curation object is a request for publication that captures the state
-        of a dataset ready for publication
-      parameters:
-        - name: curationId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
+  ##############################################################################
+  # LOGOS ENDPOINTS                                                            #
+  ##############################################################################
   /logos:
     get:
       tags:
@@ -4742,12 +5020,17 @@ paths:
           description: OK
           content: {}
 
-  /proxy/{endpoint}:
+  ##############################################################################
+  # PROXY ENDPOINTS                                                            #
+  ##############################################################################
+  /proxy/{endpoint_key}:
     get:
+      tags:
+        - proxy
       summary: Proxy a GET request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4760,10 +5043,12 @@ paths:
           description: Endpoint not configured
           content: {}
     put:
+      tags:
+        - proxy
       summary: Proxy a PUT request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4783,10 +5068,12 @@ paths:
           description: Endpoint not configured
           content: {}
     post:
+      tags:
+        - proxy
       summary: Proxy a POST request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4806,10 +5093,12 @@ paths:
           description: Endpoint not configured
           content: {}
     delete:
+      tags:
+        - proxy
       summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4822,12 +5111,14 @@ paths:
           description: Endpoint not configured
           content: {}
 
-  /proxy/{endpoint}/{pathSuffix}:
+  /proxy/{endpoint_key}/{pathSuffix}:
     get:
+      tags:
+        - proxy
       summary: Proxy a GET request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4845,10 +5136,12 @@ paths:
           description: Endpoint not configured
           content: {}
     put:
+      tags:
+        - proxy
       summary: Proxy a PUT request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4873,10 +5166,12 @@ paths:
           description: Endpoint not configured
           content: {}
     post:
+      tags:
+        - proxy
       summary: Proxy a POST request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4901,10 +5196,12 @@ paths:
           description: Endpoint not configured
           content: {}
     delete:
+      tags:
+        - proxy
       summary: Proxy a DELETE request to an endpoint specified in the proxy's configuration.
       description: Access to the endpoint will be restricted by Clowder authentication.
       parameters:
-        - name: endpoint
+        - name: endpoint_key
           in: path
           required: true
           schema:
@@ -4922,6 +5219,9 @@ paths:
           description: Endpoint not configured
           content: {}
 
+  ##############################################################################
+  # REPORTING ENDPOINTS                                                        #
+  ##############################################################################
   /reports/metrics:
     get:
       tags:
@@ -4953,12 +5253,12 @@ paths:
         Must be a server admin to access the report. Supports ISO8601 date range filters.
       parameters:
         - name: since
-          in: path
+          in: query
           required: false
           schema:
             type: string
         - name: until
-          in: path
+          in: query
           required: false
           schema:
             type: string
@@ -4983,16 +5283,16 @@ paths:
         Download usage metrics report for datasets as a CSV file.
         Must be a server admin to access the report. Supports ISO8601 date range filters.
       parameters:
-       - name: since
-         in: path
-         required: false
-         schema:
-           type: string
-       - name: until
-         in: path
-         required: false
-         schema:
-           type: string
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: until
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: A CSV with usage metrics
@@ -5061,77 +5361,9 @@ paths:
           description: Not authorized
           content: {}
 
-  /metadata.jsonld/{id}:
-    delete:
-      tags:
-        - metadata
-      summary: Delete the metadata by id.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-        400:
-          description: Invalid Metadata
-          content: {}
-
-  /metadata/autocompletenames:
-    get:
-      tags:
-        - metadata
-      summary: Get set of metadata fields containing filter substring for autocomplete.
-      parameters:
-        - name: filter
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /metadata/distinctdefinitions:
-    get:
-      tags:
-        - metadata
-      summary: Get Vocabulary definitions with distinct names.
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /metadata/definitions:
-    get:
-      tags:
-        - metadata
-      summary: Get Vocabulary definitions.
-      responses:
-        200:
-          description: OK
-          content: {}
-
-  /metadata/definitions/{id}:
-    get:
-      tags:
-        - metadata
-      summary: Get Vocabulary definitions by id.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-
+  ##############################################################################
+  # SECTIONS ENDPOINTS                                                         #
+  ##############################################################################
   /sections:
     post:
       tags:
@@ -5372,6 +5604,25 @@ paths:
           description: OK
           content: {}
 
+  ##############################################################################
+  # ADMIN ENDPOINTS                                                            #
+  ##############################################################################
+  /reindex:
+    post:
+      tags:
+        - admin
+      summary: Force a reindex of all resources in Elasticsearch.
+      description: |
+        Force a reindex of all resources in Elasticsearch.
+        Must be a server admin.
+      responses:
+        401:
+          description: Not authorized
+          content: {}
+        403:
+          description: Forbidden
+          content: {}
+
   /admin/configuration:
     post:
       tags:
@@ -5412,6 +5663,9 @@ paths:
         401:
           description: Not authorized
           content: {}
+        403:
+          description: Forbidden
+          content: {}
 
   /admin/mail:
     post:
@@ -5436,6 +5690,9 @@ paths:
       responses:
         401:
           description: Not authorized
+          content: {}
+        403:
+          description: Forbidden
           content: {}
 
   /admin/users:
@@ -5475,6 +5732,9 @@ paths:
         401:
           description: Not authorized
           content: {}
+        403:
+          description: Forbidden
+          content: {}
 
   /changeAppearance:
     post:
@@ -5501,6 +5761,209 @@ paths:
                   type: string
         required: true
       responses:
+        401:
+          description: Not authorized
+          content: {}
+
+
+  ##############################################################################
+  # 3DTEXTURES ENDPOINTS                                                       #
+  ##############################################################################
+  /3dTextures:
+    post:
+      tags:
+        - 3dTextures
+      summary: Upload a 3D texture
+      description: |
+        Upload a 3D texture file to Clowder.
+      responses:
+        401:
+          description: Not authorized
+          content: {}
+      deprecated: true
+
+
+  ##############################################################################
+  # USERS ENDPOINTS                                                            #
+  ##############################################################################
+  /me:
+    get:
+      tags:
+        - users
+      summary: Fetch current user's info
+      description: |
+        Retrieve informatation on the currently logged-in user.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  ##############################################################################
+  # TREE ENDPOINTS                                                             #
+  ##############################################################################
+  /tree/getChildrenOfNode:
+    get:
+      tags:
+        - tree
+      summary: Fetch children of the given node in the file tree
+      description: |
+        Fetch children of the given node in the file tree.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  ##############################################################################
+  # SELECTION ENDPOINTS                                                        #
+  ##############################################################################
+  /selected:
+    get:
+      tags:
+        - files
+      summary: Get the list of user-selected files
+      description: |
+        Get the list of user-selected files.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+    post:
+      tags:
+        - files
+      summary: Select a specific file
+      description: |
+        Select a specific file.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  /selected/remove:
+    post:
+      tags:
+        - files
+      summary: De-select a specific file
+      description: |
+        De-select a specific file.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  /selected/files:
+    get:
+      tags:
+        - files
+      summary: Download all selected files
+      description: |
+        Download all selected files.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+    delete:
+      tags:
+        - files
+      summary: Delete all selected files
+      description: |
+        Delete all selected files.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  /selected/clear:
+    post:
+      tags:
+        - files
+      summary: De-select all files
+      description: |
+        De-select all files.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  /selected/tag:
+    post:
+      tags:
+        - files
+      summary: Apply a tag to all selected files
+      description: |
+        Apply a tag to all selected files.
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          description: Not authorized
+          content: {}
+
+  /selected/submit/{ds_id}/{file_ids}:
+    post:
+      tags:
+        - extractions
+        - files
+      summary: Submit all selected files for extraction
+      description: |
+        Submit all selected files for extraction.
+      parameters:
+        - name: ds_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: file_ids
+          in: path
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/parameters/fileId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parameters:
+                  type: array
+                  items:
+                    type: string
+                extractor:
+                  type: string
+                  description: the extractor Id
+              example:
+                extractor: ncsa.image.metadata
+        required: true
+      responses:
+        200:
+          description: OK
+          content: {}
         401:
           description: Not authorized
           content: {}
