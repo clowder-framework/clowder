@@ -365,7 +365,7 @@ paths:
           content: {}
 
   /files/{id}/sendArchiveRequest:
-    get:
+    post:
       tags:
         - files
       summary: Submit this file to be archived
@@ -385,7 +385,7 @@ paths:
           content: {}
 
   /files/{id}/archive:
-    get:
+    post:
       tags:
         - files
       summary: Changes a file's status to ARCHIVED
@@ -404,7 +404,7 @@ paths:
           content: {}
 
   /files/{id}/sendUnarchiveRequest:
-    get:
+    post:
       tags:
         - files
       summary: Submit this file to be unarchived
@@ -424,7 +424,7 @@ paths:
           content: {}
 
   /files/{id}/unarchive:
-    get:
+    post:
       tags:
         - files
       summary: Changes a file's status back to PROCESSED
@@ -909,7 +909,7 @@ paths:
       parameters:
         - name: id
           in: query
-          required: false
+          required: true
           schema:
             type: string
       responses:
@@ -3997,6 +3997,48 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
 
+  /spaces:
+    get:
+      tags:
+        - spaces
+      summary: List spaces the user can view
+      description: Retrieves information about spaces
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
+      responses:
+        200:
+          description: OK
+          content: {}
+    post:
+      tags:
+        - spaces
+      summary: Create a space
+      description: Spaces are groupings of collections and datasets.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Space'
+        required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+        400:
+          $ref: '#/components/responses/BadRequest'
+
   /spaces/{id}:
     get:
       tags:
@@ -5784,12 +5826,10 @@ paths:
 
 
   ##############################################################################
-  # USERS ENDPOINTS                                                            #
+  # MISC ENDPOINTS                                                             #
   ##############################################################################
   /me:
     get:
-      tags:
-        - users
       summary: Fetch current user's info
       description: |
         Retrieve informatation on the currently logged-in user.
@@ -5800,14 +5840,19 @@ paths:
         401:
           description: Not authorized
           content: {}
-
-  ##############################################################################
-  # TREE ENDPOINTS                                                             #
-  ##############################################################################
+  /status:
+    get:
+      summary: Gets the status of the system
+      description: |
+        Returns a nested JSON object that contains the status of Clowder.
+        This includes health checks, enabled plugins, as well as helpful debug
+        information, such as the current size of the reindex queue.
+      responses:
+        200:
+          description: OK
+          content: {}
   /tree/getChildrenOfNode:
     get:
-      tags:
-        - tree
       summary: Fetch children of the given node in the file tree
       description: |
         Fetch children of the given node in the file tree.
@@ -5968,23 +6013,6 @@ paths:
           description: Not authorized
           content: {}
 
-
-  ##############################################################################
-  # SYSTEM ENDPOINTS                                                           #
-  ##############################################################################
-  /status:
-    get:
-      tags:
-        - system
-      summary: Gets the status of the system
-      description: |
-        Returns a nested JSON object that contains the status of Clowder.
-        This includes health checks, enabled plugins, as well as helpful debug
-        information, such as the current size of the reindex queue.
-      responses:
-        200:
-          description: OK
-          content: {}
 
 ################################################################################
 # Components                                                                   #
