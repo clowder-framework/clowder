@@ -1223,6 +1223,39 @@ paths:
           description: OK
           content: {}
 
+  /fileThumbnail:
+    post:
+      tags:
+        - files
+      summary: Upload a thumbnail
+      description: Upload a thumbnail.
+      responses:
+        200:
+          description: OK
+          content: {}
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+  /fileThumbnail/{id}/blob:
+    post:
+      tags:
+        - files
+      summary: Download a thumbnail
+      description: Download a thumbnail.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
+
+
   /files/{id}/thumbnails/{thumbnail_id}:
     post:
       tags:
@@ -3963,40 +3996,8 @@ paths:
       deprecated: true
 
   ##############################################################################
-  # THUMBNAILS ENDPOINTS                                                       #
+  # SPACES ENDPOINTS                                                           #
   ##############################################################################
-  /fileThumbnail:
-    post:
-      tags:
-        - thumbnails
-      summary: Upload a thumbnail
-      description: Upload a thumbnail.
-      responses:
-        200:
-          description: OK
-          content: {}
-        400:
-          $ref: '#/components/responses/BadRequest'
-
-  /fileThumbnail/{id}/blob:
-    post:
-      tags:
-        - thumbnails
-      summary: Download a thumbnail
-      description: Download a thumbnail.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
-        404:
-          $ref: '#/components/responses/NotFound'
-
   /spaces:
     get:
       tags:
