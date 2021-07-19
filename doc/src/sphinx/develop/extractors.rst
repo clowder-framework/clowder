@@ -41,7 +41,7 @@ The current list of supported events is:
 Building and Deploying Extractors
 ###################################
 
- To create and deploy an extractor to your Clowder instance you'll need several pieces: user code, clowder wrapping code to help you integrate your code into clowder, an extractor metadata file, and, possibly, a Dockerfile for the deployment of your extractor. With these pieces in place, a user is able to search for their extractor, submit their extractor and have any metadata returned from their extractor stored - all within Clowder. 
+To create and deploy an extractor to your Clowder instance you'll need several pieces: user code, clowder wrapping code to help you integrate your code into clowder, an extractor metadata file, and, possibly, a Dockerfile for the deployment of your extractor. With these pieces in place, a user is able to search for their extractor, submit their extractor and have any metadata returned from their extractor stored - all within Clowder. 
 
 Although the main intent of an extractor is to interact with a file within Clowder and save metadata associated with said file, Clowder’s ability to interact with files creates a flexibility with extractors that lets users do more than the intended scope. For instance, a user could write an extractor code that reads a file and pushes data to another application, modifies the file, or creates derived inputs within Clowder.
 
@@ -66,11 +66,11 @@ We've created Clowder packages in Python and Java that make it easier for you to
 
 3. extractor_info.json
 
-The extractor_info.json file is a file that includes metadata about your extractor. It allows Clowder to “know” about your extractor. Refer [here](https://opensource.ncsa.illinois.edu/confluence/display/CATS/extractor_info.json) for more information on the extractor_info.json file.
+The extractor_info.json file is a file that includes metadata about your extractor. It allows Clowder to “know” about your extractor. Refer `here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/extractor_info.json>`_ for more information on the extractor_info.json file.
 
 4. Docker
 
-To deploy your extractor within Clowder you need to create a Docker container. Docker packages your code with all its dependencies, allowing your code to be deployed and run on any system that has Docker installed. To learn more about Docker containers refer to [docker.com](https://www.docker.com/resources/what-container). For a useful tutorial on Docker containers refer to [katacoda.com](https://www.katacoda.com/courses/docker). Installing docker requires a minimum of computer skills depending on the type of machine that you are using.
+To deploy your extractor within Clowder you need to create a Docker container. Docker packages your code with all its dependencies, allowing your code to be deployed and run on any system that has Docker installed. To learn more about Docker containers refer to `docker.com <https://www.docker.com/resources/what-container>`_. For a useful tutorial on Docker containers refer to `katacoda.com <https://www.katacoda.com/courses/docker`_. Installing docker requires a minimum of computer skills depending on the type of machine that you are using.
 
 To see specific examples of Dockerfiles refer to the Clowder Code links above or peruse existing extractors at the following links:
 
@@ -85,7 +85,7 @@ If creating a simple Python extractor, a Dockerfile can be generated for you fol
 Testing locally with Clowder
 ##############################
 
-While building your extractor, it is useful to test it within a Clowder instance. Prior to deploying your extractor on development or production clusters, testing locally can help debug issues quickly. Below are some instructions on how to deploy a local instance of Clowder and deploy your extractor locally for quick testing. The following docker commands should be executed from a terminal window. These should work on a linux system with docker installed or on a mac and Windows with [Docker Desktop](https://docs.docker.com/desktop/) installed.
+While building your extractor, it is useful to test it within a Clowder instance. Prior to deploying your extractor on development or production clusters, testing locally can help debug issues quickly. Below are some instructions on how to deploy a local instance of Clowder and deploy your extractor locally for quick testing. The following docker commands should be executed from a terminal window. These should work on a linux system with docker installed or on a mac and Windows with `Docker Desktop <https://docs.docker.com/desktop>`_) installed.
 
 1. Build your docker image: run the following in the same directory as your Dockerfile
 
