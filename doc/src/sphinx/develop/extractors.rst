@@ -61,10 +61,10 @@ We've created Clowder packages in Python and Java that make it easier for you to
 * `jClowder <https://github.com/clowder-framework/jclowder>`_
 * `pyClowder <https://github.com/clowder-framework/pyclowder>`_
 * From scratch using:
-    * RabbitMQ client library
-    * HTTP/JSON client libraries
+  * RabbitMQ client library
+  * HTTP/JSON client libraries
 
-3. extractor_info.json
+1. extractor_info.json
 
 The extractor_info.json file is a file that includes metadata about your extractor. It allows Clowder to “know” about your extractor. Refer `here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/extractor_info.json>`_ for more information on the extractor_info.json file.
 
@@ -109,24 +109,24 @@ Below are examples of each file:
     * This file deploys your extractor to Clowder. You will have to update this file to reflect your extractor's name, Docker image name and version tag, and any other requirements like environment variables. See below:
 
 
-``
-version: '3.5'
+.. highlight::
+	version: '3.5'
 
-services:
+	services:
 
-  myextractor:
-    image: myextractor_imagename:mytag
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-      - clowder
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-      # Add any additional environment variables your code may need here
-  # Add multiple extractors below following template above
-``
+  	myextractor:
+    	image: myextractor_imagename:mytag
+    	restart: unless-stopped
+    	networks:
+        - clowder
+    	depends_on:
+        - rabbitmq
+        - clowder
+    	environment:
+        - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+      	# Add any additional environment variables your code may need here
+  	# Add multiple extractors below following template above
+
 
 3. Initialize Clowder. All the commands below assume that you are running this in a folder called tests, hence the network name tests_clowder. If you ran the docker-compose command in a folder called clowder, the network would be clowder_clowder.
 
