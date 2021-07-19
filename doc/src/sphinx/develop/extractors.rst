@@ -2,13 +2,11 @@
 
 Extractors
 ==============
-* :ref:`Overview<overview>`
-* :ref:`Building and Deploying Extractors<building>`
-* :ref:`Testing Locally with Clowder<testing>`
-* :ref:`Debugging<debugging>`
-* :ref:`Advanced Python Examples<examples>`
-
-.. _overview: 
+* :ref:`Overview`
+* :ref:`Building and Deploying Extractors`
+* :ref:`Testing Locally with Clowder`
+* :ref:`A Quick Note on Debugging`
+* :ref:`Additional pyClowder Examples`
 
 Overview
 ########
@@ -35,8 +33,6 @@ The current list of supported events is:
 * Metadata added to dataset
 * Metadata removed from dataset
 * File/Dataset manual submission to extractor
-
-.. _building: 
 
 Building and Deploying Extractors
 ###################################
@@ -79,8 +75,6 @@ To see specific examples of Dockerfiles refer to the Clowder Code links above or
 - `Clowder Bitbucket <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS>`_
 
 If creating a simple Python extractor, a Dockerfile can be generated for you following the instructions on the `clowder/generator <https://github.com/clowder-framework/generator>`_) repository.
-
-.. _testing: 
 
 Testing Locally with Clowder
 ##############################
@@ -152,7 +146,6 @@ Below are examples of each file:
 
 11. You should see your metadata present if all worked successfully.
 
-.. _debugging:
 
 A Quick Note on Debugging
 ##########################
@@ -198,8 +191,6 @@ In the screenshot above you can see the lines printed out by the logging.info as
 
 	2021-04-27 16:47:49,995 [MainThread     ] INFO
 
-
-.. _debugging:
 
 Additional pyClowder Examples
 ##############################
