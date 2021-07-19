@@ -209,7 +209,8 @@ For a simple example of an extractor, please refer to `extractor-csv <https://op
 .. container:: imagepadding
     .. image:: /_static/ug_extractors-1.png
 
-### Specifying multiple inputs
+Specifying multiple inputs
+***************************
 
 This example assumes data is within the same dataset.
 
@@ -225,7 +226,7 @@ This example assumes data is within the same dataset.
 	import pyclowder.datasets
 
 	class MyExtractor(Extractor):
-    	def __init__(self):
+		def __init__(self):
     		Extractor.__init__(self)
     		logging.getLogger('pyclowder').setLevel(logging.DEBUG)
     		logging.getLogger('__main__').setLevel(logging.DEBUG)
@@ -233,8 +234,8 @@ This example assumes data is within the same dataset.
     		# Add an argument to pass second filename with default filename
     		self.parser.add_argument('--secondfile',default="my_default_second_file.csv")
     		self.setup()
- 
-    	def process_message(self, connector,host, secret_key,resource, parameters):
+		
+		def process_message(self, connector,host, secret_key,resource, parameters):
     		# grab inputfile path
     		inputfile = resource["local_paths"][0]
  
@@ -266,12 +267,21 @@ This example assumes data is within the same dataset.
 		extractor = MyExtractor()
 		extractor.start()
 
-### Renaming files
+Renaming files
+*******************
 
 .. code-block:: python
 
 	class MyExtractor(Extractor):
-		...  
+		def __init__(self):
+			Extractor.__init__(self)
+			logging.getLogger('pyclowder').setLevel(logging.DEBUG)
+			logging.getLogger('__main__').setLevel(logging.DEBUG)
+
+			# Add an argument to pass second filename with default filename
+			self.parser.add_argument('--filename',default="my_default_second_file.csv")
+			self.setup()
+
     	def rename_file(self, connector, host, key, fileid,filename):
    			# rename file
 			renameFile= '%sapi/files/%s/filename' % (host, fileid)
@@ -285,7 +295,21 @@ This example assumes data is within the same dataset.
 			   	   	verify=connector.ssl_verify if connector else True)
 
 		def process_message(self, connector, host, secret_key,resource, parameters):
-			...	
-			# Run the rename_file function
-			self.rename_file(connector, host, secret_key, fileID, output_filename)
-			...
+			# grab inputfile path
+			inputfile = resource["local_paths"][0]
+	
+			if self.args.filename:
+				# call rename_file function
+				self.rename_file(connector, host, secret_key, parameters['id'], output_filename)
+	
+			# upload any metadata that code above outputs as "my_metadata"
+			metadata = self.get_metadata(my_metadata, 'file', parameters['id'], host)
+			pyclowder.files.upload_metadata(connector, host, secret_key, parameters['id'], metadata)
+	
+	
+	
+	if __name__ == "__main__":
+			extractor = MyExtractor()
+			extractor.start()
+			
+			
