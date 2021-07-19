@@ -8,7 +8,7 @@ Extractors
 * :ref:`Debugging`
 * :ref:`Advanced Python Examples`
 
-.. _Overview
+.. _Overview:
 
 Overview
 ########
@@ -36,7 +36,7 @@ The current list of supported events is:
 * Metadata removed from dataset
 * File/Dataset manual submission to extractor
 
-.. _Building and Deploying Extractors
+.. _Building and Deploying Extractors:
 
 Building and Deploying Extractors
 ###################################
@@ -80,7 +80,7 @@ To see specific examples of Dockerfiles refer to the Clowder Code links above or
 
 If creating a simple Python extractor, a Dockerfile can be generated for you following the instructions on the `clowder/generator <https://github.com/clowder-framework/generator>`_) repository.
 
-.. _Testing locally
+.. _Testing locally:
 
 Testing locally with Clowder
 ##############################
@@ -150,7 +150,7 @@ docker run -ti --rm --network tests_clowder clowder/mongo-init
 
 11. You should see your metadata present if all worked successfully.
 
-.. _Debugging
+.. _Debugging:
 
 A quick note on debugging
 ##########################
@@ -194,7 +194,7 @@ In the screenshot above you can see the lines printed out by the logging.info as
 2021-04-27 16:47:49,995 [MainThread     ] INFO
 ```
 
-.. _Advanced Python Examples
+.. _Advanced Python Examples:
 
 Additional pyClowder Examples
 ##############################
