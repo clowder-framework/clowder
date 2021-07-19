@@ -61,10 +61,10 @@ We've created Clowder packages in Python and Java that make it easier for you to
 * `jClowder <https://github.com/clowder-framework/jclowder>`_
 * `pyClowder <https://github.com/clowder-framework/pyclowder>`_
 * From scratch using:
-  * RabbitMQ client library
-  * HTTP/JSON client libraries
+  *  RabbitMQ client library
+  *  HTTP/JSON client libraries
 
-1. extractor_info.json
+3. extractor_info.json
 
 The extractor_info.json file is a file that includes metadata about your extractor. It allows Clowder to “know” about your extractor. Refer `here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/extractor_info.json>`_ for more information on the extractor_info.json file.
 
@@ -109,30 +109,30 @@ Below are examples of each file:
     * This file deploys your extractor to Clowder. You will have to update this file to reflect your extractor's name, Docker image name and version tag, and any other requirements like environment variables. See below:
 
 
-.. code-block:: python
-   version: '3.5'
+.. code-block:: yaml
 
-   services:
+    version: '3.5'
 
-     myextractor:
-       image: myextractor_imagename:mytag
-       restart: unless-stopped
-       networks:
-         - clowder
-       depends_on:
-         - rabbitmq
-         - clowder
-       environment:
-         - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-         # Add any additional environment variables your code may need here
-     # Add multiple extractors below following template above
+    services:
+      myextractor:
+        image: myextractor_imagename:mytag
+        restart: unless-stopped
+        networks:
+          - clowder
+        depends_on:
+          - rabbitmq
+          - clowder
+        environment:
+          - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+          # Add any additional environment variables your code may need here
+      # Add multiple extractors below following template above
 
 
-3. Initialize Clowder. All the commands below assume that you are running this in a folder called tests, hence the network name tests_clowder. If you ran the docker-compose command in a folder called clowder, the network would be clowder_clowder.
+1. Initialize Clowder. All the commands below assume that you are running this in a folder called tests, hence the network name tests_clowder. If you ran the docker-compose command in a folder called clowder, the network would be clowder_clowder.
 
-``
-docker run -ti --rm --network tests_clowder clowder/mongo-init
-``
+.. code-block:: bash
+	docker run -ti --rm --network tests_clowder clowder/mongo-init
+
 
 4. Enter email, first name, last name password, and admin: true when prompted.
 
@@ -167,32 +167,31 @@ You can expand the tab to see all submissions of the extractor and any error mes
 
 If your extractor failed, the error message is not helpful, or if you do not see metadata present in the “Metadata” tab for the file you can check the logs of your extractor coming from the docker container by executing the following:
 
-``
-docker log tests_myextractor_1 
-``
+.. code-block:: bash
+	docker log tests_myextractor_1 
+
 
 Replace “myextractor” with whatever name you gave your extractor in the docker-compose.extractors.yml file.
 
 If you want to watch the logs as your extractor is running you can type:
 
-``
-docker logs -f tests_myextractor_1
-``
+.. code-block:: bash
+	docker logs -f tests_myextractor_1
 
 .. container:: imagepadding
     .. image:: /_static/ug_extractors-1.png
 
 You can print any debugging information within your extractor to the docker logs by utilizing the logging object within your code. The following example is for pyClowder:
 
-``
-logging.info("Uploaded metadata %s", metadata)
-``
+.. code-block:: bash
+	logging.info("Uploaded metadata %s", metadata)
+
 
 In the screenshot above you can see the lines printed out by the logging.info as the line will start with INFO:
 
-``
-2021-04-27 16:47:49,995 [MainThread     ] INFO
-``
+.. code-block:: bash
+	2021-04-27 16:47:49,995 [MainThread     ] INFO
+
 
 .. _Advanced Python Examples:
 
@@ -208,80 +207,77 @@ For a simple example of an extractor, please refer to `extractor-csv <https://op
 
 This example assumes data is within the same dataset.
 
-``
-#!/usr/bin/env python3
+.. code-block:: python
+	#!/usr/bin/env python3
  
-import subprocess
-import logging
+	import subprocess
+	import logging
  
-from pyclowder.extractors import Extractor
-import pyclowder.files
-import pyclowder.datasets
+	from pyclowder.extractors import Extractor
+	import pyclowder.files
+	import pyclowder.datasets
 
-class MyExtractor(Extractor):
-    def __init__(self):
-    	Extractor.__init__(self)
-    	logging.getLogger('pyclowder').setLevel(logging.DEBUG)
-    	logging.getLogger('__main__').setLevel(logging.DEBUG)
+	class MyExtractor(Extractor):
+    	def __init__(self):
+    		Extractor.__init__(self)
+    		logging.getLogger('pyclowder').setLevel(logging.DEBUG)
+    		logging.getLogger('__main__').setLevel(logging.DEBUG)
  
-    	# Add an argument to pass second filename with default filename
-    	self.parser.add_argument('--secondfile',default="my_default_second_file.csv")
-    	self.setup()
+    		# Add an argument to pass second filename with default filename
+    		self.parser.add_argument('--secondfile',default="my_default_second_file.csv")
+    		self.setup()
  
-    def process_message(self, connector,host, secret_key,resource, parameters):
-    	# grab inputfile path
-    	inputfile = resource["local_paths"][0]
+    	def process_message(self, connector,host, secret_key,resource, parameters):
+    		# grab inputfile path
+    		inputfile = resource["local_paths"][0]
  
-    	# get list of files in dataset
-    	filelist = pyclowder.datasets.get_file_list(connector, host, secret_key, parameters['datasetId'])
+    		# get list of files in dataset
+    		filelist = pyclowder.datasets.get_file_list(connector, host, secret_key, parameters['datasetId'])
  
-    	# loop through dataset and grab id of file whose filename matches desired filename
-    	for file_dict in filelist:
+    		# loop through dataset and grab id of file whose filename matches desired filename
+    		for file_dict in filelist:
         	    if file_dict['filename'] == self.args.secondfile:
                     secondfileID = file_dict['id']
  
-    	# or a more pythonic way to do the above loop
-    	#secondfileId = [file_dict['id'] for file_dict in filelist if file_dict['filename'] == self.args.secondfile][0]
+    		# or a more pythonic way to do the above loop
+    		#secondfileId = [file_dict['id'] for file_dict in filelist if file_dict['filename'] == self.args.secondfile][0]
  
-    	# download second file "locally" so extractor can operate on it
-    	secondfilepath = pyclowder.files.download(connector, host, secret_key, secondfileId)
+    		# download second file "locally" so extractor can operate on it
+    		secondfilepath = pyclowder.files.download(connector, host, secret_key, secondfileId)
  
-    	"""
-    	Execute your function/code to operate on said inputfile and secondfile
-    	"""
+    		"""
+    		Execute your function/code to operate on said inputfile and secondfile
+    		"""
  
-    	# upload any metadata that code above outputs as "my_metadata"
-    	metadata = self.get_metadata(my_metadata, 'file', parameters['id'], host)
-    	pyclowder.files.upload_metadata(connector, host, secret_key, parameters['id'], metadata)
+    		# upload any metadata that code above outputs as "my_metadata"
+    		metadata = self.get_metadata(my_metadata, 'file', parameters['id'], host)
+    		pyclowder.files.upload_metadata(connector, host, secret_key, parameters['id'], metadata)
  
  
  
-if __name__ == "__main__":
-	extractor = MyExtractor()
-	extractor.start()
-
-``
+	if __name__ == "__main__":
+		extractor = MyExtractor()
+		extractor.start()
 
 ### Renaming files
 
-``
-class MyExtractor(Extractor):
-	...  
-    def rename_file(self, connector, host, key, fileid,filename):
-   		# create folder
-		renameFile= '%sapi/files/%s/filename' % (host, fileid)
+.. code-block:: python
+	class MyExtractor(Extractor):
+		...  
+    	def rename_file(self, connector, host, key, fileid,filename):
+   			# rename file
+			renameFile= '%sapi/files/%s/filename' % (host, fileid)
 
-		f = json.dumps({"name": filename})
+			f = json.dumps({"name": filename})
 
-		connector.put(renameFile,
-			    	  data=f,
-			    	  headers={"Content-Type": "application/json",
-						       "X-API-KEY": key},
-			   	   verify=connector.ssl_verify if connector else True)
+			connector.put(renameFile,
+				    	  data=f,
+			    		  headers={"Content-Type": "application/json",
+							       "X-API-KEY": key},
+			   	   	verify=connector.ssl_verify if connector else True)
 
-	def process_message(self, connector, host, secret_key,resource, parameters):
-		...	
-		# Run the rename_file function
-		self.rename_file(connector, host, secret_key, fileID, output_filename)
-		...
-``
+		def process_message(self, connector, host, secret_key,resource, parameters):
+			...	
+			# Run the rename_file function
+			self.rename_file(connector, host, secret_key, fileID, output_filename)
+			...
