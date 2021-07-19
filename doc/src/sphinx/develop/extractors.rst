@@ -2,13 +2,11 @@
 
 Extractors
 ==============
-* :ref:`Overview`
-* :ref:`Building and Deploying Extractors`
-* :ref:`Testing Locally`
-* :ref:`Debugging`
-* :ref:`Advanced Python Examples`
-
-.. _Overview:
+* :ref:`Overview<Overview>`
+* :ref:`Building and Deploying Extractors<Building and Deploying Extractors>`
+* :ref:`Testing Locally with Clowder<Testing Locally with Clowder>`
+* :ref:`Debugging<A Quick Note on Debugging>`
+* :ref:`Advanced Python Examples<Additional pyClowder Examples>`
 
 Overview
 ########
@@ -35,8 +33,6 @@ The current list of supported events is:
 * Metadata added to dataset
 * Metadata removed from dataset
 * File/Dataset manual submission to extractor
-
-.. _Building and Deploying Extractors:
 
 Building and Deploying Extractors
 ###################################
@@ -80,9 +76,7 @@ To see specific examples of Dockerfiles refer to the Clowder Code links above or
 
 If creating a simple Python extractor, a Dockerfile can be generated for you following the instructions on the `clowder/generator <https://github.com/clowder-framework/generator>`_) repository.
 
-.. _Testing locally:
-
-Testing locally with Clowder
+Testing Locally with Clowder
 ##############################
 
 While building your extractor, it is useful to test it within a Clowder instance. Prior to deploying your extractor on development or production clusters, testing locally can help debug issues quickly. Below are some instructions on how to deploy a local instance of Clowder and deploy your extractor locally for quick testing. The following docker commands should be executed from a terminal window. These should work on a linux system with docker installed or on a mac and Windows with `Docker Desktop <https://docs.docker.com/desktop>`_) installed.
@@ -152,9 +146,8 @@ Below are examples of each file:
 
 11. You should see your metadata present if all worked successfully.
 
-.. _Debugging:
 
-A quick note on debugging
+A Quick Note on Debugging
 ##########################
 
 To check the status of your extraction, navigate to the file within Clowder and click on the “Extractions” tab. This will give you a list of extractions that have been submitted. Any error messages will show up here if your extractor did not run successfully. 
@@ -198,8 +191,6 @@ In the screenshot above you can see the lines printed out by the logging.info as
 
 	2021-04-27 16:47:49,995 [MainThread     ] INFO
 
-
-.. _Advanced Python Examples:
 
 Additional pyClowder Examples
 ##############################
