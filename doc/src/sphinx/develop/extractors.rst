@@ -89,15 +89,16 @@ While building your extractor, it is useful to test it within a Clowder instance
 
 1. Build your docker image: run the following in the same directory as your Dockerfile
 
-``
-docker build -t myimage:tag .
-``
+.. code-block:: bash
+
+	docker build -t myimage:tag .
 
 2. Once your Docker image is built it can now be deployed within Clowder.
 
-``
-docker-compose -f docker-compose.yml -f docker-compose.extractors.yml up -d
-``
+.. code-block:: bash
+
+	docker-compose -f docker-compose.yml -f docker-compose.extractors.yml up -d
+
 
 Below are examples of each file:
 
@@ -131,6 +132,7 @@ Below are examples of each file:
 1. Initialize Clowder. All the commands below assume that you are running this in a folder called tests, hence the network name tests_clowder. If you ran the docker-compose command in a folder called clowder, the network would be clowder_clowder.
 
 .. code-block:: bash
+
 	docker run -ti --rm --network tests_clowder clowder/mongo-init
 
 
@@ -168,6 +170,7 @@ You can expand the tab to see all submissions of the extractor and any error mes
 If your extractor failed, the error message is not helpful, or if you do not see metadata present in the “Metadata” tab for the file you can check the logs of your extractor coming from the docker container by executing the following:
 
 .. code-block:: bash
+
 	docker log tests_myextractor_1 
 
 
@@ -176,6 +179,7 @@ Replace “myextractor” with whatever name you gave your extractor in the dock
 If you want to watch the logs as your extractor is running you can type:
 
 .. code-block:: bash
+
 	docker logs -f tests_myextractor_1
 
 .. container:: imagepadding
@@ -184,12 +188,14 @@ If you want to watch the logs as your extractor is running you can type:
 You can print any debugging information within your extractor to the docker logs by utilizing the logging object within your code. The following example is for pyClowder:
 
 .. code-block:: bash
+
 	logging.info("Uploaded metadata %s", metadata)
 
 
 In the screenshot above you can see the lines printed out by the logging.info as the line will start with INFO:
 
 .. code-block:: bash
+
 	2021-04-27 16:47:49,995 [MainThread     ] INFO
 
 
@@ -208,6 +214,7 @@ For a simple example of an extractor, please refer to `extractor-csv <https://op
 This example assumes data is within the same dataset.
 
 .. code-block:: python
+
 	#!/usr/bin/env python3
  
 	import subprocess
@@ -262,6 +269,7 @@ This example assumes data is within the same dataset.
 ### Renaming files
 
 .. code-block:: python
+
 	class MyExtractor(Extractor):
 		...  
     	def rename_file(self, connector, host, key, fileid,filename):
