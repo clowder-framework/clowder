@@ -109,23 +109,23 @@ Below are examples of each file:
     * This file deploys your extractor to Clowder. You will have to update this file to reflect your extractor's name, Docker image name and version tag, and any other requirements like environment variables. See below:
 
 
-.. highlight::
-	version: '3.5'
+.. code-block:: python
+   version: '3.5'
 
-	services:
+   services:
 
-  	myextractor:
-    	image: myextractor_imagename:mytag
-    	restart: unless-stopped
-    	networks:
-        - clowder
-    	depends_on:
-        - rabbitmq
-        - clowder
-    	environment:
-        - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-      	# Add any additional environment variables your code may need here
-  	# Add multiple extractors below following template above
+     myextractor:
+       image: myextractor_imagename:mytag
+       restart: unless-stopped
+       networks:
+         - clowder
+       depends_on:
+         - rabbitmq
+         - clowder
+       environment:
+         - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+         # Add any additional environment variables your code may need here
+     # Add multiple extractors below following template above
 
 
 3. Initialize Clowder. All the commands below assume that you are running this in a folder called tests, hence the network name tests_clowder. If you ran the docker-compose command in a folder called clowder, the network would be clowder_clowder.
