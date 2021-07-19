@@ -13,7 +13,7 @@ Extractors
 Overview
 ########
 One of the major features of Clowder is the ability to deploy custom extractors for when files are uploaded to the system.
-A list of extractors is available in `GitHub <https://github.com/clowder-framework>`_. A full list of extractors is available in [Bitbucket](https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS).
+A list of extractors is available in `GitHub <https://github.com/clowder-framework>`_. A full list of extractors is available in `Bitbucket <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS>`_.
 
 To write new extractors, `pyClowder <https://github.com/clowder-framework/pyclowder>`_ is a good starting point.
 It provides a simple Python library to write new extractors in Python. Please see the
@@ -59,7 +59,7 @@ We've created Clowder packages in Python and Java that make it easier for you to
 
 
 * `jClowder <https://github.com/clowder-framework/jclowder>`_
-* `pyClowder <https://github.com/clowder-framework/pyclowder`_
+* `pyClowder <https://github.com/clowder-framework/pyclowder>`_
 * From scratch using:
     * RabbitMQ client library
     * HTTP/JSON client libraries
@@ -70,7 +70,7 @@ The extractor_info.json file is a file that includes metadata about your extract
 
 4. Docker
 
-To deploy your extractor within Clowder you need to create a Docker container. Docker packages your code with all its dependencies, allowing your code to be deployed and run on any system that has Docker installed. To learn more about Docker containers refer to `docker.com <https://www.docker.com/resources/what-container>`_. For a useful tutorial on Docker containers refer to `katacoda.com <https://www.katacoda.com/courses/docker`_. Installing docker requires a minimum of computer skills depending on the type of machine that you are using.
+To deploy your extractor within Clowder you need to create a Docker container. Docker packages your code with all its dependencies, allowing your code to be deployed and run on any system that has Docker installed. To learn more about Docker containers refer to `docker.com <https://www.docker.com/resources/what-container>`_. For a useful tutorial on Docker containers refer to `katacoda.com <https://www.katacoda.com/courses/docker>`_. Installing docker requires a minimum of computer skills depending on the type of machine that you are using.
 
 To see specific examples of Dockerfiles refer to the Clowder Code links above or peruse existing extractors at the following links:
 
@@ -89,15 +89,15 @@ While building your extractor, it is useful to test it within a Clowder instance
 
 1. Build your docker image: run the following in the same directory as your Dockerfile
 
-```
+``
 docker build -t myimage:tag .
-```
+``
 
 2. Once your Docker image is built it can now be deployed within Clowder.
 
-```
+``
 docker-compose -f docker-compose.yml -f docker-compose.extractors.yml up -d
-```
+``
 
 Below are examples of each file:
 
@@ -109,7 +109,7 @@ Below are examples of each file:
     * This file deploys your extractor to Clowder. You will have to update this file to reflect your extractor's name, Docker image name and version tag, and any other requirements like environment variables. See below:
 
 
-```
+``
 version: '3.5'
 
 services:
@@ -126,13 +126,13 @@ services:
       - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
       # Add any additional environment variables your code may need here
   # Add multiple extractors below following template above
-```
+``
 
 3. Initialize Clowder. All the commands below assume that you are running this in a folder called tests, hence the network name tests_clowder. If you ran the docker-compose command in a folder called clowder, the network would be clowder_clowder.
 
-```
+``
 docker run -ti --rm --network tests_clowder clowder/mongo-init
-```
+``
 
 4. Enter email, first name, last name password, and admin: true when prompted.
 
@@ -167,32 +167,32 @@ You can expand the tab to see all submissions of the extractor and any error mes
 
 If your extractor failed, the error message is not helpful, or if you do not see metadata present in the “Metadata” tab for the file you can check the logs of your extractor coming from the docker container by executing the following:
 
-```
+``
 docker log tests_myextractor_1 
-```
+``
 
 Replace “myextractor” with whatever name you gave your extractor in the docker-compose.extractors.yml file.
 
 If you want to watch the logs as your extractor is running you can type:
 
-```
+``
 docker logs -f tests_myextractor_1
-```
+``
 
 .. container:: imagepadding
     .. image:: /_static/ug_extractors-1.png
 
 You can print any debugging information within your extractor to the docker logs by utilizing the logging object within your code. The following example is for pyClowder:
 
-```
+``
 logging.info("Uploaded metadata %s", metadata)
-```
+``
 
 In the screenshot above you can see the lines printed out by the logging.info as the line will start with INFO:
 
-```
+``
 2021-04-27 16:47:49,995 [MainThread     ] INFO
-```
+``
 
 .. _Advanced Python Examples:
 
@@ -208,7 +208,7 @@ For a simple example of an extractor, please refer to `extractor-csv <https://op
 
 This example assumes data is within the same dataset.
 
-```
+``
 #!/usr/bin/env python3
  
 import subprocess
@@ -260,11 +260,11 @@ if __name__ == "__main__":
 	extractor = MyExtractor()
 	extractor.start()
 
-```
+``
 
 ### Renaming files
 
-```
+``
 class MyExtractor(Extractor):
 	...  
     def rename_file(self, connector, host, key, fileid,filename):
@@ -284,4 +284,4 @@ class MyExtractor(Extractor):
 		# Run the rename_file function
 		self.rename_file(connector, host, secret_key, fileID, output_filename)
 		...
-```
+``
