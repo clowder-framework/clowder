@@ -227,42 +227,40 @@ This example assumes data is within the same dataset.
 
 	class MyExtractor(Extractor):
 		def __init__(self):
-    		Extractor.__init__(self)
-    		logging.getLogger('pyclowder').setLevel(logging.DEBUG)
-    		logging.getLogger('__main__').setLevel(logging.DEBUG)
- 
-    		# Add an argument to pass second filename with default filename
-    		self.parser.add_argument('--secondfile',default="my_default_second_file.csv")
-    		self.setup()
-		
+			Extractor.__init__(self)
+			logging.getLogger('pyclowder').setLevel(logging.DEBUG)
+			logging.getLogger('__main__').setLevel(logging.DEBUG)
+			
+			# Add an argument to pass second filename with default filename
+			self.parser.add_argument('--secondfile',default="my_default_second_file.csv")
+			self.setup()
+			
 		def process_message(self, connector,host, secret_key,resource, parameters):
-    		# grab inputfile path
-    		inputfile = resource["local_paths"][0]
- 
-    		# get list of files in dataset
-    		filelist = pyclowder.datasets.get_file_list(connector, host, secret_key, parameters['datasetId'])
- 
-    		# loop through dataset and grab id of file whose filename matches desired filename
-    		for file_dict in filelist:
-        	    if file_dict['filename'] == self.args.secondfile:
-                    secondfileID = file_dict['id']
- 
-    		# or a more pythonic way to do the above loop
-    		#secondfileId = [file_dict['id'] for file_dict in filelist if file_dict['filename'] == self.args.secondfile][0]
- 
-    		# download second file "locally" so extractor can operate on it
-    		secondfilepath = pyclowder.files.download(connector, host, secret_key, secondfileId)
- 
-    		"""
-    		Execute your function/code to operate on said inputfile and secondfile
-    		"""
- 
-    		# upload any metadata that code above outputs as "my_metadata"
-    		metadata = self.get_metadata(my_metadata, 'file', parameters['id'], host)
-    		pyclowder.files.upload_metadata(connector, host, secret_key, parameters['id'], metadata)
- 
- 
- 
+			# grab inputfile path
+			inputfile = resource["local_paths"][0]
+			
+			# get list of files in dataset
+			filelist = pyclowder.datasets.get_file_list(connector, host, secret_key, parameters['datasetId'])
+			
+			# loop through dataset and grab id of file whose filename matches desired filename
+			for file_dict in filelist:
+				if file_dict['filename'] == self.args.secondfile:
+					secondfileID = file_dict['id']
+					
+			# or a more pythonic way to do the above loop
+			# secondfileId = [file_dict['id'] for file_dict in filelist if file_dict['filename'] == self.args.secondfile][0]
+			
+			# download second file "locally" so extractor can operate on it
+			secondfilepath = pyclowder.files.download(connector, host, secret_key, secondfileId)
+			
+			"""
+			Execute your function/code to operate on said inputfile and secondfile
+			"""
+			
+			# upload any metadata that code above outputs as "my_metadata"
+			metadata = self.get_metadata(my_metadata, 'file', parameters['id'], host)
+			pyclowder.files.upload_metadata(connector, host, secret_key, parameters['id'], metadata)
+		
 	if __name__ == "__main__":
 		extractor = MyExtractor()
 		extractor.start()
@@ -277,39 +275,36 @@ Renaming files
 			Extractor.__init__(self)
 			logging.getLogger('pyclowder').setLevel(logging.DEBUG)
 			logging.getLogger('__main__').setLevel(logging.DEBUG)
-
+			
 			# Add an argument to pass second filename with default filename
-			self.parser.add_argument('--filename',default="my_default_second_file.csv")
+			self.parser.add_argument('--filename')
 			self.setup()
-
-    	def rename_file(self, connector, host, key, fileid,filename):
-   			# rename file
+			
+		def rename_file(self, connector, host, key, fileid,filename):
+			# rename file
 			renameFile= '%sapi/files/%s/filename' % (host, fileid)
-
+			
 			f = json.dumps({"name": filename})
-
+			
 			connector.put(renameFile,
-				    	  data=f,
-			    		  headers={"Content-Type": "application/json",
-							       "X-API-KEY": key},
-			   	   	verify=connector.ssl_verify if connector else True)
-
+						  data=f,
+						  headers={"Content-Type": "application/json", "X-API-KEY": key},
+						  verify=connector.ssl_verify if connector else True)
+						  
 		def process_message(self, connector, host, secret_key,resource, parameters):
 			# grab inputfile path
 			inputfile = resource["local_paths"][0]
-	
+			
 			if self.args.filename:
 				# call rename_file function
-				self.rename_file(connector, host, secret_key, parameters['id'], output_filename)
-	
+				self.rename_file(connector, host, secret_key, parameters['id'], self.args.filename)
+				
 			# upload any metadata that code above outputs as "my_metadata"
 			metadata = self.get_metadata(my_metadata, 'file', parameters['id'], host)
 			pyclowder.files.upload_metadata(connector, host, secret_key, parameters['id'], metadata)
-	
-	
-	
+			
 	if __name__ == "__main__":
-			extractor = MyExtractor()
-			extractor.start()
+		extractor = MyExtractor()
+		extractor.start()
 			
 			
