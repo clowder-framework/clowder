@@ -287,9 +287,9 @@ Renaming files
 			f = json.dumps({"name": filename})
 			
 			connector.put(renameFile,
-						  data=f,
-						  headers={"Content-Type": "application/json", "X-API-KEY": key},
-						  verify=connector.ssl_verify if connector else True)
+						data=f,
+						headers={"Content-Type": "application/json", "X-API-KEY": key},
+						verify=connector.ssl_verify if connector else True)
 						  
 		def process_message(self, connector, host, secret_key,resource, parameters):
 			# grab inputfile path
