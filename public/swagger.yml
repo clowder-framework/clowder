@@ -276,6 +276,8 @@ paths:
                   $ref: '#/components/parameters/fileId'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/getPreviews:
     get:
@@ -295,6 +297,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/metadata:
     get:
@@ -344,6 +348,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/paths:
     get:
@@ -383,6 +389,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/archive:
     post:
@@ -402,6 +410,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/sendUnarchiveRequest:
     post:
@@ -422,6 +432,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/unarchive:
     post:
@@ -441,6 +453,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
 
   /files/{id}/extractions:
@@ -559,6 +573,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/unfollow:
     post:
@@ -597,6 +613,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/withFlags/{flags}:
     post:
@@ -643,6 +661,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: metadata
 
   /files/getRDFURLsForFile/{id}:
@@ -664,6 +684,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /previews:
     post:
@@ -721,6 +743,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/isBeingProcessed:
     get:
@@ -738,6 +762,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/reindex:
     post:
@@ -755,6 +781,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/filename:
     put:
@@ -816,6 +844,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: metadata
 
   /files/{id}/follow:
@@ -855,6 +885,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
     post:
       tags:
         - files
@@ -878,6 +910,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: matadata.jsonld
     delete:
       tags:
@@ -898,6 +932,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/metadata.jsonld:
     get:
@@ -1052,6 +1088,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/updateDescription:
     put:
@@ -1082,6 +1120,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: description
 
   /files/{id}/technicalmetadatajson:
@@ -1100,6 +1140,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/sendJob/{fileId}/{fileType}:
     post:
@@ -1126,6 +1168,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/xmlmetadatajson:
     get:
@@ -1145,6 +1189,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/extracted_metadata:
     get:
@@ -1185,6 +1231,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: comment
 
   /files/{id}/tags/remove:
@@ -1277,6 +1325,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/metadataDefinitions:
     get:
@@ -1296,6 +1346,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/rdfUserMetadata/{id}:
     get:
@@ -1313,6 +1365,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /files/{id}/usermetadatajson:
     get:
@@ -1330,6 +1384,26 @@ paths:
         200:
           description: OK
           content: {}
+
+  /queries/{id}:
+    get:
+      tags:
+        - files
+      summary: Fetches and downloads a particular query
+      description: Fetches and downloads a particular query.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
+
 
   /queries/{file_id}/thumbnails/{thumbnail_id}:
     post:
@@ -1352,6 +1426,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
         ##############################################################################
         # Metadata                                                                   #
@@ -1724,6 +1800,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}:
     get:
@@ -1741,21 +1819,8 @@ paths:
         200:
           description: OK
           content: {}
-    put:
-      tags:
-        - datasets
-      summary: Update a specific dataset
-      description: This will update a specific dataset requested
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: OK
-          content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
     delete:
       tags:
         - datasets
@@ -1773,6 +1838,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
 
   /datasets/{ds_id}/copyDatasetToSpace/{space_id}:
@@ -1798,6 +1865,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
 
   /datasets/{ds_id}/files/{file_id}:
@@ -1823,6 +1892,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{ds_id}/moveFile/{folder_id}/{file_id}:
     post:
@@ -2106,6 +2177,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/createempty:
     post:
@@ -2126,6 +2199,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: dataset
 
   /datasets/{id}/description:
@@ -2199,6 +2274,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/usermetadatajson:
     get:
@@ -2216,6 +2293,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/xmlmetadatajson:
     get:
@@ -2235,6 +2314,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{ds_id}/{file_id}:
     delete:
@@ -2282,6 +2363,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: comment
 
   /datasets/{id}/user:
@@ -2319,6 +2402,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
     post:
       tags:
         - datasets
@@ -2343,6 +2428,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: json
 
   /datasets/getRDFURLsForDataset/{id}:
@@ -2364,6 +2451,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/rdfUserMetadata/{id}:
     get:
@@ -2381,6 +2470,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/unfollow:
     post:
@@ -2565,6 +2656,46 @@ paths:
           description: OK
           content: {}
 
+  /datasets/:id/queueArchival:
+    post:
+      tags:
+        - datasets
+      summary: Queue up all files in a dataset to be marked as ARCHIVED
+      description: |
+        Queue up all files in a dataset to be marked as ARCHIVED
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /datasets/:id/queueUnarchival:
+    post:
+      tags:
+        - datasets
+      summary: Queue up all files in a dataset to be marked as PROCESSED
+      description: |
+        Queue up all files in a dataset to be marked as PROCESSED
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
+
   /collections/{coll_id}/getDatasets:
     get:
       tags:
@@ -2651,6 +2782,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/searchmetadata:
     post:
@@ -2704,6 +2837,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
     post:
       tags:
         - datasets
@@ -2727,6 +2862,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
       x-codegen-request-body-name: matadata.jsonld
     delete:
       tags:
@@ -2747,6 +2884,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/license:
     post:
@@ -2818,6 +2957,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/reindex:
     post:
@@ -2837,6 +2978,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/files:
     get:
@@ -2858,6 +3001,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
     post:
       tags:
         - datasets
@@ -2890,6 +3035,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/urls:
     post:
@@ -2918,6 +3065,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/moveFileToDataset:
     get:
@@ -2950,6 +3099,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{ds_id}/listAllFiles:
     get:
@@ -2966,6 +3117,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/removeTag:
     post:
@@ -3024,6 +3177,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/download:
     get:
@@ -3138,6 +3293,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/restore/{id}:
     put:
@@ -3156,6 +3313,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /datasets/{id}/tags/remove:
     post:
@@ -4056,6 +4215,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
     delete:
       tags:
         - spaces
@@ -4116,6 +4277,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /spaces/{id}/datasets:
     get:
@@ -4138,6 +4301,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /spaces/{id}/verify:
     put:
@@ -4196,6 +4361,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /spaces/{id}/acceptRequest:
     post:
@@ -4215,6 +4382,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /spaces/{spaceId}/removeCollection/{collectionId}:
     post:
@@ -4237,6 +4406,8 @@ paths:
         200:
           description: OK
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /spaces/{id}/updateUsers:
     post:
@@ -4269,6 +4440,8 @@ paths:
         400:
           description: rolesandusers data is missing from the updateUsers call.
           content: {}
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /spaces/canEdit:
     get:
