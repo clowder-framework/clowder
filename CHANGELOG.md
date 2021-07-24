@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## unreleased
+
+### Fixed
+- Collections created using api route are now indexed upon creation. [#257](https://github.com/clowder-framework/clowder/issues/257)
+
 ## 1.18.0 - 2021-07-08
 
 ### Added
