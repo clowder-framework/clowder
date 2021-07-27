@@ -273,7 +273,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/parameters/fileId'
+                  $ref: '#/components/schemas/UUID'
         '401':
           $ref: '#/components/responses/Unauthorized'
         404:
@@ -1239,6 +1239,7 @@ paths:
     post:
       tags:
         - files
+      summary: Removes a tag from a file
       parameters:
         - name: id
           in: path
@@ -2656,7 +2657,7 @@ paths:
           description: OK
           content: {}
 
-  /datasets/:id/queueArchival:
+  /datasets/{id}/queueArchival:
     post:
       tags:
         - datasets
@@ -2676,7 +2677,7 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
 
-  /datasets/:id/queueUnarchival:
+  /datasets/{id}/queueUnarchival:
     post:
       tags:
         - datasets
@@ -3320,6 +3321,7 @@ paths:
     post:
       tags:
         - datasets
+      summary: remove a tag from a dataset
       parameters:
         - name: id
           in: path
@@ -4116,6 +4118,7 @@ paths:
     post:
       tags:
         - collections
+      summary: Remove a dataset from a collection.
       parameters:
         - name: coll_id
           in: path
@@ -4142,6 +4145,7 @@ paths:
     post:
       tags:
         - collections
+      summary: remove a collection
       parameters:
         - name: coll_id
           in: path
@@ -5792,6 +5796,7 @@ paths:
     post:
       tags:
         - section
+      summary: remove a tag from a section
       parameters:
         - name: id
           in: path
@@ -6160,9 +6165,7 @@ paths:
           in: path
           required: true
           schema:
-            type: array
-            items:
-              $ref: '#/components/parameters/fileId'
+            type: string
       requestBody:
         content:
           application/json:
@@ -6197,6 +6200,9 @@ components:
   # Models                                                                     #
   ##############################################################################
   schemas:
+    UUID:
+      type: string
+      description: ID of an object
     File:
       type: object
       description: holds all information about a file
