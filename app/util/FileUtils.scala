@@ -399,7 +399,7 @@ object FileUtils {
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
     Future {
       try {
-        saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)).match {
+        saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)) match {
           case Some(fixedfile) => {
             processFileBytes(fixedfile, f.ref.file, dataset)
             files.setStatus(fixedfile.id, FileStatus.UPLOADED)
@@ -411,7 +411,7 @@ object FileUtils {
           case None => Logger.error(s"File was not saved for ${file.id}, saveFile returned None")
         }
       } catch {
-        case _: Throwable => Logger.error(s"Error (${_}), file was not saved for ${file.id}")
+        case e: Throwable => Logger.error(s"Error (${e}), file was not saved for ${file.id}")
       } finally {
         f.ref.clean()
       }
@@ -461,7 +461,7 @@ object FileUtils {
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
     Future {
       try {
-        saveURL(file, url, clowderurl, apiKey, Some(user)).match{
+        saveURL(file, url, clowderurl, apiKey, Some(user)) match{
           case Some(fixedfile) => {
             processFileBytes(fixedfile, new java.io.File(path), fileds)
             files.setStatus(fixedfile.id, FileStatus.UPLOADED)
@@ -469,9 +469,10 @@ object FileUtils {
             processDataset(file, fileds, folder, clowderurl, user, index, runExtractors, apiKey)
             files.setStatus(fixedfile.id, FileStatus.PROCESSED)
           }
+          case None => Logger.error(s"File was not saved for ${file.id}, saveFile returned None")
         }
       } catch {
-        case _: Throwable => Logger.error(s"Error (${_}), url was not saved for ${file.id}")
+        case e: Throwable => Logger.error(s"Error (${e}), file was not saved for ${file.id}")
       }
     }(fileExecutionContext)
 
