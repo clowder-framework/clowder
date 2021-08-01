@@ -134,10 +134,27 @@ line-height: 1.5;
     // submit metadata entry to server
     function submit_@id
     (event){
+        var fl = $(this).text();
+        var fd = $(this).data("description");
+        var fid = $(this).val();
+        var ft = $(this).data("type");
+        var addForm = document.getElementById("addMetadataBasic");
+        var v = document.getElementById("add-metadata-select");
+        console.log(v);
+        console.log(v.value);
+        console.log(addForm);
+
+        console.log('clicked! submit')
+        var fieldContext = $(this);
+        console.log(fieldContext.val());
+        var sel = fieldContext.find("option:selected").val();
+        console.log(sel);
         event.preventDefault();
         var field_label = $("#@id #addMetadataBasic #field-value").data("label");
         var field_id = $("#@id #addMetadataBasic #field-value").data("id");
         var field_type = $("#@id #addMetadataBasic #add-metadata-select option:selected").data("type");
+        var exp = $("#@id #addMetadataBasic #add-metadata-select option:selected").val();
+        console.log(exp, 'exp');
         var field_value = "";
         var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1,
             "datetime": 1, "wkt": 1, "annotation": 1};
@@ -479,6 +496,8 @@ line-height: 1.5;
                 var field_id = $(this).val();
                 var field_type = $(this).data("type");
                 var space_id = $(this).attr("space_id");
+                console.log('line 484')
+                console.log(field_label, field_description, field_id, field_type);
                 // Create the template and HTML content.
                 var template_map =
                     {"string": "add_metadata_string",
