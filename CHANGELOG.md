@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Updated swagger documentation
 
+### Changed
+- Added more information when writing files to make sure files are written correctly
+- Made cilogon group check debug message instead of error message
+
 ## 1.18.0 - 2021-07-08
 
 ### Added
