@@ -229,7 +229,7 @@ function loadExternalResource(field_label, field_description, field_id, field_ty
 
         request.fail(function (jqXHR, textStatus, errorThrown){
             console.error("The following error occured: " + textStatus, errorThrown);
-            notify("Could not retrieve external vocabulary: " + errorThrown, "error");
+            // notify("Could not retrieve external vocabulary: " + errorThrown, "error");
         });
     }
 
