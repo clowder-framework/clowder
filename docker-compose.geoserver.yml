@@ -49,45 +49,45 @@ services:
       - clowder
     restart: unless-stopped
 
-    extractor-geotiff-preview:
-      image: clowder/extractors-geotiff-previews:${VERSION:-latest}
-      networks:
-        - clowder
-      environment:
-        - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-        - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
-        - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
-        - PROXY_ON=${PROXY_ON}
-        - PROXY_HOST=${TRAEFIK_HOST}
-        - PROXY_URL=${PROXY_URL}
-        - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
-        - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
-        - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
-        - GEOSERVER_USER=${GEOSERVER_USER:-admin}
-        - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
-      depends_on:
-        - geoserver
-      restart: unless-stopped
+  extractor-geotiff-preview:
+    image: clowder/extractors-geotiff-previews:${VERSION:-latest}
+    networks:
+      - clowder
+    environment:
+      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
+      - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
+      - PROXY_ON=${PROXY_ON}
+      - PROXY_HOST=${TRAEFIK_HOST}
+      - PROXY_URL=${PROXY_URL}
+      - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
+      - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
+      - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
+      - GEOSERVER_USER=${GEOSERVER_USER:-admin}
+      - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
+    depends_on:
+      - geoserver
+    restart: unless-stopped
 
-    extractor-geotiff-metadata:
-      image: clowder/extractors-geotiff-metadata:${VERSION:-latest}
-      networks:
-        - clowder
-      environment:
-        - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-        - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
-        - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
-        - PROXY_ON=${PROXY_ON}
-        - PROXY_HOST=${TRAEFIK_HOST}
-        - PROXY_URL=${PROXY_URL}
-        - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
-        - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
-        - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
-        - GEOSERVER_USER=${GEOSERVER_USER:-admin}
-        - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
-      depends_on:
-        - geoserver
-      restart: unless-stopped
+  extractor-geotiff-metadata:
+    image: clowder/extractors-geotiff-metadata:${VERSION:-latest}
+    networks:
+      - clowder
+    environment:
+      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+      - RABBITMQ_EXCHANGE=${RABBITMQ_EXCHANGE:-clowder}
+      - REGISTRATION_ENDPOINTS=${REGISTRATION_ENDPOINTS}
+      - PROXY_ON=${PROXY_ON}
+      - PROXY_HOST=${TRAEFIK_HOST}
+      - PROXY_URL=${PROXY_URL}
+      - GEOSERVER_USERNAME=${GEOSERVER_USERNAME:-admin}
+      - GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
+      - GEOSERVER_WORKSPACE=${GEOSERVER_WORKSPACE}
+      - GEOSERVER_USER=${GEOSERVER_USER:-admin}
+      - GEOSERVER_URL=${GEOSERVER_URL:-http://geoserver:8080}
+    depends_on:
+      - geoserver
+    restart: unless-stopped
 
 networks:
   clowder:
