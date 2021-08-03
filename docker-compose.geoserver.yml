@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
 
   extractor-geotiff-preview:
-    image: clowder/extractors-geotiff-previews:${VERSION:-latest}
+    image: clowder/extractors-geotiff-previews:latest
     networks:
       - clowder
     environment:
@@ -70,7 +70,7 @@ services:
     restart: unless-stopped
 
   extractor-geotiff-metadata:
-    image: clowder/extractors-geotiff-metadata:${VERSION:-latest}
+    image: clowder/extractors-geotiff-metadata:latest
     networks:
       - clowder
     environment:
