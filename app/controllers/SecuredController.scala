@@ -2,14 +2,11 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.{ClowderUser, RequestResource, ResourceRef, User, UserStatus}
-import org.apache.commons.lang.StringEscapeUtils._
+import models.{ClowderUser, ResourceRef, User, UserStatus}
 import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
-import securesocial.core.IdentityProvider
-import securesocial.core.providers.utils.RoutesHelper
 
 import scala.concurrent.Future
 
@@ -156,7 +153,7 @@ trait SecuredController extends Controller {
         val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
         spaces.get(id) match {
           case None => Future.successful(BadRequest(views.html.notFound(spaceTitle + " does not exist.")(user)))
-          case Some(space) => Future.successful(Forbidden(views.html.spaces.space(space,List(),List(),List(),List(),"", Map(),List())(user)))
+          case Some(space) => Future.successful(Forbidden(views.html.spaces.space(space,List(),List(),List(),List(),"", Map(),List(),0)(user)))
         }
       }
 

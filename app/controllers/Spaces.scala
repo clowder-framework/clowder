@@ -167,23 +167,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         var creatorActual: User = null
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
         val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
-        val allDatasetsInSpace = datasets.listSpace(0, id.toString(), user)
-        var spaceBytes: Long = 0
-        for (ds <- allDatasetsInSpace){
-          val ds_files = ds.files
-          for (ds_f <- ds_files){
-            files.get(ds_f) match {
-              case Some(file) => {
-                files.getBytes(file.id) match {
-                  case Some((stream, name, filetype, bytes)) => {
-                    var current_bytes : Long = bytes
-                    spaceBytes += current_bytes
-                  }
-                }
-              }
-            }
-          }
-        }
+        var spaceBytes : Long = getBytesPerSpace(id, user.get)
         val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
         val usersInSpace = spaces.getUsersInSpace(id, None)
         var curationObjectsInSpace: List[CurationObject] = List()
@@ -232,7 +216,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           case None => List.empty
         }
         sinkService.logSpaceViewEvent(s, user)
-        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections))
+        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections, spaceBytes))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }
@@ -654,6 +638,27 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         }
         case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
+  }
+
+  private def getBytesPerSpace(spaceId: UUID, user: models.User) : Long = {
+    val allDatasetsInSpace = datasets.listSpace(0, spaceId.toString(), Some(user))
+    var spaceBytes: Long = 0
+    for (ds <- allDatasetsInSpace){
+      val ds_files = ds.files
+      for (ds_f <- ds_files){
+        files.get(ds_f) match {
+          case Some(file) => {
+            files.getBytes(file.id) match {
+              case Some((stream, name, filetype, bytes)) => {
+                var current_bytes : Long = bytes
+                spaceBytes += current_bytes
+              }
+            }
+          }
+        }
+      }
+    }
+    spaceBytes
   }
 
 }
