@@ -1,13 +1,37 @@
-@(space: ProjectSpace, spaceBytes: Long, classes: String)(implicit user: Option[models.User])
+@(space: ProjectSpace, spaceBytes: Long, classes: String, isPublic: Option[Boolean], spaceFiles: Integer)(implicit user: Option[models.User])
 
 @import play.api.i18n.Messages
 @import _root_.util.Formatters._
 <div class="@classes">
-    <div class="col-md-12 col-lg-12 col-sm-12">
-        <h3>Statistics</h3>
-        <p><span class="glyphicon glyphicon-user"></span> Members: @space.userCount</p>
-        <p><span class="glyphicon glyphicon-th-list"></span> Collections: @space.collectionCount</p>
-        <p><span class="glyphicon glyphicon-briefcase"></span> Datasets: @space.datasetCount</p>
-        <p><span class="badge pull-right">@humanReadableByteCount(spaceBytes)</span></p>
+    <div class="col-md-12" id="resources-panel-container">
+        <div class="panel panel-default" id="resources-panel" data-clampedwidth=".col-md-5">
+            <div class="panel-heading">
+                <h3 class="panel-title">Resources</h3>
+            </div>
+            <div class="panel-body">
+                <ul class="list-group">
+
+@*                    <li class="list-group-item" title="@humanReadableNumber(spacesCount) @Messages("spaces.title")">*@
+@*                        <a href="@routes.Spaces.list()">@Messages("spaces.title")<span class="badge pull-right">@humanReadableNumber(spacesCount)</span></a>*@
+@*                    </li>*@
+
+                    <li class="list-group-item" title="@humanReadableNumber(space.collectionCount) @Messages("collections.title")">
+                        <a href="@routes.Collections.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("collections.title") <span class="badge pull-right">@space.collectionCount</span></a>
+                    </li>
+                    <li class="list-group-item" title="@humanReadableNumber(space.datasetCount) @Messages("datasets.title")">
+                        <a href="@routes.Datasets.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("datasets.title") <span class="badge pull-right">@space.datasetCount</span></a>
+                    </li>
+                    <li class="list-group-item">
+                          Files: <span class="badge pull-right">@spaceFiles</span>
+                     </li>
+                    <li class="list-group-item" title="Total number of raw bytes stored.">
+                          Bytes <span class="badge pull-right">@humanReadableByteCount(spaceBytes)</span>
+                    </li>
+                    <li class="list-group-item">
+                          Users: <span class="badge pull-right">@space.userCount</span>
+                     </li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
