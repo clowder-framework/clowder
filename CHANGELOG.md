@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+- Changed space page to show bytes per space. [#119](https://github.com/clowder-framework/clowder/issues/119)
 
 ### Fixed
 - Added index for comments, will speed up index creation
