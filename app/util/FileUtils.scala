@@ -411,7 +411,7 @@ object FileUtils {
           case None => Logger.error(s"File was not saved for ${file.id}, saveFile returned None")
         }
       } catch {
-        case e: Throwable => Logger.error(s"Error (${e}), file was not saved for ${file.id}")
+        case e: Throwable => Logger.error(s"File was not saved for ${file.id}", e)
       } finally {
         f.ref.clean()
       }
@@ -472,7 +472,7 @@ object FileUtils {
           case None => Logger.error(s"File was not saved for ${file.id}, saveFile returned None")
         }
       } catch {
-        case e: Throwable => Logger.error(s"Error (${e}), file was not saved for ${file.id}")
+        case e: Throwable => Logger.error(s"File was not saved for ${file.id}", e)
       }
     }(fileExecutionContext)
 
