@@ -82,7 +82,7 @@ class Spaces @Inject()(spaces: SpaceService,
   def get(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     spaces.get(id) match {
       case Some(space) => Ok(spaceToJson(Utils.decodeSpaceElements(space)))
-      case None => BadRequest("Space not found")
+      case None => NotFound("Space not found")
     }
   }
 
@@ -210,7 +210,7 @@ class Spaces @Inject()(spaces: SpaceService,
           case (_, _) => NotFound
         }
       }
-      case None => BadRequest("User not supplied")
+      case None => NotFound("User not supplied")
     }
   }
 
@@ -303,14 +303,26 @@ class Spaces @Inject()(spaces: SpaceService,
 
 
   def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val datasetList = datasets.listSpace(limit, spaceId.stringify)
-    Ok(toJson(datasetList))
+    spaces.get(spaceId) match {
+      case Some(space) =>{
+        val datasetList = datasets.listSpace(limit, spaceId.stringify)
+        Ok(toJson(datasetList))
+      }
+      case None => NotFound(s"Space $spaceId not found.")
+    }
+
   }
 
 
   def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val collectionList = collectionService.listSpace(limit, spaceId.stringify)
-    Ok(toJson(collectionList))
+    spaces.get(spaceId) match {
+      case Some(space) =>  {
+        val collectionList = collectionService.listSpace(limit, spaceId.stringify)
+        Ok(toJson(collectionList))
+      }
+      case None => NotFound(s"Space $spaceId not found.")
+    }
+
   }
 
 
@@ -535,7 +547,7 @@ class Spaces @Inject()(spaces: SpaceService,
 
               Ok(Json.obj("status" -> "success"))
             }
-            case None => BadRequest(toJson("Errors: Could not find space"))
+            case None => NotFound(toJson("Errors: Could not find space"))
           }
         }
         case e: JsError => {
@@ -656,7 +668,7 @@ class Spaces @Inject()(spaces: SpaceService,
             }
             Ok(Json.obj("status" -> "success"))
           }
-          case None => InternalServerError("Request user not found")
+          case None => NotFound("Request user not found")
         }
       }
       case None => NotFound("Space not found")
@@ -680,7 +692,7 @@ class Spaces @Inject()(spaces: SpaceService,
             }
             Ok(Json.obj("status" -> "success"))
           }
-          case None => InternalServerError("Request user not found")
+          case None => NotFound("Request user not found")
         }
       }
       case None => NotFound("Space not found")
