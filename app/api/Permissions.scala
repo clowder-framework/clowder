@@ -29,6 +29,7 @@ object Permission extends Enumeration {
     DeleteDataset,
     EditDataset,
     PublicDataset,
+    ArchiveDataset,
     AddResourceToDataset,
     RemoveResourceFromDataset,
     ExecuteOnDataset,
@@ -120,7 +121,8 @@ object Permission extends Enumeration {
     CreateSensor, DeleteSensor, AddGeoStream, DeleteGeoStream, AddDatapoints,
     CreateRelation, ViewRelation, DeleteRelation,
     CreateVocabulary, DeleteVocabulary, EditVocabulary,
-    CreateVocabularyTerm, DeleteVocabularyTerm, EditVocabularyTerm
+    CreateVocabularyTerm, DeleteVocabularyTerm, EditVocabularyTerm,
+    ArchiveFile, ArchiveDataset
   )
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])

@@ -1,40 +1,34 @@
 package api
 
-import java.io._
-import java.io.{File => JFile}
-import java.net.URL
-import java.security.{DigestInputStream, MessageDigest}
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
-
+import _root_.util._
 import api.Permission.Permission
-import java.util.zip._
-
-import javax.inject.{Inject, Singleton}
+import controllers.Utils.https
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
-import play.api.Play.{configuration, current, routes}
+import play.api.Play.{configuration, current}
 import play.api.i18n.Messages
+import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.mvc.{Action, AnyContent, MultipartFormData, SimpleResult}
-import services._
-import _root_.util._
-import controllers.Utils.https
-import org.json.simple.{JSONArray, JSONObject => SimpleJSONObject}
-import org.json.simple.parser.JSONParser
-import play.api.libs.Files
-import play.api.libs.Files.TemporaryFile
+import play.api.libs.json._
+import play.api.mvc.{AnyContent, MultipartFormData, SimpleResult}
 import scalax.file.Path.createTempFile
+import services._
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.io._
+import java.net.URL
+import java.security.{DigestInputStream, MessageDigest}
+import java.text.SimpleDateFormat
+import java.util.zip._
+import java.util.{Calendar, Date}
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.{ListBuffer, Map => MutaMap}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -67,7 +61,7 @@ class  Datasets @Inject()(
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(d) => Ok(toJson(d))
-      case None => BadRequest(toJson(s"Could not find dataset with id [${id.stringify}]"))
+      case None => NotFound(toJson(s"Could not find dataset with id [${id.stringify}]"))
     }
   }
 
@@ -209,11 +203,11 @@ class  Datasets @Inject()(
             case Some(spaceId) =>
               spaces.get(UUID(spaceId)) match {
                 case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)), stats = new Statistics())
-                case None => BadRequest(toJson("Bad space = " + spaceId))
+                case None => NotFound(toJson("Bad space = " + spaceId))
               }
           }
         }
-        case None => InternalServerError("User Not found")
+        case None => NotFound("User Not found")
       }
       appConfig.incrementCount('datasets, 1)
 
@@ -254,7 +248,7 @@ class  Datasets @Inject()(
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
               }
-            case None => BadRequest(toJson("Bad file_id = " + file_id))
+            case None => NotFound(toJson("Bad file_id = " + file_id))
 
           }
         }
@@ -562,7 +556,7 @@ class  Datasets @Inject()(
 
             }
           }
-          case None => InternalServerError("User Not found")
+          case None => NotFound("User Not found")
         }
         events.addObjectEvent(request.user, d.id, d.name, EventType.CREATE_DATASET.toString)
 
@@ -605,7 +599,7 @@ class  Datasets @Inject()(
                 }
                 case None => {
                   Logger.error("Error getting dataset" + id)
-                  BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+                  NotFound(toJson(s"The given dataset id $id is not a valid ObjectId."))
                 }
               }
 
@@ -645,7 +639,7 @@ class  Datasets @Inject()(
             }
             case None => {
               Logger.error("Error getting dataset" + dsId)
-              BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+              NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
             }
           }
 
@@ -667,7 +661,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset" + id)
-        BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        NotFound(toJson(s"The given dataset id $id is not a valid ObjectId."))
       }
     }
   }
@@ -723,13 +717,13 @@ class  Datasets @Inject()(
           }
           case None => {
             Logger.error("Error getting file" + fileId)
-            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+            NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
           }
         }
       }
       case None => {
         Logger.error("Error getting dataset" + dsId)
-        BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+        NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
       }
     }
   }
@@ -816,19 +810,19 @@ class  Datasets @Inject()(
               }
               case None => {
                 Logger.error ("Error getting file" + fileId)
-                BadRequest (toJson (s"The given file id $fileId is not a valid ObjectId.") )
+                NotFound(toJson (s"The given file id $fileId is not a valid ObjectId.") )
               }
             }
           }
           case None => {
             Logger.error ("Error getting dataset" + toDatasetId)
-            BadRequest (toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
+            NotFound(toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
           }
         }
       }
       case None => {
         Logger.error ("Error getting dataset" + datasetId)
-        BadRequest (toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
+        NotFound(toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
       }
     }
   }
@@ -876,7 +870,7 @@ class  Datasets @Inject()(
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
       }
-      case None => Logger.error(s"Error getting dataset $id"); NotFound
+      case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
     }
   }
 
@@ -929,9 +923,10 @@ class  Datasets @Inject()(
               }
             }
           }
-          case None => Logger.error(s"Error getting dataset $id"); NotFound
+          case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
         }
      }
+
 
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
@@ -961,7 +956,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(metadataDefinitions.toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )))
       }
-      case None => BadRequest(toJson("The requested dataset does not exist"))
+      case None => NotFound(toJson("The requested dataset does not exist"))
     }
   }
 
@@ -980,7 +975,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id);
-        BadRequest(toJson("Error getting dataset  " + id))
+        NotFound(toJson("Error getting dataset  " + id))
       }
     }
   }
@@ -1005,7 +1000,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id)
-        BadRequest(toJson("Error getting dataset  " + id))
+        NotFound(toJson("Error getting dataset  " + id))
       }
     }
   }
@@ -1058,7 +1053,7 @@ class  Datasets @Inject()(
           Ok(toJson(list))
         }
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset" + id))
     }
   }
 
@@ -1095,7 +1090,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(list))
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset" + id))
     }
   }
 
@@ -1110,7 +1105,7 @@ class  Datasets @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -1126,7 +1121,7 @@ class  Datasets @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -1134,15 +1129,18 @@ class  Datasets @Inject()(
   private def getFilesWithinFolders(id: UUID, serveradmin: Boolean=false, max: Int = -1): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
     var resultCount = 0
+    var current_folder : Option[Folder] = None
     datasets.get(id) match {
       case Some(dataset) => {
-        folders.findByParentDatasetId(id).map { folder =>
+        folders.findByParentDatasetId(id).foreach { folder =>
+          current_folder = Some(folder)
           files.get(folder.files).found.foreach(file => {
             if (max < 0 || resultCount < max) {
-              output += jsonFile(file, serveradmin)
+              output += jsonFile(file, serveradmin, Some(folder))
               resultCount += 1
             }
           })
+          print("done with folder")
         }
       }
       case None => Logger.error(s"Error getting dataset $id")
@@ -1150,31 +1148,65 @@ class  Datasets @Inject()(
     output.toList
   }
 
-  def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
-    val defaultMap = Map(
-      "id" -> file.id.toString,
-      "filename" -> file.filename,
-      "contentType" -> file.contentType,
-      "date-created" -> file.uploadDate.toString(),
-      "size" -> file.length.toString)
 
-    // Only include filepath if using DiskByte storage and user is serverAdmin
-    val jsonMap = file.loader match {
-      case "services.filesystem.DiskByteStorageService" => {
-        if (serverAdmin)
-          Map(
-            "id" -> file.id.toString,
-            "filename" -> file.filename,
-            "filepath" -> file.loader_id,
-            "contentType" -> file.contentType,
-            "date-created" -> file.uploadDate.toString(),
-            "size" -> file.length.toString)
-        else
-          defaultMap
+  def jsonFile(file: models.File, serverAdmin: Boolean = false, folder : Option[Folder] = None): JsValue = {
+    folder match {
+      case Some(f) => {
+        val folderMap : JsValue = Json.obj("id"->f.id, "name"->f.name)
+        val defaultMap : JsValue = Json.obj(
+          "id" -> file.id.toString,
+          "filename" -> file.filename,
+          "contentType" -> file.contentType,
+          "date-created" -> file.uploadDate.toString(),
+          "folders"->folderMap,
+          "size" -> file.length.toString)
+
+        // Only include filepath if using DiskByte storage and user is serverAdmin
+        val jsonMap = file.loader match {
+          case "services.filesystem.DiskByteStorageService" => {
+            if (serverAdmin)
+              Json.obj(
+                "id" -> file.id.toString,
+                "filename" -> file.filename,
+                "filepath" -> file.loader_id,
+                "contentType" -> file.contentType,
+                "date-created" -> file.uploadDate.toString(),
+                "folders"->folderMap,
+                "size" -> file.length.toString)
+            else
+              defaultMap
+          }
+          case _ => defaultMap
+        }
+        toJson(jsonMap)
       }
-      case _ => defaultMap
+      case None => {
+        val defaultMap = Map(
+          "id" -> file.id.toString,
+          "filename" -> file.filename,
+          "contentType" -> file.contentType,
+          "date-created" -> file.uploadDate.toString(),
+          "size" -> file.length.toString)
+
+        // Only include filepath if using DiskByte storage and user is serverAdmin
+        val jsonMap = file.loader match {
+          case "services.filesystem.DiskByteStorageService" => {
+            if (serverAdmin)
+              Map(
+                "id" -> file.id.toString,
+                "filename" -> file.filename,
+                "filepath" -> file.loader_id,
+                "contentType" -> file.contentType,
+                "date-created" -> file.uploadDate.toString(),
+                "size" -> file.length.toString)
+            else
+              defaultMap
+          }
+          case _ => defaultMap
+        }
+        toJson(jsonMap)
+        }
     }
-    toJson(jsonMap)
   }
 
   //Update Dataset Information code starts
@@ -1805,16 +1837,19 @@ class  Datasets @Inject()(
               case Some(dataset) => {
                 events.addSourceEvent(request.user, comment.id, comment.text , dataset.id, dataset.name, EventType.ADD_COMMENT_DATASET.toString)
               }
+              case None => {
+                NotFound(s"The given id $id is not a valid ObjectId.")
+              }
             }
             Ok(comment.id.toString())
           }
           case None => {
             Logger.error("no text specified.")
-            BadRequest
+            BadRequest("no text specified.")
           }
         }
       }
-      case None => BadRequest
+      case None => NotFound(toJson("User not found!"))
     }
   }
 
@@ -1884,7 +1919,7 @@ class  Datasets @Inject()(
         Ok(toJson(Map("isBeingProcessed" -> isActivity)))
       }
       case None => {
-        Logger.error(s"Error getting dataset $id"); InternalServerError
+        Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
       }
     }
   }
@@ -1945,7 +1980,7 @@ class  Datasets @Inject()(
         Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
       }
       case None => {
-        Logger.error("Error getting dataset" + id); InternalServerError
+        Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset\" + id"))
       }
     }
   }
@@ -2019,7 +2054,7 @@ class  Datasets @Inject()(
           Ok(toJson(Map("status"->"success")))
         }
       }
-      case None => BadRequest("No dataset found with id " + id)
+      case None => NotFound("No dataset found with id " + id)
     }
   }
 
@@ -2034,10 +2069,10 @@ class  Datasets @Inject()(
 
             Ok(toJson(Map("status" -> "success")))
           }
-          case None => InternalServerError("Update Access failed")
+          case None => NotFound(s"Update Access failed. Dataset id $id not found.")
         }
       }
-      case None => BadRequest("No user supplied")
+      case None => NotFound("User not found")
     }
   }
 
@@ -2063,7 +2098,7 @@ class  Datasets @Inject()(
         val trashDatasets = datasets.listUserTrash(user,limit)
         Ok(toJson(trashDatasets))
       }
-      case None => BadRequest("No user supplied")
+      case None => NotFound("User not found")
     }
   }
 
@@ -2092,7 +2127,7 @@ class  Datasets @Inject()(
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
           }
-          case None => BadRequest(toJson("Dataset not found " + id))
+          case None => NotFound(toJson("Dataset not found " + id))
         }
       }
       case _ => Ok("RDF export plugin not enabled")
@@ -2133,7 +2168,7 @@ class  Datasets @Inject()(
           case Some(listJson) => {
             Ok(listJson)
           }
-          case None => Logger.error(s"Error getting dataset $id"); InternalServerError
+          case None => Logger.error(s"Error getting dataset $id");NotFound(s"Error getting dataset $id")
         }
       }
       case false => {
@@ -2150,7 +2185,7 @@ class  Datasets @Inject()(
           .map(JSONLD.jsonMetadataWithContext(_) \ "content")
         Ok(toJson(listOfMetadata))
       }
-      case None => Logger.error("Error finding dataset" + id); InternalServerError
+      case None => Logger.error("Error finding dataset" + id); NotFound("Error finding dataset" + id)
     }
   }
 
@@ -2159,7 +2194,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         Ok(datasets.getXMLMetadataJSON(id))
       }
-      case None => {Logger.error("Error finding dataset" + id); InternalServerError}
+      case None => {Logger.error("Error finding dataset" + id); NotFound("Error finding dataset" + id)}
     }
   }
 
@@ -2169,8 +2204,7 @@ class  Datasets @Inject()(
         Ok(datasets.getUserMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding dataset" + id);
-        InternalServerError
+        Logger.error("Error finding dataset" + id);NotFound("Error finding dataset" + id)
       }
 
     }
@@ -2951,13 +2985,13 @@ class  Datasets @Inject()(
                     case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
                   }
                 }
-                case None => BadRequest(s"No space found with id: + $spaceId.")
+                case None => NotFound(s"No space found with id: + $spaceId.")
               }
             } else {
               BadRequest("You don't have permission to copy the dataset.")
             }
           }
-          case None => BadRequest(s"No dataset  found with id: $datasetId")
+          case None => NotFound(s"No dataset  found with id: $datasetId")
         }
       }
       case None => BadRequest("You need to be logged in to copy a dataset to a space.")
@@ -3075,6 +3109,51 @@ class  Datasets @Inject()(
       case None => NotFound(s"Error: No dataset with $id found.")
     }
 
+  }
+
+  /**
+   * Recursively submit requests to archive the contents of the given dataset
+   * @param id dataset to archive
+   * @return
+   */
+  def queueArchival(id: UUID) = PermissionAction(Permission.ArchiveDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    val reqParams = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+    val parameters = reqParams + FileService.ARCHIVE_PARAMETER
+    datasets.get(id) match {
+      case Some(ds) => {
+        val host = Utils.baseUrl(request)
+        datasets.recursiveArchive(ds, host, parameters, request.apiKey, request.user)
+        sinkService.logDatasetArchiveEvent(ds, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting dataset " + id)
+        NotFound("Error getting dataset " + id)
+      }
+    }
+  }
+
+
+  /**
+   * Recursively submit requests to unarchive the contents of the given dataset
+   * @param id dataset to unarchive
+   * @return
+   */
+  def queueUnarchival(id: UUID) = PermissionAction(Permission.ArchiveDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    val reqParams = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+    val parameters = reqParams + FileService.UNARCHIVE_PARAMETER
+    datasets.get(id) match {
+      case Some(ds) => {
+        val host = Utils.baseUrl(request)
+        datasets.recursiveArchive(ds, host, parameters, request.apiKey, request.user)
+        sinkService.logDatasetUnarchiveEvent(ds, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting dataset " + id)
+        NotFound("Error getting dataset " + id)
+      }
+    }
   }
 }
 
