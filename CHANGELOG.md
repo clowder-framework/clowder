@@ -18,6 +18,7 @@ If any files are returned, you should check to see if these files affected and a
 - When zip file is uploaded, it will parse the file to check if it is a valid zip file, this couuld result in files not stored in final storage space [#264](https://github.com/clowder-framework/clowder/issues/264)
 - Updated swagger documentation
 - Return 404 not found when calling file/dataset/space api endpoints with an invalid ID [#251](https://github.com/clowder-framework/clowder/issues/251)
+- Line breaks in welcome message breaks swagger build [#187](https://github.com/clowder-framework/clowder/issues/187)
 
 ### Changed
 - Added more information when writing files to make sure files are written correctly
