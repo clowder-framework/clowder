@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 This release fixes a critical issue where invalid zip files could result in the files not being uploaded correctly. To check to see if you are affected, please use the following query:
 
 ```
- db.uploads.find({"status": "CREATED", "contentType": "multi/files-zipped"})
+db.uploads.find({"status": "CREATED", "contentType": "application/x-zip-compressed"}, {"author.fullName": 1, "author.email": 1, "filename": 1, "uploadDate": 1, "length": 1})
 ```
 
 If any files are returned, you should check to see if these files affected and are missing from clowder.
