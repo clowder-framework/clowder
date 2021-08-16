@@ -4,26 +4,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
-- Added folder and folder id to api datasets files list [#34](https://github.com/clowder-framework/clowder/issues/34)
+## 1.18.1 - 2021-08-16
 
-### Added
-- Ability to queue archive / unarchive for full datasets.
+This release fixes a critical issue where invalid zip files could result in the files not being uploaded correctly. To check to see if you are affected, please use the following query:
+
+```
+db.uploads.find({"status": "CREATED", "contentType": "application/x-zip-compressed"}, {"author.fullName": 1, "author.email": 1, "filename": 1, "uploadDate": 1, "length": 1})
+```
+
+If any files are returned, you should check to see if these files affected and are missing from clowder.
 
 ### Fixed
-- RabbitMQ will not use connection if None exists
-- previews returns 404 if preview is not found
-- When uploading a file, it would ignore any extractors marked disabled at the space level. [#246](https://github.com/clowder-framework/clowder/issues/246)
-- Added index for comments, will speed up index creation
-- If using S3 storage in docker, it was not reflected correctly in the docker-compose file
+- When zip file is uploaded, it will parse the file to check if it is a valid zip file, this couuld result in files not stored in final storage space [#264](https://github.com/clowder-framework/clowder/issues/264)
+- Updated swagger documentation
+- Return 404 not found when calling file/dataset/space api endpoints with an invalid ID [#251](https://github.com/clowder-framework/clowder/issues/251)
 - Line breaks in welcome message breaks swagger build [#187](https://github.com/clowder-framework/clowder/issues/187)
 
+### Changed
+- Added more information when writing files to make sure files are written correctly
+- Made cilogon group check debug message instead of error message
+
+## 1.18.0 - 2021-07-08
+
 ### Added
-- Status endpoint will now show what storage is used
-- `GET /api/files/bulkRemove` now returns status of files deleted, not found, no permission, errors.
+- Added folder and folder id to API call `GET /api/datasets/:id/files`. [#34](https://github.com/clowder-framework/clowder/issues/34)
+- Ability to queue archive / unarchive for full datasets.
+- API status endpoint `GET /api/status` will now show what storage type is used and for superadmins will show more 
+  information about the backend storage. 
+- `GET /api/files/bulkRemove` now returns status of files deleted, not found, no permission, or errors.
 
 ### Fixed
-- Docker image for mongo-init now based on python:3.7-slim reduces size
+- When uploading a file, any extractors marked disabled at the space level would be ignored. [#246](https://github.com/clowder-framework/clowder/issues/246)
+- RabbitMQ will not use connection if it does not exist.
+- Previews returns 404 if preview is not found `GET /api/previews/:id`.
+- Added index for comments, will speed up index creation.
+- If using S3 storage in docker, it was not reflected correctly in the docker-compose file.
+- Docker image for mongo-init now based on python:3.7-slim to reduce size.
 
 ## 1.17.0 - 2021-04-29
 
