@@ -195,7 +195,7 @@ In the screenshot above you can see the lines printed out by the logging.info as
 Additional pyClowder Examples
 ##############################
 
-For a simple example of an extractor, please refer to `extractor-csv <https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-csv/browse>`_. This extractor is submitted on a csv file and returns the headers as metadata.
+For a simple example of an extractor, please refer to `extractor-csv <https://github.com/clowder-framework/extractors-csv>`_. This extractor is submitted on a csv file and returns the headers as metadata.
 
 .. container:: imagepadding
     .. image:: /_static/ug_extractors-1.png
