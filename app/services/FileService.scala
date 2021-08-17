@@ -54,7 +54,7 @@ trait FileService {
   /**
    * Remove the file from mongo
    */
-  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User])
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]) : Boolean
 
   /**
    * List all files in the system.
@@ -244,7 +244,7 @@ trait FileService {
 
   def incrementViews(id: UUID, user: Option[User]): (Int, Date)
 
-  def incrementDownloads(id: UUID, user: Option[User])
+  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = false)
 
   def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File]
 

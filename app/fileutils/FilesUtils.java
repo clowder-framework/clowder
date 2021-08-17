@@ -71,8 +71,8 @@ public class FilesUtils {
             if(allPTMsFlag.equals("found"))
             	return "multi/files-ptm-zipped";
             
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		} catch (Throwable e) {
+			Logger.error("Could not read zipfile", e);
 			return ("ERROR: " + e.getMessage());
 		}		
 		return mainFileType;
