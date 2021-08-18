@@ -154,16 +154,16 @@ class  Datasets @Inject()(
     */
   private def listDatasets(when: Option[String], title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
     (when, title, date) match {
-      case (Some(when), Some(t), Some(d)) => {
-        datasets.listAccess(d, nextPage=(when=="a"), limit, t, permission, user, superAdmin, true,false, exact)
+      case (Some(w), Some(t), Some(d)) => {
+        datasets.listAccess(d, nextPage=(w=="a"), limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (Some(when), Some(t), None) => {
+      case (Some(w), Some(t), None) => {
         datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (Some(when), None, Some(d)) => {
-        datasets.listAccess(d, nextPage=(when=="a"), limit, permission, user, superAdmin, true,false)
+      case (Some(w), None, Some(d)) => {
+        datasets.listAccess(d, nextPage=(w=="a"), limit, permission, user, superAdmin, true,false)
       }
-      case (Some(when), None, None) => {
+      case (Some(w), None, None) => {
         datasets.listAccess(limit, permission, user, superAdmin, true,false)
       }
       // default when to be "after" if not present in parameters. i.e. nextPage=true
