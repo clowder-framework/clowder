@@ -555,8 +555,8 @@ GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id       
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/datasets                                                            @api.Datasets.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
-GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/datasets                                                            @api.Datasets.list(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 GET            /api/datasets/moveFileToDataset                                          @api.Datasets.listMoveFileToDataset(file_id: UUID, title: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
