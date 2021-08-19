@@ -4,11 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
-- Changed space page to show bytes per space. [#119](https://github.com/clowder-framework/clowder/issues/119)
+## unreleased
 
 ### Fixed
-- Added index for comments, will speed up index creation
+- Updated swagger documentation
+- Return 404 not found when calling file/dataset/space api endpoints with an invalid ID [#251](https://github.com/clowder-framework/clowder/issues/251)
+
+## 1.18.0 - 2021-07-08
+
+### Added
+- Added folder and folder id to API call `GET /api/datasets/:id/files`. [#34](https://github.com/clowder-framework/clowder/issues/34)
+- Ability to queue archive / unarchive for full datasets.
+- API status endpoint `GET /api/status` will now show what storage type is used and for superadmins will show more 
+  information about the backend storage. 
+- `GET /api/files/bulkRemove` now returns status of files deleted, not found, no permission, or errors.
+
+### Fixed
+- When uploading a file, any extractors marked disabled at the space level would be ignored. [#246](https://github.com/clowder-framework/clowder/issues/246)
+- RabbitMQ will not use connection if it does not exist.
+- Previews returns 404 if preview is not found `GET /api/previews/:id`.
+- Added index for comments, will speed up index creation.
+- If using S3 storage in docker, it was not reflected correctly in the docker-compose file.
+- Docker image for mongo-init now based on python:3.7-slim to reduce size.
 
 ## 1.17.0 - 2021-04-29
 

@@ -289,6 +289,34 @@ class EventSinkService {
       "size" -> file.length
     ))
   }
+
+  def logDatasetArchiveEvent(ds: Dataset, archiver: Option[User]) = {
+    logEvent(Json.obj(
+      "category" -> "archive",
+      "type" -> "dataset",
+      "resource_id" -> ds.id,
+      "resource_name" -> ds.name,
+      "author_id" -> ds.author.id,
+      "author_name" -> ds.author.fullName,
+      "user_id" -> archiver.get.id,
+      "user_name" -> archiver.get.getMiniUser.fullName,
+      "size" -> (ds.files.length + ds.folders.length)
+    ))
+  }
+
+  def logDatasetUnarchiveEvent(ds: Dataset, unarchiver: Option[User]) = {
+    logEvent(Json.obj(
+      "category" -> "unarchive",
+      "type" -> "dataset",
+      "resource_id" -> ds.id,
+      "resource_name" -> ds.name,
+      "author_id" -> ds.author.id,
+      "author_name" -> ds.author.fullName,
+      "user_id" -> unarchiver.get.id,
+      "user_name" -> unarchiver.get.getMiniUser.fullName,
+      "size" -> (ds.files.length + ds.folders.length)
+    ))
+  }
 }
 
 //case class EventSinkMessage(created: Long, category: String, metadata: JsValue)

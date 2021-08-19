@@ -1,6 +1,7 @@
 package services
 
-import models.{DBResult, TypedID, UUID, Folder}
+import models.{DBResult, Folder, TypedID, UUID, User}
+import play.api.libs.json.JsObject
 /**
  * Generic Folder Service
  */
@@ -96,4 +97,9 @@ trait FolderService {
     * Get all the folders in a list of parent datasettIds. It helps to identify the files that a user has access to.
     */
   def findByParentDatasetIds(parentIds: List[UUID]): List[Folder]
+
+  /**
+   * Archive all files and subfolders within this folder.
+   */
+  def recursiveArchive(folder: Folder, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User]): Unit
 }
