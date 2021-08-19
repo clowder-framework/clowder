@@ -1068,6 +1068,17 @@ class MongoDBDatasetService @Inject() (
     Dataset.find(MongoDBObject("userMetadataWasModified" -> true)).toList
   }
 
+  def getBytesPerDataset(datasetId: UUID) : Long = {
+    val dataset = Dataset.findOneById(new ObjectId(datasetId.stringify)).get
+    val datasetFiles = dataset.files
+    var datasetBytes : Long = 0
+    datasetFiles.foreach{ f => {
+      val currentFileBytes = files.get(f).get.length
+      datasetBytes += currentFileBytes
+    }}
+    datasetBytes
+  }
+
   def removeTag(id: UUID, tagId: UUID) {
     Logger.debug("Removing tag " + tagId)
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)

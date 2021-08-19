@@ -295,6 +295,8 @@ trait DatasetService {
 
   def findMetadataChangedDatasets(): List[Dataset]
 
+  def getBytesForDataset(datasetId: UUID) : Long
+
   /**
    * Check recursively whether a dataset's user-input metadata match a requested search tree.
    */
