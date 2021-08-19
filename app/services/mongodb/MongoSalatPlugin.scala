@@ -514,7 +514,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         val spacename = java.net.InetAddress.getLocalHost.getHostName
         val newspace = new ProjectSpace(name = spacename, description = "", created = new Date(), creator = UUID("000000000000000000000000"),
           homePage = List.empty[URL], logoURL = None, bannerURL = None, metadata = List.empty[Metadata],
-          collectionCount = collections.toInt, datasetCount = datasets.toInt, userCount = users.toInt)
+          collectionCount = collections.toInt, datasetCount = datasets.toInt, userCount = users.toInt, spaceBytes = 0)
         ProjectSpaceDAO.save(newspace)
         val spaceId = new ObjectId(newspace.id.stringify)
 
