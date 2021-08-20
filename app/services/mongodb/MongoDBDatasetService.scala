@@ -1068,7 +1068,7 @@ class MongoDBDatasetService @Inject() (
     Dataset.find(MongoDBObject("userMetadataWasModified" -> true)).toList
   }
 
-  def getBytesPerDataset(datasetId: UUID) : Long = {
+  def getBytesForDataset(datasetId: UUID) : Long = {
     val dataset = Dataset.findOneById(new ObjectId(datasetId.stringify)).get
     val datasetFiles = dataset.files
     var datasetBytes : Long = 0
