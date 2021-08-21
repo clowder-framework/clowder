@@ -378,6 +378,14 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
+  def incrementSpaceBytes(space: UUID, increment: Long ): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> increment), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def decrementSpaceBytes(space: UUID, decrement: Long): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> decrement), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
   def removeCollection(collection:UUID, space:UUID): Unit = {
     log.debug(s"Space Service - removing $collection from $space")
     collections.removeFromSpace(collection, space)
