@@ -390,7 +390,9 @@ class MongoDBSpaceService @Inject() (
    */
   def addDataset(dataset: UUID, space: UUID): Unit = {
     log.debug(s"Space Service - Adding $dataset to $space")
+    val datasetBytes = datasets.getBytesForDataset(dataset)
     datasets.addToSpace(dataset, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> datasetBytes), upsert=false, multi=false, WriteConcern.Safe)
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
 
   }
@@ -404,6 +406,8 @@ class MongoDBSpaceService @Inject() (
   def removeDataset(dataset:UUID, space:UUID): Unit = {
     log.debug(s"Space Service - removing $dataset from $space")
     datasets.removeFromSpace(dataset, space)
+    val datasetBytes = datasets.getBytesForDataset(dataset)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> -datasetBytes), upsert=false, multi=false, WriteConcern.Safe)
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
