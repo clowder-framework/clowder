@@ -340,7 +340,7 @@
             updateSelectedCount(response.length);
         });
         request.fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             if (errorThrown != "Unauthorized") {
                 notify("Could not get selections: " + errorThrown, "error");
             }
@@ -385,7 +385,7 @@
             location.reload()
         });
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             notify("Could not delete selections: " + errorThrown, "error");
         });
     }
@@ -407,7 +407,7 @@
             location.reload()
         });
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             notify("Could not clear selections: " + errorThrown, "error");
         });
     }
@@ -458,7 +458,7 @@
                 notify("Tag(s) successfully added.", "success", false, 2000);
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
                 notify("Could not tag selections: " + errorThrown, "error");
             });
 

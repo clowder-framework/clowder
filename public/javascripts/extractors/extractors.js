@@ -20,7 +20,7 @@ function cancelSubmission(id, submit_id, extractor_id, extractType) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
     });
 }
 
@@ -136,7 +136,7 @@ function saveExtractorsLabel(label) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var operation = label.id ? "update" : "create";
         var specificError = jqXHR.responseText;
         var msg = "Failed to " + operation + " label: " + specificError;
@@ -158,7 +158,7 @@ function deleteExtractorsLabel(id) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var specificError = jqXHR.responseText;
         var msg = "Failed to delete label: " + specificError
         notify(msg, "error");

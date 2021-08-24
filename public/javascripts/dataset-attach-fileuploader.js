@@ -32,7 +32,7 @@ $(function () {
 			});
 
 			request.fail(function (jqXHR, textStatus, errorThrown){
-				console.error("The following error occured: "+textStatus, errorThrown);
+				console.error("The following error occurred: "+textStatus, errorThrown);
 				var errMsg = "You must be logged in to add a dataset to a collection.";
 				if (!checkErrorAndRedirect(jqXHR, errMsg)) {
 					notify("The fileset message was not generated due to : " + errorThrown, "error");
