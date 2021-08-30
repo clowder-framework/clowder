@@ -93,6 +93,9 @@ object ApplicationBuild extends Build {
     // geostreams
     "org.postgresql" % "postgresql" % "42.1.1",
 
+    // playguard rate limiting
+    "com.digitaltangible" %% "play-guard" % "1.4.1" exclude("com.typesafe.play", "play_2.10"),
+
     // Find listing of previewers/stylesheets at runtime
     //  servlet is needed here since it is not specified in org.reflections.
     "javax.servlet" % "servlet-api" % "2.5",

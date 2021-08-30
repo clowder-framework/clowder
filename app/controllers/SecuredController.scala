@@ -13,6 +13,8 @@ import securesocial.core.providers.utils.RoutesHelper
 
 import scala.concurrent.Future
 
+import com.digitaltangible.playguard._
+
 /**
  * Action builders check permissions in controller calls. When creating a new endpoint, pick one of the actions defined below.
  *
@@ -63,6 +65,19 @@ trait SecuredController extends Controller {
       }
     }
   }
+
+  /** define rate limit action 
+
+  val ipRateLimitFilter = IpRateLimitFilter[UserRequest](
+    new RateLimiter(3, 1f / 5, "Limit by IP address", { r: RequestHeader =>
+      Future.successful(TooManyRequests(s"""rate limit for ${r.remoteAddress} exceeded"""))
+    }
+  )
+ 
+  def limitByIpAction: Action[Anycontent] = (AuthenticatedAction andThen ipRateLimitFilter) {
+    Ok("limited by IP")
+  }
+  */
 
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {

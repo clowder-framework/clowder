@@ -103,6 +103,7 @@ class Users @Inject() (users: UserService, appConfig: AppConfigurationService) e
   /**
    *  Gets the users ordered by UserId.
    */
+   // def getUsers(when: String, id: String, limit: Int) = limitbyIpAction { implicit request =>
   def getUsers(when: String, id: String, limit: Int) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
