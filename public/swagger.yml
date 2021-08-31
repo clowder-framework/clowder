@@ -1768,6 +1768,22 @@ paths:
         - datasets
       summary: List all datasets the user can view
       description: This will check for Permission.ViewDataset
+      parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -2622,6 +2638,22 @@ paths:
       description: |
         This will check for Permission.AddResourceToDataset and
         Permission.EditDataset
+      parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: OK
@@ -3346,6 +3378,11 @@ paths:
         view permission
       description: Collections are groupings of datasets
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           description: The title/ name of colletions
@@ -3497,6 +3534,11 @@ paths:
         This will check for Permission.AddResourceToCollection and
         Permission.EditCollection
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: currentCollectionId
           in: query
           required: true
@@ -3595,6 +3637,11 @@ paths:
         This will check for Permission.AddResourceToCollection and
         Permission.EditCollection
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           schema:
@@ -4092,6 +4139,11 @@ paths:
       summary: List all collections the user can view
       description: This will check for Permission.ViewCollection
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           schema:
@@ -4168,6 +4220,11 @@ paths:
       summary: List spaces the user can view
       description: Retrieves information about spaces
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           schema:
@@ -4454,6 +4511,25 @@ paths:
       summary: List spaces the user can add to
       description: Retrieves a list of spaces that the user has permission to add
         to
+      parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
       responses:
         200:
           description: OK
