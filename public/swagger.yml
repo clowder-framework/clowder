@@ -1784,6 +1784,15 @@ paths:
           required: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: The number of collections returns, default as 12.
+          schema:
+            type: integer
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -2654,6 +2663,15 @@ paths:
           required: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: The number of collections returns, default as 12.
+          schema:
+            type: integer
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
