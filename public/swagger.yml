@@ -3805,6 +3805,11 @@ paths:
         the dataset in this space, otherwise list all possiable collections
       description: Collections are groupings of datasets
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: coll_id
           in: path
           required: true
