@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Typos "success" when returning status from API and "occurred" when logging to console.
 
+### Added
+- Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+
 ## 1.18.1 - 2021-08-16
 
 This release fixes a critical issue where invalid zip files could result in the files not being uploaded correctly. To check to see if you are affected, please use the following query:
@@ -24,6 +27,7 @@ If any files are returned, you should check to see if these files affected and a
 - Updated swagger documentation
 - Return 404 not found when calling file/dataset/space api endpoints with an invalid ID [#251](https://github.com/clowder-framework/clowder/issues/251)
 - Line breaks in welcome message breaks swagger build [#187](https://github.com/clowder-framework/clowder/issues/187)
+- Collections created using api route are now indexed upon creation. [#257](https://github.com/clowder-framework/clowder/issues/257)
 
 ### Changed
 - Added more information when writing files to make sure files are written correctly

@@ -1,32 +1,28 @@
 package api
 
-import java.io.{ByteArrayInputStream, InputStream, ByteArrayOutputStream}
-import java.security.{DigestInputStream, MessageDigest}
-import java.text.SimpleDateFormat
-import java.util.zip.{ZipEntry, ZipOutputStream, Deflater}
-
 import Iterators.RootCollectionIterator
-import _root_.util.JSONLD
+import util.SearchUtils
 import api.Permission.Permission
-import org.apache.commons.codec.binary.Hex
+import controllers.Utils
+import models._
 import play.api.Logger
 import play.api.Play.current
-import models._
-import play.api.libs.iteratee.Enumerator
-import services._
-import play.api.libs.json._
-import play.api.libs.json.{JsObject, JsValue}
-import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject}
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Future, ExecutionContext}
 import play.api.libs.concurrent.Execution.Implicits._
-import scala.util.parsing.json.JSONArray
-import scala.util.{Try, Success, Failure}
-import java.util.{Calendar, Date}
-import controllers.Utils
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.Json.toJson
+import play.api.libs.json.{JsObject, JsValue, _}
+import services._
 
+
+import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
+import java.util.zip.{Deflater, ZipOutputStream}
+import java.util.{Calendar, Date}
+import javax.inject.{Inject, Singleton}
 import scala.collection.immutable.List
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -72,6 +68,13 @@ class Collections @Inject() (datasets: DatasetService,
                 collections.addToRootSpaces(c.id, s.id)
                 events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               })
+              // index collection
+              current.plugin[ElasticsearchPlugin].foreach{
+                _.index(SearchUtils.getElasticsearchObject(c))
+              }
+              //Add to Events Table
+              val option_user = userService.findByIdentity(identity)
+              events.addObjectEvent(option_user, c.id, c.name, EventType.CREATE_COLLECTION.toString)
               Ok(toJson(Map("id" -> id)))
             }
             case None => Ok(toJson(Map("status" -> "error")))
@@ -237,15 +240,15 @@ class Collections @Inject() (datasets: DatasetService,
     }
   }
 
-  def list(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-    Ok(toJson(listCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.user.fold(false)(_.superAdminMode), exact)))
+  def list(when: Option[String], title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+    Ok(toJson(listCollections(when, title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-    Ok(toJson(listCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode), exact)))
+  def listCanEdit(when: Option[String], title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+    Ok(toJson(listCollections(when, title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def addDatasetToCollectionOptions(datasetId: UUID, title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+  def addDatasetToCollectionOptions(when: Option[String], datasetId: UUID, title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     var listAll = false
     var collectionList: List[Collection] = List.empty
@@ -265,7 +268,7 @@ class Collections @Inject() (datasets: DatasetService,
       }
     }
     if(listAll) {
-      collectionList = listCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode), exact)
+      collectionList = listCollections(when, title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode), exact)
     }
     Ok(toJson(collectionList))
   }
@@ -274,10 +277,10 @@ class Collections @Inject() (datasets: DatasetService,
     collections.get(current_collections.map(_.child_collection_ids).flatten).found
   }
 
-  def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+  def listPossibleParents(when: Option[String], currentCollectionId : String, title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
     val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
     val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
-    val allCollections = listCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false,
+    val allCollections = listCollections(when, title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false,
       request.user, request.user.fold(false)(_.superAdminMode), exact)
     val possibleNewParents = allCollections.filter(c =>
       if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
@@ -303,29 +306,55 @@ class Collections @Inject() (datasets: DatasetService,
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def listCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Collection] = {
+  private def listCollections(when: Option[String], title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Collection] = {
     if (mine && user.isEmpty) return List.empty[Collection]
 
-    (title, date) match {
-      case (Some(t), Some(d)) => {
+    (when, title, date) match {
+      case (Some(w), Some(t), Some(d)) => {
         if (mine)
-          collections.listUser(d, true, limit, t, user, superAdmin, user.get, exact)
+          collections.listUser(d, nextPage=(w=="a"), limit, t, user, superAdmin, user.get, exact)
         else
-          collections.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
+          collections.listAccess(d, nextPage=(w=="a"), limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (Some(t), None) => {
+      case (Some(w), Some(t), None) => {
         if (mine)
           collections.listUser(limit, t, user, superAdmin, user.get, exact)
         else
           collections.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (None, Some(d)) => {
+      case (Some(w), None, Some(d)) => {
+        if (mine)
+          collections.listUser(d, nextPage=(w=="a"), limit, user, superAdmin, user.get)
+        else
+          collections.listAccess(d, nextPage=(w=="a"), limit, permission, user, superAdmin, true,false)
+      }
+       case (Some(w), None, None) => {
+        if (mine)
+          collections.listUser(limit, user, superAdmin, user.get)
+        else
+          collections.listAccess(limit, permission, user, superAdmin, true,false)
+      }
+
+      // default when to be "after" if not present in parameters. i.e. nextPage=true
+      case (None, Some(t), Some(d)) => {
+        if (mine)
+          collections.listUser(d, true, limit, t, user, superAdmin, user.get, exact)
+        else
+          collections.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
+      }
+      case (None, Some(t), None) => {
+        if (mine)
+          collections.listUser(limit, t, user, superAdmin, user.get, exact)
+        else
+          collections.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
+      }
+      case (None, None, Some(d)) => {
         if (mine)
           collections.listUser(d, true, limit, user, superAdmin, user.get)
         else
           collections.listAccess(d, true, limit, permission, user, superAdmin, true,false)
       }
-       case (None, None) => {
+      case (None, None, None) => {
         if (mine)
           collections.listUser(limit, user, superAdmin, user.get)
         else
@@ -571,6 +600,14 @@ class Collections @Inject() (datasets: DatasetService,
                   collections.addToRootSpaces(c.id, s.id)
                   events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               }
+
+              // index collection
+              current.plugin[ElasticsearchPlugin].foreach{
+                _.index(SearchUtils.getElasticsearchObject(c))
+              }
+              //Add to Events Table
+              val option_user = userService.findByIdentity(identity)
+              events.addObjectEvent(option_user, c.id, c.name, EventType.CREATE_COLLECTION.toString)
 
               //do stuff with parent here
               (request.body \"parentId").asOpt[String] match {
