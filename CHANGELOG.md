@@ -4,11 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## unreleased
+## 1.18.1 - 2021-08-16
+
+This release fixes a critical issue where invalid zip files could result in the files not being uploaded correctly. To check to see if you are affected, please use the following query:
+
+```
+db.uploads.find({"status": "CREATED", "contentType": "application/x-zip-compressed"}, {"author.fullName": 1, "author.email": 1, "filename": 1, "uploadDate": 1, "length": 1})
+```
+
+If any files are returned, you should check to see if these files affected and are missing from clowder.
 
 ### Fixed
+- When zip file is uploaded, it will parse the file to check if it is a valid zip file, this couuld result in files not stored in final storage space [#264](https://github.com/clowder-framework/clowder/issues/264)
 - Updated swagger documentation
 - Return 404 not found when calling file/dataset/space api endpoints with an invalid ID [#251](https://github.com/clowder-framework/clowder/issues/251)
+- Line breaks in welcome message breaks swagger build [#187](https://github.com/clowder-framework/clowder/issues/187)
+
+### Changed
+- Added more information when writing files to make sure files are written correctly
+- Made cilogon group check debug message instead of error message
 
 ## 1.18.0 - 2021-07-08
 
