@@ -9,7 +9,7 @@ info:
     Clowder is a customizable and scalable data management system to support any
     data format and multiple research domains. It is under active development
     and deployed for a variety of research projects.
-  version: 1.18.0
+  version: 1.18.1
   termsOfService: https://clowder.ncsa.illinois.edu/clowder/tos
   contact:
     name: Clowder
@@ -1768,6 +1768,31 @@ paths:
         - datasets
       summary: List all datasets the user can view
       description: This will check for Permission.ViewDataset
+      parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The number of collections returns, default as 12.
+          schema:
+            type: integer
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -2622,6 +2647,31 @@ paths:
       description: |
         This will check for Permission.AddResourceToDataset and
         Permission.EditDataset
+      parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The number of collections returns, default as 12.
+          schema:
+            type: integer
+        - name: exact
+          in: query
+          schema:
+            type: boolean
       responses:
         200:
           description: OK
@@ -3346,6 +3396,11 @@ paths:
         view permission
       description: Collections are groupings of datasets
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           description: The title/ name of colletions
@@ -3497,6 +3552,11 @@ paths:
         This will check for Permission.AddResourceToCollection and
         Permission.EditCollection
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: currentCollectionId
           in: query
           required: true
@@ -3595,6 +3655,11 @@ paths:
         This will check for Permission.AddResourceToCollection and
         Permission.EditCollection
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           schema:
@@ -3740,6 +3805,11 @@ paths:
         the dataset in this space, otherwise list all possiable collections
       description: Collections are groupings of datasets
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: coll_id
           in: path
           required: true
@@ -4092,6 +4162,11 @@ paths:
       summary: List all collections the user can view
       description: This will check for Permission.ViewCollection
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           schema:
@@ -4168,6 +4243,11 @@ paths:
       summary: List spaces the user can view
       description: Retrieves information about spaces
       parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
         - name: title
           in: query
           schema:
@@ -4454,6 +4534,25 @@ paths:
       summary: List spaces the user can add to
       description: Retrieves a list of spaces that the user has permission to add
         to
+      parameters:
+        - name: when
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: default as 12
+          schema:
+            type: number
       responses:
         200:
           description: OK

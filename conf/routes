@@ -484,8 +484,8 @@ GET            /api/files/:three_d_file_id/:filename                            
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/spaces                                                              @api.Spaces.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
-GET            /api/spaces/canEdit                                                      @api.Spaces.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/spaces                                                              @api.Spaces.list(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/spaces/canEdit                                                      @api.Spaces.listCanEdit(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
@@ -508,10 +508,10 @@ GET            /api/spaces/:id/collections                                      
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/collections                                                         @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
-GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
-GET            /api/collections/datasetPossibleParents/:ds_id                           @api.Collections.addDatasetToCollectionOptions(ds_id: UUID, title: Option[String]?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
-GET            /api/collections/possibleParents                                         @api.Collections.listPossibleParents(currentCollectionId: String, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/collections                                                         @api.Collections.list(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/collections/datasetPossibleParents/:ds_id                           @api.Collections.addDatasetToCollectionOptions(when: Option[String] ?= None, ds_id: UUID, title: Option[String]?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/collections/possibleParents                                         @api.Collections.listPossibleParents(when: Option[String] ?= None, currentCollectionId: String, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/collections                                                         @api.Collections.createCollection()
 GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
 GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
@@ -522,7 +522,7 @@ DELETE         /api/collections/emptyTrash                                      
 DELETE         /api/collections/clearOldCollectionsTrash                                @api.Collections.clearOldCollectionsTrash(days : Int ?= 30)
 PUT            /api/collections/restore/:collectionId                                   @api.Collections.restoreCollection(collectionId : UUID)
 # deprecrated
-GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/collections/list                                                    @api.Collections.list(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID)
 POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID)
 GET            /api/collections/:coll_id/datasets                                       @api.Datasets.listInCollection(coll_id: UUID)
@@ -555,8 +555,8 @@ GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id       
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/datasets                                                            @api.Datasets.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
-GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/datasets                                                            @api.Datasets.list(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
+GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 GET            /api/datasets/moveFileToDataset                                          @api.Datasets.listMoveFileToDataset(file_id: UUID, title: Option[String] ?= None, limit: Int ?= 12, exact: Boolean ?= false)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
