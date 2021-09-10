@@ -152,13 +152,11 @@ A Quick Note on Debugging
 
 To check the status of your extraction, navigate to the file within Clowder and click on the “Extractions” tab. This will give you a list of extractions that have been submitted. Any error messages will show up here if your extractor did not run successfully. 
 
-.. container:: imagepadding
-    .. image:: /_static/ug_extractors-1.png
+.. image:: /_static/ug_extractors-1.png
 
 You can expand the tab to see all submissions of the extractor and any error messages associated with the submission:
 
-.. container:: imagepadding
-    .. image:: /_static/ug_extractors-1.png
+.. image:: /_static/ug_extractors-2.png
 
 If your extractor failed, the error message is not helpful, or if you do not see metadata present in the “Metadata” tab for the file you can check the logs of your extractor coming from the docker container by executing the following:
 
@@ -175,8 +173,7 @@ If you want to watch the logs as your extractor is running you can type:
 
 	docker logs -f tests_myextractor_1
 
-.. container:: imagepadding
-    .. image:: /_static/ug_extractors-1.png
+.. image:: /_static/ug_extractors-4.png
 
 You can print any debugging information within your extractor to the docker logs by utilizing the logging object within your code. The following example is for pyClowder:
 
@@ -197,8 +194,7 @@ Additional pyClowder Examples
 
 For a simple example of an extractor, please refer to `extractor-csv <https://github.com/clowder-framework/extractors-csv>`_. This extractor is submitted on a csv file and returns the headers as metadata.
 
-.. container:: imagepadding
-    .. image:: /_static/ug_extractors-1.png
+.. image:: /_static/ug_extractors-3.png
 
 Specifying multiple inputs
 ***************************
