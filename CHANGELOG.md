@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Added
+- Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+
+
 ## 1.18.1 - 2021-08-16
 
 This release fixes a critical issue where invalid zip files could result in the files not being uploaded correctly. To check to see if you are affected, please use the following query:
