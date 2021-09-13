@@ -554,6 +554,10 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: folder_id
+          in: query
+          schema:
+            type: string
       requestBody:
         content:
           multipart/form-data:
