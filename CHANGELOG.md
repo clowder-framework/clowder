@@ -50,6 +50,9 @@ If any files are returned, you should check to see if these files affected and a
 - If using S3 storage in docker, it was not reflected correctly in the docker-compose file.
 - Docker image for mongo-init now based on python:3.7-slim to reduce size.
 
+### Added
+- Endpoint '/api/files/uploadToDataset' now allows folder_id for uploading file to folder. [#232](https://github.com/clowder-framework/clowder/issues/232)
+
 ## 1.17.0 - 2021-04-29
 
 ### Fixed
