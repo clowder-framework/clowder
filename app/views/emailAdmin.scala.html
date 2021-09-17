@@ -59,7 +59,7 @@
                     $("#subject").val('')
                     $("#body").val('')
                 }).fail(function (jqXHR, textStatus, errorThrown) {
-                    console.error("The following error occured: " + textStatus, errorThrown);
+                    console.error("The following error occurred: " + textStatus, errorThrown);
                     notify("The application preferences was not updated due to : " + errorThrown, "error", false);
                 });
                 return false;

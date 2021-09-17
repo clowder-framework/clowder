@@ -37,7 +37,7 @@ function addToCollection(datasetId) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to add a dataset to a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not added to the collection due to the following : " + errorThrown, "error");
@@ -57,7 +57,7 @@ function removeFromCollection(collectionId, datasetId, event){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed from the collection due to : " + errorThrown, "error");
@@ -86,7 +86,7 @@ function removeDatasetFromCollectionAndRedirect(collectionId, datasetId, isreloa
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed from the collection due to : " + errorThrown, "error");
