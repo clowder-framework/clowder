@@ -404,8 +404,9 @@ class Extractions @Inject()(
     Ok(jarr)
   }
 
-  def listExtractors(categories: List[String]) = AuthenticatedAction  { implicit request =>
-    Ok(Json.toJson(extractors.listExtractorsInfo(categories)))
+  def listExtractors(categories: List[String], space: Option[UUID]) = AuthenticatedAction  { implicit request =>
+    val userid = request.user.map(u => Some(u.id)).getOrElse(None)
+    Ok(Json.toJson(extractors.listExtractorsInfo(categories, userid)))
   }
 
   def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>

@@ -117,7 +117,8 @@ case class ExtractorInfo(
   defaultLabels: List[String] = List[String](),
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
-  parameters: JsValue = JsObject(Seq())
+  parameters: JsValue = JsObject(Seq()),
+  users: List[UUID] =List[UUID]()
 )
 
 /** what are the categories of the extractor?
@@ -171,7 +172,8 @@ object ExtractorInfo {
       (JsPath \ "labels").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
-      (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
+      (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq()))) and
+      (JsPath \ "users").read[List[UUID]].orElse(Reads.pure(List.empty))
     )(ExtractorInfo.apply _)
 }
 

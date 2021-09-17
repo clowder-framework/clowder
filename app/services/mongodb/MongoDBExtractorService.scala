@@ -1,6 +1,6 @@
 package services.mongodb
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
@@ -12,11 +12,12 @@ import play.api.Play.current
 import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
-
 import org.bson.types.ObjectId
 
 @Singleton
-class MongoDBExtractorService extends ExtractorService {
+class MongoDBExtractorService @Inject() (
+    users: MongoDBUserService
+  ) extends ExtractorService {
 
   def getExtractorServerIPList() = {
     var listServersIPs = List[String]()
@@ -169,20 +170,26 @@ class MongoDBExtractorService extends ExtractorService {
     }
   }
 
-  def listExtractorsInfo(categories: List[String]): List[ExtractorInfo] = {
+  def listExtractorsInfo(categories: List[String], user: Option[UUID]): List[ExtractorInfo] = {
     var list_queue = List[ExtractorInfo]()
 
     val allDocs = ExtractorInfoDAO.findAll().sort(orderBy = MongoDBObject("name" -> -1))
     for (doc <- allDocs) {
-      // If no categories are specified, return all extractor names
-      var category_match = categories.isEmpty
-      if (!category_match) {
+      // If no filters are specified, return all extractor names
+      var filter_match = (categories.isEmpty && doc.users.isEmpty)
+      if (!filter_match) {
         // Otherwise check if any extractor categories overlap requested categories (force uppercase)
+        val user_match = user match {
+          case Some(u) => doc.users.contains(u) || doc.users.isEmpty
+          case None => doc.users.isEmpty // If no user filter in registered extractor, everyone can see
+        }
         val upper_categories = categories.map(cat => cat.toUpperCase)
-        category_match = doc.categories.intersect(upper_categories).length > 0
+        val category_match = doc.categories.intersect(upper_categories).length > 0
+
+        filter_match = (category_match && user_match)
       }
 
-      if (category_match)
+      if (filter_match)
         list_queue = doc :: list_queue
     }
 

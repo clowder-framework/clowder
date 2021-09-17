@@ -35,7 +35,7 @@ trait ExtractorService {
   
   def dropAllExtractorStatusCollection()
 
-  def listExtractorsInfo(categories: List[String]): List[ExtractorInfo]
+  def listExtractorsInfo(categories: List[String], user: Option[UUID]): List[ExtractorInfo]
 
   def getExtractorInfo(extractorName: String): Option[ExtractorInfo]
 
