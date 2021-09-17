@@ -239,7 +239,7 @@ function clearTrashCollections(url){
         window.location.href=url;
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: "+textStatus, errorThrown);
+        console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a collection from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The trash was not removed due to : " + errorThrown, "error");
@@ -255,7 +255,7 @@ function clearTrashDatasets(url){
         window.location.href=url;
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: "+textStatus, errorThrown);
+        console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset trash was not cleared due to : " + errorThrown, "error");

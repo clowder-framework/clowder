@@ -142,7 +142,7 @@
         });
 
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "Error message.";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                 notify("Error : " + errorThrown, "error");
