@@ -1,4 +1,4 @@
-@(file: models.File, classes: String, redirect: Call, showFollow: Boolean)(implicit user: Option[models.User])
+@(file: models.File, classes: String, redirect: Call, showFollow: Boolean, showAuthor: Boolean = true)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.humanReadableByteCount
 @import api.Permission
@@ -8,20 +8,35 @@
         <div class="pull-left">
             <span class="glyphicon glyphicon-file"></span>
         </div>
+        @if(user.isDefined) {
+            <a href="javascript: void(0)" title="Click to mark file for bulk actions" class="pull-right fileselect" data-id="@file.id">
+                <span class="glyphicon glyphicon-plus"></span>
+            </a>
+        }
         <div class="panel-body">
             @if(!file.thumbnail_id.isEmpty){
                 <a href="@(routes.Files.file(file.id))">
                     <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
                 </a>
-            }
-            <div class="caption break-word">
+            } else {
                 <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
+            }
+            <!-- <div class="caption break-word"> -->
                 <ul class="list-unstyled">
-                    <li>Author: <strong>@file.author.fullName</strong></li>
-                    <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
-                    <li>Size: <strong>@humanReadableByteCount(file.length)</strong></li>
+                    @if(showAuthor){
+                        <li>Author: <strong>@file.author.fullName</strong></li>
+                    }
+                    <!-- <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li> -->
+                    <!-- <li>Size: <strong>@humanReadableByteCount(file.length)</strong></li> -->
+                    <li>
+                        <span>
+                            @if(!file.thumbnail_id.isEmpty){
+                                <a href="@(routes.Files.file(file.id))">@file.filename</a>
+                            }    
+                        </span>
+                    </li>
                 </ul>
-            </div>
+            <!-- </div> -->
         </div>
         <ul class="list-group">
             <li class="list-group-item file-panel-footer">

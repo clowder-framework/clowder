@@ -100,10 +100,18 @@
 
     <div class="row top-padding">
         <div class="col-lg-12 col-md-12">
+            <div class="pull-right">
+                <button id="list-view-btn" type="button" class="btn btn-link" href="#list-view">
+                    <span class="glyphicon glyphicon-th-list"></span>
+                </button>
+                <button id="tile-view-btn" type="button" class="btn btn-primary" href="#tile-view">
+                    <span class="glyphicon glyphicon-th-large"></span>
+                </button>
+            </div>
             <div id="resultheader"><h3>Results</h3></div>
             <div id="resultlist"></div>
-            <div id="resultsfooter" style="text-align:center"></div>
         </div>
+        <div id="resultsfooter" style="text-align:center"></div>
     </div>
 
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
@@ -117,8 +125,58 @@
         var found_all = false;
         // This is set to true when waiting for an auto-scroll result to avoid duplicating request if user scrolls again
         var searching = false;
+        // view mode
+        var viewMode = 'tile';
+        $.cookie.raw = true;
+        $.cookie.json = true;
+        // search result
+        var searchResult = null;
+
+        // tile vs list
+        $(function() {
+            $('#tile-view-btn').click(function() {
+                $('#tile-view-btn').addClass("btn-primary").removeClass("btn-link");
+                $('#list-view-btn').addClass("btn-link").removeClass("btn-primary");
+
+                $.cookie('view-mode', 'tile', { path: '/' });
+                if (viewMode != 'tile'){
+                    viewMode = "tile";
+                    // not ideal, but searchResult always empty
+                    // console.log("setting list " + $.cookie('view-mode'));
+                    // if (searchResult) {
+                    //     updateResults(searchResult, true);
+                    // }
+                    performNewSearch();
+                }
+            });
+            $('#list-view-btn').click(function() {
+                $('#tile-view-btn').addClass("btn-link").removeClass("btn-primary");
+                $('#list-view-btn').addClass("btn-primary").removeClass("btn-link");
+                //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
+                $.cookie("view-mode", "list", { path: '/' });
+                
+                if(viewMode != 'list'){
+                    viewMode = "list";
+                    performNewSearch();
+                }
+            });
+        });
 
         $(document).ready(function() {
+            // handle viewing mode first
+            console.log("on load, cookies are " + $.cookie('view-mode'));
+            console.log("on load, viewMode is " + viewMode);
+            //Set the cookie, for the case when it is passed in by the parameter
+            $.cookie("view-mode", viewMode, { path: '/search' });
+            if (viewMode == "list") {
+                $('#list-view-btn').addClass('active');
+                $('#tile-view-btn').removeClass('active');
+            }
+            else {
+                $('#tile-view-btn').addClass('active');
+                $('#list-view-btn').removeClass('active');
+            }
+
             // Hitting Enter
             $('#querybox').keyup( function(event) {
                 if (event.keyCode === 13) {
@@ -168,6 +226,9 @@
             });
 
             request.done(function(resp, status, err){
+                // save it for later
+                searchResult = resp;
+                
                 count += resp.scanned_size;
                 searching = false;
 
@@ -214,7 +275,12 @@
                 var thumbnailId = (results[i].thumbnail == null)? "" : jsRoutes.api.Thumbnails.get(results[i].thumbnail).url;
 
                 if (results[i].resource_type == "file") {
-                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
+                    if (viewMode == "list") {
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result_list")");
+                    }
+                    else {
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result_tile")");
+                    }
                     var html = modalTemplate({
                         'url': jsRoutes.controllers.Files.file(results[i].id).url,
                         'name': results[i].name,
@@ -225,7 +291,12 @@
                 }
 
                 if (results[i].resource_type == "dataset") {
-                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
+                    if (viewMode == "list") {
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result_list")");
+                    }
+                    else {
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result_tile")");
+                    }
                     var html = modalTemplate(
                             {'url': jsRoutes.controllers.Datasets.dataset(results[i].id).url,
                                 'name': results[i].name,
@@ -237,7 +308,12 @@
                 }
 
                 if (results[i].resource_type == "collection") {
-                    var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_collection_result")");
+                    if (viewMode == "list") {
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_collection_result_list")");
+                    }
+                    else {
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_collection_result_tile")");
+                    }
                     var html = modalTemplate(
                             {'url': jsRoutes.controllers.Collections.collection(results[i].id).url,
                                 'name': results[i].name,

@@ -3,7 +3,7 @@
         filter: Option[String])(implicit user: Option[models.User])
 
 @import play.api.Play.current
-
+<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 <!-- Breadcrumbs -->
 @if(folderHierarchy.length > 0 ) {
     <div><h2 id='folderpath'>
@@ -362,23 +362,107 @@
     <script>$("#empty-folder-div").show();</script>
 }
 
-<!-- Folders list -->
-<div id="folderListDiv">
-    </br>
-    @foldersList.map { folder =>
-        @folders.listitem(folder, dataset.id)
-    }
+<div class="row">
+    <div class="pull-right">
+        <div class="btn-group btn-group-sm">
+            <button id="list-view-btn" type="button" class="btn btn-link" href="#list-view">
+                <span class="glyphicon glyphicon-th-list"></span>
+            </button>
+            <button id="tile-view-btn" type="button" class="btn btn-primary" href="#tile-view">
+                <span class="glyphicon glyphicon-th-large"></span>
+            </button>
+        </div>
+    </div>
+        
+    <script type="text/javascript" language="javascript">
+            var viewMode = 'tile';
+            $.cookie.raw = true;
+            $.cookie.json = true;
+            $(function() {
+                $('#tile-view-btn').click(function() {
+                    $('#tile-view').removeClass('hidden');
+                    $('#list-view').addClass('hidden');
+                    $('#tile-view-btn').addClass("btn-primary").removeClass("btn-link");
+                    $('#list-view-btn').addClass("btn-link").removeClass("btn-primary");
+
+                    viewMode = "tile";
+                    $.cookie('view-mode', 'tile', { path: '/' });
+                    console.log("setting tile " + $.cookie('view-mode'));
+                });
+                $('#list-view-btn').click(function() {
+                    $('#tile-view').addClass('hidden');
+                    $('#list-view').removeClass('hidden');
+                    $('#tile-view-btn').addClass("btn-link").removeClass("btn-primary");
+                    $('#list-view-btn').addClass("btn-primary").removeClass("btn-link");
+                    viewMode = "list";
+                    //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
+                    $.cookie("view-mode", "list", { path: '/' });
+                    console.log("setting list " + $.cookie('view-mode'));
+                });
+            });
+            $(document).ready(function() {
+                console.log("on load, cookies are " + $.cookie('view-mode'));
+                console.log("on load, viewMode is " + viewMode);
+                //Set the cookie, for the case when it is passed in by the parameter
+                $.cookie("view-mode", viewMode, { path: '/' });
+                if (viewMode == "list") {
+                    $('#tile-view').addClass('hidden');
+                    $('#list-view').removeClass('hidden');
+                    $('#list-view-btn').addClass('active');
+                    $('#tile-view-btn').removeClass('active');
+                }
+                else {
+                    $('#tile-view').removeClass('hidden');
+                    $('#list-view').addClass('hidden');
+                    $('#tile-view-btn').addClass('active');
+                    $('#list-view-btn').removeClass('active');
+                }
+            });
+    </script>
+    
 </div>
 
-<!-- Files list -->
-@currentFolder match {
-    case None => {
-        @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id),
-            dataset.folders.length > 0) }
-    case Some(s) => {
-        @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)),
-            dataset.folders.length > 0) }
-}
+<div class="row hidden" id="list-view">
+        <!-- Folders list -->
+        <div id="folderListDiv">
+        </br>
+            @foldersList.map { folder =>
+                @folders.listitem(folder, dataset.id)
+            }
+        </div>
+
+        <div id="fileListDiv">
+            <!-- Files list -->
+            @currentFolder match {
+            case None => {
+                @fileList.map { file =>
+                    @files.listitem(file, (routes.Datasets.dataset(dataset.id)), Some(dataset.id.stringify), space, None, false)
+                    }
+                }
+            case Some(s) => {
+                @fileList.map { file =>
+                    @files.listitem(file, (routes.Datasets.dataset(dataset.id)), Some(dataset.id.stringify), space, currentFolder, false)
+                    }
+                }
+            }
+        </div>
+</div>
+
+<div class="row active" id="tile-view">
+        <!-- Folders tile -->
+        <div id="folderTileDiv">
+        </br>
+            @foldersList.map { folder =>
+                @folders.tile(folder, dataset.id, "col-lg-4 col-md-4 col-sm-4")
+            }
+        </div>
+        <div id="fileTileDiv">
+            <!-- Files tile -->
+            @fileList.map { file =>
+                @files.tile(file, "col-lg-4 col-md-4 col-sm-4", (routes.Datasets.dataset(dataset.id)), false, false) 
+            }
+        </div>
+</div>
 
 <div class="row">
     <div class="col-md-12">
