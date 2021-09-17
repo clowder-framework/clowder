@@ -426,6 +426,7 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+POST           /api/extractors/private/:key                                             @api.Extractions.addPrivateExtractorInfo(key: String)
 POST           /api/extractors/labels                                                   @api.Extractions.createExtractorsLabel()
 PUT            /api/extractors/labels/:id                                               @api.Extractions.updateExtractorsLabel(id: UUID)
 DELETE         /api/extractors/labels/:id                                               @api.Extractions.deleteExtractorsLabel(id: UUID)

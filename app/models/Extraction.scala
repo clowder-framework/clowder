@@ -127,10 +127,11 @@ case class ExtractorInfo(
   * PUBLISH  - intended to publish files or datasets to external repositories
   * WORKFLOW - primarily manages workflows, submits external jobs, triggers other extractors, e.g. extractors-rulechecker
   * SILENT   - if in this category, extractor will not send common status messages (e.g. STARTED)
+  * PRIVATE  - registered as PrivateExtractor, accessible only to the registering user
   */
 object ExtractorCategory extends Enumeration {
   type ExtractorCategory = Value
-  val EXTRACT, CONVERT, ARCHIVE, PUBLISH, WORKFLOW, SILENT = Value
+  val EXTRACT, CONVERT, ARCHIVE, PUBLISH, WORKFLOW, SILENT, PRIVATE = Value
 }
 
 object ExtractorInfo {
