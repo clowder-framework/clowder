@@ -5,9 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+### Fixed
+- Typos "success" when returning status from API and "occurred" when logging to console.
+
 ### Added
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
-
 
 ## 1.18.1 - 2021-08-16
 

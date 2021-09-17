@@ -12,7 +12,7 @@ function removeRelation(relation_id) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         if (errorThrown == 'Unauthorized') {
           window.alert("You are not authorized to remove the relationship.");
         }

@@ -5,7 +5,7 @@ import play.api.Play.current
 import services.PostgresPlugin
 
 /**
- * Metadata about sensors registered with the system. Datastreams can be associalted with sensors.
+ * Metadata about sensors registered with the system. Datastreams can be associated with sensors.
  */
 object Sensors extends Controller with ApiController {
 

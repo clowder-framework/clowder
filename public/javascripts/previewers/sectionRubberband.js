@@ -350,7 +350,7 @@ function rubberbandAddText(tag, comment, sectionid, prNum) {
         request.done(function (response, textStatus, jqXHR) {
         });
         request.fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             window.jsRoutes.api.Sections.delete(sectionid).ajax({
                 type: "DELETE",
                 contentType: "application/json"
