@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 ### Added
+- Adding mime type for geojson
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
 
 
