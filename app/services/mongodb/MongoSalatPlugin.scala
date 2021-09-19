@@ -2,7 +2,6 @@ package services.mongodb
 
 import java.net.URL
 import java.util.{Calendar, Date}
-
 import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -15,10 +14,7 @@ import org.bson.BSONException
 import play.api.libs.json._
 import play.api.{Application, Logger, Play, Plugin}
 import play.api.Play.current
-import com.mongodb.casbah.MongoURI
-import com.mongodb.casbah.MongoConnection
-import com.mongodb.casbah.MongoDB
-import com.mongodb.casbah.MongoCollection
+import com.mongodb.casbah.{MongoCollection, MongoConnection, MongoDB, MongoURI, commons}
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
@@ -1694,21 +1690,27 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     print("DONE")
   }
 
-  private def updateSpaceBytes() : Unit = {
-    collection("spaces.projects").foreach { space =>
-      var spaceBytes : Long = 0
+  private def updateSpaceBytes(): Unit = {
+    collection("spaces.projects").foreach{ space =>
+      var currentSpaceBytes: Long = 0
       val spaceId = space.get("_id")
       val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId))
       spaceDatasets.foreach{ spaceDataset =>
-        val spaceDatasetFileIds = spaceDataset.get("files").asInstanceOf[List[ObjectId]]
-        spaceDatasetFileIds.foreach{ fileId =>
-          collection("uploads.files").find(MongoDBObject("_id" -> fileId)).foreach{ f =>
-            val bytes = f.get("length").asInstanceOf[Long]
-            spaceBytes += bytes
+        val datasetFileIds = spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+        datasetFileIds.foreach{ fileId =>
+          print(fileId)
+          val currentFileUpload = collection("uploads").find(MongoDBObject("_id" -> fileId))
+          currentFileUpload.foreach{ current_upload =>
+            val curent_loader_id = current_upload.get("loader_id").toString
+            val file_upload_id = collection("uploads").find(MongoDBObject("_id" -> new ObjectId(curent_loader_id)))
+            file_upload_id.foreach{ f_upload =>
+              val currentBytes = f_upload.get("length").asInstanceOf[Long]
+              currentSpaceBytes += currentBytes
+            }
           }
         }
+        collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
       }
-      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> spaceBytes))
     }
   }
 }
