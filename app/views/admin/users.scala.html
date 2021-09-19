@@ -212,7 +212,7 @@
                         users = { active: [], inactive: [], admin: [], unadmin: [] };
                         notify("Users successfully updated.", "success", false, 5000);
                     }).fail(function (jqXHR, textStatus, errorThrown){
-                        console.error("The following error occured: " + textStatus, errorThrown);
+                        console.error("The following error occurred: " + textStatus, errorThrown);
                         notify("Could not update users : " + errorThrown, "error");
                     });
                 } else {

@@ -189,7 +189,7 @@
 					  });
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
-						  console.error("The following error occured: "+ textStatus, errorThrown);
+						  console.error("The following error occurred: "+ textStatus, errorThrown);
                           notify("Encountered error " + errorThrown + ". Metadata not added.", true)
 					  });
 					 

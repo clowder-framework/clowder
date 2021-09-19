@@ -65,19 +65,19 @@ class  Datasets @Inject()(
     }
   }
 
-  def list(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
+  def list(when: Option[String], title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+    Ok(toJson(listDatasets(when, title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
+  def listCanEdit(when: Option[String], title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+      Ok(toJson(listDatasets(when, title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
   def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
     if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
       Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     } else {
-      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
+      Ok(toJson(listDatasets(None, title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     }
   }
 
@@ -152,18 +152,31 @@ class  Datasets @Inject()(
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
-    (title, date) match {
-      case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
+  private def listDatasets(when: Option[String], title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
+    (when, title, date) match {
+      case (Some(w), Some(t), Some(d)) => {
+        datasets.listAccess(d, nextPage=(w=="a"), limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (Some(t), None) => {
+      case (Some(w), Some(t), None) => {
         datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (None, Some(d)) => {
+      case (Some(w), None, Some(d)) => {
+        datasets.listAccess(d, nextPage=(w=="a"), limit, permission, user, superAdmin, true,false)
+      }
+      case (Some(w), None, None) => {
+        datasets.listAccess(limit, permission, user, superAdmin, true,false)
+      }
+      // default when to be "after" if not present in parameters. i.e. nextPage=true
+      case (None, Some(t), Some(d)) => {
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
+      }
+      case (None, Some(t), None) => {
+        datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
+      }
+      case (None, None, Some(d)) => {
         datasets.listAccess(d, true, limit, permission, user, superAdmin, true,false)
       }
-      case (None, None) => {
+      case (None, None, None) => {
         datasets.listAccess(limit, permission, user, superAdmin, true,false)
       }
     }

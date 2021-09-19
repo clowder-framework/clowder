@@ -50,7 +50,7 @@ $(function () {
 
 
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("addCallback - fileUploader - The following error occured: " + textStatus, errorThrown);
+            console.error("addCallback - fileUploader - The following error occurred: " + textStatus, errorThrown);
             authInProcess = false;
             var errMsg = "You must be logged in to upload new files.";                                
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {            	
@@ -132,7 +132,7 @@ $(function () {
 
 
       request.fail(function (jqXHR, textStatus, errorThrown){
-          console.error("submitCallback - fileUploader - The following error occured: " + textStatus, errorThrown);
+          console.error("submitCallback - fileUploader - The following error occurred: " + textStatus, errorThrown);
           authInProcess = false;
           var errMsg = "You must be logged in to upload new files.";                                
           if (!checkErrorAndRedirect(jqXHR, errMsg)) {            	

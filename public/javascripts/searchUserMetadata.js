@@ -536,7 +536,7 @@ $(function() {
 					 
 					  request.fail(function (jqXHR, textStatus, errorThrown){
 		        		console.error(
-		            		"The following error occured: "+
+		            		"The following error occurred: "+
 		            		textStatus, errorThrown		            
 		        			);
 		        		notify("ERROR: " + errorThrown +". Search not executed.", "error");
