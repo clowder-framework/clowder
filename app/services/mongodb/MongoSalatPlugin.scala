@@ -453,6 +453,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates extractors enabled and disabled in a space
     updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
+
+    // Adds space bytes to space
+    updateMongo(updateKey = "update-space-bytes", updateSpaceBytes)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1689,5 +1692,23 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         $unset("extractors"))
     }
     print("DONE")
+  }
+
+  private def updateSpaceBytes() : Unit = {
+    collection("spaces.projects").foreach { space =>
+      var spaceBytes : Long = 0
+      val spaceId = space.get("_id")
+      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId))
+      spaceDatasets.foreach{ spaceDataset =>
+        val spaceDatasetFileIds = spaceDataset.get("files").asInstanceOf[List[ObjectId]]
+        spaceDatasetFileIds.foreach{ fileId =>
+          collection("uploads.files").find(MongoDBObject("_id" -> fileId)).foreach{ f =>
+            val bytes = f.get("length").asInstanceOf[Long]
+            spaceBytes += bytes
+          }
+        }
+      }
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> spaceBytes))
+    }
   }
 }
