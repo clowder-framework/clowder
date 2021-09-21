@@ -24,7 +24,7 @@ function expandRepositories() {
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
 			if (jqXHR.status != 404) {
-				console.error("The following error occured: " + textStatus,
+				console.error("The following error occurred: " + textStatus,
 						errorThrown);
 			}
 		});

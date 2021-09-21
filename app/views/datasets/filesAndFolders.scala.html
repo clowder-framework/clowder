@@ -175,7 +175,7 @@
                     getUpdatedFilesAndFolders();
                 });
                 request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: " + textStatus, errorThrown);
+                    console.error("The following error occurred: " + textStatus, errorThrown);
                     notify("Could not delete marked file "+selected[entry]+": " + errorThrown, "error");
                     // Add it back to selected list
                     addFileToMarked(selected[entry]);
@@ -263,7 +263,7 @@
                         getUpdatedFilesAndFolders();
                     });
                     request.fail(function (jqXHR, textStatus, errorThrown) {
-                        console.error("The following error occured: " + textStatus, errorThrown);
+                        console.error("The following error occurred: " + textStatus, errorThrown);
                         notify("Could not tag marked file " + selected[entry] + ": " + errorThrown, "error");
                     });
                 }
@@ -282,7 +282,7 @@
                 notify("Tag(s) successfully added.", "success", false, 2000);
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
                 notify("Could not tag selections: " + errorThrown, "error");
             });
 

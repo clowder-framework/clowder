@@ -26,7 +26,7 @@ function detachFile(fileId, fileName,event){
         $("#fileUserMetadata_"+fileId).remove();
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: "+textStatus, errorThrown);
+        console.error("The following error occurred: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a file from a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The file was not removed from the dataset due to : " + errorThrown, "error");
