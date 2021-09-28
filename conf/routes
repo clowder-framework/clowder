@@ -423,7 +423,7 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty, , space: Option[UUID] ?= None)
+GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty, space: Option[UUID] ?= None)
 GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 POST           /api/extractors/private/:key                                             @api.Extractions.addPrivateExtractorInfo(key: String)

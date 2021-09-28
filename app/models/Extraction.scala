@@ -118,7 +118,8 @@ case class ExtractorInfo(
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
   parameters: JsValue = JsObject(Seq()),
-  users: List[UUID] =List[UUID]()
+  unique_key: String = "",
+  permissions: List[ResourceRef] =List[ResourceRef]()
 )
 
 /** what are the categories of the extractor?
@@ -128,11 +129,10 @@ case class ExtractorInfo(
   * PUBLISH  - intended to publish files or datasets to external repositories
   * WORKFLOW - primarily manages workflows, submits external jobs, triggers other extractors, e.g. extractors-rulechecker
   * SILENT   - if in this category, extractor will not send common status messages (e.g. STARTED)
-  * PRIVATE  - registered as PrivateExtractor, accessible only to the registering user
   */
 object ExtractorCategory extends Enumeration {
   type ExtractorCategory = Value
-  val EXTRACT, CONVERT, ARCHIVE, PUBLISH, WORKFLOW, SILENT, PRIVATE = Value
+  val EXTRACT, CONVERT, ARCHIVE, PUBLISH, WORKFLOW, SILENT = Value
 }
 
 object ExtractorInfo {
@@ -173,7 +173,8 @@ object ExtractorInfo {
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq()))) and
-      (JsPath \ "users").read[List[UUID]].orElse(Reads.pure(List.empty))
+      (JsPath \ "unique_key").read[String].orElse(Reads.pure("")) and
+      (JsPath \ "permissions").read[List[ResourceRef]].orElse(Reads.pure(List.empty))
     )(ExtractorInfo.apply _)
 }
 

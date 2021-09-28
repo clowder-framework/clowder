@@ -171,21 +171,24 @@ class MongoDBExtractorService @Inject() (
   }
 
   def listExtractorsInfo(categories: List[String], user: Option[UUID]): List[ExtractorInfo] = {
+    Logger.info("listing: "+categories.toString)
     var list_queue = List[ExtractorInfo]()
 
     val allDocs = ExtractorInfoDAO.findAll().sort(orderBy = MongoDBObject("name" -> -1))
     for (doc <- allDocs) {
       // If no filters are specified, return all extractor names
-      var filter_match = (categories.isEmpty && doc.users.isEmpty)
+      var filter_match = (categories.isEmpty && doc.permissions.isEmpty)
       if (!filter_match) {
         // Otherwise check if any extractor categories overlap requested categories (force uppercase)
         val user_match = user match {
-          case Some(u) => doc.users.contains(u) || doc.users.isEmpty
-          case None => doc.users.isEmpty // If no user filter in registered extractor, everyone can see
+          case Some(u) => {
+            val rr = new ResourceRef('user, u)
+            doc.permissions.contains(rr) || doc.permissions.isEmpty
+          }
+          case None => doc.permissions.isEmpty // If no user filter in registered extractor, everyone can see
         }
         val upper_categories = categories.map(cat => cat.toUpperCase)
-        val category_match = doc.categories.intersect(upper_categories).length > 0
-
+        val category_match = categories.length == 0 || doc.categories.intersect(upper_categories).length > 0
         filter_match = (category_match && user_match)
       }
 
