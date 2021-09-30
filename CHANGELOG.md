@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Fixed
+- Can add dataset to spaces - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
 - Typos "success" when returning status from API and "occurred" when logging to console.
 
 ### Added
+- Adding mime type for geojson
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
 - Add "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
 
