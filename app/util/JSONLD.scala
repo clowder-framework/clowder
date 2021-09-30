@@ -64,7 +64,7 @@ object JSONLD {
 
     //convert metadata to json using implicit writes in Metadata model
     //include metadata ID in the json
-    val metadataJson = resourceJson ++ toJson(metadata).asInstanceOf[JsObject] ++ JsObject(Seq("id" -> JsString(metadata.id.toString())))
+    val metadataJson = JsObject(Seq("id" -> JsString(metadata.id.toString()))) ++ resourceJson ++ toJson(metadata).asInstanceOf[JsObject]
 
     //combine the two json objects and return
     if (contextJson.isEmpty) metadataJson else contextJson.get ++ metadataJson
