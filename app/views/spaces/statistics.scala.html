@@ -1,32 +1,36 @@
-@(space: ProjectSpace, spaceBytes: Long, classes: String, isPublic: Option[Boolean], spaceFiles: Integer)(implicit user: Option[models.User])
+@(space: ProjectSpace, spaceBytes: Long, isPublic: Option[Boolean], spaceFiles: Integer)(implicit user: Option[models.User])
 
 @import play.api.i18n.Messages
 @import _root_.util.Formatters._
-<div class="@classes">
-    <div class="col-md-12" id="resources-panel-container">
-        <div class="panel panel-default" id="resources-panel" data-clampedwidth=".col-md-5">
-            <div class="panel-heading">
-                <h3 class="panel-title">Resources</h3>
-            </div>
-            <div class="panel-body">
-                <ul class="list-group">
-                    <li class="list-group-item" title="@humanReadableNumber(space.collectionCount) @Messages("collections.title")">
-                        <a href="@routes.Collections.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("collections.title") <span class="badge pull-right">@space.collectionCount</span></a>
-                    </li>
-                    <li class="list-group-item" title="@humanReadableNumber(space.datasetCount) @Messages("datasets.title")">
-                        <a href="@routes.Datasets.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("datasets.title") <span class="badge pull-right">@space.datasetCount</span></a>
-                    </li>
-                    <li class="list-group-item">
-                          Files: <span class="badge pull-right">@spaceFiles</span>
-                     </li>
-                    <li class="list-group-item" title="Total number of raw bytes stored.">
-                          Bytes <span class="badge pull-right">@humanReadableByteCount(spaceBytes)</span>
-                    </li>
-                    <li class="list-group-item">
-                          Users: <span class="badge pull-right">@space.userCount</span>
-                     </li>
-                </ul>
-            </div>
-        </div>
+
+<div class="row ds-section-sm file-info">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <h3>Statistics</h3>
+    </div>
+    <div class="col-md-12">
+        <table class="table table-condensed">
+            <tbody>
+                <tr>
+                    <td><b><a href="@routes.Collections.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("collections.title")</a></b></td>
+                    <td><span class="pull-right">@space.collectionCount</span></td>
+                </tr>
+                <tr>
+                    <td><b><a href="@routes.Datasets.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("datasets.title")</a></b></td>
+                    <td><span class="pull-right">@space.datasetCount</span></td>
+                </tr>
+                <tr>
+                    <td><b>Files:</b></td>
+                    <td><span class="pull-right">@spaceFiles</span></td>
+                </tr>
+                <tr>
+                    <td><b>Bytes:</b></td>
+                    <td><span class="pull-right">@humanReadableByteCount(spaceBytes)</span></td>
+                </tr>
+                <tr>
+                    <td><b>Users:</b></td>
+                    <td><span class="pull-right">@space.userCount</span></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
