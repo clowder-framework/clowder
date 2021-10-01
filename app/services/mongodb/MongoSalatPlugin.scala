@@ -1691,26 +1691,20 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateSpaceBytes(): Unit = {
-    collection("spaces.projects").foreach{ space =>
+    val spaces = collection("spaces.projects").find().toList.foreach{ space =>
       var currentSpaceBytes: Long = 0
       val spaceId = space.get("_id")
-      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId))
+      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId)).toList
       spaceDatasets.foreach{ spaceDataset =>
         val datasetFileIds = spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
         datasetFileIds.foreach{ fileId =>
-          print(fileId)
-          val currentFileUpload = collection("uploads").find(MongoDBObject("_id" -> fileId))
-          currentFileUpload.foreach{ current_upload =>
-            val curent_loader_id = current_upload.get("loader_id").toString
-            val file_upload_id = collection("uploads").find(MongoDBObject("_id" -> new ObjectId(curent_loader_id)))
-            file_upload_id.foreach{ f_upload =>
-              val currentBytes = f_upload.get("length").asInstanceOf[Long]
-              currentSpaceBytes += currentBytes
-            }
+          collection("uploads").findOne(MongoDBObject("_id" -> fileId)) match {
+            case Some(file) => currentSpaceBytes += file.get("length").asInstanceOf[Long]
+            case None => Logger.info(s"Could not find file ${fileId} in space ${spaceId}")
           }
         }
-        collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
       }
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
     }
   }
 }
