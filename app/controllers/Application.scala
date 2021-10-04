@@ -107,14 +107,6 @@ class Application @Inject()(files: FileService, collections: CollectionService, 
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if !(clowderUser.status == UserStatus.Inactive) => {
-        if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
-          newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
-          newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(20))
-          if (user.isDefined) {
-            newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(user.get, Some(20)))
-              .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
-          }
-        }
         if (play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents ::: events.getCommentEvent(clowderUser, Some(20))
         newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
