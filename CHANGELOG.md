@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Adding mime type for geojson
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Show statistics of spaces (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
+
+### Changed
+- Space layout is now more inline with the layout of files and dataasets.
 
 ## 1.18.1 - 2021-08-16
 
@@ -69,6 +73,7 @@ If any files are returned, you should check to see if these files affected and a
 
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
+- Updated the three.js libraries for the FBX previewer
 
 ## 1.16.0 - 2021-03-31
 
@@ -137,6 +142,7 @@ script to fix this.
 ## 1.14.0 - 2021-01-07
 
 ### Added
+- Added a previewer for FBX files.
 - Added a new `/api/reports/metrics/extractors` report for summarizing extractor usage by user. Database administrators
   can use `scripts/updates/UpdateUserId.js` to assign user IDs to older extraction event records based on resource ownership
   in order to improve the accuracy of the report for older data.

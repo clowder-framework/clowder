@@ -19,110 +19,121 @@
         </div>
     }
 
-    <div class="row vertical-align">
-
-            <div class="col-md-12 col-lg-12 col-sm-12">
-                <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-hdd"></span> @space.name</h1>
-                
-            <p><span id="spacedescdisplay" class='abstract'>@Html(space.description.replace("\n","<br>"))</span></p>
-            @if(user.isDefined) {
-                <hr/>
-                @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                    <button id="deleteButton" onclick="confirmDeleteResource('space','@Messages("space.title")','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                    class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
-                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                }
-                @if(Permission.checkPermission(Permission.CreateDataset, ResourceRef(ResourceRef.space, space.id))) {
-                    <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="@Messages("create.title", Messages("dataset.title"))">
-                        <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
-                }
-                @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, space.id))) {
-                    <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))">
-                        <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
-                }
-                <!-- If user can view, the search button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
-                    <a href="@routes.Metadata.search()?spaceid=@space.id" class="btn btn-link" title="Search metadata within the @Messages("space.title")">
-                        <span class="glyphicon glyphicon-search"></span> Search
-                    </a>
-                }
-                @if(play.Play.application().configuration().getBoolean("enablePublic") && (Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) || Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)))){
-                    <hr/>
-                }
-            }
-        </div>
-    </div>
     <div class="row">
+
+        @* left column, space details, datasets, collections *@
         <div class="col-md-8 col-lg-8 col-sm-8">
-            <ul class="nav nav-tabs margin-bottom-20" >
-                @if(play.Play.application().configuration().getBoolean("enablePublic")){
-                    @if(user.isDefined) {
-                        <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
-                        <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined){
-                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+            <div class="row">
+                <div class="col-md-12 caption break-word space-title">
+                    <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-hdd"></span> @space.name</h1>
+                </div>
+                <div class="col-md-12">
+                    <p><span id="spacedescdisplay" class='abstract'>@Html(space.description.replace("\n","<br>"))</span></p>
+                </div>
+                @if(user.isDefined) {
+                    <div class="col-xs-12">
+                        <hr/>
+                        @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                            <button id="deleteButton" onclick="confirmDeleteResource('space','@Messages("space.title")','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
+                            class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
+                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         }
-                    } else {
-                    	<li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
-                        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                            <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                        @if(Permission.checkPermission(Permission.CreateDataset, ResourceRef(ResourceRef.space, space.id))) {
+                            <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="@Messages("create.title", Messages("dataset.title"))">
+                                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
+                        }
+                        @if(Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, space.id))) {
+                            <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))">
+                                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
+                        }
+                        <!-- If user can view, the search button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                        @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                            <a href="@routes.Metadata.search()?spaceid=@space.id" class="btn btn-link" title="Search metadata within the @Messages("space.title")">
+                                <span class="glyphicon glyphicon-search"></span> Search
+                            </a>
+                        }
+                        @if(play.Play.application().configuration().getBoolean("enablePublic") && (Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) || Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)))){
+                            <hr/>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="tabbable">
+                <ul class="nav nav-tabs margin-bottom-20" >
+                    @if(play.Play.application().configuration().getBoolean("enablePublic")){
+                        @if(user.isDefined) {
+                            <li role="presentation" class="active"><a href="#tab-all" role="tab" data-toggle="tab">All Data</a></li>
+                            <li role="presentation"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
+                            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined){
+                                <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                            }
+                        } else {
+                            <li role="presentation" class="active"><a href="#tab-public" role="tab" data-toggle="tab">Public Data</a></li>
+                            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                                <li role="presentation"><a href="#tab-publish" role="tab" data-toggle="tab">Published Data</a></li>
+                            }
                         }
                     }
-                }
-            </ul>
-            <div class="tab-content">
-                @if(user.isDefined){
-                    <div role="tabpanel" class="tab-pane fade in active" id="tab-all">
-                        @spaces.datasetsBySpace(datasets, space, None, userSelections)
-                        @spaces.collectionsBySpace(collections, space, None)
+                </ul>
+                <div class="tab-content">
+                    @if(user.isDefined){
+                        <div role="tabpanel" class="tab-pane fade in active" id="tab-all">
+                            @spaces.datasetsBySpace(datasets, space, None, userSelections)
+                            @spaces.collectionsBySpace(collections, space, None)
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane fade" id="tab-public">
+                            <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
+                            @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
+                                <!-- collections follow the space status, there is no public, private flag on a collection -->
+                            @if(space.isPublic) {
+                                @spaces.collectionsBySpace(collections, space, Some(true))
+                            } else {
+                                <h3>@Messages("collections.title")</h3>
+                                <p>There are no public collections associated with this @Messages("space.title"). </p>
+                            }
+                        </div>
+                    } else {
+                        <div role="tabpanel" class="tab-pane fade in active" id="tab-public">
+                            <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.
+                                You must be a logged-in member of the @Messages("space.title") to access all the @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase.
+                            </p>
+                            @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
+                            @if(space.isPublic) {
+                                @spaces.collectionsBySpace(collections, space, Some(true))
+                            } else {
+                                <h3>@Messages("collections.title")</h3>
+                                <p>There are no public collections associated with this @Messages("space.title"). </p>
+                            }
+                        </div>
+                    }
+                    <div role="tabpanel" class="tab-pane fade" id="tab-publish">
+                    <p>The following @Messages("datasets.title").toLowerCase have been published through this @Messages("space.title") and any affiliated @Messages("space.title")s.</p>
+                        @curations.publishedGrid(publishedData, servicesUrl, None)
                     </div>
-                     
-                    <div role="tabpanel" class="tab-pane fade" id="tab-public">
-                        <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.</p>
-                        @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
-                            <!-- collections follow the space status, there is no public, private flag on a collection -->
-                        @if(space.isPublic) {
-                            @spaces.collectionsBySpace(collections, space, Some(true))
-                        } else {
-                            <h3>@Messages("collections.title")</h3>
-                            <p>There are no public collections associated with this @Messages("space.title"). </p>
-                        }
-                    </div>
-                } else {
-                    <div role="tabpanel" class="tab-pane fade in active" id="tab-public">
-                        <p>The @Messages("space.title") team has made the following @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase publicly available.
-                            You must be a logged-in member of the @Messages("space.title") to access all the @Messages("datasets.title").toLowerCase and @Messages("collections.title").toLowerCase.
-                        </p>
-                        @spaces.datasetsBySpace(publicDatasets, space, Some(true), userSelections)
-                        @if(space.isPublic) {
-                            @spaces.collectionsBySpace(collections, space, Some(true))
-                        } else {
-                            <h3>@Messages("collections.title")</h3>
-                            <p>There are no public collections associated with this @Messages("space.title"). </p>
-                        }
-                    </div>
-                }
-                <div role="tabpanel" class="tab-pane fade" id="tab-publish">
-                <p>The following @Messages("datasets.title").toLowerCase have been published through this @Messages("space.title") and any affiliated @Messages("space.title")s.</p>
-                    @curations.publishedGrid(publishedData, servicesUrl, None)
                 </div>
             </div>
         </div>
+
+        @* right column, space statistics, actions *@
         <div class="col-md-4 col-lg-4 col-sm-4">
             @if(user.isDefined) {
-                @spaces.statistics(space, spaceBytes,"row ds-section-sm space-col-right", None, spaceFiles )
+                @spaces.statistics(space, spaceBytes, None, spaceFiles )
                 @spaces.otherActions(space)
             } else {
-                @spaces.statistics(space, spaceBytes, "row ds-section-sm space-col-right",None, spaceFiles)
+                @spaces.statistics(space, spaceBytes, None, spaceFiles)
             }
-            @spaces.externalLinks(space.homePage, space, "row ds-section-sm break-word space-col-right")
+            @spaces.externalLinks(space.homePage, space, "row ds-section-sm")
             @if(play.Play.application().configuration().getBoolean("enablePublic")) {
-                @spaces.access(space, userRoleMap, "row ds-section-sm break-word space-col-right")
+                @spaces.access(space, userRoleMap, "row ds-section-sm")
             }
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }
         </div>
+    </div>
+
     </div>
     <script src="@routes.Assets.at("javascripts/descriptionSummary.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
