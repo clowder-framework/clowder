@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Can add dataset to spaces - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
 - Typos "success" when returning status from API and "occurred" when logging to console.
+- If a dataset had multiple folders the layout would be wrong.
 
 ### Added
 - Adding mime type for geojson
@@ -16,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show statistics of spaces (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
 
 ### Changed
-- Space layout is now more inline with the layout of files and dataasets.
+- Add "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
 
 ## 1.18.1 - 2021-08-16
 
