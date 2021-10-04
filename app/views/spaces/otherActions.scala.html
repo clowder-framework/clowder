@@ -7,50 +7,50 @@
     </div>
     @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs">
+            <a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a>
         </div>
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs">
+            <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @Messages("space.title")
             </a>
         </div>
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a href="@routes.Metadata.getMetadataBySpace(space.id)" class="btn btn-link btn-xs">
+            <a href="@routes.Metadata.getMetadataBySpace(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-list" aria-hidden="true"></span> Manage Metadata Terms & Definitions
             </a>
         </div>
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs">
+            <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
             </a>
         </div>
     } else {
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a class="btn btn-link btn-xs disabled">
+            <a class="btn btn-link btn-xs btn-margins disabled">
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a>
         </div>
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a class="btn btn-link btn-xs disabled">
+            <a class="btn btn-link btn-xs btn-margins disabled">
                 <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @Messages("space.title")
             </a>
         </div>
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a class="btn btn-link btn-xs disabled">
+            <a class="btn btn-link btn-xs btn-margins disabled">
                 <span class = "glyphicon glyphicon-list" aria-hidden="true"></span> Manage Metadata Terms & Definitions
             </a>
         </div>
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a class="btn btn-link btn-xs disabled">
+            <a class="btn btn-link btn-xs btn-margins disabled">
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
             </a>
         </div>
     }
     @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
         <div class="col-md-12 col-lg-12 col-sm-12">
-            <a href="@routes.Spaces.stagingArea(space.id)" class="btn btn-link btn-xs" title="Staging Area">
+            <a href="@routes.Spaces.stagingArea(space.id)" class="btn btn-link btn-xs btn-margins" title="Staging Area">
                 <span class="glyphicon glyphicon-book"></span> Staging Area
             </a>
         </div>
