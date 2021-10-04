@@ -1675,6 +1675,10 @@ class Files @Inject()(
         // notify rabbitmq
         datasets.findByFileIdAllContain(file.id).foreach { ds =>
           routing.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
+          val ds_spaces = ds.spaces
+          for (ds_s <- ds_spaces) {
+            spaces.decrementSpaceBytes(ds_s, file.length)
+          }
         }
 
         //this stmt has to be before files.removeFile

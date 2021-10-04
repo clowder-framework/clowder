@@ -41,7 +41,7 @@ class Spaces @Inject()(spaces: SpaceService,
         val userId = request.user.get.id
         val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
           homePage = List.empty, logoURL = None, bannerURL = None, collectionCount = 0,
-          datasetCount = 0, userCount = 0, metadata = List.empty)
+          datasetCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty)
         spaces.insert(c) match {
           case Some(id) => {
             appConfig.incrementCount('spaces, 1)

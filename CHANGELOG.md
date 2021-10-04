@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Adding mime type for geojson
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Show statistics of spaces (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
+
+### Changed
 - Add "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
 
 ## 1.18.1 - 2021-08-16
@@ -71,7 +74,6 @@ If any files are returned, you should check to see if these files affected and a
 
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
-
 - Updated the three.js libraries for the FBX previewer
 
 ## 1.16.0 - 2021-03-31
