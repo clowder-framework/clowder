@@ -4,20 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.19.0 - 2021-10-05
 
 ### Fixed
-- Can add dataset to spaces - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
+- Adding dataset to space. Space list on dataset page would be empty. [#274](https://github.com/clowder-framework/clowder/issues/274)
 - Typos "success" when returning status from API and "occurred" when logging to console.
 - If a dataset had multiple folders the layout would be wrong.
 
 ### Added
-- Adding mime type for geojson
-- Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
-- Show statistics of spaces (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
-
-### Changed
-- Add "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
+- Mime type for geojson
+- "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Show space statistics (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
+- "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
 
 ## 1.18.1 - 2021-08-16
 
