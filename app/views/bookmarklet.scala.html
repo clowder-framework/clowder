@@ -31,7 +31,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       var outstandingExtractions = new Array();
       var tags = {};
       var failedCountDown;
-      var sucessfullyDone;
+      var successfullyDone;
       var countDone;
       var status = '';
       var imgdocs = {};
@@ -352,7 +352,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         outstandingExtractions = new Array();
         tags = {};
         failedCountDown = 0;
-        sucessfullyDone = 0;
+        successfullyDone = 0;
         countDone = 0;
         status = '';
         imgdocs = {};
@@ -430,7 +430,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         // console.log("Checking submission status");
         countDone=0;
         failedCountDown=0;
-        sucessfullyDone=0;
+        successfullyDone=0;
 
         for ( var j = 0; j < filesInfo.length; j++) {
           if (filesInfo[j].status == 'Processing') {
@@ -438,8 +438,8 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           } else if (filesInfo[j].status == 'Done') {
             countDone++;
             console.log('---countDone Incremented-- ');
-            sucessfullyDone++;
-            // jQuery('#DTSSuccessfulExtractions').text(sucessfullyDone);
+            successfullyDone++;
+            // jQuery('#DTSSuccessfulExtractions').text(successfullyDone);
           } else if (filesInfo[j].status == 'Required Extractor is either busy or is not currently running. Try after some time.') {
             console.log('---[check Results]---status: Required Extractor is either busy or is not currently running. Try after some time.');
           }
@@ -457,9 +457,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
           }
         }
         // TODO update ui counts
-        jQuery('#DTSSuccessfulExtractions').text(sucessfullyDone);
+        jQuery('#DTSSuccessfulExtractions').text(successfullyDone);
         jQuery('#DTSFailedExtractions').text(failedCountDown);
-        console.log('Successfull: ' + sucessfullyDone);
+        console.log('Successfull: ' + successfullyDone);
         console.log('Failed: ' + failedCountDown);
         if (countDone > 0 && countDone == filesInfo.length) {
           status = 'Done';

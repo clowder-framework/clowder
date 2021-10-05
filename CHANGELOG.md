@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.19.0 - 2021-10-05
+**_Important:_** This update requires a MongoDB update schema due to the new ability of showing summary statistics at the
+space level. Make sure to start the application with -DMONGOUPDATE=1.
+
+### Fixed
+- Adding dataset to space. Space list on dataset page would be empty - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
+- Typos "success" when returning status from API and "occurred" when logging to console.
+- If a dataset had multiple folders the layout would be wrong.
+- Collections created using api route are now indexed upon creation. [#257](https://github.com/clowder-framework/clowder/issues/257)
+
+### Added
+- Mime type for geojson
+- "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Show space statistics (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
+- "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
+- 'POST /api/files/uploadToDataset' now allows folder_id for uploading file to folder. [#232](https://github.com/clowder-framework/clowder/issues/232)
+
 ## 1.18.1 - 2021-08-16
 
 This release fixes a critical issue where invalid zip files could result in the files not being uploaded correctly. To check to see if you are affected, please use the following query:
@@ -55,7 +72,6 @@ If any files are returned, you should check to see if these files affected and a
 
 ### Changed
 - Updated Sphinx dependencies due to security and changes in required packages.
-
 - Updated the three.js libraries for the FBX previewer
 
 ## 1.16.0 - 2021-03-31

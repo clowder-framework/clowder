@@ -20,7 +20,7 @@ function moveFromDatasetToDataset(folderFromId, datasetFromId, fileId) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to move a file to a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The file was not moved to the dataset due to the following : " + errorThrown, "error");
@@ -52,7 +52,7 @@ function addToDataset(fileId) {
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to add a file to a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The file was not added to the dataset due to the following : " + errorThrown, "error");
@@ -71,7 +71,7 @@ function removeFromDataset(datasetId, fileId, event){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a file from a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The file was not removed from the dataset due to : " + errorThrown, "error");

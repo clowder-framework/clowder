@@ -216,7 +216,7 @@ line-height: 1.5;
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: " + textStatus, errorThrown);
+                    console.error("The following error occurred: " + textStatus, errorThrown);
                     var errMsg = "You must be logged in to add metadata";
                     if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                       notify("Metadata was not added due to : " + errorThrown, "error");
@@ -499,7 +499,7 @@ line-height: 1.5;
         });
 
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "You must be logged in to retrieve metadata definitions";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
               notify("Metadata was not added due to : " + errorThrown, "error");
