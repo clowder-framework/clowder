@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Can add dataset to spaces - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
 - Typos "success" when returning status from API and "occurred" when logging to console.
 - If a dataset had multiple folders the layout would be wrong.
+- Fix the broken link after file deletion within a folder. [#277](https://github.com/clowder-framework/clowder/issues/277) 
 
 ### Added
 - Adding mime type for geojson
