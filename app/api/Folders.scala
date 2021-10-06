@@ -333,8 +333,6 @@ class Folders @Inject() (
                             })
                           }
                         }
-                          }
-                        }
 
                         files.index(fileId)
                         datasets.index(datasetId)
