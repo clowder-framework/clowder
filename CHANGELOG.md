@@ -4,20 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.19.0 - 2021-10-05
+**_Important:_** This update requires a MongoDB update schema due to the new ability of showing summary statistics at the
+space level. Make sure to start the application with -DMONGOUPDATE=1.
 
 ### Fixed
-- Can add dataset to spaces - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
+- Adding dataset to space. Space list on dataset page would be empty - fixed error when no spaces would load. [#274](https://github.com/clowder-framework/clowder/issues/274)
 - Typos "success" when returning status from API and "occurred" when logging to console.
 - If a dataset had multiple folders the layout would be wrong.
+- Collections created using api route are now indexed upon creation. [#257](https://github.com/clowder-framework/clowder/issues/257)
 
 ### Added
-- Adding mime type for geojson
-- Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
-- Show statistics of spaces (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
-
-### Changed
-- Add "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
+- Mime type for geojson
+- "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Show space statistics (bytes, users. etc) [#119](https://github.com/clowder-framework/clowder/issues/119)
+- "id" in GET metadata.jsonld endpoints [#278](https://github.com/clowder-framework/clowder/issues/278)
+- 'POST /api/files/uploadToDataset' now allows folder_id for uploading file to folder. [#232](https://github.com/clowder-framework/clowder/issues/232)
 
 ## 1.18.1 - 2021-08-16
 
@@ -34,7 +36,6 @@ If any files are returned, you should check to see if these files affected and a
 - Updated swagger documentation
 - Return 404 not found when calling file/dataset/space api endpoints with an invalid ID [#251](https://github.com/clowder-framework/clowder/issues/251)
 - Line breaks in welcome message breaks swagger build [#187](https://github.com/clowder-framework/clowder/issues/187)
-- Collections created using api route are now indexed upon creation. [#257](https://github.com/clowder-framework/clowder/issues/257)
 
 ### Changed
 - Added more information when writing files to make sure files are written correctly
@@ -56,9 +57,6 @@ If any files are returned, you should check to see if these files affected and a
 - Added index for comments, will speed up index creation.
 - If using S3 storage in docker, it was not reflected correctly in the docker-compose file.
 - Docker image for mongo-init now based on python:3.7-slim to reduce size.
-
-### Added
-- Endpoint '/api/files/uploadToDataset' now allows folder_id for uploading file to folder. [#232](https://github.com/clowder-framework/clowder/issues/232)
 
 ## 1.17.0 - 2021-04-29
 
