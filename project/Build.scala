@@ -107,8 +107,8 @@ object ApplicationBuild extends Build {
     "com.google.inject" % "guice" % "3.0",
 
     // ??
-    "org.apache.httpcomponents" % "httpclient" % "4.2.3",
-    "org.apache.httpcomponents" % "httpcore" % "4.2.3",
+    "org.apache.httpcomponents" % "httpclient" % "4.5.2",
+    "org.apache.httpcomponents" % "httpcore" % "4.4.4",
     "org.apache.httpcomponents" % "httpmime" % "4.2.3",
 
     // JSONparser and JSONObject

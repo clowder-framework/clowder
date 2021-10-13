@@ -16,7 +16,7 @@ import com.amazonaws.AmazonServiceException
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.amazonaws.services.s3.transfer.Upload
-import services.s3.S3ByteStorageService.{handleACE, handleASE, handleIOE, handleUnknownError, s3}
+import services.s3.S3ByteStorageService.{handleACE, handleASE, handleIOE, handleUnknownError}
 
 
 /**
@@ -45,93 +45,6 @@ object S3ByteStorageService {
   val AccessKey: String = "clowder.s3.accessKey"
   val SecretKey: String = "clowder.s3.secretKey"
   val Region: String = "clowder.s3.region"
-
-  Logger.underlying().info("Starting up static S3ByteStorageService...")
-
-  val s3: AmazonS3 = {
-    // NOTE: Region is ignored for MinIO case
-    val s3client = (Play.current.configuration.getString(S3ByteStorageService.ServiceEndpoint), Play.current.configuration.getString(S3ByteStorageService.Region)) match {
-      case (Some(serviceEndpoint), Some(region)) => {
-        Logger.info("Creating S3 Client with custom endpoint and region.")
-        AmazonS3ClientBuilder.standard().withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, region))
-      }
-      case (Some(serviceEndpoint), None) => {
-        Logger.info("Creating S3 Client with custom endpoint. (using default region)")
-        AmazonS3ClientBuilder.standard()
-          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, Regions.DEFAULT_REGION.getName))
-      }
-      case (None, Some(region)) => {
-        Logger.info("Creating S3 Client with custom region: " + region)
-        AmazonS3ClientBuilder.standard().withRegion(region)
-      }
-      case (None, None) => AmazonS3ClientBuilder.standard()
-    }
-
-    (Play.current.configuration.getString(S3ByteStorageService.AccessKey),
-      Play.current.configuration.getString(S3ByteStorageService.SecretKey)) match {
-      case (Some(accessKey), Some(secretKey)) => {
-        val credentials = new BasicAWSCredentials(accessKey, secretKey)
-        val clientConfiguration = new ClientConfiguration
-        clientConfiguration.setSignerOverride("AWSS3V4SignerType")
-
-        Logger.info("Creating S3 Client with custom credentials.")
-
-        s3client.withClientConfiguration(clientConfiguration)
-          .withCredentials(
-            new AWSCredentialsProviderChain(
-              new AWSStaticCredentialsProvider(credentials),
-              DefaultAWSCredentialsProviderChain.getInstance))
-          .build()
-      }
-      case (None, None) => {
-        Logger.info("Creating S3 Client with default credentials.")
-
-        s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance).build()
-      }
-
-      case _ => {
-        val errMsg = "Bad S3 configuration: accessKey and secretKey are both required if one is given. Falling back to default credentials..."
-        Logger.warn(errMsg)
-
-        s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance).build()
-      }
-    }
-  }
-
-  // Ensure that bucket exists and that we have access to it before continuing
-  Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
-    case Some(bucketName) => {
-      try {
-        // Validate configuration by checking for bucket existence on startup
-        s3.headBucket(new HeadBucketRequest(bucketName))
-        Logger.debug("Confirmed access to configured S3 bucket. S3ByteStorageService loading is complete.")
-      } catch {
-        case sdke @ (_: AmazonClientException | _: AmazonServiceException) => {
-          if (sdke.getMessage.contains("Status Code: 404")) {
-            Logger.warn("Configured S3 bucket does not exist, attempting to create it now...")
-            try {
-              // Bucket does not exist - create the bucket
-              s3.createBucket(new CreateBucketRequest(bucketName))
-              Logger.debug("Created configured S3 bucket. S3ByteStorageService loading is complete.")
-            } catch {
-              // Bucket could not be created - abort
-              case _: Throwable => throw new RuntimeException("Bad S3 configuration: Bucket does not exist and could not be created.")
-            }
-          } else if (sdke.getMessage.contains("Status Code: 403")) {
-            // Bucket exists, but you do not have permission to access it
-            throw new RuntimeException("Bad S3 configuration: You do not have access to the configured bucket.")
-          } else {
-            // Unknown error - print status code for further investigation
-            val errMsg = sdke.getLocalizedMessage
-            Logger.error(errMsg)
-            throw new RuntimeException("Bad S3 configuration: an unknown error has occurred - " + errMsg)
-          }
-        }
-        case _: Throwable => throw new RuntimeException("Bad S3 configuration: an unknown error has occurred.")
-      }
-    }
-    case _ => throw new RuntimeException("Bad S3 configuration: verify that you have set all configuration options.")
-  }
 
   /* Reusable handlers for various Exception types */
   def handleUnknownError(err: Exception = null) = {
@@ -171,6 +84,96 @@ object S3ByteStorageService {
   * you to use an S3 bucket on AWS or Minio to store your files.
   */
 class S3ByteStorageService @Inject()() extends ByteStorageService {
+
+  val s3: AmazonS3 = {
+    // NOTE: Region is ignored for MinIO case
+    val s3client = (Play.current.configuration.getString(S3ByteStorageService.ServiceEndpoint), Play.current.configuration.getString(S3ByteStorageService.Region)) match {
+      case (Some(serviceEndpoint), Some(region)) => {
+        Logger.info("Creating S3 Client with custom endpoint and region: " + serviceEndpoint + " in region " + region)
+        AmazonS3ClientBuilder.standard().withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, region))
+      }
+      case (Some(serviceEndpoint), None) => {
+        Logger.info("Creating S3 Client with custom endpoint: " + serviceEndpoint + " (using default region)")
+        AmazonS3ClientBuilder.standard()
+          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, Regions.US_EAST_1.name()))
+      }
+      case (None, Some(region)) => {
+        Logger.info("Creating S3 Client with custom region: " + region)
+        AmazonS3ClientBuilder.standard().withRegion(region)
+      }
+      case (None, None) => AmazonS3ClientBuilder.standard()
+    }
+
+    // Search for AccessKey / SecretKey in config (envvar values will be populated here by default)
+    (Play.current.configuration.getString(S3ByteStorageService.AccessKey),
+      Play.current.configuration.getString(S3ByteStorageService.SecretKey)) match {
+      case (Some(accessKey), Some(secretKey)) => {
+        val credentials = new BasicAWSCredentials(accessKey, secretKey)
+        val clientConfiguration = new ClientConfiguration
+        clientConfiguration.setSignerOverride("AWSS3V4SignerType")
+
+        Logger.info("Creating S3 Client with custom credentials.")
+
+        s3client.withClientConfiguration(clientConfiguration)
+          .withPathStyleAccessEnabled(true)
+          .withCredentials(new AWSStaticCredentialsProvider(credentials))
+          .build()
+      }
+      case (None, None) => {
+        Logger.info("Creating S3 Client with default credentials.")
+
+        s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance)
+          .withPathStyleAccessEnabled(true)
+          .build()
+      }
+
+      case _ => {
+        val errMsg = "Bad S3 configuration: accessKey and secretKey are both required if one is given. Falling back to default credentials..."
+        Logger.warn(errMsg)
+
+        s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance)
+          .withPathStyleAccessEnabled(true)
+          .build()
+      }
+    }
+  }
+
+  // Ensure that bucket exists and that we have access to it before continuing
+  synchronized {
+    Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
+      case Some(bucketName) => {
+        try {
+          // Validate configuration by checking for bucket existence on startup
+          this.s3.headBucket(new HeadBucketRequest(bucketName))
+          Logger.debug("Confirmed access to configured S3 bucket. S3ByteStorageService loading is complete.")
+        } catch {
+          case sdke@(_: AmazonClientException | _: AmazonServiceException) => {
+            if (sdke.getMessage.contains("Status Code: 404")) {
+              Logger.warn("Configured S3 bucket does not exist, attempting to create it now...")
+              try {
+                // Bucket does not exist - create the bucket
+                this.s3.createBucket(new CreateBucketRequest(bucketName))
+                Logger.debug("Created configured S3 bucket. S3ByteStorageService loading is complete.")
+              } catch {
+                // Bucket could not be created - abort
+                case _: Throwable => throw new RuntimeException("Bad S3 configuration: Bucket does not exist and could not be created.")
+              }
+            } else if (sdke.getMessage.contains("Status Code: 403")) {
+              // Bucket exists, but you do not have permission to access it
+              throw new RuntimeException("Bad S3 configuration: You do not have access to the configured bucket.")
+            } else {
+              // Unknown error - print status code for further investigation
+              val errMsg = sdke.getLocalizedMessage
+              Logger.error(errMsg)
+              throw new RuntimeException("Bad S3 configuration: an unknown error has occurred - " + errMsg)
+            }
+          }
+          case _: Throwable => throw new RuntimeException("Bad S3 configuration: an unknown error has occurred.")
+        }
+      }
+      case _ => throw new RuntimeException("Bad S3 configuration: verify that you have set all configuration options.")
+    }
+  }
 
   /**
     * Store bytes to the specified path within the configured S3 bucket.
