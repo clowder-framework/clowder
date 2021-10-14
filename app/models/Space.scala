@@ -23,6 +23,7 @@ case class ProjectSpace (
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
+  spaceBytes: Long, 
   metadata: List[Metadata],
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
@@ -52,7 +53,8 @@ case class UserSpace (
    bannerURL: Option[URL],
    collectionCount: Integer,
    datasetCount: Integer,
-   userCount: Integer)
+   userCount: Integer,
+   spaceBytes: Long)
 
 case class SpaceInvite(
     id: UUID = UUID.generate,

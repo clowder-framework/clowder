@@ -25,6 +25,7 @@ class SpaceMongoDBSpec extends PlaySpec with OneServerPerSuite {
     collectionCount = 0,
     datasetCount = 0,
     userCount = 0,
+    spaceBytes = 0,
     metadata = List.empty
   )
 
