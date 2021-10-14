@@ -13,7 +13,6 @@ import play.Logger
 import play.api.Play
 import services.ByteStorageService
 import com.amazonaws.AmazonServiceException
-import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.amazonaws.services.s3.transfer.Upload
 import services.s3.S3ByteStorageService.{handleACE, handleASE, handleIOE, handleUnknownError}
@@ -84,24 +83,29 @@ object S3ByteStorageService {
   * you to use an S3 bucket on AWS or Minio to store your files.
   */
 class S3ByteStorageService @Inject()() extends ByteStorageService {
+  val s3: AmazonS3 = this.buildS3Client()
+  this.ensureBucketAccessAndExists()
 
-  val s3: AmazonS3 = {
+  def buildS3Client(): AmazonS3 = {
     // NOTE: Region is ignored for MinIO case
     val s3client = (Play.current.configuration.getString(S3ByteStorageService.ServiceEndpoint), Play.current.configuration.getString(S3ByteStorageService.Region)) match {
       case (Some(serviceEndpoint), Some(region)) => {
-        Logger.info("Creating S3 Client with custom endpoint and region: " + serviceEndpoint + " in region " + region)
+        Logger.debug("Creating S3 Client with custom endpoint and region: " + serviceEndpoint + " in region " + region)
         AmazonS3ClientBuilder.standard().withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, region))
       }
       case (Some(serviceEndpoint), None) => {
-        Logger.info("Creating S3 Client with custom endpoint: " + serviceEndpoint + " (using default region)")
+        Logger.debug("Creating S3 Client with custom endpoint: " + serviceEndpoint + " (using default region)")
         AmazonS3ClientBuilder.standard()
           .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, Regions.US_EAST_1.name()))
       }
       case (None, Some(region)) => {
-        Logger.info("Creating S3 Client with custom region: " + region)
+        Logger.debug("Creating S3 Client with custom region: " + region)
         AmazonS3ClientBuilder.standard().withRegion(region)
       }
-      case (None, None) => AmazonS3ClientBuilder.standard()
+      case (None, None) => {
+        Logger.debug("Creating S3 Client with default region.")
+        AmazonS3ClientBuilder.standard()
+      }
     }
 
     // Search for AccessKey / SecretKey in config (envvar values will be populated here by default)
@@ -112,17 +116,17 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
         val clientConfiguration = new ClientConfiguration
         clientConfiguration.setSignerOverride("AWSS3V4SignerType")
 
-        Logger.info("Creating S3 Client with custom credentials.")
+        Logger.debug("Creating S3 Client with custom credentials.")
 
-        s3client.withClientConfiguration(clientConfiguration)
+        return s3client.withClientConfiguration(clientConfiguration)
           .withPathStyleAccessEnabled(true)
           .withCredentials(new AWSStaticCredentialsProvider(credentials))
           .build()
       }
       case (None, None) => {
-        Logger.info("Creating S3 Client with default credentials.")
+        Logger.debug("Creating S3 Client with default credentials.")
 
-        s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance)
+        return s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance)
           .withPathStyleAccessEnabled(true)
           .build()
       }
@@ -131,15 +135,15 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
         val errMsg = "Bad S3 configuration: accessKey and secretKey are both required if one is given. Falling back to default credentials..."
         Logger.warn(errMsg)
 
-        s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance)
+        return s3client.withCredentials(DefaultAWSCredentialsProviderChain.getInstance)
           .withPathStyleAccessEnabled(true)
           .build()
       }
     }
   }
 
-  // Ensure that bucket exists and that we have access to it before continuing
-  synchronized {
+  def ensureBucketAccessAndExists() = {
+    // Ensure that bucket exists and that we have access to it before continuing
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
       case Some(bucketName) => {
         try {
@@ -187,8 +191,8 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
     Play.current.configuration.getString(S3ByteStorageService.BucketName) match {
       case None => Logger.error("Failed saving bytes: failed to find configured S3 bucketName.")
       case Some(bucketName) => {
-        val xferManager: TransferManager = TransferManagerBuilder.standard().withS3Client(s3).build
         try {
+          val xferManager = TransferManagerBuilder.standard().withS3Client(this.s3).build
           Logger.debug("Saving file to: /" + bucketName + "/" + prefix)
 
           val id = UUID.generate.stringify
@@ -219,7 +223,7 @@ class S3ByteStorageService @Inject()() extends ByteStorageService {
           //XferMgrProgress.showTransferProgress(xfer)
           //  or block with Transfer.waitForCompletion()
           xfer.waitForCompletion()
-          xferManager.shutdownNow()
+          xferManager.shutdownNow(false)
 
           Logger.debug("File saved to: /" + bucketName + "/" + prefix + "/" + targetPath)
 
