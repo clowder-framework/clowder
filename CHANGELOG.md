@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Support the [DefaultAWSCredentialsProviderChain](https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html) for passing in credentials to the S3ByteStorageService.
+
+### Fixed
+- Cleaning up after a failed upload should no longer decrement the file + byte counts.
+
+
 ## 1.19.0 - 2021-10-05
 **_Important:_** This update requires a MongoDB update schema due to the new ability of showing summary statistics at the
 space level. Make sure to start the application with -DMONGOUPDATE=1.
