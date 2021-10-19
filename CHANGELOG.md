@@ -6,11 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Support the [DefaultAWSCredentialsProviderChain](https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html) 
+  for passing in credentials to the S3ByteStorageService.
+
 ### Fixed
-- Upgraded extractor parameters jsonform to version `2.2.5`.
+- Cleaning up after a failed upload should no longer decrement the file + byte counts.
 
 ### Changed
 - now building mongo-init and monitor docker containers with python 3.8
+- Upgraded extractor parameters jsonform to version `2.2.5`.
 
 ### Removed
 - check image is now part of [ncsa/checks](https://github.com/ncsa/checks/)
