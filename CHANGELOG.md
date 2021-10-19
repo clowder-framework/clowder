@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   for passing in credentials to the S3ByteStorageService.
 
 ### Fixed
-- Upgraded extractor parameters jsonform to version `2.2.5`.
 - Cleaning up after a failed upload should no longer decrement the file + byte counts.
 - Fix the broken preview after file deletion within a folder. [#277](https://github.com/clowder-framework/clowder/issues/277) 
 
