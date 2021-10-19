@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Upgraded extractor parameters jsonform to version `2.2.5`.
 
+### Changed
+- now building mongo-init and monitor docker containers with python 3.8
+
+### Removed
+- check image is now part of [ncsa/checks](https://github.com/ncsa/checks/)
+
 ## 1.19.0 - 2021-10-05
 **_Important:_** This update requires a MongoDB update schema due to the new ability of showing summary statistics at the
 space level. Make sure to start the application with -DMONGOUPDATE=1.
