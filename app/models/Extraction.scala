@@ -78,6 +78,7 @@ case class ExtractorDetail(
  *
  * @param id id internal to the system
  * @param name lower case, no spaces, can use dashes
+ * @param uniqueName name+suffix to uniquely identify extractor for private use e.g. clowder.extractor.v2.johndoe123
  * @param version the version, for example 1.3.5
  * @param updated date when this information was last updated
  * @param description short description of what the extractor does

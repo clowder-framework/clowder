@@ -305,6 +305,7 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
     case statusBody: String =>
       Logger.debug("Received extractor heartbeat: " + statusBody)
       val json = Json.parse(statusBody)
+      Logger.debug(json.toString)
       // TODO store running extractors ids
       val id = UUID((json \ "id").as[String])
       val queue = (json \ "queue").as[String]
@@ -315,51 +316,101 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
 
       // Update database
       extractionInfoResult.fold(
-        errors => {
-          Logger.debug("Received extractor heartbeat with bad format: " + extractor_info)
-        },
+        errors => Logger.debug("Received extractor heartbeat with bad format: " + extractor_info),
         info => {
-          extractorsService.getExtractorInfo(info.name) match {
-            case Some(infoFromDB) => {
-              // TODO only update if new semantic version is greater than old semantic version
-              if (infoFromDB.version != info.version) {
-                // TODO keep older versions of extractor info instead of just the latest one
-                extractorsService.updateExtractorInfo(info)
-                Logger.info("Updated extractor definition for " + info.name)
-              }
-            }
-            case None => {
-              extractorsService.updateExtractorInfo(info) match {
-                case None => {}
-                case Some(eInfo) => {
-                  // Create (if needed) and assign default labels
-                  eInfo.defaultLabels.foreach(labelStr => {
-                    val segments = labelStr.split("/")
-                    val (labelName, labelCategory) = if (segments.length > 1) {
-                      (segments(1), segments(0))
-                    } else {
-                      (segments(0), "Other")
-                    }
-                    extractorsService.getExtractorsLabel(labelName) match {
-                      case None => {
-                        // Label does not exist - create and assign it
-                        val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
-                      }
-                      case Some(lbl) => {
-                        // Label already exists, assign it
-                        if (!lbl.extractors.contains(eInfo.name)) {
-                          val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
-                          val updatedLabel = extractorsService.updateExtractorsLabel(label)
+          info.unique_key match {
+            case "" => {
+              extractorsService.getExtractorInfo(info.name, None) match {
+                case Some(infoFromDB) => {
+                  Logger.info("update info, blank key")
+                  // TODO only update if new semantic version is greater than old semantic version
+                  if (infoFromDB.version != info.version) {
+                    // TODO keep older versions of extractor info instead of just the latest one
+                    extractorsService.updateExtractorInfo(info)
+                    Logger.info("Updated extractor definition for " + info.name)
+                  }
+                }
+                case None => {
+                  extractorsService.updateExtractorInfo(info) match {
+                    case None => {}
+                    case Some(eInfo) => {
+                      Logger.info("add info, no key")
+                      // Create (if needed) and assign default labels
+                      eInfo.defaultLabels.foreach(labelStr => {
+                        val segments = labelStr.split("/")
+                        val (labelName, labelCategory) = if (segments.length > 1) {
+                          (segments(1), segments(0))
+                        } else {
+                          (segments(0), "Other")
                         }
-                      }
+                        extractorsService.getExtractorsLabel(labelName) match {
+                          case None => {
+                            // Label does not exist - create and assign it
+                            val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
+                          }
+                          case Some(lbl) => {
+                            // Label already exists, assign it
+                            if (!lbl.extractors.contains(eInfo.name)) {
+                              val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
+                              val updatedLabel = extractorsService.updateExtractorsLabel(label)
+                            }
+                          }
+                        }
+                      })
                     }
-                  })
+                  }
+
+                  Logger.info(s"New extractor ${info.name} registered from heartbeat")
                 }
               }
+            }
+            case ek => {
+              extractorsService.getExtractorInfo(info.name, Some(ek)) match {
+                case Some(infoFromDB) => {
+                  Logger.info("update info with key")
+                  // TODO only update if new semantic version is greater than old semantic version
+                  if (infoFromDB.version != info.version) {
+                    // TODO keep older versions of extractor info instead of just the latest one
+                    extractorsService.updateExtractorInfo(info)
+                    Logger.info("Updated extractor definition for " + info.name)
+                  }
+                }
+                case None => {
+                  extractorsService.updateExtractorInfo(info) match {
+                    case None => {}
+                    case Some(eInfo) => {
+                      Logger.info("updated info, with key")
+                      // Create (if needed) and assign default labels
+                      eInfo.defaultLabels.foreach(labelStr => {
+                        val segments = labelStr.split("/")
+                        val (labelName, labelCategory) = if (segments.length > 1) {
+                          (segments(1), segments(0))
+                        } else {
+                          (segments(0), "Other")
+                        }
+                        extractorsService.getExtractorsLabel(labelName) match {
+                          case None => {
+                            // Label does not exist - create and assign it
+                            val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
+                          }
+                          case Some(lbl) => {
+                            // Label already exists, assign it
+                            if (!lbl.extractors.contains(eInfo.name)) {
+                              val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
+                              val updatedLabel = extractorsService.updateExtractorsLabel(label)
+                            }
+                          }
+                        }
+                      })
+                    }
+                  }
 
-              Logger.info(s"New extractor ${info.name} registered from heartbeat")
+                  Logger.info(s"New extractor ${info.name} registered from heartbeat")
+                }
+              }
             }
           }
+
         }
       )
   }

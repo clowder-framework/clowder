@@ -199,25 +199,48 @@ class MongoDBExtractorService @Inject() (
     list_queue
   }
 
-  def getExtractorInfo(extractorName: String): Option[ExtractorInfo] = {
-    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName))
-  }
-
-  def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo] = {
-    ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name)) match {
-      case Some(old) => {
-        val updated = e.copy(id = old.id)
-        ExtractorInfoDAO.update(MongoDBObject("name" -> e.name), updated, false, false, WriteConcern.Safe)
-        Some(updated)
-      }
-      case None => {
-        ExtractorInfoDAO.save(e)
-        Some(e)
-      }
+  def getExtractorInfo(extractorName: String, extractorKey: Option[String]): Option[ExtractorInfo] = {
+    extractorKey match {
+      case Some(ek) => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek))
+      case None => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName))
     }
   }
 
-  def deleteExtractor(extractorName: String) {
+  def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo] = {
+    // TODO: Make this account for version as well
+    e.unique_key match {
+      case "" => {
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name)) match {
+          case Some(old) => {
+            val updated = e.copy(id = old.id)
+            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name), updated, false, false, WriteConcern.Safe)
+            Some(updated)
+          }
+          case None => {
+            ExtractorInfoDAO.save(e)
+            Some(e)
+          }
+        }
+      }
+      case ek => {
+        Logger.info("using key lookup on "+ek)
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name, "unique_key" -> ek)) match {
+          case Some(old) => {
+            val updated = e.copy(id = old.id)
+            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name), updated, false, false, WriteConcern.Safe)
+            Some(updated)
+          }
+          case None => {
+            ExtractorInfoDAO.save(e)
+            Some(e)
+          }
+        }
+      }
+    }
+
+  }
+
+  def deleteExtractor(extractorName: String, extractorKey: Option[String]) {
     ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName)) match {
       case Some(extractor) => {
         ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
@@ -256,15 +279,11 @@ class MongoDBExtractorService @Inject() (
 
   def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel] = {
     var results = List[ExtractorsLabel]()
-    ExtractorInfoDAO.findOne(MongoDBObject("name"->extractorName)) match {
-      case Some(info) => {
-        ExtractorsLabelDAO.findAll().foreach(label => {
-          if (label.extractors.contains(extractorName)) {
-            results = results ++ List[ExtractorsLabel](label)
-          }
-        })
+    ExtractorsLabelDAO.findAll().foreach(label => {
+      if (label.extractors.contains(extractorName) && !results.contains(label)) {
+        results = results ++ List[ExtractorsLabel](label)
       }
-    }
+    })
     results
   }
 }

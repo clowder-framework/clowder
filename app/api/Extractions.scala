@@ -409,19 +409,19 @@ class Extractions @Inject()(
     Ok(Json.toJson(extractors.listExtractorsInfo(categories, userid)))
   }
 
-  def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
-    extractors.getExtractorInfo(extractorName) match {
+  def getExtractorInfo(extractorName: String, extractor_key: Option[String]) = AuthenticatedAction { implicit request =>
+    extractors.getExtractorInfo(extractorName, extractor_key) match {
       case Some(info) => Ok(Json.toJson(info))
       case None => NotFound(Json.obj("status" -> "KO", "message" -> "Extractor info not found"))
     }
   }
 
-  def deleteExtractor(extractorName: String) = ServerAdminAction { implicit request =>
-    extractors.deleteExtractor(extractorName)
+  def deleteExtractor(extractorName: String, extractor_key: Option[String]) = ServerAdminAction { implicit request =>
+    extractors.deleteExtractor(extractorName, extractor_key)
     Ok(toJson(Map("status" -> "success")))
   }
 
-  def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
+  def addExtractorInfo(extractor_key: Option[String], user: Option[String]) = AuthenticatedAction(parse.json) { implicit request =>
     // If repository is of type object, change it into an array.
     // This is for backward compatibility with requests from existing extractors.
     var requestJson = request.body \ "repository" match {
@@ -435,67 +435,42 @@ class Extractions @Inject()(
     // Update database
     extractionInfoResult.fold(
       errors => {
+        Logger.info("Couldn't parse info")
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
       },
       info => {
-        extractors.updateExtractorInfo(info) match {
-          case Some(u) => {
-            // Create/assign any default labels for this extractor
-            u.defaultLabels.foreach(labelStr => {
-              val segments = labelStr.split("/")
-              val (labelName, labelCategory) = if (segments.length > 1) {
-                (segments(1), segments(0))
-              } else {
-                (segments(0), "Other")
+        // TODO: Include version number in queue name as well
+        // Check private extractor flags
+        val submissionInfo: Option[ExtractorInfo] = extractor_key match {
+          case Some(ek) => {
+            user match {
+              case None => {
+                Logger.error("Extractors with a private key must also specify a user email.")
+                None
               }
-              extractors.getExtractorsLabel(labelName) match {
-                case None => {
-                  // Label does not exist - create and assign it
-                  val createdLabel = extractors.createExtractorsLabel(labelName, Some(labelCategory), List[String](u.name))
-                }
-                case Some(lbl) => {
-                  // Label already exists, assign it
-                  if (!lbl.extractors.contains(u.name)) {
-                    val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](u.name))
-                    val updatedLabel = extractors.updateExtractorsLabel(label)
+              case Some(userEmail) => {
+                userservice.findByEmail(userEmail) match {
+                  case Some(u) => {
+                    val perms = List(new ResourceRef('user, u.id))
+                    Some(info.copy(unique_key=ek, permissions = perms))
+                  }
+                  case None => {
+                    Logger.error("No user found with email "+userEmail)
+                    None
                   }
                 }
               }
-            })
-
-            Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+            }
           }
-          case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
+          case None => Some(info)
         }
-      }
-    )
-  }
 
-  def addPrivateExtractorInfo(extractorKey: String) = AuthenticatedAction(parse.json) { implicit request =>
-    // If repository is of type object, change it into an array.
-    // This is for backward compatibility with requests from existing extractors.
-    var requestJson = request.body \ "repository" match {
-      case rep: JsObject => request.body.as[JsObject] ++ Json.obj("repository" ->  Json.arr(rep))
-      case _ => request.body
-    }
+        // TODO: Check user permissions if the extractor_key has already been registered
 
-    request.user match {
-      case Some(usr) => {
-        // Validate document
-        val extractionInfoResult = requestJson.validate[ExtractorInfo]
-
-        // Update database
-        extractionInfoResult.fold(
-          errors => {
-            BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
-          },
-          info => {
-            // This is private extractor, so need to use the extractor_key provided
-            val uniqueName = info.name + extractorKey
-            val categories = "PRIVATE" :: info.categories
-            val updatedInfo = info.copy(name=uniqueName, categories=categories)
-
-            extractors.updateExtractorInfo(updatedInfo) match {
+        submissionInfo match {
+          case None => BadRequest("Extractors with a private key must also specify a non-anonymous user.")
+          case Some(subInfo) => {
+            extractors.updateExtractorInfo(subInfo) match {
               case Some(u) => {
                 // Create/assign any default labels for this extractor
                 u.defaultLabels.foreach(labelStr => {
@@ -525,10 +500,9 @@ class Extractions @Inject()(
               case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
             }
           }
-        )
+        }
       }
-      case None => BadRequest(Json.obj("status" -> "KO", "message" -> "User is required for private extractors."))
-    }
+    )
   }
 
   def submitFileToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
