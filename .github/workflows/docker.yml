@@ -36,7 +36,6 @@ jobs:
           - clowder
           - mongo-init
           - monitor
-          - check
         include:
           - name: clowder
             FOLDER: "."
@@ -49,10 +48,6 @@ jobs:
           - name: monitor
             FOLDER: scripts/monitor
             IMAGE: monitor
-            README: ""
-          - name: check
-            FOLDER: scripts/check
-            IMAGE: check
             README: ""
     steps:
       - uses: actions/checkout@v2
