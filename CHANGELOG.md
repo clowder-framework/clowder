@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- Upgraded extractor parameters jsonform to version `2.2.5`.
+
 ### Changed
 - now building mongo-init and monitor docker containers with python 3.8
 
