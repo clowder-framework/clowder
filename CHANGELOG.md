@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Cleaning up after a failed upload should no longer decrement the file + byte counts.
 - Fix the broken preview after file deletion within a folder. [#277](https://github.com/clowder-framework/clowder/issues/277) 
+- Fix public spaces not displaying correctly if not logged in.
 
 ### Changed
 - Now building mongo-init and monitor docker containers with python 3.8

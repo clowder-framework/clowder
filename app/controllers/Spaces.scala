@@ -168,7 +168,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
         val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
         val spaceBytes : Long = s.spaceBytes
-        val spaceFiles : Integer = getFilesPerSpace(id, user.get)
+        val spaceFiles : Integer = getFilesPerSpace(id, user)
         val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
         val usersInSpace = spaces.getUsersInSpace(id, None)
         var curationObjectsInSpace: List[CurationObject] = List()
@@ -641,9 +641,9 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
       }
   }
 
-  private def getFilesPerSpace(spaceId: UUID, user: models.User) : Integer = {
+  private def getFilesPerSpace(spaceId: UUID, user: Option[User]) : Integer = {
     var spaceFiles: Integer = 0
-    val allDatasetsInSpace = datasets.listSpace(0, spaceId.toString(), Some(user))
+    val allDatasetsInSpace = datasets.listSpace(0, spaceId.toString(), user)
     for (ds <- allDatasetsInSpace) {
       val files_in_ds = ds.files.length
       spaceFiles += files_in_ds
