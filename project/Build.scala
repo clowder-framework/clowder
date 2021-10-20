@@ -125,11 +125,11 @@ object ApplicationBuild extends Build {
     "org.julienrf" %% "play-jsonp-filter" % "1.1",
 
     // Official AWS Java SDK
-    "com.amazonaws" % "aws-java-sdk-bom" % "1.12.78",
+    "com.amazonaws" % "aws-java-sdk-bom" % "1.11.106",
 
-    "com.amazonaws" % "aws-java-sdk-s3" % "1.12.78",
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106",
 
-    "com.amazonaws" % "aws-java-sdk-sts" % "1.12.78"
+    "com.amazonaws" % "aws-java-sdk-sts" % "1.11.106"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory
