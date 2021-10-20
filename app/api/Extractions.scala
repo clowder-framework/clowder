@@ -452,7 +452,7 @@ class Extractions @Inject()(
                 userservice.findByEmail(userEmail) match {
                   case Some(u) => {
                     val perms = List(new ResourceRef('user, u.id))
-                    Some(info.copy(unique_key=ek, permissions = perms))
+                    Some(info.copy(unique_key=Some(ek), permissions=perms))
                   }
                   case None => {
                     Logger.error("No user found with email "+userEmail)

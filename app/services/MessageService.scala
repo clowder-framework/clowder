@@ -298,6 +298,7 @@ class EventFilter(channel: Channel, queue: String) extends Actor {
  * @param queue
  */
 class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
+  val users: UserService = DI.injector.getInstance(classOf[UserService])
   val extractions: ExtractionService = DI.injector.getInstance(classOf[ExtractionService])
   val extractorsService: ExtractorService = DI.injector.getInstance(classOf[ExtractorService])
 
@@ -314,103 +315,97 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
       // Validate document
       val extractionInfoResult = extractor_info.validate[ExtractorInfo]
 
+      // Determine if there is a user associated with this request
+      val owner = (json \ "owner").as[String]
+      val user: Option[User] = if (owner.length > 0) {
+        users.findByEmail(owner)
+      } else {
+        None
+      }
+
       // Update database
       extractionInfoResult.fold(
         errors => Logger.debug("Received extractor heartbeat with bad format: " + extractor_info),
         info => {
-          info.unique_key match {
-            case "" => {
-              extractorsService.getExtractorInfo(info.name, None) match {
-                case Some(infoFromDB) => {
-                  Logger.info("update info, blank key")
-                  // TODO only update if new semantic version is greater than old semantic version
-                  if (infoFromDB.version != info.version) {
-                    // TODO keep older versions of extractor info instead of just the latest one
-                    extractorsService.updateExtractorInfo(info)
-                    Logger.info("Updated extractor definition for " + info.name)
-                  }
-                }
-                case None => {
-                  extractorsService.updateExtractorInfo(info) match {
-                    case None => {}
-                    case Some(eInfo) => {
-                      Logger.info("add info, no key")
-                      // Create (if needed) and assign default labels
-                      eInfo.defaultLabels.foreach(labelStr => {
-                        val segments = labelStr.split("/")
-                        val (labelName, labelCategory) = if (segments.length > 1) {
-                          (segments(1), segments(0))
-                        } else {
-                          (segments(0), "Other")
-                        }
-                        extractorsService.getExtractorsLabel(labelName) match {
-                          case None => {
-                            // Label does not exist - create and assign it
-                            val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
-                          }
-                          case Some(lbl) => {
-                            // Label already exists, assign it
-                            if (!lbl.extractors.contains(eInfo.name)) {
-                              val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
-                              val updatedLabel = extractorsService.updateExtractorsLabel(label)
-                            }
-                          }
-                        }
-                      })
+          if (info.unique_key.isDefined && user.isEmpty) {
+            Logger.error("Unique extractor keys must have a user associated with them.")
+
+          } else {
+            val userRRef = ResourceRef('user, user.get.id)
+            // We just verified that if we have a key, we have a user, so we can add the user ID to permissions
+            val infoWithPerms = info.unique_key match {
+              case Some(ek) => if info.copy(permissions=List() :+ userRRef)
+              case None => info
+            }
+
+            extractorsService.getExtractorInfo(info.name, info.unique_key) match {
+              case Some(infoFromDB) => {
+                Logger.info("...found existing extractor...")
+                if (info.unique_key == infoFromDB.unique_key) {
+                  info.unique_key match {
+                    case None => {
+                      // TODO only update if new semantic version is greater than old semantic version
+                      if (infoFromDB.version != info.version) {
+                        // TODO keep older versions of extractor info instead of just the latest one
+                        extractorsService.updateExtractorInfo(info)
+                        Logger.info("Updated extractor definition for " + info.name)
+                      }
+                    }
+                    case Some(ek) => {
+                      Logger.info("Checking permissions.")
+                      val reqUser = new ResourceRef('user, user.get.id)
+                      if (infoFromDB.permissions.contains(reqUser)) {
+                        Logger.info("pass")
+                        extractorsService.updateExtractorInfo(info)
+                      } else {
+                        Logger.info(reqUser.toString)
+                        Logger.info(infoFromDB.permissions.toString)
+                        Logger.error("User doesn't have permission.")
+                      }
                     }
                   }
+                } else {
+                  Logger.error("Mismatch between given extractor unique key and existing registration.")
+                }
 
-                  Logger.info(s"New extractor ${info.name} registered from heartbeat")
-                }
+
               }
-            }
-            case ek => {
-              extractorsService.getExtractorInfo(info.name, Some(ek)) match {
-                case Some(infoFromDB) => {
-                  Logger.info("update info with key")
-                  // TODO only update if new semantic version is greater than old semantic version
-                  if (infoFromDB.version != info.version) {
-                    // TODO keep older versions of extractor info instead of just the latest one
-                    extractorsService.updateExtractorInfo(info)
-                    Logger.info("Updated extractor definition for " + info.name)
-                  }
-                }
-                case None => {
-                  extractorsService.updateExtractorInfo(info) match {
-                    case None => {}
-                    case Some(eInfo) => {
-                      Logger.info("updated info, with key")
-                      // Create (if needed) and assign default labels
-                      eInfo.defaultLabels.foreach(labelStr => {
-                        val segments = labelStr.split("/")
-                        val (labelName, labelCategory) = if (segments.length > 1) {
-                          (segments(1), segments(0))
-                        } else {
-                          (segments(0), "Other")
+              case None => {
+                Logger.info("...no existing extractor found")
+                extractorsService.updateExtractorInfo(updatedInfo) match {
+                  case None => {}
+                  case Some(eInfo) => {
+                    Logger.info("registered")
+                    // Create (if needed) and assign default labels
+                    eInfo.defaultLabels.foreach(labelStr => {
+                      val segments = labelStr.split("/")
+                      val (labelName, labelCategory) = if (segments.length > 1) {
+                        (segments(1), segments(0))
+                      } else {
+                        (segments(0), "Other")
+                      }
+                      extractorsService.getExtractorsLabel(labelName) match {
+                        case None => {
+                          // Label does not exist - create and assign it
+                          val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
                         }
-                        extractorsService.getExtractorsLabel(labelName) match {
-                          case None => {
-                            // Label does not exist - create and assign it
-                            val createdLabel = extractorsService.createExtractorsLabel(labelName, Some(labelCategory), List[String](eInfo.name))
-                          }
-                          case Some(lbl) => {
-                            // Label already exists, assign it
-                            if (!lbl.extractors.contains(eInfo.name)) {
-                              val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
-                              val updatedLabel = extractorsService.updateExtractorsLabel(label)
-                            }
+                        case Some(lbl) => {
+                          // Label already exists, assign it
+                          if (!lbl.extractors.contains(eInfo.name)) {
+                            val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](eInfo.name))
+                            val updatedLabel = extractorsService.updateExtractorsLabel(label)
                           }
                         }
-                      })
-                    }
+                      }
+                    })
                   }
-
-                  Logger.info(s"New extractor ${info.name} registered from heartbeat")
                 }
+
+                Logger.info(s"New extractor ${info.name} registered from heartbeat with key "+info.unique_key.toString)
               }
             }
+
           }
-
         }
       )
   }

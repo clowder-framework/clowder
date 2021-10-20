@@ -119,7 +119,7 @@ case class ExtractorInfo(
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
   parameters: JsValue = JsObject(Seq()),
-  unique_key: String = "",
+  unique_key: Option[String] = None,
   permissions: List[ResourceRef] =List[ResourceRef]()
 )
 
@@ -174,7 +174,7 @@ object ExtractorInfo {
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq()))) and
-      (JsPath \ "unique_key").read[String].orElse(Reads.pure("")) and
+      (JsPath \ "unique_key").read[Option[String]] and
       (JsPath \ "permissions").read[List[ResourceRef]].orElse(Reads.pure(List.empty))
     )(ExtractorInfo.apply _)
 }

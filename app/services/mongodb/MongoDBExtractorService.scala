@@ -209,7 +209,7 @@ class MongoDBExtractorService @Inject() (
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo] = {
     // TODO: Make this account for version as well
     e.unique_key match {
-      case "" => {
+      case None => {
         ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name)) match {
           case Some(old) => {
             val updated = e.copy(id = old.id)
@@ -222,8 +222,7 @@ class MongoDBExtractorService @Inject() (
           }
         }
       }
-      case ek => {
-        Logger.info("using key lookup on "+ek)
+      case Some(ek) => {
         ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name, "unique_key" -> ek)) match {
           case Some(old) => {
             val updated = e.copy(id = old.id)
@@ -237,7 +236,6 @@ class MongoDBExtractorService @Inject() (
         }
       }
     }
-
   }
 
   def deleteExtractor(extractorName: String, extractorKey: Option[String]) {
