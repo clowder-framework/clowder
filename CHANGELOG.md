@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.19.1 - 2021-10-19
+
+### Added
+- Support the [DefaultAWSCredentialsProviderChain](https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html) 
+  for passing in credentials to the S3ByteStorageService.
+
+### Fixed
+- Cleaning up after a failed upload should no longer decrement the file + byte counts.
+- Fix the broken preview after file deletion within a folder. [#277](https://github.com/clowder-framework/clowder/issues/277) 
+- Fix public spaces not displaying correctly if not logged in.
+
+### Changed
+- Now building mongo-init and monitor docker containers with python 3.8
+- Upgraded extractor parameters jsonform to version `2.2.5`.
+
+### Removed
+- Check image is now part of [ncsa/checks](https://github.com/ncsa/checks/)
+
 ## 1.19.0 - 2021-10-05
 **_Important:_** This update requires a MongoDB update schema due to the new ability of showing summary statistics at the
 space level. Make sure to start the application with -DMONGOUPDATE=1.

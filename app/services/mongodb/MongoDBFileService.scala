@@ -847,20 +847,24 @@ class MongoDBFileService @Inject() (
             }
           }
 
+
           // delete the actual file
-          if(isLastPointingToLoader(file.loader, file.loader_id)) {
+          val fileSize = if(isLastPointingToLoader(file.loader, file.loader_id)) {
             for(preview <- previews.findByFileId(file.id)){
               previews.removePreview(preview)
             }
             if(!file.thumbnail_id.isEmpty)
               thumbnails.remove(UUID(file.thumbnail_id.get))
             ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+            file.length
+          } else {
+            0
           }
 
           import UUIDConversions._
           FileDAO.removeById(file.id)
           appConfig.incrementCount('files, -1)
-          appConfig.incrementCount('bytes, -file.length)
+          appConfig.incrementCount('bytes, -1 * fileSize)
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete(id.stringify)
           }
