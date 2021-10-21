@@ -94,6 +94,10 @@ trait SpaceService {
 
   def incrementCollectionCounter(collection: UUID, space: UUID, increment: Int)
 
+  def incrementFileCounter(space: UUID, increment: Long)
+
+  def decrementFileCounter(space: UUID, decrement: Long)
+
   def incrementSpaceBytes(space: UUID, increment: Long)
 
   def decrementSpaceBytes(space: UUID, decrement: Long)

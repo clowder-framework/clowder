@@ -1,4 +1,4 @@
-@(space: ProjectSpace, collections: List[Collection], publicDatasets: List[Dataset], datasets: List[Dataset], publishedData: List[play.api.libs.json.JsValue], servicesUrl: String, userRoleMap: Map[User, String], userSelections: List[String], spaceBytes: Long, spaceFiles: Integer)(implicit user: Option[models.User])
+@(space: ProjectSpace, collections: List[Collection], publicDatasets: List[Dataset], datasets: List[Dataset], publishedData: List[play.api.libs.json.JsValue], servicesUrl: String, userRoleMap: Map[User, String], userSelections: List[String])(implicit user: Option[models.User])
 @import play.api.libs.json._
 
 @import play.api.Play.current
@@ -119,10 +119,10 @@
         @* right column, space statistics, actions *@
         <div class="col-md-4 col-lg-4 col-sm-4">
             @if(user.isDefined) {
-                @spaces.statistics(space, spaceBytes, None, spaceFiles )
+                @spaces.statistics(space, None )
                 @spaces.otherActions(space)
             } else {
-                @spaces.statistics(space, spaceBytes, None, spaceFiles)
+                @spaces.statistics(space, None)
             }
             @spaces.externalLinks(space.homePage, space, "row ds-section-sm")
             @if(play.Play.application().configuration().getBoolean("enablePublic")) {

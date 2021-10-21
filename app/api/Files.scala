@@ -1678,6 +1678,7 @@ class Files @Inject()(
           val ds_spaces = ds.spaces
           for (ds_s <- ds_spaces) {
             spaces.decrementSpaceBytes(ds_s, file.length)
+            spaces.decrementFileCounter(ds_s, 1)
           }
         }
 
