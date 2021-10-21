@@ -1,5 +1,7 @@
+.. _installing_clowder:
+
 ##################
-Getting Started
+Installing Clowder
 ##################
 
 Clowder can be deployed in two ways. Users can either use `Docker <http://docker.com>`_  or manually install the core and
@@ -303,13 +305,13 @@ First, edit these properties to your liking:
 Now you can login to Clowder (``localhost:9000`` or ``localhost:8000`` if not building from source Docker) in your browser
 
 User creation method 2 and 3
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For methods 2 and 3, enable local email verification (*or you will never
 get an email verification*).
 
 Enable local email verification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++++++++
 
 For local instances of Clowder, the email verification step will have to
 be done manually, via a mock SMTP email server.
