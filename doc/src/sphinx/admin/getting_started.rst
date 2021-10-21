@@ -9,7 +9,7 @@ tested. Production instances usually use the second method of installation :ref:
 most extractors are deployed using `Docker swarm <https://docs.docker.com/engine/swarm/>`_.
 
 What type of user are you?
-===============
+===================================
 
 
 For **users of Clowder**: Clowder is easily accessed via Docker. :ref:`Quickstart here<usersOfClowder>`.
@@ -33,7 +33,7 @@ recommended.
 .. _usersOfClowder:
 
 Users of Clowder: Getting Started via Docker
-===================================
+==============================================
 
 1. Install `Docker <http://docker.com/>`__ (if you haven’t already)
 2. Download and unzip the `latest stable version here <Download and unzip a specific version: Latest stable version.>`_
@@ -90,12 +90,24 @@ First, edit these properties to your liking:
 
    docker run --rm -ti --network clowder_clowder -e FIRST_NAME=Admin -e LAST_NAME=User -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute -e ADMIN=true clowder/mongo-init
 
+Now you can login to Clowder in your browser via ``localhost:8000`` (or if you built from source in IntelliJ, use ``localhost:9000``).
+
 - If you get error: ``Error response from daemon: network clowder_clowder not found.`` 
   - Try changing the network parameter to ``--network clowder-1_clowder``. It's possible you have multiple Clowder docker containers.
 
-Now you can login to Clowder in your browser via ``localhost:8000`` (or if you built from source in IntelliJ, use ``localhost:9000``).
+Done! You should be able to login to your new account, create new Spaces & Datasets and upload many different types of data. 
 
-Check out the `next steps below <nextSteps>`_ !
+.. note::
+   Before you go, check out useful information like the `Clowder 'All Paws' YouTube playist <https://www.youtube.com/playlist?list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i>`__.
+   
+   -  `Check out the Overview of Clowder <https://www.youtube.com/watch?v=B5hD8ehENck&list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i&index=5&ab_channel=ClowderFramework>`__
+   -  `Check out How to use Clowder <https://www.youtube.com/watch?v=wHmDJAD5GbE&list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i&index=5&t=605s&ab_channel=ClowderFramework>`__
+   -  `Check out How to Create a New Extractor <https://www.youtube.com/watch?v=0uthTzrZCt8&list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i&index=17&ab_channel=ClowderFramework>`__
+   -  and 28 total videos covering specific Clowder topics and uses!
+
+   Or, try the `core data extractors <https://github.com/clowder-framework/extractors-core>`__ that most people would like to install.
+
+
 
 .. _clowderDevelopers:
 
@@ -214,14 +226,18 @@ Part 2: Run Clowder via IntelliJ
 
 7. Create a new ``Play 2 App`` configuration
 
-   - Note: if you **don’t see Play 2 App in the list**, you may need to use IntelliJ *Ultimate* version (instead of Community). I experienced this bug, feel free to ask in the Clowder Slack.
+.. note::
 
-      .. figure:: ../_static/GettingStarted_Play2Config.png
-         :alt: Create play2 configuration.
+   If you **don’t see Play 2 App in the list**, you may need to use IntelliJ *Ultimate* version (instead of Community). I experienced this bug, feel free to ask in the `Clowder Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_.
+
+.. figure:: ../_static/GettingStarted_Play2Config.png
+   :alt: Create play2 configuration.
 
 8. The default configuration should be okay, see image below.
 
-   - NOTE: Later, **if Clowder feels slow** (multiple seconds per page load) then you will need to add JNotify to your JVM Options here. :ref:`Instructions at bottom of this page<slowClowder>`.
+.. note::
+
+   Later, **if Clowder feels slow** (multiple seconds per page load) then you will need to add JNotify to your JVM Options on this page. :ref:`Instructions at bottom of this page<slowClowder>`.
 
 .. figure:: ../_static/GettingStarted_AddJDK.png
    :alt: Specify the JDK path
@@ -241,8 +257,11 @@ Now in IntelliJ, click the green play button (top right) to build Clowder from s
 Access Clowder via ``localhost:9000`` in the
 browser.
 
--  Note: building from source defaults to port 9000. Running from Docker
-   (without building from source) defaults to port 8000.
+.. note::
+
+   Use ``localhost:9000`` when building from source (clicking the green play button in IntelliJ) and running the services via ``docker-compose -f docker-compose.override.yml up -d``
+
+   Use ``localhost:8000`` when running from Docker only (without building from source) via ``docker-compose up -d``
 
 .. _creatingLocalAccount
 Creating a local Clowder account
@@ -312,8 +331,8 @@ Now the below methods will work.
 Method 2: Creating many users? Change default Activation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All accounts must also be **activated by an administrator. To activate
-your account by default, edit ``application.conf``**
+**All accounts must also be activated by an administrator. To activate
+your account by default, edit** ``application.conf``.
 
 .. code:: bash
 
@@ -407,9 +426,6 @@ here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/JVM+Configura
 
 -  Simply download JNotify and tell IntelliJ where it is.
 
-
-.. _nextSteps: 
-
 Next Steps
 ==========
 
@@ -451,6 +467,15 @@ own <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Extractors>`__
 -  `Virus checker
    extractor <https://github.com/clowder-framework/extractors-clamav>`__
    (ensure dataset doesn’t have viruses)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -518,8 +543,9 @@ For example the following ``play.plugins`` file will enable some additional plug
 
 .. _requirements:
 
+******
 Requirements
-=================
+******
 
 Following is a list of requirements for the Clowder software. Besides Java, all other services/software
 can be installed on other machines with Clowder configured to communicate with them.
