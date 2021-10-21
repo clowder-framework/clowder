@@ -18,7 +18,7 @@ master_doc = 'index'
 # -- Project information -----------------------------------------------------
 
 project = 'Clowder'
-copyright = '2019, University of Illinois at Urbana-Champaign'
+copyright = '2021, University of Illinois at Urbana-Champaign'
 author = 'Luigi Marini'
 
 # The full version, including alpha/beta/rc tags
