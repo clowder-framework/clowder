@@ -202,7 +202,7 @@ class MongoDBExtractorService @Inject() (
   def getExtractorInfo(extractorName: String, extractorKey: Option[String]): Option[ExtractorInfo] = {
     extractorKey match {
       case Some(ek) => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek))
-      case None => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName))
+      case None => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> MongoDBObject("$exists" -> false)))
     }
   }
 
@@ -210,10 +210,10 @@ class MongoDBExtractorService @Inject() (
     // TODO: Make this account for version as well
     e.unique_key match {
       case None => {
-        ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name)) match {
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name, "unique_key" -> MongoDBObject("$exists" -> false))) match {
           case Some(old) => {
             val updated = e.copy(id = old.id)
-            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name), updated, false, false, WriteConcern.Safe)
+            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name, "unique_key" -> MongoDBObject("$exists" -> false)), updated, false, false, WriteConcern.Safe)
             Some(updated)
           }
           case None => {
@@ -226,7 +226,7 @@ class MongoDBExtractorService @Inject() (
         ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name, "unique_key" -> ek)) match {
           case Some(old) => {
             val updated = e.copy(id = old.id)
-            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name), updated, false, false, WriteConcern.Safe)
+            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name, "unique_key" -> ek), updated, false, false, WriteConcern.Safe)
             Some(updated)
           }
           case None => {
@@ -239,12 +239,26 @@ class MongoDBExtractorService @Inject() (
   }
 
   def deleteExtractor(extractorName: String, extractorKey: Option[String]) {
-    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName)) match {
-      case Some(extractor) => {
-        ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
+    extractorKey match {
+      case Some(ek) => {
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek)) match {
+          case Some(extractor) => {
+            ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name, "unique_key" -> ek))
+          }
+          case None => {
+            Logger.error(s"No extractor found with name ${extractorName} and key ${ek}")
+          }
+        }
       }
       case None => {
-        Logger.info("No extractor found with name: " + extractorName)
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> MongoDBObject("$exists" -> false))) match {
+          case Some(extractor) => {
+            ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name, "unique_key" -> MongoDBObject("$exists" -> false)))
+          }
+          case None => {
+            Logger.error("No extractor found with name: " + extractorName)
+          }
+        }
       }
     }
   }

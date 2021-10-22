@@ -174,7 +174,7 @@ object ExtractorInfo {
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
       (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq()))) and
-      (JsPath \ "unique_key").read[Option[String]] and
+      (JsPath \ "unique_key").read[Option[String]].orElse(Reads.pure(None)) and
       (JsPath \ "permissions").read[List[ResourceRef]].orElse(Reads.pure(List.empty))
     )(ExtractorInfo.apply _)
 }

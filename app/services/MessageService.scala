@@ -328,54 +328,46 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
         errors => Logger.debug("Received extractor heartbeat with bad format: " + extractor_info),
         info => {
           if (info.unique_key.isDefined && user.isEmpty) {
-            Logger.error("Unique extractor keys must have a user associated with them.")
-
+            Logger.error("Extractor keys must have a user associated with them.")
           } else {
-            val userRRef = ResourceRef('user, user.get.id)
-            // We just verified that if we have a key, we have a user, so we can add the user ID to permissions
-            val infoWithPerms = info.unique_key match {
-              case Some(ek) => if info.copy(permissions=List() :+ userRRef)
-              case None => info
-            }
-
             extractorsService.getExtractorInfo(info.name, info.unique_key) match {
               case Some(infoFromDB) => {
-                Logger.info("...found existing extractor...")
-                if (info.unique_key == infoFromDB.unique_key) {
-                  info.unique_key match {
-                    case None => {
-                      // TODO only update if new semantic version is greater than old semantic version
-                      if (infoFromDB.version != info.version) {
-                        // TODO keep older versions of extractor info instead of just the latest one
-                        extractorsService.updateExtractorInfo(info)
-                        Logger.info("Updated extractor definition for " + info.name)
+                Logger.debug("Found existing extractor, checking permissions...")
+                if (info.unique_key.isDefined) {
+                  if (user.isEmpty)
+                    Logger.error("User authentication required to modify this extractor.")
+                  else {
+                    val submittingUser = ResourceRef('user, user.get.id)
+                    if (!infoFromDB.permissions.contains(submittingUser))
+                      Logger.error("User does not have permission to modify this extractor.")
+                    else {
+                      // Retain existing permissions
+                      val registrationInfo = info.unique_key match {
+                        case Some(ek) => info.copy(permissions=infoFromDB.permissions)
+                        case None => info
                       }
-                    }
-                    case Some(ek) => {
-                      Logger.info("Checking permissions.")
-                      val reqUser = new ResourceRef('user, user.get.id)
-                      if (infoFromDB.permissions.contains(reqUser)) {
-                        Logger.info("pass")
-                        extractorsService.updateExtractorInfo(info)
-                      } else {
-                        Logger.info(reqUser.toString)
-                        Logger.info(infoFromDB.permissions.toString)
-                        Logger.error("User doesn't have permission.")
-                      }
+                      extractorsService.updateExtractorInfo(registrationInfo)
+                      Logger.info(s"Updated private extractor definition for ${info.name} - ${info.unique_key}")
                     }
                   }
                 } else {
-                  Logger.error("Mismatch between given extractor unique key and existing registration.")
+                  // TODO only update if new semantic version is greater than old semantic version
+                  if (infoFromDB.version != info.version) {
+                    // TODO keep older versions of extractor info instead of just the latest one
+                    extractorsService.updateExtractorInfo(info)
+                    Logger.info(s"Updated extractor definition for ${info.name}")
+                  }
                 }
-
-
               }
               case None => {
-                Logger.info("...no existing extractor found")
-                extractorsService.updateExtractorInfo(updatedInfo) match {
+                // Inject user into permissions list if a key is given
+                val registrationInfo = info.unique_key match {
+                  case Some(ek) => info.copy(permissions=List(ResourceRef('user, user.get.id)))
+                  case None => info
+                }
+                extractorsService.updateExtractorInfo(registrationInfo) match {
                   case None => {}
                   case Some(eInfo) => {
-                    Logger.info("registered")
                     // Create (if needed) and assign default labels
                     eInfo.defaultLabels.foreach(labelStr => {
                       val segments = labelStr.split("/")

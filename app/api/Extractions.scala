@@ -435,11 +435,9 @@ class Extractions @Inject()(
     // Update database
     extractionInfoResult.fold(
       errors => {
-        Logger.info("Couldn't parse info")
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
       },
       info => {
-        // TODO: Include version number in queue name as well
         // Check private extractor flags
         val submissionInfo: Option[ExtractorInfo] = extractor_key match {
           case Some(ek) => {
