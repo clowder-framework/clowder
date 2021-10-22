@@ -23,11 +23,10 @@ For **developers of Clowder**, a hybrid is recommended. :ref:`Dev quickstart her
 -  Run the required services via Docker, and expose each of their ports
    to Clowder.
 
-For **production instances of Clowder**, manual installation is
-recommended.
+For **production instances of Clowder**, a Kubernetes deployment is recommended and manual installations are being phased out.
 
--  Manual clowder install
--  Manual install of required services (at a minimum: MongoDB,
+-  See `Kubernetes install instructions here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Kubernetes>`__
+-  Otherwise, manually install Clowder, and each of it's required services (at a minimum: MongoDB,
    ElasticSearch, RabbitMQ). See
    `Requirements <https://clowder-framework.readthedocs.io/en/latest/admin/installing.html#requirements>`__
    for details.
@@ -65,12 +64,12 @@ Helpful Docker commands:
 -  ``docker-compose up -d`` - start up all required services
 -  ``docker-compose down`` - stop all docker containers
 -  ``docker-compose logs -f`` - see the logs
--  ``docker info`` - check how many services are running
+-  ``docker ps`` - check how many services are running
+-  ``docker info`` - details about your docker version
 
-   -  Server → containers → Running shows currently active containers.
-      You should expect to see 3 (MongoDB, Elasticsearch, RabbitMQ).
+   -  After starting your services, run ``docker ps`` and check that 3 containers are running. The "Image" column should show ``rabbitmq``, ``elasticsearch`` and ``mongo``.
 
--  Check on Docker services via the Docker Desktop GUI (on Windows and
+   -  You could also check on Docker services via the Docker Desktop GUI (on Windows and
    Mac)
 
 Done! Now simply `create a new user (below) <easyUserCreation>`_
@@ -249,15 +248,14 @@ Done!
 Now simply ensure your docker services are still running from the
 previous step.
 
--  You can check by running ``docker info`` and check that 3 services
+-  You can check by running ``docker ps`` and check that 3 services
    are running.
 -  If not, start them with
    ``docker-compose -f docker-compose.override.yml up -d``
 
-Now in IntelliJ, click the green play button (top right) to build Clowder from source! Give it a minute to finish.
+Now in IntelliJ, click the green play button (top right) to build Clowder from source! Give it a minute to finish. Access Clowder via ``localhost:9000`` in the browser.
 
-Access Clowder via ``localhost:9000`` in the
-browser.
+Also note, a handy debugging mode is enabled by default. You can run the debug mode by clicking the green "bug" button right beside the play button.
 
 .. note::
 
@@ -389,7 +387,7 @@ Start Clowder:
    Clowder directory).
 
    1. You can check if your services are already running using
-      ``docker info`` and check that 3 containers are active (MongoDB,
+      ``docker ps`` and check that 3 containers are active (MongoDB,
       ElasticSearch, and RabbitMQ) by looking at
       ``Server → Containser: 3``. Or check via the Docker Desktop GUI.
 
@@ -571,4 +569,5 @@ can be installed on other machines with Clowder configured to communicate with t
 
   * ElasticSearch is used for text based search by Clowder.
   * Versions above 2.x have not been tested.
+
 
