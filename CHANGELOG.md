@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Error with library dependencies broke search capabilities, rolled back to known working versions
+- Set permissions for folders to be 777 this fixes [clowder-helm#5](https://github.com/clowder-framework/clowder-helm/issues/5)
 
 ## 1.19.1 - 2021-10-19
 
