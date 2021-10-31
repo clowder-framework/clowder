@@ -291,7 +291,7 @@ user account. All accounts require:
 Method 1: Easiest new user creation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run the (edited) command below from the base Clowder directory.
+Run the (edited) command below from the base Clowder directory. If the folder name is not clowder, the network will need to be changed, e.g. the folder you are in is called `kitten` in this case the network will be `kitten_clowder`.
 
 First, edit these properties to your liking:
 
