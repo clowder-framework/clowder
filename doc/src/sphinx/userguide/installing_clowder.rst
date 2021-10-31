@@ -181,12 +181,16 @@ for details.), we must tell Clowder which ports the services are using.
 
 .. code:: bash
 
-   # make sure to pass the override file!
-   docker-compose -f docker-compose.override.yml up -d
+   docker-compose up -d
+
+
+.. note::
+   By default, running ``docker-compose up -d`` uses the ``docker-compose.yml`` configuration and will apply overrides found in ``docker-compose.override.yml``. Neither file need to be specified on the command line.
+
 
 4. Go to each Mongo and ElasticSearch to see it running
 
-.. code:: bash
+.. code:: text
 
    If you get a response, it's working!
 
@@ -251,7 +255,7 @@ previous step.
 -  You can check by running ``docker ps`` and check that 3 services
    are running.
 -  If not, start them with
-   ``docker-compose -f docker-compose.override.yml up -d``
+   ``docker-compose up -d``
 
 Now in IntelliJ, click the green play button (top right) to build Clowder from source! Give it a minute to finish. Access Clowder via ``localhost:9000`` in the browser.
 
@@ -259,9 +263,9 @@ Also note, a handy debugging mode is enabled by default. You can run the debug m
 
 .. note::
 
-   Use ``localhost:9000`` when building from source (clicking the green play button in IntelliJ) and running the services via ``docker-compose -f docker-compose.override.yml up -d``
+   Use ``localhost:9000`` when building from source (clicking the green play button in IntelliJ).``
 
-   Use ``localhost:8000`` when running from Docker only (without building from source) via ``docker-compose up -d``
+   Use ``localhost:8000`` when running from Docker only (without building from source via ``docker-compose up -d``)
 
 .. _creatingLocalAccount
 Creating a local Clowder account
@@ -383,7 +387,7 @@ Create a local Clowder account
 Start Clowder:
 
 1. Start required services (via
-   ``docker-compose -f docker-compose.override.yml up -d`` from the root
+   ``docker-compose up -d`` from the root
    Clowder directory).
 
    1. You can check if your services are already running using
