@@ -108,8 +108,13 @@ let previewerWidth = 640;
 let previewerHeight = 480;
 
 function init(urlAddress) {
-
     const container = document.getElementById(Configuration.tab.replace("#",""));
+
+    renderer = new THREE.WebGLRenderer( { antialias: false, powerPreference: "high-performance" } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( previewerWidth, previewerHeight );
+    renderer.shadowMap.enabled = true;
+
 
     camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 2000000 );
     camera.position.set( 0, 100, 1250 );
@@ -130,6 +135,11 @@ function init(urlAddress) {
     dirLight.shadow.camera.left = - 120;
     dirLight.shadow.camera.right = 120;
     scene.add( dirLight );
+
+    const controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls.target.set( 0, 100, 0 );
+    controls.update();
+    container.appendChild(renderer.domElement);
 
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
@@ -156,8 +166,7 @@ function init(urlAddress) {
         loader = new THREE.GLTFLoader();
     }
 
-    let desiredScale = 640;
-    let scaleV3 = new THREE.Vector3().setScalar(desiredScale);
+
 
     loader.setPath(urlAddress);
 
@@ -171,27 +180,20 @@ function init(urlAddress) {
             object=object.scene;
         }
 
-        if( object.animations[ 0 ] ) {
-            mixer = new THREE.AnimationMixer( object );
-
-            const action = mixer.clipAction( object.animations[ 0 ] );
-            action.play();
-        }
-
-        let box = new THREE.Box3();
-        box.setFromObject(object);
-
-        let size = new THREE.Vector3();
-        box.getSize(size);
-
-        let center = new THREE.Vector3();
-        box.getCenter(center);
-
-        let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
-        let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
-
-        object.scale.setScalar(scale);
-        object.position.sub(center.multiplyScalar( scale ));
+        // let box = new THREE.Box3();
+        // box.setFromObject(object);
+        //
+        // let size = new THREE.Vector3();
+        // box.getSize(size);
+        //
+        // let center = new THREE.Vector3();
+        // box.getCenter(center);
+        //
+        // let scaleTemp = new THREE.Vector3().copy(scaleV3).divide(size);
+        // let scale = Math.min(scaleTemp.x, Math.min(scaleTemp.y, scaleTemp.z));
+        //
+        // object.scale.setScalar(scale);
+        // object.position.sub(center.multiplyScalar( scale ));
 
         object.traverse(function (child) {
 
@@ -204,7 +206,53 @@ function init(urlAddress) {
 
         });
 
-        object.position.setY(0);
+        if( object.animations[ 0 ] ) {
+            mixer = new THREE.AnimationMixer( object );
+
+            const action = mixer.clipAction( object.animations[ 0 ] );
+            action.play();
+        }
+
+        //object.position.setZ(-300);
+
+        //object.position.y = - previewerHeight / 2;
+        //object.position.x =  previewerWidth / 2;
+        //object.position.z = -1000;
+
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const center = box.getCenter(new THREE.Vector3());
+
+        controls.reset();
+
+        object.position.x += (object.position.x - center.x);
+        object.position.y += (object.position.y - center.y);
+        object.position.z += (object.position.z - center.z);
+
+
+        // console.log(object.position.x);
+        // console.log(object.position.y);
+        // console.log(object.position.z);
+
+        controls.maxDistance = size * 10;
+        camera.near = size / 100;
+        camera.far = size * 100;
+
+        camera.updateProjectionMatrix();
+
+
+
+        //camera.position.copy(center);
+        //  camera.position.x += size / 2.0;
+        //  camera.position.y += size / 5.0;
+        //  camera.position.z += size / 2.0;
+
+
+
+
+
+        //setCamera(camera);
+
 
 
         scene.add(object);
@@ -249,15 +297,9 @@ function init(urlAddress) {
 
     } );
 
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( previewerWidth, previewerHeight );
-    renderer.shadowMap.enabled = true;
 
-    const controls = new THREE.OrbitControls( camera, renderer.domElement );
-    controls.target.set( 0, 100, 0 );
-    controls.update();
-    container.appendChild(renderer.domElement);
+
+
 
     window.addEventListener( 'resize', onWindowResize );
 
