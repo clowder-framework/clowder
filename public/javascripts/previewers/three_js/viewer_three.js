@@ -59,6 +59,9 @@
 
 ****************************************************************/
 
+let fileNameExtension;
+let loader;
+
 (function ($, Configuration) {
 
     let useTab = Configuration.tab;
@@ -67,28 +70,16 @@
 
     // The following variables are not needed for now
 
-    //let fileName = $('#file-name-title').text().trim();
-    //let fileNameExtension = fileName.substr(fileName.length - 3);
+    let fileName = $('#file-name-title').text().trim();
+    fileNameExtension = fileName.split('.').pop();
+
     //let fileType;
 
-    // This is a trick I use to make the console.log function to work
+    console.log(fileName);
+    console.log(fileNameExtension);
 
-    console.log = console.log || function(message) { alert(message);};
+    let scripts =[ "three.min.js",  "stats.min.js", "OrbitControls.js", "FBXLoader.js", "GLTFLoader.js", "fflate.min.js" ];
 
-    console.warn = console.warn || function(message) { alert(message);};
-
-    console.error = console.error || function(message) { alert(message);};
-
-    // scripts is an array containing three library files which are found under
-    // the js folder. We use various functions from those library files
-    // to load our model.
-
-    // These libraries can be found online and eventually we should load
-    // them from a server I think.
-
-    let scripts =[ "three.min.js",  "stats.min.js", "OrbitControls.js", "FBXLoader.js", "fflate.min.js" ];
-
-    // We use the for loop to load the files into our program
 
     for (let index = 0; index < scripts.length; index++) {
         let s = document.createElement("script");
@@ -120,12 +111,12 @@ function init(urlAddress) {
 
     const container = document.getElementById(Configuration.tab.replace("#",""));
 
-    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-    camera.position.set( 100, 200, 300 );
+    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 2000000 );
+    camera.position.set( 0, 100, 1250 );
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xa0a0a0 );
-    scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
+    //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 200, 0 );
@@ -143,26 +134,30 @@ function init(urlAddress) {
     // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
     // ground
-    const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry( 2000, 2000 ),
-        new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } )
-    );
-
-    mesh.rotation.x = - Math.PI / 2;
-    mesh.receiveShadow = true;
-    scene.add( mesh );
-
-    const grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
-    grid.material.opacity = 0.2;
-    grid.material.transparent = true;
-    scene.add( grid );
-
-    const loader = new THREE.FBXLoader();
-
-    let desiredScale = 320;
-    let scaleV3 = new THREE.Vector3().setScalar(desiredScale);
-
+    // const mesh = new THREE.Mesh(
+    //     new THREE.PlaneGeometry( 4000, 4000 ),
+    //     new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } )
+    // );
     //
+    // mesh.rotation.x = - Math.PI / 2;
+    // mesh.receiveShadow = true;
+    // scene.add( mesh );
+    //
+    // const grid = new THREE.GridHelper( 4000, 20, 0x000000, 0x000000 );
+    // grid.material.opacity = 0.2;
+    // grid.material.transparent = true;
+    // scene.add( grid );
+
+    if(fileNameExtension ==='fbx') {
+        loader = new THREE.FBXLoader();
+    }
+
+    if(fileNameExtension ==='gltf') {
+        loader = new THREE.GLTFLoader();
+    }
+
+    let desiredScale = 640;
+    let scaleV3 = new THREE.Vector3().setScalar(desiredScale);
 
     loader.setPath(urlAddress);
 
@@ -172,15 +167,16 @@ function init(urlAddress) {
 
     loader.load( '', function ( object ) {
 
+        if(fileNameExtension ==='gltf') {
+            object=object.scene;
+        }
+
         if( object.animations[ 0 ] ) {
             mixer = new THREE.AnimationMixer( object );
 
             const action = mixer.clipAction( object.animations[ 0 ] );
             action.play();
         }
-
-
-        //
 
         let box = new THREE.Box3();
         box.setFromObject(object);
@@ -197,8 +193,6 @@ function init(urlAddress) {
         object.scale.setScalar(scale);
         object.position.sub(center.multiplyScalar( scale ));
 
-        //
-
         object.traverse(function (child) {
 
             if (child.isMesh) {
@@ -210,7 +204,11 @@ function init(urlAddress) {
 
         });
 
+        object.position.setY(0);
+
+
         scene.add(object);
+      
 
         // object.traverse( function ( child ) {
         //
