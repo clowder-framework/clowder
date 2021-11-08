@@ -1,0 +1,70 @@
+version: '3.5'
+
+services:
+  mongo:
+    image: mongo:3.4
+    ports:
+      - 27017:27017
+  rabbitmq:
+    ports:
+      - 5672:5672
+
+  # ----------------------------------------------------------------------
+  # DOCKER MANAGEMENT APPLICATION
+  # ----------------------------------------------------------------------
+
+  # Allow to see all docker containers running, restart and see log files. (optional)
+  portainer:
+    image: portainer/portainer:latest
+    command:
+      - --admin-password=${PORTAINER_PASSWORD:-}
+      - --host=unix:///var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - clowder
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=portainer"
+      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefixStrip: /portainer"
+      - "traefik.website.frontend.whiteList.sourceRange=${TRAEFIK_IPFILTER:-172.16.0.0/12}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer:/data
+
+  # ----------------------------------------------------------------------
+  # S3 STORAGE CONTAINER
+  # ----------------------------------------------------------------------
+
+  # S3 storage
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    restart: unless-stopped
+    networks:
+      - clowder
+    environment:
+      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY:-clowder}
+      - MINIO_SECRET_KEY=${S3_SECRET_KEY:-catsarecute}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=minio"
+      - "traefik.port=9000"
+      - "traefik.frontend.rule=${TRAEFIK_FRONTEND_RULE:-}PathPrefix:/minio/"
+    volumes:
+      - minio-data:/data
+
+# ----------------------------------------------------------------------
+# VOLUMES FOR PERSISTENT STORAGE
+# ----------------------------------------------------------------------
+volumes:
+  portainer:
+  minio-data:
+    driver_opts:
+      type: none
+      device: '${PWD}/volumes/minio'
+      o: bind
+  mongo:
+    driver_opts:
+      type: none
+      device: '${PWD}/volumes/mongo'
+      o: bind
