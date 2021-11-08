@@ -1,5 +1,6 @@
 # ignore customizations to clowder
 docker-compose.override.yml
+docker-compose.yml
 .env
 custom
 
