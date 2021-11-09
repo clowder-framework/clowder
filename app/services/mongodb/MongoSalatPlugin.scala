@@ -452,6 +452,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Adds space bytes to space
     updateMongo(updateKey = "update-space-bytes", updateSpaceBytes)
+    updateMongo(updateKey = "update-space-files", updateSpaceFiles)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -513,7 +514,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         val spacename = java.net.InetAddress.getLocalHost.getHostName
         val newspace = new ProjectSpace(name = spacename, description = "", created = new Date(), creator = UUID("000000000000000000000000"),
           homePage = List.empty[URL], logoURL = None, bannerURL = None, metadata = List.empty[Metadata],
-          collectionCount = collections.toInt, datasetCount = datasets.toInt, userCount = users.toInt, spaceBytes = 0)
+          collectionCount = collections.toInt, datasetCount = datasets.toInt, userCount = users.toInt, fileCount = 0,
+          spaceBytes = 0)
         ProjectSpaceDAO.save(newspace)
         val spaceId = new ObjectId(newspace.id.stringify)
 
@@ -1705,6 +1707,18 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
       }
       collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
+    }
+  }
+
+  private def updateSpaceFiles(): Unit = {
+    collection("spaces.projects").find().toList.foreach{ space =>
+      var fileCount: Integer = 0
+      val spaceId = space.get("_id")
+      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId)).toList
+      spaceDatasets.foreach{ spaceDataset =>
+        fileCount += spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty).length
+      }
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("fileCount" -> fileCount))
     }
   }
 }

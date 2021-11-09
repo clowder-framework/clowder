@@ -22,6 +22,7 @@ case class ProjectSpace (
   bannerURL: Option[URL],
   collectionCount: Integer,
   datasetCount: Integer,
+  fileCount: Integer,
   userCount: Integer,
   spaceBytes: Long, 
   metadata: List[Metadata],

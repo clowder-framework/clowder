@@ -1399,6 +1399,15 @@ class MongoDBDatasetService @Inject() (
         }
         for (f <- dataset.files) {
           val notTheDataset = for (currDataset <- findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          files.get(f) match {
+            case Some(file) => {
+              for(space <- dataset.spaces) {
+                spaces.decrementFileCounter(space, 1)
+                spaces.decrementSpaceBytes(space, file.length)
+              }
+            }
+            case None => Logger.error(s"Error file with with id ${f} no longer exists")
+          }
           if (notTheDataset.size == 0)
             files.removeFile(f, host, apiKey, user)
         }

@@ -595,6 +595,7 @@ object FileUtils {
           val datasetSpaces = dataset.get.spaces
           for (s <- datasetSpaces){
             spaceService.incrementSpaceBytes(s, file.length)
+            spaceService.incrementFileCounter(s, 1)
           }
         }
       }
