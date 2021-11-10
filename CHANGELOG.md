@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.19.3 - 2021-11-11
 
 See [fix-counts.js](scripts/updates/fix-count.js) for a script that can be run before this update (as well as the
 update for 1.19.0) to pre populate the migration. This will speed up the update and will not impact the running
@@ -12,12 +12,12 @@ instance.
 
 ### Fixed
 - If a space has a lot of datasets, rendering the space page is very slow. Files in a space is now cached.
+- Set permissions for folders to be 777 this fixes [clowder-helm#5](https://github.com/clowder-framework/clowder-helm/issues/5)
 
 ## 1.19.2 - 2021-10-20
 
 ### Fixed
 - Error with library dependencies broke search capabilities, rolled back to known working versions
-- Set permissions for folders to be 777 this fixes [clowder-helm#5](https://github.com/clowder-framework/clowder-helm/issues/5)
 
 ## 1.19.1 - 2021-10-19
 
