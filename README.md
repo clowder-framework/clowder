@@ -1,6 +1,7 @@
 # Clowder: Open Source Data Management for Long Tail Data
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1196568.svg)](https://doi.org/10.5281/zenodo.1196568)
+[![DOI](https://zenodo.org/badge/196635389.svg)](https://zenodo.org/badge/latestdoi/196635389)
+
 
 A customizable and scalable data management system you can install in the cloud or on your own hardware.
 More information is available at [https://clowderframework.org/](https://clowderframework.org/).
