@@ -167,8 +167,6 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         var creatorActual: User = null
         val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
         val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
-        val spaceBytes : Long = s.spaceBytes
-        val spaceFiles : Integer = getFilesPerSpace(id, user)
         val publicDatasetsInSpace = datasets.listSpaceStatus(size, id.toString(), "publicAll", user)
         val usersInSpace = spaces.getUsersInSpace(id, None)
         var curationObjectsInSpace: List[CurationObject] = List()
@@ -217,7 +215,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           case None => List.empty
         }
         sinkService.logSpaceViewEvent(s, user)
-        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections, spaceBytes, spaceFiles))
+        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
     }
@@ -414,7 +412,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
                       val newSpace = ProjectSpace(name = formData.name, description = formData.description,
                         created = new Date, creator = userId, homePage = formData.homePage,
                         logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                        collectionCount = 0, datasetCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty,
+                        collectionCount = 0, datasetCount = 0, fileCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty,
                         resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled,
                         status = formData.access,
                         affiliatedSpaces = formData.affSpace)
@@ -640,15 +638,4 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
-
-  private def getFilesPerSpace(spaceId: UUID, user: Option[User]) : Integer = {
-    var spaceFiles: Integer = 0
-    val allDatasetsInSpace = datasets.listSpace(0, spaceId.toString(), user)
-    for (ds <- allDatasetsInSpace) {
-      val files_in_ds = ds.files.length
-      spaceFiles += files_in_ds
-    }
-    spaceFiles
-  }
-
 }

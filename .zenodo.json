@@ -146,6 +146,35 @@
       "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
       "name": "Kenton McHenry",
       "orcid": "0000-0003-0367-2550"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Aaraj Habib"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Ben Galewsky"
+    },
+    {
+      "name": "Chrysovalantis Constantinou"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Kaveh Karimi-Asli"
+    },
+    {
+      "name": "Maria-Spyridoula Tzima"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Michael Johnson"
+    },
+    {
+      "affiliation": "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign",
+      "name": "Mike Bobak"
+    },
+    {
+      "name": "Tim Yardley"
     }
   ],
   "upload_type": "software",
@@ -158,5 +187,5 @@
     "open-data",
     "open-science"
   ],
-  "notes": "This research has been partially funded by grants: NSF #BCS-0941268, #EAR- 331906, #ACI-1261582, #ACI-1443013, #OCI-0940824, #OCI-0525308; NIH #1P01AI089556-01A1. Illinois - Indiana Sea Grant #DW92329201, European Commission #RI-261600, XSEDE #OCI-1053575, ARPA- E #DE-AR0000594."
+  "notes": "This research has been partially funded by grants: NSF #BCS-0941268, #EAR- 331906, #ACI-1261582, #ACI-1443013, #OCI-0940824, #OCI-0525308, #OAC-1835834; NIH #1P01AI089556-01A1. Illinois - Indiana Sea Grant #DW92329201, European Commission #RI-261600, XSEDE #OCI-1053575, ARPA- E #DE-AR0000594."
 }
