@@ -69,15 +69,15 @@ Helpful Docker commands:
    -  You could also check on Docker services via the Docker Desktop GUI (on Windows and
    Mac)
 
-Done! Now simply `create a new user (below) <easyUserCreation>`_
+Done! Now simply `create a new user 👇 <easyUserCreation>`_
 
 .. _easyUserCreation:
-Easy new user creation via Docker
----------------------------------
+Create your first user
+-------------------------
 
 Run the (edited) command below from the base Clowder directory.
 
-First, edit these properties to your liking in the ``docker run`` command below:
+First, **edit these properties** to your liking in the ``docker run`` command below:
 
 -  FIRST_NAME (default: ``Admin``)
 -  LAST_NAME  (``User``)
