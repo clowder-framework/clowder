@@ -129,7 +129,7 @@ Part 1: Setup Docker
    git clone https://github.com/clowder-framework/clowder.git
 
 3. Navigate to Clowder’s root directory (``cd clowder``)
-4. Expose ports for Docker services to Clowder (below)
+4. Expose ports for Docker services to Clowder 👇
 
 Expose Docker services’ ports to Clowder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -194,7 +194,7 @@ for details.), we must tell Clowder which ports the services are using.
    localhost:15672 -- should see RabbitMQ login screen (no need to login tho!)
    localhost:9200 -- Should see a json file with "name" : "Machine Teen" 
 
-Done! Now keep that running, and next let’s build Clowder from source.
+Done! Now keep that running, and next let’s build Clowder from source 👇
 
 Part 2: Run Clowder via IntelliJ
 --------------------------------
@@ -257,15 +257,16 @@ previous step.
 
 Now in IntelliJ, click the green play button (top right) to build Clowder from source! Give it a minute to finish. Access Clowder via ``localhost:9000`` in the browser.
 
-Also note, a handy debugging mode is enabled by default. You can run the debug mode by clicking the green "bug" button right beside the play button.
+Also note, a handy debugging mode 🐞 is enabled by default. You can run the debug mode by clicking the green "bug" button right beside the play button.
 
 .. note::
 
-   Use ``localhost:9000`` when building from source (clicking the green play button in IntelliJ).``
+   Use ``localhost:9000`` when **building from source** (clicking the green play button ▶️ in IntelliJ).``
 
-   Use ``localhost:8000`` when running from Docker only (without building from source via ``docker-compose up -d``)
+   Use ``localhost:8000`` when **running from Docker only** (via ``docker-compose up -d`` without building from source)
 
 .. _creatingLocalAccount
+
 Creating a local Clowder account
 --------------------------------
 
@@ -302,7 +303,9 @@ First, edit these properties to your liking:
 
    docker run --rm -ti --network clowder_clowder -e FIRST_NAME=Admin -e LAST_NAME=User -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute -e ADMIN=true clowder/mongo-init
 
-Now you can login to Clowder (``localhost:9000`` or ``localhost:8000`` if not building from source Docker) in your browser
+✅ Configuration complete! Now you can login to Clowder via ``localhost:9000`` in your browser.
+
+:ref:`Skip to using default extractors and developer resources <defaultExtractors>` 👇
 
 User creation method 2 and 3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -406,7 +409,7 @@ link.
 
 Look for this in the console:
 
--  Don’t see it? Make sure you enabled ``smtp.mock=true`` above!!
+-  Don’t see it? Make sure you enabled ``smtp.mock=true`` above.
 
 .. code:: python
 
@@ -427,17 +430,27 @@ If Clowder feels slow, add the faster JVM option
 - Simply download JNotify and tell IntelliJ where it is in the ``Run Configurations`` -> ``JVM Options``.
 
 .. _defaultExtractors: 
+
 Use the default extractors
 ============================
 
 
-The default extractors offer simple quality of life improvements like image/video/pdf previews while browsing Clowder. 
+The default extractors offer simple quality of life improvements for image, video, pdf, and audio file previews while browsing Clowder. 
 
-Enable them by starting Clowder with the Extractors yml file:
+Enable them by starting Clowder with the extractors file ``docker-compose.extractors.yml``:
 
 .. code:: bash
 
    docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.extractors.yml up -d
+
+Or run NCSA GeoServer for viewing and editing geospacial data via ``docker-compose.geoserver.yml``: 
+
+* geoserver
+* ncsa_geo_shp
+* extractor-geotiff-preview
+* extractor-geotiff-metadata
+
+Learn more about `GeoServer <https://wiki.ncsa.illinois.edu/display/NCSASoftware/GeoServer+Focus+Group+Final+Report>`__ and `read the documentation <https://wiki.ncsa.illinois.edu/display/MM/Documentation>`__.
 
 Troubleshooting extractors
 ---------------------------
@@ -448,7 +461,7 @@ This is caused by the docker containers not being able to connect to each other.
 
 Then restart Clowder in IntelliJ and via Docker, and everything should work. Done!
 
-On Windows, I've had trouble getting ``localhost`` to resolve to the docker host. You could try the following:
+On Windows, I've had trouble getting ``localhost`` to resolve to the Docker host. You could try the following:
 
 - Access Clowder **NOT** via localhost, but via your local IP address. For example, ``55.251.130.193:9000``. 
 
@@ -476,6 +489,12 @@ Youtube <https://www.youtube.com/playlist?list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13
 
 Try the :ref:`default extractors<defaultExtractors>` for simple quality of life improvements in Clowder.
 
+Write your own extractors using the `PyClowder Python package <https://github.com/clowder-framework/pyclowder>`__.
+
+🤔❓ Please ask any questions on our `Clowder Slack <clowder-software.slack.com>`__.
+
+.. _clowder-python:
+
 Resources for Developers
 ========================
 
@@ -498,21 +517,11 @@ own <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Extractors>`__
    files <https://github.com/clowder-framework/extractors-zip>`__
 -  `Virus checker
    extractor <https://github.com/clowder-framework/extractors-clamav>`__
-   (ensure dataset doesn’t have viruses)
-
-
-
-
-
-
-
-
-
-
+   (to ensure datasets don't have viruses)
 
 
 Customize Deployment
-=================
+======================
 
 
 Customize your deployment by creating a custom folder in Clowder's root directory and add a ``/custom/custom.conf`` and a
@@ -575,9 +584,8 @@ For example the following ``play.plugins`` file will enable some additional plug
 
 .. _requirements:
 
-******
 Requirements
-******
+=============
 
 Following is a list of requirements for the Clowder software. Besides Java, all other services/software
 can be installed on other machines with Clowder configured to communicate with them.
