@@ -4,24 +4,17 @@
 Installing Clowder
 ##################
 
-Clowder can be deployed in two ways. Users can either use `Docker <http://docker.com>`_  or manually install the core and
-required dependencies. The :ref:`docker_install` method is the quickest method to run Clowder. It can be used for testing
-features and development. It can be used in production but most of the current production but it hasn't been thoroughly
-tested. Production instances usually use the second method of installation :ref:`manualinstall`. The only exception is that
-most extractors are deployed using `Docker swarm <https://docs.docker.com/engine/swarm/>`_.
-
 What type of user are you?
 ===================================
 
 
-For **users of Clowder**: Clowder is easily accessed via Docker. :ref:`Quickstart here<usersOfClowder>`.
+For **most users of Clowder**: easily access Clowder via Docker. :ref:`Get started here <usersOfClowder>` 👇
 
-For **developers of Clowder**, a hybrid is recommended. :ref:`Dev quickstart here<clowderDevelopers>`.
+For **developers of Clowder itself**, a hybrid is recommended. :ref:`Dev quickstart here<clowderDevelopers>`.
 
--  Run the Clowder instance manually via IntelliJ’s Play-2 run
+-  Build Clowder from source via IntelliJ’s Play-2 run
    configuration.
--  Run the required services via Docker, and expose each of their ports
-   to Clowder.
+-  Run the required services via Docker.
 
 For **production instances of Clowder**, a Kubernetes deployment is recommended and manual installations are being phased out.
 
@@ -53,7 +46,7 @@ Users of Clowder: Getting Started via Docker
 -  If you see Error 404, allow a minute for it to appear.
 -  Note: use port 8000 for docker run. However, port 9000 for manual builds.
 
-⭐ If you experience any trouble, come ask us on `Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_! ⭐
+⭐ If you experience *any* trouble, come ask us on `Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_! ⭐
 
 Helpful Docker commands:
 ---------------------------------
@@ -435,7 +428,7 @@ Use the default extractors
 ============================
 
 
-The default extractors offer simple quality of life improvements for image, video, pdf, and audio file previews while browsing Clowder. 
+The default extractors offer simple quality of life improvements for image, video, pdf, and audio file previews while browsing Clowder.
 
 Enable them by starting Clowder with the extractors file ``docker-compose.extractors.yml``:
 
