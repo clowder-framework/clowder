@@ -25,27 +25,24 @@ For **developers of Clowder**, a hybrid is recommended. :ref:`Dev quickstart her
 
 For **production instances of Clowder**, a Kubernetes deployment is recommended and manual installations are being phased out.
 
--  See `Kubernetes install instructions here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Kubernetes>`__
+-  See `Clowder's Kubernetes install instructions here <https://github.com/clowder-framework/clowder-helm>`__.
 -  Otherwise, manually install Clowder, and each of it's required services (at a minimum: MongoDB,
-   ElasticSearch, RabbitMQ). See
-   `Requirements <https://clowder-framework.readthedocs.io/en/latest/admin/installing.html#requirements>`__
-   for details.
+   ElasticSearch, RabbitMQ). See :ref:`requirements below<requirements>` for details.
 
 .. _usersOfClowder:
 
 Users of Clowder: Getting Started via Docker
 ==============================================
 
-1. Install `Docker <http://docker.com/>`__ (if you haven’t already)
-2. Download and unzip the `latest stable version here <Download and unzip a specific version: Latest stable version.>`_
-3. Navigate to Clowder’s root directory in your bash command line (``cd clowder-<version_number>``)
-4. Download the docker script to Clowder's root directory
+1. Install `Docker Desktop <http://docker.com/>`__ (if you haven’t already)
+2. Clone or download `Clowder on Github <https://github.com/clowder-framework/clowder>`_ (use the default ``develop`` branch)
 
 .. code:: bash
 
-   wget -O docker-compose.yml https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/clowder/raw/docker-compose.yml\?at\=refs%2Fheads%2Fdevelop
+   git clone https://github.com/clowder-framework/clowder.git
 
-5. Start clowder on your local machine's command line (bash)
+3. Navigate to Clowder’s root directory in your bash command line (``cd clowder``)
+4. Start Clowder using the Docker Compose configuration, via your command line
 
 .. code:: bash
 
@@ -80,12 +77,13 @@ Easy new user creation via Docker
 
 Run the (edited) command below from the base Clowder directory.
 
-First, edit these properties to your liking:
+First, edit these properties to your liking in the ``docker run`` command below:
 
--  FIRST_NAME
--  LAST_NAME
--  EMAIL_ADDRESS
--  PASSWORD
+-  FIRST_NAME (default: ``Admin``)
+-  LAST_NAME  (``User``)
+-  EMAIL_ADDRESS  (``admin@example.com``)
+-  PASSWORD   (``catsarecute``)
+-  ADMIN  (``true``)
 
 .. code:: bash
 
@@ -106,9 +104,7 @@ Done! You should be able to login to your new account, create new Spaces & Datas
    -  `Check out How to Create a New Extractor <https://www.youtube.com/watch?v=0uthTzrZCt8&list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i&index=17&ab_channel=ClowderFramework>`__
    -  and 28 total videos covering specific Clowder topics and uses!
 
-   Or, try the `core data extractors <https://github.com/clowder-framework/extractors-core>`__ that most people would like to install.
-
-
+   Try the :ref:`default extractors<defaultExtractors>` for simple quality of life improvements in Clowder.
 
 .. _clowderDevelopers:
 
@@ -153,9 +149,9 @@ for details.), we must tell Clowder which ports the services are using.
    touch docker-compose.override.yml 
 
 2. Copy and paste the lines below into that file we just created
-   (``docker-compose.override.yml``)
+   ``docker-compose.override.yml``
 
-.. code:: bash
+.. code:: yml
 
    # this lets Clowder communicate with the necessary services
    # These services (Mongo, RabbitMQ, ElsticSearch) will be run 
@@ -211,34 +207,36 @@ Part 2: Run Clowder via IntelliJ
 
    - This should prompt you to install the Scala plugin! Install it.
 
-3. Install the Scala Plugin for IntelliJ
+3. Install the Scala Plugin for IntelliJ ``File`` --> ``Settings`` --> ``Plugins`` --> ``Download Scala``.
 4. Install Java 8 on your computer (version 8 required, not compatible
    with other versions)
 
-   - From here: https://adoptopenjdk.net/. Java 8, HotSpot.
+   - I find this easiest to do via IntelliJ’s Plugin Manager. ``File`` --> ``Project Structure`` --> ``SDKs`` --> ``+`` icon --> ``Download JDK``
+   - Select ``Version 1.8`` (Clowder is only compatible with Java 8 (1.8), nothing higher) --> Vendor: ``Eclipse Temurin (AdoptOpenJDK Hotspot)`` --> ``Download``.
 
-5. Connect IntelliJ to that Java instance.
+   - Alternatively, download the JDK online at `AdoptOpenJDK <https://adoptopenjdk.net/>`__. Java 8, HotSpot.
+   - Then point IntelliJ to the JDK folder under ``Project Structure`` --> ``SDKs`` and specify the root folder of the JDK you just downloaded.
 
-   - In IntelliJ: ``file`` → ``Project Structure`` → ``SDKs``
-   - Add a new SDK, and specify the root folder of the SDK you just downloaded. For example: JDK Home path on Windows might look like ``C:\Program Files\Eclipse Foundation\jdk-8.0.302.8-hotspot``
+.. figure:: ../_static/IntelliJ_JDK_Download.png
+   :alt: Download JDK from IntelliJ.
 
-6. Add a new Run Configuration
+5. Add a new Run Configuration
 
    - In the top right, click the dropdown and click “Edit Configurations…”
 
 .. figure:: ../_static/GettingStarted_addConfig.png
    :alt: Add new configuration
 
-7. Create a new ``Play 2 App`` configuration
+6. Create a new ``Play 2 App`` configuration
 
 .. note::
 
-   If you **don’t see Play 2 App in the list**, you may need to use IntelliJ *Ultimate* version (instead of Community). I experienced this bug, feel free to ask in the `Clowder Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_.
+   If you **don’t see Play 2 App in the list**, ensure you have the Scala plugin installed. If Play2 still isn't there, you may need to use IntelliJ *Ultimate* version (instead of Community). I experienced this bug, feel free to ask in the `Clowder Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_.
 
 .. figure:: ../_static/GettingStarted_Play2Config.png
    :alt: Create play2 configuration.
 
-8. The default configuration should be okay, see image below.
+7. The default configuration should be okay, see image below.
 
 .. note::
 
@@ -353,10 +351,10 @@ Method 3: Edit permissions in MongoDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To edit the permissions on *existing accounts*, **edit their properties
-in MongoDB**. You can skip this step if haven’t created a local Clowder
+in MongoDB**. You can skip this step if you haven’t created a local Clowder
 account yet.
 
-1. Download RoboMongo (a GUI for MongoDB)
+1. Download a GUI for MongoDB: MongoDB Compass or a 3rd party tool like RoboMongo.
 2. Ensure all services are running!
 
 .. code:: bash
@@ -366,12 +364,12 @@ account yet.
    # start all required services 
    docker-compose up -d
 
-1. Connect RoboMongo to the docker instance (the defaults should be
+3. Connect RoboMongo to the docker instance (the defaults should be
    fine)
 
    1. Point it towards port ``27017``
 
-2. In the file tree on the left, navigate to clowder → Collections →
+4. In the file tree on the left, navigate to clowder → Collections →
    social.users
 
    1. Then click the dropdown to expand that user
@@ -379,7 +377,7 @@ account yet.
    3. If it is ``Inactive``, change it by typing ``Active``
       (capitalized)
 
-3. Done. Refresh your browser (on ``localhost:9000``) to access Clowder.
+5. Done. Refresh your browser (on ``localhost:9000``) to access Clowder.
 
 Create a local Clowder account
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -425,10 +423,41 @@ Clowder!
 If Clowder feels slow, add the faster JVM option
 ------------------------------------------------
 
-`Instructions are
-here <https://opensource.ncsa.illinois.edu/confluence/display/CATS/JVM+Configuration+Options>`__.
+- Follow the `instructions here to add JNotify <https://opensource.ncsa.illinois.edu/confluence/display/CATS/JVM+Configuration+Options>`__.
+- Simply download JNotify and tell IntelliJ where it is in the ``Run Configurations`` -> ``JVM Options``.
 
--  Simply download JNotify and tell IntelliJ where it is.
+.. _defaultExtractors: 
+Use the default extractors
+============================
+
+
+The default extractors offer simple quality of life improvements like image/video/pdf previews while browsing Clowder. 
+
+Enable them by starting Clowder with the Extractors yml file:
+
+.. code:: bash
+
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.extractors.yml up -d
+
+Troubleshooting extractors
+---------------------------
+Networking issues: Error "connection refused."
+This is caused by the docker containers not being able to connect to each other.
+
+1. In ``conf/application.conf`` edit the rabbitmq (message queue) URL to: ``clowder.rabbitmq.clowderurl="http://host.docker.internal:9000"``
+
+Then restart Clowder in IntelliJ and via Docker, and everything should work. Done!
+
+On Windows, I've had trouble getting ``localhost`` to resolve to the docker host. You could try the following:
+
+- Access Clowder **NOT** via localhost, but via your local IP address. For example, ``55.251.130.193:9000``. 
+
+- You can find your local IP address:
+   - Windows: ``Settings`` -> ``Network & internet`` -> ``IPv4 address``.
+   - Mac: ``System Preferences`` --> ``Netowrk``--> ``Advanced``--> ``TCP/IP``--> ``IPv4 Address``. (Note: don't use the 'Public IP' from iStat Menus).
+   - Linux ``$ ifconfig``
+
+That should resolve extractor issues.
 
 Next Steps
 ==========
@@ -445,8 +474,7 @@ Youtube <https://www.youtube.com/playlist?list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13
    Extractor <https://www.youtube.com/watch?v=0uthTzrZCt8&list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i&index=17&ab_channel=ClowderFramework>`__
    and many more!
 
-Try the `core data
-extractors <https://github.com/clowder-framework/extractors-core>`__.
+Try the :ref:`default extractors<defaultExtractors>` for simple quality of life improvements in Clowder.
 
 Resources for Developers
 ========================
