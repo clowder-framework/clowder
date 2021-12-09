@@ -44,13 +44,13 @@ Contents
     :caption: Getting Started
 
     userguide/ug_index
+    userguide/installing_clowder
     api
 
 .. toctree::
     :maxdepth: 1
     :caption: Administration
 
-    admin/installing
     admin/upgrading
     admin/customizing
 
