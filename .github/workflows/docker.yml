@@ -36,6 +36,7 @@ jobs:
           - clowder
           - mongo-init
           - monitor
+          - elasticsearch
         include:
           - name: clowder
             FOLDER: "."
@@ -80,7 +81,7 @@ jobs:
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
             echo "CLOWDER_TAGS=develop" >> $GITHUB_ENV
-          else 
+          else
             echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
             echo "CLOWDER_TAGS=" >> $GITHUB_ENV
           fi
