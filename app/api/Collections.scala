@@ -805,7 +805,7 @@ class Collections @Inject() (datasets: DatasetService,
     implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadCollectionBagit").getOrElse(true)
+        val bagit = play.api.Play.configuration.getBoolean("downloadCollectionBagIt").getOrElse(true)
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
         Ok.chunked(enumeratorFromCollection(collection,1024*1024, compression,bagit,user)).withHeaders(
