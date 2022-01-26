@@ -2838,7 +2838,7 @@ class  Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
@@ -2867,7 +2867,7 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val fileIDs = fileList.split(',').map(fid => new UUID(fid)).toList
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count for each file
@@ -2892,7 +2892,7 @@ class  Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
 
