@@ -14,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 
 //this iterator is used for downloading a dataset
 //it has a file iterator
-class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipOutputStream, md5Files :scala.collection.mutable.HashMap[String, MessageDigest],
+class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipOutputStream, bagit: Boolean, md5Files :scala.collection.mutable.HashMap[String, MessageDigest],
                       folders : FolderService, files: FileService, metadataService : MetadataService, datasets: DatasetService, spaces : SpaceService) extends Iterator[Option[InputStream]] {
 
   //get files in the dataset
@@ -111,10 +111,14 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
 
   var fileCounter = 0
 
-  var currentFileIterator : Option[FileIterator] = None
+  var currentFileIterator : Option[FileIterator] = if (numFiles > 0){
+    Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),bagit, zip,md5Files,files,folders,metadataService))
+  } else {
+    None
+  }
 
   var is : Option[InputStream] = None
-  var file_type : Int = 0
+  var file_type : Int = if (bagit) 0 else 2
 
   def hasNext() = {
     if (file_type < 2){
@@ -126,7 +130,7 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
             true
           } else if (fileCounter < numFiles -1){
             fileCounter +=1
-            currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),zip,md5Files,files,folders,metadataService))
+            currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),bagit, zip,md5Files,files,folders,metadataService))
             true
           } else {
             false
@@ -155,7 +159,6 @@ class DatasetIterator(pathToFolder : String, dataset : models.Dataset, zip: ZipO
         md5Files.put("_metadata.json",md5)
         if (numFiles > 0){
           file_type+=1
-          currentFileIterator = Some(new FileIterator(folderNameMap(inputFiles(fileCounter).id),inputFiles(fileCounter),zip,md5Files,files,folders,metadataService))
         } else {
           file_type+=2
         }

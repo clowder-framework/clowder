@@ -2369,7 +2369,6 @@ class  Datasets @Inject()(
     * @param dataset dataset from which to get teh files
     * @param chunkSize chunk size in memory in which to buffer the stream
     * @param compression java built in compression value. Use 0 for no compression.
-    * @param bagit whether or not to include bagit structures in zip
    *  @param baseURL the root Clowder URL for metadata files, from original request
     * @param user an optional user to include in metadata
     * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
@@ -2377,12 +2376,12 @@ class  Datasets @Inject()(
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8,
-                            compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, baseURL: String,
-                            user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
-                           (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+  def enumeratorFromDatasetBagIt(dataset: Dataset, chunkSize: Int = 1024 * 8,
+                                 compression: Int = Deflater.DEFAULT_COMPRESSION, baseURL: String,
+                                 user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
+                                (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    val dataFolder = if (bagit) "data/" else ""
+    val dataFolder = "data/"
     val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
     val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
 
@@ -2468,14 +2467,9 @@ class  Datasets @Inject()(
                   is = addMD5Entry(filename, is, md5Files)
                   file_index +=1
                   if (file_index >= inputFiles.size) {
-                    if (bagit) {
-                      file_index = 0
-                      level = "bag"
-                      file_type = "bagit.txt"
-                    } else {
-                      level = "done"
-                      file_type = "none"
-                    }
+                    file_index = 0
+                    level = "bag"
+                    file_type = "bagit.txt"
                   }
                 }
                 case ("bag", "bagit.txt") => {
@@ -2539,6 +2533,105 @@ class  Datasets @Inject()(
         case None => Future.successful(None)
       }
     })(pec)
+  }
+
+  /**
+   * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param dataset dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @param compression java built in compression value. Use 0 for no compression.
+   * @param baseURL the root Clowder URL for metadata files, from original request
+   * @param user an optional user to include in metadata
+   * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
+   * @param folderId a folder UUID in the dataset to include (i.e. folder download)
+   * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
+  def enumeratorFromDatasetFiles(dataset: Dataset, chunkSize: Int = 1024 * 8,
+                                 compression: Int = Deflater.DEFAULT_COMPRESSION, baseURL: String,
+                                 user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
+                                (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+    implicit val pec = ec.prepare()
+    val dataFolder = ""
+    val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
+    val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
+
+    // Get list of all files and folder in dataset and enforce unique names
+    fileIDs match {
+      case Some(fids) => {
+        Logger.info("Downloading only some files")
+        Logger.info(fids.toString)
+        listFilesInFolder(fids, List.empty, dataFolder, filenameMap, inputFiles)
+      }
+      case None => {
+        folderId match {
+          case Some(fid) => listFilesInFolder(List.empty, List(fid), dataFolder, filenameMap, inputFiles)
+          case None => listFilesInFolder(dataset.files, dataset.folders, dataFolder, filenameMap, inputFiles)
+        }
+      }
+    }
+
+    // create the zipfile
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val zip = new ZipOutputStream(byteArrayOutputStream)
+    zip.setLevel(compression)
+
+    var file_index = 0
+    val buffer = new Array[Byte](chunkSize)
+    var is: Option[InputStream] = None
+
+    Enumerator.generateM({
+      println("getting chunk")
+      val bytesRead = is match {
+        case Some(inputStream: InputStream) => {
+          val bytesRead = scala.concurrent.blocking {
+            inputStream.read(buffer)
+          }
+          if (bytesRead == -1) {
+            // finished individual file
+            zip.closeEntry()
+            inputStream.close()
+          }
+          bytesRead
+        }
+        case None => -1
+      }
+
+      val chunk = if (bytesRead == -1) {
+        println("need next file")
+        if (file_index == -1) {
+          println("all done")
+          None
+        } else if (file_index < inputFiles.length) {
+          val filename = filenameMap(inputFiles(file_index).id)
+          is = addFileToZip(filename, inputFiles(file_index), zip)
+          file_index += 1
+          val result = Some(byteArrayOutputStream.toByteArray)
+          byteArrayOutputStream.reset()
+          result
+        } else {
+          println("No more files")
+          zip.close()
+          val result = Some(byteArrayOutputStream.toByteArray)
+          byteArrayOutputStream.reset()
+          is = None
+          file_index = -1
+          result
+        }
+      } else {
+        println("Got " + bytesRead + "bytes")
+        zip.write(buffer, 0, bytesRead)
+        val result = Some(byteArrayOutputStream.toByteArray)
+        byteArrayOutputStream.reset()
+        result
+      }
+
+      println("Sending " + chunk.getOrElse(Array.emptyByteArray).length + " bytes")
+      Future.successful(chunk)
+    })(pec)
+
   }
 
   private def addMD5Entry(name: String, is: Option[InputStream], md5HashMap: scala.collection.mutable.HashMap[String, MessageDigest]) = {
@@ -2834,11 +2927,10 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  def download(id: UUID, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID, bagit: Boolean, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
@@ -2849,7 +2941,13 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, baseURL, user, None, None)).withHeaders(
+        val enumerator = if (bagit) {
+          enumeratorFromDatasetBagIt(dataset,1024*1024, -1, baseURL, user, None, None)
+        } else {
+          enumeratorFromDatasetFiles(dataset,1024*1024, -1, baseURL, user, None, None)
+        }
+
+        Ok.chunked(enumerator).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2862,12 +2960,11 @@ class  Datasets @Inject()(
   }
 
   // Takes dataset ID and a comma-separated string of file UUIDs in the dataset and streams just those files as a zip
-  def downloadPartial(id: UUID, fileList: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def downloadPartial(id: UUID, fileList: String, bagit: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
         val fileIDs = fileList.split(',').map(fid => new UUID(fid)).toList
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count for each file
@@ -2875,7 +2972,12 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, Some(fileIDs), None)).withHeaders(
+        val enumerator = if (bagit) {
+          enumeratorFromDatasetBagIt(dataset,1024*1024, -1, baseURL, user, Some(fileIDs), None)
+        } else {
+          enumeratorFromDatasetFiles(dataset,1024*1024, -1, baseURL, user, Some(fileIDs), None)
+        }
+        Ok.chunked(enumerator).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " (Partial).zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2888,22 +2990,26 @@ class  Datasets @Inject()(
   }
 
   // Takes dataset ID and a folder ID in that dataset and streams just that folder and sub-folders as a zip
-  def downloadFolder(id: UUID, folderId: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def downloadFolder(id: UUID, folderId: UUID, bagit: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
-
 
         // Increment download count for each file in folder
         folders.get(folderId) match {
           case Some(fo) => {
             fo.files.foreach(fid => files.incrementDownloads(fid, user))
 
+            val enumerator = if (bagit) {
+              enumeratorFromDatasetBagIt(dataset, 1024*1024, -1, baseURL, user, None, Some(folderId))
+            } else {
+              enumeratorFromDatasetFiles(dataset, 1024*1024, -1, baseURL, user, None, Some(folderId))
+            }
+
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, None, Some(folderId))).withHeaders(
+            Ok.chunked(enumerator).withHeaders(
               CONTENT_TYPE -> "application/zip",
               CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ("+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
             )

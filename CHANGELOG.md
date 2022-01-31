@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
 
+### Changed
+- download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
+
 ## 1.19.5 - 2022-01-21
 
 ### Fixed
