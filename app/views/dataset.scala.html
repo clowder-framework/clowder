@@ -190,7 +190,7 @@
                     }
                     @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a id='download-url' href="#"
-                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id', -1, true).url, '_blank');"
+                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id', false, -1, true).url, '_blank');"
                             class="btn btn-link" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
