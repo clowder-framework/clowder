@@ -2583,7 +2583,6 @@ class  Datasets @Inject()(
     var is: Option[InputStream] = None
 
     Enumerator.generateM({
-      println("getting chunk")
       val bytesRead = is match {
         case Some(inputStream: InputStream) => {
           val bytesRead = scala.concurrent.blocking {
@@ -2600,9 +2599,7 @@ class  Datasets @Inject()(
       }
 
       val chunk = if (bytesRead == -1) {
-        println("need next file")
         if (file_index == -1) {
-          println("all done")
           None
         } else if (file_index < inputFiles.length) {
           val filename = filenameMap(inputFiles(file_index).id)
@@ -2612,7 +2609,6 @@ class  Datasets @Inject()(
           byteArrayOutputStream.reset()
           result
         } else {
-          println("No more files")
           zip.close()
           val result = Some(byteArrayOutputStream.toByteArray)
           byteArrayOutputStream.reset()
@@ -2621,14 +2617,12 @@ class  Datasets @Inject()(
           result
         }
       } else {
-        println("Got " + bytesRead + "bytes")
         zip.write(buffer, 0, bytesRead)
         val result = Some(byteArrayOutputStream.toByteArray)
         byteArrayOutputStream.reset()
         result
       }
 
-      println("Sending " + chunk.getOrElse(Array.emptyByteArray).length + " bytes")
       Future.successful(chunk)
     })(pec)
 
