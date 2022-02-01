@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
+- three.js is no longer associated with application/octet-stream, now with models [#305](https://github.com/clowder-framework/clowder/issues/305)
 
 ## 1.19.5 - 2022-01-21
 
