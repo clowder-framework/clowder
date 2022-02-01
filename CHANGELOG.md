@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
+- when event stream is disabled don't show for logged in user [#280](https://github.com/clowder-framework/clowder/issues/280)
 
 ## 1.19.5 - 2022-01-21
 
