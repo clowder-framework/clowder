@@ -93,23 +93,21 @@ class Application @Inject()(files: FileService, collections: CollectionService, 
     implicit val user = request.user
 
     var newsfeedEvents = List.empty[Event]
-    if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
-      newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
-      newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(20))
-      if (user.isDefined) {
-        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(user.get, Some(20)))
-          .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
-      }
-    }
 
     user match {
       case Some(clowderUser) if (clowderUser.status == UserStatus.Inactive) => {
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if !(clowderUser.status == UserStatus.Inactive) => {
-        newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
-        if (play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents ::: events.getCommentEvent(clowderUser, Some(20))
-        newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+        if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
+          newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
+          newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(20))
+          newsfeedEvents = newsfeedEvents ::: events.getEvents(clowderUser.followedEntities, Some(20))
+          if (play.Play.application().configuration().getBoolean("showCommentOnHomepage")) {
+            newsfeedEvents = newsfeedEvents ::: events.getCommentEvent(clowderUser, Some(20))
+          }
+          newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+        }
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionsWithThumbnails = collectionList.map { c =>
