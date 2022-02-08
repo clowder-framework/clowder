@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
+- three.js is no longer associated with application/octet-stream, now with models [#305](https://github.com/clowder-framework/clowder/issues/305)
 
 ### Changed
 - download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
