@@ -1153,7 +1153,6 @@ class  Datasets @Inject()(
               resultCount += 1
             }
           })
-          print("done with folder")
         }
       }
       case None => Logger.error(s"Error getting dataset $id")
