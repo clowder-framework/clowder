@@ -42,18 +42,22 @@ jobs:
             FOLDER: "."
             IMAGE: clowder
             README: README.md
+            PLATFORM: "linux/amd64,linux/arm64"
           - name: mongo-init
             FOLDER: scripts/mongo-init
             IMAGE: mongo-init
             README: ""
+            PLATFORM: "linux/amd64,linux/arm64"
           - name: monitor
             FOLDER: scripts/monitor
             IMAGE: monitor
             README: ""
+            PLATFORM: "linux/amd64,linux/arm64"
           - name: elasticsearch
             FOLDER: scripts/elasticsearch
             IMAGE: elasticsearch
             README: ""
+            PLATFORM: "linux/amd64"
 
     steps:
       - uses: actions/checkout@v2
@@ -108,7 +112,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ${{ matrix.FOLDER }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.PLATFORM }}
           push: false
           cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}:${{ env.TAG }}
           cache-to: type=inline
