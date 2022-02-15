@@ -47,7 +47,7 @@ jobs:
             FOLDER: scripts/mongo-init
             IMAGE: mongo-init
             README: ""
-            PLATFORM: "linux/amd64,linux/arm64"
+            PLATFORM: "linux/amd64"
           - name: monitor
             FOLDER: scripts/monitor
             IMAGE: monitor
