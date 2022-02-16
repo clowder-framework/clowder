@@ -93,8 +93,8 @@ jobs:
 
           push_tags=""
           for tag in ${tags}; do
-            push_tags="${push_tags} ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag}"
-            push_tags="${push_tags} ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag}"
+            push_tags="${push_tags}${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag}\n"
+            push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag}\n"
           done
 
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
