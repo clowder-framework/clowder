@@ -213,7 +213,7 @@ Part 2: Run Clowder via IntelliJ
 .. figure:: ../_static/IntelliJ_JDK_Download.png
    :alt: Download JDK from IntelliJ.
 
-1. Add a new Run Configuration
+5. Add a new Run Configuration
 
    - In the top right, click the dropdown and click “Edit Configurations…”
 
