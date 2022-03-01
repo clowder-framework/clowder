@@ -144,15 +144,15 @@ for details.), we must tell Clowder which ports the services are using.
 2. Copy and paste the lines below into that file we just created
    ``docker-compose.override.yml``
 
-.. code:: yml
+.. code-block:: yaml
+   :caption: docker-compose.override.yml
 
-   # this lets Clowder communicate with the necessary services
-   # These services (Mongo, RabbitMQ, ElsticSearch) will be run 
-   # via docker containers using the command line
+   # this lets Clowder communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
+   # Each service runs as a docker container.
 
    services:
      mongo:
-       image: mongo:3.4
+       image: mongo:3.6
        ports:
          - 27017:27017
      rabbitmq:
@@ -201,8 +201,8 @@ Part 2: Run Clowder via IntelliJ
    - This should prompt you to install the Scala plugin! Install it.
 
 3. Install the Scala Plugin for IntelliJ ``File`` --> ``Settings`` --> ``Plugins`` --> ``Download Scala``.
-4. Install Java 8 on your computer (version 8 required, not compatible
-   with other versions)
+4. Install Java 8 (i.e. Java 1.8) on your computer. Clowder requires Java version 8 and is not compatible
+   with other versions.
 
    - I find this easiest to do via IntelliJ’s Plugin Manager. ``File`` --> ``Project Structure`` --> ``SDKs`` --> ``+`` icon --> ``Download JDK``
    - Select ``Version 1.8`` (Clowder is only compatible with Java 8 (1.8), nothing higher) --> Vendor: ``Eclipse Temurin (AdoptOpenJDK Hotspot)`` --> ``Download``.
@@ -213,7 +213,7 @@ Part 2: Run Clowder via IntelliJ
 .. figure:: ../_static/IntelliJ_JDK_Download.png
    :alt: Download JDK from IntelliJ.
 
-5. Add a new Run Configuration
+1. Add a new Run Configuration
 
    - In the top right, click the dropdown and click “Edit Configurations…”
 
@@ -254,7 +254,7 @@ Also note, a handy debugging mode 🐞 is enabled by default. You can run the de
 
 .. note::
 
-   Use ``localhost:9000`` when **building from source** (clicking the green play button ▶️ in IntelliJ).``
+   Use ``localhost:9000`` when **building from source** (clicking the green play button ▶️ in IntelliJ).
 
    Use ``localhost:8000`` when **running from Docker only** (via ``docker-compose up -d`` without building from source)
 
