@@ -382,6 +382,26 @@
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/people.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/creators.js")" type="text/javascript"></script>
+
+ <script type="application/ld+json">{"context": { "@@vocab": "https://sechma.org/"},
+ "identifier": "@dataset.id",
+ "name": "@dataset.name",
+ "author": "@dataset.author",
+ "description": "@dataset.description",
+ "dateCreated": "@dataset.created.format("MMM dd, yyyy")",
+ "DigitalDocument": "@dataset.files",
+ "Directory": "@dataset.folders",
+ "keywords": "@dataset.tags",
+ "Collection": "@dataset.collections",
+ "thumbnail": "@dataset.thumbnail_id",
+ "license": "@dataset.licenseData",
+ "dateModfied": "@dataset.lastModifiedDate",
+ "FollowAction": "@dataset.followers",
+ "creator": "@dataset.creators",
+ "d": @dataset,
+ "m": @m
+ }</script>
+
     <script type="text/javascript">
         var removeIndicator = false;
         var parentId = "@dataset.id";
