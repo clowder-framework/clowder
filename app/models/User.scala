@@ -108,7 +108,26 @@ case class MiniUser(
    id: UUID,
    fullName: String,
    avatarURL: String,
-   email: Option[String])
+   email: Option[String]) {
+       def to_jsonld () : String = {
+          var firstName= "";
+          var lastName= "";
+          var nameLD = "";
+          var authorLD= "";
+          var emailLD = "";
+          var imgLD = "";
+          if(fullName.split("\\w+").length>1){
+             lastName = fullName.substring(fullName.lastIndexOf(" ")+1);
+             firstName = fullName.substring(0, fullName.lastIndexOf(' '));
+           } else{ firstName = fullName; }
+          nameLD = "{ \"givenName\": \"" + firstName + "\", \"familyName\": \"" + lastName + "\"}"
+          emailLD = "\"email\": \"mailto:" + email + "\","
+          imgLD = "\"image\": \"" + avatarURL + "\" "
+          authorLD =   "{\"@type\": \"Person\", " + nameLD  + emailLD  + imgLD + "},"
+          return authorLD
+      }
+   }
+
 
 case class ClowderUser(
   id: UUID = UUID.generate(),
