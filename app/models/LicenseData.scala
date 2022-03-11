@@ -29,6 +29,10 @@ case class LicenseData (
         case None => false
       })
     }
+        
+    def to_jsonld () : String = {
+            return m_licenseUrl
+    }
 
     /**
      * Utility method to check if a name matches the rights holder of the license.
