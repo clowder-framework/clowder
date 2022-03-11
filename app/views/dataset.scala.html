@@ -386,7 +386,7 @@
  <script type="application/ld+json">{"context": { "@@vocab": "https://sechma.org/"},
  "identifier": "@dataset.id",
  "name": "@dataset.name",
- "author": "@dataset.author",
+ "author": "@dataset.author.to_jsonld()",
  "description": "@dataset.description",
  "dateCreated": "@dataset.created.format("MMM dd, yyyy")",
  "DigitalDocument": "@dataset.files",
@@ -397,9 +397,7 @@
  "license": "@dataset.licenseData.to_jsonld()",
  "dateModfied": "@dataset.lastModifiedDate",
  "FollowAction": "@dataset.followers",
- "creator": "@dataset.creators",
- "d": @dataset,
- "m": @m
+ "creator": "@dataset.creators"
  }</script>
 
     <script type="text/javascript">
