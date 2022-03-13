@@ -120,10 +120,10 @@ case class MiniUser(
              lastName = fullName.substring(fullName.lastIndexOf(" ")+1);
              firstName = fullName.substring(0, fullName.lastIndexOf(' '));
            } else{ firstName = fullName; }
-          nameLD = "{ \"givenName\": \"" + firstName + "\", \"familyName\": \"" + lastName + "\"}"
+          nameLD = " \"givenName\": \"" + firstName + "\", \"familyName\": \"" + lastName + "\","
           emailLD = "\"email\": \"mailto:" + email + "\","
           imgLD = "\"image\": \"" + avatarURL + "\" "
-          authorLD =   "{\"@type\": \"Person\", " + nameLD  + emailLD  + imgLD + "},"
+          authorLD =   "{\"@type\": \"Person\", " + nameLD  + emailLD  + imgLD + "}"
           return authorLD
       }
    }
