@@ -9,6 +9,8 @@ import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core._
 import services.AppConfiguration
 
+import play.api.libs.json._
+
 object UserStatus extends Enumeration {
 	  type UserStatus = Value
 	  val Inactive, Active, Admin = Value
@@ -112,10 +114,6 @@ case class MiniUser(
        def to_jsonld () : String = {
           var firstName= "";
           var lastName= "";
-          var nameLD = "";
-          var authorLD= "";
-          var emailLD = "";
-          var imgLD = "";
           if(fullName.split("\\w+").length>1){
              lastName = fullName.substring(fullName.lastIndexOf(" ")+1);
              firstName = fullName.substring(0, fullName.lastIndexOf(' '));
