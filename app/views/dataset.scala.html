@@ -386,7 +386,7 @@
  <script type="application/ld+json">{"context": { "@@vocab": "https://schema.org/"},
  "identifier": "@dataset.id",
  "name": "@dataset.name",
- "author": @dataset.author.to_jsonld(),
+ "author": @Html(dataset.author.to_jsonld()),
  "description": "@dataset.description",
  "dateCreated": "@dataset.created.format("MMM dd, yyyy")",
  "DigitalDocument": "@dataset.files",
