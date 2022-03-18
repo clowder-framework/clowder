@@ -120,15 +120,14 @@ case class MiniUser(
              lastName = fullName.substring(fullName.lastIndexOf(" ")+1);
              firstName = fullName.substring(0, fullName.lastIndexOf(' '));
            } else{ firstName = fullName; }
-	   val jsLD = JsObject(Seq(
+	   val authorLD = JsObject(Seq(
                    "@type" -> JsString("Person"),
                    "givenName" -> JsString(firstName.toString()),
                    "familyName" -> JsString(lastName.toString()),
                    "email" ->  JsString(email.get.toString()),
                    "image" -> JsString(avatarURL.toString())
                    ))
-          val authorLD =   Json.stringify(jsLD) 
-          return authorLD.replaceAll("&quot;","\"")
+          return Json.stringify(authorLD) 
       }
    }
 
