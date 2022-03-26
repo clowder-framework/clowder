@@ -40,6 +40,19 @@ Users of Clowder: Getting Started via Docker
 .. code:: bash
 
    docker-compose up -d
+   
+5. If you experience any issue with file uploads and see the below error message in the console:
+
+.. code:: text
+
+   [ERROR  ] - application - Could not create folder on disk /home/clowder/data/uploads/xx/xx/xx
+   [ERROR  ] - application - Could not save bytes, deleting file xxx
+
+you can try this command:
+
+.. code:: bash 
+   
+   docker-compose exec -u 0 clowder chmod 777 /home/clowder/data
 
 6. Open your web browser to ``localhost:8000``
 

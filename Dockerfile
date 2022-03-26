@@ -30,6 +30,11 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
     && ./sbt dist \
     && unzip -q target/universal/clowder-*.zip \
     && mv clowder-* clowder \
+    && apk add --no-cache zip \
+    && for x in $(find clowder -name \*.jar); do \
+         zip -d $x org/apache/log4j/net/JMSAppender.class org/apache/log4j/net/SocketServer.class | grep 'deleting:' && echo "fixed $x"; \
+       done; \
+       echo "removed JMSAppender and SocketServer" \
     && mkdir -p clowder/custom clowder/logs
 
 # ----------------------------------------------------------------------

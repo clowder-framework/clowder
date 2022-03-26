@@ -21,7 +21,7 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
 
   var datasetCount = 0
   var currDs = selected(datasetCount)
-  var datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name, currDs, zip, md5Files, folders, files,
+  var datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name, currDs, zip, bagit, md5Files, folders, files,
     metadataService,datasets,spaces)
   var file_type = 0
 
@@ -54,7 +54,7 @@ class SelectedIterator(pathToFolder : String, selected : List[Dataset], zip : Zi
       } else if (selected.length > datasetCount+1){
         datasetCount += 1
         currDs = selected(datasetCount)
-        datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name,currDs,zip,md5Files,folders,files,
+        datasetIterator = new DatasetIterator(pathToFolder+"/"+currDs.name,currDs,zip,bagit, md5Files,folders,files,
           metadataService,datasets,spaces)
         true
       } else if (bagit) {

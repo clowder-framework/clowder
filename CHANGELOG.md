@@ -5,12 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.19.5 - 2022-3-25
+
+## 1.20.1 - 2022-3-25
 
 ### Added
 
 - Apple Silicon M1 documentation for installing Clowder
 - Documentation for "How to contribute documentation" alongside new Sphinx plugins.
+
+## 1.20.0 - 2022-02-07
+
+### Fixed
+- Conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
+- When event stream is disabled don't show for logged in user [#280](https://github.com/clowder-framework/clowder/issues/280)
+- three.js is no longer associated with application/octet-stream, now with models [#305](https://github.com/clowder-framework/clowder/issues/305)
+
+### Changed
+- Download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
+
+## 1.19.5 - 2022-01-21
+
+### Fixed
+- Removed JMSAppender and SocketServer from log4j.
+- Cleaned up getting started documentation.
 
 ## 1.19.4 - 2021-11-11
 
