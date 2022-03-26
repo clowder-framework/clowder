@@ -1,0 +1,64 @@
+.. index:: How to Contribute Documentation
+
+How to Contribute Documentation
+=============================
+
+Documentation is stored in ``doc/src/sphinx``. 
+
+Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
+
+
+
+
+.. tab-set::
+
+  .. tab-item:: conda
+
+    Create a virtual environment for documentation: 
+
+    .. code:: bash
+
+      conda create -n clowder_docs python=3.8 -y
+      conda activate clowder_docs
+
+    Install doc dependencies. It's always better to run all conda commands before installing pip packages.
+
+    .. code:: bash
+
+      conda install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 -y
+      pip install sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13
+
+  .. tab-item:: pyenv
+
+    Create a virtual environment for documentation:
+
+    .. code:: bash
+
+      pyenv install 3.8.2
+      pyenv virtualenv 3.8.6 clowder_docs
+
+      # make virtual environemnt auto-activate
+      cd doc/src/sphinx
+      pyenv local clowder_docs
+
+    Install doc dependencies: 
+
+    .. code:: bash
+
+      pip install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13
+
+Now, build HTML docs for viewing:
+
+    .. code:: bash
+
+      cd doc/src/sphinx
+      make html
+
+View docs by opening ``index.html`` in the browser
+``clowder/doc/src/sphinx/_build/html/index.html``
+
+⭐ If you experience *any* trouble, come ask us on `Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_! ⭐
+
+.. note::
+  
+  To see how to install Clowder, please see :ref:`installing_clowder`.

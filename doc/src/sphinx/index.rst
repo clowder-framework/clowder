@@ -62,6 +62,7 @@ Contents
     develop/setup_dev
     develop/extractors
     develop/previewers
+    develop/contribute_docs
     .. not included:  publishing_data
 
 .. toctree::
