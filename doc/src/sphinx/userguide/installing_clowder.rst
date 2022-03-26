@@ -8,9 +8,9 @@ What type of user are you?
 ===================================
 
 
-For **most users of Clowder**: :ref:`Get started here <usersOfClowder>` 👇
+For **most users of Clowder**: easily access Clowder via Docker. :ref:`Get started here <usersOfClowder>` 👇
 
-For **developers of Clowder itself**: :ref:`Dev quickstart here<clowderDevelopers>` 👇
+For **developers of Clowder itself**, a hybrid is recommended. :ref:`Dev quickstart here<clowderDevelopers>`.
 
 -  Build Clowder from source via IntelliJ’s Play-2 run
    configuration.
@@ -48,51 +48,46 @@ Users of Clowder: Getting Started via Docker
 
 ⭐ If you experience *any* trouble, come ask us on `Slack here <https://join.slack.com/t/clowder-software/shared_invite/enQtMzQzOTg0Nzk3OTUzLTYwZDlkZDI0NGI4YmI0ZjE5MTZiYmZhZTIyNWE1YzM0NWMwMzIxODNhZTA1Y2E3MTQzOTg1YThiNzkwOWQwYWE>`_! ⭐
 
-.. dropdown:: Helpful docker commands
-   :open:
+Helpful Docker commands:
+---------------------------------
 
-   -  ``docker-compose up -d`` - start up all required services
-   -  ``docker-compose down`` - stop all docker containers
-   -  ``docker-compose logs -f`` - see the logs
-   -  ``docker ps`` - check how many services are running
-   -  ``docker info`` - details about your docker version
+-  ``docker-compose up -d`` - start up all required services
+-  ``docker-compose down`` - stop all docker containers
+-  ``docker-compose logs -f`` - see the logs
+-  ``docker ps`` - check how many services are running
+-  ``docker info`` - details about your docker version
 
-      - After starting Docker, check that your services are running via the Docker Desktop GUI, or run ``docker ps`` and check that 3 containers are running. 
-      - The "image" column should show ``rabbitmq``, ``elasticsearch`` and ``mongo``.
+   -  After starting your services, run ``docker ps`` and check that 3 containers are running. The "Image" column should show ``rabbitmq``, ``elasticsearch`` and ``mongo``.
 
+   -  You could also check on Docker services via the Docker Desktop GUI (on Windows and
+   Mac)
 
-Clowder started! Now :ref:`create a new user 👇 <easyUserCreation>`
+Done! Now simply `create a new user 👇 <easyUserCreation>`_
 
 .. _easyUserCreation:
+Create your first user
+-------------------------
 
-Sign up for a Clowder login account
--------------------------------------
+Run the (edited) command below from the base Clowder directory.
 
-After installing Clowder, you still need to sign up for a user account. 
+First, **edit these properties** to your liking in the ``docker run`` command below:
 
-Run this in your terminal to create a new account:
+-  FIRST_NAME (default: ``Admin``)
+-  LAST_NAME  (``User``)
+-  EMAIL_ADDRESS  (``admin@example.com``)
+-  PASSWORD   (``catsarecute``)
+-  ADMIN  (``true``)
 
 .. code:: bash
 
-   docker run --rm -ti --network clowder_clowder -e \
-      FIRST_NAME=Admin -e LAST_NAME=User \
-      -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute \
-      -e ADMIN=true clowder/mongo-init \
+   docker run --rm -ti --network clowder_clowder -e FIRST_NAME=Admin -e LAST_NAME=User -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute -e ADMIN=true clowder/mongo-init
 
-Optionally, edit these properties to your liking:
+Now you can login to Clowder in your browser via ``localhost:8000`` (or if you built from source in IntelliJ, use ``localhost:9000``).
 
--  FIRST_NAME
--  LAST_NAME
--  EMAIL_ADDRESS
--  PASSWORD
+- If you get error: ``Error response from daemon: network clowder_clowder not found.`` 
+  - Try changing the network parameter to ``--network clowder-1_clowder``. It's possible you have multiple Clowder docker containers.
 
-✅ Configuration complete! Now you can login to Clowder via ``localhost:9000`` in your browser.
-
-.. warning::
-
-   If you renamed the base clowder folder to something else, like `kitten`, then the ``--netowrk`` parameter must be changed to ``--network kitten_clowder``.
-
-All done! You should be able to login to your new account, create new Spaces & Datasets and upload many different types of data. 
+Done! You should be able to login to your new account, create new Spaces & Datasets and upload many different types of data. 
 
 .. note::
    Before you go, check out useful information like the `Clowder 'All Paws' YouTube playist <https://www.youtube.com/playlist?list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13i>`__.
@@ -104,10 +99,6 @@ All done! You should be able to login to your new account, create new Spaces & D
 
    Try the :ref:`default extractors<defaultExtractors>` for simple quality of life improvements in Clowder.
 
-   .. code:: bash
-
-      $ docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.extractors.yml up -d
-
 .. _clowderDevelopers:
 
 Clowder Developers: Getting Started
@@ -115,9 +106,9 @@ Clowder Developers: Getting Started
 
 For **Clowder developers**, a hybrid is recommended:
 
--  Part 1: Run the required services via **Docker**, and expose each of
+-  Part 1: Run the required services via Docker, and expose each of
    their ports to Clowder.
--  Part 2: Run the Clowder instance manually via **IntelliJ Ultimate**’s Play-2 run
+-  Part 2: Run the Clowder instance manually via IntelliJ’s Play-2 run
    configuration.
 
 Part 1: Setup Docker
@@ -130,44 +121,8 @@ Part 1: Setup Docker
 
    git clone https://github.com/clowder-framework/clowder.git
 
-.. dropdown::  Apple Silicon M1 users, additional instructions here 💻👈
-   :open:
-
-   Clowder works well on Apple Silicon, with only one minor caveat. No changes are necessary, but these optimizations are handy.
-
-   Elasticsearch does not work and so the search bar in the top right 
-   of the web interface will not work or be visible. Clowder depends on 
-   an older version of Elasticsearch before it added Apple Silicon support, 
-   and Docker's QEMU emulation of x64 happens to fail causing the container to infinitely crash 
-   and restart.
-
-   To prevent this container from constantly crashing and restarting, 
-   please comment it out of the Docker definition in ``docker-compose.yml``. 
-
-   .. code:: yaml
-
-      # COMMENT THIS OUT in docker-compose.yml:
-
-      # search index (optional, needed for search and sorting future) 
-      elasticsearch:
-        image: clowder/elasticsearch:${CLOWDER_VERSION:-latest}
-        command: elasticsearch -Des.cluster.name="clowder"
-        networks:
-          - clowder
-        restart: unless-stopped
-        environment:
-          - cluster.name=clowder
-        volumes:
-          - elasticsearch:/usr/share/elasticsearch/data
-
-   Additionally, you may have to install Scala and SBT on your Mac.
-
-   .. code:: bash
-
-      brew install scala sbt
-
-   Finally, there is *no need* to specify a 'default Docker platform, and could hurt performance. (i.e.  ``<DO NOT> export DOCKER_DEFAULT_PLATFORM=linux/amd64``.') Only the necessary Docker containers will automatically emulate x64, and the rest will run natively on Apple Silicon.
-
+3. Navigate to Clowder’s root directory (``cd clowder``)
+4. Expose ports for Docker services to Clowder 👇
 
 Expose Docker services’ ports to Clowder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,19 +147,19 @@ for details.), we must tell Clowder which ports the services are using.
 .. code-block:: yaml
    :caption: docker-compose.override.yml
 
-   # Enable Clowder to communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
-   # Each service runs as a Docker container.
+   # this lets Clowder communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
+   # Each service runs as a docker container.
 
    services:
      mongo:
+       image: mongo:3.6
        ports:
          - 27017:27017
      rabbitmq:
+       image: rabbitmq:management-alpine
        ports:
          - 5672:5672
          - 15672:15672
-     # Elasticsearch does NOT work with Apple Silicon M1. Do not include it here.
-     # That's okay, but as a result the search bar will not be visible.
      elasticsearch:
        image: elasticsearch:2
        ports:
@@ -219,35 +174,34 @@ for details.), we must tell Clowder which ports the services are using.
 
 
 .. note::
-   By default, running ``docker-compose up -d`` uses the ``docker-compose.yml`` configuration **and will apply overrides found in** ``docker-compose.override.yml``. Neither file need to be specified on the command line.
-
-.. dropdown:: (Optional) Check that the Docker containers are running
-   
-   You can see them in the Docker Desktop application, or in the web browser shown below.
-
-   ``localhost:27017``
-   - You should see: "It looks like you're trying to access MongoDB..." Success!
-   ``localhost:15672``
-   - You should see: the RabbitMQ login screen (no need to login tho!). Success!
-
-    Now keep everything running, and next let’s build Clowder from source 👇
+   By default, running ``docker-compose up -d`` uses the ``docker-compose.yml`` configuration and will apply overrides found in ``docker-compose.override.yml``. Neither file need to be specified on the command line.
 
 
+4. Go to each Mongo and ElasticSearch to see it running
 
+.. code:: text
 
+   If you get a response, it's working!
+
+   localhost:27017 -- "It looks like you're trying to access MongoDB" Success!
+   localhost:15672 -- should see RabbitMQ login screen (no need to login tho!)
+   localhost:9200 -- Should see a json file with "name" : "Machine Teen" 
+
+Done! Now keep that running, and next let’s build Clowder from source 👇
 
 Part 2: Run Clowder via IntelliJ
 --------------------------------
 
-1. Install IntelliJ **Ultimate Edition**.
+1. Install IntelliJ Community Edition
 
-   - This guide will assume developers use IntelliJ. Ultimate Edition is required for the Play2 configuration.
+   - This guide will assume developers use IntelliJ
 
-2. Open the base Clowder directory & install Scala plugin
+2. Open the base Clowder directory
 
    - This should prompt you to install the Scala plugin! Install it.
-   - Or, manually install the Scala Plugin for IntelliJ ``File`` --> ``Settings`` --> ``Plugins`` --> ``Download Scala``.
-3. Install Java 8 (i.e. Java 1.8) on your computer. Clowder requires Java version 8 and is not compatible
+
+3. Install the Scala Plugin for IntelliJ ``File`` --> ``Settings`` --> ``Plugins`` --> ``Download Scala``.
+4. Install Java 8 (i.e. Java 1.8) on your computer. Clowder requires Java version 8 and is not compatible
    with other versions.
 
    - I find this easiest to do via IntelliJ’s Plugin Manager. ``File`` --> ``Project Structure`` --> ``SDKs`` --> ``+`` icon --> ``Download JDK``
@@ -259,14 +213,14 @@ Part 2: Run Clowder via IntelliJ
 .. figure:: ../_static/IntelliJ_JDK_Download.png
    :alt: Download JDK from IntelliJ.
 
-4. Add a new Run Configuration
+5. Add a new Run Configuration
 
    - In the top right, click the dropdown and click “Edit Configurations…”
 
 .. figure:: ../_static/GettingStarted_addConfig.png
    :alt: Add new configuration
 
-5. Create a new ``Play 2 App`` configuration
+6. Create a new ``Play 2 App`` configuration
 
 .. note::
 
@@ -275,153 +229,190 @@ Part 2: Run Clowder via IntelliJ
 .. figure:: ../_static/GettingStarted_Play2Config.png
    :alt: Create play2 configuration.
 
-6. The default run configuration should be okay, see image below.
-
-.. figure:: ../_static/GettingStarted_AddJDK.png
-   :alt: Specify the JDK path in the Run Configuration.
-   
-   The default Clowder run Configuration.
+7. The default configuration should be okay, see image below.
 
 .. note::
 
-   Later, **if Clowder feels slow** (multiple seconds per page load) then you will need to add JNotify to your JVM Options on this page. :ref:`See the instructions at bottom of this page<slowClowder>`.
+   Later, **if Clowder feels slow** (multiple seconds per page load) then you will need to add JNotify to your JVM Options on this page. :ref:`Instructions at bottom of this page<slowClowder>`.
 
+.. figure:: ../_static/GettingStarted_AddJDK.png
+   :alt: Specify the JDK path
 
-**⭐️ Now start Clowder:** In IntelliJ, click the green play button ▶️ (top right) to build Clowder from source! Give it a minute to finish. Access Clowder via ``localhost:9000`` in the browser.
+Done!
 
-Also note, a handy debugging mode is enabled by default. You can run the debug mode by clicking the green "bug" 🐞 button right beside the play button.
+Now simply ensure your docker services are still running from the
+previous step.
 
-.. _creatingLocalAccount:
+-  You can check by running ``docker ps`` and check that 3 services
+   are running.
+-  If not, start them with
+   ``docker-compose up -d``
+
+Now in IntelliJ, click the green play button (top right) to build Clowder from source! Give it a minute to finish. Access Clowder via ``localhost:9000`` in the browser.
+
+Also note, a handy debugging mode 🐞 is enabled by default. You can run the debug mode by clicking the green "bug" button right beside the play button.
+
+.. note::
+
+   Use ``localhost:9000`` when **building from source** (clicking the green play button ▶️ in IntelliJ).
+
+   Use ``localhost:8000`` when **running from Docker only** (via ``docker-compose up -d`` without building from source)
+
+.. _creatingLocalAccount
 
 Creating a local Clowder account
 --------------------------------
 
-After installing Clowder, you still need to sign up for a user account. 
+After creating your Clowder instance, you still need to Sign Up for a
+user account. All accounts require:
 
-Run this in your terminal to create a new account:
+1. Email verification (need to spoof this locally)
+2. To be Activated by an administrator (you are an administrator of the
+   local instance)
 
-.. code:: bash
+3 ways to create a local Clowder account:
 
-   docker run --rm -ti --network clowder_clowder -e \
-      FIRST_NAME=Admin -e LAST_NAME=User \
-      -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute \
-      -e ADMIN=true clowder/mongo-init \
+1. Easiest: Use the docker command
 
-Optionally, edit these properties to your liking:
+   - Skip the email verification and activation.
+
+2. Creating many users: set the default to auto-activate new users.
+3. Already created a user, but you didn’t get a confirmation email, or
+   you’re “not activated”: edit permissions in MongoDB.
+
+Method 1: Easiest new user creation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the (edited) command below from the base Clowder directory. If the folder name is not clowder, the network will need to be changed, e.g. the folder you are in is called `kitten` in this case the network will be `kitten_clowder`.
+
+First, edit these properties to your liking:
 
 -  FIRST_NAME
 -  LAST_NAME
 -  EMAIL_ADDRESS
 -  PASSWORD
 
+.. code:: bash
+
+   docker run --rm -ti --network clowder_clowder -e FIRST_NAME=Admin -e LAST_NAME=User -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute -e ADMIN=true clowder/mongo-init
+
 ✅ Configuration complete! Now you can login to Clowder via ``localhost:9000`` in your browser.
-
-.. warning::
-
-   If you renamed the base clowder folder to something else, like `kitten`, then the ``--netowrk`` parameter must be changed to ``--network kitten_clowder``.
-
 
 :ref:`Skip to using default extractors and developer resources <defaultExtractors>` 👇
 
-.. dropdown:: (Optional) User creation method 2: mock SMTP server
+User creation method 2 and 3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   **Enable local email verification**
+For methods 2 and 3, enable local email verification (*or you will never
+get an email verification*).
 
-   For local instances of Clowder, the email verification step will have to
-   be done manually, via a mock SMTP email server.
+Enable local email verification
++++++++++++++++++++++++++++++++++
 
-   Add the following lines to the bottom of ``application.conf``:
+For local instances of Clowder, the email verification step will have to
+be done manually, via a mock SMTP email server.
 
-   .. code:: bash
+Add the following line to the bottom of ``application.conf``
 
-      # application.conf
+.. code:: bash
 
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      # Local email verification -- see Intellij's run console to complete registration
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      smtp.mock=true
+   # application.conf
+   # Add the content below to end of file
 
-   All accounts must also be activated by an administrator. To activate
-   your account by default, edit ``application.conf``:
+   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   # Local email verification -- see Intellij console to complete registration
+   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   smtp.mock=true
 
-   .. code:: bash
+Now the below methods will work.
 
-      # application.conf
-      # Search for this line, and EDIT it (do not add a new line)
-      # Set to false
+Method 2: Creating many users? Change default Activation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-      # Whether emails for new users registrations go through admins first
-      registerThroughAdmins=false
+**All accounts must also be activated by an administrator. To activate
+your account by default, edit** ``application.conf``.
 
-   **Now, create a local Clowder account via the web interface**
+.. code:: bash
 
-   Start Clowder:
+   # application.conf
+   # Search for this line, and EDIT it (not adding a new line)
+   # SET TO FALSE
 
-   1. Start required services (via
-      ``docker-compose up -d`` from the root
-      Clowder directory).
+   # Whether emails for new users registrations go through admins first
+   registerThroughAdmins=false
 
-      1. You can check if your services are already running using
-         ``docker ps`` and check that 3 containers are active (MongoDB,
-         ElasticSearch, and RabbitMQ) by looking at
-         ``Server → Containser: 3``. Or check via the Docker Desktop GUI.
+Done! Create new users via the Clowder GUI in your browser.
 
-   2. Ensure your local clowder instance is running (on ``localhost:9000``)
+Method 3: Edit permissions in MongoDB
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Finally, **attempt to signup for an account via the Clowder GUI** on
-   ``localhost:9000``
+To edit the permissions on *existing accounts*, **edit their properties
+in MongoDB**. You can skip this step if you haven’t created a local Clowder
+account yet.
 
-   -  Click the Sign Up button in the top right.
+1. Download a GUI for MongoDB: MongoDB Compass or a 3rd party tool like RoboMongo.
+2. Ensure all services are running!
 
-   Upon clicking Signup, **the IntelliJ console will show the text of the
-   user signup verification emails**, where you can click the confirmation
-   link.
+.. code:: bash
 
-   Look for this in Intellij's run output terminal, **and click the link to complete registration**:
+   cd clowder # base directory
 
-   .. code:: python
+   # start all required services 
+   docker-compose up -d
 
-      <p>Please follow this
-          <a href="http://localhost:9000/signup/baf28c54-80fe-480c-b1e4-9200668cb92e">link</a> to complete your registration
-          at <a href="http://localhost:9000/">Clowder</a>.
-      </p>
+3. Connect RoboMongo to the docker instance (the defaults should be
+   fine)
 
-   -  Don’t see it? Make sure you enabled ``smtp.mock=true`` above.
+   1. Point it towards port ``27017``
 
-   Now fill in your account details, and you should be good to go using
-   Clowder!
+4. In the file tree on the left, navigate to clowder → Collections →
+   social.users
 
-.. dropdown:: (Optional) Edit user properties directly in MongoDB
+   1. Then click the dropdown to expand that user
+   2. Find ``status`` field, and right click to edit.
+   3. If it is ``Inactive``, change it by typing ``Active``
+      (capitalized)
 
-   To edit the permissions on *existing accounts*, **edit their properties
-   in MongoDB**. You can skip this step if you haven’t created a local Clowder
-   account yet.
+5. Done. Refresh your browser (on ``localhost:9000``) to access Clowder.
 
-   1. Download a GUI for MongoDB: MongoDB Compass or a 3rd party tool like RoboMongo.
-   2. Ensure all services are running!
+Create a local Clowder account
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   .. code:: bash
+Start Clowder:
 
-      cd clowder # base directory
+1. Start required services (via
+   ``docker-compose up -d`` from the root
+   Clowder directory).
 
-      # start all required services 
-      docker-compose up -d
+   1. You can check if your services are already running using
+      ``docker ps`` and check that 3 containers are active (MongoDB,
+      ElasticSearch, and RabbitMQ) by looking at
+      ``Server → Containser: 3``. Or check via the Docker Desktop GUI.
 
-   1. Connect RoboMongo to the docker instance (the defaults should be
-      fine)
+2. Ensure your local clowder instance is running (on ``localhost:9000``)
 
-      1. Point it towards port ``27017``
+Finally, **attempt to signup for an account via the Clowder GUI** on
+``localhost:9000``
 
-   2. To find user properties, in the file tree on the left, navigate to clowder → Collections →
-      social.users
+-  Click the Sign Up button in the top right.
 
-      1. Then click the dropdown to expand that user
-      2. Find ``status`` field, and right click to edit.
-      3. If it is ``Inactive``, change it by typing ``Active``
-         (capitalized).
+Upon clicking Signup, **the IntelliJ console will show the text of the
+user signup verification emails**, where you can click the confirmation
+link.
 
-   3. User is activated. Refresh your browser (on ``localhost:9000``) to access Clowder.
-   
+Look for this in the console:
+
+-  Don’t see it? Make sure you enabled ``smtp.mock=true`` above.
+
+.. code:: python
+
+   <p>Please follow this
+       <a href="http://localhost:9000/signup/baf28c54-80fe-480c-b1e4-9200668cb92e">link</a> to complete your registration
+       at <a href="http://localhost:9000/">Clowder</a>.
+   </p>
+
+Now fill in your account details, and you should be good to go using
+Clowder!
 
 .. _slowClowder: 
 
@@ -491,10 +482,6 @@ Youtube <https://www.youtube.com/playlist?list=PLVhslX3lYajMZD9KA-RJK-ulmXys8d13
 
 Try the :ref:`default extractors<defaultExtractors>` for simple quality of life improvements in Clowder.
 
-  .. code:: bash
-     
-     docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.extractors.yml up -d
-
 Write your own extractors using the `PyClowder Python package <https://github.com/clowder-framework/pyclowder>`__.
 
 🤔❓ Please ask any questions on our `Clowder Slack <clowder-software.slack.com>`__.
@@ -526,8 +513,8 @@ own <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Extractors>`__
    (to ensure datasets don't have viruses)
 
 
-Advanced Customization
-========================
+Customize Deployment
+======================
 
 
 Customize your deployment by creating a custom folder in Clowder's root directory and add a ``/custom/custom.conf`` and a
