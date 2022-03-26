@@ -109,7 +109,7 @@ class Selected @Inject()(selections: SelectionService,
     Logger.debug("Requesting Selected.downloadAll")
     request.user match {
       case Some(user) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val selected = selections.get(user.email.get)
         Ok.chunked(enumeratorFromSelected(selected,1024*1024,bagit,Some(user))).withHeaders(
           "Content-Type" -> "application/zip",

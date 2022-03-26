@@ -11,7 +11,7 @@ import util.JSONLD
 
 //this is used for file downloads
 //called by the dataset interator
-class FileIterator (pathToFile : String, file : models.File,zip : ZipOutputStream, md5Files :scala.collection.mutable.HashMap[String, MessageDigest], files : FileService, folders : FolderService , metadataService : MetadataService) extends Iterator[Option[InputStream]] {
+class FileIterator (pathToFile : String, file : models.File, bagit: Boolean, zip : ZipOutputStream, md5Files :scala.collection.mutable.HashMap[String, MessageDigest], files : FileService, folders : FolderService , metadataService : MetadataService) extends Iterator[Option[InputStream]] {
 
   def getFileInfoAsJson(file : models.File) : JsValue = {
     val rightsHolder = {
@@ -54,7 +54,7 @@ class FileIterator (pathToFile : String, file : models.File,zip : ZipOutputStrea
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  var file_type : Int = 0
+  var file_type : Int = if (bagit) 0 else 2
   var is : Option[InputStream] = None
   def hasNext() = {
     if ( file_type < 3){
