@@ -116,7 +116,7 @@ services:
 
   # search index (optional, needed for search and sorting future) 
   elasticsearch:
-    image: elasticsearch:2
+    image: clowder/elasticsearch:${CLOWDER_VERSION:-latest}
     command: elasticsearch -Des.cluster.name="clowder"
     networks:
       - clowder
