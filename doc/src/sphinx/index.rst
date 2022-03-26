@@ -36,7 +36,7 @@ Contents
     :caption: General
 
     overview
-    changelog
+    changelog_md_to_rst
     license
 
 .. toctree::
@@ -62,6 +62,7 @@ Contents
     develop/setup_dev
     develop/extractors
     develop/previewers
+    .. not included:  publishing_data
 
 .. toctree::
     :maxdepth: 1

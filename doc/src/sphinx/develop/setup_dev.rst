@@ -6,11 +6,13 @@ Development Environment
 The Clowder web application is written in `Scala <http://www.scala-lang.org/>`_ and `Play <www.playframework.org>`_. Many
 developers currently use `IntelliJ IDEA <https://www.jetbrains.com/idea/>`_ for Scala development.
 
+
+.. warning::
+  
+  This document is depricated -- please see :ref:`installing_clowder`.
+
 Minimum Requirements
 --------------------
-
-First install required software described here :ref:`requirements`.
-
 
 Check out the source code
 -------------------------
@@ -23,14 +25,17 @@ The repository `clowder` containes the web frontend and is required. It should b
 
 ::
 
-  > git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/clowder.git
+  $ git clone https://github.com/clowder-framework/clowder
+  Depricated: https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/clowder.git
 
 
 Most of the other repositories include specific extractors. Basic extractors are available in `extractors-core`:
 
 ::
 
-  > git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/extractors-core.git
+  $ git clone https://github.com/clowder-framework/pyclowder
+  $ git clone https://github.com/clowder-framework/extractors-core
+  Depricated: https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/extractors-core.git
 
 
 Execute
