@@ -189,27 +189,54 @@ for details.), we must tell Clowder which ports the services are using.
 2. Copy and paste the lines below into that file we just created
    ``docker-compose.override.yml``
 
-.. code-block:: yaml
-   :caption: docker-compose.override.yml
+.. tab-set::
 
-   # Enable Clowder to communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
-   # Each service runs as a Docker container.
+   .. tab-item:: Default
 
-   services:
-     mongo:
-       ports:
-         - 27017:27017
-     rabbitmq:
-       ports:
-         - 5672:5672
-         - 15672:15672
-     # Elasticsearch does NOT work with Apple Silicon M1. Do not include it here.
-     # That's okay, but as a result the search bar will not be visible.
-     elasticsearch:
-       image: elasticsearch:2
-       ports:
-         - 9200:9200
-         - 9300:9300
+      .. code-block:: yaml
+         :caption: docker-compose.override.yml
+
+         # Enable Clowder to communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
+         # Each service runs as a Docker container.
+
+         services:
+         mongo:
+            ports:
+               - 27017:27017
+         rabbitmq:
+            ports:
+               - 5672:5672
+               - 15672:15672
+         elasticsearch:
+            image: elasticsearch:2
+            ports:
+               - 9200:9200
+               - 9300:9300
+
+
+   .. tab-item:: Apple Silicon M1
+
+      .. code-block:: yaml
+         :caption: docker-compose.override.yml
+
+         # Enable Clowder to communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
+         # Each service runs as a Docker container.
+
+         services:
+         mongo:
+            ports:
+               - 27017:27017
+         rabbitmq:
+            ports:
+               - 5672:5672
+               - 15672:15672
+         # Elasticsearch does NOT work with Apple Silicon M1. Do not include it here.
+         # That's okay, but as a result the search bar will not be visible.
+         # elasticsearch:
+         # image: elasticsearch:2
+         # ports:
+         #    - 9200:9200
+         #    - 9300:9300
 
 3. Test that our services work! First start them:
 
