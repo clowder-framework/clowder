@@ -4,7 +4,7 @@ babel==2.9.1
 certifi==2021.5.30
 chardet==4.0.0
 commonmark==0.9.1
-docutils==0.17.1
+docutils==0.16
 idna==2.10
 imagesize==1.2.0
 jinja2==3.0.1

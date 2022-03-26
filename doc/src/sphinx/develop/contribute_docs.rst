@@ -18,7 +18,7 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
 
     .. code:: bash
 
-      conda create -n clowder_docs python=3.8 -y
+      conda create -n clowder_docs python=3.7 -y
       conda activate clowder_docs
 
     Install doc dependencies. It's always better to run all conda commands before installing pip packages.
@@ -26,7 +26,7 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
     .. code:: bash
 
       conda install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 -y
-      pip install sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13
+      pip install sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13 docutils==0.16 certifi==2021.5.30
 
   .. tab-item:: pyenv
 
@@ -34,8 +34,8 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
 
     .. code:: bash
 
-      pyenv install 3.8.2
-      pyenv virtualenv 3.8.6 clowder_docs
+      pyenv install 3.7
+      pyenv virtualenv 3.7 clowder_docs
 
       # make virtual environemnt auto-activate
       cd doc/src/sphinx
@@ -45,7 +45,7 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
 
     .. code:: bash
 
-      pip install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13
+      pip install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13 docutils==0.16 certifi==2021.5.30
 
 Now, build HTML docs for viewing:
 
