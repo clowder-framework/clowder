@@ -90,7 +90,7 @@ Run this in your terminal to create a new account:
    docker run --rm -ti --network clowder_clowder -e \
       FIRST_NAME=Admin -e LAST_NAME=User \
       -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute \
-      -e ADMIN=true clowder/mongo-init \
+      -e ADMIN=true clowder/mongo-init
 
 Optionally, edit these properties to your liking:
 
@@ -345,7 +345,7 @@ Run this in your terminal to create a new account:
    docker run --rm -ti --network clowder_clowder -e \
       FIRST_NAME=Admin -e LAST_NAME=User \
       -e EMAIL_ADDRESS=admin@example.com -e PASSWORD=catsarecute \
-      -e ADMIN=true clowder/mongo-init \
+      -e ADMIN=true clowder/mongo-init
 
 Optionally, edit these properties to your liking:
 
