@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+### 
+- [#335](https://github.com/clowder-framework/clowder/issues/335): dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch
+- MiniUser and LicenseData now have to_jsonld methods to return string part of [#335](https://github.com/clowder-framework/clowder/issues/335) metadata
+- LicenseData has urlViaAttributes used by it's to_jsonld to guess url when empty, for [#335](https://github.com/clowder-framework/clowder/issues/335)
+
 ## 1.20.0 - 2022-02-07
 
 ### Fixed
