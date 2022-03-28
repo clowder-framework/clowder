@@ -29,10 +29,6 @@ case class LicenseData (
         case None => false
       })
     }
-        
-    def to_jsonld () : String = {
-            return m_licenseUrl
-    }
 
     /**
      * Utility method to check if a name matches the rights holder of the license.
@@ -45,5 +41,57 @@ case class LicenseData (
     def isRightsOwner(aName: String) = {
         m_rightsHolder == aName
     }
-}
 
+    /**
+     * Utility to return a url even if empty, but enough other attributes available to determine it
+     * this is repurposed from:
+     * function updateData(id, imageBase, sourceObject, authorName)  
+     * in updateLicenseInfo.js line:88
+     */
+    def urlViaAttributes() : String = {
+       if (m_licenseUrl != "") return m_licenseUrl
+       var licenseUrl = m_licenseUrl;
+       if (m_licenseType == "license2") {
+         //No checkboxes selected
+         if (!m_ccAllowCommercial && !m_ccAllowDerivative && !m_ccRequireShareAlike) {
+            licenseUrl = "http://creativecommons.org/licenses/by-nc-nd/3.0/";
+         }
+         //Only commercial selected
+         else if (m_ccAllowCommercial && !m_ccAllowDerivative && !m_ccRequireShareAlike) {
+            licenseUrl = "http://creativecommons.org/licenses/by-nd/3.0/";
+         }
+         //Only remixing selected
+         else if (!m_ccAllowCommercial && m_ccAllowDerivative && !m_ccRequireShareAlike) {
+            licenseUrl = "http://creativecommons.org/licenses/by-nc/3.0/";
+         }
+         //Remixing and Sharealike selected
+         else if (!m_ccAllowCommercial && m_ccAllowDerivative && m_ccRequireShareAlike) {
+            licenseUrl = "http://creativecommons.org/licenses/by-nc-sa/3.0/";
+         }
+         //All checkboxes selected
+         else if (m_ccAllowCommercial && m_ccAllowDerivative && m_ccRequireShareAlike) {
+            licenseUrl = "http://creativecommons.org/licenses/by-sa/3.0/";
+         }
+         //Commercial and Remixing selected
+         else if (m_ccAllowCommercial && m_ccAllowDerivative && !m_ccRequireShareAlike) {
+            licenseUrl = "http://creativecommons.org/licenses/by/3.0/";
+         }
+         //else { rightsHolder = 'Creative Commons';
+         //   licenseText = 'Specific level info'; }
+      }
+      else if (m_licenseType == "license3") {
+         licenseUrl = "http://creativecommons.org/publicdomain/zero/1.0/";
+      }
+       //m_licenseType = licenseUrl; //would only reset if not "" to start 
+      return licenseUrl
+   }
+        
+   /**
+    * Utility function, similar to a json Write, to return string version in json-ld  format
+    * Should also return key
+    */
+    def to_jsonld () : String = {
+       //return m_licenseUrl
+       return this.urlViaAttributes()
+    }
+}
