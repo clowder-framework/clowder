@@ -98,6 +98,7 @@ Optionally, edit these properties to your liking:
 -  LAST_NAME
 -  EMAIL_ADDRESS
 -  PASSWORD
+- ADMIN (only set this if you want the user to have superadmin rights, make sure at lease one user has this).
 
 ✅ Configuration complete! Now you can login to Clowder via ``localhost:9000`` in your browser.
 
@@ -353,6 +354,7 @@ Optionally, edit these properties to your liking:
 -  LAST_NAME
 -  EMAIL_ADDRESS
 -  PASSWORD
+-  ADMIN (only set this if you want the user to have superadmin rights, make sure at lease one user has this).
 
 ✅ Configuration complete! Now you can login to Clowder via ``localhost:9000`` in your browser.
 
@@ -542,96 +544,29 @@ Write your own extractors using the `PyClowder Python package <https://github.co
 .. _clowder-python:
 
 Resources for Developers
-========================
+===========================
 
-`Installing Clowder and creating custom plugins and Configurations
-(legacy
-instructions) <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Installing+Clowder>`__
+- `Clowder REST API examples <https://clowder-framework.readthedocs.io/en/latest/api.html>`__ (and `legacy examples <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Clowder+API+Examples>`__)
 
-`Clowder REST API
-examples <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Clowder+API+Examples>`__
+- `Customize your deployment <https://clowder-framework.readthedocs.io/en/latest/admin/customizing.html>`__
 
-`Extractors: Running samples and writing your
-own <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Extractors>`__
+- `Extractors: Running samples and writing your own <https://opensource.ncsa.illinois.edu/confluence/display/CATS/Extractors#Extractors-Extractorbasics>`__
 
--  Look at the `Core Extractors for
-   examples <https://github.com/clowder-framework/extractors-core>`__
-   for image, video, Audio, PDF, etc.
--  `Extractor for CSV
-   files <https://github.com/clowder-framework/extractors-csv>`__
--  `Extractor for ZIP
-   files <https://github.com/clowder-framework/extractors-zip>`__
--  `Virus checker
-   extractor <https://github.com/clowder-framework/extractors-clamav>`__
-   (to ensure datasets don't have viruses)
+-  Look at the `Core Extractors <https://github.com/clowder-framework/extractors-core>`__
+   for exmaples on how to use image, video, audio, PDF, etc.
 
+   -  `Extractor for CSV files <https://github.com/clowder-framework/extractors-csv>`__
 
-Advanced Customization
-========================
+   -  `Extractor for ZIP files <https://github.com/clowder-framework/extractors-zip>`__
 
+   -  `Virus checker extractor <https://github.com/clowder-framework/extractors-clamav>`__ (to ensure datasets don't have viruses)
 
-Customize your deployment by creating a custom folder in Clowder's root directory and add a ``/custom/custom.conf`` and a
-``/custom/play.plugins`` files within. Modifications included in these files will overwrite defaults in
-``/conf/application.conf`` and ``/conf/play.plugins``.
-
-Do **not** make changes to the original files in ``/conf``.
-
-The ``/custom/play.plugins`` file describes all the additional plugins that should be enabled. This file can only add additional plugins,
-and is not capable of turning off any of the default ones enabled in ``/conf/play.plugins``
-For example the following ``play.plugins`` file will enable some additional plugins:
-
-.. code-block:: properties
-  :caption: play.plugins
-
-  9992:services.RabbitmqPlugin
-  10002:securesocial.core.providers.GoogleProvider
-  11002:services.ElasticsearchPlugin
-
-``/custom/custom.conf`` is used to overwrite any of the defaults configurations. Some common examples that are modified are:
-
-.. code-block:: properties
-  :caption: custom.conf
-
-  # mongodb
-  mongodb.default="mongodb://mongoserver:27017/mongodatabase"
-   
-  # where to store the blobs (highly recommended)
-  service.byteStorage=services.filesystem.DiskByteStorageService
-  medici2.diskStorage.path="/home/clowder/data"
-   
-  # rabbitmq
-  clowder.rabbitmq.uri="amqp://guest:guest@server/virtualhost"
-  clowder.rabbitmq.exchange=exchange
-   
-  initialAdmins="youremail@address"
-   
-  # elasticsearch
-  elasticsearchSettings.clusterName="name"
-  elasticsearchSettings.serverAddress="server"
-  elasticsearchSettings.serverPort=9300
-   
-  # securesocial customization
-  # set this to true if using https
-  securesocial.ssl=true
-  # this will make the default timeout be 8 hours
-  securesocial.cookie.idleTimeoutInMinutes=480
-   
-  # google setup
-  securesocial.google.authorizationUrl="https://accounts.google.com/o/oauth2/auth"
-  securesocial.google.accessTokenUrl="https://accounts.google.com/o/oauth2/token"
-  securesocial.google.clientId="magic"
-  securesocial.google.clientSecret="magic"
-  securesocial.google.scope="https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
-   
-  # security options
-  application.secret="some magic string"
-  commKey=magickey
-
+Can't find what you need? `Clowder's legacy wiki <https://opensource.ncsa.illinois.edu/confluence/display/CATS>`__ may have additional detail.
 
 .. _requirements:
 
-Requirements
-=============
+Requirements Overview
+=======================
 
 Following is a list of requirements for the Clowder software. Besides Java, all other services/software
 can be installed on other machines with Clowder configured to communicate with them.
@@ -655,5 +590,6 @@ can be installed on other machines with Clowder configured to communicate with t
 
   * ElasticSearch is used for text based search by Clowder.
   * Versions above 2.x have not been tested.
+  * This dependency (specifically v2) is not compatible with Apple Silicon M1.
 
 

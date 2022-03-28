@@ -18,15 +18,26 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
 
     .. code:: bash
 
-      conda create -n clowder_docs python=3.7 -y
+      conda create -n clowder_docs python=3.8 -y
       conda activate clowder_docs
 
-    Install doc dependencies. It's always better to run all conda commands before installing pip packages.
+    Now we must edit the `requirements.txt` file to be compatible with Conda. These packages are not available on conda-forge. 
+    
+    Comment out the top three lines like so:
+
+    .. code:: properties
+
+      # -i https://pypi.org/simple/
+      # sphinx-rtd-theme==0.5.0
+      # sphinx_design==0.0.13
+      ... 
+
+    Install the dependencies. It's always better to run all conda commands before installing pip packages.
 
     .. code:: bash
 
-      conda install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 -y
-      pip install sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13 docutils==0.16 certifi==2021.5.30 sphinx-autobuild==2021.3.14
+      conda install --file requirements.txt -y
+      pip install sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13
 
   .. tab-item:: pyenv
 
@@ -34,8 +45,8 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
 
     .. code:: bash
 
-      pyenv install 3.7
-      pyenv virtualenv 3.7 clowder_docs
+      pyenv install 3.7.12 # or any 3.{7,8,9}
+      pyenv virtualenv 3.7.12 clowder_docs
 
       # make virtual environemnt auto-activate
       cd doc/src/sphinx
@@ -45,16 +56,16 @@ Dependencies are stored in ``doc/src/sphinx/requirements.txt``.
 
     .. code:: bash
 
-      pip install sphinx==3.1.2 recommonmark==0.6.0 jinja2==3.0.1 m2r2==0.3.2 sphinx-rtd-theme==0.5.0 sphinx_design==0.0.13 docutils==0.16 certifi==2021.5.30
+      pip install -r requirements.txt
 
 Now, build HTML docs for viewing: 
 
     .. code:: bash
 
-      cd doc/src/sphinx
+      # run from doc/src/sphinx
       sphinx-autobuild . _build/html
 
-Open http://127.0.0.1:8000 in your browser. Saved change will be auto-updated in the browser.
+Open http://127.0.0.1:8000 in your browser. Saved changes will be auto-updated in the browser.
 
 
 .. dropdown:: (Optional alternative) Static builds

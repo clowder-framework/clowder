@@ -59,7 +59,6 @@ Contents
     :caption: Development
 
     develop/architecture
-    develop/setup_dev
     develop/extractors
     develop/previewers
     develop/contribute_docs
