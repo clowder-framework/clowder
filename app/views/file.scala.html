@@ -73,22 +73,22 @@
 	<script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/files/datasets.js")" type="text/javascript"></script>
 
- <script type="application/ld+json">{"context": { "@@vocab": "https://sechma.org/"},
- "identifier": "@id",
- "name": "@file.filename",
- "isBasedOn": "@file.originalname",
- "author": @Html(file.author.to_jsonld()),
- "uploadDate": "@file.uploadDate.format("MMM dd, yyyy")",
- "contentType": "@file.contentType",
- "MenuSection": "@file.sections",
- "keywords": "@file.tags",
- "thumbnail": "@file.thumbnail_id",
- "description": "@file.description",
- "license": "@file.licenseData",
- "FollowAction": "@file.followers",
- "interactionStatistic": "@file.stats",
- "status": "@file.status"
- }</script>
+  <script type="application/ld+json">{"context": { "@@vocab": "https://sechma.org/"},
+		 "identifier": "@id",
+		 "name": "@file.filename",
+		 "isBasedOn": "@file.originalname",
+		 "author": @Html(file.author.to_jsonld()),
+		 "uploadDate": "@file.uploadDate.format("MMM dd, yyyy")",
+		 "contentType": "@file.contentType",
+		 "MenuSection": "@file.sections",
+		 "keywords": "@file.tags",
+		 "thumbnail": "@file.thumbnail_id",
+		 "description": "@file.description",
+		 "license": "@file.licenseData",
+		 "FollowAction": "@file.followers",
+		 "interactionStatistic": "@file.stats",
+		 "status": "@file.status"
+		 }</script>
 
 	<script>
 			var spaceId = "@spaceId";

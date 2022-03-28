@@ -111,6 +111,9 @@ case class MiniUser(
    fullName: String,
    avatarURL: String,
    email: Option[String]) {
+      /**
+       * return MiniUser as string in jsonld format, w/fullName split into first and last
+       */
        def to_jsonld () : String = {
           var firstName= "";
           var lastName= "";
