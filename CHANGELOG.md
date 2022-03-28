@@ -5,14 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-
-## 1.20.1 - 2022-3-25
-
-### Added
-
-- Apple Silicon M1 documentation for installing Clowder
-- Documentation for "How to contribute documentation" alongside new Sphinx plugins.
-
 ## 1.20.0 - 2022-02-07
 
 ### Fixed
