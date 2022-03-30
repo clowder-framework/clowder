@@ -198,7 +198,7 @@ for details.), we must tell Clowder which ports the services are using.
 
    localhost:27017 -- "It looks like you're trying to access MongoDB" Success!
    localhost:15672 -- should see RabbitMQ login screen (no need to login tho!)
-   localhost:9200 -- Should see a json file with "name" : "Machine Teen" 
+   localhost:9200 -- Should see a json file with "name" : "Machine Teen" (Note this is optional! Clowder can function fine without Elasticsearch)
 
 Done! Now keep that running, and next let’s build Clowder from source 👇
 
@@ -441,12 +441,13 @@ Use the default extractors
 ============================
 
 
-The default extractors offer simple quality of life improvements for image, video, pdf, and audio file previews while browsing Clowder.
+The default extractors offer simple quality of life improvements for image, video, pdf, and audio file previews while browsing Clowder. Extractors also offer powerful capabilities for manipulating your data in Clowder, see `PyClowder <https://github.com/clowder-framework/pyclowder>`__ for additional capabilities, including running machine learning training on your data stored in Clowder.
 
-Enable them by starting Clowder with the extractors file ``docker-compose.extractors.yml``:
+Enable the default Extractors:
 
 .. code:: bash
-
+   
+   # start Clowder with extractor support
    docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.extractors.yml up -d
 
 Or run NCSA GeoServer for viewing and editing geospacial data via ``docker-compose.geoserver.yml``: 
@@ -456,27 +457,37 @@ Or run NCSA GeoServer for viewing and editing geospacial data via ``docker-compo
 * extractor-geotiff-preview
 * extractor-geotiff-metadata
 
+.. code:: bash
+   
+   # start Clowder with default extractors, and GeoServer extractors
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.extractors.yml -f docker-compose.geoserver.yml up -d
+
 Learn more about `GeoServer <https://wiki.ncsa.illinois.edu/display/NCSASoftware/GeoServer+Focus+Group+Final+Report>`__ and `read the documentation <https://wiki.ncsa.illinois.edu/display/MM/Documentation>`__.
 
 Troubleshooting extractors
 ---------------------------
-Networking issues: Error "connection refused."
-This is caused by the docker containers not being able to connect to each other.
+First, make sure you include the extractors when starting Docker! See ``docker-compose.extractors.yml`` in :ref:`the section above <_defaultExtractors>`. 
 
-1. In ``conf/application.conf`` edit the rabbitmq (message queue) URL to: ``clowder.rabbitmq.clowderurl="http://host.docker.internal:9000"``
+If running the extractor results in a ``"Failed to establish a new connection: [Errno 111] Connection refused"``, this is a Docker networking issue. Containers must be able to talk to each other (Clowder talking to RabbitMQ).
 
-Then restart Clowder in IntelliJ and via Docker, and everything should work. Done!
+To resolve, open ``clowder/conf/application.conf`` search for and set the RabbitMQ message queue URL:
 
-On Windows, I've had trouble getting ``localhost`` to resolve to the Docker host. You could try the following:
+.. code:: yml
 
-- Access Clowder **NOT** via localhost, but via your local IP address. For example, ``55.251.130.193:9000``. 
+    clowder.rabbitmq.clowderurl="http://host.docker.internal:9000"
 
-- You can find your local IP address:
+Simply saving the file should fix the issue. You can again "submit a file for extraction" on the file's details page. Done!
+
+If navigating to ``localhost:9000`` yields nothing, try this. On Windows, I've had trouble getting ``localhost`` to resolve to the Docker host, so: 
+
+- Access Clowder **not** via localhost, but **via your local IP address**. For example, ``55.251.130.193:9000``. 
+
+- Find your local IP address:
    - Windows: ``Settings`` -> ``Network & internet`` -> ``IPv4 address``.
    - Mac: ``System Preferences`` --> ``Netowrk``--> ``Advanced``--> ``TCP/IP``--> ``IPv4 Address``. (Note: don't use the 'Public IP' from iStat Menus).
    - Linux ``$ ifconfig``
 
-That should resolve extractor issues.
+That should resolve extractor issues across all major platforms, including Apple Silicon (M1).
 
 Next Steps
 ==========
