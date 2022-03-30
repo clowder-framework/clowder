@@ -1,6 +1,7 @@
 @(newsfeed: List[models.Event])(implicit user: Option[models.User])
 @import _root_.util.Formatters
 @import play.api.i18n.Messages
+@import play.api.Play.current
 @for(event <- newsfeed) {
   <div class="panel panel-default">
     <div class="panel-body">
@@ -27,18 +28,25 @@
 }
 <script>
   $(document).ready(function() {
-    // the default number of event index. means there is no event for this user.
-    if(eventCount === 3){
-      @if( newsfeed.size < 1) {
-      $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>@Messages("users.title")</a>, <a href=@routes.Spaces.list("")>@Messages("spaces.title")</a>,"
-              + " <a href=@routes.Datasets.list("")>@Messages("datasets.title")</a> and <a href=@routes.Collections.list("")>@Messages("collections.title")</a>."
-              + " Any updates on your followed instances will show here.</p>");
-      } else  {
-      @if( newsfeed.size < 20) { $("#moreeventbutton").replaceWith("<p>No more events.</p>");}
-      }
+    @if(play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
+      $("#moreeventbutton").replaceWith("<p>Event stream disabled.</p>");
     } else {
-      @if( newsfeed.size < 10) { $("#moreeventbutton").replaceWith("<p>No more events.</p>");}
+      // the default number of event index. means there is no event for this user.
+      if (eventCount === 3) {
+        @if( newsfeed.size < 1) {
+          $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>@Messages("users.title")</a>, <a href=@routes.Spaces.list("")>@Messages("spaces.title")</a>,"
+                  + " <a href=@routes.Datasets.list("")>@Messages("datasets.title")</a> and <a href=@routes.Collections.list("")>@Messages("collections.title")</a>."
+                  + " Any updates on your followed instances will show here.</p>");
+        } else  {
+          @if( newsfeed.size < 20) {
+            $("#moreeventbutton").replaceWith("<p>No more events.</p>");
+          }
+        }
+      } else {
+        @if( newsfeed.size < 10) {
+          $("#moreeventbutton").replaceWith("<p>No more events.</p>");
+        }
+      }
     }
-
   });
 </script>

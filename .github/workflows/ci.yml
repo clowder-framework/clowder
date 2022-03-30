@@ -43,7 +43,7 @@ jobs:
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
-          else 
+          else
             echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
           fi
       - uses: actions/setup-java@v1
@@ -97,7 +97,7 @@ jobs:
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
-          else 
+          else
             echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
           fi
       - uses: actions/setup-java@v1
@@ -141,7 +141,7 @@ jobs:
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
-          else 
+          else
             echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
           fi
       - uses: actions/setup-java@v1
@@ -164,6 +164,16 @@ jobs:
           VERSION: ${{ env.CLOWDER_VERSION }}
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
+      - name: fix log4j
+        run: |
+          ZIPFILE=$(ls -1rt target/universal/*.zip | head -1)
+          DIR=$(basename ${ZIPFILE} .zip)
+          unzip -q ${ZIPFILE}
+          for x in $(find ${DIR} -name \*.jar); do
+            zip -d $x org/apache/log4j/net/JMSAppender.class org/apache/log4j/net/SocketServer.class | grep 'deleting:' && echo "fixed $x"
+          done
+          rm ${ZIPFILE}
+          zip -r ${ZIPFILE} ${DIR}
       - uses: actions/upload-artifact@v2
         with:
           name: clowder.zip
@@ -207,7 +217,7 @@ jobs:
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
-          else 
+          else
             echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
           fi
       - uses: actions/setup-java@v1
@@ -247,7 +257,7 @@ jobs:
           key: ${{ secrets.SCP_KEY }}
           files: "target/scala-*/api/*"
           target: "CATS/${{ env.CLOWDER_VERSION }}/documentation/scaladoc"
-      - name: sphinx  
+      - name: sphinx
         run: |
           cd doc/src/sphinx/
           python -m pip install -r requirements.txt

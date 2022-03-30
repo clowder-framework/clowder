@@ -17,11 +17,11 @@ import scala.collection.mutable.ListBuffer
 class RootCollectionIterator(pathToFolder : String, root_collection : models.Collection,zip : ZipOutputStream,
                              md5Files : scala.collection.mutable.HashMap[String, MessageDigest],
                              md5Bag : scala.collection.mutable.HashMap[String, MessageDigest],
-                             user : Option[User],totalBytes : Long,bagit : Boolean,
+                             user : Option[User],totalBytes : Long, bagit : Boolean,
                              collections: CollectionService, datasets : DatasetService, files : FileService, folders : FolderService, metadataService : MetadataService,
                              spaces : SpaceService) extends Iterator[Option[InputStream]] {
 
-  val datasetIterator = new DatasetsInCollectionIterator(root_collection.name,root_collection,zip,md5Files,user,
+  val datasetIterator = new DatasetsInCollectionIterator(root_collection.name,root_collection,zip,bagit, md5Files,user,
     datasets,files,folders,metadataService,spaces)
 
   var currentCollectionIterator : Option[CollectionIterator] = None
@@ -34,7 +34,7 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
   var numCollections = child_collections.size
 
   var bytesSoFar : Long  = 0L
-  var file_type = 0
+  var file_type = if (bagit) 0 else 2
 
 
   private def addCollectionInfoToZip(folderName: String, collection: models.Collection, zip: ZipOutputStream): Option[InputStream] = {
@@ -107,9 +107,9 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
         true
       } else if (numCollections > 0){
 
-        currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(collectionCount).name, child_collections(collectionCount),zip,md5Files,user,
-          collections,datasets,files,
-          folders,metadataService,spaces))
+        currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(collectionCount).name,
+          child_collections(collectionCount), zip, md5Files, user, bagit,
+          collections, datasets,files, folders, metadataService, spaces))
         file_type +=1
         true
       } else if (bagit){
@@ -127,7 +127,7 @@ class RootCollectionIterator(pathToFolder : String, root_collection : models.Col
           } else if (collectionCount < numCollections -2){
             collectionCount+=1
             currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(collectionCount).name, child_collections(collectionCount),zip,md5Files,user,
-              collections,datasets,files,
+              bagit, collections,datasets,files,
               folders,metadataService,spaces))
             true
           } else {
