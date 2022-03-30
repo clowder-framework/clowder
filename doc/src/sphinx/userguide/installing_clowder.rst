@@ -252,6 +252,7 @@ for details.), we must tell Clowder which ports the services are using.
          #    - 9200:9200
          #    - 9300:9300
 
+
 3. Test that our services work! First start them:
 
 .. code:: bash
@@ -285,8 +286,8 @@ Part 2: Run Clowder via IntelliJ
 
    - This should prompt you to install the Scala plugin! Install it.
    - Or, manually install the Scala Plugin for IntelliJ ``File`` --> ``Settings`` --> ``Plugins`` --> ``Download Scala``.
-3. Install Java 8 (i.e. Java 1.8) on your computer. Clowder requires Java version 8 and is not compatible
-   with other versions.
+
+3. Install Java 8 (i.e. Java 1.8) on your computer. Clowder requires Java version 8 and is not compatible with other versions.
 
    - I find this easiest to do via IntelliJ’s Plugin Manager. ``File`` --> ``Project Structure`` --> ``SDKs`` --> ``+`` icon --> ``Download JDK``
    - Select ``Version 1.8`` (Clowder is only compatible with Java 8 (1.8), nothing higher) --> Vendor: ``Eclipse Temurin (AdoptOpenJDK Hotspot)`` --> ``Download``.
@@ -326,6 +327,7 @@ Part 2: Run Clowder via IntelliJ
 
 
 **⭐️ Now start Clowder:** In IntelliJ, click the green play button ▶️ (top right) to build Clowder from source! Give it a minute to finish. Access Clowder via ``localhost:9000`` in the browser.
+
 
 Also note, a handy debugging mode is enabled by default. You can run the debug mode by clicking the green "bug" 🐞 button right beside the play button.
 
