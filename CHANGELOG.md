@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Fixed
-- masonry package was not loaded from right location sometimes
+- Fix to incorrect sorting for default cases. [#248](https://github.com/clowder-framework/clowder/issues/248)
+- Masonry package was not loaded from right location sometimes.
 
 ### Added
-
 - Documentation: Installing Clowder on Apple Silicon M1
 - Documentation: Customizing clowder's deployment, simplified duplicate instructinos.
 - Documentation: Added "How to contribute documentation" page
