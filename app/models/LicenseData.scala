@@ -2,6 +2,9 @@ package models
 
 import api.Permission
 
+import play.api.libs.json._
+
+
 /**
  * case class to handle specific license information. Currently attached to individual Datasets and Files.  
  */
@@ -95,6 +98,16 @@ case class LicenseData (
     */
     def to_jsonld () : String = {
        //return m_licenseUrl
-       return this.urlViaAttributes()
+       //return this.urlViaAttributes()
+       val licURI = this.urlViaAttributes()
+       val licURL = if (licURI != "https://dbpedia.org/page/All_rights_reserved") licURI
+                    else ""
+       val licLD = JsObject(Seq(
+                "@id" -> JsString(licURI),
+                "URL" -> JsString(licURL),
+                "@type" -> JsString("license"),
+                "text" -> JsString(m_licenseText)
+                ))
+       return Json.stringify(licLD)
     }
 }

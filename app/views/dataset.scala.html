@@ -394,7 +394,7 @@
 		 "keywords": "@dataset.tags.mkString(",")",
 		 "Collection": "@dataset.collections.mkString(",")",
 		 "thumbnail": "@dataset.thumbnail_id",
-		 "license": "@dataset.licenseData.to_jsonld()",
+		 "license": @Html(dataset.licenseData.to_jsonld()),
 		 "dateModfied": "@dataset.lastModifiedDate",
 		 "FollowAction": "@dataset.followers.mkString(",")",
 		 "creator": "@dataset.creators.mkString(",")"

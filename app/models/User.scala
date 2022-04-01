@@ -114,7 +114,7 @@ case class MiniUser(
       /**
        * return MiniUser as string in jsonld format, w/fullName split into first and last
        */
-       def to_jsonld () : String = {
+       def to_jsonld() : String = {
           var firstName = "";
           var lastName = "";
           if (fullName.split("\\w+").length > 1) {
