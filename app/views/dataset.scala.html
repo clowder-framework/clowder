@@ -387,6 +387,10 @@
 				@Html(dataset.to_jsonld())
 		 </script>
 
+    <script type="application/ld+json">
+				@Html(dataset.to_jsonLD().toString)
+		 </script>
+
     <script type="application/ld+json">{"context": { "@@vocab": "https://schema.org/"},
 		 "identifier": "@dataset.id",
 		 "name": "@dataset.name",

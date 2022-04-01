@@ -62,6 +62,30 @@ case class Dataset(
               ))
         return Json.stringify(datasetLD)
      }
+  /**
+    * return Dataset as JsValue in jsonld format
+    */
+  def to_jsonLD() : JsValue = { 
+     val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
+     val datasetLD = Json.obj(
+              "context" -> so,
+              "identifier" -> id.toString,
+              "name" -> name,
+              "author" -> author.to_jsonld(),
+              "description" -> description,
+              "dateCreated" -> created.toString.format("MMM dd, yyyy"),
+              "DigitalDocument" -> files.toString,
+              "Directory" -> folders.toString,
+              "keywords" -> tags.toString,
+              "Collection" -> collections.toString,
+              "thumbnail" -> thumbnail_id.toString,
+              "license" -> licenseData.to_jsonld(),
+              "dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
+              "FollowAction" -> followers.toString,
+              "creator" -> creators.toString
+              )
+        return datasetLD
+     }
 }
 
 object DatasetStatus extends Enumeration {
