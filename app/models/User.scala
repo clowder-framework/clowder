@@ -114,7 +114,8 @@ case class MiniUser(
       /**
        * return MiniUser as string in jsonld format, w/fullName split into first and last
        */
-       def to_jsonld() : String = {
+       //def to_jsonld() : String = {
+       def to_jsonld() : JsValue = {
           var firstName = "";
           var lastName = "";
           if (fullName.split("\\w+").length > 1) {
@@ -125,13 +126,14 @@ case class MiniUser(
            }
 	   val authorLD = JsObject(Seq(
                    "@type" -> JsString("Person"),
-                   "name" -> JsString(fullName.toString()),
-                   "givenName" -> JsString(firstName.toString()),
-                   "familyName" -> JsString(lastName.toString()),
-                   "email" ->  JsString(email.get.toString()),
-                   "image" -> JsString(avatarURL.toString())
+                   "name" -> JsString(fullName),
+                   "givenName" -> JsString(firstName),
+                   "familyName" -> JsString(lastName),
+                   "email" ->  JsString(email.getOrElse("")),
+                   "image" -> JsString(avatarURL)
                    ))
-          return Json.stringify(authorLD) 
+          //return Json.stringify(authorLD) 
+          return authorLD 
       }
    }
 

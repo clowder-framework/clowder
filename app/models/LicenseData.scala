@@ -106,7 +106,7 @@ case class LicenseData (
                 "@id" -> JsString(licURI),
                 "URL" -> JsString(licURL),
                 "@type" -> JsString("license"),
-                "text" -> JsString(m_licenseText)
+                "Text" -> JsString(m_licenseText)  //added this DataType
                 ))
        return Json.stringify(licLD)
     }

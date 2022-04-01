@@ -383,10 +383,14 @@
     <script src="@routes.Assets.at("javascripts/people.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/creators.js")" type="text/javascript"></script>
 
+    <script type="application/ld+json">
+				@Html(dataset.to_jsonld())
+		 </script>
+
     <script type="application/ld+json">{"context": { "@@vocab": "https://schema.org/"},
 		 "identifier": "@dataset.id",
 		 "name": "@dataset.name",
-		 "author": @Html(dataset.author.to_jsonld()),
+		 "author": @Html(dataset.author.to_jsonld().toString),
 		 "description": "@dataset.description",
 		 "dateCreated": "@dataset.created.format("MMM dd, yyyy")",
 		 "DigitalDocument": "@dataset.files.mkString(",")",

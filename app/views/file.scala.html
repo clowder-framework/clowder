@@ -77,7 +77,7 @@
 		 "identifier": "@id",
 		 "name": "@file.filename",
 		 "isBasedOn": "@file.originalname",
-		 "author": @Html(file.author.to_jsonld()),
+		 "author": @Html(file.author.to_jsonld().toString),
 		 "uploadDate": "@file.uploadDate.format("MMM dd, yyyy")",
 		 "contentType": "@file.contentType",
 		 "MenuSection": "@file.sections",

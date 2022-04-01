@@ -38,6 +38,30 @@ case class Dataset(
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
   def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
   def inSpace:Boolean = spaces.size > 0
+  /**
+    * return Dataset as string in jsonld format
+    */
+  def to_jsonld() : String = { 
+     val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
+     val datasetLD = JsObject(Seq(
+              "context" -> so,
+              "identifier" -> JsString(id.toString),
+              "name" -> JsString(name),
+              "author" -> author.to_jsonld(),
+              "description" -> JsString(description),
+              "dateCreated" -> JsString(created.toString.format("MMM dd, yyyy")),
+              "DigitalDocument" -> JsString(files.toString),
+              "Directory" -> JsString(folders.toString),
+              "keywords" -> JsString(tags.toString),
+              "Collection" -> JsString(collections.toString),
+              "thumbnail" -> JsString(thumbnail_id.toString),
+              "license" -> JsString(licenseData.to_jsonld()),
+              "dateModfied" -> JsString(lastModifiedDate.toString.format("MMM dd, yyyy")),
+              "FollowAction" -> JsString(followers.toString),
+              "creator" -> JsString(creators.toString)
+              ))
+        return Json.stringify(datasetLD)
+     }
 }
 
 object DatasetStatus extends Enumeration {
@@ -66,6 +90,7 @@ object Dataset {
     }
   }
 }
+
 
 
 case class DatasetAccess(
