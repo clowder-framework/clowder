@@ -115,14 +115,17 @@ case class MiniUser(
        * return MiniUser as string in jsonld format, w/fullName split into first and last
        */
        def to_jsonld () : String = {
-          var firstName= "";
-          var lastName= "";
-          if(fullName.split("\\w+").length>1){
-             lastName = fullName.substring(fullName.lastIndexOf(" ")+1);
+          var firstName = "";
+          var lastName = "";
+          if (fullName.split("\\w+").length > 1) {
+             lastName = fullName.substring(fullName.lastIndexOf(" ") + 1);
              firstName = fullName.substring(0, fullName.lastIndexOf(' '));
-           } else{ firstName = fullName; }
+           } else { 
+              firstName = fullName; 
+           }
 	   val authorLD = JsObject(Seq(
                    "@type" -> JsString("Person"),
+                   "name" -> JsString(fullName.toString()),
                    "givenName" -> JsString(firstName.toString()),
                    "familyName" -> JsString(lastName.toString()),
                    "email" ->  JsString(email.get.toString()),
