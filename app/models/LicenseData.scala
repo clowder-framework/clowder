@@ -82,6 +82,9 @@ case class LicenseData (
       else if (m_licenseType == "license3") {
          licenseUrl = "http://creativecommons.org/publicdomain/zero/1.0/";
       }
+      else {
+         licenseUrl = "https://dbpedia.org/page/All_rights_reserved";
+      }
        //m_licenseType = licenseUrl; //would only reset if not "" to start 
       return licenseUrl
    }
