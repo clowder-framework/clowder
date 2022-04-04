@@ -387,23 +387,6 @@
 				@Html(dataset.to_jsonld().toString)
 		 </script>
 
-    <script type="application/ld+json">{"context": { "@@vocab": "https://schema.org/"},
-		 "identifier": "@dataset.id",
-		 "name": "@dataset.name",
-		 "author": @Html(dataset.author.to_jsonld().toString),
-		 "description": "@dataset.description",
-		 "dateCreated": "@dataset.created.format("MMM dd, yyyy")",
-		 "DigitalDocument": "@dataset.files.mkString(",")",
-		 "Directory": "@dataset.folders.mkString(",")",
-		 "keywords": "@dataset.tags.mkString(",")",
-		 "Collection": "@dataset.collections.mkString(",")",
-		 "thumbnail": "@dataset.thumbnail_id",
-		 "license": @Html(dataset.licenseData.to_jsonld().toString),
-		 "dateModfied": "@dataset.lastModifiedDate",
-		 "FollowAction": "@dataset.followers.mkString(",")",
-		 "creator": "@dataset.creators.mkString(",")"
-		 }</script>
-
     <script type="text/javascript">
         var removeIndicator = false;
         var parentId = "@dataset.id";
