@@ -41,7 +41,7 @@ case class Dataset(
   /**
     * return Dataset as string in jsonld format
     */
-  def to_jsonld() : String = { 
+  def to_jsonLD() : String = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val datasetLD = JsObject(Seq(
               "context" -> so,
@@ -55,7 +55,7 @@ case class Dataset(
               "keywords" -> JsString(tags.toString),
               "Collection" -> JsString(collections.toString),
               "thumbnail" -> JsString(thumbnail_id.toString),
-              "license" -> JsString(licenseData.to_jsonld()),
+              "license" -> JsString(licenseData.to_jsonld().toString),
               "dateModfied" -> JsString(lastModifiedDate.toString.format("MMM dd, yyyy")),
               "FollowAction" -> JsString(followers.toString),
               "creator" -> JsString(creators.toString)
@@ -65,7 +65,7 @@ case class Dataset(
   /**
     * return Dataset as JsValue in jsonld format
     */
-  def to_jsonLD() : JsValue = { 
+  def to_jsonld() : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val datasetLD = Json.obj(
               "context" -> so,

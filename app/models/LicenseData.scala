@@ -96,7 +96,8 @@ case class LicenseData (
     * Utility function, similar to a json Write, to return string version in json-ld  format
     * Should also return key
     */
-    def to_jsonld () : String = {
+    //def to_jsonld () : String = {
+    def to_jsonld () : JsValue = {
        //return m_licenseUrl
        //return this.urlViaAttributes()
        val licURI = this.urlViaAttributes()
@@ -108,6 +109,7 @@ case class LicenseData (
                 "@type" -> JsString("license"),
                 "Text" -> JsString(m_licenseText)  //added this DataType
                 ))
-       return Json.stringify(licLD)
+       //return Json.stringify(licLD)
+       return licLD
     }
 }
