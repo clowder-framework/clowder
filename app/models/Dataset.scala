@@ -57,7 +57,7 @@ case class Dataset(
               "license" -> licenseData.to_jsonld(),
               "dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
               "FollowAction" -> Json.toJson(followers),
-              "keywords" -> tags.toString,
+              "keywords" -> tags.map(x => x.to_jsonld()),
               "creator" -> Json.toJson(creators)
               )
         return datasetLD
