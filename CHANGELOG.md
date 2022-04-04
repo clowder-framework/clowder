@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.20.1 - 2022-04-04
 
 ### Fixed
 - Fix to incorrect sorting for default cases. [#248](https://github.com/clowder-framework/clowder/issues/248)
 - Masonry package was not loaded from right location sometimes.
+- Fixes bug where "Select a Collection" Parent Collection dropdown on Collection page was not working due to missing parameter [#343](https://github.com/clowder-framework/clowder/issues/343)
 
 ### Added
 - Documentation: Installing Clowder on Apple Silicon M1
