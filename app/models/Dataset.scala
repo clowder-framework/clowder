@@ -74,15 +74,15 @@ case class Dataset(
               "author" -> author.to_jsonld(),
               "description" -> description,
               "dateCreated" -> created.toString.format("MMM dd, yyyy"),
-              "DigitalDocument" -> files.toString,
-              "Directory" -> folders.toString,
-              "keywords" -> tags.toString,
-              "Collection" -> collections.toString,
-              "thumbnail" -> thumbnail_id.toString,
+              "DigitalDocument" -> Json.toJson(files),
+              "Directory" -> Json.toJson(folders),
+              "Collection" -> Json.toJson(collections),
+              "thumbnail" -> Json.toJson(thumbnail_id),
               "license" -> licenseData.to_jsonld(),
               "dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
-              "FollowAction" -> followers.toString,
-              "creator" -> creators.toString
+              "FollowAction" -> Json.toJson(followers),
+              "keywords" -> tags.toString,
+              "creator" -> Json.toJson(creators)
               )
         return datasetLD
      }
