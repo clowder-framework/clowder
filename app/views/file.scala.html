@@ -73,6 +73,10 @@
 	<script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/files/datasets.js")" type="text/javascript"></script>
 
+	<script type="application/ld+json">
+        @Html(file.to_jsonld().toString)
+     </script>
+
 	<script type="application/ld+json">{"context": { "@@vocab": "https://sechma.org/"},
 		 "identifier": "@id",
 		 "name": "@file.filename",
