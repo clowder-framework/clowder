@@ -26,6 +26,9 @@
 @import services.EventSinkService
 @import services.DI
 
+@import play.api.libs.json._
+
+
 @main(dataset.name) {
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/glyphicon-animations.css")">
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -384,7 +387,7 @@
     <script src="@routes.Assets.at("javascripts/creators.js")" type="text/javascript"></script>
 
     <script type="application/ld+json">
-				@Html(dataset.to_jsonld().toString)
+				@Html(Json.prettyPrint(dataset.to_jsonld()))
 		 </script>
 
     <script type="text/javascript">
