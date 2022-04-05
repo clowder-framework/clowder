@@ -10,6 +10,7 @@ Following is a list of contributors in alphabetical order:
 - Chris Navarro
 - Chrysovalantis Constantinou
 - Constantinos Sophocleous
+- Dipannita Dey
 - Gene Roeder
 - Gregory Jansen
 - Indira Gutierrez

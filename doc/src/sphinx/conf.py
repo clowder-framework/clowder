@@ -22,7 +22,7 @@ copyright = '2019, University of Illinois at Urbana-Champaign'
 author = 'Luigi Marini'
 
 # The full version, including alpha/beta/rc tags
-release = '1.20.0'
+release = '1.20.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,6 +31,7 @@ release = '1.20.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx_rtd_theme", "sphinx_design", "m2r2"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
