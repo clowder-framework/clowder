@@ -9,5 +9,5 @@ import java.util.Date
  */
 object ServerStartTime {
   var startTime: Date=null
-
+  var url: String="http://localhost:9000/"
 }
