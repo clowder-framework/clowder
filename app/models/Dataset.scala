@@ -41,7 +41,8 @@ case class Dataset(
   /**
     * return Dataset as JsValue in jsonld format
     */
-  def to_jsonld() : JsValue = { 
+  //def to_jsonld() : JsValue = { 
+  def to_jsonld(url: String) : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val datasetLD = Json.obj(
               "context" -> so,
@@ -52,7 +53,8 @@ case class Dataset(
               "dateCreated" -> created.toString.format("MMM dd, yyyy"),
               //"DigitalDocument" -> Json.toJson(files),
               //"DigitalDocument" -> Json.toJson(files.map(f => models.ServerStartTime.url + "files/" + f)),
-              "DigitalDocument" -> Json.toJson(files.map(f => models.ServerStartTime.url.replaceAll("/$", "") + "/files/" + f)),
+              //"DigitalDocument" -> Json.toJson(files.map(f => models.ServerStartTime.url.replaceAll("/$", "") + "/files/" + f)),
+              "DigitalDocument" -> Json.toJson(files.map(f => url.replaceAll("/$", "") + "/files/" + f)),
               //"DigitalDocument" -> Json.toJson(files.map(f => "http://" + appConfig.getProperty("hostip").replaceAll("/$", "") + ":9000/files/" + f)),
               "Directory" -> Json.toJson(folders),
               "Collection" -> Json.toJson(collections),
