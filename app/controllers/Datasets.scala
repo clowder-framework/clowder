@@ -618,12 +618,10 @@ class Datasets @Inject() (
 
         sinkService.logDatasetViewEvent(dataset, user)
         // view_data is passed as tuple in dataset case only, because template is at limit of 22 parameters
-        val baseURLstr = Utils.baseUrl(request).toString //in case request.host doesn't work
         Ok(views.html.dataset(dataset, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
           currentSpace, limit, showDownload, accessData, canAddDatasetToCollection,
-          stagingAreaDefined, view_data, extractionGroups, relatedDatasets, filter  //, baseURLstr
-          ))
+          stagingAreaDefined, view_data, extractionGroups, relatedDatasets, filter))
       }
       case None => {
         Logger.error("Error getting dataset" + id)
