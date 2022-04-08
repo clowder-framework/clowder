@@ -43,12 +43,6 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     ServerStartTime.startTime = Calendar.getInstance().getTime
     Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
 
-    //ServerStartTime.url = sys.env.getOrElse("CLOWDER_HOST","http://localhost:9000/")
-    val url2 = "http://" + ServerStartTime.ip.replaceAll("/$", "") + ":9000"
-    ServerStartTime.url = sys.env.getOrElse("CLOWDER_HOST",url2)
-    Logger.debug("\n----Server url----" + ServerStartTime.url + "\n \n")
-
-
     val users: UserService = DI.injector.getInstance(classOf[UserService])
 
     // get clowder unique ID

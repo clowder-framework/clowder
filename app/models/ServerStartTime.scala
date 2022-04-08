@@ -11,6 +11,5 @@ import java.net._
  */
 object ServerStartTime {
   var startTime: Date=null
-  var url: String="http://localhost:9000/"
-  var ip: String=InetAddress.getLocalHost.getHostAddress
+
 }
