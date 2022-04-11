@@ -22,16 +22,6 @@ object Utils {
       routes.Files.list().url.replace("/files", "")
     }
   }
-  /**
-   * A version of baseUrl that can take a RequestHeader
-   */
-  def rh2baseUrl(request: RequestHeader, absolute: Boolean = true) = {
-    if (absolute) {
-      routes.Files.list().absoluteURL(https(request))(request).replace("/files", "")
-    } else {
-      routes.Files.list().url.replace("/files", "")
-    }
-  }
 
   /**
     * Returns true if protocol is https
