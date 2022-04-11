@@ -387,7 +387,7 @@
     <script src="@routes.Assets.at("javascripts/creators.js")" type="text/javascript"></script>
 
     <script type="application/ld+json">
-				@Html(Json.prettyPrint(dataset.to_jsonld(Utils.rh2baseUrl(request))))
+				@Html(Json.prettyPrint(dataset.to_jsonld(Utils.baseUrl(request))))
 		 </script>
 
     <script type="text/javascript">
