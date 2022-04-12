@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+### Fixed
 - Fixes bug where same extractor shows up multiple times and all Clowder instances index db on reindex [#327](https://github.com/clowder-framework/clowder/issues/327)
 
 ## 1.20.1 - 2022-04-04
