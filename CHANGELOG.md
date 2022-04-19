@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- Fix for a rare race condition with masonry where tiles could end up overlapping in space page.
+
 ## 1.20.1 - 2022-04-04
 
 ### Fixed
