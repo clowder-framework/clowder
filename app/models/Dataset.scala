@@ -6,6 +6,9 @@ import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
+//def cap (l: List, n: Int) : List = {
+//def cap (l: List) : List = { return (l.length < 2 ? l : (l.take(2) :: List("..."))) }
+
 /**
  * A dataset is a collection of files, and streams.
  */
@@ -43,6 +46,7 @@ case class Dataset(
     */
   def to_jsonld(url: String) : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
+     val URLb = url.replaceAll("/$", "") 
      val datasetLD = Json.obj(
               "context" -> so,
               "identifier" -> id.toString,
@@ -52,16 +56,18 @@ case class Dataset(
               //"dateCreated" -> created.toString.format("MMM dd, yyyy"), //iso8601,incl tz
               "dateCreated" -> created.toString, //iso8601,incl tz
               //for all lists, cap, ... //if >10 replace last w/"..."
-              //"DigitalDocument" -> Json.toJson(files.map(f => url.replaceAll("/$", "") + "/files/" + f)),
-              "DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
-                                                  //above works, but is not a crawable page/the so:jsonld but maybe later
-              //"Directory" -> Json.toJson(folders),
+              //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
+              //"DigitalDocument" -> Json.toJson(cap(files).map(f => URLb + "/files/" + f)), //2 for testing
+              "DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)),
+              //"DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
+              //"Directory" -> Json.toJson(folders), //skip
               "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
-              "thumbnail" -> Json.toJson(thumbnail_id.getOrElse("")), //get url
+              "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url
+              //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "license" -> licenseData.to_jsonld(),
               //"dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
               "dateModfied" -> lastModifiedDate.toString,
-              //"FollowAction" -> Json.toJson(followers),
+              //"FollowAction" -> Json.toJson(followers), //skip
               "keywords" -> tags.map(x => x.to_jsonld()),
               "creator" -> Json.toJson(creators)
               )
