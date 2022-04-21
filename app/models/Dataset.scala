@@ -49,15 +49,19 @@ case class Dataset(
               "name" -> name,
               "author" -> author.to_jsonld(),
               "description" -> description,
-              "dateCreated" -> created.toString.format("MMM dd, yyyy"),
+              //"dateCreated" -> created.toString.format("MMM dd, yyyy"), //iso8601,incl tz
+              "dateCreated" -> created.toString, //iso8601,incl tz
+              //for all lists, cap, ... //if >10 replace last w/"..."
               //"DigitalDocument" -> Json.toJson(files.map(f => url.replaceAll("/$", "") + "/files/" + f)),
-              "DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/clowder/api/datasets/" + id.toString + "/files?max=9"),
-              "Directory" -> Json.toJson(folders),
-              "Collection" -> Json.toJson(collections),
-              "thumbnail" -> Json.toJson(thumbnail_id.filterNot(_.isEmpty).getOrElse("")),
+              "DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
+                                                  //above works, but is not a crawable page/the so:jsonld but maybe later
+              //"Directory" -> Json.toJson(folders),
+              "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
+              "thumbnail" -> Json.toJson(thumbnail_id.getOrElse("")), //get url
               "license" -> licenseData.to_jsonld(),
-              "dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
-              "FollowAction" -> Json.toJson(followers),
+              //"dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
+              "dateModfied" -> lastModifiedDate.toString,
+              //"FollowAction" -> Json.toJson(followers),
               "keywords" -> tags.map(x => x.to_jsonld()),
               "creator" -> Json.toJson(creators)
               )
