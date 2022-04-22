@@ -12,8 +12,8 @@ import play.api.libs.functional.syntax._
       //return (l.length < 2 ? l : (l.take(2) :: List("..."))) 
       //return (l.length < 2 ? l : l.take(2) :: List("...")) 
 //         return l.take(2) } }
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter._
+//import java.time.LocalDateTime
+//import java.time.format.DateTimeFormatter._
 //from Formatters
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,6 +50,7 @@ case class Dataset(
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
   def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
   def inSpace:Boolean = spaces.size > 0
+   def cap (l: List[Any]) : List[Any] = { return l.take(3) } 
   /**
     * return Dataset as JsValue in jsonld format
     */
@@ -63,25 +64,17 @@ case class Dataset(
               "name" -> name,
               "author" -> author.to_jsonld(),
               "description" -> description,
-              //"dateCreated" -> created.toString.format("MMM dd, yyyy"), //iso8601,incl tz
-              //"dateCreated" -> LocalDateTime.parse(created.toString, ISO_DATE_TIME), 
-              //"dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
-              //"dateCreated" -> created.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"), //iso8601,incl tz
               "dateCreated" -> formatter.format(created), //iso8601,incl tz
               //for all lists, cap, ... //if >10 replace last w/"..."
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
-              //"DigitalDocument" -> Json.toJson(cap(files).map(f => URLb + "/files/" + f)), //2 for testing
-              "DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)),
               //"DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
+              //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
+              "DigitalDocument" -> Json.toJson(cap(files).map(f => URLb + "/files/" + f)), //2 for testing
               //"Directory" -> Json.toJson(folders), //skip
               "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
-              "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
+              "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url, skip append in null/fix
               "license" -> licenseData.to_jsonld(),
-              //"dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
-              //"dateModfied" -> LocalDateTime.parse(lastModifiedDate.toString, ISO_DATE_TIME),
-              //"dateModfied" -> Formatters.iso8601(lastModifiedDate),
-              //"dateModfied" -> lastModifiedDate.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"),
               "dateModfied" -> formatter.format(lastModifiedDate),
               //"FollowAction" -> Json.toJson(followers), //skip
               "keywords" -> tags.map(x => x.to_jsonld()),
