@@ -59,6 +59,16 @@ case class Dataset(
  // def cap_map (l: List[Any], max: Int, λ: (A) -> String ) : List[Any] = {  //pass in lambda so don't have2rewrite
  //   if (l.length < max)  return l  
  //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
+      //write specific1before generalizing as above
+   def cap_files (l: List[Any], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
+      if (l.length < max)  {
+        return files.map(f => URLb + "/files/" + f)
+      } else {
+        val sl = cap(files, max).map(f => URLb + "/files/" + f)
+           //return sl :: "..."  //value :: is not a member of String  //expected it was a list
+           return sl 
+      }
+   }
   /**
     * return Dataset as JsValue in jsonld format
     */
@@ -77,7 +87,8 @@ case class Dataset(
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
               //"DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
               //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
-              "DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
+              //"DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
+              "DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //2 for testing
               //"Directory" -> Json.toJson(folders), //skip
               "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
