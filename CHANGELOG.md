@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- When downloading a file with a `'` in the name it would save the file as blob
+
 ## 1.20.1 - 2022-04-04
 
 ### Fixed
