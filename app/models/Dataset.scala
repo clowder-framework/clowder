@@ -14,6 +14,9 @@ import play.api.libs.functional.syntax._
 //         return l.take(2) } }
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter._
+//from Formatters
+import java.text.SimpleDateFormat
+import java.util.Date
 
 /**
  * A dataset is a collection of files, and streams.
@@ -53,6 +56,7 @@ case class Dataset(
   def to_jsonld(url: String) : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val URLb = url.replaceAll("/$", "") 
+     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
      val datasetLD = Json.obj(
               "context" -> so,
               "identifier" -> id.toString,
@@ -60,9 +64,10 @@ case class Dataset(
               "author" -> author.to_jsonld(),
               "description" -> description,
               //"dateCreated" -> created.toString.format("MMM dd, yyyy"), //iso8601,incl tz
-              "dateCreated" -> created.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"), //iso8601,incl tz
               //"dateCreated" -> LocalDateTime.parse(created.toString, ISO_DATE_TIME), 
               //"dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
+              //"dateCreated" -> created.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"), //iso8601,incl tz
+              "dateCreated" -> formatter.format(created), //iso8601,incl tz
               //for all lists, cap, ... //if >10 replace last w/"..."
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
               //"DigitalDocument" -> Json.toJson(cap(files).map(f => URLb + "/files/" + f)), //2 for testing
@@ -74,9 +79,10 @@ case class Dataset(
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "license" -> licenseData.to_jsonld(),
               //"dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
-              "dateModfied" -> lastModifiedDate.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"),
               //"dateModfied" -> LocalDateTime.parse(lastModifiedDate.toString, ISO_DATE_TIME),
               //"dateModfied" -> Formatters.iso8601(lastModifiedDate),
+              //"dateModfied" -> lastModifiedDate.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"),
+              "dateModfied" -> formatter.format(lastModifiedDate),
               //"FollowAction" -> Json.toJson(followers), //skip
               "keywords" -> tags.map(x => x.to_jsonld()),
               "creator" -> Json.toJson(creators)
