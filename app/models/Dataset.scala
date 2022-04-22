@@ -6,8 +6,14 @@ import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-//def cap (l: List, n: Int) : List = {
-//def cap (l: List) : List = { return (l.length < 2 ? l : (l.take(2) :: List("..."))) }
+//import util.Formatters
+//package object models {
+//   def cap (l: List[Any]) : List[Any] = { 
+      //return (l.length < 2 ? l : (l.take(2) :: List("..."))) 
+      //return (l.length < 2 ? l : l.take(2) :: List("...")) 
+//         return l.take(2) } }
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter._
 
 /**
  * A dataset is a collection of files, and streams.
@@ -54,7 +60,9 @@ case class Dataset(
               "author" -> author.to_jsonld(),
               "description" -> description,
               //"dateCreated" -> created.toString.format("MMM dd, yyyy"), //iso8601,incl tz
-              "dateCreated" -> created.toString, //iso8601,incl tz
+              "dateCreated" -> created.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"), //iso8601,incl tz
+              //"dateCreated" -> LocalDateTime.parse(created.toString, ISO_DATE_TIME), 
+              //"dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
               //for all lists, cap, ... //if >10 replace last w/"..."
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
               //"DigitalDocument" -> Json.toJson(cap(files).map(f => URLb + "/files/" + f)), //2 for testing
@@ -66,7 +74,9 @@ case class Dataset(
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "license" -> licenseData.to_jsonld(),
               //"dateModfied" -> lastModifiedDate.toString.format("MMM dd, yyyy"),
-              "dateModfied" -> lastModifiedDate.toString,
+              "dateModfied" -> lastModifiedDate.toString.format("yyyy-MM-dd'T'HH:mm:ss.SSSX"),
+              //"dateModfied" -> LocalDateTime.parse(lastModifiedDate.toString, ISO_DATE_TIME),
+              //"dateModfied" -> Formatters.iso8601(lastModifiedDate),
               //"FollowAction" -> Json.toJson(followers), //skip
               "keywords" -> tags.map(x => x.to_jsonld()),
               "creator" -> Json.toJson(creators)
