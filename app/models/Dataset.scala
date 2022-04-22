@@ -60,13 +60,31 @@ case class Dataset(
  //   if (l.length < max)  return l  
  //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
       //write specific1before generalizing as above
-   def cap_files (l: List[Any], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
+   def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
+   //def cap_files (l: List[Any], max: Int, URLb: String) : List[String] = {   
       if (l.length < max)  {
-        return files.map(f => URLb + "/files/" + f)
+        //return files.map(f => URLb + "/files/" + f)
+        return l.map(f => URLb + "/files/" + f) //this case works
       } else {
-        val sl = cap(files, max).map(f => URLb + "/files/" + f)
+         val cl = l.take(max)
+         //cl +=  "..." 
+         //val cl = l.take(max) :: "..." //oh yes has2be a list
+         //val cl = l.take(max) :: List("...")
+         //   System.out.println(cl)
+//       val sl = cap(files, max).map(f => URLb + "/files/" + f)
            //return sl :: "..."  //value :: is not a member of String  //expected it was a list
-           return sl 
+//       return sl 
+      //  return cl.map(f => URLb + "/files/" + f) :: "..." //same error
+      //  return cl.map(f => URLb + "/files/" + f) //:: List("...") //type mismatch; found : List[String] required: String
+          val r : List[String] = cl.map(f => URLb + "/files/" + f) //:: "..." 
+          //r += "..."
+          //return r.::("...") //was an insert vs append
+          //return List("...")::r
+          val ls : List[String]=List("...")
+          //return ls :+ r //type mismatch; found : List[Object] required: List[String]
+          //return r :+ ls
+          //return ls.::r
+          return r.::("...").reverse //was an insert vs append
       }
    }
   /**
@@ -88,7 +106,7 @@ case class Dataset(
               //"DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
               //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
               //"DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
-              "DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //2 for testing
+              "DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //3 for testing
               //"Directory" -> Json.toJson(folders), //skip
               "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
