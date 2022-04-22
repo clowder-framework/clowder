@@ -50,7 +50,15 @@ case class Dataset(
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
   def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
   def inSpace:Boolean = spaces.size > 0
-   def cap (l: List[Any]) : List[Any] = { return l.take(3) } 
+   def cap (l: List[Any], max: Int) : List[Any] = { 
+      return l.take(max) 
+      //return (l.length < max ? l : l.take(max) :: "...") 
+      //if (l.length < max)  return l  
+      //   else { return  l.take(max) :: "¨" }
+   } 
+ // def cap_map (l: List[Any], max: Int, λ: (A) -> String ) : List[Any] = {  //pass in lambda so don't have2rewrite
+ //   if (l.length < max)  return l  
+ //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
   /**
     * return Dataset as JsValue in jsonld format
     */
@@ -69,7 +77,7 @@ case class Dataset(
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
               //"DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
               //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
-              "DigitalDocument" -> Json.toJson(cap(files).map(f => URLb + "/files/" + f)), //2 for testing
+              "DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
               //"Directory" -> Json.toJson(folders), //skip
               "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
