@@ -60,7 +60,7 @@ case class Dataset(
  //   if (l.length < max)  return l  
  //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
       //write specific1before generalizing as above
-   def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
+   def cap_files_ (l: List[UUID], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
    //def cap_files (l: List[Any], max: Int, URLb: String) : List[String] = {   
       if (l.length < max)  {
         //return files.map(f => URLb + "/files/" + f)
@@ -88,7 +88,22 @@ case class Dataset(
       }
    }
    //if it is only the str spacer for the api call that differs, then just pass that in, to a cap_api_list
-   def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
+   def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
+      if (l.length < max)  {
+        return l.map(f => URLb + "/collection/" + f) //this case works
+      } else {
+         val cl = l.take(max)
+         val r : List[String] = cl.map(f => URLb + apiRoute + f) //:: "..." 
+         return r.::("...").reverse //was an insert vs append
+      }
+   } 
+   def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {  
+      return cap_api_list(l, max, URLb, "/collections/")
+   }
+   def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {  
+      return cap_api_list(l, max, URLb, "/files/")
+   }
+   def cap_collections_ (l: List[UUID], max: Int, URLb: String) : List[String] = {  
       if (l.length < max)  {
         return l.map(f => URLb + "/collection/" + f) //this case works
       } else {
