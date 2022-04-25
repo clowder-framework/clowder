@@ -87,6 +87,18 @@ case class Dataset(
           return r.::("...").reverse //was an insert vs append
       }
    }
+   //if it is only the str spacer for the api call that differs, then just pass that in, to a cap_api_list
+   def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
+      if (l.length < max)  {
+        return l.map(f => URLb + "/collection/" + f) //this case works
+      } else {
+         val cl = l.take(max)
+         val r : List[String] = cl.map(f => URLb + "/collection/" + f) //:: "..." 
+         //val ls : List[String]=List("...")
+         return r.::("...").reverse //was an insert vs append
+      }
+   } //not sure if needs to be capped
+   //if collection here why not 'space', see what that maps to
   /**
     * return Dataset as JsValue in jsonld format
     */
@@ -108,7 +120,8 @@ case class Dataset(
               //"DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
               "DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //3 for testing
               //"Directory" -> Json.toJson(folders), //skip
-              "Collection" -> Json.toJson(collections), //like w/file urls, &below, 
+              //"Collection" -> Json.toJson(collections), //like w/file urls, &below, 
+              "Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url, skip append in null/fix
               "license" -> licenseData.to_jsonld(),
