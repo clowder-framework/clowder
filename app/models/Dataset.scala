@@ -7,6 +7,7 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 //import util.Formatters
+import _root_.util.Formatters
 //package object models {
 //   def cap (l: List[Any]) : List[Any] = { 
       //return (l.length < 2 ? l : (l.take(2) :: List("..."))) 
@@ -86,27 +87,33 @@ case class Dataset(
   def to_jsonld(url: String) : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val URLb = url.replaceAll("/$", "") 
-     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
+     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")  //iso8601
+     //util.Formatters.iso8601
      val datasetLD = Json.obj(
               "context" -> so,
               "identifier" -> id.toString,
               "name" -> name,
               "author" -> author.to_jsonld(),
               "description" -> description,
-              "dateCreated" -> formatter.format(created), //iso8601,incl tz
+              //"dateCreated" -> formatter.format(created), //iso8601,incl tz
+              "dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
               //for all lists, cap, ... //if >10 replace last w/"..."
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
               //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
               //"DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
-              "DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //3 for testing
+              //"DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //3 for testing
+              "DigitalDocument" -> Json.toJson(cap_api_list(files, 3, URLb, "/files/")), //3 for testing
               //"Directory" -> Json.toJson(folders), //skip
               //"Collection" -> Json.toJson(collections), //like w/file urls, &below, 
-              "Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
-              "DataCatalog" -> Json.toJson(cap_spaces(spaces,2, URLb)), //like w/file urls, &below, 
+              //"Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
+              "Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")), //like w/file urls, &below, 
+              //"DataCatalog" -> Json.toJson(cap_spaces(spaces,2, URLb)), //like w/file urls, &below, 
+              "DataCatalog" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url, skip append in null/fix
               "license" -> licenseData.to_jsonld(),
-              "dateModfied" -> formatter.format(lastModifiedDate),
+              //"dateModfied" -> formatter.format(lastModifiedDate),
+              "dateModfied" -> Formatters.iso8601(lastModifiedDate),
               //"FollowAction" -> Json.toJson(followers), //skip
               "keywords" -> tags.map(x => x.to_jsonld()),
               "creator" -> Json.toJson(creators)
