@@ -60,58 +60,24 @@ case class Dataset(
  //   if (l.length < max)  return l  
  //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
       //write specific1before generalizing as above
-   def cap_files_ (l: List[UUID], max: Int, URLb: String) : List[String] = {   //ret L of Strings for Json serializer
-   //def cap_files (l: List[Any], max: Int, URLb: String) : List[String] = {   
-      if (l.length < max)  {
-        //return files.map(f => URLb + "/files/" + f)
-        return l.map(f => URLb + "/files/" + f) //this case works
-      } else {
-         val cl = l.take(max)
-         //cl +=  "..." 
-         //val cl = l.take(max) :: "..." //oh yes has2be a list
-         //val cl = l.take(max) :: List("...")
-         //   System.out.println(cl)
-//       val sl = cap(files, max).map(f => URLb + "/files/" + f)
-           //return sl :: "..."  //value :: is not a member of String  //expected it was a list
-//       return sl 
-      //  return cl.map(f => URLb + "/files/" + f) :: "..." //same error
-      //  return cl.map(f => URLb + "/files/" + f) //:: List("...") //type mismatch; found : List[String] required: String
-          val r : List[String] = cl.map(f => URLb + "/files/" + f) //:: "..." 
-          //r += "..."
-          //return r.::("...") //was an insert vs append
-          //return List("...")::r
-          val ls : List[String]=List("...")
-          //return ls :+ r //type mismatch; found : List[Object] required: List[String]
-          //return r :+ ls
-          //return ls.::r
-          return r.::("...").reverse //was an insert vs append
-      }
-   }
    //if it is only the str spacer for the api call that differs, then just pass that in, to a cap_api_list
    def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
-      if (l.length < max)  {
+      if (l.length <= max)  {
         return l.map(f => URLb + "/collection/" + f) //this case works
       } else {
          val cl = l.take(max)
          val r : List[String] = cl.map(f => URLb + apiRoute + f) //:: "..." 
          return r.::("...").reverse //was an insert vs append
       }
-   } 
+   } //can skip the next 3 methods and just call directly 
    def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {  
       return cap_api_list(l, max, URLb, "/collections/")
    }
+   def cap_spaces (l: List[UUID], max: Int, URLb: String) : List[String] = {  
+      return cap_api_list(l, max, URLb, "/spaces/")
+   }
    def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {  
       return cap_api_list(l, max, URLb, "/files/")
-   }
-   def cap_collections_ (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-      if (l.length < max)  {
-        return l.map(f => URLb + "/collection/" + f) //this case works
-      } else {
-         val cl = l.take(max)
-         val r : List[String] = cl.map(f => URLb + "/collection/" + f) //:: "..." 
-         //val ls : List[String]=List("...")
-         return r.::("...").reverse //was an insert vs append
-      }
    } //not sure if needs to be capped
    //if collection here why not 'space', see what that maps to
   /**
@@ -130,13 +96,13 @@ case class Dataset(
               "dateCreated" -> formatter.format(created), //iso8601,incl tz
               //for all lists, cap, ... //if >10 replace last w/"..."
               //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
-              //"DigitalDocument" -> Json.toJson(url.replaceAll("/$", "") + "/api/datasets/" + id.toString + "/files?max=9"),
               //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
               //"DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
               "DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //3 for testing
               //"Directory" -> Json.toJson(folders), //skip
               //"Collection" -> Json.toJson(collections), //like w/file urls, &below, 
               "Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
+              "DataCatalog" -> Json.toJson(cap_spaces(spaces,2, URLb)), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url, skip append in null/fix
               "license" -> licenseData.to_jsonld(),
