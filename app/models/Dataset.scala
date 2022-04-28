@@ -5,10 +5,7 @@ import java.util.Date
 import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-
 import _root_.util.Formatters
-//import java.text.SimpleDateFormat
-//import java.util.Date
 
 /**
  * A dataset is a collection of files, and streams.
@@ -48,7 +45,7 @@ case class Dataset(
     */
   def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
       if (l.length <= max)  {
-        return l.map(f => URLb + apiRoute + f) //this case works
+        return l.map(f => URLb + apiRoute + f) 
       } else {
          val cl = l.take(max)
          val r : List[String] = cl.map(f => URLb + apiRoute + f) 
@@ -62,28 +59,22 @@ case class Dataset(
   def to_jsonld(url: String) : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val URLb = url.replaceAll("/$", "") 
-     //val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")  //iso8601
-     //util.Formatters.iso8601
      var pic_id = thumbnail_id.getOrElse("")
      if (pic_id != "") {
         pic_id = URLb + pic_id 
      } else ""
-     //pic_id = (pic_id != "" ? URLb + pic_id : "")
      val datasetLD = Json.obj(
            "context" -> so,
            "identifier" -> id.toString,
            "name" -> name,
            "author" -> author.to_jsonld(),
            "description" -> description,
-           "dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
+           "dateCreated" -> Formatters.iso8601(created), 
            "DigitalDocument" -> Json.toJson(cap_api_list(files, 10, URLb, "/files/")), 
            //"Directory" -> Json.toJson(folders), //skip
            //"Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")),  //skip
            //earthcube used spaces, as a repo's DataCatalog, but they are better thought of as so:Collection s
-           "Collection" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
-           //get url, skip append in null/fix
-           //"thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), 
-           //"thumbnail" -> Json.toJson(pic_id != "" ? URLb + pic_id : "")
+           "Collection" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //'space' as so:Collection
            "thumbnail" -> Json.toJson(pic_id),
            "license" -> licenseData.to_jsonld(),
            "dateModfied" -> Formatters.iso8601(lastModifiedDate),
