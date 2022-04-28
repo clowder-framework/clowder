@@ -51,12 +51,12 @@ case class Dataset(
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
   def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
   def inSpace:Boolean = spaces.size > 0
-   def cap (l: List[Any], max: Int) : List[Any] = { 
-      return l.take(max) 
+  //def cap (l: List[Any], max: Int) : List[Any] = { 
+  //   return l.take(max) 
       //return (l.length < max ? l : l.take(max) :: "...") 
       //if (l.length < max)  return l  
       //   else { return  l.take(max) :: "¨" }
-   } 
+   // 
  // def cap_map (l: List[Any], max: Int, λ: (A) -> String ) : List[Any] = {  //pass in lambda so don't have2rewrite
  //   if (l.length < max)  return l  
  //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
@@ -71,15 +71,13 @@ case class Dataset(
          return r.::("...").reverse //was an insert vs append
       }
    } //can skip the next 3 methods and just call directly 
-   def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-      return cap_api_list(l, max, URLb, "/collections/")
-   }
-   def cap_spaces (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-      return cap_api_list(l, max, URLb, "/spaces/")
-   }
-   def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-      return cap_api_list(l, max, URLb, "/files/")
-   } //not sure if needs to be capped
+   //def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {  
+   //   return cap_api_list(l, max, URLb, "/files/") } 
+   //def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {  
+   //   return cap_api_list(l, max, URLb, "/collections/") }
+   //not sure if needs to be capped
+   //def cap_spaces (l: List[UUID], max: Int, URLb: String) : List[String] = {  
+   //   return cap_api_list(l, max, URLb, "/spaces/") }
    //if collection here why not 'space', see what that maps to
   /**
     * return Dataset as JsValue in jsonld format
@@ -107,6 +105,7 @@ case class Dataset(
               //"Collection" -> Json.toJson(collections), //like w/file urls, &below, 
               //"Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
               "Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")), //like w/file urls, &below, 
+              //this is how I use spaces, but might not mean same to others, so cfg, or..?
               //"DataCatalog" -> Json.toJson(cap_spaces(spaces,2, URLb)), //like w/file urls, &below, 
               "DataCatalog" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
