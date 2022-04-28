@@ -104,10 +104,11 @@ case class Dataset(
               //"Directory" -> Json.toJson(folders), //skip
               //"Collection" -> Json.toJson(collections), //like w/file urls, &below, 
               //"Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
-              "Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")), //like w/file urls, &below, 
+    //        "Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")), //like w/file urls, &below, 
               //this is how I use spaces, but might not mean same to others, so cfg, or..?
               //"DataCatalog" -> Json.toJson(cap_spaces(spaces,2, URLb)), //like w/file urls, &below, 
-              "DataCatalog" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
+              //"DataCatalog" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
+              "Collection" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
               //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
               "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url, skip append in null/fix
               "license" -> licenseData.to_jsonld(),
