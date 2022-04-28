@@ -6,18 +6,9 @@ import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-//import util.Formatters
 import _root_.util.Formatters
-//package object models {
-//   def cap (l: List[Any]) : List[Any] = { 
-      //return (l.length < 2 ? l : (l.take(2) :: List("..."))) 
-      //return (l.length < 2 ? l : l.take(2) :: List("...")) 
-//         return l.take(2) } }
-//import java.time.LocalDateTime
-//import java.time.format.DateTimeFormatter._
-//from Formatters
-import java.text.SimpleDateFormat
-import java.util.Date
+//import java.text.SimpleDateFormat
+//import java.util.Date
 
 /**
  * A dataset is a collection of files, and streams.
@@ -51,74 +42,56 @@ case class Dataset(
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
   def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
   def inSpace:Boolean = spaces.size > 0
-  //def cap (l: List[Any], max: Int) : List[Any] = { 
-  //   return l.take(max) 
-      //return (l.length < max ? l : l.take(max) :: "...") 
-      //if (l.length < max)  return l  
-      //   else { return  l.take(max) :: "¨" }
-   // 
- // def cap_map (l: List[Any], max: Int, λ: (A) -> String ) : List[Any] = {  //pass in lambda so don't have2rewrite
- //   if (l.length < max)  return l  
- //      else { return  l.take(max).map(λ) :: "¨" } }  //want to append to mapped list, so as not to map the ...
-      //write specific1before generalizing as above
-   //if it is only the str spacer for the api call that differs, then just pass that in, to a cap_api_list
-   def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
+
+  /**
+    * Caps a list at 'max' appends "...", then turns these ID's into resolvable URLs of that 'apiRoute' type
+    */
+  def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
       if (l.length <= max)  {
-        return l.map(f => URLb + "/collection/" + f) //this case works
+        return l.map(f => URLb + apiRoute + f) //this case works
       } else {
          val cl = l.take(max)
-         val r : List[String] = cl.map(f => URLb + apiRoute + f) //:: "..." 
-         return r.::("...").reverse //was an insert vs append
+         val r : List[String] = cl.map(f => URLb + apiRoute + f) 
+         return r.::("...").reverse 
       }
-   } //can skip the next 3 methods and just call directly 
-   //def cap_files (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-   //   return cap_api_list(l, max, URLb, "/files/") } 
-   //def cap_collections (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-   //   return cap_api_list(l, max, URLb, "/collections/") }
-   //not sure if needs to be capped
-   //def cap_spaces (l: List[UUID], max: Int, URLb: String) : List[String] = {  
-   //   return cap_api_list(l, max, URLb, "/spaces/") }
-   //if collection here why not 'space', see what that maps to
+   } 
+
   /**
     * return Dataset as JsValue in jsonld format
     */
   def to_jsonld(url: String) : JsValue = { 
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val URLb = url.replaceAll("/$", "") 
-     val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")  //iso8601
+     //val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")  //iso8601
      //util.Formatters.iso8601
+     var pic_id = thumbnail_id.getOrElse("")
+     if (pic_id != "") {
+        pic_id = URLb + pic_id 
+     } else ""
+     //pic_id = (pic_id != "" ? URLb + pic_id : "")
      val datasetLD = Json.obj(
-              "context" -> so,
-              "identifier" -> id.toString,
-              "name" -> name,
-              "author" -> author.to_jsonld(),
-              "description" -> description,
-              //"dateCreated" -> formatter.format(created), //iso8601,incl tz
-              "dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
-              //for all lists, cap, ... //if >10 replace last w/"..."
-              //"DigitalDocument" -> Json.toJson(files.map(f => URLb + "/files/" + f)), 
-              //"DigitalDocument" -> Json.toJson(files.take(2).map(f => URLb + "/files/" + f)), //limits but needs append "..."
-              //"DigitalDocument" -> Json.toJson(cap(files, 3).map(f => URLb + "/files/" + f)), //2 for testing
-              //"DigitalDocument" -> Json.toJson(cap_files(files, 3, URLb)), //3 for testing
-              "DigitalDocument" -> Json.toJson(cap_api_list(files, 3, URLb, "/files/")), //3 for testing
-              //"Directory" -> Json.toJson(folders), //skip
-              //"Collection" -> Json.toJson(collections), //like w/file urls, &below, 
-              //"Collection" -> Json.toJson(cap_collections(collections,1, URLb)), //like w/file urls, &below, 
-    //        "Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")), //like w/file urls, &below, 
-              //this is how I use spaces, but might not mean same to others, so cfg, or..?
-              //"DataCatalog" -> Json.toJson(cap_spaces(spaces,2, URLb)), //like w/file urls, &below, 
-              //"DataCatalog" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
-              "Collection" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
-              //"thumbnail" -> Json.toJson((thumbnail_id == null ? "" : URlb + thumbnail_id)), 
-              "thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), //get url, skip append in null/fix
-              "license" -> licenseData.to_jsonld(),
-              //"dateModfied" -> formatter.format(lastModifiedDate),
-              "dateModfied" -> Formatters.iso8601(lastModifiedDate),
-              //"FollowAction" -> Json.toJson(followers), //skip
-              "keywords" -> tags.map(x => x.to_jsonld()),
-              "creator" -> Json.toJson(creators)
-              )
-        return datasetLD
+           "context" -> so,
+           "identifier" -> id.toString,
+           "name" -> name,
+           "author" -> author.to_jsonld(),
+           "description" -> description,
+           "dateCreated" -> Formatters.iso8601(created), //iso8601,incl tz
+           "DigitalDocument" -> Json.toJson(cap_api_list(files, 10, URLb, "/files/")), 
+           //"Directory" -> Json.toJson(folders), //skip
+           //"Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")),  //skip
+           //earthcube used spaces, as a repo's DataCatalog, but they are better thought of as so:Collection s
+           "Collection" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //like w/file urls, &below, 
+           //get url, skip append in null/fix
+           //"thumbnail" -> Json.toJson(URLb + thumbnail_id.getOrElse("")), 
+           //"thumbnail" -> Json.toJson(pic_id != "" ? URLb + pic_id : "")
+           "thumbnail" -> Json.toJson(pic_id),
+           "license" -> licenseData.to_jsonld(),
+           "dateModfied" -> Formatters.iso8601(lastModifiedDate),
+           //"FollowAction" -> Json.toJson(followers), //skip
+           "keywords" -> tags.map(x => x.to_jsonld()),
+           "creator" -> Json.toJson(creators)
+           )
+     return datasetLD
      }
 }
 
