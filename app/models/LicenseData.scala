@@ -88,7 +88,6 @@ case class LicenseData (
       else {
          licenseUrl = "https://dbpedia.org/page/All_rights_reserved";
       }
-       //m_licenseType = licenseUrl; //would only reset if not "" to start 
       return licenseUrl
    }
         
@@ -98,9 +97,7 @@ case class LicenseData (
     */
     //def to_jsonld () : String = {
     def to_jsonld () : JsValue = {
-       //return m_licenseUrl
-       //return this.urlViaAttributes()
-       val licURI = this.urlViaAttributes()
+       val licURI = this.urlViaAttributes()  //URI = URL except in one case:
        val licURL = if (licURI != "https://dbpedia.org/page/All_rights_reserved") licURI
                     else ""
        val licLD = JsObject(Seq(
@@ -109,7 +106,6 @@ case class LicenseData (
                 "@type" -> JsString("license"),
                 "Text" -> JsString(m_licenseText)  //added this DataType
                 ))
-       //return Json.stringify(licLD)
        return licLD
     }
 }
