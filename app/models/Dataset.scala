@@ -80,7 +80,7 @@ case class Dataset(
            //"Collection"->Json.toJson(cap_api_list(collections,1,URLb,"/collections/")), //skip
            //earthcube used spaces, as a repo's 'DataCatalog', but better to have
            // 'space' as so:Collection
-           "Collection" -> Json.toJson(cap_api_list(spaces, a0, URLb, "/spaces/")), 
+           "Collection" -> Json.toJson(cap_api_list(spaces, 10, URLb, "/spaces/")), 
            "thumbnail" -> Json.toJson(pic_id),
            "license" -> licenseData.to_jsonld(),
            "dateModfied" -> Formatters.iso8601(lastModifiedDate),

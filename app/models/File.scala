@@ -5,6 +5,7 @@ import java.util.Date
 import models.FileStatus.FileStatus
 import play.api.libs.json.{JsObject, Json, Writes}
 import play.api.libs.json._
+import _root_.util.Formatters
 
 /**
  * Uploaded files.
@@ -45,7 +46,7 @@ case class File(
            "name" -> filename,
            "author" -> author.to_jsonld(),
            "isBasedOn" -> originalname,
-           "uploadDate" -> uploadDate.toString.format("MMM dd, yyyy"),
+           "uploadDate" -> Formatters.iso8601(uploadDate),
            "contentType" -> contentType,
            "MenuSection" -> sections.map(x => x.to_jsonld()),
            "keywords" -> tags.map(x => x.to_jsonld()),
