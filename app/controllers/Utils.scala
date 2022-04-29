@@ -13,16 +13,14 @@ object Utils {
   /**
    * Return base url given a request. This will add http or https to the front, for example
    * https://localhost:9443 will be returned if it is using https.
+   *
+   * Change type from Request[Any]
    */
-  def baseUrl(request: RequestHeader, absolute: Boolean = true) = {  //temporary debug, will remove
+  def baseUrl(request: RequestHeader, absolute: Boolean = true) = {  
     if (absolute) {
-      val r= routes.Files.list().absoluteURL(https(request))(request).replace("/files", "")
-         println("======================a baseURL:" + r)
-      r
+       routes.Files.list().absoluteURL(https(request))(request).replace("/files", "")
     } else {
-      val r= routes.Files.list().url.replace("/files", "")
-         print("======================baseURL:" + r)
-      r
+       routes.Files.list().url.replace("/files", "")
     }
   }
 
