@@ -41,7 +41,11 @@ case class Dataset(
   def inSpace:Boolean = spaces.size > 0
 
   /**
-    * Caps a list at 'max' appends "...", then turns these ID's into resolvable URLs of that 'apiRoute' type
+    * Caps a list at 'max'  
+    * then turns it's ID's into resolvable URLs of that 'apiRoute' type
+    * end with appending "..." to the List, to signify that it was abridged 
+    *
+    * todo: issue 354 to the max configurable
     */
   def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
       if (l.length <= max)  {
@@ -72,13 +76,14 @@ case class Dataset(
            "dateCreated" -> Formatters.iso8601(created), 
            "DigitalDocument" -> Json.toJson(cap_api_list(files, 10, URLb, "/files/")), 
            //"Directory" -> Json.toJson(folders), //skip
-           //"Collection" -> Json.toJson(cap_api_list(collections,1, URLb, "/collections/")),  //skip
-           //earthcube used spaces, as a repo's DataCatalog, but they are better thought of as so:Collection s
-           "Collection" -> Json.toJson(cap_api_list(spaces,2, URLb, "/spaces/")), //'space' as so:Collection
+           //"FollowAction" -> Json.toJson(followers), //skip
+           //"Collection"->Json.toJson(cap_api_list(collections,1,URLb,"/collections/")), //skip
+           //earthcube used spaces, as a repo's 'DataCatalog', but better to have
+           // 'space' as so:Collection
+           "Collection" -> Json.toJson(cap_api_list(spaces, a0, URLb, "/spaces/")), 
            "thumbnail" -> Json.toJson(pic_id),
            "license" -> licenseData.to_jsonld(),
            "dateModfied" -> Formatters.iso8601(lastModifiedDate),
-           //"FollowAction" -> Json.toJson(followers), //skip
            "keywords" -> tags.map(x => x.to_jsonld()),
            "creator" -> Json.toJson(creators)
            )
