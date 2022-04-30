@@ -22,7 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-    example.openapi.yaml
       - name: openapi-lint 
         uses: mbowman100/swagger-validator-action@master
         with:
