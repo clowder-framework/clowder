@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.20.2 - 2022-04-30
 
-### CHanged
+### Fixed
+- swagger lint action
+
+### Changed
 - Changed `Enabled By SuperAdmin` to read `Enabled by Server Admin` [#344](https://github.com/clowder-framework/clowder/issues/344)
 
 ## 1.20.1 - 2022-04-04
