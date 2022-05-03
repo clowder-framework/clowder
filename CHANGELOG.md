@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - swagger lint action
-
+- When downloading a file with a `'` in the name it would save the file as blob
+- 
 ### Changed
 - Changed `Enabled By SuperAdmin` to read `Enabled by Server Admin` [#344](https://github.com/clowder-framework/clowder/issues/344)
 
