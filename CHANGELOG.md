@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - swagger lint action
 - When downloading a file with a `'` in the name it would save the file as blob
 - Fix for a rare race condition with masonry where tiles could end up overlapping in space page.
+- Fixes bug where same extractor shows up multiple times and all Clowder instances index db on reindex [#327](https://github.com/clowder-framework/clowder/issues/327)
 
 ### Changed
 - Changed `Enabled By SuperAdmin` to read `Enabled by Server Admin` [#344](https://github.com/clowder-framework/clowder/issues/344)
