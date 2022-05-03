@@ -5,10 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.20.2 - 2022-04-30
 
 ### Fixed
+- swagger lint action
+- When downloading a file with a `'` in the name it would save the file as blob
+- Fix for a rare race condition with masonry where tiles could end up overlapping in space page.
 - Fixes bug where same extractor shows up multiple times and all Clowder instances index db on reindex [#327](https://github.com/clowder-framework/clowder/issues/327)
+
+### Changed
+- Changed `Enabled By SuperAdmin` to read `Enabled by Server Admin` [#344](https://github.com/clowder-framework/clowder/issues/344)
 
 ## 1.20.1 - 2022-04-04
 
