@@ -93,7 +93,8 @@ trait MongoDBQueueService {
 
   // start pool to being processing queue actions
   def listen() = {
-    if (queueTimer == null) {
+    //only if this is the primary clowder instance
+    if (queueTimer == null && configuration.getBoolean("clowder.primary").getOrElse(true)) {
       // TODO: Need to make these in a separate pool
       queueTimer = Akka.system().scheduler.schedule(0 seconds, 5 millis) {
         getNextQueuedAction match {
