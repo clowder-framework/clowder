@@ -689,7 +689,7 @@ class Spaces @Inject()(spaces: SpaceService,
               val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
               val recipient: String = requestUser.email.get.toString
               val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
-              Mail.sendEmail(subject, request.user, recipient, body)
+              Mail.sendEmailAdmins(subject, request.user, body)
             }
             Ok(Json.obj("status" -> "success"))
           }
