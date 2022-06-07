@@ -142,7 +142,6 @@ jobs:
           cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}
           cache-to: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }},mode=max
           tags: ${{ env.TAGS }}
-          target:
           build-args: |
             BRANCH=${{ env.BRANCH }}
             VERSION=${{ env.VERSION }}
@@ -154,12 +153,11 @@ jobs:
         with:
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
-          target: clowder-build
+          target: clowder-runtime
           push: false
           cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}
           cache-to: type=registry,ref=clowder/${{ matrix.IMAGE }}:${{ env.VERSION }},mode=min
           tags: ${{ env.TAGS }}
-          target:
           build-args: |
             BRANCH=${{ env.BRANCH }}
             VERSION=${{ env.VERSION }}
