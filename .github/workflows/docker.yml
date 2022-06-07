@@ -42,18 +42,22 @@ jobs:
             FOLDER: "."
             IMAGE: clowder
             README: README.md
+            PLATFORM: "linux/amd64,linux/arm64"
           - name: mongo-init
             FOLDER: scripts/mongo-init
             IMAGE: mongo-init
             README: ""
+            PLATFORM: "linux/amd64"
           - name: monitor
             FOLDER: scripts/monitor
             IMAGE: monitor
             README: ""
+            PLATFORM: "linux/amd64,linux/arm64"
           - name: elasticsearch
             FOLDER: scripts/elasticsearch
             IMAGE: elasticsearch
             README: ""
+            PLATFORM: "linux/amd64"
 
     steps:
       - uses: actions/checkout@v2
@@ -63,10 +67,12 @@ jobs:
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
             BRANCH="${{ github.event.release.target_commitish }}"
+          elif [[ $GITHUB_REF =~ pull ]]; then
+            BRANCH="$(echo $GITHUB_REF | sed 's#refs/pull/\([0-9]*\)/merge#PR-\1#')"
           else
             BRANCH=${GITHUB_REF##*/}
           fi
-          echo "GITHUB_BRANCH=${BRANCH}" >> $GITHUB_ENV
+
           if [ "$BRANCH" == "master" ]; then
             version="$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
             tags="latest"
@@ -76,92 +82,139 @@ jobs:
               tags="${tags},${version}"
               version=${version%.*}
             done
-            echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
-            echo "CLOWDER_TAGS=${tags}" >> $GITHUB_ENV
+            version="$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
           elif [ "$BRANCH" == "develop" ]; then
-            echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
-            echo "CLOWDER_TAGS=develop" >> $GITHUB_ENV
+            version="develop"
+            tags="develop"
           else
-            echo "CLOWDER_VERSION=testing" >> $GITHUB_ENV
-            echo "CLOWDER_TAGS=" >> $GITHUB_ENV
+            version="test"
+            tags="${BRANCH}"
           fi
 
-      # build the docker image, this will always run to make sure
-      # the Dockerfile still works.
-      - name: Build image
-        uses: elgohr/Publish-Docker-Github-Action@2.22
-        env:
-          BRANCH: ${{ env.GITHUB_BRANCH }}
-          VERSION: ${{ env.CLOWDER_VERSION }}
-          BUILDNUMBER: ${{ github.run_number }}
-          GITSHA1: ${{ github.sha  }}
-        with:
-          registry: docker.pkg.github.com
-          name: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.IMAGE }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          context: ${{ matrix.FOLDER }}
-          tags: "${{ env.TAGS }}"
-          buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
-          no_push: true
+          push_tags=""
+          for tag in ${tags}; do
+            push_tags="${push_tags}${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag}\n"
+            push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag}\n"
+          done
 
-      # this will publish to github container registry
-      - name: Publish to GitHub
-        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
-        uses: elgohr/Publish-Docker-Github-Action@2.22
-        env:
-          BRANCH: ${{ env.GITHUB_BRANCH }}
-          VERSION: ${{ env.CLOWDER_VERSION }}
-          BUILDNUMBER: ${{ github.run_number }}
-          GITSHA1: ${{ github.sha  }}
-        with:
-          registry: ghcr.io
-          name: ${{ github.repository_owner }}/${{ matrix.IMAGE }}
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_PASSWORD }}
-          context: ${{ matrix.FOLDER }}
-          tags: "${{ env.CLOWDER_TAGS }}"
-          buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "VERSION=${version}" >> $GITHUB_ENV
+          echo "TAGS=${push_tags}" >> $GITHUB_ENV
 
-      # this will publish to the clowder dockerhub repo
-      - name: Publish to Docker Hub
-        if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
-        uses: elgohr/Publish-Docker-Github-Action@2.22
-        env:
-          BRANCH: ${{ env.GITHUB_BRANCH }}
-          VERSION: ${{ env.CLOWDER_VERSION }}
-          BUILDNUMBER: ${{ github.run_number }}
-          GITSHA1: ${{ github.sha  }}
+      # setup docker build
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # login to registries
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
         with:
-          name: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          context: ${{ matrix.FOLDER }}
-          tags: "${{ env.CLOWDER_TAGS }}"
-          buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
 
-      # this will update the README of the dockerhub repo
-      - name: check file
-        id: filecheck
-        run: |
-          if [ "${{ matrix.README }}" != "" ]; then
-            if [ -e "${{ matrix.README }}" ]; then
-              echo "##[set-output name=readme;]${{ matrix.README }}"
-            else
-              echo "##[set-output name=readme;]"
-            fi
-          else
-            if [ -e "${{ matrix.FOLDER }}/README.md" ]; then
-              echo "##[set-output name=readme;]${{ matrix.FOLDER }}/README.md"
-            else
-              echo "##[set-output name=readme;]"
-            fi
-          fi
-      - name: Docker Hub Description
-        if: github.event_name == 'push' && github.repository == env.MASTER_REPO && env.BRANCH == 'master' && steps.filecheck.outputs.readme != ''
-        uses: peter-evans/dockerhub-description@v2
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_REPOSITORY: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
-          README_FILEPATH: ${{ steps.filecheck.outputs.readme }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # build the docker IMAGE
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ${{ matrix.FOLDER }}
+          platforms: ${{ matrix.PLATFORM }}
+          push: false
+          cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}:${{ env.VERSION }}
+          cache-to: type=inline
+          tags: ${{ env.TAGS }}
+          build-args: |
+            BRANCH=${{ env.BRANCH }}
+            VERSION=${{ env.VERSION }}
+            BUILDNUMBER=${{ github.run_number }}
+            GITSHA1=${{ github.sha  }}
+
+      # - name: Docker Hub Description
+      #   if: github.event_name == 'push' && github.repository == env.MASTER_REPO && env.BRANCH == 'master' && steps.filecheck.outputs.readme != ''
+      #   uses: peter-evans/dockerhub-description@v2
+      #   env:
+      #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+      #     DOCKERHUB_REPOSITORY: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
+      #     README_FILEPATH: ${{ steps.filecheck.outputs.readme }}
+
+      # # build the docker image, this will always run to make sure
+      # # the Dockerfile still works.
+      # - name: Build image
+      #   uses: elgohr/Publish-Docker-Github-Action@2.22
+      #   env:
+      #     BRANCH: ${{ env.GITHUB_BRANCH }}
+      #     VERSION: ${{ env.CLOWDER_VERSION }}
+      #     BUILDNUMBER: ${{ github.run_number }}
+      #     GITSHA1: ${{ github.sha  }}
+      #   with:
+      #     registry: docker.pkg.github.com
+      #     name: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.IMAGE }}
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+      #     context: ${{ matrix.FOLDER }}
+      #     tags: "${{ env.TAGS }}"
+      #     buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+      #     no_push: true
+      #
+      # # this will publish to github container registry
+      # - name: Publish to GitHub
+      #   if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
+      #   uses: elgohr/Publish-Docker-Github-Action@2.22
+      #   env:
+      #     BRANCH: ${{ env.GITHUB_BRANCH }}
+      #     VERSION: ${{ env.CLOWDER_VERSION }}
+      #     BUILDNUMBER: ${{ github.run_number }}
+      #     GITSHA1: ${{ github.sha  }}
+      #   with:
+      #     registry: ghcr.io
+      #     name: ${{ github.repository_owner }}/${{ matrix.IMAGE }}
+      #     username: ${{ secrets.GHCR_USERNAME }}
+      #     password: ${{ secrets.GHCR_PASSWORD }}
+      #     context: ${{ matrix.FOLDER }}
+      #     tags: "${{ env.CLOWDER_TAGS }}"
+      #     buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+      #
+      # # this will publish to the clowder dockerhub repo
+      # - name: Publish to Docker Hub
+      #   if: github.event_name != 'pull_request' && github.repository == env.MASTER_REPO
+      #   uses: elgohr/Publish-Docker-Github-Action@2.22
+      #   env:
+      #     BRANCH: ${{ env.GITHUB_BRANCH }}
+      #     VERSION: ${{ env.CLOWDER_VERSION }}
+      #     BUILDNUMBER: ${{ github.run_number }}
+      #     GITSHA1: ${{ github.sha  }}
+      #   with:
+      #     name: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      #     context: ${{ matrix.FOLDER }}
+      #     tags: "${{ env.CLOWDER_TAGS }}"
+      #     buildargs: BRANCH,VERSION,BUILDNUMBER,GITSHA1
+      #
+      # # this will update the README of the dockerhub repo
+      # - name: check file
+      #   id: filecheck
+      #   run: |
+      #     if [ "${{ matrix.README }}" != "" ]; then
+      #       if [ -e "${{ matrix.README }}" ]; then
+      #         echo "##[set-output name=readme;]${{ matrix.README }}"
+      #       else
+      #         echo "##[set-output name=readme;]"
+      #       fi
+      #     else
+      #       if [ -e "${{ matrix.FOLDER }}/README.md" ]; then
+      #         echo "##[set-output name=readme;]${{ matrix.FOLDER }}/README.md"
+      #       else
+      #         echo "##[set-output name=readme;]"
+      #       fi
+      #     fi
