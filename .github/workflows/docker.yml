@@ -137,8 +137,9 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # build the docker images
+      # build the clowder docker images
       - name: Build and push
+        if: matrix.IMAGE == 'clowder'
         uses: docker/build-push-action@v2
         with:
           context: ${{ matrix.FOLDER }}
@@ -155,6 +156,7 @@ jobs:
             GITSHA1=${{ github.sha  }}
 
       - name: Build and push
+        if: matrix.IMAGE == 'clowder'
         uses: docker/build-push-action@v2
         with:
           context: ${{ matrix.FOLDER }}
@@ -169,6 +171,24 @@ jobs:
             VERSION=${{ env.VERSION }}
             BUILDNUMBER=${{ github.run_number }}
             GITSHA1=${{ github.sha  }}
+
+      # build the other docker images
+      - name: Build and push
+        if: matrix.IMAGE != 'clowder'
+        uses: docker/build-push-action@v2
+        with:
+          context: ${{ matrix.FOLDER }}
+          platforms: ${{ matrix.PLATFORM }}
+          push: false
+          cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}
+          cache-to: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }},mode=max
+          tags: ${{ env.TAGS }}
+          build-args: |
+            BRANCH=${{ env.BRANCH }}
+            VERSION=${{ env.VERSION }}
+            BUILDNUMBER=${{ github.run_number }}
+            GITSHA1=${{ github.sha  }}
+
 
       # - name: Docker Hub Description
       #   if: github.event_name == 'push' && github.repository == env.MASTER_REPO && env.BRANCH == 'master' && steps.filecheck.outputs.readme != ''
