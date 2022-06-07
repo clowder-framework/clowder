@@ -79,7 +79,7 @@ jobs:
             oldversion=""
             while [ "${oldversion}" != "${version}" ]; do
               oldversion="${version}"
-              tags="${tags},${version}"
+              tags="${tags} ${version}"
               version=${version%.*}
             done
             version="$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')"
@@ -91,19 +91,21 @@ jobs:
             tags="${BRANCH}"
           fi
 
-          # push_tags=""
-          # for tag in ${tags}; do
-          #   push_tags="${push_tags}${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag}\n"
-          #   push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag}\n"
-          # done
+          push_tags=""
+          for tag in ${tags}; do
+            push_tags="${push_tags}${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag},"
+            push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag},"
+          done
+          push_tags="${push_tags%,*}"
 
           echo "BRANCH=${BRANCH}"
           echo "VERSION=${version}"
           echo "TAGS=${tags}"
+          echo "PUSH_TAGS=${push_tags}"
 
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "VERSION=${version}" >> $GITHUB_ENV
-          echo "TAGS=${tags}" >> $GITHUB_ENV
+          echo "TAGS=${push_tags}" >> $GITHUB_ENV
 
       # setup docker build
       - name: Set up QEMU
