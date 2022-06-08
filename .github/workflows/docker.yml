@@ -142,11 +142,12 @@ jobs:
         if: matrix.IMAGE == 'clowder'
         uses: docker/build-push-action@v2
         with:
+          push: true
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
           target: ${{ matrix.IMAGE }}-build
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${{ env.BRANCH }}-cache
-          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${{ env.BRANCH }}-cache,mode=max
+          cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-build-cache:${{ env.BRANCH }}
+          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-build-cache:${{ env.BRANCH }},mode=max
           tags: ${{ env.TAGS }}
           build-args: |
             BRANCH=${{ env.BRANCH }}
@@ -158,11 +159,12 @@ jobs:
         if: matrix.IMAGE == 'clowder'
         uses: docker/build-push-action@v2
         with:
+          push: true
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
           target: ${{ matrix.IMAGE }}-runtime
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${{ env.BRANCH }}-cache
-          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${{ env.BRANCH }},mode=min
+          cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-runtime-cache:${{ env.BRANCH }}
+          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-runtime-cache:${{ env.BRANCH }}
           tags: ${{ env.TAGS }}
           build-args: |
             BRANCH=${{ env.BRANCH }}
@@ -175,10 +177,11 @@ jobs:
         if: matrix.IMAGE != 'clowder'
         uses: docker/build-push-action@v2
         with:
+          push: true
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${{ env.VERSION }}-cache
-          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${{ env.VERSION }}-cache,mode=max
+          cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}
+          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}-cache,mode=max
           tags: ${{ env.TAGS }}
           build-args: |
             BRANCH=${{ env.BRANCH }}
