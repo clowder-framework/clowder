@@ -138,13 +138,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # build the clowder docker images
-      - name: Build and push
+      - name: Build and push ${{ matrix.IMAGE }}-build
         if: matrix.IMAGE == 'clowder'
         uses: docker/build-push-action@v2
         with:
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
-          target: clowder-build
+          target: ${{ matrix.IMAGE }}-build
           push: false
           cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}
           cache-to: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }},mode=max
@@ -155,13 +155,13 @@ jobs:
             BUILDNUMBER=${{ github.run_number }}
             GITSHA1=${{ github.sha  }}
 
-      - name: Build and push
+      - name: Build and push ${{ matrix.IMAGE }}-runtime
         if: matrix.IMAGE == 'clowder'
         uses: docker/build-push-action@v2
         with:
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
-          target: clowder-runtime
+          target: ${{ matrix.IMAGE }}-runtime
           push: false
           cache-from: type=registry,ref=clowder/${{ matrix.IMAGE }}-cache:${{ env.VERSION }}
           cache-to: type=registry,ref=clowder/${{ matrix.IMAGE }}:${{ env.VERSION }},mode=min
@@ -173,7 +173,7 @@ jobs:
             GITSHA1=${{ github.sha  }}
 
       # build the other docker images
-      - name: Build and push
+      - name: Build and push ${{ matrix.IMAGE }}
         if: matrix.IMAGE != 'clowder'
         uses: docker/build-push-action@v2
         with:
