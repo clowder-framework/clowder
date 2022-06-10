@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unrleased
+## 1.20.3 - 2022-06-10
 
 ### Fixed
 - docker images are build using newest java version [#361](https://github.com/clowder-framework/clowder/issues/361)
