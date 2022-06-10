@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # BUILD CLOWDER DIST
 # ----------------------------------------------------------------------
-FROM java:jdk-alpine as clowder-build
+FROM openjdk:8-jdk-bullseye as clowder-build
 
 ARG BRANCH="unknown"
 ARG VERSION="unknown"
@@ -30,7 +30,7 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
     && ./sbt dist \
     && unzip -q target/universal/clowder-*.zip \
     && mv clowder-* clowder \
-    && apk add --no-cache zip \
+    && apt-get update && apt-get -y install zip \
     && for x in $(find clowder -name \*.jar); do \
          zip -d $x org/apache/log4j/net/JMSAppender.class org/apache/log4j/net/SocketServer.class | grep 'deleting:' && echo "fixed $x"; \
        done; \
@@ -40,10 +40,7 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
 # ----------------------------------------------------------------------
 # BUILD CLOWDER
 # ----------------------------------------------------------------------
-FROM java:jre-alpine
-
-# add bash
-RUN apk add --no-cache bash curl
+FROM openjdk:8-jre-bullseye as clowder-runtime
 
 # environemnt variables
 ARG BRANCH="unknown"
