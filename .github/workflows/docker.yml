@@ -94,7 +94,7 @@ jobs:
           push_tags=""
           for tag in ${tags}; do
             push_tags="${push_tags}${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag},"
-            #push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag},"
+            push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag},"
           done
           push_tags="${push_tags%,*}"
 
@@ -134,7 +134,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # build the clowder docker images
