@@ -183,7 +183,7 @@ jobs:
           context: ${{ matrix.FOLDER }}
           platforms: ${{ matrix.PLATFORM }}
           cache-from: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-cache:${{ env.BRANCH }}
-          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-cache:${{ env.BRANCH }}-cache,mode=max
+          cache-to: type=registry,ref=${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}-cache:${{ env.BRANCH }},mode=max
           tags: ${{ env.TAGS }}
           build-args: |
             BRANCH=${{ env.BRANCH }}
