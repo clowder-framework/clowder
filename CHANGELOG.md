@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## Unreleased
+
+### Fixed
+- Send email to all admins in a single email when a user submits 'Request access' for a space
+- Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
+
 ## 1.20.3 - 2022-06-10
 
 ### Fixed
@@ -12,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - docker builds images for amd64 and arm64 [#322](https://github.com/clowder-framework/clowder/issues/322)
+
 
 ## 1.20.2 - 2022-04-30
 

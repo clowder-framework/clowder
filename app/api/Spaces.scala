@@ -13,6 +13,7 @@ import util.Mail
 
 import java.util.Date
 import javax.inject.Inject
+import scala.collection.mutable.ListBuffer
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -687,9 +688,8 @@ class Spaces @Inject()(spaces: SpaceService,
             }
             if(requestUser.email.isDefined) {
               val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
-              val recipient: String = requestUser.email.get.toString
               val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
-              Mail.sendEmail(subject, request.user, recipient, body)
+              Mail.sendEmail(subject, request.user, getRecipientsList(s, requestUser), body)
             }
             Ok(Json.obj("status" -> "success"))
           }
@@ -698,6 +698,22 @@ class Spaces @Inject()(spaces: SpaceService,
       }
       case None => NotFound("Space not found")
     }
+  }
+
+  def getRecipientsList(s: ProjectSpace, requestUser: User): List[String] = {
+    val recipients = new ListBuffer[String]()
+    recipients += requestUser.email.get.toString
+
+    for (requestReceiver <- spaces.getUsersInSpace(s.id, None)) {
+      spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+        case Some(aRole) => {
+          if (aRole.permissions.contains(Permission.EditSpace.toString) && requestReceiver.id != requestUser.id) {
+            recipients += requestReceiver.toString
+          }
+        }
+      }
+    }
+    return recipients.toList
   }
 
   def rejectRequest(id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
@@ -711,9 +727,8 @@ class Spaces @Inject()(spaces: SpaceService,
             spaces.removeRequest(id, requestUser.id)
             if(requestUser.email.isDefined) {
               val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
-              val recipient: String = requestUser.email.get.toString
               val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
-              Mail.sendEmail(subject, request.user, recipient, body)
+              Mail.sendEmail(subject, request.user, getRecipientsList(s, requestUser), body)
             }
             Ok(Json.obj("status" -> "success"))
           }
