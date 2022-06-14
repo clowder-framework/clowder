@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- MRI previewer for NIFTY (.nii) files.
+
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
 - Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
