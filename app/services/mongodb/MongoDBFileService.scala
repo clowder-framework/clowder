@@ -803,7 +803,7 @@ class MongoDBFileService @Inject() (
       false, false, WriteConcern.Safe)
   }
 
-  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]) : Boolean = {
     get(id) match{
       case Some(file) => {
           if(!file.isIntermediate){
@@ -847,28 +847,36 @@ class MongoDBFileService @Inject() (
             }
           }
 
+
           // delete the actual file
-          if(isLastPointingToLoader(file.loader, file.loader_id)) {
+          val fileSize = if(isLastPointingToLoader(file.loader, file.loader_id)) {
             for(preview <- previews.findByFileId(file.id)){
               previews.removePreview(preview)
             }
             if(!file.thumbnail_id.isEmpty)
               thumbnails.remove(UUID(file.thumbnail_id.get))
             ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+            file.length
+          } else {
+            0
           }
 
           import UUIDConversions._
           FileDAO.removeById(file.id)
           appConfig.incrementCount('files, -1)
-          appConfig.incrementCount('bytes, -file.length)
+          appConfig.incrementCount('bytes, -1 * fileSize)
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete(id.stringify)
           }
 
           // finally remove metadata - if done before file is deleted, document metadataCounts won't match
           metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
+          true
       }
-      case None => Logger.debug("File not found")
+      case None => {
+        Logger.debug("File not found")
+        false
+      }
     }
   }
 
@@ -1192,16 +1200,25 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def incrementDownloads(id: UUID, user: Option[User]) = {
+  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = false) = {
     Logger.debug("updating downloads for file "+id.toString)
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+    val fileOp = if (dateOnly) {
+      $set("stats.last_downloaded" -> new Date)
+    } else {
+      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date)
+    }
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), fileOp, true, false, WriteConcern.Safe)
 
     user match {
       case Some(u) => {
         Logger.debug("updating downloads for user "+u.toString)
+        val userOp = if (dateOnly) {
+          $set("last_downloaded" -> new Date)
+        } else {
+          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date)
+        }
         FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
-          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+          userOp, true, false, WriteConcern.Safe)
       }
       case None => {}
     }

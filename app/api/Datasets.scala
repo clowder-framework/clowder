@@ -1,40 +1,34 @@
 package api
 
-import java.io._
-import java.io.{File => JFile}
-import java.net.URL
-import java.security.{DigestInputStream, MessageDigest}
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
-
+import _root_.util._
 import api.Permission.Permission
-import java.util.zip._
-
-import javax.inject.{Inject, Singleton}
+import controllers.Utils.https
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
-import play.api.Play.{configuration, current, routes}
+import play.api.Play.{configuration, current}
 import play.api.i18n.Messages
+import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.mvc.{Action, AnyContent, MultipartFormData, SimpleResult}
-import services._
-import _root_.util._
-import controllers.Utils.https
-import org.json.simple.{JSONArray, JSONObject => SimpleJSONObject}
-import org.json.simple.parser.JSONParser
-import play.api.libs.Files
-import play.api.libs.Files.TemporaryFile
+import play.api.libs.json._
+import play.api.mvc.{AnyContent, MultipartFormData, SimpleResult}
 import scalax.file.Path.createTempFile
+import services._
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.io._
+import java.net.URL
+import java.security.{DigestInputStream, MessageDigest}
+import java.text.SimpleDateFormat
+import java.util.zip._
+import java.util.{Calendar, Date}
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.{ListBuffer, Map => MutaMap}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -67,23 +61,23 @@ class  Datasets @Inject()(
   def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(d) => Ok(toJson(d))
-      case None => BadRequest(toJson(s"Could not find dataset with id [${id.stringify}]"))
+      case None => NotFound(toJson(s"Could not find dataset with id [${id.stringify}]"))
     }
   }
 
-  def list(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
+  def list(when: Option[String], title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+    Ok(toJson(listDatasets(when, title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
-      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
+  def listCanEdit(when: Option[String], title: Option[String], date: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
+      Ok(toJson(listDatasets(when, title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
   }
 
   def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int, exact: Boolean) = PrivateServerAction { implicit request =>
     if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
       Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     } else {
-      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
+      Ok(toJson(listDatasets(None, title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode), exact)))
     }
   }
 
@@ -158,18 +152,31 @@ class  Datasets @Inject()(
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
-    (title, date) match {
-      case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
+  private def listDatasets(when: Option[String], title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean, exact: Boolean) : List[Dataset] = {
+    (when, title, date) match {
+      case (Some(w), Some(t), Some(d)) => {
+        datasets.listAccess(d, nextPage=(w=="a"), limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (Some(t), None) => {
+      case (Some(w), Some(t), None) => {
         datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
       }
-      case (None, Some(d)) => {
+      case (Some(w), None, Some(d)) => {
+        datasets.listAccess(d, nextPage=(w=="a"), limit, permission, user, superAdmin, true,false)
+      }
+      case (Some(w), None, None) => {
+        datasets.listAccess(limit, permission, user, superAdmin, true,false)
+      }
+      // default when to be "after" if not present in parameters. i.e. nextPage=true
+      case (None, Some(t), Some(d)) => {
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true,false, exact)
+      }
+      case (None, Some(t), None) => {
+        datasets.listAccess(limit, t, permission, user, superAdmin, true,false, exact)
+      }
+      case (None, None, Some(d)) => {
         datasets.listAccess(d, true, limit, permission, user, superAdmin, true,false)
       }
-      case (None, None) => {
+      case (None, None, None) => {
         datasets.listAccess(limit, permission, user, superAdmin, true,false)
       }
     }
@@ -209,11 +216,11 @@ class  Datasets @Inject()(
             case Some(spaceId) =>
               spaces.get(UUID(spaceId)) match {
                 case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)), stats = new Statistics())
-                case None => BadRequest(toJson("Bad space = " + spaceId))
+                case None => NotFound(toJson("Bad space = " + spaceId))
               }
           }
         }
-        case None => InternalServerError("User Not found")
+        case None => NotFound("User Not found")
       }
       appConfig.incrementCount('datasets, 1)
 
@@ -254,7 +261,7 @@ class  Datasets @Inject()(
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
               }
-            case None => BadRequest(toJson("Bad file_id = " + file_id))
+            case None => NotFound(toJson("Bad file_id = " + file_id))
 
           }
         }
@@ -562,7 +569,7 @@ class  Datasets @Inject()(
 
             }
           }
-          case None => InternalServerError("User Not found")
+          case None => NotFound("User Not found")
         }
         events.addObjectEvent(request.user, d.id, d.name, EventType.CREATE_DATASET.toString)
 
@@ -605,7 +612,7 @@ class  Datasets @Inject()(
                 }
                 case None => {
                   Logger.error("Error getting dataset" + id)
-                  BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+                  NotFound(toJson(s"The given dataset id $id is not a valid ObjectId."))
                 }
               }
 
@@ -645,7 +652,7 @@ class  Datasets @Inject()(
             }
             case None => {
               Logger.error("Error getting dataset" + dsId)
-              BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+              NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
             }
           }
 
@@ -667,7 +674,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset" + id)
-        BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+        NotFound(toJson(s"The given dataset id $id is not a valid ObjectId."))
       }
     }
   }
@@ -723,13 +730,13 @@ class  Datasets @Inject()(
           }
           case None => {
             Logger.error("Error getting file" + fileId)
-            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+            NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
           }
         }
       }
       case None => {
         Logger.error("Error getting dataset" + dsId)
-        BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
+        NotFound(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
       }
     }
   }
@@ -816,19 +823,19 @@ class  Datasets @Inject()(
               }
               case None => {
                 Logger.error ("Error getting file" + fileId)
-                BadRequest (toJson (s"The given file id $fileId is not a valid ObjectId.") )
+                NotFound(toJson (s"The given file id $fileId is not a valid ObjectId.") )
               }
             }
           }
           case None => {
             Logger.error ("Error getting dataset" + toDatasetId)
-            BadRequest (toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
+            NotFound(toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
           }
         }
       }
       case None => {
         Logger.error ("Error getting dataset" + datasetId)
-        BadRequest (toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
+        NotFound(toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
       }
     }
   }
@@ -876,7 +883,7 @@ class  Datasets @Inject()(
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
       }
-      case None => Logger.error(s"Error getting dataset $id"); NotFound
+      case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
     }
   }
 
@@ -929,9 +936,10 @@ class  Datasets @Inject()(
               }
             }
           }
-          case None => Logger.error(s"Error getting dataset $id"); NotFound
+          case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
         }
      }
+
 
   def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
@@ -961,7 +969,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(metadataDefinitions.toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )))
       }
-      case None => BadRequest(toJson("The requested dataset does not exist"))
+      case None => NotFound(toJson("The requested dataset does not exist"))
     }
   }
 
@@ -980,7 +988,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id);
-        BadRequest(toJson("Error getting dataset  " + id))
+        NotFound(toJson("Error getting dataset  " + id))
       }
     }
   }
@@ -1005,7 +1013,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id)
-        BadRequest(toJson("Error getting dataset  " + id))
+        NotFound(toJson("Error getting dataset  " + id))
       }
     }
   }
@@ -1058,7 +1066,7 @@ class  Datasets @Inject()(
           Ok(toJson(list))
         }
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset" + id))
     }
   }
 
@@ -1095,7 +1103,7 @@ class  Datasets @Inject()(
         }
         Ok(toJson(list))
       }
-      case None => Logger.error("Error getting dataset" + id); InternalServerError
+      case None => Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset" + id))
     }
   }
 
@@ -1110,7 +1118,7 @@ class  Datasets @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -1126,7 +1134,7 @@ class  Datasets @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -1134,12 +1142,14 @@ class  Datasets @Inject()(
   private def getFilesWithinFolders(id: UUID, serveradmin: Boolean=false, max: Int = -1): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
     var resultCount = 0
+    var current_folder : Option[Folder] = None
     datasets.get(id) match {
       case Some(dataset) => {
-        folders.findByParentDatasetId(id).map { folder =>
+        folders.findByParentDatasetId(id).foreach { folder =>
+          current_folder = Some(folder)
           files.get(folder.files).found.foreach(file => {
             if (max < 0 || resultCount < max) {
-              output += jsonFile(file, serveradmin)
+              output += jsonFile(file, serveradmin, Some(folder))
               resultCount += 1
             }
           })
@@ -1150,31 +1160,65 @@ class  Datasets @Inject()(
     output.toList
   }
 
-  def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
-    val defaultMap = Map(
-      "id" -> file.id.toString,
-      "filename" -> file.filename,
-      "contentType" -> file.contentType,
-      "date-created" -> file.uploadDate.toString(),
-      "size" -> file.length.toString)
 
-    // Only include filepath if using DiskByte storage and user is serverAdmin
-    val jsonMap = file.loader match {
-      case "services.filesystem.DiskByteStorageService" => {
-        if (serverAdmin)
-          Map(
-            "id" -> file.id.toString,
-            "filename" -> file.filename,
-            "filepath" -> file.loader_id,
-            "contentType" -> file.contentType,
-            "date-created" -> file.uploadDate.toString(),
-            "size" -> file.length.toString)
-        else
-          defaultMap
+  def jsonFile(file: models.File, serverAdmin: Boolean = false, folder : Option[Folder] = None): JsValue = {
+    folder match {
+      case Some(f) => {
+        val folderMap : JsValue = Json.obj("id"->f.id, "name"->f.name)
+        val defaultMap : JsValue = Json.obj(
+          "id" -> file.id.toString,
+          "filename" -> file.filename,
+          "contentType" -> file.contentType,
+          "date-created" -> file.uploadDate.toString(),
+          "folders"->folderMap,
+          "size" -> file.length.toString)
+
+        // Only include filepath if using DiskByte storage and user is serverAdmin
+        val jsonMap = file.loader match {
+          case "services.filesystem.DiskByteStorageService" => {
+            if (serverAdmin)
+              Json.obj(
+                "id" -> file.id.toString,
+                "filename" -> file.filename,
+                "filepath" -> file.loader_id,
+                "contentType" -> file.contentType,
+                "date-created" -> file.uploadDate.toString(),
+                "folders"->folderMap,
+                "size" -> file.length.toString)
+            else
+              defaultMap
+          }
+          case _ => defaultMap
+        }
+        toJson(jsonMap)
       }
-      case _ => defaultMap
+      case None => {
+        val defaultMap = Map(
+          "id" -> file.id.toString,
+          "filename" -> file.filename,
+          "contentType" -> file.contentType,
+          "date-created" -> file.uploadDate.toString(),
+          "size" -> file.length.toString)
+
+        // Only include filepath if using DiskByte storage and user is serverAdmin
+        val jsonMap = file.loader match {
+          case "services.filesystem.DiskByteStorageService" => {
+            if (serverAdmin)
+              Map(
+                "id" -> file.id.toString,
+                "filename" -> file.filename,
+                "filepath" -> file.loader_id,
+                "contentType" -> file.contentType,
+                "date-created" -> file.uploadDate.toString(),
+                "size" -> file.length.toString)
+            else
+              defaultMap
+          }
+          case _ => defaultMap
+        }
+        toJson(jsonMap)
+        }
     }
-    toJson(jsonMap)
   }
 
   //Update Dataset Information code starts
@@ -1805,16 +1849,19 @@ class  Datasets @Inject()(
               case Some(dataset) => {
                 events.addSourceEvent(request.user, comment.id, comment.text , dataset.id, dataset.name, EventType.ADD_COMMENT_DATASET.toString)
               }
+              case None => {
+                NotFound(s"The given id $id is not a valid ObjectId.")
+              }
             }
             Ok(comment.id.toString())
           }
           case None => {
             Logger.error("no text specified.")
-            BadRequest
+            BadRequest("no text specified.")
           }
         }
       }
-      case None => BadRequest
+      case None => NotFound(toJson("User not found!"))
     }
   }
 
@@ -1884,7 +1931,7 @@ class  Datasets @Inject()(
         Ok(toJson(Map("isBeingProcessed" -> isActivity)))
       }
       case None => {
-        Logger.error(s"Error getting dataset $id"); InternalServerError
+        Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
       }
     }
   }
@@ -1945,7 +1992,7 @@ class  Datasets @Inject()(
         Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, List[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
       }
       case None => {
-        Logger.error("Error getting dataset" + id); InternalServerError
+        Logger.error("Error getting dataset" + id); NotFound(toJson("Error getting dataset\" + id"))
       }
     }
   }
@@ -2019,7 +2066,7 @@ class  Datasets @Inject()(
           Ok(toJson(Map("status"->"success")))
         }
       }
-      case None => BadRequest("No dataset found with id " + id)
+      case None => NotFound("No dataset found with id " + id)
     }
   }
 
@@ -2034,10 +2081,10 @@ class  Datasets @Inject()(
 
             Ok(toJson(Map("status" -> "success")))
           }
-          case None => InternalServerError("Update Access failed")
+          case None => NotFound(s"Update Access failed. Dataset id $id not found.")
         }
       }
-      case None => BadRequest("No user supplied")
+      case None => NotFound("User not found")
     }
   }
 
@@ -2063,7 +2110,7 @@ class  Datasets @Inject()(
         val trashDatasets = datasets.listUserTrash(user,limit)
         Ok(toJson(trashDatasets))
       }
-      case None => BadRequest("No user supplied")
+      case None => NotFound("User not found")
     }
   }
 
@@ -2092,7 +2139,7 @@ class  Datasets @Inject()(
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(),request.headers.get("user-agent").getOrElse(""))))
           }
-          case None => BadRequest(toJson("Dataset not found " + id))
+          case None => NotFound(toJson("Dataset not found " + id))
         }
       }
       case _ => Ok("RDF export plugin not enabled")
@@ -2133,7 +2180,7 @@ class  Datasets @Inject()(
           case Some(listJson) => {
             Ok(listJson)
           }
-          case None => Logger.error(s"Error getting dataset $id"); InternalServerError
+          case None => Logger.error(s"Error getting dataset $id");NotFound(s"Error getting dataset $id")
         }
       }
       case false => {
@@ -2150,7 +2197,7 @@ class  Datasets @Inject()(
           .map(JSONLD.jsonMetadataWithContext(_) \ "content")
         Ok(toJson(listOfMetadata))
       }
-      case None => Logger.error("Error finding dataset" + id); InternalServerError
+      case None => Logger.error("Error finding dataset" + id); NotFound("Error finding dataset" + id)
     }
   }
 
@@ -2159,7 +2206,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         Ok(datasets.getXMLMetadataJSON(id))
       }
-      case None => {Logger.error("Error finding dataset" + id); InternalServerError}
+      case None => {Logger.error("Error finding dataset" + id); NotFound("Error finding dataset" + id)}
     }
   }
 
@@ -2169,8 +2216,7 @@ class  Datasets @Inject()(
         Ok(datasets.getUserMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding dataset" + id);
-        InternalServerError
+        Logger.error("Error finding dataset" + id);NotFound("Error finding dataset" + id)
       }
 
     }
@@ -2322,7 +2368,6 @@ class  Datasets @Inject()(
     * @param dataset dataset from which to get teh files
     * @param chunkSize chunk size in memory in which to buffer the stream
     * @param compression java built in compression value. Use 0 for no compression.
-    * @param bagit whether or not to include bagit structures in zip
    *  @param baseURL the root Clowder URL for metadata files, from original request
     * @param user an optional user to include in metadata
     * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
@@ -2330,12 +2375,12 @@ class  Datasets @Inject()(
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8,
-                            compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, baseURL: String,
-                            user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
-                           (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+  def enumeratorFromDatasetBagIt(dataset: Dataset, chunkSize: Int = 1024 * 8,
+                                 compression: Int = Deflater.DEFAULT_COMPRESSION, baseURL: String,
+                                 user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
+                                (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    val dataFolder = if (bagit) "data/" else ""
+    val dataFolder = "data/"
     val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
     val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
 
@@ -2421,14 +2466,9 @@ class  Datasets @Inject()(
                   is = addMD5Entry(filename, is, md5Files)
                   file_index +=1
                   if (file_index >= inputFiles.size) {
-                    if (bagit) {
-                      file_index = 0
-                      level = "bag"
-                      file_type = "bagit.txt"
-                    } else {
-                      level = "done"
-                      file_type = "none"
-                    }
+                    file_index = 0
+                    level = "bag"
+                    file_type = "bagit.txt"
                   }
                 }
                 case ("bag", "bagit.txt") => {
@@ -2492,6 +2532,99 @@ class  Datasets @Inject()(
         case None => Future.successful(None)
       }
     })(pec)
+  }
+
+  /**
+   * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param dataset dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @param compression java built in compression value. Use 0 for no compression.
+   * @param baseURL the root Clowder URL for metadata files, from original request
+   * @param user an optional user to include in metadata
+   * @param fileIDs a list of UUIDs of files in the dataset to include (i.e. marked file downloads)
+   * @param folderId a folder UUID in the dataset to include (i.e. folder download)
+   * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
+  def enumeratorFromDatasetFiles(dataset: Dataset, chunkSize: Int = 1024 * 8,
+                                 compression: Int = Deflater.DEFAULT_COMPRESSION, baseURL: String,
+                                 user : Option[User], fileIDs: Option[List[UUID]], folderId: Option[UUID])
+                                (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+    implicit val pec = ec.prepare()
+    val dataFolder = ""
+    val filenameMap = scala.collection.mutable.Map.empty[UUID, String]
+    val inputFiles = scala.collection.mutable.ListBuffer.empty[models.File]
+
+    // Get list of all files and folder in dataset and enforce unique names
+    fileIDs match {
+      case Some(fids) => {
+        Logger.info("Downloading only some files")
+        Logger.info(fids.toString)
+        listFilesInFolder(fids, List.empty, dataFolder, filenameMap, inputFiles)
+      }
+      case None => {
+        folderId match {
+          case Some(fid) => listFilesInFolder(List.empty, List(fid), dataFolder, filenameMap, inputFiles)
+          case None => listFilesInFolder(dataset.files, dataset.folders, dataFolder, filenameMap, inputFiles)
+        }
+      }
+    }
+
+    // create the zipfile
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val zip = new ZipOutputStream(byteArrayOutputStream)
+    zip.setLevel(compression)
+
+    var file_index = 0
+    val buffer = new Array[Byte](chunkSize)
+    var is: Option[InputStream] = None
+
+    Enumerator.generateM({
+      val bytesRead = is match {
+        case Some(inputStream: InputStream) => {
+          val bytesRead = scala.concurrent.blocking {
+            inputStream.read(buffer)
+          }
+          if (bytesRead == -1) {
+            // finished individual file
+            zip.closeEntry()
+            inputStream.close()
+          }
+          bytesRead
+        }
+        case None => -1
+      }
+
+      val chunk = if (bytesRead == -1) {
+        if (file_index == -1) {
+          None
+        } else if (file_index < inputFiles.length) {
+          val filename = filenameMap(inputFiles(file_index).id)
+          is = addFileToZip(filename, inputFiles(file_index), zip)
+          file_index += 1
+          val result = Some(byteArrayOutputStream.toByteArray)
+          byteArrayOutputStream.reset()
+          result
+        } else {
+          zip.close()
+          val result = Some(byteArrayOutputStream.toByteArray)
+          byteArrayOutputStream.reset()
+          is = None
+          file_index = -1
+          result
+        }
+      } else {
+        zip.write(buffer, 0, bytesRead)
+        val result = Some(byteArrayOutputStream.toByteArray)
+        byteArrayOutputStream.reset()
+        result
+      }
+
+      Future.successful(chunk)
+    })(pec)
+
   }
 
   private def addMD5Entry(name: String, is: Option[InputStream], md5HashMap: scala.collection.mutable.HashMap[String, MessageDigest]) = {
@@ -2787,11 +2920,10 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  def download(id: UUID, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID, bagit: Boolean, compression: Int, tracking: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count if tracking is enabled
@@ -2802,7 +2934,13 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression, bagit, baseURL, user, None, None)).withHeaders(
+        val enumerator = if (bagit) {
+          enumeratorFromDatasetBagIt(dataset,1024*1024, -1, baseURL, user, None, None)
+        } else {
+          enumeratorFromDatasetFiles(dataset,1024*1024, -1, baseURL, user, None, None)
+        }
+
+        Ok.chunked(enumerator).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ ".zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2815,12 +2953,11 @@ class  Datasets @Inject()(
   }
 
   // Takes dataset ID and a comma-separated string of file UUIDs in the dataset and streams just those files as a zip
-  def downloadPartial(id: UUID, fileList: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def downloadPartial(id: UUID, fileList: String, bagit: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
         val fileIDs = fileList.split(',').map(fid => new UUID(fid)).toList
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
 
         // Increment download count for each file
@@ -2828,7 +2965,12 @@ class  Datasets @Inject()(
 
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
-        Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, Some(fileIDs), None)).withHeaders(
+        val enumerator = if (bagit) {
+          enumeratorFromDatasetBagIt(dataset,1024*1024, -1, baseURL, user, Some(fileIDs), None)
+        } else {
+          enumeratorFromDatasetFiles(dataset,1024*1024, -1, baseURL, user, Some(fileIDs), None)
+        }
+        Ok.chunked(enumerator).withHeaders(
           CONTENT_TYPE -> "application/zip",
           CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " (Partial).zip", request.headers.get("user-agent").getOrElse("")))
         )
@@ -2841,22 +2983,26 @@ class  Datasets @Inject()(
   }
 
   // Takes dataset ID and a folder ID in that dataset and streams just that folder and sub-folders as a zip
-  def downloadFolder(id: UUID, folderId: UUID) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def downloadFolder(id: UUID, folderId: UUID, bagit: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
         val baseURL = controllers.routes.Datasets.dataset(id).absoluteURL(https(request))
-
 
         // Increment download count for each file in folder
         folders.get(folderId) match {
           case Some(fo) => {
             fo.files.foreach(fid => files.incrementDownloads(fid, user))
 
+            val enumerator = if (bagit) {
+              enumeratorFromDatasetBagIt(dataset, 1024*1024, -1, baseURL, user, None, Some(folderId))
+            } else {
+              enumeratorFromDatasetFiles(dataset, 1024*1024, -1, baseURL, user, None, Some(folderId))
+            }
+
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, -1, bagit, baseURL, user, None, Some(folderId))).withHeaders(
+            Ok.chunked(enumerator).withHeaders(
               CONTENT_TYPE -> "application/zip",
               CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(dataset.name+ " ("+fo.name+" Folder).zip", request.headers.get("user-agent").getOrElse("")))
             )
@@ -2951,13 +3097,13 @@ class  Datasets @Inject()(
                     case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
                   }
                 }
-                case None => BadRequest(s"No space found with id: + $spaceId.")
+                case None => NotFound(s"No space found with id: + $spaceId.")
               }
             } else {
               BadRequest("You don't have permission to copy the dataset.")
             }
           }
-          case None => BadRequest(s"No dataset  found with id: $datasetId")
+          case None => NotFound(s"No dataset  found with id: $datasetId")
         }
       }
       case None => BadRequest("You need to be logged in to copy a dataset to a space.")
@@ -3075,6 +3221,51 @@ class  Datasets @Inject()(
       case None => NotFound(s"Error: No dataset with $id found.")
     }
 
+  }
+
+  /**
+   * Recursively submit requests to archive the contents of the given dataset
+   * @param id dataset to archive
+   * @return
+   */
+  def queueArchival(id: UUID) = PermissionAction(Permission.ArchiveDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    val reqParams = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+    val parameters = reqParams + FileService.ARCHIVE_PARAMETER
+    datasets.get(id) match {
+      case Some(ds) => {
+        val host = Utils.baseUrl(request)
+        datasets.recursiveArchive(ds, host, parameters, request.apiKey, request.user)
+        sinkService.logDatasetArchiveEvent(ds, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting dataset " + id)
+        NotFound("Error getting dataset " + id)
+      }
+    }
+  }
+
+
+  /**
+   * Recursively submit requests to unarchive the contents of the given dataset
+   * @param id dataset to unarchive
+   * @return
+   */
+  def queueUnarchival(id: UUID) = PermissionAction(Permission.ArchiveDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    val reqParams = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+    val parameters = reqParams + FileService.UNARCHIVE_PARAMETER
+    datasets.get(id) match {
+      case Some(ds) => {
+        val host = Utils.baseUrl(request)
+        datasets.recursiveArchive(ds, host, parameters, request.apiKey, request.user)
+        sinkService.logDatasetUnarchiveEvent(ds, request.user)
+        Ok(toJson(Map("status" -> "success")))
+      }
+      case None => {
+        Logger.error("Error getting dataset " + id)
+        NotFound("Error getting dataset " + id)
+      }
+    }
   }
 }
 

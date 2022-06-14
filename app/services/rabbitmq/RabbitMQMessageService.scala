@@ -128,24 +128,27 @@ class RabbitMQMessageService extends MessageService {
         new MsgConsumer(channel.get, event_filter.get)
       )
 
-      // Start actor to listen to extractor heartbeats
-      Logger.info("Starting extractor heartbeat listener")
-      // create fanout exchange if it doesn't already exist
-      channel.get.exchangeDeclare("extractors", "fanout", true)
-      // anonymous queue
-      val heartbeatsQueue = channel.get.queueDeclare().getQueue
-      // bind queue to exchange
-      channel.get.queueBind(heartbeatsQueue, "extractors", "*")
-      extractorsHeartbeats = Some(Akka.system.actorOf(
-        Props(new ExtractorsHeartbeats(channel.get, heartbeatsQueue)), name = "ExtractorsHeartbeats"
-      ))
-      Logger.debug("Initializing a MsgConsumer for the ExtractorsHeartbeats")
-      channel.get.basicConsume(
-        heartbeatsQueue,
-        false, // do not auto ack
-        "ExtractorsHeartbeats", // tagging the consumer is important if you want to stop it later
-        new MsgConsumer(channel.get, extractorsHeartbeats.get)
-      )
+      //register new extractor only if this is the primary clowder instance
+      if (configuration.getBoolean("clowder.primary").getOrElse(true)) {
+        // Start actor to listen to extractor heartbeats
+        Logger.info("Starting extractor heartbeat listener")
+        // create fanout exchange if it doesn't already exist
+        channel.get.exchangeDeclare("extractors", "fanout", true)
+        // anonymous queue
+        val heartbeatsQueue = channel.get.queueDeclare().getQueue
+        // bind queue to exchange
+        channel.get.queueBind(heartbeatsQueue, "extractors", "*")
+        extractorsHeartbeats = Some(Akka.system.actorOf(
+          Props(new ExtractorsHeartbeats(channel.get, heartbeatsQueue)), name = "ExtractorsHeartbeats"
+        ))
+        Logger.debug("Initializing a MsgConsumer for the ExtractorsHeartbeats")
+        channel.get.basicConsume(
+          heartbeatsQueue,
+          false, // do not auto ack
+          "ExtractorsHeartbeats", // tagging the consumer is important if you want to stop it later
+          new MsgConsumer(channel.get, extractorsHeartbeats.get)
+        )
+      }
 
       // Setup Actor to submit new extractions to broker
       extractQueue = Some(Akka.system.actorOf(Props(new PublishDirectActor(channel = channel.get,
@@ -234,7 +237,10 @@ class RabbitMQMessageService extends MessageService {
     connect()
     var tempChannel: Channel = null
     try {
-      tempChannel = connection.get.createChannel()
+      tempChannel = connection match {
+        case Some(c) => c.createChannel()
+        case None => null
+      }
       if (tempChannel != null) {
         tempChannel.exchangeDeclare(exchange, exchange_type, true)
 

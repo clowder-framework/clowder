@@ -16,9 +16,9 @@ import scala.collection.mutable.ListBuffer
  * Main application controller.
  */
 @Singleton
-class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
-                             spaces: SpaceService, events: EventService, comments: CommentService,
-                             sections: SectionService, users: UserService, selections: SelectionService) extends SecuredController {
+class Application @Inject()(files: FileService, collections: CollectionService, datasets: DatasetService,
+                            spaces: SpaceService, events: EventService, comments: CommentService,
+                            sections: SectionService, users: UserService, selections: SelectionService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    *
@@ -34,10 +34,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Redirect("http://clowder.ncsa.illinois.edu/swagger/?url=" + swagger)
   }
 
-    /**
-    * Returns the swagger documentation customized for this site.
-    */
-  def swagger = Action  { implicit request =>
+  /**
+   * Returns the swagger documentation customized for this site.
+   */
+  def swagger = Action { implicit request =>
     Play.resource("/public/swagger.yml") match {
       case Some(resource) => {
         val https = Utils.https(request)
@@ -62,7 +62,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               skipit = true
               "info:\n" +
                 "  title: " + AppConfiguration.getDisplayName + "\n" +
-                "  description: " + AppConfiguration.getWelcomeMessage + "\n" +
+                //  replace line breaks with space so swagger can build
+                "  description: " + AppConfiguration.getWelcomeMessage.replaceAll("\\n|\\r|\\r\\n", " ") + "\n" +
                 "  version: \"" + sys.props.getOrElse("build.version", default = "0.0.0").toString + "\"\n" +
                 "  termsOfService: " + routes.Application.tos().absoluteURL(https) + "\n" +
                 "  contact: " + "\n" +
@@ -89,29 +90,27 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def index = UserAction(needActive = false) { implicit request =>
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
-  	implicit val user = request.user
+    implicit val user = request.user
 
     var newsfeedEvents = List.empty[Event]
-    if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
-      newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
-      newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
-      if (user.isDefined) {
-        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(user.get, Some(20)))
-          .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
-      }
-    }
 
     user match {
-      case Some(clowderUser) if (clowderUser.status==UserStatus.Inactive) => {
+      case Some(clowderUser) if (clowderUser.status == UserStatus.Inactive) => {
         Redirect(routes.Error.notActivated())
       }
-      case Some(clowderUser) if !(clowderUser.status==UserStatus.Inactive) => {
-        newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
-        if( play.Play.application().configuration().getBoolean("showCommentOnHomepage")) newsfeedEvents = newsfeedEvents :::events.getCommentEvent(clowderUser, Some(20))
-        newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+      case Some(clowderUser) if !(clowderUser.status == UserStatus.Inactive) => {
+        if (!play.Play.application().configuration().getBoolean("clowder.disable.events", false)) {
+          newsfeedEvents = newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
+          newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(20))
+          newsfeedEvents = newsfeedEvents ::: events.getEvents(clowderUser.followedEntities, Some(20))
+          if (play.Play.application().configuration().getBoolean("showCommentOnHomepage")) {
+            newsfeedEvents = newsfeedEvents ::: events.getCommentEvent(clowderUser, Some(20))
+          }
+          newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+        }
         val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
-        val collectionsWithThumbnails = collectionList.map {c =>
+        val collectionsWithThumbnails = collectionList.map { c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
@@ -126,7 +125,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         for (aCollection <- collectionsWithThumbnails) {
           decodedCollections += Utils.decodeCollectionElements(aCollection)
         }
-        val spacesUser = spaces.listUser(12, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
+        val spacesUser = spaces.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
           val userFollower = users.findById(followerID)
@@ -190,12 +189,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         }
         Logger.debug("User selections" + user)
         val userSelections: List[String] =
-          if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+          if (user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
           else List.empty[String]
         Logger.debug("User selection " + userSelections)
         Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser,
           decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12), followedFiles.take(8),
-          followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true), userSelections))
+          followedDatasets.take(8), followedCollections.take(8), followedSpaces.take(8), Some(true), userSelections))
       }
       case _ => {
         // Set bytes from appConfig
@@ -234,10 +233,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val sanitezedWelcomeText = sanitizeHTML(AppConfiguration.getWelcomeMessage)
 
     Ok(views.html.index(datasetsCount, filesCount, filesBytes, collectionsCount,
-        spacesCount, usersCount, AppConfiguration.getDisplayName, sanitezedWelcomeText))
+      spacesCount, usersCount, AppConfiguration.getDisplayName, sanitezedWelcomeText))
   }
 
-  def email(subject: String, body: String) = UserAction(needActive=false) { implicit request =>
+  def email(subject: String, body: String) = UserAction(needActive = false) { implicit request =>
     if (request.user.isEmpty) {
       Redirect(routes.Application.index())
     } else {
@@ -252,10 +251,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Ok(views.html.tos(redirect))
   }
 
-  def options(path:String) = UserAction(needActive = false) { implicit request =>
+  def options(path: String) = UserAction(needActive = false) { implicit request =>
     Logger.debug("---controller: PreFlight Information---")
     Ok("")
-   }
+  }
 
   def healthz() = Action { implicit request =>
     Ok("healthy")
@@ -269,7 +268,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   /**
-   *  Javascript routing.
+   * Javascript routing.
    */
   def javascriptRoutes = Action { implicit request =>
     Ok(
@@ -347,6 +346,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.users,
         api.routes.javascript.Datasets.restoreDataset,
         api.routes.javascript.Datasets.emptyTrash,
+        api.routes.javascript.Datasets.queueArchival,
+        api.routes.javascript.Datasets.queueUnarchival,
         api.routes.javascript.Extractions.submitFilesToExtractor,
         api.routes.javascript.Files.download,
         api.routes.javascript.Files.archive,
@@ -541,7 +542,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.FileLinks.createLink,
         controllers.routes.javascript.Search.search
       )
-    ).as(JSON) 
+    ).as(JSON)
   }
 
 }

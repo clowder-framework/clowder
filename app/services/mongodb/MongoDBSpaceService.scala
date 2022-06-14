@@ -375,7 +375,23 @@ class MongoDBSpaceService @Inject() (
   }
 
   def decrementCollectionCounter(collection: UUID, space: UUID, decrement: Int): Unit = {
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> -1 * decrement), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def incrementFileCounter(space: UUID, increment: Long ): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("fileCount" -> increment), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def decrementFileCounter(space: UUID, decrement: Long): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("fileCount" -> -1 * decrement), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def incrementSpaceBytes(space: UUID, increment: Long ): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> increment), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def decrementSpaceBytes(space: UUID, decrement: Long): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> -1 * decrement), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   def removeCollection(collection:UUID, space:UUID): Unit = {
@@ -390,9 +406,15 @@ class MongoDBSpaceService @Inject() (
    */
   def addDataset(dataset: UUID, space: UUID): Unit = {
     log.debug(s"Space Service - Adding $dataset to $space")
-    datasets.addToSpace(dataset, space)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
-
+    datasets.get(dataset) match {
+      case Some(x) => {
+        val datasetBytes = datasets.getBytesForDataset(dataset)
+        datasets.addToSpace(dataset, space)
+        ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> datasetBytes), upsert=false, multi=false, WriteConcern.Safe)
+        ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("fileCount" -> x.files.length), upsert=false, multi=false, WriteConcern.Safe)
+        ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+      }
+    }
   }
 
   /**
@@ -404,7 +426,15 @@ class MongoDBSpaceService @Inject() (
   def removeDataset(dataset:UUID, space:UUID): Unit = {
     log.debug(s"Space Service - removing $dataset from $space")
     datasets.removeFromSpace(dataset, space)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+    datasets.get(dataset) match {
+      case Some(x) => {
+        val datasetBytes = datasets.getBytesForDataset(dataset)
+        datasets.addToSpace(dataset, space)
+        ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> -1 * datasetBytes), upsert=false, multi=false, WriteConcern.Safe)
+        ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("fileCount" -> -1 * x.files.length), upsert=false, multi=false, WriteConcern.Safe)
+        ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+      }
+    }
   }
 
   /**

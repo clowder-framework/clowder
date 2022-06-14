@@ -1,15 +1,9 @@
 package util
 
-import java.io.{File => JFile}
-import java.net.URL
-import java.util.Date
-
-import collection.JavaConversions._
 import api.UserRequest
 import controllers.Utils
 import fileutils.FilesUtils
 import models._
-import org.apache.commons.codec.digest.DigestUtils
 import play.api.Logger
 import play.api.Play._
 import play.api.libs.Files
@@ -18,12 +12,13 @@ import play.api.mvc.MultipartFormData
 import play.libs.Akka
 import services._
 
+import java.net.{URL, URLEncoder}
+import java.util.Date
+import javax.mail.internet.MimeUtility
+import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-
-import javax.mail.internet.MimeUtility
-import java.net.URLEncoder
 
 object FileUtils {
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
@@ -41,6 +36,7 @@ object FileUtils {
   lazy val thumbnails : ThumbnailService = DI.injector.getInstance(classOf[ThumbnailService])
   lazy val routing : ExtractorRoutingService = DI.injector.getInstance(classOf[ExtractorRoutingService])
   lazy val sinkService : EventSinkService = DI.injector.getInstance(classOf[EventSinkService])
+  lazy val spaceService : SpaceService = DI.injector.getInstance(classOf[SpaceService])
 
 
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
@@ -399,14 +395,19 @@ object FileUtils {
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
     Future {
       try {
-        saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
-          processFileBytes(fixedfile, f.ref.file, dataset)
-          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-          sinkService.logFileUploadEvent(fixedfile, dataset, Option(user))
-          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
-          processDataset(file, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
-          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+        saveFile(file, f.ref.file, originalZipFile, clowderurl, apiKey, Some(user)) match {
+          case Some(fixedfile) => {
+            processFileBytes(fixedfile, f.ref.file, dataset)
+            files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+            sinkService.logFileUploadEvent(fixedfile, dataset, Option(user))
+            processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset, runExtractors, apiKey)
+            processDataset(file, dataset, folder, clowderurl, user, index, runExtractors, apiKey)
+            files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+          }
+          case None => Logger.error(s"File was not saved for ${file.id}, saveFile returned None")
         }
+      } catch {
+        case e: Throwable => Logger.error(s"File was not saved for ${file.id}", e)
       } finally {
         f.ref.clean()
       }
@@ -455,12 +456,19 @@ object FileUtils {
     // process rest of file in background
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
     Future {
-      saveURL(file, url, clowderurl, apiKey, Some(user)).foreach { fixedfile =>
-        processFileBytes(fixedfile, new java.io.File(path), fileds)
-        files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds, runExtractors, apiKey)
-        processDataset(file, fileds, folder, clowderurl, user, index, runExtractors, apiKey)
-        files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+      try {
+        saveURL(file, url, clowderurl, apiKey, Some(user)) match{
+          case Some(fixedfile) => {
+            processFileBytes(fixedfile, new java.io.File(path), fileds)
+            files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+            processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds, runExtractors, apiKey)
+            processDataset(file, fileds, folder, clowderurl, user, index, runExtractors, apiKey)
+            files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+          }
+          case None => Logger.error(s"File was not saved for ${file.id}, saveFile returned None")
+        }
+      } catch {
+        case e: Throwable => Logger.error(s"File was not saved for ${file.id}", e)
       }
     }(fileExecutionContext)
 
@@ -584,6 +592,11 @@ object FileUtils {
             events.addObjectEvent(Some(user), ds.id, ds.name, EventType.ADD_FILE.toString)
           }
           datasets.addFile(ds.id, file)
+          val datasetSpaces = dataset.get.spaces
+          for (s <- datasetSpaces){
+            spaceService.incrementSpaceBytes(s, file.length)
+            spaceService.incrementFileCounter(s, 1)
+          }
         }
       }
     }
@@ -843,37 +856,20 @@ object FileUtils {
   //Download CONTENT-DISPOSITION encoding
   //
   def encodeAttachment(filename: String, userAgent: String) : String = {
-    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
-                              URLEncoder.encode(filename, "UTF-8")
-                            } else if (userAgent.indexOf("Edge") > -1){
-                              MimeUtility.encodeText(filename
-                                  .replaceAll(",","%2C")
-                                  .replaceAll("\"","%22")
-                                  .replaceAll("/","%2F")
-                                  .replaceAll("=","%3D")
-                                  .replaceAll("&","%26")
-                                  .replaceAll(":","%3A")
-                                  .replaceAll(";","%3B")
-                                  .replaceAll("\\?","%3F")
-                                  .replaceAll("\\*","%2A")
+    val filenameStar = MimeUtility.encodeText(filename
+                                    .replaceAll("%","%25")
+                                    .replaceAll(" ","%20")
+                                    .replaceAll("\"","%22")
+                                    .replaceAll("'","%27")
+                                    .replaceAll(",","%2C")
+                                    .replaceAll("/","%2F")
+                                    .replaceAll("=","%3D")
+                                    .replaceAll(":","%3A")
+                                    .replaceAll(";","%3B")
+                                    .replaceAll("\\*","%2A")
                                   ,"utf-8","Q")
-                            } else {
-                              MimeUtility.encodeText(filename
-                                  .replaceAll("%","%25")
-                                  .replaceAll(" ","%20")
-                                  .replaceAll("\"","%22")
-                                  .replaceAll(",","%2C")
-                                  .replaceAll("/","%2F")
-                                  .replaceAll("=","%3D")
-                                  .replaceAll(":","%3A")
-                                  .replaceAll(";","%3B")
-                                  .replaceAll("\\*","%2A")
-                                  ,"utf-8","Q")
-                            }
-    Logger.debug(userAgent + ": " + filenameStar)
 
     //Return the complete attachment header info
     "attachment; filename*=UTF-8''" + filenameStar
   }
-
 }

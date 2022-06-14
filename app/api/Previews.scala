@@ -93,7 +93,10 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
               }
             }
           }
-          case None => Logger.error("No preview find " + id); InternalServerError("No preview found")
+          case None => {
+            Logger.error("No preview found " + id)
+            NotFound("No preview found")
+          }
         }
     }
 

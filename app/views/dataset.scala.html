@@ -190,7 +190,7 @@
                     }
                     @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.trash) {
                         <a id='download-url' href="#"
-                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id', -1, true).url, '_blank');"
+                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id', false, -1, true).url, '_blank');"
                             class="btn btn-link" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
@@ -201,6 +201,21 @@
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
+                    }
+                    @if( play.Play.application().configuration().getBoolean("archiveEnabled")) {
+                        @if( Permission.checkPermission(Permission.ArchiveDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                            <button id="archiveButton" type="button" onclick="return archiveDataset('@(dataset.id)');" class="btn btn-link" title="Archive this dataset.">
+                                <span class="glyphicon glyphicon-export"></span>
+                                Archive All
+                            </button>
+
+                            @if( play.Play.application().configuration().getBoolean("archiveAllowUnarchive")) {
+                                <button id="unarchiveButton" type="button" onclick="return unarchiveDataset('@(dataset.id)');" class="btn btn-link" title="Unarchive this dataset.">
+                                    <span class="glyphicon glyphicon-import"></span>
+                                    Unarchive All
+                                </button>
+                            }
+                        }
                     }
                     @if(dataset.trash){
                         @datasets.restoreButton(dataset)
@@ -422,6 +437,38 @@
             if(!pageSet) {
                 pageIndex = 0;
             }
+        }
+        function archiveDataset(datasetid) {
+            var dataBody = {'datasetid': datasetid};
+            var request = jsRoutes.api.Datasets.queueArchival(datasetid).ajax({
+                data: JSON.stringify(dataBody),
+                type: 'POST',
+                contentType: "application/json"
+            });
+            request.done(function (response, textStatus, jqXHR){
+                console.log("Dataset " + datasetid + " was successfully queued for archival. Please check back later.");
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                notify("Failed to archive dataset.", "error");
+            });
+        }
+        function unarchiveDataset(datasetid) {
+            var dataBody = {'datasetid': datasetid};
+            var request = jsRoutes.api.Datasets.queueUnarchival(datasetid).ajax({
+                data: JSON.stringify(dataBody),
+                type: 'POST',
+                contentType: "application/json"
+            });
+            request.done(function (response, textStatus, jqXHR){
+                console.log("Dataset " + datasetid + " was successfully queued for unarchival. Please check back later.");
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                notify("Failed to unarchive dataset.", "error");
+            });
         }
         $(document).ready(function(){
 
@@ -647,7 +694,7 @@
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
                         $('#name').val("");
-                        console.error("The following error occured: " + textStatus, errorThrown);
+                        console.error("The following error occurred: " + textStatus, errorThrown);
                         var errMsg = "You must be logged in to create a new folder.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                             notify("Error in creating folder: " + errorThrown, "error");

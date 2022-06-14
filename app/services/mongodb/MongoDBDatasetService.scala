@@ -3,11 +3,10 @@ package services.mongodb
 import java.io._
 import java.text.SimpleDateFormat
 import java.util.{ArrayList, Date}
-
 import javax.inject.{Inject, Singleton}
 import Transformation.LidoToCidocConvertion
 import util.{Formatters, Parsers}
-import api.Permission
+import api.{Permission, UserRequest}
 import api.Permission.Permission
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
@@ -16,6 +15,7 @@ import com.mongodb.casbah.commons.MongoDBList
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import controllers.Utils
 import jsonutils.JsonUtil
 import models.{File, _}
 import org.apache.commons.io.FileUtils
@@ -24,7 +24,8 @@ import org.json.JSONObject
 import play.api.Logger
 import play.api.Play._
 import play.api.libs.json.Json._
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.mvc.AnyContent
 import services._
 import services.mongodb.MongoContext.context
 
@@ -1067,6 +1068,17 @@ class MongoDBDatasetService @Inject() (
     Dataset.find(MongoDBObject("userMetadataWasModified" -> true)).toList
   }
 
+  def getBytesForDataset(datasetId: UUID) : Long = {
+    val dataset = Dataset.findOneById(new ObjectId(datasetId.stringify)).get
+    val datasetFiles = dataset.files
+    var datasetBytes : Long = 0
+    datasetFiles.foreach{ f => {
+      val currentFileBytes = files.get(f).get.length
+      datasetBytes += currentFileBytes
+    }}
+    datasetBytes
+  }
+
   def removeTag(id: UUID, tagId: UUID) {
     Logger.debug("Removing tag " + tagId)
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
@@ -1387,6 +1399,15 @@ class MongoDBDatasetService @Inject() (
         }
         for (f <- dataset.files) {
           val notTheDataset = for (currDataset <- findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          files.get(f) match {
+            case Some(file) => {
+              for(space <- dataset.spaces) {
+                spaces.decrementFileCounter(space, 1)
+                spaces.decrementSpaceBytes(space, file.length)
+              }
+            }
+            case None => Logger.error(s"Error file with with id ${f} no longer exists")
+          }
           if (notTheDataset.size == 0)
             files.removeFile(f, host, apiKey, user)
         }
@@ -1657,6 +1678,21 @@ class MongoDBDatasetService @Inject() (
       trashedIds += ds.id
     })
     trashedIds.toList
+  }
+
+  /**
+  * Recursively submit requests to archive or unarchive the contents of the given dataset.
+  * NOTE: "parameters" includes "operation", which supports both archiving and unarchiving
+  */
+  def recursiveArchive(ds: Dataset, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User]) = {
+    ds.files.foreach(fileId => files.get(fileId) match {
+      case None => Logger.error("Error getting file " + fileId)
+      case Some(file) => files.submitArchivalOperation(file, fileId, host, parameters, apiKey, user)
+    })
+    ds.folders.foreach(folderId => folders.get(folderId) match {
+      case None => Logger.error("Error getting folder " + folderId)
+      case Some(folder) => folders.recursiveArchive(folder, host, parameters, apiKey, user)
+    })
   }
 }
 

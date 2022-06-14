@@ -58,7 +58,7 @@ function updateSpaceConfig(spaceId) {
 	});
 
 	request.fail(function (jqXHR, textStatus, errorThrown){
-		console.error("The following error occured: "+textStatus, errorThrown);
+		console.error("The following error occurred: "+textStatus, errorThrown);
 		var errMsg = "You must be logged in to update the information about a space.";
 		if (!checkErrorAndRedirect(jqXHR, errMsg)) {
 			alert("The space information was not updated due to : " + errorThrown);

@@ -1,11 +1,36 @@
-@(space: ProjectSpace, classes: String)(implicit user: Option[models.User])
+@(space: ProjectSpace, isPublic: Option[Boolean])(implicit user: Option[models.User])
 
 @import play.api.i18n.Messages
-<div class="@classes">
+@import _root_.util.Formatters._
+
+<div class="row ds-section-sm file-info">
     <div class="col-md-12 col-lg-12 col-sm-12">
         <h3>Statistics</h3>
-        <p><span class="glyphicon glyphicon-user"></span> Members: @space.userCount</p>
-        <p><span class="glyphicon glyphicon-th-list"></span> Collections: @space.collectionCount</p>
-        <p><span class="glyphicon glyphicon-briefcase"></span> Datasets: @space.datasetCount</p>
+    </div>
+    <div class="col-md-12">
+        <table class="table table-condensed">
+            <tbody>
+                <tr>
+                    <td><b><a href="@routes.Collections.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("collections.title")</a></b></td>
+                    <td><span class="pull-right">@humanReadableNumber(space.collectionCount)</span></td>
+                </tr>
+                <tr>
+                    <td><b><a href="@routes.Datasets.sortedListInSpace(space.id.stringify, 0,12,isPublic.getOrElse(true))">@Messages("datasets.title")</a></b></td>
+                    <td><span class="pull-right">@humanReadableNumber(space.datasetCount)</span></td>
+                </tr>
+                <tr>
+                    <td><b>Files:</b></td>
+                    <td><span class="pull-right">@humanReadableNumber(space.fileCount)</span></td>
+                </tr>
+                <tr>
+                    <td><b>Bytes:</b></td>
+                    <td><span class="pull-right">@humanReadableByteCount(space.spaceBytes)</span></td>
+                </tr>
+                <tr>
+                    <td><b>Users:</b></td>
+                    <td><span class="pull-right">@humanReadableNumber(space.userCount)</span></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>

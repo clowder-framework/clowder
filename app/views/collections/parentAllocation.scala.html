@@ -76,7 +76,7 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Collections.listPossibleParents( '@resourceId', params.term,null, 5).url;
+                return jsRoutes.api.Collections.listPossibleParents(null, '@resourceId', params.term, null, 5).url;
             },
             data: function(params) {
                 return { title: params.term };

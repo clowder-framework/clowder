@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "1.17.0"
+  val version = "1.20.3"
   val jvm = "1.7"
 
   def appVersion: String = {
@@ -107,8 +107,8 @@ object ApplicationBuild extends Build {
     "com.google.inject" % "guice" % "3.0",
 
     // ??
-    "org.apache.httpcomponents" % "httpclient" % "4.2.3",
-    "org.apache.httpcomponents" % "httpcore" % "4.2.3",
+    "org.apache.httpcomponents" % "httpclient" % "4.5.2",
+    "org.apache.httpcomponents" % "httpcore" % "4.4.4",
     "org.apache.httpcomponents" % "httpmime" % "4.2.3",
 
     // JSONparser and JSONObject
@@ -127,7 +127,9 @@ object ApplicationBuild extends Build {
     // Official AWS Java SDK
     "com.amazonaws" % "aws-java-sdk-bom" % "1.11.106",
 
-    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106"
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.106",
+
+    "com.amazonaws" % "aws-java-sdk-sts" % "1.11.106"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory
