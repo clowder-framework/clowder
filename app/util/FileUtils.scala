@@ -856,37 +856,20 @@ object FileUtils {
   //Download CONTENT-DISPOSITION encoding
   //
   def encodeAttachment(filename: String, userAgent: String) : String = {
-    val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
-                              URLEncoder.encode(filename, "UTF-8")
-                            } else if (userAgent.indexOf("Edge") > -1){
-                              MimeUtility.encodeText(filename
-                                  .replaceAll(",","%2C")
-                                  .replaceAll("\"","%22")
-                                  .replaceAll("/","%2F")
-                                  .replaceAll("=","%3D")
-                                  .replaceAll("&","%26")
-                                  .replaceAll(":","%3A")
-                                  .replaceAll(";","%3B")
-                                  .replaceAll("\\?","%3F")
-                                  .replaceAll("\\*","%2A")
+    val filenameStar = MimeUtility.encodeText(filename
+                                    .replaceAll("%","%25")
+                                    .replaceAll(" ","%20")
+                                    .replaceAll("\"","%22")
+                                    .replaceAll("'","%27")
+                                    .replaceAll(",","%2C")
+                                    .replaceAll("/","%2F")
+                                    .replaceAll("=","%3D")
+                                    .replaceAll(":","%3A")
+                                    .replaceAll(";","%3B")
+                                    .replaceAll("\\*","%2A")
                                   ,"utf-8","Q")
-                            } else {
-                              MimeUtility.encodeText(filename
-                                  .replaceAll("%","%25")
-                                  .replaceAll(" ","%20")
-                                  .replaceAll("\"","%22")
-                                  .replaceAll(",","%2C")
-                                  .replaceAll("/","%2F")
-                                  .replaceAll("=","%3D")
-                                  .replaceAll(":","%3A")
-                                  .replaceAll(";","%3B")
-                                  .replaceAll("\\*","%2A")
-                                  ,"utf-8","Q")
-                            }
-    Logger.debug(userAgent + ": " + filenameStar)
 
     //Return the complete attachment header info
     "attachment; filename*=UTF-8''" + filenameStar
   }
-
 }

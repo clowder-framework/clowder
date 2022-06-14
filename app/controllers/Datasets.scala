@@ -681,8 +681,8 @@ class Datasets @Inject() (
             (SortingUtils.sortFolders(filteredFolders, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
               SortingUtils.sortFiles(filteredFiles, sortOrder).slice(limit * filepageUpdate - filteredFolders.length, limit * (filepageUpdate + 1) - filteredFolders.length))
           } else {
-            (folders.get(childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1))).found,
-              files.get(childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length)).found)
+            (folders.get(childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1))).found.reverse,
+              files.get(childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length)).found.reverse)
           }
 
         // Get comment counts per file

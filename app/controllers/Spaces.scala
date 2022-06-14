@@ -354,7 +354,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val requestuser = request.user
     requestuser match {
-      case Some(user) => {
+      case Some(user) =>
         spaces.get(id) match {
           case Some(s) => {
             // when permission is public, user can reach the authorization request button, so we check if the request is
@@ -367,24 +367,25 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
               Logger.debug("Request submitted in controller.Space.addRequest  ")
               val subject: String = "Request for access from " + AppConfiguration.getDisplayName
               val body = views.html.spaces.requestemail(user, id.toString, s.name)
+              val spaceAdminRecipients = new ListBuffer[String]
 
               for (requestReceiver <- spaces.getUsersInSpace(s.id, None)) {
                 spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
                   case Some(aRole) => {
                     if (aRole.permissions.contains(Permission.EditSpace.toString)) {
                       events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
-                      Mail.sendEmail(subject, request.user, requestReceiver, body)
+                      spaceAdminRecipients += requestReceiver.toString
                     }
                   }
                 }
               }
+              Mail.sendEmail(subject, request.user, spaceAdminRecipients.toList, body)
               spaces.addRequest(id, user.id, user.fullName)
               Ok(views.html.authorizationMessage("Request submitted for " + spaceTitle + " " + s.name, s))
             }
           }
           case None => InternalServerError(spaceTitle + " not found")
         }
-      }
 
       case None => InternalServerError("User not found")
     }
