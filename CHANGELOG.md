@@ -50,6 +50,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.20.0 - 2022-02-07
 
+### Added 
+
+- An IFC previewer
+
 ### Fixed
 - Conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
 - When event stream is disabled don't show for logged in user [#280](https://github.com/clowder-framework/clowder/issues/280)
@@ -57,6 +61,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
+- The FBX previewer can also load GLTF files
 
 ## 1.19.5 - 2022-01-21
 
