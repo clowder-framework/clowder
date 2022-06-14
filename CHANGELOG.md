@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- MRI previewer for NIFTY (.nii) files.
+
 ### Fixed
 - Added index for comments, will speed up index creation
 

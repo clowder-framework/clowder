@@ -29,6 +29,7 @@ Following is a list of contributors in alphabetical order:
 - Mike Lambert
 - Nicholas Tenczar
 - Nishant Nayudu
+- Peter Groves
 - Rob Kooper
 - Rui Liu
 - Sandeep Puthanveetil Satheesan
