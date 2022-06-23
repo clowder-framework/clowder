@@ -41,7 +41,7 @@ case class File(
      def to_jsonld() : JsValue = {
      val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
      val fileLD = Json.obj(
-           "context" -> so,
+           "@context" -> so,
            "identifier" -> id.toString,
            "name" -> filename,
            "author" -> author.to_jsonld(),

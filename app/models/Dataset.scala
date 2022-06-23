@@ -68,7 +68,7 @@ case class Dataset(
         pic_id = URLb + pic_id 
      } else ""
      val datasetLD = Json.obj(
-           "context" -> so,
+           "@context" -> so,
            "identifier" -> id.toString,
            "name" -> name,
            "author" -> author.to_jsonld(),
