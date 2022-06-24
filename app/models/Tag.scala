@@ -15,7 +15,7 @@ case class Tag(
   userId: Option[String],
   extractor_id: Option[String],
   created: Date) {
-   def to_jsonld() : JsValue = {
+   def to_json() : JsValue = {
       return Json.toJson(name)
    }
   }

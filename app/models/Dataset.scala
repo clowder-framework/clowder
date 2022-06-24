@@ -75,15 +75,11 @@ case class Dataset(
            "description" -> description,
            "dateCreated" -> Formatters.iso8601(created), 
            "DigitalDocument" -> Json.toJson(cap_api_list(files, 10, URLb, "/files/")), 
-           //"Directory" -> Json.toJson(folders), //skip
-           //"FollowAction" -> Json.toJson(followers), //skip
-           //"Collection"->Json.toJson(cap_api_list(collections,1,URLb,"/collections/")), //skip
-           //earthcube used spaces, as a repo's 'DataCatalog', but better to have 'space' as so:Collection
            "Collection" -> Json.toJson(cap_api_list(spaces, 10, URLb, "/spaces/")), 
            "thumbnail" -> Json.toJson(pic_id),
            "license" -> licenseData.to_jsonld(),
            "dateModfied" -> Formatters.iso8601(lastModifiedDate),
-           "keywords" -> tags.map(x => x.to_jsonld()),
+           "keywords" -> tags.map(x => x.to_json()),
            "creator" -> Json.toJson(creators)
            )
      return datasetLD

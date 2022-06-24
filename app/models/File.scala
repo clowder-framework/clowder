@@ -49,7 +49,7 @@ case class File(
            "uploadDate" -> Formatters.iso8601(uploadDate),
            "contentType" -> contentType,
            "MenuSection" -> sections.map(x => x.to_jsonld()),
-           "keywords" -> tags.map(x => x.to_jsonld()),
+           "keywords" -> tags.map(x => x.to_json()),
            "thumbnail" -> Json.toJson(thumbnail_id.filterNot(_.isEmpty).getOrElse("")),
            "description" -> description,
            "license" -> licenseData.to_jsonld(),

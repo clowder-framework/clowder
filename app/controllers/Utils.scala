@@ -14,7 +14,6 @@ object Utils {
    * Return base url given a request. This will add http or https to the front, for example
    * https://localhost:9443 will be returned if it is using https.
    *
-   * Change type from Request[Any]
    */
   def baseUrl(request: RequestHeader, absolute: Boolean = true) = {  
     if (absolute) {
