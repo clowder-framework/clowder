@@ -66,7 +66,9 @@ case class Dataset(
      var pic_id = thumbnail_id.getOrElse("")
      if (pic_id != "") {
         pic_id = URLb + pic_id 
-     } else ""
+     } else {
+        ""
+     }
      val datasetLD = Json.obj(
            "@context" -> so,
            "identifier" -> id.toString,
