@@ -284,7 +284,11 @@
                     }
                 </ul>
                 <div class="tab-content">
+                    @if(dataset.files.isEmpty && (m.size > 0)) {
+                    <div role="tabpanel" class="tab-pane fade" id="tab-files">
+                    } else {
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-files">
+										}
                         <div id="loading-spinner" class="center-glyphicon valign-link">
                             <span class="glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-5x"></span>
                             <span class="sr-only">Loading...</span>
@@ -297,7 +301,11 @@
                         }
                         <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>
+                    @if(dataset.files.isEmpty && (m.size > 0)) {
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-metadata">
+                    } else {
                     <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
+										}
                         @if(user.isDefined) {
                             <div class="row">
                                 <div class="col-md-12">
