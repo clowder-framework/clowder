@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
 - Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
+- Fixed positioning problems related to how the 3D models appear on the screen
 
 ## 1.20.3 - 2022-06-10
 
