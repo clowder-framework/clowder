@@ -95,7 +95,6 @@ case class LicenseData (
     * Utility function, similar to a json Write, to return string version in json-ld  format
     * Should also return key
     */
-    //def to_jsonld () : String = {
     def to_jsonld () : JsValue = {
        val licURI = this.urlViaAttributes()  //URI = URL except in one case:
        val licURL = if (licURI != "https://dbpedia.org/page/All_rights_reserved") licURI
