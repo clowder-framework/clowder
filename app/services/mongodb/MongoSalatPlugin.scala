@@ -1718,7 +1718,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           }
         }
       }
-      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes, "fileCount" -> fileCount))
     }
   }
 }
