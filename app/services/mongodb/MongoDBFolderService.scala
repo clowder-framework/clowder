@@ -39,7 +39,10 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
     val notFound = ids.diff(found.map(ds => ds.id))
 
     if (notFound.length > 0)
-      Logger.error("Not all dataset IDs found for bulk get request")
+    {
+      Logger.error("Not all dataset IDs found for [Folder] bulk get request")
+      Logger.error("notfound=" + notFound.toString) 
+    }
     return DBResult(found, notFound)
   }
 
