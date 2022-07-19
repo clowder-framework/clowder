@@ -23,6 +23,6 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: openapi-lint 
-        uses: mhiew/redoc-lint-github-action@v2
+        uses: mbowman100/swagger-validator-action@master
         with:
-          args: 'public/swagger.yml --skip-rule operation-operationId'
+          files: public/swagger.yml

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## Unreleased
+
+### Added
+- MRI previewer for NIFTY (.nii) files.
+
+### Fixed
+- Send email to all admins in a single email when a user submits 'Request access' for a space
+- Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
+
+## 1.20.3 - 2022-06-10
+
+### Fixed
+- docker images are build using newest java version [#361](https://github.com/clowder-framework/clowder/issues/361)
+
+### Changed
+- docker builds images for amd64 and arm64 [#322](https://github.com/clowder-framework/clowder/issues/322)
+
+
+## 1.20.2 - 2022-04-30
+
+### Fixed
+- swagger lint action
+- When downloading a file with a `'` in the name it would save the file as blob
+- Fix for a rare race condition with masonry where tiles could end up overlapping in space page.
+- Fixes bug where same extractor shows up multiple times and all Clowder instances index db on reindex [#327](https://github.com/clowder-framework/clowder/issues/327)
+
+### Changed
+- Changed `Enabled By SuperAdmin` to read `Enabled by Server Admin` [#344](https://github.com/clowder-framework/clowder/issues/344)
+
 ## 1.20.1 - 2022-04-04
 
 ### Fixed
@@ -20,6 +50,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.20.0 - 2022-02-07
 
+### Added 
+
+- An IFC previewer
+
 ### Fixed
 - Conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
 - When event stream is disabled don't show for logged in user [#280](https://github.com/clowder-framework/clowder/issues/280)
@@ -27,6 +61,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
+- The FBX previewer can also load GLTF files
 
 ## 1.19.5 - 2022-01-21
 
