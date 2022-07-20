@@ -716,6 +716,7 @@ class Files @Inject()(
   }
 
   def jsonFile(file: File, serverAdmin: Boolean = false): JsValue = {
+    val foldersContainingFile = folders.findByFileId(file.id)
     val defaultMap = Map(
       "id" -> file.id.toString,
       "filename" -> file.filename,
@@ -725,7 +726,8 @@ class Files @Inject()(
       "size" -> file.length.toString,
       "thumbnail" -> file.thumbnail_id.orNull,
       "authorId" -> file.author.id.stringify,
-      "status" -> file.status)
+      "status" -> file.status,
+      "folders" -> foldersContainingFile.toString())
 
     // Only include filepath if using DiskByte storage and user is serverAdmin
     val jsonMap = file.loader match {
