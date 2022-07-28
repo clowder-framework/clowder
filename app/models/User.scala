@@ -114,7 +114,6 @@ case class MiniUser(
       /**
        * return MiniUser as string in jsonld format, w/fullName split into first and last
        */
-       //def to_jsonld() : String = {
        def to_jsonld() : JsValue = {
           var firstName = "";
           var lastName = "";
@@ -132,7 +131,6 @@ case class MiniUser(
                    "email" ->  JsString(email.getOrElse("")),
                    "image" -> JsString(avatarURL)
                    ))
-          //return Json.stringify(authorLD) 
           return authorLD 
       }
    }
