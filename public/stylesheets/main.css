@@ -523,7 +523,7 @@ textarea, input[type='text'], input[type='password'] {
 }
 
 .btn-margins {
-	margin: 20px 0px;
+	margin: 15px 0px;
 }
 
 .btn-margin-bottom {
@@ -577,6 +577,10 @@ p.error, span.error {
 
 .space-head {
 	border-bottom: 1px solid #E1E1E8;
+}
+
+.space-title {
+	word-wrap: break-word;
 }
 
 .space-col-right {

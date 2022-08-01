@@ -13,6 +13,7 @@
 @import models.UUID
 @import api.Permission
 @import _root_.util.Formatters._
+@import services.AppConfiguration
 
 @showPreview(name: String, url: String, collection_id: String) = {
 <script>
@@ -76,7 +77,7 @@
 
 				</ol>
 				<div class="col-xs-12 collection-title" id="coll-title">
-					<h1 id ="collectiontitle" class="inline"><span class="glyphicon glyphicon-th-large"></span> @Html(collection.name)</h1>
+					<h1 id ="collectiontitle" class="inline break-word"><span class="glyphicon glyphicon-th-large"></span> @Html(collection.name)</h1>
 					@if(!collection.trash && Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
 						<h3 id="h-edit-title" class="hiddencomplete">
 							<a id="edit-title" href="javascript:updateTitle()" edit="Click to edit title">

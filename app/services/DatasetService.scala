@@ -1,10 +1,10 @@
 package services
 
 import java.util.Date
-
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import models.{File, _}
+import play.api.libs.json.JsObject
 
 /**
  * Generic dataset service.
@@ -253,7 +253,7 @@ trait DatasetService {
   /** Queue a dataset to be indexed in Elasticsearch. */
   def index(id: UUID, idx: Option[String] = None)
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
+  def removeTags(id: UUID, tags: List[String])
 
   def removeTag(id: UUID, tagId: UUID)
 
@@ -294,6 +294,8 @@ trait DatasetService {
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean)
 
   def findMetadataChangedDatasets(): List[Dataset]
+
+  def getBytesForDataset(datasetId: UUID) : Long
 
   /**
    * Check recursively whether a dataset's user-input metadata match a requested search tree.
@@ -383,6 +385,9 @@ trait DatasetService {
 
   def incrementDownloads(id: UUID, user: Option[User])
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[Dataset]
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[Dataset]
 
+  def getTrashedIds(): List[UUID]
+
+  def recursiveArchive(dataset: Dataset, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User])
 }

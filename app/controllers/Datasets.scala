@@ -33,7 +33,8 @@ class Datasets @Inject() (
     folders: FolderService,
     metadata: MetadataService,
     events: EventService,
-    selections: SelectionService) extends SecuredController {
+    selections: SelectionService,
+    sinkService: EventSinkService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -615,7 +616,7 @@ class Datasets @Inject() (
         val relatedThings = relations.findRelationships(dataset.id.stringify, ResourceType.dataset, ResourceType.dataset)
         val relatedDatasets = for(r <- relatedThings) yield NodeDataset(datasets.get(UUID(r.target.id)).get, r.rdfType)
 
-
+        sinkService.logDatasetViewEvent(dataset, user)
         // view_data is passed as tuple in dataset case only, because template is at limit of 22 parameters
         Ok(views.html.dataset(dataset, commentsByDataset, filteredPreviewers.toList, m,
           decodedCollectionsInside.toList, sensors, Some(decodedSpaces_canRemove), toPublish, curPubObjects,
@@ -680,8 +681,8 @@ class Datasets @Inject() (
             (SortingUtils.sortFolders(filteredFolders, sortOrder).slice(limit * filepageUpdate, limit * (filepageUpdate + 1)),
               SortingUtils.sortFiles(filteredFiles, sortOrder).slice(limit * filepageUpdate - filteredFolders.length, limit * (filepageUpdate + 1) - filteredFolders.length))
           } else {
-            (folders.get(childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1))).found,
-              files.get(childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length)).found)
+            (folders.get(childFolders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate + 1))).found.reverse,
+              files.get(childFiles.reverse.slice(limit * filepageUpdate - childFolders.length, limit * (filepageUpdate + 1) - childFolders.length)).found.reverse)
           }
 
         // Get comment counts per file

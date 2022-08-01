@@ -1,5 +1,6 @@
 @(extractors: List[ExtractorInfo], ds: Dataset)(implicit user: Option[models.User])
 @import play.api.libs.json._
+@import services.AppConfiguration
 
 @main("Extractions") {
     <div class="row">
@@ -26,8 +27,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <script src="https://cdn.jsdelivr.net/npm/jsonform@@2.1.5/deps/underscore.js"></script>
-                    <script src="https://cdn.jsdelivr.net/npm/jsonform@@2.1.5/lib/jsonform.min.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/jsonform@@2.2.5/deps/underscore.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/jsonform@@2.2.5/lib/jsonform.min.js"></script>
                     @for(e <- extractors) {
                         <tr>
                             <td>
@@ -90,7 +91,7 @@
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
+                console.error("The following error occurred: " + textStatus, errorThrown);
             });
         }
     </script>

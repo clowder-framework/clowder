@@ -80,6 +80,8 @@ class Admin @Inject() (userService: UserService,
     getValueString(request.body, "sensor").foreach(AppConfiguration.setSensorTitle(_))
     getValueString(request.body, "parameters").foreach(AppConfiguration.setParametersTitle(_))
     getValueString(request.body, "parameter").foreach(AppConfiguration.setParameterTitle(_))
+    getValueString(request.body, "amplitudeApikey").foreach(AppConfiguration.setAmplitudeApiKey(_))
+
     getValueString(request.body, "tosText").foreach { tos =>
       events.addEvent(Event(request.user.get, event_type = EventType.TOS_UPDATE.toString))
       AppConfiguration.setTermsOfServicesText(tos)
@@ -177,5 +179,11 @@ class Admin @Inject() (userService: UserService,
     val success = esqueue.queue("index_all")
     if (success) Ok(toJson(Map("status" -> "reindex successfully queued")))
     else BadRequest(toJson(Map("status" -> "reindex queuing failed, Elasticsearch may be disabled")))
+  }
+
+  def deleteIndex = ServerAdminAction { implicit request =>
+    val success = esqueue.queue("delete_index")
+    if (success) Ok(toJson(Map("status" -> "deindex successfully queued")))
+    else BadRequest(toJson(Map("status" -> "deindex queuing failed, Elasticsearch may be disabled")))
   }
 }

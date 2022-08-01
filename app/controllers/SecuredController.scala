@@ -2,14 +2,11 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.{ClowderUser, RequestResource, ResourceRef, User, UserStatus}
-import org.apache.commons.lang.StringEscapeUtils._
+import models.{ClowderUser, ResourceRef, User, UserStatus}
 import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
-import securesocial.core.IdentityProvider
-import securesocial.core.providers.utils.RoutesHelper
 
 import scala.concurrent.Future
 

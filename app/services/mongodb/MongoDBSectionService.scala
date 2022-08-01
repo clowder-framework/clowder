@@ -52,10 +52,10 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     tagsAdded.toList
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in section " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in section " + id + " : " + tags)
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
-    val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.id.toString())
+    val existingTags = section.tags.map(_.id.toString())
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map { tag =>

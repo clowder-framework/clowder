@@ -37,7 +37,7 @@
                 </div>
                 <div class="col-md-10">
                     <div>
-                        <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space">@s.name</a>
+                        <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space-title">@s.name</a>
                     </div>
                     <div>
                         @if(resourceType == ResourceRef.dataset) {
@@ -142,7 +142,7 @@
         });
 
         request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "Error message.";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                 notify("Error : " + errorThrown, "error");

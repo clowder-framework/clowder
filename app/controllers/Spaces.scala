@@ -1,31 +1,22 @@
 package controllers
 
-import java.net.URL
-import java.util.{ Calendar, Date }
-import javax.inject.Inject
-
 import api.Permission
 import api.Permission._
 import models._
-import play.api.{ Logger, Play }
-import play.api.data.Forms._
-import play.api.data.{ Form, Forms }
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.i18n.Messages
-import services._
-import securesocial.core.providers.{ Token, UsernamePasswordProvider }
 import org.joda.time.DateTime
+import play.api.data.Forms._
+import play.api.data.{Form, Forms}
 import play.api.i18n.Messages
-import play.api.libs.ws._
-import services.AppConfiguration
-import util.{ Formatters, Mail, Publications }
+import play.api.{Logger, Play}
+import securesocial.core.providers.{Token, UsernamePasswordProvider}
+import services._
+import util.{Formatters, Mail, Publications}
 
+import java.net.URL
+import java.util.{Calendar, Date}
+import javax.inject.Inject
 import scala.collection.immutable.List
-import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
-import scala.concurrent.{ Future, Await }
-import scala.concurrent.duration._
-import org.apache.commons.lang.StringEscapeUtils.escapeJava
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -49,7 +40,7 @@ case class spaceInviteData(
   message: Option[String])
 
 class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService,
-  extractors: ExtractorService, datasets: DatasetService, collections: CollectionService, selections: SelectionService) extends SecuredController {
+  extractors: ExtractorService, datasets: DatasetService, collections: CollectionService, selections: SelectionService, sinkService: EventSinkService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -223,6 +214,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           case Some(plugin) => Publications.getPublications(s.id.toString, spaces)
           case None => List.empty
         }
+        sinkService.logSpaceViewEvent(s, user)
         Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, publicDatasetsInSpace, datasetsInSpace, rs, play.Play.application().configuration().getString("SEADservices.uri"), userRoleMap, userSelections))
       }
       case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
@@ -362,7 +354,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val requestuser = request.user
     requestuser match {
-      case Some(user) => {
+      case Some(user) =>
         spaces.get(id) match {
           case Some(s) => {
             // when permission is public, user can reach the authorization request button, so we check if the request is
@@ -375,24 +367,25 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
               Logger.debug("Request submitted in controller.Space.addRequest  ")
               val subject: String = "Request for access from " + AppConfiguration.getDisplayName
               val body = views.html.spaces.requestemail(user, id.toString, s.name)
+              val spaceAdminRecipients = new ListBuffer[String]
 
               for (requestReceiver <- spaces.getUsersInSpace(s.id, None)) {
                 spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
                   case Some(aRole) => {
                     if (aRole.permissions.contains(Permission.EditSpace.toString)) {
                       events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
-                      Mail.sendEmail(subject, request.user, requestReceiver, body)
+                      spaceAdminRecipients += requestReceiver.toString
                     }
                   }
                 }
               }
+              Mail.sendEmail(subject, request.user, spaceAdminRecipients.toList, body)
               spaces.addRequest(id, user.id, user.fullName)
               Ok(views.html.authorizationMessage("Request submitted for " + spaceTitle + " " + s.name, s))
             }
           }
           case None => InternalServerError(spaceTitle + " not found")
         }
-      }
 
       case None => InternalServerError("User not found")
     }
@@ -420,7 +413,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
                       val newSpace = ProjectSpace(name = formData.name, description = formData.description,
                         created = new Date, creator = userId, homePage = formData.homePage,
                         logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                        collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
+                        collectionCount = 0, datasetCount = 0, fileCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty,
                         resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled,
                         status = formData.access,
                         affiliatedSpaces = formData.affSpace)
@@ -646,5 +639,4 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
         case None => BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
-
 }

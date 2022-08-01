@@ -1,13 +1,13 @@
 package api
 
 import javax.inject.Inject
-
-import play.api.Logger
+import play.api.{Logger, Play}
 import models.User
 import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
 import services._
 import services.mongodb.MongoSalatPlugin
+import services.s3.S3ByteStorageService
 
 import scala.collection.mutable
 
@@ -31,9 +31,11 @@ class Status @Inject()(spaces: SpaceService,
 
   def status = UserAction(needActive=false) { implicit request =>
 
-    Ok(Json.obj("version" -> getVersionInfo,
+    Ok(Json.obj("instance" -> AppConfiguration.getInstance,
+      "version" -> getVersionInfo,
       "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
+      "storage" -> getStorage(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames(List.empty))))
   }
 
@@ -63,22 +65,6 @@ class Status @Inject()(spaces: SpaceService,
           Json.obj("server" -> p.serverAddress,
             "clustername" -> p.nameOfCluster,
             "queue" -> elasticqueue.status(),
-            "status" -> status)
-        } else {
-          Json.obj("status" -> status)
-        })
-      }
-
-      // rabbitmq
-      case p: RabbitmqPlugin => {
-        val status = if (p.connect) {
-          "connected"
-        } else {
-          "disconnected"
-        }
-        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
-          Json.obj("uri" -> p.rabbitmquri,
-            "exchange" -> p.exchange,
             "status" -> status)
         } else {
           Json.obj("status" -> status)
@@ -141,7 +127,45 @@ class Status @Inject()(spaces: SpaceService,
       }
     }
 
+    // messageService
+    // FIXME change key `rabbitmq` to something more generic like `messageService`. Keeping as is for backward compatibility.
+    val messageService: MessageService = DI.injector.getInstance(classOf[MessageService])
+    if (Permission.checkServerAdmin(user)) {
+      result.put("rabbitmq", messageService.getInfo(true))
+    } else {
+      result.put("rabbitmq", messageService.getInfo(false))
+    }
+
     Json.toJson(result.toMap[String, JsValue])
+  }
+
+  def getStorage(user: Option[User]): JsValue = {
+    val config = Play.current.configuration
+    val result = new mutable.HashMap[String, String]()
+
+    ByteStorageService.storage.getClass.getName match {
+      case "services.mongodb.MongoDBByteStorage" => {
+        result.put("location", "mongo")
+      }
+      case "services.filesystem.DiskByteStorageService" => {
+        result.put("location", "disk")
+        if (Permission.checkServerAdmin(user)) {
+          result.put("path", config.getString("clowder.diskStorage.path").getOrElse[String]("unknown"))
+        }
+      }
+      case "services.s3.S3ByteStorageService" => {
+        result.put("location", "s3")
+        if (Permission.checkServerAdmin(user)) {
+          result.put("endpoint", config.getString(S3ByteStorageService.ServiceEndpoint).getOrElse[String]("unknown"))
+          result.put("region", config.getString(S3ByteStorageService.Region).getOrElse[String]("unknown"))
+          result.put("bucket", config.getString(S3ByteStorageService.BucketName).getOrElse[String]("unknown"))
+        }
+      }
+      case name => {
+        result.put("location", name)
+      }
+    }
+    Json.toJson(result.toMap[String, String])
   }
 
   def getCounts(user: Option[User]): JsValue = {

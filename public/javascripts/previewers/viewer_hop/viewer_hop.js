@@ -3,7 +3,7 @@
 
   Loads the 3DHOP library and uses methods and functions to 
   load 3D models in point cloud (*.ply) and nexus (*.nxz) form
-   into a clowder repository.   
+  into a clowder repository.   
  
   Language: JavaScript
   
@@ -13,19 +13,21 @@
   + 09/14/20 (cc): Created.
   + 10/14/20 (cc): Changing the source of the 3DHOP files
                    and load them online
+  + 01/08/21 (cc): Loading libraries from https
 
 ****************************************************************/
 
-(function ($, Configuration) {
-  var useTab = Configuration.tab;
-  var referenceUrl = Configuration.url;
-  var confId = Configuration.id;
-  var fileId = Configuration.fileid;
-  var previewer = Configuration.previewer;
 
-  var fileName = $('#file-name-title').text().trim();
-  var fileNameExtension = fileName.substr(fileName.length - 3);
-  var fileType;
+(function ($, Configuration) {
+  let useTab = Configuration.tab;
+  let referenceUrl = Configuration.url;
+  let confId = Configuration.id;
+  let fileId = Configuration.fileid;
+  let previewer = Configuration.previewer;
+
+  let fileName = $('#file-name-title').text().trim();
+  let fileNameExtension = fileName.substr(fileName.length - 3);
+  let fileType;
 
   if (fileNameExtension == "ply") {
     fileType = "ply";
@@ -33,11 +35,6 @@
   else if (fileNameExtension == "nxz") {
     fileType = "nexus";
   }
-
-  //alert(fileName);
-  //alert(typeof(fileName));
-  //alert(fileNameExtension);
-  //alert(fileType);
 
   // print all attributes of Configuration object
 
@@ -48,7 +45,7 @@
 
   // add 3dhop.css to previewer
 
-  $(useTab).append('<link rel="stylesheet" type="text/css" href="http://vcg.isti.cnr.it/3dhop/distribution/stylesheet/3dhop.css">');
+  $(useTab).append('<link rel="stylesheet" type="text/css" href = "https://3dhop.net/distribution/latest/stylesheet/3dhop.css">');
 
   // load various 3dhop attributes (such as the background image) for 3dhop
 
@@ -66,22 +63,22 @@
     id: 'toolbar'
   }));
 
-  $("#toolbar").append("<img id='home' title='Home'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/home.png'/><br/>");
+  $("#toolbar").append("<img id='home' title='Home'  src='https://3dhop.net/distribution/latest/skins/dark/home.png'/><br/>");
 
-  $("#toolbar").append("<img id='zoomin' title='Zoom In'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/zoomin.png'/><br/>");
-  $("#toolbar").append("<img id='zoomout' title='Zoom Out'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/zoomout.png'/><br/>");
+  $("#toolbar").append("<img id='zoomin' title='Zoom In'  src='https://3dhop.net/distribution/latest/skins/dark/zoomin.png'/><br/>");
+  $("#toolbar").append("<img id='zoomout' title='Zoom Out'  src='https://3dhop.net/distribution/latest/skins/dark/zoomout.png'/><br/>");
 
-  $("#toolbar").append("<img id='light_on' title='Disable Light Control'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/lightcontrol_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='light' title='Enable Light Control'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/lightcontrol.png'/><br/>");
+  $("#toolbar").append("<img id='light_on' title='Disable Light Control'  src='https://3dhop.net/distribution/latest/skins/dark/lightcontrol_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='light' title='Enable Light Control'  src='https://3dhop.net/distribution/latest/skins/dark/lightcontrol.png'/><br/>");
 
-  $("#toolbar").append("<img id='measure_on' title='Disable Measure Tool'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/measure_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='measure' title='Enable Measure Tool'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/measure.png'/><br/>");
+  $("#toolbar").append("<img id='measure_on' title='Disable Measure Tool'  src='https://3dhop.net/distribution/latest/skins/dark/measure_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='measure' title='Enable Measure Tool'  src='https://3dhop.net/distribution/latest/skins/dark/measure.png'/><br/>");
 
-  $("#toolbar").append("<img id='pick_on' title='Disable PickPoint Mode'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/pick_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='pick' title='Enable PickPoint Mode'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/pick.png'/><br/>");
+  $("#toolbar").append("<img id='pick_on' title='Disable PickPoint Mode'  src='https://3dhop.net/distribution/latest/skins/dark/pick_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='pick' title='Enable PickPoint Mode'  src='https://3dhop.net/distribution/latest/skins/dark/pick.png'/><br/>");
 
-  $("#toolbar").append("<img id='full_on' title='Exit Full Screen'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/full_on.png' style='position:absolute; visibility:hidden;'/>");
-  $("#toolbar").append("<img id='full' title='Full Screen'  src='http://vcg.isti.cnr.it/3dhop/distribution/skins/dark/full.png'/>");
+  $("#toolbar").append("<img id='full_on' title='Exit Full Screen'  src='https://3dhop.net/distribution/latest/skins/dark/full_on.png' style='position:absolute; visibility:hidden;'/>");
+  $("#toolbar").append("<img id='full' title='Full Screen'  src='https://3dhop.net/distribution/latest/skins/dark/full.png'/>");
 
   $('#3dhop').append($('<div/>', {
     id: 'measure-box',
@@ -119,18 +116,18 @@
 
   $("#3dhop").append($('<canvas/>', {
     id: 'draw-canvas',
-    style: 'background-image: url("http://vcg.isti.cnr.it/3dhop/distribution/skins/backgrounds/dark.jpg")'
+    style: 'background-image: url("https://3dhop.net/distribution/latest/skins/backgrounds/dark.jpg")'
   }));
 
   // scripts  holds all the  3dhop files                                                                        
 
-  var scripts = ["spidergl.js", "nexus.js", "ply.js", "trackball_sphere.js",
+  let scripts = ["spidergl.js", "nexus.js", "ply.js", "trackball_sphere.js",
     "trackball_turntable.js", "trackball_pantilt.js", "trackball_turntable_pan.js", "init.js", "presenter.js"];
 
   // append the http address where the files are located
 
   for (index = 0; index < scripts.length; index++) {
-    scripts[index] = "http://vcg.isti.cnr.it/3dhop/distribution/js/" + scripts[index];
+    scripts[index] = "https://3dhop.net/distribution/latest/js/" + scripts[index];
   }
 
   // load 3dhop into the current tab   (old version)                                                                         
@@ -189,7 +186,7 @@
 
 function getScripts(scripts, callback) {
 
-  var progress = 0;
+  let progress = 0;
 
   scripts.forEach(function (script) {
     //alert(script);
@@ -199,7 +196,7 @@ function getScripts(scripts, callback) {
   });
 }
 
-var presenter = null;
+let presenter = null;
 
 function setup3dhop(address, fileType) {
   presenter = new Presenter("draw-canvas");

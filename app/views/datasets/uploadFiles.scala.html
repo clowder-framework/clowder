@@ -1,5 +1,6 @@
 @(dataset: Dataset, folderId: Option[String])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
+@import services.AppConfiguration
 <!--
 The sections of this file dealing with the multi file uploader library are loosely based on the demo
 of the blueimp jQuery File Upload library. An open source project located here: http://blueimp.github.io/jQuery-File-Upload/
@@ -171,6 +172,7 @@ of the blueimp jQuery File Upload library. An open source project located here: 
 
 <!-- The Templates plugin is included to render the upload/download listings - downloaded to make the resource local -->
 <script src="@routes.Assets.at("javascripts/file-uploader/tmpl.min.js")"></script>
+
 <!-- The Load Image plugin is included for the preview images and image resizing functionality - downloaded to make the resource local -->
 <script src="@routes.Assets.at("javascripts/file-uploader/load-image.all.min.js")"></script>
 <!-- The Canvas to Blob plugin is included for image resizing functionality - downloaded to make the resource local -->

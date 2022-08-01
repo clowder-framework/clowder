@@ -233,7 +233,7 @@
                     });
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
-                        console.error("The following error occured: " + textStatus, errorThrown);
+                        console.error("The following error occurred: " + textStatus, errorThrown);
                         var errMsg = "You must be logged in to create a new dataset.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                             notify("Error in creating dataset. : " + errorThrown, "error");

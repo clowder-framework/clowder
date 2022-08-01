@@ -71,6 +71,18 @@ object AppConfiguration {
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   // ----------------------------------------------------------------------
+  def getInstance: String = {
+    appConfig.getProperty[String]("instance") match {
+      case Some(id) => id
+      case None => {
+        val id = scala.util.Random.alphanumeric.take(10).mkString
+        appConfig.setProperty("instance", id)
+        id
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------------
 
   /** Set the default theme */
   def setTheme(theme: String) = {
@@ -116,8 +128,20 @@ object AppConfiguration {
   /** Set the google analytics code */
   def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
 
-  /** Get the welcome message */
+  /** Get the google analytics code */
   def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Amplitude clickstream/analytics configuration */
+  def setAmplitudeApiKey(ampApiKey: String) = {
+    appConfig.setProperty("amplitude.apikey", ampApiKey)
+  }
+
+  /** Get the Amplitude clickstream/analytics configuration */
+  def getAmplitudeApiKey: String = {
+    appConfig.getProperty("amplitude.apikey", "")
+  }
 
   // ----------------------------------------------------------------------
 

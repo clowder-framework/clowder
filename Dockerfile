@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # BUILD CLOWDER DIST
 # ----------------------------------------------------------------------
-FROM java:jdk-alpine as clowder-build
+FROM openjdk:8-jdk-bullseye as clowder-build
 
 ARG BRANCH="unknown"
 ARG VERSION="unknown"
@@ -30,15 +30,17 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
     && ./sbt dist \
     && unzip -q target/universal/clowder-*.zip \
     && mv clowder-* clowder \
+    && apt-get update && apt-get -y install zip \
+    && for x in $(find clowder -name \*.jar); do \
+         zip -d $x org/apache/log4j/net/JMSAppender.class org/apache/log4j/net/SocketServer.class | grep 'deleting:' && echo "fixed $x"; \
+       done; \
+       echo "removed JMSAppender and SocketServer" \
     && mkdir -p clowder/custom clowder/logs
 
 # ----------------------------------------------------------------------
 # BUILD CLOWDER
 # ----------------------------------------------------------------------
-FROM java:jre-alpine
-
-# add bash
-RUN apk add --no-cache bash curl
+FROM openjdk:8-jre-bullseye as clowder-runtime
 
 # environemnt variables
 ARG BRANCH="unknown"
@@ -67,7 +69,7 @@ COPY docker/custom.conf docker/play.plugins /home/clowder/custom/
 # Containers should NOT run as root as a good practice
 # numeric id to be compatible with openshift, will run as random userid:0
 RUN mkdir -p /home/clowder/data && \
-    chmod g+w /home/clowder/logs /home/clowder/data /home/clowder/custom
+    chmod 777 /home/clowder/logs /home/clowder/data /home/clowder/custom
 USER 10001
 
 # command to run when starting docker

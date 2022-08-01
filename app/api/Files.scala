@@ -1,14 +1,8 @@
 package api
 
-import scala.annotation.tailrec
-import java.io.FileInputStream
-import java.net.{URL, URLEncoder}
-
-import javax.inject.Inject
-import javax.mail.internet.MimeUtility
-import _root_.util.{FileUtils, JSONLD, Parsers, RequestUtils, SearchUtils}
+import _root_.util._
 import com.mongodb.casbah.Imports._
-import controllers.Previewers
+import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models._
 import play.api.Logger
@@ -18,16 +12,16 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.mvc.{Action, ResponseHeader, Result, SimpleResult}
+import play.api.mvc.{ResponseHeader, SimpleResult}
 import services._
-
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.json.JSONArray
-import java.text.SimpleDateFormat
-import java.util.Date
-
-import controllers.Utils
 import services.s3.S3ByteStorageService
+
+import java.io.FileInputStream
+import java.net.URL
+import java.util.Date
+import javax.inject.Inject
+import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 
 /**
  * Json API for files.
@@ -51,8 +45,10 @@ class Files @Inject()(
   folders: FolderService,
   spaces: SpaceService,
   userService: UserService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
-  esqueue: ElasticsearchQueue) extends ApiController {
+  esqueue: ElasticsearchQueue,
+  sinkService: EventSinkService) extends ApiController {
 
   lazy val chunksize = play.Play.application().configuration().getInt("clowder.chunksize", 1024*1024)
 
@@ -68,7 +64,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id)
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -89,7 +85,7 @@ class Files @Inject()(
     PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
       datasets.getFileId(datasetId, filename) match {
         case Some(id) => Redirect(routes.Files.download(id))
-        case None => Logger.error("Error getting dataset " + datasetId); InternalServerError
+        case None => Logger.error("Error getting dataset " + datasetId); NotFound("Error getting dataset " + datasetId)
       }
     }
 
@@ -107,8 +103,10 @@ class Files @Inject()(
               case Some((inputStream, filename, contentType, contentLength)) => {
 
                 // Increment download count if tracking is enabled
-                if (tracking)
+                if (tracking) {
                   files.incrementDownloads(id, user)
+                  sinkService.logFileDownloadEvent(file, user)
+                }
 
                 request.headers.get(RANGE) match {
                   case Some(value) => {
@@ -136,7 +134,7 @@ class Files @Inject()(
                   }
                   case None => {
                     val userAgent = request.headers.get("user-agent").getOrElse("")
-
+                    sinkService.logFileDownloadEvent(file, user)
                     Ok.chunked(Enumerator.fromStream(inputStream, chunksize))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(filename, userAgent)))
@@ -158,7 +156,7 @@ class Files @Inject()(
         case None => {
           //Case where the file could not be found
           Logger.debug(s"Error getting the file with id $id.")
-          BadRequest("Invalid file ID")
+          NotFound("Invalid file ID")
         }
       }
     }
@@ -204,7 +202,7 @@ class Files @Inject()(
         }
         case None => {
           Logger.error("Error getting file" + id)
-          NotFound
+          NotFound("Error getting file" + id)
         }
       }
     }
@@ -249,7 +247,7 @@ class Files @Inject()(
         }
         Ok(toJson(metadataDefinitions.toList.sortWith(_.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse(""))))
       }
-      case None => BadRequest(toJson("The requested file does not exist"))
+      case None => NotFound(toJson("The requested file does not exist"))
     }
   }
 
@@ -289,17 +287,15 @@ class Files @Inject()(
           val mdMap = metadata.getExtractionSummary
 
           //send RabbitMQ message
-          current.plugin[RabbitmqPlugin].foreach { p =>
-            p.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
-              request.apiKey, request.user)
-          }
+          routing.metadataAddedToResource(metadataId, ResourceRef(ResourceRef.file, file.id), mdMap, Utils.baseUrl(request),
+            request.apiKey, request.user)
 
           // events.addObjectEvent(None, id, file.filename,EventType.ADD_METADATA_FILE.toString)
 
           files.index(id)
           Ok(toJson(Map("status" -> "success")))
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+        case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
       }
       Ok(toJson("success"))
     }
@@ -346,9 +342,7 @@ class Files @Inject()(
             val mdMap = metadata.getExtractionSummary
 
             //send RabbitMQ message
-            current.plugin[RabbitmqPlugin].foreach { p =>
-              p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
-            }
+            routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request), request.apiKey, request.user)
 
             events.addObjectEvent(request.user, id, x.filename, EventType.ADD_METADATA_FILE.toString)
 
@@ -361,7 +355,7 @@ class Files @Inject()(
           }
         }
       }
-      case None => Logger.error(s"Error getting file $id"); NotFound
+      case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
     }
   }
 
@@ -408,10 +402,8 @@ class Files @Inject()(
                 val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
-                current.plugin[RabbitmqPlugin].foreach { p =>
-                  p.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
+                routing.metadataAddedToResource(metadataId, metadata.attachedTo, mdMap, Utils.baseUrl(request),
                     request.apiKey, request.user)
-                }
 
                 files.index(f.id)
               })
@@ -450,7 +442,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        BadRequest(toJson("Error getting file  " + id))
+        NotFound(toJson("Error getting file  " + id))
       }
     }
   }
@@ -480,17 +472,15 @@ class Files @Inject()(
             request.apiKey, request.user)
         }
         // send extractor message after attached to resource
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          metadataIds.foreach { mId =>
-            p.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
-              request.apiKey, request.user)
-          }
+        metadataIds.foreach { mId =>
+          routing.metadataRemovedFromResource(mId, ResourceRef(ResourceRef.file, file.id), Utils.baseUrl(request),
+            request.apiKey, request.user)
         }
         Ok(toJson(Map("status" -> "success", "count" -> metadataIds.size.toString)))
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        BadRequest(toJson("Error getting file  " + id))
+        NotFound(toJson("Error getting file  " + id))
       }
     }
   }
@@ -511,7 +501,7 @@ class Files @Inject()(
         }
         case None => {
           Logger.error("Error in getting file " + id)
-          NotFound
+          NotFound("Error in getting file " + id)
         }
       }
     }
@@ -533,10 +523,16 @@ class Files @Inject()(
   /**
     * Upload a file to a specific dataset
     */
-  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true, folder_id: Option[String]) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
+        var current_folder : Option[Folder] = None
+        if (folder_id != None) {
+          if (UUID.isValid(folder_id.get)){
+            current_folder = folders.get(UUID(folder_id.get))
+          }
+        }
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), current_folder, showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -544,7 +540,7 @@ class Files @Inject()(
         }
       }
       case None => {
-        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+        NotFound(s"Dataset with id=${dataset_id} does not exist")
       }
     }
   }
@@ -575,7 +571,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id)
-        BadRequest(toJson(s"The given file id $id is not a valid ObjectId."))
+        NotFound(toJson(s"The given file id $id is not a valid ObjectId."))
       }
     }
   }
@@ -611,16 +607,13 @@ class Files @Inject()(
         val host = Utils.baseUrl(request)
         val extra = Map("filename" -> theFile.filename)
 
-        current.plugin[RabbitmqPlugin].foreach {
-          // FIXME dataset not available?
-          _.fileCreated(theFile, None, Utils.baseUrl(request), request.apiKey)
-        }
+        routing.fileCreated(theFile, None, Utils.baseUrl(request).toString, request.apiKey)
 
         Ok(toJson(Map("id" -> id.stringify)))
 
       }
       case None => {
-        BadRequest(toJson("File not found."))
+        NotFound(toJson("File not found."))
       }
     }
   }
@@ -647,7 +640,7 @@ class Files @Inject()(
                 // TODO replace null with None
                 previews.attachToFile(preview_id, file_id, extractor_id, request.body)
                 Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Preview not found"))
+              case None => NotFound(toJson("Preview not found"))
             }
           }
           //If file to be previewed is not found, just delete the preview
@@ -657,7 +650,7 @@ class Files @Inject()(
                 Logger.debug("File not found. Deleting previews.files " + preview_id)
                 previews.removePreview(preview)
                 BadRequest(toJson("File not found. Preview deleted."))
-              case None => BadRequest(toJson("Preview not found"))
+              case None => NotFound(toJson("Preview not found"))
             }
           }
         }
@@ -675,7 +668,7 @@ class Files @Inject()(
               .withHeaders(CONTENT_TYPE -> "application/rdf+xml")
               .withHeaders(CONTENT_DISPOSITION -> (FileUtils.encodeAttachment(resultFile.getName(), request.headers.get("user-agent").getOrElse(""))))
           }
-          case None => BadRequest(toJson("File not found " + id))
+          case None => NotFound(toJson("File not found " + id))
         }
       }
       case false => {
@@ -692,7 +685,7 @@ class Files @Inject()(
             Ok(listJson)
           }
           case None => {
-            Logger.error("Error getting file" + id); InternalServerError
+            Logger.error("Error getting file" + id); NotFound("Error getting file" + id)
           }
         }
       }
@@ -790,7 +783,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -818,10 +811,10 @@ class Files @Inject()(
               case Some(geometry) =>
                 threeD.updateGeometry(file_id, geometry_id, fields)
                 Ok(toJson(Map("status" -> "success")))
-              case None => BadRequest(toJson("Geometry file not found"))
+              case None => NotFound(toJson("Geometry file not found"))
             }
           }
-          case None => BadRequest(toJson("File not found " + file_id))
+          case None => NotFound(toJson("File not found " + file_id))
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
@@ -842,10 +835,10 @@ class Files @Inject()(
                 threeD.updateTexture(file_id, texture_id, fields)
                 Ok(toJson(Map("status" -> "success")))
               }
-              case None => BadRequest(toJson("Texture file not found"))
+              case None => NotFound(toJson("Texture file not found"))
             }
           }
-          case None => BadRequest(toJson("File not found " + file_id))
+          case None => NotFound(toJson("File not found " + file_id))
         }
       }
       case _ => Ok("received something else: " + request.body + '\n')
@@ -874,10 +867,10 @@ class Files @Inject()(
             }
             Ok(toJson(Map("status" -> "success")))
           }
-          case None => BadRequest(toJson("Thumbnail not found"))
+          case None => NotFound(toJson("Thumbnail not found"))
         }
       }
-      case None => BadRequest(toJson("File not found " + file_id))
+      case None => NotFound(toJson("File not found " + file_id))
     }
   }
 
@@ -895,13 +888,13 @@ class Files @Inject()(
           }
           case None => {
             Logger.error("Thumbnail not found")
-            BadRequest(toJson("Thumbnail not found"))
+            NotFound(toJson("Thumbnail not found"))
           }
         }
       }
       case None => {
         Logger.error("File not found")
-        BadRequest(toJson("Query file not found " + query_id))
+        NotFound(toJson("Query file not found " + query_id))
       }
     }
   }
@@ -951,11 +944,11 @@ class Files @Inject()(
               }
             }
           }
-          case None => Logger.error("No geometry file found: " + geometry.id); InternalServerError("No geometry file found")
+          case None => Logger.error("No geometry file found: " + geometry.id); NotFound("No geometry file found")
 
         }
       }
-      case None => Logger.error("Geometry file not found"); InternalServerError
+      case None => Logger.error("Geometry file not found"); NotFound("Geometry file not found")
     }
   }
 
@@ -1005,11 +998,11 @@ class Files @Inject()(
               }
             }
           }
-          case None => Logger.error("No texture file found: " + texture.id.toString()); InternalServerError("No texture found")
+          case None => Logger.error("No texture file found: " + texture.id.toString()); NotFound("No texture found")
 
         }
       }
-      case None => Logger.error("Texture file not found"); InternalServerError
+      case None => Logger.error("Texture file not found"); NotFound("Texture file not found")
     }
   }
 
@@ -1436,13 +1429,13 @@ class Files @Inject()(
           }
           case None => {
             Logger.error("no text specified.")
-            BadRequest(toJson("no text specified."))
+            NotFound(toJson("no text specified."))
           }
         }
       }
       case None =>
         Logger.error(("No user identity found in the request, request body: " + request.body))
-        BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+        NotFound(toJson("No user identity found in the request, request body: " + request.body))
     }
   }
 
@@ -1462,7 +1455,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
   }
@@ -1539,7 +1532,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file" + id);
-        InternalServerError
+        NotFound("Error getting file" + id)
       }
     }
 
@@ -1552,7 +1545,7 @@ class Files @Inject()(
         Ok(files.getXMLMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding file" + id); InternalServerError
+        Logger.error("Error finding file" + id); NotFound("Error finding file" + id)
       }
     }
   }
@@ -1563,7 +1556,7 @@ class Files @Inject()(
         Ok(files.getUserMetadataJSON(id))
       }
       case None => {
-        Logger.error("Error finding file" + id); InternalServerError
+        Logger.error("Error finding file" + id); NotFound("Error finding file" + id)
       }
     }
   }
@@ -1580,7 +1573,7 @@ class Files @Inject()(
           files.updateMetadata(id, request.body, extractor_id)
           files.index(id)
         }
-        case None => Logger.error(s"Error getting file $id"); NotFound
+        case None => Logger.error(s"Error getting file $id"); NotFound(s"Error getting file $id")
       }
 
       Logger.debug(s"Updated metadata of file $id")
@@ -1597,7 +1590,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error finding file" + id);
-        InternalServerError
+        NotFound("Error finding file" + id)
       }
     }
   }
@@ -1618,20 +1611,74 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error finding file" + id);
-        InternalServerError
+        NotFound("Error finding file" + id)
       }
     }
   }
 
+  def bulkDeleteFiles() = PrivateServerAction (parse.json) {implicit request=>
+    var filesToCheck : ListBuffer[String] = ListBuffer.empty[String]
+    var filesNotExist : ListBuffer[String] = ListBuffer.empty[String]
+    var filesDeleted : ListBuffer[String] = ListBuffer.empty[String]
+    var filesErrorDeleted: ListBuffer[String] = ListBuffer.empty[String]
+    request.user match {
+      case Some(user) => {
+        val fileIds = request.body.\("fileIds").asOpt[List[String]].getOrElse(List.empty[String])
+        filesToCheck.appendAll(fileIds)
+        if (fileIds.isEmpty){
+          NotFound("No file ids supplied")
+        } else {
+          var resourceRefList: ListBuffer[ResourceRef] = ListBuffer.empty[ResourceRef]
+          for (fileId <- fileIds) {
+            if (UUID.isValid(fileId)) {
+              files.get(UUID(fileId)) match {
+                case Some(currentFile) => {
+                  val current_resource_ref = ResourceRef(ResourceRef.file, UUID(fileId))
+                  resourceRefList += current_resource_ref
+                }
+                case None => {
+                  filesToCheck -= fileId
+                  filesNotExist += fileId
+                }
+              }
+            } else {
+              filesToCheck -= fileId
+              filesNotExist += fileId
+            }
+          }
+          val filesIdsCanDelete = Permission.checkPermissions(request.user, Permission.DeleteFile, resourceRefList.toList).approved.map(_.id)
+          for (id <- filesIdsCanDelete) {
+            val id_removed = files.removeFile(id,Utils.baseUrl(request), request.apiKey, request.user)
+            if (id_removed == true) {
+              filesToCheck -= id.stringify
+              filesDeleted += id.stringify
+            } else {
+              filesToCheck -= id.stringify
+              filesErrorDeleted += id.stringify
+            }
+          }
+          Ok(toJson(Map("deleted"->filesDeleted.toList, "not found"->filesNotExist.toList,
+            "error deleting"->filesErrorDeleted.toList,"no permission"->filesToCheck.toList)))
+          // Ok(toJson(Map("status" -> "success")))
+        }
+      }
+      case None => {
+        NotFound("No user supplied")
+      }
+    }
+  }
 
   def removeFile(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
         events.addObjectEvent(request.user, file.id, file.filename, EventType.DELETE_FILE.toString)
         // notify rabbitmq
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          datasets.findByFileIdAllContain(file.id).foreach { ds =>
-            p.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
+        datasets.findByFileIdAllContain(file.id).foreach { ds =>
+          routing.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
+          val ds_spaces = ds.spaces
+          for (ds_s <- ds_spaces) {
+            spaces.decrementSpaceBytes(ds_s, file.length)
+            spaces.decrementFileCounter(ds_s, 1)
           }
         }
 
@@ -1676,12 +1723,12 @@ class Files @Inject()(
           }
           case e: JsError => {
             Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-            BadRequest(toJson(s"description data is missing"))
+            NotFound(toJson(s"description data is missing"))
           }
         }
 
       }
-      case None => BadRequest("No file exists with that id")
+      case None => NotFound("No file exists with that id")
     }
   }
 
@@ -1865,27 +1912,34 @@ class Files @Inject()(
   }
 
   def archive(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
         files.setStatus(id, FileStatus.ARCHIVED)
+        sinkService.logFileArchiveEvent(file, user)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound("Error getting file " + id)
       }
     }
   }
 
   def unarchive(id: UUID) = PermissionAction(Permission.ArchiveFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
         files.setStatus(id, FileStatus.PROCESSED)
+        sinkService.logFileUnarchiveEvent(file, user)
+
+        // Only increment download date, to avoid immediate auto-archive
+        files.incrementDownloads(id, user, true)
         Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1901,7 +1955,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1917,7 +1971,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file " + id)
-        InternalServerError
+        NotFound("Error getting file " + id)
       }
     }
   }
@@ -1949,10 +2003,9 @@ class Files @Inject()(
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
-        datasetId, newFlags, apiKey, user)
-    }
+    routing.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+      datasetId, newFlags, apiKey, user)
+    sinkService.logSubmitFileToExtractorEvent(file, extractorId, user)
     Logger.info("Sent archive request for file " + id)
   }
 }

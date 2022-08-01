@@ -52,6 +52,10 @@ class MongoDBSelectionService @Inject() (datasets: DatasetService)  extends Sele
   def deleteAll(user: String) = {}
 
   def downloadAll(user: String) = {}
+
+  def submitAll() = {
+
+  }
 }
 
 object SelectedDAO extends ModelCompanion[Selected, ObjectId] {

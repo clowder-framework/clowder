@@ -4,23 +4,23 @@ import play.api.mvc.Request
 import services._
 import models._
 import com.mongodb.casbah.commons.{Imports, MongoDBObject}
-import java.text.SimpleDateFormat
 
+import java.text.SimpleDateFormat
 import _root_.util.{License, Parsers, SearchUtils}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
-import java.util.{ArrayList, Calendar}
-import java.io._
 
+import java.util.{ArrayList, Calendar, Date}
+import java.io._
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
 import play.api.libs.json.{JsValue, Json}
 import com.mongodb.util.JSON
+
 import java.nio.file.{FileSystems, Files}
 import java.nio.file.attribute.BasicFileAttributes
-import java.time.LocalDateTime
-
+import java.time.Instant
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
@@ -31,14 +31,15 @@ import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
 import models.File
 import play.api.libs.json.JsObject
-import java.util.Date
-
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
 import com.mongodb.casbah.Imports._
 import models.FileStatus.FileStatus
 import org.bson.types.ObjectId
+
+import java.time.temporal.ChronoUnit
+import scala.concurrent.duration.FiniteDuration
 
 
 /**
@@ -62,6 +63,7 @@ class MongoDBFileService @Inject() (
   folders: FolderService,
   metadatas: MetadataService,
   events: EventService,
+  routing: ExtractorRoutingService,
   appConfig: AppConfigurationService,
   esqueue: ElasticsearchQueue) extends FileService {
 
@@ -190,15 +192,9 @@ class MongoDBFileService @Inject() (
       datasetId = datasetslists.head.id
     }
     val extractorId = play.Play.application().configuration().getString("archiveExtractorId")
-    val plugins = current.plugin[RabbitmqPlugin]
-    plugins.foreach { p =>
-      p.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
-        datasetId, newFlags, apiKey, user)
-      Logger.info("Sent archive request for file " + id)
-    }
-    if (plugins.isEmpty) {
-      Logger.warn("RabbitMQ plugin not detected: archival may be disabled")
-    }
+    routing.submitFileManually(new UUID(originalId), file, host, extractorId, extra,
+      datasetId, newFlags, apiKey, user)
+    Logger.info("Sent archive request for file " + id)
   }
 
   /**
@@ -206,48 +202,41 @@ class MongoDBFileService @Inject() (
     * This may be expanded to support per-space configuration in the future.
     *
     * Reads the following parameters from Clowder configuration:
-    *     - archiveAutoAfterDaysInactive - timeout after which files are considered
+    *     - archiveAutoAfterInactiveCount - timeout after which files are considered
     *         to be candidates for archival (see below)
-    *     - archiveMinimumStorageSize - files below this size (in Bytes) should not be archived
+    *     - archiveAutoAfterInactiveUnits - time unit that should be used for the timeout (see below)
+    *     - archiveAutoAboveMinimumStorageSize - files below this size (in Bytes) should not be archived
     *     - clowder.rabbitmq.clowderurl - the Clowder hostname to pass to the archival extractor
     *     - commKey - the admin key to pass to the archival extractor
     *
     * Archival candidates are currently defined as follows:
-    *    - file must be over `archiveMinimumStorageSize` Bytes in size
-    *    - file must be over `archiveAutoAfterDaysInactive` days old
+    *    - file's size must be greater than `archiveAutoAboveMinimumStorageSize` Bytes
+    *    - file's age must be greater than `archiveAutoAfterInactiveCount` * `archiveAutoAfterInactiveUnits`
+    *         (e.g. 10 days old)
     *    - AND one of the following must be true:
     *       - file has never been downloaded (0 downloads)
     *                 OR
-    *       - file has not been downloaded in the past `archiveAutoAfterDaysInactive` days
+    *       - file has not been downloaded in the past `archiveAutoAfterInactiveCount` `archiveAutoAfterInactiveUnits`
     *
     *
     */
   def autoArchiveCandidateFiles() = {
-    val timeout = configuration(play.api.Play.current).getInt("archiveAutoAfterDaysInactive")
+    val timeout: Option[Long] = configuration(play.api.Play.current).getLong("archiveAutoAfterInactiveCount")
     timeout match {
       case None => Logger.info("No archival auto inactivity timeout set - skipping auto archival loop.")
-      case Some(days) => {
-        if (days == 0) {
+      case Some(inactiveTimeout) => {
+        if (inactiveTimeout == 0) {
           Logger.info("Archival auto inactivity timeout set to 0 - skipping auto archival loop.")
         } else {
-          // DEBUG ONLY: query for files that were uploaded within the past hour
-          val archiveDebug = configuration(play.api.Play.current).getBoolean("archiveDebug").getOrElse(false)
-          val oneHourAgo = LocalDateTime.now.minusHours(1).toString + "-00:00"
+          val unit = configuration(play.api.Play.current).getString("archiveAutoAfterInactiveUnits").getOrElse("days")
+          val timeoutAgo = FiniteDuration(inactiveTimeout, unit)
 
-          // Query for files that haven't been accessed for at least this many days
-          val daysAgo = LocalDateTime.now.minusDays(days).toString + "-00:00"
-          val notDownloadedWithinTimeout = if (archiveDebug) {
-            ("stats.last_downloaded" $gte Parsers.fromISO8601(oneHourAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          } else {
-            ("stats.last_downloaded" $lt Parsers.fromISO8601(daysAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          }
+          // Query for files that haven't been accessed for at least this many units
+          val since = Instant.now().minus(timeoutAgo.length.toLong, ChronoUnit.valueOf(timeoutAgo.unit.toString)).toString + "-00:00"
+          val notDownloadedWithinTimeout = ("stats.last_downloaded" $lt Parsers.fromISO8601(since)) ++ ("status" $eq FileStatus.PROCESSED.toString)
 
           // Include files that have never been downloaded, but make sure they are old enough
-          val neverDownloaded = if (archiveDebug) {
-            ("stats.downloads" $eq 0) ++ ("uploadDate" $gte Parsers.fromISO8601(oneHourAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          } else {
-            ("stats.downloads" $eq 0) ++ ("uploadDate" $lt Parsers.fromISO8601(daysAgo)) ++ ("status" $eq FileStatus.PROCESSED.toString)
-          }
+          val neverDownloaded = ("stats.downloads" $eq 0) ++ ("uploadDate" $lt Parsers.fromISO8601(since)) ++ ("status" $eq FileStatus.PROCESSED.toString)
 
           // TODO: How to get host / apiKey / admin internally without a request?
           val host = configuration(play.api.Play.current).getString("clowder.rabbitmq.clowderurl").getOrElse("http://localhost:9000")
@@ -262,7 +251,7 @@ class MongoDBFileService @Inject() (
           Logger.info("Archival candidates found: " + matchingFiles.length)
 
           // Exclude candidates that do not exceed our minimum file size threshold
-          val minSize = configuration(play.api.Play.current).getLong("archiveMinimumStorageSize").getOrElse(1000000L)
+          val minSize = configuration(play.api.Play.current).getLong("archiveAutoAboveMinimumStorageSize").getOrElse(1000000L)
 
           // Loop all candidate files and submit each one for archival
           for (file <- matchingFiles) {
@@ -326,8 +315,11 @@ class MongoDBFileService @Inject() (
 
   def indexAll(idx: Option[String] = None) = {
     // Bypass Salat in case any of the file records are malformed to continue past them
+    val trashedIds = datasets.getTrashedIds()
     FileDAO.dao.collection.find(MongoDBObject(), MongoDBObject("_id" -> 1)).foreach(f => {
-      index(new UUID(f.get("_id").toString), idx)
+      val fid = new UUID(f.get("_id").toString)
+      if (!trashedIds.contains(fid))
+        index(fid, idx)
     })
   }
 
@@ -519,10 +511,10 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
-    Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
+  def removeTags(id: UUID, tags: List[String]) {
+    Logger.debug("Removing tags in file " + id + " : " + tags)
     val file = get(id).get
-    val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
+    val existingTags = file.tags.map(_.name)
     Logger.debug("existingTags after user and extractor filtering: " + existingTags.toString)
     // Only remove existing tags.
     tags.intersect(existingTags).map {
@@ -811,72 +803,80 @@ class MongoDBFileService @Inject() (
       false, false, WriteConcern.Safe)
   }
 
-  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]){
+  def removeFile(id: UUID, host: String, apiKey: Option[String], user: Option[User]) : Boolean = {
     get(id) match{
       case Some(file) => {
-        if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
-          for(fileDataset <- fileDatasets){
-            datasets.removeFile(fileDataset.id, id)
-            if(!file.xmlMetadata.isEmpty){
-              datasets.index(fileDataset.id)
-            }
+          if(!file.isIntermediate){
+            val fileDatasets = datasets.findByFileIdDirectlyContain(file.id)
+            for(fileDataset <- fileDatasets){
+              datasets.removeFile(fileDataset.id, id)
+              if(!file.xmlMetadata.isEmpty){
+                datasets.index(fileDataset.id)
+              }
 
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
-              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
-                datasets.newThumbnail(fileDataset.id)
-                collections.get(fileDataset.collections).found.foreach(collection => {
-                  if(!collection.thumbnail_id.isEmpty){
-                    if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-                      collections.createThumbnail(collection.id)
+              if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
+                if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                  datasets.newThumbnail(fileDataset.id)
+                  collections.get(fileDataset.collections).found.foreach(collection => {
+                    if(!collection.thumbnail_id.isEmpty){
+                      if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                        collections.createThumbnail(collection.id)
+                      }
                     }
-                  }
-                })
-		          }
+                  })
+                }
+              }
+
             }
-                     
+
+            val fileFolders = folders.findByFileId(file.id)
+            for(fileFolder <- fileFolders) {
+              folders.removeFile(fileFolder.id, file.id)
+            }
+            for(section <- sections.findByFileId(file.id)){
+              sections.removeSection(section)
+            }
+            for(comment <- comments.findCommentsByFileId(id)){
+              comments.removeComment(comment)
+            }
+            for(texture <- threeD.findTexturesByFileId(file.id)){
+              ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
+            }
+            for (follower <- file.followers) {
+              userService.unfollowFile(follower, id)
+            }
           }
 
-          val fileFolders = folders.findByFileId(file.id)
-          for(fileFolder <- fileFolders) {
-            folders.removeFile(fileFolder.id, file.id)
-          }
-          for(section <- sections.findByFileId(file.id)){
-            sections.removeSection(section)
-          }
-          for(comment <- comments.findCommentsByFileId(id)){
-            comments.removeComment(comment)
-          }
-          for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
-          }
-          for (follower <- file.followers) {
-            userService.unfollowFile(follower, id)
-          }
-        }
 
-        // delete the actual file
-        if(isLastPointingToLoader(file.loader, file.loader_id)) {
-          for(preview <- previews.findByFileId(file.id)){
-            previews.removePreview(preview)
+          // delete the actual file
+          val fileSize = if(isLastPointingToLoader(file.loader, file.loader_id)) {
+            for(preview <- previews.findByFileId(file.id)){
+              previews.removePreview(preview)
+            }
+            if(!file.thumbnail_id.isEmpty)
+              thumbnails.remove(UUID(file.thumbnail_id.get))
+            ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+            file.length
+          } else {
+            0
           }
-          if(!file.thumbnail_id.isEmpty)
-            thumbnails.remove(UUID(file.thumbnail_id.get))
-          ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
-        }
 
-        import UUIDConversions._
-        FileDAO.removeById(file.id)
-        appConfig.incrementCount('files, -1)
-        appConfig.incrementCount('bytes, -file.length)
-        current.plugin[ElasticsearchPlugin].foreach {
-          _.delete(id.stringify)
-        }
+          import UUIDConversions._
+          FileDAO.removeById(file.id)
+          appConfig.incrementCount('files, -1)
+          appConfig.incrementCount('bytes, -1 * fileSize)
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete(id.stringify)
+          }
 
-        // finally remove metadata - if done before file is deleted, document metadataCounts won't match
-        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
+          // finally remove metadata - if done before file is deleted, document metadataCounts won't match
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id), host, apiKey, user)
+          true
       }
-      case None => Logger.debug("File not found")
+      case None => {
+        Logger.debug("File not found")
+        false
+      }
     }
   }
 
@@ -1200,22 +1200,31 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def incrementDownloads(id: UUID, user: Option[User]) = {
+  def incrementDownloads(id: UUID, user: Option[User], dateOnly: Boolean = false) = {
     Logger.debug("updating downloads for file "+id.toString)
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+    val fileOp = if (dateOnly) {
+      $set("stats.last_downloaded" -> new Date)
+    } else {
+      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date)
+    }
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), fileOp, true, false, WriteConcern.Safe)
 
     user match {
       case Some(u) => {
         Logger.debug("updating downloads for user "+u.toString)
+        val userOp = if (dateOnly) {
+          $set("last_downloaded" -> new Date)
+        } else {
+          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date)
+        }
         FileStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "file"),
-          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+          userOp, true, false, WriteConcern.Safe)
       }
       case None => {}
     }
   }
 
-  def getIterator(space: Option[UUID], since: Option[String], until: Option[String]): Iterator[File] = {
+  def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File] = {
     var query = MongoDBObject()
     space.foreach(spid => {
       // If space is specified, we have to get that association from datasets for now

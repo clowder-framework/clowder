@@ -53,6 +53,7 @@ class ElasticsearchQueue @Inject() (
             }
           }
           case "index_all" => _indexAll()
+          case "delete_index" => _deleteIndex()
           case "index_swap" => _swapIndex()
           case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
         }
@@ -63,6 +64,7 @@ class ElasticsearchQueue @Inject() (
           case "index_dataset" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
           case "index_collection" => throw new IllegalArgumentException(s"No target specified for action ${action.action}")
           case "index_all" => _indexAll()
+          case "delete_index" => _deleteIndex()
           case "index_swap" => _swapIndex()
           case _ => throw new IllegalArgumentException(s"Unrecognized action: ${action.action}")
         }
@@ -71,19 +73,35 @@ class ElasticsearchQueue @Inject() (
   }
 
   def _indexAll() = {
+    val swap = false
+
     // Add all individual entries to the queue and delete this action
     current.plugin[ElasticsearchPlugin].foreach(p => {
-      val idx = p.nameOfIndex + "_reindex_temp_swap"
-      Logger.debug("Reindexing database into temporary reindex file: "+idx)
-      p.createIndex(idx)
+      if (swap) {
+        val idx = p.nameOfIndex + "_reindex_temp_swap"
+        Logger.debug("Reindexing database into temporary reindex file: "+idx)
+        p.createIndex(idx)
 
-      // queue everything for each resource type
-      collections.indexAll(Some(idx))
-      datasets.indexAll(Some(idx))
-      files.indexAll(Some(idx))
+        // queue everything for each resource type
+        collections.indexAll(Some(idx))
+        datasets.indexAll(Some(idx))
+        files.indexAll(Some(idx))
 
-      // queue action to swap index once we're done reindexing
-      p.queue.queue("index_swap")
+        // queue action to swap index once we're done reindexing
+        p.queue.queue("index_swap")
+      } else {
+        // TODO: This does not delete the index first! It will need to do so in some cases!
+        p.createIndex()
+        collections.indexAll()
+        datasets.indexAll()
+        files.indexAll()
+      }
+    })
+  }
+
+  def _deleteIndex() = {
+    current.plugin[ElasticsearchPlugin].foreach(p => {
+      p.deleteAll()
     })
   }
 

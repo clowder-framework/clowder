@@ -2,7 +2,6 @@ package services.mongodb
 
 import java.net.URL
 import java.util.{Calendar, Date}
-
 import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -15,10 +14,7 @@ import org.bson.BSONException
 import play.api.libs.json._
 import play.api.{Application, Logger, Play, Plugin}
 import play.api.Play.current
-import com.mongodb.casbah.MongoURI
-import com.mongodb.casbah.MongoConnection
-import com.mongodb.casbah.MongoDB
-import com.mongodb.casbah.MongoCollection
+import com.mongodb.casbah.{MongoCollection, MongoConnection, MongoDB, MongoURI, commons}
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
@@ -26,6 +22,7 @@ import services.filesystem.DiskByteStorageService
 import services.{AppConfigurationService, ByteStorageService, DI, MetadataService}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.{Map => MutaMap}
 
 /**
  * Mongo Salat service.
@@ -116,6 +113,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
     collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("stats" -> 1))
+
+    collection("comments").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("comments").ensureIndex(MongoDBObject("dataset_id" -> 1))
+    collection("comments").ensureIndex(MongoDBObject("comment_id" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -448,6 +449,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Updates extractors enabled and disabled in a space
     updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
+
+    // Adds space bytes to space
+    updateMongo(updateKey = "update-space-bytes", updateSpaceBytes)
+    updateMongo(updateKey = "update-space-files", updateSpaceFiles)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -509,7 +514,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         val spacename = java.net.InetAddress.getLocalHost.getHostName
         val newspace = new ProjectSpace(name = spacename, description = "", created = new Date(), creator = UUID("000000000000000000000000"),
           homePage = List.empty[URL], logoURL = None, bannerURL = None, metadata = List.empty[Metadata],
-          collectionCount = collections.toInt, datasetCount = datasets.toInt, userCount = users.toInt)
+          collectionCount = collections.toInt, datasetCount = datasets.toInt, userCount = users.toInt, fileCount = 0,
+          spaceBytes = 0)
         ProjectSpaceDAO.save(newspace)
         val spaceId = new ObjectId(newspace.id.stringify)
 
@@ -1686,4 +1692,33 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     print("DONE")
   }
 
+  private def updateSpaceBytes(): Unit = {
+    val spaces = collection("spaces.projects").find().toList.foreach{ space =>
+      var currentSpaceBytes: Long = 0
+      val spaceId = space.get("_id")
+      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId)).toList
+      spaceDatasets.foreach{ spaceDataset =>
+        val datasetFileIds = spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+        datasetFileIds.foreach{ fileId =>
+          collection("uploads").findOne(MongoDBObject("_id" -> fileId)) match {
+            case Some(file) => currentSpaceBytes += file.get("length").asInstanceOf[Long]
+            case None => Logger.info(s"Could not find file ${fileId} in space ${spaceId}")
+          }
+        }
+      }
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
+    }
+  }
+
+  private def updateSpaceFiles(): Unit = {
+    collection("spaces.projects").find().toList.foreach{ space =>
+      var fileCount: Integer = 0
+      val spaceId = space.get("_id")
+      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId)).toList
+      spaceDatasets.foreach{ spaceDataset =>
+        fileCount += spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty).length
+      }
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("fileCount" -> fileCount))
+    }
+  }
 }
