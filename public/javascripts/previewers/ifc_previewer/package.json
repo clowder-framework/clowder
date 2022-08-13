@@ -2,5 +2,5 @@
   "name": "IFC-Viewer",
   "main": "ifc_viewer.js",
   "file": true,
-  "contentType": ["model/ifc", "model/IFC", "application/octet-stream"]
+  "contentType": ["model/ifc", "model/IFC"]
 }

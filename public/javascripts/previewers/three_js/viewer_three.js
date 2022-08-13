@@ -44,36 +44,45 @@
 
  ****************************************************************/
 
-let fileNameExtension;
-let loader;
+console.log("This is the 3D viewer");
 
-console.log("This is the gltf previewer");
+/**
+ * Jquery 
+ */
+
+let loader;
+let useTab;
+let referenceUrl;
+let previewer;
+let fileName;
+let fileNameExtension;
+
+let scripts = [
+    "three.min.js",
+    "stats.min.js",
+    "OrbitControls.js",
+    "FBXLoader.js",
+    // "GLTFLoader.js",
+    // "DRACOLoader.js",
+    "fflate.min.js"
+];
 
 (function ($, Configuration) {
-    let useTab = Configuration.tab;
-    let referenceUrl = Configuration.url;
-    let previewer = Configuration.previewer;
+    useTab = Configuration.tab;
+    referenceUrl = Configuration.url;
+    previewer = Configuration.previewer;
 
-    $(useTab).append('<section id="loading-screen">\n' +
-        '\n' +
-        '\t<div id="loader"></div>\n' +
-        '\n' +
-        '</section>')
-
-    $(useTab).append('<link rel="stylesheet" type="text/css" href = "/assets/javascripts/previewers/three_js/loading_screen.css" >');
-
-    let fileName = $('#file-name-title').text().trim();
+    fileName = $('#file-name-title').text().trim();
     fileNameExtension = fileName.split('.').pop();
 
-    let scripts = [
-        "three.min.js",
-        "stats.min.js",
-        "OrbitControls.js",
-        "FBXLoader.js",
-        "GLTFLoader.js",
-        "DRACOLoader.js",
-        "fflate.min.js"
-    ];
+    $(useTab).append('<link rel="stylesheet" type="text/css" href = "/assets/javascripts/previewers/three_js/style.css" >');
+
+    /**
+     * Decipher whether the uploaded file is an 
+     * FBX or a GLTF (GLB) file and load the appropriate model loader 
+     * For the special case of GLTF/GLB model usel Google's
+     * model viewer 
+     */
 
     for (let index = 0; index < scripts.length; index++) {
         let s = document.createElement("script");
@@ -82,21 +91,43 @@ console.log("This is the gltf previewer");
         $(useTab).append(s);
     }
 
-    $(document).ready(function () {
-        init(referenceUrl);
-        animate();
-    });
+    if (fileNameExtension === 'fbx') {
+
+        $(useTab).append('<section id="loading-screen">\n' +
+            '\n' +
+            '\t<div id="loader"></div>\n' +
+            '\n' +
+            '</section>')
+
+        $(document).ready(function () {
+            init(referenceUrl);
+            animate();
+        });
+    }
+
+    if (fileNameExtension === 'gltf' || fileNameExtension === 'glb') {
+
+        $(useTab).append('<script nomodule src="https://www.unpkg.com/@google/model-viewer@1.4.1/dist/model-viewer-legacy.js"></script>')
+
+
+        $(useTab).append("<model-viewer id='mv-demo' ar ar-modes='scene-viewer webxr' shadow-intensity='1'  auto-rotate camera-controls enable-pan src='" + referenceUrl + "'></model-viewer>")
+    }
 
 }(jQuery, Configuration));
 
+/**
+ * Three.js
+ */
+
 let camera, scene, renderer, stats;
-const clock = new THREE.Clock();
 let mixer;
 let previewerWidth = 640;
 let previewerHeight = 480;
+const clock = new THREE.Clock();
 
 function init(urlAddress) {
     const container = document.getElementById(Configuration.tab.replace("#", ""));
+
 
     /**
      * Renderer
@@ -127,13 +158,12 @@ function init(urlAddress) {
      */
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x444444);
+    scene.background = new THREE.Color("White");
     //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
     /**
      * Lights
      */
-
 
     const hemiLight1 = new THREE.HemisphereLight(0xffffff, 0x444444);
     const hemiLight2 = new THREE.HemisphereLight(0xffffff, 1);
@@ -194,29 +224,7 @@ function init(urlAddress) {
         loadingScreen.addEventListener('transitionend', onTransitionEnd);
     });
 
-    /**
-     * Decipher whether the uploaded file is an 
-     * FBX or a GLTF (GLB) file and load the appropriate model loader 
-     * accordingly
-     */
-
-    if (fileNameExtension === 'fbx') {
-        loader = new THREE.FBXLoader(loadingManager);
-    }
-
-    if (fileNameExtension === 'gltf' || fileNameExtension === 'glb') {
-        let dracopath = "/assets/javascripts/previewers/three_js/draco/"
-
-        loader = new THREE.GLTFLoader(loadingManager);
-
-        const dracoLoader = new THREE.DRACOLoader(loadingManager);
-
-        dracoLoader.setDecoderPath(dracopath);
-
-        dracoLoader.setDecoderConfig({ type: 'js' });
-
-        loader.setDRACOLoader(dracoLoader);
-    }
+    loader = new THREE.FBXLoader(loadingManager);
 
     // Set loader's path to the url address of the file
 
@@ -260,7 +268,7 @@ function init(urlAddress) {
 
         controls.maxDistance = size * 10;
         controls.minDistance = size;
-        
+
         camera.near = size / 100;
         camera.far = size * 100;
         camera.updateProjectionMatrix();
