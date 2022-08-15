@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- Fix to remove dataset from a space [#349](https://github.com/clowder-framework/clowder/issues/349)
+  (The count might be off to existing spaces, please run fixCounts script)
+
 ### Added
 - MRI previewer for NIFTY (.nii) files.
 
