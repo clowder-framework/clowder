@@ -424,7 +424,7 @@ class MongoDBSpaceService @Inject() (
    * @param space space id
    */
   def removeDataset(dataset:UUID, space:UUID): Unit = {
-    log.info(s"Space Service - removing $dataset from $space")
+    log.debug(s"Space Service - removing $dataset from $space")
     datasets.removeFromSpace(dataset, space)
     datasets.get(dataset) match {
       case Some(x) => {
