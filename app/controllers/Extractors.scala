@@ -315,7 +315,14 @@ class Extractors  @Inject() (extractions: ExtractionService,
     fileService.get(file_id) match {
       case Some(file) => {
         val all_extractors = extractorService.listExtractorsInfo(List("EXTRACT", "CONVERT"), userid)
-        val extractors = all_extractors.filter(!_.process.file.isEmpty)
+        var extractors = all_extractors.filter(!_.process.file.isEmpty)
+
+        val user_extra = userid match {
+          case Some(uid) => all_extractors.filter(_.permissions.contains(ResourceRef('user, uid)))
+          case None => List.empty
+        }
+
+        extractors = (extractors ++ user_extra).distinct
 
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
         var folderHierarchy = new ListBuffer[Folder]()
