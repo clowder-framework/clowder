@@ -10,6 +10,7 @@ import play.api.Play.{configuration, current}
 import play.api.i18n.Messages
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
+//import play.api.libs.json.Json.toJson  //try tho maybe already below
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.mvc.{ResponseHeader, SimpleResult}
@@ -732,8 +733,8 @@ class Files @Inject()(
       "thumbnail" -> file.thumbnail_id.orNull,
       "authorId" -> file.author.id.stringify,
       "status" -> file.status,
-      "views" -> file.stats.views,
-      "downloads" -> file.stats.downloads,
+      "views" -> file.stats.views.toString(),
+      "downloads" -> file.stats.downloads.toString(),
       "path" -> path_str
       )
 
