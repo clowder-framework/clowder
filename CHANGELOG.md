@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- [#228](https://github.com/clowder-framework/clowder/issues/228) api.Files jsonfile, adds to fields "downloads" and "views"
+- [#228](https://github.com/clowder-framework/clowder/issues/228) api.Files jsonfile, adds two fields "downloads" and "views"
 
 ### Added
 - MRI previewer for NIFTY (.nii) files.
