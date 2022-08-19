@@ -188,7 +188,7 @@ class MongoDBExtractorService @Inject() (
           case None => doc.permissions.isEmpty // If no user filter in registered extractor, everyone can see
         }
         val upper_categories = categories.map(cat => cat.toUpperCase)
-        val category_match = doc.categories.length == 0 || doc.categories.intersect(upper_categories).length > 0
+        val category_match = categories.length == 0 || doc.categories.intersect(upper_categories).length > 0
         filter_match = (category_match && user_match)
       }
 
