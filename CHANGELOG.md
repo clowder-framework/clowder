@@ -8,10 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.21.0 - 2022-08-23
 
-### Fixed
-- Fix to remove dataset from a space [#349](https://github.com/clowder-framework/clowder/issues/349)
-  (The count might be off to existing spaces, please run fixCounts script)
-
 **_Important:_** This update requires a MongoDB update schema due to a bug in the original migration  of showing summary statistics at the
 space level. Make sure to start the application with -DMONGOUPDATE=1. You can also run the [fixCounts.js](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
 script prior to upgrading to minimize the downtime.
@@ -28,6 +24,7 @@ script prior to upgrading to minimize the downtime.
 - Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
 - script/code to count space in files was not correct [#366](https://github.com/clowder-framework/clowder/issues/336)
 - github actions would fail for docker builds due to secrets not existing
+- Fix to remove dataset from a space [#349](https://github.com/clowder-framework/clowder/issues/349)
 
 ## 1.20.3 - 2022-06-10
 
