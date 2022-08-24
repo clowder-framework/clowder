@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Changed
+- MongoDB Service log error:'Not all dataset IDs found for Dataset|Folder bulk get request', now incl all the IDs notFound
+
 ### Added
 - MRI previewer for NIFTY (.nii) files.
 
