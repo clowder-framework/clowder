@@ -13,6 +13,9 @@ space level. Make sure to start the application with -DMONGOUPDATE=1. You can al
 script prior to upgrading to minimize the downtime.
 
 ### Added
+- [#228](https://github.com/clowder-framework/clowder/issues/228) api.Files jsonfile, adds two fields "downloads" and "views"
+
+### Added
 - MRI previewer for NIFTY (.nii) files.
 - HEIC (.heic) and HEIF (.heif) mimetypes to support new Apple iPhone image file format.
 - In the docker container the folder /home/clowder/data is now whitelisted by default for uploading by reference. 
