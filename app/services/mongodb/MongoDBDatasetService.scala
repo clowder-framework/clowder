@@ -506,8 +506,7 @@ class MongoDBDatasetService @Inject() (
     val found = Dataset.find(query).toList
     val notFound = ids.diff(found.map(_.id))
 
-    if (notFound.length > 0)
-    {
+    if (notFound.length > 0) {
       Logger.error("Not all dataset IDs found for [Dataset] bulk get request")
       Logger.error("notfound=" + notFound.toString) 
     }
