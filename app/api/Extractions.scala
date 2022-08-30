@@ -128,36 +128,6 @@ class Extractions @Inject()(
   }
 
   /**
-   *
-   * Given a file id (UUID), submit this file for extraction
-   */
-  def submitExtraction(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-    if (UUID.isValid(id.stringify)) {
-      files.get(id) match {
-        case Some(file) => {
-          // FIXME dataset not available?
-          routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
-            case Some(jobId) => {
-              Ok(Json.obj("status" -> "OK", "job_id" -> jobId))
-            }
-            case None => {
-              val message = "No jobId found for Extraction"
-              Logger.error(message)
-              InternalServerError(toJson(Map("status" -> "KO", "message" -> message)))
-            }
-          }
-        }
-        case None => {
-          Logger.error("Could not retrieve file that was just saved.")
-          InternalServerError("Error uploading file")
-        }
-      } //file match
-    } else {
-      BadRequest("Not valid id")
-    }
-  }
-
-  /**
    * For a given file id, checks for the status of all extractors processing that file.
    * REST endpoint  GET /api/extractions/:id/status
    * input: file id
@@ -550,11 +520,14 @@ class Extractions @Inject()(
           }
           // if extractor_id is not specified default to execution of all extractors matching mime type
           (request.body \ "extractor").asOpt[String] match {
-            case Some(extractorId) =>
+            case Some(extractorId) => {
+              // TODO: Check extractor permissions
+              extractors.getExtractorInfo()
               val job_id = routing.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
               sink.logSubmitFileToExtractorEvent(file, extractorId, request.user)
               Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
+            }
             case None => {
               routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
                 case Some(job_id) => {

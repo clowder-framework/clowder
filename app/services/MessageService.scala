@@ -330,26 +330,16 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
           if (info.unique_key.isDefined && user.isEmpty) {
             Logger.error("Extractor keys must have a user associated with them.")
           } else {
-            extractorsService.getExtractorInfo(info.name, info.unique_key) match {
+            extractorsService.getExtractorInfo(info.name, info.unique_key, user) match {
               case Some(infoFromDB) => {
-                Logger.debug("Found existing extractor, checking permissions...")
                 if (info.unique_key.isDefined) {
-                  if (user.isEmpty)
-                    Logger.error("User authentication required to modify this extractor.")
-                  else {
-                    val submittingUser = ResourceRef('user, user.get.id)
-                    if (!infoFromDB.permissions.contains(submittingUser))
-                      Logger.error("User does not have permission to modify this extractor.")
-                    else {
-                      // Retain existing permissions
-                      val registrationInfo = info.unique_key match {
-                        case Some(ek) => info.copy(permissions=infoFromDB.permissions)
-                        case None => info
-                      }
-                      extractorsService.updateExtractorInfo(registrationInfo)
-                      Logger.info(s"Updated private extractor definition for ${info.name} - ${info.unique_key}")
-                    }
+                  // Retain existing permissions
+                  val registrationInfo = info.unique_key match {
+                    case Some(ek) => info.copy(permissions=infoFromDB.permissions)
+                    case None => info
                   }
+                  extractorsService.updateExtractorInfo(registrationInfo)
+                  Logger.info(s"Updated private extractor definition for ${info.name} - ${info.unique_key}")
                 } else {
                   // TODO only update if new semantic version is greater than old semantic version
                   if (infoFromDB.version != info.version) {

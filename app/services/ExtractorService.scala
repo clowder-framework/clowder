@@ -37,7 +37,7 @@ trait ExtractorService {
 
   def listExtractorsInfo(categories: List[String], user: Option[UUID]): List[ExtractorInfo]
 
-  def getExtractorInfo(extractorName: String, extractorKey: Option[String]): Option[ExtractorInfo]
+  def getExtractorInfo(extractorName: String, extractorKey: Option[String], user: Option[User]): Option[ExtractorInfo]
 
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo]
 

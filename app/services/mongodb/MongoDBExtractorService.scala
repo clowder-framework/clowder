@@ -199,9 +199,21 @@ class MongoDBExtractorService @Inject() (
     list_queue
   }
 
-  def getExtractorInfo(extractorName: String, extractorKey: Option[String]): Option[ExtractorInfo] = {
+  def getExtractorInfo(extractorName: String, extractorKey: Option[String], user: Option[User]): Option[ExtractorInfo] = {
     extractorKey match {
-      case Some(ek) => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek))
+      case Some(ek) => {
+        user match {
+          case None =>  {
+            Logger.error("User authentication required to view extractor info with a unique key.")
+            None
+          }
+          case Some(u) => {
+            val userRef = new ResourceRef('user, u.id)
+            ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek, "permissions" -> userRef))
+          }
+        }
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek))
+      }
       case None => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> MongoDBObject("$exists" -> false)))
     }
   }
