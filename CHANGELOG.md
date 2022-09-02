@@ -9,10 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- Dataset page usually defaults to Files tab, but if no files will now show Metadata first
-
-### Added
 - MRI previewer for NIFTY (.nii) files.
+- Dataset page usually defaults to Files tab, but if no files will now show Metadata first
 
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
