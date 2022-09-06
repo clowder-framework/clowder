@@ -15,6 +15,9 @@ script prior to upgrading to minimize the downtime.
 ### Added
 - [#228](https://github.com/clowder-framework/clowder/issues/228) api.Files jsonfile, adds two fields "downloads" and "views"
 
+### Changed
+- MongoDB Service log error:'Not all dataset IDs found for Dataset|Folder bulk get request', now incl all the IDs notFound
+
 ### Added
 - MRI previewer for NIFTY (.nii) files.
 - HEIC (.heic) and HEIF (.heif) mimetypes to support new Apple iPhone image file format.
