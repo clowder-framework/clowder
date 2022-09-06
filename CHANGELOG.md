@@ -18,6 +18,7 @@ script prior to upgrading to minimize the downtime.
 ### Added
 - api.Files jsonfile, adds two fields "downloads" and "views" [#228](https://github.com/clowder-framework/clowder/issues/228)
 - MRI previewer for NIFTY (.nii) files.
+- Dataset page usually defaults to Files tab, but if no files will now show Metadata first
 - HEIC (.heic) and HEIF (.heif) mimetypes to support new Apple iPhone image file format.
 - In the docker container the folder /home/clowder/data is now whitelisted by default for uploading by reference. 
   This can be changed using the environment variable CLOWDER_SOURCEPATH.

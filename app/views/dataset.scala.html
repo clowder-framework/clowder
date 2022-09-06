@@ -287,17 +287,26 @@
 
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
-                    <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
-                    <li role="presentation"><a href="#tab-extractions" role="tab" data-toggle="tab">Extractions </a></li>
-                    <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
-                    <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
+                    @if(dataset.files.isEmpty && (m.size > 0)) {
+                    <li role="presentation"><a href="#tab-files" id="files" role="tab" data-toggle="tab">Files </a></li>
+                    <li role="presentation" class="active"><a href="#tab-metadata" id="metadata" role="tab" data-toggle="tab">Metadata </a></li>
+                    } else {
+                    <li role="presentation" class="active"><a href="#tab-files" id="files" role="tab" data-toggle="tab">Files </a></li>
+                    <li role="presentation"><a href="#tab-metadata" id="metadata" role="tab" data-toggle="tab">Metadata </a></li>
+										} 
+                    <li role="presentation"><a href="#tab-extractions" id="extractions" role="tab" data-toggle="tab">Extractions </a></li>
+                    <li role="presentation"><a href="#tab-visua" id="visua" role="tab" data-toggle="tab">Visualizations</a></li>
+                    <li role="presentation"><a href="#tab-comments" id="comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     @if(relatedDataset.size > 0) {
                         <li role="relation"><a href="#tab-relations" role="tab" data-toggle="tab">Related</a></li>
                     }
                 </ul>
                 <div class="tab-content">
+                    @if(dataset.files.isEmpty && (m.size > 0)) {
+                    <div role="tabpanel" class="tab-pane fade" id="tab-files">
+                    } else {
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-files">
+										}
                         <div id="loading-spinner" class="center-glyphicon valign-link">
                             <span class="glyphicon glyphicon-refresh glyphicon-animation-spin glyphicon-5x"></span>
                             <span class="sr-only">Loading...</span>
@@ -310,7 +319,11 @@
                         }
                         <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>
+                    @if(dataset.files.isEmpty && (m.size > 0)) {
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-metadata">
+                    } else {
                     <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
+										}
                         @if(user.isDefined) {
                             <div class="row">
                                 <div class="col-md-12">
@@ -371,8 +384,9 @@
 		</div>
 	</div>
 
+    @* FIXME tabsInURL.js Commented out since it creates some issues with dataset previewers *@
     @* FIXME Commented out since it creates some issues with dataset previewers *@
-    @*<script src="@routes.Assets.at("javascripts/tabsInURL.js")" type="text/javascript"></script>*@
+    @* <script src="@routes.Assets.at("javascripts/tabsInURL.js")" type="text/javascript"></script> *@
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
@@ -871,5 +885,4 @@
         }
 
     </script>
-}
-
+} 
