@@ -17,6 +17,9 @@ script prior to upgrading to minimize the downtime.
 
 ### Added
 - api.Files jsonfile, adds two fields "downloads" and "views" [#228](https://github.com/clowder-framework/clowder/issues/228)
+- Dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch [#335](https://github.com/clowder-framework/clowder/issues/335)
+- MiniUser and LicenseData now have to_jsonld methods to return string part of [#335](https://github.com/clowder-framework/clowder/issues/335) metadata
+- LicenseData has urlViaAttributes used by it's to_jsonld to guess url when empty, for [#335](https://github.com/clowder-framework/clowder/issues/335)
 - MRI previewer for NIFTY (.nii) files.
 - Dataset page usually defaults to Files tab, but if no files will now show Metadata first
 - HEIC (.heic) and HEIF (.heif) mimetypes to support new Apple iPhone image file format.
@@ -30,6 +33,9 @@ script prior to upgrading to minimize the downtime.
 - script/code to count space in files was not correct [#366](https://github.com/clowder-framework/clowder/issues/336)
 - github actions would fail for docker builds due to secrets not existing
 - Fix to remove dataset from a space [#349](https://github.com/clowder-framework/clowder/issues/349)
+
+### Changed
+- Utils.baseURL now on RequestHeader instead of Request[Any]
 
 ## 1.20.3 - 2022-06-10
 
@@ -63,6 +69,7 @@ script prior to upgrading to minimize the downtime.
 - Documentation: Customizing clowder's deployment, simplified duplicate instructinos.
 - Documentation: Added "How to contribute documentation" page
 - Documentation: New Sphinx plugins for dropdowns and menus.
+
 
 ## 1.20.0 - 2022-02-07
 

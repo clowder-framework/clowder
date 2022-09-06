@@ -9,6 +9,8 @@ import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core._
 import services.AppConfiguration
 
+import play.api.libs.json._
+
 object UserStatus extends Enumeration {
 	  type UserStatus = Value
 	  val Inactive, Active, Admin = Value
@@ -108,7 +110,31 @@ case class MiniUser(
    id: UUID,
    fullName: String,
    avatarURL: String,
-   email: Option[String])
+   email: Option[String]) {
+      /**
+       * return MiniUser as string in jsonld format, w/fullName split into first and last
+       */
+       def to_jsonld() : JsValue = {
+          var firstName = "";
+          var lastName = "";
+          if (fullName.split("\\w+").length > 1) {
+             lastName = fullName.substring(fullName.lastIndexOf(" ") + 1);
+             firstName = fullName.substring(0, fullName.lastIndexOf(' '));
+           } else { 
+              firstName = fullName; 
+           }
+	   val authorLD = JsObject(Seq(
+                   "@type" -> JsString("Person"),
+                   "name" -> JsString(fullName),
+                   "givenName" -> JsString(firstName),
+                   "familyName" -> JsString(lastName),
+                   "email" ->  JsString(email.getOrElse("")),
+                   "image" -> JsString(avatarURL)
+                   ))
+          return authorLD 
+      }
+   }
+
 
 case class ClowderUser(
   id: UUID = UUID.generate(),

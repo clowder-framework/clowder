@@ -1,5 +1,7 @@
 package models
 
+import play.api.libs.json._
+
 /**
  * A portion of a file.
  *
@@ -17,7 +19,12 @@ case class Section(
   metadataCount: Long = 0,
   @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty,
   thumbnail_id: Option[String] = None,
-  tags: List[Tag] = List.empty)
+  tags: List[Tag] = List.empty) {
+   def to_jsonld() : JsValue = {
+      return Json.toJson(description)
+   }
+  }
+
 
 case class Rectangle(
   x: Double,
