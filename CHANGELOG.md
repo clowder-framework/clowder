@@ -9,14 +9,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- [#335](https://github.com/clowder-framework/clowder/issues/335): dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch
+- Dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch [#335](https://github.com/clowder-framework/clowder/issues/335)
 - MiniUser and LicenseData now have to_jsonld methods to return string part of [#335](https://github.com/clowder-framework/clowder/issues/335) metadata
 - LicenseData has urlViaAttributes used by it's to_jsonld to guess url when empty, for [#335](https://github.com/clowder-framework/clowder/issues/335)
-- Utils.baseURL now on RequestHeader instead of Request[Any]
+- MRI previewer for NIFTY (.nii) files.
 
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
 - Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
+- github actions would fail for docker builds due to secrets not existing
+
+### Changed
+- Utils.baseURL now on RequestHeader instead of Request[Any]
 
 ## 1.20.3 - 2022-06-10
 
@@ -54,6 +58,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.20.0 - 2022-02-07
 
+### Added 
+
+- An IFC previewer
+
 ### Fixed
 - Conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
 - When event stream is disabled don't show for logged in user [#280](https://github.com/clowder-framework/clowder/issues/280)
@@ -61,6 +69,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
+- The FBX previewer can also load GLTF files
 
 ## 1.19.5 - 2022-01-21
 
