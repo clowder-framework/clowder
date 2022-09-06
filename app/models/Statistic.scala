@@ -10,7 +10,12 @@ case class Statistics (
   downloads: Int = 0,
   last_viewed: Option[Date] = None,
   last_downloaded: Option[Date] = None
-)
+) {
+   def to_jsonld() : JsValue = {
+      return Json.toJson(views)
+   }
+  }
+
 
 case class StatisticUser (
   user_id: UUID,

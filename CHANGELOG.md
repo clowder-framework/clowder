@@ -9,12 +9,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
+- Dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch [#335](https://github.com/clowder-framework/clowder/issues/335)
+- MiniUser and LicenseData now have to_jsonld methods to return string part of [#335](https://github.com/clowder-framework/clowder/issues/335) metadata
+- LicenseData has urlViaAttributes used by it's to_jsonld to guess url when empty, for [#335](https://github.com/clowder-framework/clowder/issues/335)
 - MRI previewer for NIFTY (.nii) files.
 
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
 - Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
 - github actions would fail for docker builds due to secrets not existing
+
+### Changed
+- Utils.baseURL now on RequestHeader instead of Request[Any]
 
 ## 1.20.3 - 2022-06-10
 
@@ -48,6 +54,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documentation: Customizing clowder's deployment, simplified duplicate instructinos.
 - Documentation: Added "How to contribute documentation" page
 - Documentation: New Sphinx plugins for dropdowns and menus.
+
 
 ## 1.20.0 - 2022-02-07
 

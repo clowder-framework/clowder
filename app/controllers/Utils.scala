@@ -13,12 +13,13 @@ object Utils {
   /**
    * Return base url given a request. This will add http or https to the front, for example
    * https://localhost:9443 will be returned if it is using https.
+   *
    */
-  def baseUrl(request: Request[Any], absolute: Boolean = true) = {
+  def baseUrl(request: RequestHeader, absolute: Boolean = true) = {  
     if (absolute) {
-      routes.Files.list().absoluteURL(https(request))(request).replace("/files", "")
+       routes.Files.list().absoluteURL(https(request))(request).replace("/files", "")
     } else {
-      routes.Files.list().url.replace("/files", "")
+       routes.Files.list().url.replace("/files", "")
     }
   }
 
