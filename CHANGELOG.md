@@ -12,9 +12,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 space level. Make sure to start the application with -DMONGOUPDATE=1. You can also run the [fixCounts.js](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
 script prior to upgrading to minimize the downtime.
 
-### Changed
-- MongoDB Service log error:'Not all dataset IDs found for Dataset|Folder bulk get request', now incl all the IDs notFound
-
 ### Added
 - api.Files jsonfile, adds two fields "downloads" and "views" [#228](https://github.com/clowder-framework/clowder/issues/228)
 - Dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch [#335](https://github.com/clowder-framework/clowder/issues/335)
@@ -36,6 +33,7 @@ script prior to upgrading to minimize the downtime.
 
 ### Changed
 - Utils.baseURL now on RequestHeader instead of Request[Any]
+- MongoDB Service log error:'Not all dataset IDs found for Dataset|Folder bulk get request', now incl all the IDs notFound
 
 ## 1.20.3 - 2022-06-10
 
