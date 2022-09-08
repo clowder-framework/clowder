@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+### Unreleased
+
+### Fixed
+- Added a dropdown menu to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
 
 ## 1.21.0 - 2022-08-23
 
