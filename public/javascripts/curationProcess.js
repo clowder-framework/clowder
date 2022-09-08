@@ -16,7 +16,7 @@ function removeCuration(id, isreload, url){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to delete a publication request from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The publication request was not deleted from the system due to : " + errorThrown, "error");
@@ -56,7 +56,7 @@ function removeCurationFile(id, currentFolder, curationid){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a file from the publication request";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("File was not removed from the request due to : " + jqXHR.textResponse, "error");
@@ -75,7 +75,7 @@ function removeCurationFolder(id, parentCurationObject, parentId){
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a folder from the publication request";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("Folder was not removed due to : " + errorThrown, "error");
@@ -107,7 +107,7 @@ function getUpdatedFilesAndFolders(curationObject, limit) {
         $('#files').html(response);
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to see files and folders.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("Error in getting more files and folders. : " + errorThrown, "error");

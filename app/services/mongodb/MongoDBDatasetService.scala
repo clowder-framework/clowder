@@ -506,8 +506,10 @@ class MongoDBDatasetService @Inject() (
     val found = Dataset.find(query).toList
     val notFound = ids.diff(found.map(_.id))
 
-    if (notFound.length > 0)
-      Logger.error("Not all dataset IDs found for bulk get request")
+    if (notFound.length > 0) {
+      Logger.error("Not all dataset IDs found for [Dataset] bulk get request")
+      Logger.error("notfound=" + notFound.toString) 
+    }
     return DBResult(found, notFound)
   }
 
@@ -1068,6 +1070,17 @@ class MongoDBDatasetService @Inject() (
     Dataset.find(MongoDBObject("userMetadataWasModified" -> true)).toList
   }
 
+  def getBytesForDataset(datasetId: UUID) : Long = {
+    val dataset = Dataset.findOneById(new ObjectId(datasetId.stringify)).get
+    val datasetFiles = dataset.files
+    var datasetBytes : Long = 0
+    datasetFiles.foreach{ f => {
+      val currentFileBytes = files.get(f).get.length
+      datasetBytes += currentFileBytes
+    }}
+    datasetBytes
+  }
+
   def removeTag(id: UUID, tagId: UUID) {
     Logger.debug("Removing tag " + tagId)
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
@@ -1388,6 +1401,15 @@ class MongoDBDatasetService @Inject() (
         }
         for (f <- dataset.files) {
           val notTheDataset = for (currDataset <- findByFileIdDirectlyContain(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          files.get(f) match {
+            case Some(file) => {
+              for(space <- dataset.spaces) {
+                spaces.decrementFileCounter(space, 1)
+                spaces.decrementSpaceBytes(space, file.length)
+              }
+            }
+            case None => Logger.error(s"Error file with with id ${f} no longer exists")
+          }
           if (notTheDataset.size == 0)
             files.removeFile(f, host, apiKey, user)
         }

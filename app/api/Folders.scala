@@ -22,6 +22,7 @@ import scala.collection.mutable.ListBuffer
 class Folders @Inject() (
   folders: FolderService,
   datasets: DatasetService,
+  collections: CollectionService,
   files: FileService,
   events: EventService,
   routing: ExtractorRoutingService) extends ApiController {
@@ -316,6 +317,23 @@ class Folders @Inject() (
                       if(dataset.files.contains(fileId)) {
                         folders.addFile(newFolder.id, fileId)
                         datasets.removeFile(datasetId, fileId)
+
+                        // when moving a file in the root of a dataset inside a folder
+                        // check if that file has been used as thumbnail
+                        // if yes, update the thumbnail of both dataset and collection
+                        if(!file.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
+                          if (file.thumbnail_id.get.equals(dataset.thumbnail_id.get)){
+                            datasets.newThumbnail(dataset.id)
+                            collections.get(dataset.collections).found.foreach(collection => {
+                              if(!collection.thumbnail_id.isEmpty){
+                                if(collection.thumbnail_id.get.equals(dataset.thumbnail_id.get)){
+                                  collections.createThumbnail(collection.id)
+                                }
+                              }
+                            })
+                          }
+                        }
+
                         files.index(fileId)
                         datasets.index(datasetId)
                         Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))

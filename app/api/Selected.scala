@@ -87,7 +87,7 @@ class Selected @Inject()(selections: SelectionService,
         selections.get(user.email.get).map(d => {
           selections.remove(d.id, user.email.get)
         })
-        Ok(toJson(Map("sucess"->"true")))
+        Ok(toJson(Map("success"->"true")))
       }
     }
   }
@@ -100,7 +100,7 @@ class Selected @Inject()(selections: SelectionService,
           datasets.removeDataset(d.id, Utils.baseUrl(request), request.apiKey, request.user)
           selections.remove(d.id, user.email.get)
         })
-        Ok(toJson(Map("sucess"->"true")))
+        Ok(toJson(Map("success"->"true")))
       }
     }
   }
@@ -109,7 +109,7 @@ class Selected @Inject()(selections: SelectionService,
     Logger.debug("Requesting Selected.downloadAll")
     request.user match {
       case Some(user) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagit").getOrElse(true)
+        val bagit = play.api.Play.configuration.getBoolean("downloadDatasetBagIt").getOrElse(true)
         val selected = selections.get(user.email.get)
         Ok.chunked(enumeratorFromSelected(selected,1024*1024,bagit,Some(user))).withHeaders(
           "Content-Type" -> "application/zip",
@@ -189,7 +189,7 @@ class Selected @Inject()(selections: SelectionService,
           events.addObjectEvent(request.user, d.id, d.name, EventType.ADD_TAGS_DATASET.toString)
           datasets.index(d.id)
         })
-        Ok(toJson(Map("sucess"->"true")))
+        Ok(toJson(Map("success"->"true")))
       }
     }
   }

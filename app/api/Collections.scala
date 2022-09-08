@@ -1,32 +1,28 @@
 package api
 
-import java.io.{ByteArrayInputStream, InputStream, ByteArrayOutputStream}
-import java.security.{DigestInputStream, MessageDigest}
-import java.text.SimpleDateFormat
-import java.util.zip.{ZipEntry, ZipOutputStream, Deflater}
-
 import Iterators.RootCollectionIterator
-import _root_.util.JSONLD
+import util.SearchUtils
 import api.Permission.Permission
-import org.apache.commons.codec.binary.Hex
+import controllers.Utils
+import models._
 import play.api.Logger
 import play.api.Play.current
-import models._
-import play.api.libs.iteratee.Enumerator
-import services._
-import play.api.libs.json._
-import play.api.libs.json.{JsObject, JsValue}
-import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject}
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Future, ExecutionContext}
 import play.api.libs.concurrent.Execution.Implicits._
-import scala.util.parsing.json.JSONArray
-import scala.util.{Try, Success, Failure}
-import java.util.{Calendar, Date}
-import controllers.Utils
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.Json.toJson
+import play.api.libs.json.{JsObject, JsValue, _}
+import services._
 
+
+import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
+import java.util.zip.{Deflater, ZipOutputStream}
+import java.util.{Calendar, Date}
+import javax.inject.{Inject, Singleton}
 import scala.collection.immutable.List
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -72,6 +68,13 @@ class Collections @Inject() (datasets: DatasetService,
                 collections.addToRootSpaces(c.id, s.id)
                 events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               })
+              // index collection
+              current.plugin[ElasticsearchPlugin].foreach{
+                _.index(SearchUtils.getElasticsearchObject(c))
+              }
+              //Add to Events Table
+              val option_user = userService.findByIdentity(identity)
+              events.addObjectEvent(option_user, c.id, c.name, EventType.CREATE_COLLECTION.toString)
               Ok(toJson(Map("id" -> id)))
             }
             case None => Ok(toJson(Map("status" -> "error")))
@@ -598,6 +601,14 @@ class Collections @Inject() (datasets: DatasetService,
                   events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, EventType.ADD_COLLECTION_SPACE.toString)
               }
 
+              // index collection
+              current.plugin[ElasticsearchPlugin].foreach{
+                _.index(SearchUtils.getElasticsearchObject(c))
+              }
+              //Add to Events Table
+              val option_user = userService.findByIdentity(identity)
+              events.addObjectEvent(option_user, c.id, c.name, EventType.CREATE_COLLECTION.toString)
+
               //do stuff with parent here
               (request.body \"parentId").asOpt[String] match {
                 case Some(parentId) => {
@@ -790,11 +801,10 @@ class Collections @Inject() (datasets: DatasetService,
     }
   }
 
-  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
+  def download(id: UUID, compression: Int, bagit: Boolean) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
     implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {
-        val bagit = play.api.Play.configuration.getBoolean("downloadCollectionBagit").getOrElse(true)
         // Use custom enumerator to create the zip file on the fly
         // Use a 1MB in memory byte array
         Ok.chunked(enumeratorFromCollection(collection,1024*1024, compression,bagit,user)).withHeaders(
@@ -810,7 +820,9 @@ class Collections @Inject() (datasets: DatasetService,
   }
 
 
-  def enumeratorFromCollection(collection: Collection, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : Option[User])
+  def enumeratorFromCollection(collection: Collection, chunkSize: Int = 1024 * 8,
+                               compression: Int = Deflater.DEFAULT_COMPRESSION,
+                               bagit: Boolean, user : Option[User])
                               (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
 
     implicit val pec = ec.prepare()
@@ -827,8 +839,6 @@ class Collections @Inject() (datasets: DatasetService,
     //val datasetsInCollection = getDatasetsInCollection(collection,user.get)
     var current_iterator = new RootCollectionIterator(collection.name,collection,zip,md5Files,md5Bag,user, totalBytes,bagit,collections,
     datasets,files,folders,metadataService,spaces)
-
-
 
     //var current_iterator = new FileIterator(folderNameMap(inputFiles(1).id),inputFiles(1), zip,md5Files)
     var is = current_iterator.next()

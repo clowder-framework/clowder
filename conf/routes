@@ -377,8 +377,8 @@ POST           /api/files                                                       
 POST           /api/files/withFlags/:flags                                              @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/files/searchusermetadata                                            @api.Files.searchFilesUserMetadata
 POST           /api/files/searchmetadata                                                @api.Files.searchFilesGeneralMetadata
-POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String, extract: Boolean ?= true)
-POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "", extract: Boolean ?= true)
+POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String, extract: Boolean ?= true, folder_id: Option[String] ?= None)
+POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "", extract: Boolean ?= true, folder_id: Option[String] ?= None)
 PUT            /api/files/:id/updateDescription                                         @api.Files.updateDescription(id: UUID)
 POST           /api/files/uploadIntermediate/:idAndFlags                                @api.Files.uploadIntermediate(idAndFlags)
 POST           /api/files/sendJob/:fileId/:fileType                                     @api.Files.sendJob(fileId: UUID,fileType)
@@ -516,7 +516,7 @@ POST           /api/collections                                                 
 GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
 GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
 GET            /api/collections/allCollections                                          @api.Collections.getAllCollections(limit : Int ?= 0, showAll: Boolean ?=false)
-GET            /api/collections/:id/download                                            @api.Collections.download(id: UUID, compression: Int ?= -1)
+GET            /api/collections/:id/download                                            @api.Collections.download(id: UUID, compression: Int ?= -1, bagit: Boolean ?= false)
 GET            /api/collections/listTrash                                               @api.Collections.listCollectionsInTrash(limit : Int ?= 12)
 DELETE         /api/collections/emptyTrash                                              @api.Collections.emptyTrash()
 DELETE         /api/collections/clearOldCollectionsTrash                                @api.Collections.clearOldCollectionsTrash(days : Int ?= 30)
@@ -592,9 +592,9 @@ GET            /api/datasets/:id/listAllFiles                                   
 GET            /api/datasets/:id/files                                                  @api.Datasets.datasetAllFilesList(id: UUID, max: Int ?= -1)
 POST           /api/datasets/:id/files                                                  @api.Datasets.uploadToDatasetFile(id: UUID)
 POST           /api/datasets/:id/urls                                                   @api.Datasets.uploadToDatasetJSON(id: UUID)
-GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1, tracking: Boolean ?= true)
-GET            /api/datasets/:id/downloadPartial                                        @api.Datasets.downloadPartial(id: UUID, fileList: String)
-GET            /api/datasets/:id/downloadFolder                                         @api.Datasets.downloadFolder(id: UUID, folderId: UUID)
+GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, bagit: Boolean ?= false, compression: Int ?= -1, tracking: Boolean ?= true)
+GET            /api/datasets/:id/downloadPartial                                        @api.Datasets.downloadPartial(id: UUID, fileList: String, bagit: Boolean ?= false)
+GET            /api/datasets/:id/downloadFolder                                         @api.Datasets.downloadFolder(id: UUID, folderId: UUID, bagit: Boolean ?= false)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID)

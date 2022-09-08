@@ -10,12 +10,14 @@ Following is a list of contributors in alphabetical order:
 - Chris Navarro
 - Chrysovalantis Constantinou
 - Constantinos Sophocleous
+- Dipannita Dey
 - Gene Roeder
 - Gregory Jansen
 - Indira Gutierrez
 - Inna Zharnitsky
 - Jim Myers
 - Jong Lee
+- Kastan Day
 - Kaveh Karimi-Asli
 - Kenton McHenry
 - Luigi Marini
@@ -29,11 +31,13 @@ Following is a list of contributors in alphabetical order:
 - Mike Lambert
 - Nicholas Tenczar
 - Nishant Nayudu
+- Peter Groves
 - Rob Kooper
 - Rui Liu
 - Sandeep Puthanveetil Satheesan
 - Smruti Padhy
 - Theerasit Issaranon
+- Tim Yardley
 - Todd Nicholson
 - Varun Kethineedi
 - Ward Poelmans

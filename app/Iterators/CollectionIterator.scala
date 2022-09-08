@@ -13,10 +13,11 @@ import scala.collection.mutable.ListBuffer
 
 //this is to download collections
 //that are not at the root level
-class CollectionIterator(pathToFolder : String, parent_collection : models.Collection,zip : ZipOutputStream, md5Files : scala.collection.mutable.HashMap[String, MessageDigest], user : Option[User],
-                         collections: CollectionService, datasets : DatasetService, files : FileService, folders : FolderService, metadataService : MetadataService,
+class CollectionIterator(pathToFolder: String, parent_collection: models.Collection, zip: ZipOutputStream,
+                         md5Files: scala.collection.mutable.HashMap[String, MessageDigest], user : Option[User],
+                         bagit: Boolean, collections: CollectionService, datasets: DatasetService, files: FileService,
+                         folders: FolderService, metadataService: MetadataService,
                          spaces : SpaceService) extends Iterator[Option[InputStream]] {
-
 
   def getNextGenerationCollections(currentCollections : List[Collection]) : List[Collection] = {
     var nextGenerationCollections : ListBuffer[Collection] = ListBuffer.empty[Collection]
@@ -28,7 +29,7 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
     nextGenerationCollections.toList
   }
 
-  val datasetIterator = new DatasetsInCollectionIterator(pathToFolder,parent_collection,zip,md5Files,user,
+  val datasetIterator = new DatasetsInCollectionIterator(pathToFolder,parent_collection,zip,bagit, md5Files,user,
     datasets,files, folders, metadataService,spaces)
 
   var currentCollectionIterator : Option[CollectionIterator] = None
@@ -40,7 +41,7 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
   var childCollectionCount = 0
   var numChildCollections = child_collections.size
 
-  var file_type = 0
+  var file_type = if (bagit) 0 else 2
 
   // TODO: Repeat from api/Collections
   def jsonCollection(collection: Collection): JsValue = {
@@ -74,12 +75,12 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
     if (file_type < 2){
       true
     }
-    else if (file_type ==2){
+    else if (file_type == 2){
       if (datasetIterator.hasNext()){
         true
       } else if (numChildCollections > 0){
-
-        currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(childCollectionCount).name, child_collections(childCollectionCount),zip,md5Files,user,collections,datasets,files,
+        currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(childCollectionCount).name,
+          child_collections(childCollectionCount),zip,md5Files,user, bagit, collections,datasets,files,
           folders,metadataService,spaces))
         file_type +=1
         true
@@ -94,7 +95,7 @@ class CollectionIterator(pathToFolder : String, parent_collection : models.Colle
           } else if (childCollectionCount < numChildCollections -2){
             childCollectionCount+=1
             currentCollectionIterator = Some(new CollectionIterator(pathToFolder+"/"+child_collections(childCollectionCount).name, child_collections(childCollectionCount),zip,md5Files,user,
-              collections,datasets,files,
+              bagit, collections,datasets,files,
               folders,metadataService,spaces))
             true
           } else {

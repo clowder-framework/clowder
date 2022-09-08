@@ -523,10 +523,16 @@ class Files @Inject()(
   /**
     * Upload a file to a specific dataset
     */
-  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "", extract: Boolean = true, folder_id: Option[String]) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
-        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
+        var current_folder : Option[Folder] = None
+        if (folder_id != None) {
+          if (UUID.isValid(folder_id.get)){
+            current_folder = folders.get(UUID(folder_id.get))
+          }
+        }
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), current_folder, showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious, runExtractors = extract, apiKey = request.apiKey)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
           case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
@@ -710,6 +716,12 @@ class Files @Inject()(
   }
 
   def jsonFile(file: File, serverAdmin: Boolean = false): JsValue = {
+    val foldersContainingFile = folders.findByFileId(file.id)
+    val allPaths: List[List[String]] =  (for (folder <- foldersContainingFile) yield (folderPath(folder, List()).tail))
+    var path_str = allPaths.map(xl => "/" + xl.map(x => x.toString()).mkString("/")).mkString("")
+    if(path_str == "") {
+       path_str = "/" 
+    }
     val defaultMap = Map(
       "id" -> file.id.toString,
       "filename" -> file.filename,
@@ -719,7 +731,11 @@ class Files @Inject()(
       "size" -> file.length.toString,
       "thumbnail" -> file.thumbnail_id.orNull,
       "authorId" -> file.author.id.stringify,
-      "status" -> file.status)
+      "status" -> file.status,
+      "views" -> file.stats.views.toString(),
+      "downloads" -> file.stats.downloads.toString(),
+      "path" -> path_str
+      )
 
     // Only include filepath if using DiskByte storage and user is serverAdmin
     val jsonMap = file.loader match {
@@ -1669,6 +1685,11 @@ class Files @Inject()(
         // notify rabbitmq
         datasets.findByFileIdAllContain(file.id).foreach { ds =>
           routing.fileRemovedFromDataset(file, ds, Utils.baseUrl(request), request.apiKey)
+          val ds_spaces = ds.spaces
+          for (ds_s <- ds_spaces) {
+            spaces.decrementSpaceBytes(ds_s, file.length)
+            spaces.decrementFileCounter(ds_s, 1)
+          }
         }
 
         //this stmt has to be before files.removeFile
