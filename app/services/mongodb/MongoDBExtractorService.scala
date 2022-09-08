@@ -212,7 +212,6 @@ class MongoDBExtractorService @Inject() (
             ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek, "permissions" -> userRef))
           }
         }
-        ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek))
       }
       case None => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> MongoDBObject("$exists" -> false)))
     }

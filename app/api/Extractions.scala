@@ -380,7 +380,7 @@ class Extractions @Inject()(
   }
 
   def getExtractorInfo(extractorName: String, extractor_key: Option[String]) = AuthenticatedAction { implicit request =>
-    extractors.getExtractorInfo(extractorName, extractor_key) match {
+    extractors.getExtractorInfo(extractorName, extractor_key, request.user) match {
       case Some(info) => Ok(Json.toJson(info))
       case None => NotFound(Json.obj("status" -> "KO", "message" -> "Extractor info not found"))
     }
@@ -521,8 +521,8 @@ class Extractions @Inject()(
           // if extractor_id is not specified default to execution of all extractors matching mime type
           (request.body \ "extractor").asOpt[String] match {
             case Some(extractorId) => {
-              // TODO: Check extractor permissions
-              extractors.getExtractorInfo()
+              val extractorKey = (request.body \ "extractor").asOpt[String]
+              extractors.getExtractorInfo(extractorId, extractorKey, request.user)
               val job_id = routing.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
               sink.logSubmitFileToExtractorEvent(file, extractorId, request.user)

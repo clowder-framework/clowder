@@ -76,7 +76,7 @@ class ExtractorRoutingService {
     val extractorsService = DI.injector.getInstance(classOf[ExtractorService])
 
     extractorIds.flatMap(exId =>
-      extractorsService.getExtractorInfo(exId, None)).filter(exInfo => {
+      extractorsService.getExtractorInfo(exId, None, None)).filter(exInfo => {
       val processMatch = resourceType match {
         case ResourceType.dataset =>
           containsOperation(exInfo.process.dataset, operation)

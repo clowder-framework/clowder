@@ -41,7 +41,7 @@ class Extractors  @Inject() (extractions: ExtractionService,
    */
   def showJobHistory(extractorName: String, extractor_key: Option[String]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-    extractorService.getExtractorInfo(extractorName, extractor_key) match {
+    extractorService.getExtractorInfo(extractorName, extractor_key, user) match {
       case None => NotFound(s"No extractor found with name=${extractorName}")
       case Some(info) => {
         val allExtractions = extractions.findAll()
