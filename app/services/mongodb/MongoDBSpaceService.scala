@@ -429,7 +429,6 @@ class MongoDBSpaceService @Inject() (
     datasets.get(dataset) match {
       case Some(x) => {
         val datasetBytes = datasets.getBytesForDataset(dataset)
-        datasets.addToSpace(dataset, space)
         ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("spaceBytes" -> -1 * datasetBytes), upsert=false, multi=false, WriteConcern.Safe)
         ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("fileCount" -> -1 * x.files.length), upsert=false, multi=false, WriteConcern.Safe)
         ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)

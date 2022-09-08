@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## 1.21.0 - 2022-08-23
+
+**_Important:_** This update requires a MongoDB update schema due to a bug in the original migration  of showing summary statistics at the
+space level. Make sure to start the application with -DMONGOUPDATE=1. You can also run the [fixCounts.js](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
+script prior to upgrading to minimize the downtime.
+
+### Added
+- api.Files jsonfile, adds two fields "downloads" and "views" [#228](https://github.com/clowder-framework/clowder/issues/228)
+- Dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch [#335](https://github.com/clowder-framework/clowder/issues/335)
+- MiniUser and LicenseData now have to_jsonld methods to return string part of [#335](https://github.com/clowder-framework/clowder/issues/335) metadata
+- LicenseData has urlViaAttributes used by it's to_jsonld to guess url when empty, for [#335](https://github.com/clowder-framework/clowder/issues/335)
+- MRI previewer for NIFTY (.nii) files.
+- Dataset page usually defaults to Files tab, but if no files will now show Metadata first
+- HEIC (.heic) and HEIF (.heif) mimetypes to support new Apple iPhone image file format.
+- In the docker container the folder /home/clowder/data is now whitelisted by default for uploading by reference. 
+  This can be changed using the environment variable CLOWDER_SOURCEPATH.
+- The current CLA for developers of clowder.
+
+### Fixed
+- Send email to all admins in a single email when a user submits 'Request access' for a space
+- Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
+- script/code to count space in files was not correct [#366](https://github.com/clowder-framework/clowder/issues/336)
+- github actions would fail for docker builds due to secrets not existing
+- Fix to remove dataset from a space [#349](https://github.com/clowder-framework/clowder/issues/349)
+
+### Changed
+- Utils.baseURL now on RequestHeader instead of Request[Any]
+- MongoDB Service log error:'Not all dataset IDs found for Dataset|Folder bulk get request', now incl all the IDs notFound
+
 ## 1.20.3 - 2022-06-10
 
 ### Fixed
@@ -12,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - docker builds images for amd64 and arm64 [#322](https://github.com/clowder-framework/clowder/issues/322)
+
 
 ## 1.20.2 - 2022-04-30
 
@@ -37,7 +68,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documentation: Added "How to contribute documentation" page
 - Documentation: New Sphinx plugins for dropdowns and menus.
 
+
 ## 1.20.0 - 2022-02-07
+
+### Added 
+
+- An IFC previewer
 
 ### Fixed
 - Conf file and code had incosistent spelling of BagIt. Now all have capital B and I.
@@ -46,6 +82,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Download of dataset/collection now has optional parameter bagit (default false) to download items in bagit format.
+- The FBX previewer can also load GLTF files
 
 ## 1.19.5 - 2022-01-21
 

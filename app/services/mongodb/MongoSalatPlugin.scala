@@ -431,7 +431,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Change from User active and serverAdmin flags to single status 
     updateMongo("change-to-user-status", updateToUserStatus)
-    
+
     // Capture original filename from FRBR metadata supplied by SEAD Migrator 
     updateMongo("populate-original-filename", updateOriginalFilename)
 
@@ -450,9 +450,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // Updates extractors enabled and disabled in a space
     updateMongo("update-space-extractors-selection", updateSpaceExtractorsSelection)
 
-    // Adds space bytes to space
-    updateMongo(updateKey = "update-space-bytes", updateSpaceBytes)
-    updateMongo(updateKey = "update-space-files", updateSpaceFiles)
+    // Adds status information to space
+    updateMongo(updateKey = "update-space-status", updateSpaceStatus)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -478,14 +477,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addDateMovedToTrashCollections() {
     val q = MongoDBObject()
-    val s = MongoDBObject("$set" -> MongoDBObject("dateMovedToTrash" -> None, "trash"->false))
-    collection("collections").update(q,s, multi=true)
+    val s = MongoDBObject("$set" -> MongoDBObject("dateMovedToTrash" -> None, "trash" -> false))
+    collection("collections").update(q, s, multi = true)
   }
 
   private def addDateMovedToTrashDatasets() {
     val q = MongoDBObject()
-    val s = MongoDBObject("$set" -> MongoDBObject("dateMovedToTrash" -> None, "trash"->false))
-    collection("datasets").update(q,s, multi=true)
+    val s = MongoDBObject("$set" -> MongoDBObject("dateMovedToTrash" -> None, "trash" -> false))
+    collection("datasets").update(q, s, multi = true)
   }
 
   private def updateMongoChangeUserType() {
@@ -1223,8 +1222,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     var lastId: ObjectId = null
     var lastCollection: String = null
     var count = 0
-    collection("metadata").find().sort(MongoDBObject("attachedTo" -> 1)).foreach{d =>
-      d.getAs[DBObject]("attachedTo").foreach{at =>
+    collection("metadata").find().sort(MongoDBObject("attachedTo" -> 1)).foreach { d =>
+      d.getAs[DBObject]("attachedTo").foreach { at =>
         (at.getAs[ObjectId]("_id"), at.getAs[String]("resourceType")) match {
           case (Some(id), Some(coll)) => {
             if (id != lastId) {
@@ -1311,29 +1310,29 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     userpasses.foreach { user =>
       (user.getAs[ObjectId]("_id"), user.getAs[String]("email"),
         user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAs[String]("userId")) match {
-          case (Some(userId), Some(email), Some(username)) => {
-            try {
-              // Find if user exists with lowercase email already
-              val conflicts = collection("social.users").count(MongoDBObject(
-                "_id" -> MongoDBObject("$ne" -> userId),
-                "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")))
+        case (Some(userId), Some(email), Some(username)) => {
+          try {
+            // Find if user exists with lowercase email already
+            val conflicts = collection("social.users").count(MongoDBObject(
+              "_id" -> MongoDBObject("$ne" -> userId),
+              "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")))
 
-              if (conflicts == 0) {
-                collection("social.users").update(MongoDBObject("_id" -> userId),
-                  MongoDBObject("$set" -> MongoDBObject(
-                    "email" -> email.toLowerCase,
-                    "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass"))), upsert = false, multi = true)
-              } else {
-                // If there's already an account with lowercase email, deactivate this account
-                collection("social.users").update(MongoDBObject("_id" -> userId),
-                  MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert = false, multi = true)
-              }
-            } catch {
-              case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+            if (conflicts == 0) {
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject(
+                  "email" -> email.toLowerCase,
+                  "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass"))), upsert = false, multi = true)
+            } else {
+              // If there's already an account with lowercase email, deactivate this account
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert = false, multi = true)
             }
+          } catch {
+            case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
           }
-          case _ => Logger.error("Missing user fields when updating email case")
         }
+        case _ => Logger.error("Missing user fields when updating email case")
+      }
     }
   }
 
@@ -1455,21 +1454,21 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateAvatarUrl() {
-    val q =  MongoDBObject("avatarUrl" -> "^http://www.gravatar.com".r)
+    val q = MongoDBObject("avatarUrl" -> "^http://www.gravatar.com".r)
     collection("social.users").find(q).foreach { user =>
       val avatar_url = user.getAsOrElse[String]("avatarUrl", "")
-      if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+      if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
         val index = avatar_url.lastIndexOf("/")
         val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
         user.put("avatarUrl", new_gravatar)
       }
       collection("social.users").save(user, WriteConcern.Safe)
     }
-    collection("events").find(MongoDBObject("user.avatarURL" -> "^http://www.gravatar.com".r)).foreach{ event =>
+    collection("events").find(MongoDBObject("user.avatarURL" -> "^http://www.gravatar.com".r)).foreach { event =>
       event.getAs[DBObject]("user") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1480,7 +1479,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       event.getAs[DBObject]("targetuser") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1490,11 +1489,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
       collection("events").save(event, WriteConcern.Safe)
     }
-    collection("collections").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)).foreach{ c =>
+    collection("collections").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)).foreach { c =>
       c.getAs[DBObject]("author") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1504,11 +1503,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case _ => Logger.info("No miniuser associated with the collection ")
       }
     }
-    collection("datasets").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)).foreach{ dataset =>
+    collection("datasets").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)).foreach { dataset =>
       dataset.getAs[DBObject]("author") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1519,11 +1518,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case _ => Logger.info("No miniuser associated with the dataset ")
       }
     }
-    collection("folders").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r))foreach{ folder =>
+    collection("folders").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)) foreach { folder =>
       folder.getAs[DBObject]("author") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1534,11 +1533,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case _ => Logger.info("No miniuser associated with the folder")
       }
     }
-    collection("uploads").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r))foreach{ file =>
+    collection("uploads").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)) foreach { file =>
       file.getAs[DBObject]("author") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1549,11 +1548,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case _ => Logger.info("No miniuser associated with the file")
       }
     }
-    collection("comments").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r))foreach{ comment =>
+    collection("comments").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)) foreach { comment =>
       comment.getAs[DBObject]("author") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1564,11 +1563,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case _ => Logger.info("No miniuser associated with the comment ")
       }
     }
-    collection("curationObjects").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r))foreach{ event =>
+    collection("curationObjects").find(MongoDBObject("author.avatarURL" -> "^http://www.gravatar.com".r)) foreach { event =>
       event.getAs[DBObject]("author") match {
         case Some(mini_user) => {
           val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-          if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+          if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
             val index = avatar_url.lastIndexOf("/")
             val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
             mini_user.put("avatarURL", new_gravatar)
@@ -1579,25 +1578,25 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case _ => Logger.info("No miniuser associated with the curation Object ")
       }
     }
-    collection("metadata").find(MongoDBObject("creator.typeOfAgent" -> "cat:user", "creator.user.avatarURL" -> "^http://www.gravatar.com".r) )foreach{ metadata =>
+    collection("metadata").find(MongoDBObject("creator.typeOfAgent" -> "cat:user", "creator.user.avatarURL" -> "^http://www.gravatar.com".r)) foreach { metadata =>
       metadata.getAs[DBObject]("creator") match {
         case Some(creator) => {
           val typeOfAgent = creator.getAsOrElse("typeOfAgent", "")
-          if(typeOfAgent == "cat:user") {
+          if (typeOfAgent == "cat:user") {
             creator.getAs[DBObject]("user") match {
               case Some(mini_user) => {
                 val avatar_url = mini_user.getAsOrElse("avatarURL", "")
-                if(avatar_url.indexOf("http://www.gravatar.com") == 0 ) {
+                if (avatar_url.indexOf("http://www.gravatar.com") == 0) {
                   val index = avatar_url.lastIndexOf("/")
                   val new_gravatar = "https://www.gravatar.com/avatar" + avatar_url.substring(index)
                   mini_user.put("avatarURL", new_gravatar)
 
                 }
                 collection("metadata").save(metadata, WriteConcern.Safe)
-            }
+              }
               case _ => Logger.info("No miniuser associated with the curation Object ")
+            }
           }
-        }
         }
         case _ => Logger.info("No agent associated with the curation Object ")
       }
@@ -1620,13 +1619,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             val path = content.getAsOrElse[String]("Upload Path", "")
             if (path.length > 0) {
               if (path.lastIndexOf("/") >= 0) {
-                Logger.info("Assigning name/: " + path.substring(path.lastIndexOf("/")+1) + " from path " + path)
+                Logger.info("Assigning name/: " + path.substring(path.lastIndexOf("/") + 1) + " from path " + path)
                 md.getAs[DBObject]("attachedTo") match {
                   case Some(ref) => {
-                                  collection("uploads").update(MongoDBObject("_id" -> new ObjectId(ref.get("_id").toString())),
-                  MongoDBObject("$set" -> MongoDBObject(
-                    "originalname" -> path.substring(path.lastIndexOf("/")+1))), false, false, WriteConcern.Safe)
-                  
+                    collection("uploads").update(MongoDBObject("_id" -> new ObjectId(ref.get("_id").toString())),
+                      MongoDBObject("$set" -> MongoDBObject(
+                        "originalname" -> path.substring(path.lastIndexOf("/") + 1))), false, false, WriteConcern.Safe)
+
                   }
                   case _ => Logger.info("Nope")
                 }
@@ -1659,16 +1658,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def updateEditorRole(): Unit = {
     val query = MongoDBObject("name" -> "Editor")
-    collection("roles").find(query).foreach {role =>
+    collection("roles").find(query).foreach { role =>
       role.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
       collection("roles").save(role, WriteConcern.Safe)
     }
-    collection("social.users").foreach{user =>
+    collection("social.users").foreach { user =>
       val userSpaceRoles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
-      userSpaceRoles.foreach{ userSpaceRole =>
+      userSpaceRoles.foreach { userSpaceRole =>
         val tempUserSpace = userSpaceRole.asInstanceOf[BasicDBObject]
         val tempRole = tempUserSpace.get("role").asInstanceOf[BasicDBObject]
-        if(tempRole.get("name") == "Editor") {
+        if (tempRole.get("name") == "Editor") {
           tempRole.put("permissions", Permission.EDITOR_PERMISSIONS.map(_.toString).toSet)
         }
       }
@@ -1692,33 +1691,34 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     print("DONE")
   }
 
-  private def updateSpaceBytes(): Unit = {
-    val spaces = collection("spaces.projects").find().toList.foreach{ space =>
+  private def updateSpaceStatus(): Unit = {
+    collection("spaces.projects").find().toList.foreach { space =>
       var currentSpaceBytes: Long = 0
+      var fileCount: Integer = 0
       val spaceId = space.get("_id")
       val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId)).toList
-      spaceDatasets.foreach{ spaceDataset =>
+      spaceDatasets.foreach { spaceDataset =>
         val datasetFileIds = spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
-        datasetFileIds.foreach{ fileId =>
+        fileCount += datasetFileIds.length
+        datasetFileIds.foreach { fileId =>
           collection("uploads").findOne(MongoDBObject("_id" -> fileId)) match {
             case Some(file) => currentSpaceBytes += file.get("length").asInstanceOf[Long]
             case None => Logger.info(s"Could not find file ${fileId} in space ${spaceId}")
           }
+          val folders = collection("folders").find(MongoDBObject("parentDatasetId" -> spaceDataset.get("_id"))).toList
+          folders.foreach { folder =>
+            val folderFileIds = folder.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+            fileCount += folderFileIds.length
+            folderFileIds.foreach { fileId =>
+              collection("uploads").findOne(MongoDBObject("_id" -> fileId)) match {
+                case Some(file) => currentSpaceBytes += file.get("length").asInstanceOf[Long]
+                case None => Logger.info(s"Could not find file ${fileId} in space ${spaceId}")
+              }
+            }
+          }
         }
       }
-      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes))
-    }
-  }
-
-  private def updateSpaceFiles(): Unit = {
-    collection("spaces.projects").find().toList.foreach{ space =>
-      var fileCount: Integer = 0
-      val spaceId = space.get("_id")
-      val spaceDatasets = collection("datasets").find(MongoDBObject("spaces" -> spaceId)).toList
-      spaceDatasets.foreach{ spaceDataset =>
-        fileCount += spaceDataset.getAsOrElse[MongoDBList]("files", MongoDBList.empty).length
-      }
-      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("fileCount" -> fileCount))
+      collection("spaces.projects").update(MongoDBObject("_id" -> spaceId), $set("spaceBytes" -> currentSpaceBytes, "fileCount" -> fileCount))
     }
   }
 }
