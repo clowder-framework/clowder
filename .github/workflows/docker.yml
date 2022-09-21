@@ -97,7 +97,7 @@ jobs:
 
           push_tags=""
           for tag in ${tags}; do
-            if [ "${{ secrets.DOCKERHUB_USERNAME }}" == "" ]; then
+            if [ "${{ secrets.DOCKERHUB_USERNAME }}" != "" ]; then
               push_tags="${push_tags}${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}:${tag},"
             fi
             push_tags="${push_tags}ghcr.io/${{ github.repository_owner }}/${{ matrix.IMAGE }}:${tag},"
