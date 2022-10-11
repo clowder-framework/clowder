@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Fixed
+- Changed default to 'Viewer' while inviting users to new spaces [#375](https://github.com/clowder-framework/clowder/issues/375)
 
 ## 1.21.0 - 2022-08-23
 
