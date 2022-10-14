@@ -23,6 +23,7 @@ script prior to upgrading to minimize the downtime.
 - In the docker container the folder /home/clowder/data is now whitelisted by default for uploading by reference. 
   This can be changed using the environment variable CLOWDER_SOURCEPATH.
 - The current CLA for developers of clowder.
+- sitemap.xml route to list dataset pages so they can be crawled for thier embedded jsonld, for google dataset search
 
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
