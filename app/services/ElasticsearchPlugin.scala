@@ -228,8 +228,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     // Check permissions for each resource
     results.foreach(resource => {
       resource.resourceType match {
-        case ResourceRef.file => if (Permission.checkPermission(user, Permission.ViewFile, resource))
-          filesFound += resource.id
+        case ResourceRef.file => {
+          if (Permission.checkPermission(user, Permission.ViewFile, resource) && !files.isInTrash(resource.id))
+            filesFound += resource.id
+        }
         case ResourceRef.dataset => {
           if (Permission.checkPermission(user, Permission.ViewDataset, resource) && !datasets.isInTrash(resource.id))
             datasetsFound += resource.id
