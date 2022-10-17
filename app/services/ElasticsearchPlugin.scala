@@ -230,10 +230,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       resource.resourceType match {
         case ResourceRef.file => if (Permission.checkPermission(user, Permission.ViewFile, resource))
           filesFound += resource.id
-        case ResourceRef.dataset => if (Permission.checkPermission(user, Permission.ViewDataset, resource))
-          datasetsFound += resource.id
-        case ResourceRef.collection => if (Permission.checkPermission(user, Permission.ViewDataset, resource))
-          collectionsFound += resource.id
+        case ResourceRef.dataset => {
+          if (Permission.checkPermission(user, Permission.ViewDataset, resource) && !datasets.isInTrash(resource.id))
+            datasetsFound += resource.id
+        }
+        case ResourceRef.collection => {
+          if (Permission.checkPermission(user, Permission.ViewDataset, resource) && !collections.isInTrash(resource.id))
+            collectionsFound += resource.id
+        }
         case _ => {}
       }
     })
