@@ -157,6 +157,10 @@ class Collections @Inject() (datasets: DatasetService,
       case Some(collection) => {
         val useTrash = play.api.Play.configuration.getBoolean("useTrash").getOrElse(false)
         if (!useTrash || (useTrash && collection.trash)){
+          Logger.debug("Deleting collection from indexes " + collectionId)
+          current.plugin[ElasticsearchPlugin].foreach {
+            _.delete(collectionId.stringify)
+          }
           events.addObjectEvent(request.user , collection.id, collection.name, EventType.DELETE_COLLECTION.toString)
           collections.delete(collectionId)
           current.plugin[AdminsNotifierPlugin].foreach {

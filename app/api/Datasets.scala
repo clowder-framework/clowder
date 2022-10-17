@@ -2039,6 +2039,11 @@ class  Datasets @Inject()(
   def deleteDatasetHelper(id: UUID, request: UserRequest[AnyContent]) = {
     datasets.get(id) match {
       case Some(dataset) => {
+        Logger.debug("Deleting dataset from indexes " + id)
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete(id.stringify)
+        }
+
         //remove dataset from RDF triple store if triple store is used
         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
           case "yes" => rdfsparql.removeDatasetFromGraphs(id)
