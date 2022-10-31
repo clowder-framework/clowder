@@ -770,6 +770,8 @@ class  Datasets @Inject()(
         if(files.isInDataset(file, dataset)){
           //remove file from dataset
           datasets.removeFile(dataset.id, file.id)
+          //updating lastModifiedDate of dataset
+          dataset.lastModifiedDate.setTime(new Date().getTime());
           events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset")
           files.index(fileId)
           if (!file.xmlMetadata.isEmpty)
@@ -882,6 +884,9 @@ class  Datasets @Inject()(
 
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
+
+        //updating lastModifiedDate of dataset
+        x.lastModifiedDate.setTime(new Date().getTime());
       }
       case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
     }
@@ -929,6 +934,9 @@ class  Datasets @Inject()(
 
                 datasets.index(id)
                 Ok(toJson("Metadata successfully added to db"))
+
+                //updating lastModifiedDate of dataset
+                x.lastModifiedDate.setTime(new Date().getTime());
               }
               case e: JsError => {
                 Logger.error("Error getting creator");
@@ -3047,6 +3055,8 @@ class  Datasets @Inject()(
         var eventType = if (inFolder) "add_file_folder" else "add_file"
         eventType = eventType + "_" + fileCount.toString
         events.addObjectEvent(request.user, id, d.name, eventType)
+        //updating lastModifiedDate of dataset
+        d.lastModifiedDate.setTime(new Date().getTime());
       }
 
       // we do not return an internal server error here since this function just add an event and won't influence the
