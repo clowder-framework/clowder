@@ -883,10 +883,10 @@ class  Datasets @Inject()(
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
         datasets.index(id)
-        Ok(toJson(Map("status" -> "success")))
-
         //updating lastModifiedDate of dataset
         x.lastModifiedDate.setTime(new Date().getTime());
+        Ok(toJson(Map("status" -> "success")))
+
       }
       case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
     }
@@ -933,10 +933,10 @@ class  Datasets @Inject()(
                 events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
                 datasets.index(id)
-                Ok(toJson("Metadata successfully added to db"))
 
                 //updating lastModifiedDate of dataset
                 x.lastModifiedDate.setTime(new Date().getTime());
+                Ok(toJson("Metadata successfully added to db"))
               }
               case e: JsError => {
                 Logger.error("Error getting creator");
