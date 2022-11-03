@@ -8,10 +8,13 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
-import util.{FileUtils, Formatters, RequiredFieldsConfig, SortingUtils }
+import util.{FileUtils, Formatters, RequiredFieldsConfig, SortingUtils}
+
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
+
+import java.util.Date
 
 /**
  * A dataset is a collection of files and streams.
@@ -728,7 +731,6 @@ class Datasets @Inject() (
     implicit val user = request.user
 
     Logger.debug("------- in Datasets.submit ---------")
-
     val folder = folderId.flatMap(id => folders.get(UUID(id)))
     val retMap = request.body.asFormUrlEncoded.get("datasetid").flatMap(_.headOption) match {
       case Some(ds) => {
@@ -736,6 +738,7 @@ class Datasets @Inject() (
           case Some(dataset) => {
             val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = "DatasetLevel",
               dataset = Some(dataset), folder = folder, apiKey=request.apiKey)
+            dataset.lastModifiedDate.setTime(new Date().getTime())
             Map("files" -> uploadedFiles.map(f => toJson(Map(
               "name" -> toJson(f.filename),
               "size" -> toJson(f.length),
