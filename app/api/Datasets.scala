@@ -770,8 +770,6 @@ class  Datasets @Inject()(
         if(files.isInDataset(file, dataset)){
           //remove file from dataset
           datasets.removeFile(dataset.id, file.id)
-          //updating lastModifiedDate of dataset
-          dataset.lastModifiedDate.setTime(new Date().getTime());
           events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset")
           files.index(fileId)
           if (!file.xmlMetadata.isEmpty)
@@ -883,8 +881,6 @@ class  Datasets @Inject()(
         events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
         datasets.index(id)
-        //updating lastModifiedDate of dataset
-        x.lastModifiedDate.setTime(new Date().getTime());
         Ok(toJson(Map("status" -> "success")))
 
       }
@@ -934,8 +930,6 @@ class  Datasets @Inject()(
 
                 datasets.index(id)
 
-                //updating lastModifiedDate of dataset
-                x.lastModifiedDate.setTime(new Date().getTime());
                 Ok(toJson("Metadata successfully added to db"))
               }
               case e: JsError => {
@@ -3055,8 +3049,6 @@ class  Datasets @Inject()(
         var eventType = if (inFolder) "add_file_folder" else "add_file"
         eventType = eventType + "_" + fileCount.toString
         events.addObjectEvent(request.user, id, d.name, eventType)
-        //updating lastModifiedDate of dataset
-        d.lastModifiedDate.setTime(new Date().getTime());
       }
 
       // we do not return an internal server error here since this function just add an event and won't influence the

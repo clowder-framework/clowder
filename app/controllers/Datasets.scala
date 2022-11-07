@@ -14,8 +14,6 @@ import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
 
-import java.util.Date
-
 /**
  * A dataset is a collection of files and streams.
  */
@@ -738,7 +736,6 @@ class Datasets @Inject() (
           case Some(dataset) => {
             val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews = "DatasetLevel",
               dataset = Some(dataset), folder = folder, apiKey=request.apiKey)
-            dataset.lastModifiedDate.setTime(new Date().getTime())
             Map("files" -> uploadedFiles.map(f => toJson(Map(
               "name" -> toJson(f.filename),
               "size" -> toJson(f.length),
