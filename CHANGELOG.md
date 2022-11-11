@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ## Fixed
-- Updated lastModifiesDate when updating file or metadata to a dataset  [386](https://github.com/clowder-framework/clowder/issues/386)
+- Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
 
 ## 1.21.0 - 2022-08-23
 
