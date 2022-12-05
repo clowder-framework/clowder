@@ -372,6 +372,7 @@
                     <tr><td><b>Last viewed:</b></td><td> @view._2.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Downloads:</b></td><td> @dataset.stats.downloads</td></tr>
                     <tr><td><b>Last downloaded:</b></td><td> @if(dataset.stats.last_downloaded.isDefined){@dataset.stats.last_downloaded.get.format("MMM dd, yyyy HH:mm:ss")}else{Never}</td></tr>
+                    <tr><td><b>Last Modified:</b></td><td> @dataset.lastModifiedDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                 </table>
             </div>
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
