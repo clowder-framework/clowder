@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+### Unreleased
 
 ### Added
+- Added Trash button to delete section [#347](https://github.com/clowder-framework/clowder/issues/347)
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
 - Extractors can now specify an extractor_key and an owner (email address) when sending a
 registration or heartbeat to Clowder that will restrict use of that extractor to them.
