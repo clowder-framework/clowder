@@ -1,6 +1,6 @@
 package services.mongodb
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
@@ -12,11 +12,12 @@ import play.api.Play.current
 import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, JsValue, Json}
 import services._
 import services.mongodb.MongoContext.context
-
 import org.bson.types.ObjectId
 
 @Singleton
-class MongoDBExtractorService extends ExtractorService {
+class MongoDBExtractorService @Inject() (
+    users: MongoDBUserService
+  ) extends ExtractorService {
 
   def getExtractorServerIPList() = {
     var listServersIPs = List[String]()
@@ -169,51 +170,106 @@ class MongoDBExtractorService extends ExtractorService {
     }
   }
 
-  def listExtractorsInfo(categories: List[String]): List[ExtractorInfo] = {
+  def listExtractorsInfo(categories: List[String], user: Option[UUID]): List[ExtractorInfo] = {
+    Logger.info("listing: "+categories.toString)
     var list_queue = List[ExtractorInfo]()
 
     val allDocs = ExtractorInfoDAO.findAll().sort(orderBy = MongoDBObject("name" -> -1))
     for (doc <- allDocs) {
-      // If no categories are specified, return all extractor names
-      var category_match = categories.isEmpty
-      if (!category_match) {
+      // If no filters are specified, return all extractor names
+      var filter_match = (categories.isEmpty && doc.permissions.isEmpty)
+      if (!filter_match) {
         // Otherwise check if any extractor categories overlap requested categories (force uppercase)
+        val user_match = user match {
+          case Some(u) => {
+            val rr = new ResourceRef('user, u)
+            doc.permissions.contains(rr) || doc.permissions.isEmpty
+          }
+          case None => doc.permissions.isEmpty // If no user filter in registered extractor, everyone can see
+        }
         val upper_categories = categories.map(cat => cat.toUpperCase)
-        category_match = doc.categories.intersect(upper_categories).length > 0
+        val category_match = categories.length == 0 || doc.categories.intersect(upper_categories).length > 0
+        filter_match = (category_match && user_match)
       }
 
-      if (category_match)
+      if (filter_match)
         list_queue = doc :: list_queue
     }
 
     list_queue
   }
 
-  def getExtractorInfo(extractorName: String): Option[ExtractorInfo] = {
-    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName))
+  def getExtractorInfo(extractorName: String, extractorKey: Option[String], user: Option[User]): Option[ExtractorInfo] = {
+    extractorKey match {
+      case Some(ek) => {
+        user match {
+          case None =>  {
+            Logger.error("User authentication required to view extractor info with a unique key.")
+            None
+          }
+          case Some(u) => {
+            val userRef = new ResourceRef('user, u.id)
+            ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek, "permissions" -> userRef))
+          }
+        }
+      }
+      case None => ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> MongoDBObject("$exists" -> false)))
+    }
   }
 
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo] = {
-    ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name)) match {
-      case Some(old) => {
-        val updated = e.copy(id = old.id)
-        ExtractorInfoDAO.update(MongoDBObject("name" -> e.name), updated, false, false, WriteConcern.Safe)
-        Some(updated)
-      }
+    // TODO: Make this account for version as well
+    e.unique_key match {
       case None => {
-        ExtractorInfoDAO.save(e)
-        Some(e)
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name, "unique_key" -> MongoDBObject("$exists" -> false))) match {
+          case Some(old) => {
+            val updated = e.copy(id = old.id)
+            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name, "unique_key" -> MongoDBObject("$exists" -> false)), updated, false, false, WriteConcern.Safe)
+            Some(updated)
+          }
+          case None => {
+            ExtractorInfoDAO.save(e)
+            Some(e)
+          }
+        }
+      }
+      case Some(ek) => {
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> e.name, "unique_key" -> ek)) match {
+          case Some(old) => {
+            val updated = e.copy(id = old.id)
+            ExtractorInfoDAO.update(MongoDBObject("name" -> e.name, "unique_key" -> ek), updated, false, false, WriteConcern.Safe)
+            Some(updated)
+          }
+          case None => {
+            ExtractorInfoDAO.save(e)
+            Some(e)
+          }
+        }
       }
     }
   }
 
-  def deleteExtractor(extractorName: String) {
-    ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName)) match {
-      case Some(extractor) => {
-        ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name))
+  def deleteExtractor(extractorName: String, extractorKey: Option[String]) {
+    extractorKey match {
+      case Some(ek) => {
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> ek)) match {
+          case Some(extractor) => {
+            ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name, "unique_key" -> ek))
+          }
+          case None => {
+            Logger.error(s"No extractor found with name ${extractorName} and key ${ek}")
+          }
+        }
       }
       case None => {
-        Logger.info("No extractor found with name: " + extractorName)
+        ExtractorInfoDAO.findOne(MongoDBObject("name" -> extractorName, "unique_key" -> MongoDBObject("$exists" -> false))) match {
+          case Some(extractor) => {
+            ExtractorInfoDAO.remove(MongoDBObject("name" -> extractor.name, "unique_key" -> MongoDBObject("$exists" -> false)))
+          }
+          case None => {
+            Logger.error("No extractor found with name: " + extractorName)
+          }
+        }
       }
     }
   }
@@ -246,15 +302,11 @@ class MongoDBExtractorService extends ExtractorService {
 
   def getLabelsForExtractor(extractorName: String): List[ExtractorsLabel] = {
     var results = List[ExtractorsLabel]()
-    ExtractorInfoDAO.findOne(MongoDBObject("name"->extractorName)) match {
-      case Some(info) => {
-        ExtractorsLabelDAO.findAll().foreach(label => {
-          if (label.extractors.contains(extractorName)) {
-            results = results ++ List[ExtractorsLabel](label)
-          }
-        })
+    ExtractorsLabelDAO.findAll().foreach(label => {
+      if (label.extractors.contains(extractorName) && !results.contains(label)) {
+        results = results ++ List[ExtractorsLabel](label)
       }
-    }
+    })
     results
   }
 }
