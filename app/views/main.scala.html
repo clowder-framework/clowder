@@ -84,7 +84,7 @@
                                 <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
                             } else {
-                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-hdd"></span> @Messages("spaces.title")</a></li>
+                                <li onclick="setMySpaceTypeSessionStorage()"><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-hdd"></span> @Messages("spaces.title")</a></li>
                                 <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
                             }
@@ -96,7 +96,7 @@
                             Explore <b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-hdd"> </span> @Messages("spaces.title")</a></li>
+                            <li><a href="@routes.Spaces.list(showAll=false)"><span class="glyphicon glyphicon-hdd"> </span> @Messages("spaces.title")</a></li>
                             @user match {
                                 case Some(x) => {
                                     @if(play.Play.application().configuration().getBoolean("verifySpaces") && api.Permission.checkServerAdmin(user)) {
@@ -323,6 +323,10 @@
     function toggelServerAdmin() {
         $.cookie("superAdmin", $.cookie("superAdmin") != "true", { path: '/' });
         location.reload();
+    }
+
+    function setMySpaceTypeSessionStorage (){
+        sessionStorage.setItem("#spacesOwnership", "2");
     }
 </script>
 
