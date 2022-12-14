@@ -72,12 +72,12 @@ class ExtractorRoutingService {
    * @param resourceType the type of resource to check
    * @return filtered list of extractors
    */
-  private def getMatchingExtractors(extractorIds: List[String], operation: String, resourceType: ResourceType.Value): List[String] = {
+  private def getMatchingExtractors(extractorIds: List[String], operation: String, resourceType: ResourceType.Value, user: Option[User] = None): List[String] = {
     val extractorsService = DI.injector.getInstance(classOf[ExtractorService])
 
     extractorIds.flatMap(exId =>
-      extractorsService.getExtractorInfo(exId)).filter(exInfo =>
-      resourceType match {
+      extractorsService.getExtractorInfo(exId, None, None)).filter(exInfo => {
+      val processMatch = resourceType match {
         case ResourceType.dataset =>
           containsOperation(exInfo.process.dataset, operation)
         case ResourceType.file =>
@@ -87,7 +87,17 @@ class ExtractorRoutingService {
         case _ =>
           false
       }
-    ).map(_.name)
+      val permissionMatch = exInfo.unique_key match {
+        case Some(key) => {
+          user match {
+            case None => false // User must be provided for a key-protected extractor
+            case Some(u) => exInfo.permissions.contains(new ResourceRef('user,u.id))
+          }
+        }
+        case None => true
+      }
+      processMatch && permissionMatch
+    }).map(_.name)
   }
 
   /**
@@ -96,15 +106,15 @@ class ExtractorRoutingService {
    * @param operation The dataset operation requested.
    * @return A list of extractors IDs.
    */
-  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String, resourceType: ResourceType.Value): (List[String], List[String]) = {
+  private def getSpaceExtractorsByOperation(dataset: Dataset, operation: String, resourceType: ResourceType.Value, user: Option[User] = None): (List[String], List[String]) = {
     val spacesService = DI.injector.getInstance(classOf[SpaceService])
 
     var enabledExtractors = new ListBuffer[String]()
     var disabledExtractors = new ListBuffer[String]()
     dataset.spaces.map(space => {
       spacesService.getAllExtractors(space).foreach { extractors =>
-        enabledExtractors.appendAll(getMatchingExtractors(extractors.enabled, operation, resourceType))
-        disabledExtractors.appendAll(getMatchingExtractors(extractors.disabled, operation, resourceType))
+        enabledExtractors.appendAll(getMatchingExtractors(extractors.enabled, operation, resourceType, user))
+        disabledExtractors.appendAll(getMatchingExtractors(extractors.disabled, operation, resourceType, user))
       }
     })
     (enabledExtractors.toList, disabledExtractors.toList)
@@ -145,7 +155,7 @@ class ExtractorRoutingService {
    * @param contentType the content type of the file in the case of a file
    * @return a set of unique rabbitmq queues
    */
-  private def getQueues(dataset: Dataset, routingKey: String, contentType: String): Set[String] = {
+  private def getQueues(dataset: Dataset, routingKey: String, contentType: String, user: Option[User] = None): Set[String] = {
     val extractorsService = DI.injector.getInstance(classOf[ExtractorService])
 
     // drop the first fragment from the routing key and replace characters to create operation id
@@ -160,9 +170,9 @@ class ExtractorRoutingService {
       else
         return Set.empty[String]
     // get extractors enabled at the global level
-    val globalExtractors = getMatchingExtractors(extractorsService.getEnabledExtractors(), operation, resourceType)
+    val globalExtractors = getMatchingExtractors(extractorsService.getEnabledExtractors(), operation, resourceType, user)
     // get extractors enabled/disabled at the space level
-    val (enabledExtractors, disabledExtractors) = getSpaceExtractorsByOperation(dataset, operation, resourceType)
+    val (enabledExtractors, disabledExtractors) = getSpaceExtractorsByOperation(dataset, operation, resourceType, user)
     // get queues based on RabbitMQ bindings (old method).
     val queuesFromBindings = getQueuesFromBindings(routingKey)
     // take the union of queues so that we publish to a specific queue only once
@@ -229,6 +239,7 @@ class ExtractorRoutingService {
     var jobId: Option[UUID] = None
     dataset match {
       case Some(d) => {
+        // TODO: Check private extractor behavior
         getQueues(d, routingKey, file.contentType).foreach { queue =>
           val source = Entity(ResourceRef(ResourceRef.file, file.id), Some(file.contentType), sourceExtra)
 
