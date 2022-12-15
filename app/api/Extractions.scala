@@ -128,36 +128,6 @@ class Extractions @Inject()(
   }
 
   /**
-   *
-   * Given a file id (UUID), submit this file for extraction
-   */
-  def submitExtraction(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-    if (UUID.isValid(id.stringify)) {
-      files.get(id) match {
-        case Some(file) => {
-          // FIXME dataset not available?
-          routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
-            case Some(jobId) => {
-              Ok(Json.obj("status" -> "OK", "job_id" -> jobId))
-            }
-            case None => {
-              val message = "No jobId found for Extraction"
-              Logger.error(message)
-              InternalServerError(toJson(Map("status" -> "KO", "message" -> message)))
-            }
-          }
-        }
-        case None => {
-          Logger.error("Could not retrieve file that was just saved.")
-          InternalServerError("Error uploading file")
-        }
-      } //file match
-    } else {
-      BadRequest("Not valid id")
-    }
-  }
-
-  /**
    * For a given file id, checks for the status of all extractors processing that file.
    * REST endpoint  GET /api/extractions/:id/status
    * input: file id
@@ -404,24 +374,24 @@ class Extractions @Inject()(
     Ok(jarr)
   }
 
-  def listExtractors(categories: List[String]) = AuthenticatedAction  { implicit request =>
-    Ok(Json.toJson(extractors.listExtractorsInfo(categories)))
+  def listExtractors(categories: List[String], space: Option[UUID]) = AuthenticatedAction  { implicit request =>
+    val userid = request.user.map(u => Some(u.id)).getOrElse(None)
+    Ok(Json.toJson(extractors.listExtractorsInfo(categories, userid)))
   }
 
-  def getExtractorInfo(extractorName: String) = AuthenticatedAction { implicit request =>
-    extractors.getExtractorInfo(extractorName) match {
+  def getExtractorInfo(extractorName: String, extractor_key: Option[String]) = AuthenticatedAction { implicit request =>
+    extractors.getExtractorInfo(extractorName, extractor_key, request.user) match {
       case Some(info) => Ok(Json.toJson(info))
       case None => NotFound(Json.obj("status" -> "KO", "message" -> "Extractor info not found"))
     }
   }
 
-  def deleteExtractor(extractorName: String) = ServerAdminAction { implicit request =>
-    extractors.deleteExtractor(extractorName)
+  def deleteExtractor(extractorName: String, extractor_key: Option[String]) = ServerAdminAction { implicit request =>
+    extractors.deleteExtractor(extractorName, extractor_key)
     Ok(toJson(Map("status" -> "success")))
   }
 
-  def addExtractorInfo() = AuthenticatedAction(parse.json) { implicit request =>
-
+  def addExtractorInfo(extractor_key: Option[String], user: Option[String]) = AuthenticatedAction(parse.json) { implicit request =>
     // If repository is of type object, change it into an array.
     // This is for backward compatibility with requests from existing extractors.
     var requestJson = request.body \ "repository" match {
@@ -438,34 +408,66 @@ class Extractions @Inject()(
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
       },
       info => {
-        extractors.updateExtractorInfo(info) match {
-          case Some(u) => {
-            // Create/assign any default labels for this extractor
-            u.defaultLabels.foreach(labelStr => {
-              val segments = labelStr.split("/")
-              val (labelName, labelCategory) = if (segments.length > 1) {
-                (segments(1), segments(0))
-              } else {
-                (segments(0), "Other")
+        // Check private extractor flags
+        val submissionInfo: Option[ExtractorInfo] = extractor_key match {
+          case Some(ek) => {
+            user match {
+              case None => {
+                Logger.error("Extractors with a private key must also specify a user email.")
+                None
               }
-              extractors.getExtractorsLabel(labelName) match {
-                case None => {
-                  // Label does not exist - create and assign it
-                  val createdLabel = extractors.createExtractorsLabel(labelName, Some(labelCategory), List[String](u.name))
-                }
-                case Some(lbl) => {
-                  // Label already exists, assign it
-                  if (!lbl.extractors.contains(u.name)) {
-                    val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](u.name))
-                    val updatedLabel = extractors.updateExtractorsLabel(label)
+              case Some(userEmail) => {
+                userservice.findByEmail(userEmail) match {
+                  case Some(u) => {
+                    val perms = List(new ResourceRef('user, u.id))
+                    Some(info.copy(unique_key=Some(ek), permissions=perms))
+                  }
+                  case None => {
+                    Logger.error("No user found with email "+userEmail)
+                    None
                   }
                 }
               }
-            })
-
-            Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+            }
           }
-          case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
+          case None => Some(info)
+        }
+
+        // TODO: Check user permissions if the extractor_key has already been registered
+
+        submissionInfo match {
+          case None => BadRequest("Extractors with a private key must also specify a non-anonymous user.")
+          case Some(subInfo) => {
+            extractors.updateExtractorInfo(subInfo) match {
+              case Some(u) => {
+                // Create/assign any default labels for this extractor
+                u.defaultLabels.foreach(labelStr => {
+                  val segments = labelStr.split("/")
+                  val (labelName, labelCategory) = if (segments.length > 1) {
+                    (segments(1), segments(0))
+                  } else {
+                    (segments(0), "Other")
+                  }
+                  extractors.getExtractorsLabel(labelName) match {
+                    case None => {
+                      // Label does not exist - create and assign it
+                      val createdLabel = extractors.createExtractorsLabel(labelName, Some(labelCategory), List[String](u.name))
+                    }
+                    case Some(lbl) => {
+                      // Label already exists, assign it
+                      if (!lbl.extractors.contains(u.name)) {
+                        val label = ExtractorsLabel(lbl.id, lbl.name, lbl.category, lbl.extractors ++ List[String](u.name))
+                        val updatedLabel = extractors.updateExtractorsLabel(label)
+                      }
+                    }
+                  }
+                })
+
+                Ok(Json.obj("status" -> "OK", "message" -> ("Extractor info updated. ID = " + u.id)))
+              }
+              case None => BadRequest(Json.obj("status" -> "KO", "message" -> "Error updating extractor info"))
+            }
+          }
         }
       }
     )
@@ -518,11 +520,14 @@ class Extractions @Inject()(
           }
           // if extractor_id is not specified default to execution of all extractors matching mime type
           (request.body \ "extractor").asOpt[String] match {
-            case Some(extractorId) =>
+            case Some(extractorId) => {
+              val extractorKey = (request.body \ "extractor").asOpt[String]
+              extractors.getExtractorInfo(extractorId, extractorKey, request.user)
               val job_id = routing.submitFileManually(new UUID(originalId), file, Utils.baseUrl(request), extractorId, extra,
                 datasetId, newFlags, request.apiKey, request.user)
               sink.logSubmitFileToExtractorEvent(file, extractorId, request.user)
               Ok(Json.obj("status" -> "OK", "job_id" -> job_id))
+            }
             case None => {
               routing.fileCreated(file, None, Utils.baseUrl(request).toString, request.apiKey) match {
                 case Some(job_id) => {

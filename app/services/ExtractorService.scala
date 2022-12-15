@@ -35,13 +35,13 @@ trait ExtractorService {
   
   def dropAllExtractorStatusCollection()
 
-  def listExtractorsInfo(categories: List[String]): List[ExtractorInfo]
+  def listExtractorsInfo(categories: List[String], user: Option[UUID]): List[ExtractorInfo]
 
-  def getExtractorInfo(extractorName: String): Option[ExtractorInfo]
+  def getExtractorInfo(extractorName: String, extractorKey: Option[String], user: Option[User]): Option[ExtractorInfo]
 
   def updateExtractorInfo(e: ExtractorInfo): Option[ExtractorInfo]
 
-  def deleteExtractor(extractorName: String)
+  def deleteExtractor(extractorName: String, extractorKey: Option[String])
 
   def listExtractorsLabels(): List[ExtractorsLabel]
 
