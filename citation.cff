@@ -2,7 +2,6 @@ cff-version: 1.2.0
 type: software
 message: If you use this software, please cite it using these metadata.
 title: "Clowder: Open Source Data Management for Long Tail Data"
-title: null
 version: 1.2.7
 license: "NCSA"
 repository-code: "https://github.com/clowder-framework/clowder"
