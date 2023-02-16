@@ -49,6 +49,31 @@ preferred-citation:
       given-names: Yan
     - family-names: McHenry
       given-names: Kenton
+references:
+  - institution: "National Science Foundation" 
+    number: "#BCS-0941268" 
+  - institution: "National Science Foundation"  
+    number: "#EAR- 331906"
+  - institution: "National Science Foundation"  
+    number: "#ACI-1261582"
+  - institution: "National Science Foundation"  
+    number: "#ACI-1443013"
+  - institution: "National Science Foundation"  
+    number: "#OCI-0940824"
+  - institution: "National Science Foundation"  
+    number: "#OCI-0525308"
+  - institution: "National Science Foundation"  
+    number: "#OAC-1835834"
+  - institution: "National Institutes of Health"
+    number: "#1P01AI089556-01A1"
+  - institution: "Illinois - Indiana Sea Grant"
+    number: "#DW92329201"
+  - institution: "European Commission"
+    number: "#RI-261600"
+  - institution: "XSEDE"
+    number: "#OCI-1053575"
+  - institution: "ARPA-E"
+    number: "#DE-AR0000594"
 authors:
   - family-names: "Marini"
     given-names: "Luigi"
