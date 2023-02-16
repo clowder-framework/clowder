@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## Unreleased
+
+### Added
+- added a citation.cff file
+
 ## 1.21.0 - 2022-08-23
 
 **_Important:_** This update requires a MongoDB update schema due to a bug in the original migration  of showing summary statistics at the
