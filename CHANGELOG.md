@@ -17,6 +17,7 @@ registration or heartbeat to Clowder that will restrict use of that extractor to
 ## Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
 - Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
+- Fixed bug where complex JSON metadata objects using arrays were not being indexed properly for search.
 
 ## 1.21.0 - 2022-08-23
 
