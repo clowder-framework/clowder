@@ -598,9 +598,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           // Elasticsearch 2 does not allow periods in field names
           builder.startArray(k.toString.replace(".", "_"))
           v.value.foreach(jv => {
-            // Try to interpret numeric value from each String if possible
             builder.startObject()
-            convertJsObjectToBuilder(builder, jv.asInstanceOf[JsObject], true)
+            convertJsObjectToBuilder(builder, jv.asInstanceOf[JsObject])
             builder.endObject()
           })
           builder.endArray()
