@@ -90,10 +90,14 @@ trait ApiController extends Controller {
         case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => {
-          affectedResource match {
-            case Some(resource) if Permission.checkOwner(u, resource) => block(userRequest)
-            case _ => Future.successful(Unauthorized("Not authorized"))
-           }
+          if(u.status == UserStatus.ReadOnly && !api.Permission.READONLY.contains(permission)) {
+            Future.successful(Unauthorized("Account is read-only"))
+          } else {
+            affectedResource match {
+              case Some(resource) if Permission.checkOwner(u, resource) => block(userRequest)
+              case _ => Future.successful(Unauthorized("Not authorized"))
+            }
+          }
         }
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))

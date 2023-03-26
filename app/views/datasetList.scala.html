@@ -54,6 +54,8 @@
 <div class="row">
     <div class="btn-toolbar pagination-toolbar pull-right">
 
+    @if(user.isDefined && user.get.status != UserStatus.ReadOnly) {
+
         @status match {
             case Some(st) => {}
             case None => {
@@ -95,6 +97,7 @@
                 }
             }
         }
+    }
 
         <div class="btn-group btn-group-sm" id="number-displayed-dropdown">
             <select id="numPageItems" class="form-control" onchange="getValue()">

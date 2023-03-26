@@ -129,29 +129,30 @@
                         </ul>
                     </li>
                 @if(user.isDefined) {
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Create <b class="caret"></b>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-hdd"> </span>
-                                @Messages("spaces.title")
-                            </a></li>
-                            <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span>
-                                @Messages("datasets.title")</a></li>
-                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-large"> </span>
-                                @Messages("collections.title")</a></li>
-                            @play.api.Play.current.plugin[services.PostgresPlugin] match {
+                    @if(user.get.status !=  UserStatus.ReadOnly) {
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                Create <b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-hdd"> </span>
+                                    @Messages("spaces.title")
+                                </a></li>
+                                <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span>
+                                    @Messages("datasets.title")</a></li>
+                                <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-large"> </span>
+                                    @Messages("collections.title")</a></li>
+                                @play.api.Play.current.plugin[services.PostgresPlugin] match {
                                 case Some(db) if db.isEnabled => {
-                                    <li><a href="@routes.Geostreams.newSensor"><span class="glyphicon glyphicon-globe"> </span>
-                                        @(AppConfiguration.getSensorsTitle)</a></li>
-                                }
-                                case _ => {}
+                                <li><a href="@routes.Geostreams.newSensor"><span class="glyphicon glyphicon-globe"> </span>
+                                    @(AppConfiguration.getSensorsTitle)</a>
+                                </li>
                             }
-
-
-                        </ul>
-                    </li>
+                                case _ => {}
+                                }
+                            </ul>
+                        </li>
+                    }
 
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -163,10 +164,12 @@
                             <li><a href="#" onclick="downloadAllSelections();"><span class="glyphicon glyphicon-download-alt"> </span>
                                 Download All
                             </a></li>
-                            <li><a href="#" onclick="showTagPopup();"><span class="glyphicon glyphicon-tag"> </span>
-                                Tag All</a></li>
-                            <li><a href="#" onclick="confirmDeleteSelected();"><span class="glyphicon glyphicon-trash"> </span>
-                                Delete All</a></li>
+                            @if(user.get.status !=  UserStatus.ReadOnly) {
+                                <li><a href="#" onclick="showTagPopup();"><span class="glyphicon glyphicon-tag"> </span>
+                                    Tag All</a></li>
+                                <li><a href="#" onclick="confirmDeleteSelected();"><span class="glyphicon glyphicon-trash"> </span>
+                                    Delete All</a></li>
+                            }
                             <li><a href="#" onclick="clearSelections();"><span class="glyphicon glyphicon-erase"> </span>
                                 Clear All</a></li>
                         </ul>

@@ -426,6 +426,7 @@ object Permission extends Enumeration {
   def checkPermission(user: User, permission: Permission, resourceRef: ResourceRef): Boolean = {
     // check if user is owner, in that case they can do what they want.
     if (user.superAdminMode) return true
+    if (user.status == UserStatus.ReadOnly && !READONLY.contains(permission)) return false
     if (checkOwner(users.findByIdentity(user), resourceRef)) return true
 
     resourceRef match {
