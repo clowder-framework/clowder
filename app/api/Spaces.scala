@@ -32,7 +32,7 @@ class Spaces @Inject()(spaces: SpaceService,
   val spaceTitle: String = Messages("space.title")
 
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = AuthenticatedAction(parse.json) { implicit request =>
+  def createSpace() = PermissionAction(Permission.CreateSpace)(parse.json) { implicit request =>
     Logger.debug("Creating new space")
     if(request.user.get.status == UserStatus.ReadOnly) {
       BadRequest(toJson("User is Read-Only"))

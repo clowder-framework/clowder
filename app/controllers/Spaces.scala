@@ -222,7 +222,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
     }
   }
 
-  def newSpace() = AuthenticatedAction { implicit request =>
+  def newSpace() = PermissionAction(Permission.CreateSpace) { implicit request =>
     implicit val user = request.user
     Ok(views.html.spaces.newSpace(spaceForm))
   }
@@ -396,7 +396,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
    * Submit action for new or edit space
    */
   // TODO this should check to see if user has editspace for specific space
-  def submit() = AuthenticatedAction { implicit request =>
+  def submit() = PermissionAction(Permission.CreateSpace) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(identity) if identity.status != UserStatus.ReadOnly => {

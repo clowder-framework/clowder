@@ -24,22 +24,26 @@ Bulk operations are still subject to individual dataset permissions; if you do n
 					<a id='download-url' href="#" onclick="downloadAllSelections();"
 					class="btn btn-link disabled" title="Download all selected files as zip" role="button">
 						<span class="glyphicon glyphicon-download-alt"></span> Download All</a>
-					<a id='delete-url' href="#" onclick="confirmDeleteSelected();"
-					class="btn btn-link disabled" title="Delete all selected datasets" role="button">
-						<span class="glyphicon glyphicon-trash"></span> Delete All</a>
-					<a id='tag-url' href="#" onclick="showTagPopup();"
-					class="btn btn-link" title="Apply a tag to all selected datasets" role="button">
-						<span class="glyphicon glyphicon-tag"></span> Tag All</a>
+					@if(user.get.status != UserStatus.ReadOnly) {
+						<a id='delete-url' href="#" onclick="confirmDeleteSelected();"
+						class="btn btn-link disabled" title="Delete all selected datasets" role="button">
+							<span class="glyphicon glyphicon-trash"></span> Delete All</a>
+						<a id='tag-url' href="#" onclick="showTagPopup();"
+						class="btn btn-link" title="Apply a tag to all selected datasets" role="button">
+							<span class="glyphicon glyphicon-tag"></span> Tag All</a>
+					}
 				} else {
 					<a id='download-url' href="#" onclick="downloadAllSelections();"
 					class="btn btn-link" title="Download all selected files as zip" role="button">
 						<span class="glyphicon glyphicon-download-alt"></span> Download All</a>
-					<a id='delete-url' href="#" onclick="confirmDeleteSelected();"
-					class="btn btn-link" title="Delete all selected datasets" role="button">
-						<span class="glyphicon glyphicon-trash"></span> Delete All</a>
-					<a id='tag-url' href="#" onclick="showTagPopup();"
-					class="btn btn-link" title="Apply a tag to all selected datasets" role="button">
-						<span class="glyphicon glyphicon-tag"></span> Tag All</a>
+					@if(user.get.status != UserStatus.ReadOnly) {
+						<a id='delete-url' href="#" onclick="confirmDeleteSelected();"
+						class="btn btn-link" title="Delete all selected datasets" role="button">
+							<span class="glyphicon glyphicon-trash"></span> Delete All</a>
+						<a id='tag-url' href="#" onclick="showTagPopup();"
+						class="btn btn-link" title="Apply a tag to all selected datasets" role="button">
+							<span class="glyphicon glyphicon-tag"></span> Tag All</a>
+					}
 				}
 				<a id='clear-url' href="#" onclick="clearSelections();"
 				class="btn btn-link" title="Clear all selected datasets" role="button">

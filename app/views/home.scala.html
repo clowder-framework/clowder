@@ -23,12 +23,14 @@
         <div class="button-margins">
             <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile">
                 <span class="glyphicon glyphicon-user"></span> Profile</a>
-            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new @Messages("space.title")">
-                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("space.title"))</a>
-            <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset">
-                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
-            <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection">
-                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collection.title"))</a>
+            @if(user.get.status != UserStatus.ReadOnly) {
+                <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new @Messages("space.title")">
+                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("space.title"))</a>
+                <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset">
+                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
+                <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection">
+                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collection.title"))</a>
+            }
         </div>
     <div class="row">
         <!-- Nav tabs -->

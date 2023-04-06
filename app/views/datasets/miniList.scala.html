@@ -27,7 +27,9 @@
     <div class="text-center">
         @if(ownProfile) {
             <div>@Messages("home.empty.message", Messages("datasets.title").toLowerCase)</div>
-            <div><a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new @Messages("dataset.title")">@Messages("create.title", Messages("dataset.title"))</a></div>
+            @if(user.get.status != UserStatus.ReadOnly) {
+                <div><a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new @Messages("dataset.title")">@Messages("create.title", Messages("dataset.title"))</a></div>
+            }
         } else {
             <div>@Messages("profile.empty.message", Messages("datasets.title").toLowerCase) </div>
         }
