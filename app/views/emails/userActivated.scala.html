@@ -7,13 +7,8 @@
         @user.fullName,<br/>
         <br>
         <p>
-            Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a><br/>
-            has been
-            @if(active) {
-                enabled and you can now login.
-            } else {
-                disabled.
-            }
+            Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a>
+            has been made @user.status.
         </p>
         @footer()
     </body>
