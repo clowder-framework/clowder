@@ -128,7 +128,7 @@ class Admin @Inject() (userService: UserService,
             if (u.status != UserStatus.Active) {
               userService.update(u.copy(status = UserStatus.Active))
               val subject = s"[${AppConfiguration.getDisplayName}] account is now active"
-              val body = views.html.emails.userActivated(u, active = true)(request)
+              val body = views.html.emails.userChanged(u, "activated")(request)
               util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
@@ -141,7 +141,7 @@ class Admin @Inject() (userService: UserService,
             if (u.status != UserStatus.Inactive) {
               userService.update(u.copy(status = UserStatus.Inactive))
               val subject = s"[${AppConfiguration.getDisplayName}] account is deactivated"
-              val body = views.html.emails.userActivated(u, active = false)(request)
+              val body = views.html.emails.userChanged(u, "deactivated")(request)
               util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
@@ -154,7 +154,7 @@ class Admin @Inject() (userService: UserService,
             if (u.status != UserStatus.Admin) {
               userService.update(u.copy(status = UserStatus.Admin))
               val subject = s"[${AppConfiguration.getDisplayName}] account is now an admin"
-              val body = views.html.emails.userActivated(u, active = false)(request)
+              val body = views.html.emails.userChanged(u, "an admin account")(request)
               util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
@@ -167,7 +167,7 @@ class Admin @Inject() (userService: UserService,
             if (u.status != UserStatus.ReadOnly) {
               userService.update(u.copy(status = UserStatus.ReadOnly))
               val subject = s"[${AppConfiguration.getDisplayName}] account is now an read-only"
-              val body = views.html.emails.userActivated(u, active = false)(request)
+              val body = views.html.emails.userChanged(u, "read-only")(request)
               util.Mail.sendEmail(subject, request.user, u, body)
             }
           }

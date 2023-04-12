@@ -1,4 +1,4 @@
-@(user: User, active: Boolean, ssl: Boolean = true)(implicit request: RequestHeader)
+@(user: User, statis: String, ssl: Boolean = true)(implicit request: RequestHeader)
 
 @import services.AppConfiguration
 
@@ -8,7 +8,7 @@
         <br>
         <p>
             Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a>
-            has been made @user.status.
+            has been made @status.
         </p>
         @footer()
     </body>
