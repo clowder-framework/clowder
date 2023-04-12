@@ -104,7 +104,7 @@ trait SecuredController extends Controller {
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if (u.status==UserStatus.Inactive) => Future.successful(Results.Redirect(routes.Error.notActivated()))
-        case Some(u) if (u.status==UserStatus.ReadOnly && !api.Permission.READONLY.contains(permission)) => {
+        case Some(u) if (u.status==UserStatus.ReadOnly && !api.Permission.READONLY.contains(permission) && permission != Permission.DownloadFiles) => {
           Future.successful(Results.Redirect(routes.Error.notAuthorized("Account is ReadOnly", "", "")))
         }
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
