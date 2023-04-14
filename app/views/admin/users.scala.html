@@ -24,24 +24,24 @@
         <td><select id="status-@u.id" data-original="@u.status">
         }
             @if(u.status==UserStatus.Inactive) {
-                <option value="inactive" selected>Inactive</option>
+                <option value="Inactive" selected>Inactive</option>
             } else {
-                <option value="inactive">Inactive</option>
+                <option value="Inactive">Inactive</option>
             }
             @if(u.status==UserStatus.Active) {
-                <option value="active" selected>Active</option>
+                <option value="Active" selected>Active</option>
             } else {
-                <option value="active">Active</option>
+                <option value="Active">Active</option>
             }
             @if(u.status==UserStatus.ReadOnly) {
-                <option value="readonly" selected>ReadOnly</option>
+                <option value="ReadOnly" selected>ReadOnly</option>
             } else {
-                <option value="readonly">ReadOnly</option>
+                <option value="ReadOnly">ReadOnly</option>
             }
             @if(u.status==UserStatus.Admin) {
-                <option value="admin" selected>Admin</option>
+                <option value="Admin" selected>Admin</option>
             } else {
-                <option value="admin">Admin</option>
+                <option value="Admin">Admin</option>
             }
         </select></td>
     </tr>
@@ -173,31 +173,16 @@
     <br/>
 
     <script>
-            $(".active").click(function() {
-                var input = $(this)[0];
-                var parts = input.id.split("-", 2);
-                $("#status-" + parts[1]).prop('disabled', !input.checked);
-            });
             var users = { active: [], inactive: [], admin: [], readonly: [] };
             function submitUsers() {
-
                 var sendit = false;
-
-                $()
-                $(".active:not(:checked)").each(function() {
-                    var input = $(this)[0];
-                    var parts = input.id.split("-", 2);
-                    var admin = $("#admin-" + parts[1]);
-                    admin.prop('checked', false);
-                    admin.prop('disabled', true);
-                });
 
                 $("select").each(function() {
                     var select = $(this)[0];
                     if (select.getAttribute("data-original") != select.value) {
                         sendit = true;
                         var parts = select.id.split("-", 2);
-                        users[select.value].push(parts[1]);
+                        users[select.value.toLowerCase()].push(parts[1]);
                         select.setAttribute("data-original", select.value);
                     }
                 });
