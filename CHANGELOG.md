@@ -20,6 +20,7 @@ registration or heartbeat to Clowder that will restrict use of that extractor to
 - Documentation on how to do easy testing of pull requests
 - Previewer source URL in the documentation to point to the Clowder GitHub repo. [#395](https://github.com/clowder-framework/clowder/issues/395)
 - Added a citation.cff file
+- Add getSections to file API and fix missing section routes in javascriptRoutes [#410](https://github.com/clowder-framework/clowder/pull/410)
 
 ### Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)

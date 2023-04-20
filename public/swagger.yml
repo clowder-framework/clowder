@@ -351,6 +351,32 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
 
+  /files/{id}/getSections:
+    get:
+      tags:
+        - files
+      summary: Get the sections of a file
+      description: |
+        Get the sections of a file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UUID'
+        404:
+          $ref: '#/components/responses/NotFound'
+      
+
   /files/{id}/paths:
     get:
       tags:
