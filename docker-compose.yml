@@ -67,6 +67,7 @@ services:
       - RABBITMQ_CLOWDERURL=${RABBITMQ_CLOWDERURL:-http://clowder:9000}
       - SMTP_MOCK=${SMTP_MOCK:-true}
       - SMTP_SERVER=${SMTP_SERVER:-smtp}
+      - SMTP_FROM=${SMTP_FROM:-devnull@ncsa.illinois.edu}
       - CLOWDER_STORAGE=${CLOWDER_STORAGE:-services.filesystem.DiskByteStorageService}
       - CLOWDER_DISKPATH=${CLOWDER_DISKPATH:-/home/clowder/data}
       - S3_ENDPOINT=${S3_ENDPOINT:-http://minio:9000}
