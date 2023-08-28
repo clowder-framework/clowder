@@ -49,10 +49,10 @@ class KeycloakProvider(application: Application) extends OAuth2Provider(applicat
           val avatarUrl = ( me \ Picture).asOpt[String]
           val email = ( me \ Email).asOpt[String]
           val groups = ( me \ Groups).asOpt[List[String]]
-          (application.configuration.getList("securesocial.cilogon.groups"), groups) match {
-            case (Some(conf), Some(cilogon)) => {
+          (application.configuration.getList("securesocial.keycloak.groups"), groups) match {
+            case (Some(conf), Some(keycloak)) => {
               val conflist = conf.unwrapped().asScala.toList
-              if (cilogon.intersect(conflist).isEmpty) {
+              if (keycloak.intersect(conflist).isEmpty) {
                 throw new AuthenticationException()
               }
             }
