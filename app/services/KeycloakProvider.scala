@@ -18,9 +18,10 @@ class KeycloakProvider(application: Application) extends OAuth2Provider(applicat
   val Name = "name"
   val GivenName = "given_name"
   val FamilyName = "family_name"
+  //  todo: picture wont work
   val Picture = "picture"
   val Email = "email"
-  val Groups = "isMemberOf"
+  val Groups = "groups"
 
 
   override def id = KeycloakProvider.Keycloak
