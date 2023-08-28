@@ -20,7 +20,8 @@
 10020:services.SecureSocialEventListener
 #10050:services.CrowdProvider
 #10051:services.CILogonProvider
-#10052:services.KeycloakProvider
+#10052:services.LdapProvider
+#10053:services.KeycloakProvider
 #10090:services.MailerPlugin
 #10091:services.AdminsNotifierPlugin
 #10100:services.TempFilesPlugin
