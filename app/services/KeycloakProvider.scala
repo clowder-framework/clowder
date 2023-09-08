@@ -23,7 +23,6 @@ class KeycloakProvider(application: Application) extends OAuth2Provider(applicat
   val Email = "email"
   val Groups = "groups"
 
-
   override def id = KeycloakProvider.Keycloak
 
   def fillProfile(user: SocialUser): SocialUser = {
@@ -50,6 +49,7 @@ class KeycloakProvider(application: Application) extends OAuth2Provider(applicat
           val avatarUrl = ( me \ Picture).asOpt[String]
           val email = ( me \ Email).asOpt[String]
           val groups = ( me \ Groups).asOpt[List[String]]
+          val roles = ( me \ "resource_access" \ "account" \ "roles").asOpt[List[String]]
           (application.configuration.getList("securesocial.keycloak.groups"), groups) match {
             case (Some(conf), Some(keycloak)) => {
               val conflist = conf.unwrapped().asScala.toList
@@ -59,6 +59,16 @@ class KeycloakProvider(application: Application) extends OAuth2Provider(applicat
             }
             case (Some(_), None) => throw new AuthenticationException()
             case (None, _) => Logger.debug("[securesocial] No check needed for groups")
+          }
+          (application.configuration.getList("securesocial.keycloak.roles"), roles) match {
+            case (Some(conf), Some(keycloak)) => {
+              val conflist = conf.unwrapped().asScala.toList
+              if (keycloak.intersect(conflist).isEmpty) {
+                throw new AuthenticationException()
+              }
+            }
+            case (Some(_), None) => throw new AuthenticationException()
+            case (None, _) => Logger.debug("[securesocial] No check needed for roles")
           }
           user.copy(
             identityId = IdentityId(userId, id),
