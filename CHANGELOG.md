@@ -13,11 +13,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Extractors can now specify an extractor_key and an owner (email address) when sending a
 registration or heartbeat to Clowder that will restrict use of that extractor to them.
 - Added a dropdown menu to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
+- Add SMTP_FROM in docker-compose yml file. [#417](https://github.com/clowder-framework/clowder/issues/417)
+- Keycloak provider with secure social [#419](https://github.com/clowder-framework/clowder/issues/419)
 - Documentation on how to do easy testing of pull requests
 
 ## Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
 - Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
+
+## Unreleased
+
+### Added
+- added a citation.cff file
 
 ## 1.21.0 - 2022-08-23
 
