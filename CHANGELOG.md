@@ -21,6 +21,11 @@ registration or heartbeat to Clowder that will restrict use of that extractor to
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
 - Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
 
+## Unreleased
+
+### Added
+- added a citation.cff file
+
 ## 1.21.0 - 2022-08-23
 
 **_Important:_** This update requires a MongoDB update schema due to a bug in the original migration  of showing summary statistics at the
