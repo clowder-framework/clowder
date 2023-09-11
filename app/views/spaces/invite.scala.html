@@ -13,7 +13,7 @@
                     @inputText(myForm("addressList"),'class->"form-control", 'id -> "addressList", '_label -> "Email addresses (comma-separated)", 'type -> "Email", 'multiple -> "true")
                     <span class="error hiddencomplete" id="addresserror"> Please enter at least one email address.<br></span>
 
-                    @select(myForm("role"), options(roleList), 'id -> "role_list", '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
+                    @select(myForm("role"), options(roleList.reverse), 'id -> "role_list", '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
                     @textarea(myForm("message"), 'class->"form-control", '_label -> "Message")
 
 

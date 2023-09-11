@@ -21,9 +21,10 @@ registration or heartbeat to Clowder that will restrict use of that extractor to
 - Previewer source URL in the documentation to point to the Clowder GitHub repo. [#395](https://github.com/clowder-framework/clowder/issues/395)
 - Added a citation.cff file
 
-## Fixed
+### Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
 - Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
+- Changed default to 'Viewer' while inviting users to new spaces [#375](https://github.com/clowder-framework/clowder/issues/375)
 - Fixed bug where complex JSON metadata objects using arrays were not being indexed properly for search.
 
 
