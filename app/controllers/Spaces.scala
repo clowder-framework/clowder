@@ -83,10 +83,11 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
   def selectExtractors(id: UUID) = AuthenticatedAction {
     implicit request =>
       implicit val user = request.user
+      val userid = request.user.map(u => Some(u.id)).getOrElse(None)
       spaces.get(id) match {
         case Some(s) => {
           // get list of registered extractors
-          val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo(List.empty)
+          val runningExtractors: List[ExtractorInfo] = extractors.listExtractorsInfo(List.empty, userid)
           // list of extractors enabled globally
           val globalSelections: List[String] = extractors.getEnabledExtractors()
           // get list of extractors registered with a specific space
