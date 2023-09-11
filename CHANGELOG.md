@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 registration or heartbeat to Clowder that will restrict use of that extractor to them.
 - Added a dropdown menu to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
 - Keycloak provider with secure social [#419](https://github.com/clowder-framework/clowder/issues/419)
+- Documentation on how to do easy testing of pull requests
 
 ## Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
