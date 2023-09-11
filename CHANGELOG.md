@@ -5,19 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-### Unreleased
+
+## Unreleased
 
 ### Added
+- Users can be marked as ReadOnly [#405](https://github.com/clowder-framework/clowder/issues/405)
 - Added Trash button to delete section [#347](https://github.com/clowder-framework/clowder/issues/347)
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
 - Extractors can now specify an extractor_key and an owner (email address) when sending a
 registration or heartbeat to Clowder that will restrict use of that extractor to them.
 - Added a dropdown menu to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
+- Add SMTP_FROM in docker-compose yml file. [#417](https://github.com/clowder-framework/clowder/issues/417)
+- Keycloak provider with secure social [#419](https://github.com/clowder-framework/clowder/issues/419)
+- Documentation on how to do easy testing of pull requests
+- Previewer source URL in the documentation to point to the Clowder GitHub repo. [#395](https://github.com/clowder-framework/clowder/issues/395)
+- Added a citation.cff file
 
 ## Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
 - Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
 - Fixed bug where complex JSON metadata objects using arrays were not being indexed properly for search.
+
 
 ## 1.21.0 - 2022-08-23
 

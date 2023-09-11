@@ -222,7 +222,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
     }
   }
 
-  def newSpace() = AuthenticatedAction { implicit request =>
+  def newSpace() = PermissionAction(Permission.CreateSpace) { implicit request =>
     implicit val user = request.user
     Ok(views.html.spaces.newSpace(spaceForm))
   }
@@ -396,10 +396,10 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
    * Submit action for new or edit space
    */
   // TODO this should check to see if user has editspace for specific space
-  def submit() = AuthenticatedAction { implicit request =>
+  def submit() = PermissionAction(Permission.CreateSpace) { implicit request =>
     implicit val user = request.user
     user match {
-      case Some(identity) => {
+      case Some(identity) if identity.status != UserStatus.ReadOnly => {
         val userId = request.user.get.id
         //need to get the submitValue before binding form data, in case of errors we want to trigger different forms
         request.body.asMultipartFormData.get.dataParts.get("submitValue").headOption match {
@@ -483,7 +483,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
           case None => { BadRequest("Did not get any submit button value.") }
         }
       } //some identity
-      case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit $spaceTitle.")
+      case _ => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit $spaceTitle.")
     }
   }
   def followingSpaces(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
