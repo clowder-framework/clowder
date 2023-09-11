@@ -13,7 +13,7 @@ import play.api.libs.json._
 
 object UserStatus extends Enumeration {
 	  type UserStatus = Value
-	  val Inactive, Active, Admin = Value
+	  val Inactive, Active, Admin, ReadOnly = Value
 	}
 
 /**
