@@ -152,7 +152,7 @@
                             <th>Name</th>
                             <th>Authors</th>
                             <th>Version</th>
-                            <th>Maturity</th>
+                            <th>Unique Key</th>
                             <!-- th>My Jobs</th -->
                             <th>All Jobs</th>
                             @if(showOptional("ratings")) { <th>Rating</th> }
@@ -187,7 +187,7 @@
 
                                     <!-- Extractor maturity (e.g. Development, Staging, Production) -->
                                     <td class="v-center">
-                                        @extractor.maturity
+                                        @extractor.unique_key
                                     </td>
 
                                     <!-- TODO: Extractor Job Counts: My Job Submissions -->
