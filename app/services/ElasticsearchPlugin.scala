@@ -527,7 +527,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
                 case jv: JsArray => {
                   builder.startArray(clean_k)
                   jv.value.foreach(subv => {
-                    builder.value(subv.toString.replace("\"",""))
+                    builder.value(convertJsObjectToBuilder(builder, subv.asInstanceOf[JsObject]))
                   })
                   builder.endArray()
                 }
@@ -598,11 +598,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           // Elasticsearch 2 does not allow periods in field names
           builder.startArray(k.toString.replace(".", "_"))
           v.value.foreach(jv => {
-            // Try to interpret numeric value from each String if possible
-            parseDouble(jv.toString) match {
-              case Some(d) => builder.value(d)
-              case None => builder.value(jv)
-            }
+            builder.startObject()
+            convertJsObjectToBuilder(builder, jv.asInstanceOf[JsObject])
+            builder.endObject()
           })
           builder.endArray()
         }
