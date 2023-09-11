@@ -32,35 +32,39 @@ class Spaces @Inject()(spaces: SpaceService,
   val spaceTitle: String = Messages("space.title")
 
   //TODO- Minimal Space created with Name and description. URLs are not yet put in
-  def createSpace() = AuthenticatedAction(parse.json) { implicit request =>
+  def createSpace() = PermissionAction(Permission.CreateSpace)(parse.json) { implicit request =>
     Logger.debug("Creating new space")
-    val nameOpt = (request.body \ "name").asOpt[String]
-    val descOpt = (request.body \ "description").asOpt[String]
-    (nameOpt, descOpt) match {
-      case (Some(name), Some(description)) => {
-        // TODO: add creator
-        val userId = request.user.get.id
-        val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
-          homePage = List.empty, logoURL = None, bannerURL = None, collectionCount = 0,
-          datasetCount = 0, fileCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty)
-        spaces.insert(c) match {
-          case Some(id) => {
-            appConfig.incrementCount('spaces, 1)
-            events.addObjectEvent(request.user, c.id, c.name, "create_space")
-            userService.findRoleByName("Admin") match {
-              case Some(realRole) => {
-                spaces.addUser(userId, realRole, UUID(id))
+    if(request.user.get.status == UserStatus.ReadOnly) {
+      BadRequest(toJson("User is Read-Only"))
+    } else {
+      val nameOpt = (request.body \ "name").asOpt[String]
+      val descOpt = (request.body \ "description").asOpt[String]
+      (nameOpt, descOpt) match {
+        case (Some(name), Some(description)) => {
+          // TODO: add creator
+          val userId = request.user.get.id
+          val c = ProjectSpace(name = name, description = description, created = new Date(), creator = userId,
+            homePage = List.empty, logoURL = None, bannerURL = None, collectionCount = 0,
+            datasetCount = 0, fileCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty)
+          spaces.insert(c) match {
+            case Some(id) => {
+              appConfig.incrementCount('spaces, 1)
+              events.addObjectEvent(request.user, c.id, c.name, "create_space")
+              userService.findRoleByName("Admin") match {
+                case Some(realRole) => {
+                  spaces.addUser(userId, realRole, UUID(id))
+                }
+                case None => Logger.info("No admin role found")
+
               }
-              case None => Logger.info("No admin role found")
-
+              Ok(toJson(Map("id" -> id)))
             }
-            Ok(toJson(Map("id" -> id)))
+            case None => Ok(toJson(Map("status" -> "error")))
           }
-          case None => Ok(toJson(Map("status" -> "error")))
-        }
 
+        }
+        case (_, _) => BadRequest(toJson("Missing required parameters"))
       }
-      case (_, _) => BadRequest(toJson("Missing required parameters"))
     }
   }
 

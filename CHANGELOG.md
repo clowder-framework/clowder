@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
+- Users can be marked as ReadOnly [#405](https://github.com/clowder-framework/clowder/issues/405)
 - Added Trash button to delete section [#347](https://github.com/clowder-framework/clowder/issues/347)
 - Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
 - Extractors can now specify an extractor_key and an owner (email address) when sending a

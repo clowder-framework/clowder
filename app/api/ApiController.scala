@@ -88,12 +88,13 @@ trait ApiController extends Controller {
       userRequest.user match {
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
         case Some(u) if (u.status == UserStatus.Inactive) => Future.successful(Unauthorized("Account is not activated"))
+        case Some(u) if (u.status == UserStatus.ReadOnly && !api.Permission.READONLY.contains(permission) && permission != Permission.DownloadFiles) => Future.successful(Unauthorized("Account is ReadOnly"))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => {
           affectedResource match {
             case Some(resource) if Permission.checkOwner(u, resource) => block(userRequest)
             case _ => Future.successful(Unauthorized("Not authorized"))
-           }
+          }
         }
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
