@@ -5,16 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- Search results are checked to verify nothing has been put in trash before display [#377](https://github.com/clowder-framework/clowder/issues/377)
 
 ## Unreleased
 
 ### Added
+- Users can be marked as ReadOnly [#405](https://github.com/clowder-framework/clowder/issues/405)
+- Added Trash button to delete section [#347](https://github.com/clowder-framework/clowder/issues/347)
+- Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Extractors can now specify an extractor_key and an owner (email address) when sending a
+registration or heartbeat to Clowder that will restrict use of that extractor to them.
+- Added a dropdown menu to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
+- Add SMTP_FROM in docker-compose yml file. [#417](https://github.com/clowder-framework/clowder/issues/417)
+- Keycloak provider with secure social [#419](https://github.com/clowder-framework/clowder/issues/419)
+- Documentation on how to do easy testing of pull requests
+- Previewer source URL in the documentation to point to the Clowder GitHub repo. [#395](https://github.com/clowder-framework/clowder/issues/395)
+- Added a citation.cff file
+- Added Google's model viewer within viewer_three.js previewer
+
+### Fixed
+- Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
+- Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
+- Changed default to 'Viewer' while inviting users to new spaces [#375](https://github.com/clowder-framework/clowder/issues/375)
+- Fixed bug where complex JSON metadata objects using arrays were not being indexed properly for search.
+- Fixed positioning problems related to how the 3D models appear on the screen
+
+
+## 1.21.0 - 2022-08-23
+
+**_Important:_** This update requires a MongoDB update schema due to a bug in the original migration  of showing summary statistics at the
+space level. Make sure to start the application with -DMONGOUPDATE=1. You can also run the [fixCounts.js](https://github.com/clowder-framework/clowder/blob/develop/scripts/updates/fix-counts.js)
+script prior to upgrading to minimize the downtime.
+
+### Added
+- api.Files jsonfile, adds two fields "downloads" and "views" [#228](https://github.com/clowder-framework/clowder/issues/228)
+- Dataset and file scala.html pages incl schema.org jsonld metadata for (google)datasetsearch [#335](https://github.com/clowder-framework/clowder/issues/335)
+- MiniUser and LicenseData now have to_jsonld methods to return string part of [#335](https://github.com/clowder-framework/clowder/issues/335) metadata
+- LicenseData has urlViaAttributes used by it's to_jsonld to guess url when empty, for [#335](https://github.com/clowder-framework/clowder/issues/335)
 - MRI previewer for NIFTY (.nii) files.
+- Dataset page usually defaults to Files tab, but if no files will now show Metadata first
+- HEIC (.heic) and HEIF (.heif) mimetypes to support new Apple iPhone image file format.
+- In the docker container the folder /home/clowder/data is now whitelisted by default for uploading by reference. 
+  This can be changed using the environment variable CLOWDER_SOURCEPATH.
+- The current CLA for developers of clowder.
 
 ### Fixed
 - Send email to all admins in a single email when a user submits 'Request access' for a space
 - Send email to all admins and request user in a single email when any admin accepts/rejects 'Request access' for a space [#330](https://github.com/clowder-framework/clowder/issues/330)
-- Fixed positioning problems related to how the 3D models appear on the screen
+- script/code to count space in files was not correct [#366](https://github.com/clowder-framework/clowder/issues/336)
+- github actions would fail for docker builds due to secrets not existing
+- Fix to remove dataset from a space [#349](https://github.com/clowder-framework/clowder/issues/349)
+
+### Changed
+- Utils.baseURL now on RequestHeader instead of Request[Any]
+- MongoDB Service log error:'Not all dataset IDs found for Dataset|Folder bulk get request', now incl all the IDs notFound
 
 ## 1.20.3 - 2022-06-10
 
@@ -48,6 +96,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documentation: Customizing clowder's deployment, simplified duplicate instructinos.
 - Documentation: Added "How to contribute documentation" page
 - Documentation: New Sphinx plugins for dropdowns and menus.
+
 
 ## 1.20.0 - 2022-02-07
 

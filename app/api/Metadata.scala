@@ -257,7 +257,7 @@ class Metadata @Inject() (
 
   // Given a list of terms, create a new standard vocabulary from the list
   // Expects a JSON array of Strings as the request body
-  def createVocabulary() = AuthenticatedAction(parse.json) {
+  def createVocabulary() = PermissionAction(Permission.CreateVocabulary)(parse.json) {
     implicit request =>
       request.user match {
         case None => BadRequest(toJson("Invalid user"))
@@ -278,7 +278,7 @@ class Metadata @Inject() (
 
   // Given an ID, replace the entire terms list of a standard vocabulary
   // Expects a JSON array of Strings as the request body
-  def updateVocabulary(id: UUID) = AuthenticatedAction(parse.json) {
+  def updateVocabulary(id: UUID) = PermissionAction(Permission.EditVocabulary)(parse.json) {
     implicit request =>
       request.user match {
         case None => BadRequest(toJson("Invalid user"))
@@ -304,7 +304,7 @@ class Metadata @Inject() (
   }
 
   // Given an ID, delete the standard vocabulary with that ID
-  def deleteVocabulary(id: UUID) = AuthenticatedAction(parse.empty) {
+  def deleteVocabulary(id: UUID) = PermissionAction(Permission.DeleteVocabulary)(parse.empty) {
     implicit request =>
       request.user match {
         case None => BadRequest(toJson("Invalid user"))
@@ -341,7 +341,7 @@ class Metadata @Inject() (
     }
   }
 
-  def editDefinition(id: UUID, spaceId: Option[String]) = AuthenticatedAction(parse.json) {
+  def editDefinition(id: UUID, spaceId: Option[String]) = PermissionAction(Permission.EditVocabulary)(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -387,7 +387,7 @@ class Metadata @Inject() (
       }
   }
 
-  def deleteDefinition(id: UUID) = AuthenticatedAction { implicit request =>
+  def deleteDefinition(id: UUID) = PermissionAction(Permission.CreateVocabulary) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(user) => {

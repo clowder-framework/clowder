@@ -4,6 +4,8 @@ import java.util.Date
 
 import models.FileStatus.FileStatus
 import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json._
+import _root_.util.Formatters
 
 /**
  * Uploaded files.
@@ -32,7 +34,33 @@ case class File(
   licenseData: LicenseData = new LicenseData(),
   followers: List[UUID] = List.empty,
   stats: Statistics = new Statistics(),
-  status: String = FileStatus.UNKNOWN.toString) // can't use enums in salat
+  status: String = FileStatus.UNKNOWN.toString) { // can't use enums in salat
+    /**
+    * return File as JsValue in jsonld format
+    */
+     def to_jsonld() : JsValue = {
+     val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
+     val fileLD = Json.obj(
+           "@context" -> so,
+           "identifier" -> id.toString,
+           "name" -> filename,
+           "author" -> author.to_jsonld(),
+           "isBasedOn" -> originalname,
+           "uploadDate" -> Formatters.iso8601(uploadDate),
+           "contentType" -> contentType,
+           "MenuSection" -> sections.map(x => x.to_jsonld()),
+           "keywords" -> tags.map(x => x.to_json()),
+           "thumbnail" -> Json.toJson(thumbnail_id.filterNot(_.isEmpty).getOrElse("")),
+           "description" -> description,
+           "license" -> licenseData.to_jsonld(),
+           "FollowAction" -> Json.toJson(followers),
+           "interactionStatistic" -> stats.to_jsonld, 
+           "status" -> status
+           )
+        return fileLD
+     }
+}
+
 
 // what is the status of the file
 object FileStatus extends Enumeration {

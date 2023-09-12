@@ -1,6 +1,5 @@
-db.app.configuration.update({"key" : "mongodb.updates"}, { $addToSet: {"value": "update-space-bytes"}})
+db.app.configuration.update({"key" : "mongodb.updates"}, { $addToSet: {"value": "update-space-status"}})
 db.spaces.projects.update({"spaceBytes": {$exists : false}}, {$set: {'spaceBytes': NumberLong(0)}})
-db.app.configuration.update({"key" : "mongodb.updates"}, { $addToSet: {"value": "update-space-files"}})
 db.spaces.projects.update({"fileCount": {$exists : false}}, {$set: {'fileCount': 0}})
 
 db.app.configuration.update({"key" : "countof.users"}, {$set: { "value": NumberLong(db.social.users.count())}})
@@ -16,13 +15,21 @@ db.spaces.projects.find().sort({"datasetCount": 1}).forEach(function(s) {
 	db.datasets.find({"spaces": s._id}).forEach(function(d) {
 		d.files.forEach(function(fid) {
 			db.uploads.find({"_id": fid}).forEach(function(f) {
-				spaceBytes += f.length;
+				spaceBytes += f.length.toNumber();
 				filecount += 1;
+			});
+		});
+		db.folders.find({"parentDatasetId": d._id}).forEach(function(folder) {
+			folder.files.forEach(function(fid) {
+				db.uploads.find({"_id": fid}).forEach(function(f) {
+					spaceBytes += f.length.toNumber();
+					filecount += 1;
+				});
 			});
 		});
 	});
 	s.spaceBytes = NumberLong(spaceBytes);
 	s.fileCount = filecount;
 	db.spaces.projects.save(s);
-	print(s["_id"] + " " + s.name + " = " + s.spaceBytes + " in " + s.fileCount + " files");
+	print(s["_id"] + " " + s.name + " = " + s.spaceBytes + " in " + s.fileCount + " files\n");
 })

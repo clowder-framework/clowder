@@ -5,6 +5,7 @@ import java.util.Date
 import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import _root_.util.Formatters
 
 /**
  * A dataset is a collection of files, and streams.
@@ -38,6 +39,53 @@ case class Dataset(
   def isDefault:Boolean = status == DatasetStatus.DEFAULT.toString
   def isTRIAL:Boolean = status == DatasetStatus.TRIAL.toString
   def inSpace:Boolean = spaces.size > 0
+
+  /**
+    * Caps a list at 'max'  
+    * then turns it's ID's into resolvable URLs of that 'apiRoute' type
+    * end with appending "..." to the List, to signify that it was abridged 
+    *
+    * todo: issue 354 to the max configurable
+    */
+  def cap_api_list (l: List[UUID], max: Int, URLb: String, apiRoute: String) : List[String] = {  
+      if (l.length <= max)  {
+        return l.map(f => URLb + apiRoute + f) 
+      } else {
+         val cl = l.take(max)
+         val r : List[String] = cl.map(f => URLb + apiRoute + f) 
+         return r.::("...").reverse 
+      }
+   } 
+
+  /**
+    * return Dataset as JsValue in jsonld format
+    */
+  def to_jsonld(url: String) : JsValue = { 
+     val so = JsObject(Seq("@vocab" -> JsString("https://schema.org/")))
+     val URLb = url.replaceAll("/$", "") 
+     var pic_id = thumbnail_id.getOrElse("")
+     if (pic_id != "") {
+        pic_id = URLb + pic_id 
+     } else {
+        ""
+     }
+     val datasetLD = Json.obj(
+           "@context" -> so,
+           "identifier" -> id.toString,
+           "name" -> name,
+           "author" -> author.to_jsonld(),
+           "description" -> description,
+           "dateCreated" -> Formatters.iso8601(created), 
+           "DigitalDocument" -> Json.toJson(cap_api_list(files, 10, URLb, "/files/")), 
+           "Collection" -> Json.toJson(cap_api_list(spaces, 10, URLb, "/spaces/")), 
+           "thumbnail" -> Json.toJson(pic_id),
+           "license" -> licenseData.to_jsonld(),
+           "dateModfied" -> Formatters.iso8601(lastModifiedDate),
+           "keywords" -> tags.map(x => x.to_json()),
+           "creator" -> Json.toJson(creators)
+           )
+     return datasetLD
+     }
 }
 
 object DatasetStatus extends Enumeration {
@@ -66,6 +114,7 @@ object Dataset {
     }
   }
 }
+
 
 
 case class DatasetAccess(

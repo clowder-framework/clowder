@@ -213,7 +213,7 @@ for details.), we must tell Clowder which ports the services are using.
          # Enable Clowder to communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
          # Each service runs as a Docker container.
 
-         services:
+       services:
          mongo:
             ports:
                - 27017:27017
@@ -236,7 +236,7 @@ for details.), we must tell Clowder which ports the services are using.
          # Enable Clowder to communicate with the necessary services (Mongo, RabbitMQ, ElsticSearch)
          # Each service runs as a Docker container.
 
-         services:
+       services:
          mongo:
             ports:
                - 27017:27017

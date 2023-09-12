@@ -228,12 +228,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     // Check permissions for each resource
     results.foreach(resource => {
       resource.resourceType match {
-        case ResourceRef.file => if (Permission.checkPermission(user, Permission.ViewFile, resource))
-          filesFound += resource.id
-        case ResourceRef.dataset => if (Permission.checkPermission(user, Permission.ViewDataset, resource))
-          datasetsFound += resource.id
-        case ResourceRef.collection => if (Permission.checkPermission(user, Permission.ViewDataset, resource))
-          collectionsFound += resource.id
+        case ResourceRef.file => {
+          if (Permission.checkPermission(user, Permission.ViewFile, resource) && !files.isInTrash(resource.id))
+            filesFound += resource.id
+        }
+        case ResourceRef.dataset => {
+          if (Permission.checkPermission(user, Permission.ViewDataset, resource) && !datasets.isInTrash(resource.id))
+            datasetsFound += resource.id
+        }
+        case ResourceRef.collection => {
+          if (Permission.checkPermission(user, Permission.ViewDataset, resource) && !collections.isInTrash(resource.id))
+            collectionsFound += resource.id
+        }
         case _ => {}
       }
     })
@@ -527,7 +533,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
                 case jv: JsArray => {
                   builder.startArray(clean_k)
                   jv.value.foreach(subv => {
-                    builder.value(subv.toString.replace("\"",""))
+                    builder.value(convertJsObjectToBuilder(builder, subv.asInstanceOf[JsObject]))
                   })
                   builder.endArray()
                 }
@@ -598,11 +604,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           // Elasticsearch 2 does not allow periods in field names
           builder.startArray(k.toString.replace(".", "_"))
           v.value.foreach(jv => {
-            // Try to interpret numeric value from each String if possible
-            parseDouble(jv.toString) match {
-              case Some(d) => builder.value(d)
-              case None => builder.value(jv)
-            }
+            builder.startObject()
+            convertJsObjectToBuilder(builder, jv.asInstanceOf[JsObject])
+            builder.endObject()
           })
           builder.endArray()
         }

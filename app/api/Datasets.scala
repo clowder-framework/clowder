@@ -882,6 +882,7 @@ class  Datasets @Inject()(
 
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
+
       }
       case None => Logger.error(s"Error getting dataset $id"); NotFound(toJson(s"Error getting dataset $id"))
     }
@@ -928,6 +929,7 @@ class  Datasets @Inject()(
                 events.addObjectEvent(request.user, id, x.name, EventType.ADD_METADATA_DATASET.toString)
 
                 datasets.index(id)
+
                 Ok(toJson("Metadata successfully added to db"))
               }
               case e: JsError => {
@@ -2039,6 +2041,11 @@ class  Datasets @Inject()(
   def deleteDatasetHelper(id: UUID, request: UserRequest[AnyContent]) = {
     datasets.get(id) match {
       case Some(dataset) => {
+        Logger.debug("Deleting dataset from indexes " + id)
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete(id.stringify)
+        }
+
         //remove dataset from RDF triple store if triple store is used
         configuration.getString("userdfSPARQLStore").getOrElse("no") match {
           case "yes" => rdfsparql.removeDatasetFromGraphs(id)

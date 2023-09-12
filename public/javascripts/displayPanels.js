@@ -12,12 +12,31 @@ window.onload = function(){
   if (pageSize){
     document.getElementById('numPageItems').value = pageSize;
   }
+  var spaceType = sessionStorage.getItem("#spacesOwnership");
+  if (spaceType)
+    document.getElementById('spacesOwnership').value = spaceType;
 };
 
 function getValue(){
   var pageItems = $("#numPageItems").val();
   var url = window.location.href;
   window.location.href = updateQueryStringParameter(url, "size", pageItems);
+};
+
+function getSpaceType(owner){
+  var type =$("#spacesOwnership").val();
+  var url = window.location.href;
+  if (type == 1) {
+    window.location.href = updateQueryStringParameter(url, "showAll", false);
+    sessionStorage.setItem("#spacesOwnership", "1");
+  } else if (type == 2) {
+    window.location.href = updateQueryStringParameter(url, "owner", owner);
+    sessionStorage.setItem("#spacesOwnership", "2");
+  } else {
+    window.location.href = url.substring(0, url.indexOf("?"));
+    sessionStorage.setItem("#spacesOwnership", "3");
+  }
+  updatePage();
 };
 
 function updateQueryStringParameter(uri, key, value) {

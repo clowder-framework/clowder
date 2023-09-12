@@ -252,4 +252,6 @@ trait CollectionService {
 
   def getMetrics(): Iterator[Collection]
 
+  def isInTrash(id: UUID): Boolean
+
 }

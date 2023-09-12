@@ -8,7 +8,8 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
-import util.{FileUtils, Formatters, RequiredFieldsConfig, SortingUtils }
+import util.{FileUtils, Formatters, RequiredFieldsConfig, SortingUtils}
+
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
@@ -728,7 +729,6 @@ class Datasets @Inject() (
     implicit val user = request.user
 
     Logger.debug("------- in Datasets.submit ---------")
-
     val folder = folderId.flatMap(id => folders.get(UUID(id)))
     val retMap = request.body.asFormUrlEncoded.get("datasetid").flatMap(_.headOption) match {
       case Some(ds) => {

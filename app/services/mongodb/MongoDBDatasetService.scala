@@ -506,8 +506,10 @@ class MongoDBDatasetService @Inject() (
     val found = Dataset.find(query).toList
     val notFound = ids.diff(found.map(_.id))
 
-    if (notFound.length > 0)
-      Logger.error("Not all dataset IDs found for bulk get request")
+    if (notFound.length > 0) {
+      Logger.error("Not all dataset IDs found for [Dataset] bulk get request")
+      Logger.error("notfound=" + notFound.toString) 
+    }
     return DBResult(found, notFound)
   }
 
@@ -727,12 +729,12 @@ class MongoDBDatasetService @Inject() (
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
             if (!theFile.thumbnail_id.isEmpty) {
-              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
               return
             }
           }
         }
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
       }
       case None => Logger.debug(s"Dataset $datasetId not found")
     }
@@ -747,12 +749,12 @@ class MongoDBDatasetService @Inject() (
           if (file.isInstanceOf[File]) {
             val theFile = file.asInstanceOf[File]
             if (!theFile.thumbnail_id.isEmpty) {
-              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
               return
             }
           }
         }
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
       }
       case None => Logger.debug("No dataset found with id " + datasetId)
     }
@@ -927,13 +929,13 @@ class MongoDBDatasetService @Inject() (
     val md = JSON.parse(json).asInstanceOf[DBObject]
     Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)), MongoDBObject("metadata" -> 1)) match {
       case None => {
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> md), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> md, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
       }
       case Some(x) => {
         x.getAs[DBObject]("metadata") match {
           case Some(map) => {
             val union = map.asInstanceOf[DBObject] ++ md
-            Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> union), false, false, WriteConcern.Safe)
+            Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("metadata" -> union, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
           }
           case None => Map.empty
         }
@@ -945,23 +947,25 @@ class MongoDBDatasetService @Inject() (
     Logger.debug("Adding XML metadata to dataset " + id + " from file " + fileId + ": " + json)
     val md = JsonUtil.parseJSON(json).asInstanceOf[java.util.LinkedHashMap[String, Any]].toMap
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(models.DatasetXMLMetadata(md, fileId.stringify))), false, false, WriteConcern.Safe)
+      $addToSet("datasetXmlMetadata" -> DatasetXMLMetadata.toDBObject(models.DatasetXMLMetadata(md, fileId.stringify)))
+        ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def removeXMLMetadata(id: UUID, fileId: UUID) {
     Logger.debug("Removing XML metadata belonging to file " + fileId + " from dataset " + id + ".")
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("datasetXmlMetadata" -> MongoDBObject("fileId" -> fileId.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("datasetXmlMetadata" -> MongoDBObject("fileId" -> fileId.stringify))
+      ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def addUserMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to dataset " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   /** Change the metadataCount field for a dataset */
   def incrementMetadataCount(id: UUID, count: Long) = {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count) ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   /**
@@ -969,20 +973,20 @@ class MongoDBDatasetService @Inject() (
    */
   def updateInformation(id: UUID, description: String, name: String) {
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-          $set("description" -> description, "name" -> name),
+          $set("description" -> description, "name" -> name, "lastModifiedDate" -> new Date()),
           false, false, WriteConcern.Safe)
   }
 
   def updateName(id: UUID, name: String) {
     events.updateObjectName(id, name)
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("name" -> name),
+      $set("name" -> name, "lastModifiedDate" -> new Date()),
       false, false, WriteConcern.Safe)
   }
 
   def updateDescription(id: UUID, description: String){
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("description" -> description),
+      $set("description" -> description, "lastModifiedDate" -> new Date()),
       false, false, WriteConcern.Safe)
   }
 
@@ -993,7 +997,7 @@ class MongoDBDatasetService @Inject() (
     //Don't allow duplicates
     if (Dataset.dao.find(MongoDBObject("_id" -> new ObjectId(id.stringify)) ++ MongoDBObject("creators" -> creator)).length == 0) {
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-        $push("creators" -> creator),
+        $push("creators" -> creator) ++ $set("lastModifiedDate" -> new Date()),
         false, false, WriteConcern.Safe)
     }
   }
@@ -1003,7 +1007,7 @@ class MongoDBDatasetService @Inject() (
    */
   def removeCreator(id: UUID, creator: String) {
     Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $pull("creators" -> creator), false, false, WriteConcern.Safe)
+      $pull("creators" -> creator) ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   /**
@@ -1014,8 +1018,8 @@ class MongoDBDatasetService @Inject() (
     if (Dataset.dao.find(MongoDBObject("_id" -> new ObjectId(id.stringify)) ++ MongoDBObject("creators" -> creator)).length != 0) {
       removeCreator(id, creator);
       Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-        $push("creators" -> MongoDBObject("$each" -> MongoDBList(creator), "$position" -> position)),
-        false, false, WriteConcern.Safe)
+        $push("creators" -> MongoDBObject("$each" -> MongoDBList(creator), "$position" -> position))
+        ++ $set("lastModifiedDate" -> new Date()),false, false, WriteConcern.Safe)
     }
   }
 
@@ -1030,7 +1034,7 @@ class MongoDBDatasetService @Inject() (
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {
       val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-          $set("licenseData" -> LicenseData.toDBObject(licenseData)),
+          $set("licenseData" -> LicenseData.toDBObject(licenseData), "lastModifiedDate" -> new Date()),
           false, false, WriteConcern.Safe)
   }
 
@@ -1054,14 +1058,14 @@ class MongoDBDatasetService @Inject() (
       if (!existingTags.contains(shortTag)) {
         val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
         tagsAdded += tagObj
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)) ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
       }
     })
     tagsAdded.toList
   }
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified), "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def findMetadataChangedDatasets(): List[Dataset] = {
@@ -1081,7 +1085,8 @@ class MongoDBDatasetService @Inject() (
 
   def removeTag(id: UUID, tagId: UUID) {
     Logger.debug("Removing tag " + tagId)
-    val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify))), false, false, WriteConcern.Safe)
+    val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("_id" -> new ObjectId(tagId.stringify)))
+    ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def removeTags(id: UUID, tags: List[String]) {
@@ -1092,12 +1097,13 @@ class MongoDBDatasetService @Inject() (
     // Only remove existing tags.
     tags.intersect(existingTags).map {
       tag =>
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag)), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $pull("tags" -> MongoDBObject("name" -> tag))
+          ++ $set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
     }
   }
 
   def removeAllTags(id: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List(), "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   // ---------- Tags related code ends ------------------
@@ -1347,28 +1353,28 @@ class MongoDBDatasetService @Inject() (
   }
 
   def addFile(datasetId: UUID, file: File) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> new ObjectId(file.id.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> new ObjectId(file.id.stringify)) ++$set("lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def addFolder(datasetId: UUID, folderId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("folders" -> new ObjectId(folderId.stringify)) ++$set( "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def addCollection(datasetId: UUID, collectionId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> new ObjectId(collectionId.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> new ObjectId(collectionId.stringify)) ++$set( "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def removeCollection(datasetId: UUID, collectionId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> new ObjectId(collectionId.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("collections" -> new ObjectId(collectionId.stringify)) ++$set( "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def removeFile(datasetId: UUID, fileId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)) ++$set( "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
     removeXMLMetadata(datasetId, fileId)
   }
 
   def removeFolder(datasetId: UUID, folderId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("folders" -> new ObjectId(folderId.stringify)) ++$set( "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
   }
 
   def newThumbnail(datasetId: UUID) {
@@ -1379,12 +1385,12 @@ class MongoDBDatasetService @Inject() (
           if (file.isInstanceOf[models.File]) {
             val theFile = file.asInstanceOf[models.File]
             if (!theFile.thumbnail_id.isEmpty) {
-              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get), false, false, WriteConcern.Safe)
+              Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> theFile.thumbnail_id.get, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
               return
             }
           }
         }
-        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None), false, false, WriteConcern.Safe)
+        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $set("thumbnail_id" -> None, "lastModifiedDate" -> new Date()), false, false, WriteConcern.Safe)
       }
       case None =>
     }
@@ -1450,11 +1456,11 @@ class MongoDBDatasetService @Inject() (
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {
     val result = Dataset.update(
       MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-      $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
+      $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))) ++$set( "lastModifiedDate" -> new Date()),
       false, false)
     if (get(datasetId).exists(_.isTRIAL == true) && spaces.get(spaceId).exists(_.isTrial == false)) {
       Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-        $set("status" -> DatasetStatus.DEFAULT.toString),
+        $set("status" -> DatasetStatus.DEFAULT.toString, "lastModifiedDate" -> new Date()),
         false, false)
     }
   }
@@ -1462,7 +1468,7 @@ class MongoDBDatasetService @Inject() (
   def removeFromSpace(datasetId: UUID, spaceId: UUID): Unit = {
     val result = Dataset.update(
       MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-      $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
+      $pull("spaces" -> Some(new ObjectId(spaceId.stringify))) ++$set("lastModifiedDate" -> new Date()),
       false, false)
 
     if (play.Play.application().configuration().getBoolean("verifySpaces")) {
@@ -1470,7 +1476,7 @@ class MongoDBDatasetService @Inject() (
       get(datasetId) match {
         case Some(d) if !d.spaces.map(s => spaces.get(s)).flatten.exists(_.isTrial == false) =>
           Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-            $set("status" -> DatasetStatus.TRIAL.toString),
+            $set("status" -> DatasetStatus.TRIAL.toString, "lastModifiedDate" -> new Date()),
             false, false)
         case _ =>
       }
@@ -1644,13 +1650,13 @@ class MongoDBDatasetService @Inject() (
   def incrementDownloads(id: UUID, user: Option[User]) = {
     Logger.debug("updating downloads for dataset "+id.toString)
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+      $inc("stats.downloads" -> 1) ++ $set("stats.last_downloaded" -> new Date, "lastModifiedDate" -> new Date()), true, false, WriteConcern.Safe)
 
     user match {
       case Some(u) => {
         Logger.debug("updating downloads for user "+u.toString)
         DatasetStats.update(MongoDBObject("user_id" -> new ObjectId(u.id.stringify), "resource_id" -> new ObjectId(id.stringify), "resource_type" -> "dataset"),
-          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date), true, false, WriteConcern.Safe)
+          $inc("downloads" -> 1) ++ $set("last_downloaded" -> new Date, "lastModifiedDate" -> new Date()), true, false, WriteConcern.Safe)
       }
       case None => {}
     }
@@ -1678,6 +1684,10 @@ class MongoDBDatasetService @Inject() (
       trashedIds += ds.id
     })
     trashedIds.toList
+  }
+
+  def isInTrash(id: UUID): Boolean = {
+    Dataset.findOne(MongoDBObject("trash" -> true, "_id" -> new ObjectId(id.stringify))).isDefined
   }
 
   /**

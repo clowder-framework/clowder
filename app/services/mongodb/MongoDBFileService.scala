@@ -1237,6 +1237,15 @@ class MongoDBFileService @Inject() (
     until.foreach(t => query = query ++ ("uploadDate" $lte Parsers.fromISO8601(t)))
     FileDAO.find(query)
   }
+
+  def isInTrash(id: UUID): Boolean = {
+    var foundTrash = false
+    datasets.findByFileIdAllContain(id).foreach(ds => {
+      if (ds.trash)
+        foundTrash = true
+    })
+    foundTrash
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
