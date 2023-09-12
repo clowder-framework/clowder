@@ -208,7 +208,7 @@ class Files @Inject()(
       }
     }
 
-  def getSections(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def sections(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
