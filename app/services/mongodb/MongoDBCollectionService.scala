@@ -1116,6 +1116,10 @@ class MongoDBCollectionService @Inject() (
     Collection.find(MongoDBObject("trash" -> false)).toIterator
   }
 
+  def isInTrash(id: UUID): Boolean = {
+    Collection.findOne(MongoDBObject("trash" -> true, "_id" -> new ObjectId(id.stringify))).isDefined
+  }
+
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
     if (collection.child_collection_ids.contains(subCollectionId)){
       return true

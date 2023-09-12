@@ -1710,6 +1710,9 @@ class Files @Inject()(
         current.plugin[VersusPlugin].foreach {
           _.removeFromIndexes(id)
         }
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete(id.stringify)
+        }
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)
 
