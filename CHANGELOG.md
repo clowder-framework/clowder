@@ -5,36 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
-
-### Fixed
-
-- Search results are checked to verify nothing has been put in trash before display [#377](https://github.com/clowder-framework/clowder/issues/377)
-
-## Unreleased
+## 1.22.0 - 2023-09-12
 
 ### Added
 - Users can be marked as ReadOnly [#405](https://github.com/clowder-framework/clowder/issues/405)
-- Added Trash button to delete section [#347](https://github.com/clowder-framework/clowder/issues/347)
-- Add "when" parameter in a few GET API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
+- Delete button to delete section [#347](https://github.com/clowder-framework/clowder/issues/347)
+- When parameter on API endpoints to enable pagination [#266](https://github.com/clowder-framework/clowder/issues/266)
 - Extractors can now specify an extractor_key and an owner (email address) when sending a
 registration or heartbeat to Clowder that will restrict use of that extractor to them.
-- Added a dropdown menu to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
-- Add SMTP_FROM in docker-compose yml file. [#417](https://github.com/clowder-framework/clowder/issues/417)
+- Added a dropdown menu to space listing to select all spaces, your spaces and also the spaces you have access to. [#374](https://github.com/clowder-framework/clowder/issues/374)
+- Support for SMTP_FROM in docker-compose yml file. [#417](https://github.com/clowder-framework/clowder/issues/417)
 - Keycloak provider with secure social [#419](https://github.com/clowder-framework/clowder/issues/419)
 - Documentation on how to do easy testing of pull requests
-- Previewer source URL in the documentation to point to the Clowder GitHub repo. [#395](https://github.com/clowder-framework/clowder/issues/395)
-- Added a citation.cff file
-- Add sections endpoint to file API and fix missing section routes in javascriptRoutes [#410](https://github.com/clowder-framework/clowder/pull/410)
-- Added Google's model viewer within viewer_three.js previewer
+- citation.cff
+- New GET sections endpoint to file API and fix missing section routes in javascriptRoutes [#410](https://github.com/clowder-framework/clowder/pull/410)
+- Google's model viewer within viewer_three.js previewer
 
 ### Fixed
 - Updated lastModifiesDate when updating file or metadata to a dataset, added lastModified to UI  [386](https://github.com/clowder-framework/clowder/issues/386)
-- Disabled button while create dataset ajax call is still going on [#311](https://github.com/clowder-framework/clowder/issues/311)
+- Disabled button after creating new dataset [#311](https://github.com/clowder-framework/clowder/issues/311)
 - Changed default to 'Viewer' while inviting users to new spaces [#375](https://github.com/clowder-framework/clowder/issues/375)
-- Fixed bug where complex JSON metadata objects using arrays were not being indexed properly for search.
+- Complex extracted JSON metadata objects using arrays are now being indexed properly for search.
 - Fixed positioning problems related to how the 3D models appear on the screen
-
+- Search results are checked to verify nothing has been put in trash before display [#377](https://github.com/clowder-framework/clowder/issues/377)
+- Previewer source URL in the documentation to point to the Clowder GitHub repo. [#395](https://github.com/clowder-framework/clowder/issues/395)
 
 ## 1.21.0 - 2022-08-23
 
