@@ -32,7 +32,7 @@ class Files @Inject()(
   collections: CollectionService,
   queries: MultimediaQueryService,
   tags: TagService,
-  sections: SectionService,
+  sections_service: SectionService,
   comments: CommentService,
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
@@ -212,7 +212,7 @@ class Files @Inject()(
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
-        val sectionList = sections.findByFileId(id)
+        val sectionList = sections_service.findByFileId(id)
         val sectionIds = sectionList.map { section => section.id }
         Ok(toJson(sectionIds))
       }
