@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- Search results are checked to verify nothing has been put in trash before display [#377](https://github.com/clowder-framework/clowder/issues/377)
 
 ## Unreleased
 

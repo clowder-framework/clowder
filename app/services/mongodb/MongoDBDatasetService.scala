@@ -1686,6 +1686,10 @@ class MongoDBDatasetService @Inject() (
     trashedIds.toList
   }
 
+  def isInTrash(id: UUID): Boolean = {
+    Dataset.findOne(MongoDBObject("trash" -> true, "_id" -> new ObjectId(id.stringify))).isDefined
+  }
+
   /**
   * Recursively submit requests to archive or unarchive the contents of the given dataset.
   * NOTE: "parameters" includes "operation", which supports both archiving and unarchiving
