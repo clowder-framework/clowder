@@ -1,6 +1,6 @@
 {
-  "name": "Three-JS",
+  "name": "3D Viewer",
   "main": "viewer_three.js",
   "file": true,
-  "contentType": [ "model/fbx", "model/FBX","model/gltf","model/GLTF", "model/glb","model/GLB", "application/octet-stream"]
+  "contentType": [ "model/fbx", "model/FBX","model/gltf","model/GLTF", "model/glb","model/GLB"]
 }

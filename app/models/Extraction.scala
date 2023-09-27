@@ -78,6 +78,7 @@ case class ExtractorDetail(
  *
  * @param id id internal to the system
  * @param name lower case, no spaces, can use dashes
+ * @param uniqueName name+suffix to uniquely identify extractor for private use e.g. clowder.extractor.v2.johndoe123
  * @param version the version, for example 1.3.5
  * @param updated date when this information was last updated
  * @param description short description of what the extractor does
@@ -117,7 +118,9 @@ case class ExtractorInfo(
   defaultLabels: List[String] = List[String](),
   process: ExtractorProcessTriggers = new ExtractorProcessTriggers(),
   categories: List[String] = List[String](ExtractorCategory.EXTRACT.toString),
-  parameters: JsValue = JsObject(Seq())
+  parameters: JsValue = JsObject(Seq()),
+  unique_key: Option[String] = None,
+  permissions: List[ResourceRef] =List[ResourceRef]()
 )
 
 /** what are the categories of the extractor?
@@ -170,7 +173,9 @@ object ExtractorInfo {
       (JsPath \ "labels").read[List[String]].orElse(Reads.pure(List.empty)) and
       (JsPath \ "process").read[ExtractorProcessTriggers].orElse(Reads.pure(new ExtractorProcessTriggers())) and
       (JsPath \ "categories").read[List[String]].orElse(Reads.pure(List[String](ExtractorCategory.EXTRACT.toString))) and
-      (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq())))
+      (JsPath \ "parameters").read[JsValue].orElse(Reads.pure(JsObject(Seq()))) and
+      (JsPath \ "unique_key").read[Option[String]].orElse(Reads.pure(None)) and
+      (JsPath \ "permissions").read[List[ResourceRef]].orElse(Reads.pure(List.empty))
     )(ExtractorInfo.apply _)
 }
 

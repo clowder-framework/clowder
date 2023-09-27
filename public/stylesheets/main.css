@@ -760,11 +760,15 @@ table#sensorsListTable>thead>tr>th.headerSortDown {
 }
 
 #scrollTableGalleria .galleriaDescr {
-	width: 35%;
+	width: 30%;
 }
 
 #scrollTableGalleria .galleriaFindSimilar {
-	width: 20%;
+	width: 15%;
+}
+
+#scrollTableGalleria .galleriaDelete {
+	width: 10%;
 }
 
 #scrollTableGalleria thead {

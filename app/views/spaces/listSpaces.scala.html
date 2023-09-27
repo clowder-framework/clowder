@@ -33,17 +33,27 @@
 
         <div class="row">
             <div class="btn-toolbar pagination-toolbar pull-right">
-                @(user, owner) match {
-                    case (Some(u), Some(o)) => {
-                        @if(o.equalsIgnoreCase(u.id.stringify)) {
-                            <a class="btn btn-primary btn-sm" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                @if(user.isDefined && user.get.status != UserStatus.ReadOnly) {
+                    @(user, owner) match {
+                        case (Some(u), Some(o)) => {
+                            @if(o.equalsIgnoreCase(u.id.stringify)) {
+                                <a class="btn btn-primary btn-sm" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
+                            }
                         }
+                        case (Some(u), _) => {
+                            <a class="btn btn-primary btn-sm" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span>
+                                @Messages("create.title", "")</a>
+                        }
+                        case (_, _) => {}
                     }
-                    case (Some(u), _) => {
-                        <a class="btn btn-primary btn-sm" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")</a>
-                    }
-                    case (_,_) => {}
                 }
+                <div class="btn-group btn-group-sm" id="spacesOwnership-displayed-dropdown">
+                    <select id="spacesOwnership" class="form-control" onchange="getSpaceType('@user.get.id')">
+                        <option value="1">Joined Spaces</option>
+                        <option value="2">My Spaces</option>
+                        <option value="3">All Spaces</option>
+                    </select>
+                </div>
                 <div class="btn-group btn-group-sm" id="number-displayed-dropdown">
                     <select id="numPageItems" class="form-control" onchange="getValue()">
                         <option value="12">12</option>

@@ -183,7 +183,7 @@ GET            /extractors/labels                                               
 GET            /extractors/:extractorName                                               @controllers.Extractors.showExtractorInfo(extractorName)
 GET            /extractors/:extractorName/metrics                                       @controllers.Extractors.showExtractorMetrics(extractorName)
 GET            /extractors/:extractorName/logs                                          @controllers.Extractors.showExtractorLog(extractorName)
-GET            /extractors/:extractorName/history                                       @controllers.Extractors.showJobHistory(extractorName)
+GET            /extractors/:extractorName/history                                       @controllers.Extractors.showJobHistory(extractorName, extractor_key: Option[String] ?= None)
 
 
 # ----------------------------------------------------------------------
@@ -390,6 +390,7 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 POST           /api/files/bulkRemove                                                    @api.Files.bulkDeleteFiles()
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
+GET            /api/files/:id/sections                                                  @api.Files.sections(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
 POST           /api/files/:id/updateMetadata                                            @api.Files.updateMetadata(id: UUID, extractor_id: String)
@@ -423,9 +424,9 @@ POST           /api/files/:id/sendUnarchiveRequest                              
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty)
-GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String)
-POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+GET            /api/extractors                                                          @api.Extractions.listExtractors(categories: List[String] ?= List.empty, space: Option[UUID] ?= None)
+GET            /api/extractors/:name                                                    @api.Extractions.getExtractorInfo(name: String, extractor_key: Option[String] ?= None)
+POST           /api/extractors                                                          @api.Extractions.addExtractorInfo(extractor_key: Option[String] ?= None, user: Option[String] ?= None)
 POST           /api/extractors/labels                                                   @api.Extractions.createExtractorsLabel()
 PUT            /api/extractors/labels/:id                                               @api.Extractions.updateExtractorsLabel(id: UUID)
 DELETE         /api/extractors/labels/:id                                               @api.Extractions.deleteExtractorsLabel(id: UUID)
@@ -447,7 +448,7 @@ GET            /api/extractions/:id/status                                      
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
 
-DELETE         /api/extractions/:extractorName/delete                                   @api.Extractions.deleteExtractor(extractorName : String)
+DELETE         /api/extractions/:extractorName/delete                                   @api.Extractions.deleteExtractor(extractorName : String, extractor_key: Option[String] ?= None)
 
 DELETE         /api/files/:file_id/extractions/:msg_id                                  @api.Extractions.cancelFileExtractionSubmission(file_id:UUID, msg_id: UUID)
 DELETE         /api/datasets/:ds_id/extractions/:msg_id                                 @api.Extractions.cancelDatasetExtractionSubmission(ds_id:UUID, msg_id: UUID)
