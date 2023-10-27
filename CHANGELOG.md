@@ -5,13 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.22.1 - 2023-10-30
 
 ### Fixed
+- Fixed hearthbeat bug where if the owner was not set in extractors_info.json clowder would throw and error and the 
+  extractor would not get registered.- 
 
-- Search results are checked to verify nothing has been put in trash before display [#377](https://github.com/clowder-framework/clowder/issues/377)
-
-## Unreleased
+## 1.22.0 - 2023-10-27
 
 ### Added
 - Users can be marked as ReadOnly [#405](https://github.com/clowder-framework/clowder/issues/405)
@@ -34,6 +34,7 @@ registration or heartbeat to Clowder that will restrict use of that extractor to
 - Changed default to 'Viewer' while inviting users to new spaces [#375](https://github.com/clowder-framework/clowder/issues/375)
 - Fixed bug where complex JSON metadata objects using arrays were not being indexed properly for search.
 - Fixed positioning problems related to how the 3D models appear on the screen
+- Search results are checked to verify nothing has been put in trash before display [#377](https://github.com/clowder-framework/clowder/issues/377)
 
 
 ## 1.21.0 - 2022-08-23
