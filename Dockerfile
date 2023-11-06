@@ -10,6 +10,10 @@ ARG GITSHA1="unknown"
 
 WORKDIR /src
 
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends unzip zip && \
+    rm -rf rm -rf /var/lib/apt/lists/*
+
 # install clowder libraries (hopefully cached)
 COPY sbt* /src/
 COPY project /src/project
