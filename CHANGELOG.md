@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.22.1 - 2023-10-30
+## 1.22.1 - 2023-11-10
 
 ### Fixed
 - Fixed hearthbeat bug where if the owner was not set in extractors_info.json clowder would throw and error and the

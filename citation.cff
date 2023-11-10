@@ -3,7 +3,7 @@ message: If you use this software, please cite it using these metadata.
 title: "Clowder: Open Source Data Management for Long Tail Data"
 abstract: "A customizable and scalable data management system you can install in the cloud or on your own hardware."
 type: software
-version: "1.22.0"
+version: "1.22.1"
 license: "NCSA"
 repository-code: "https://github.com/clowder-framework/clowder"
 keywords:
