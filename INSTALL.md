@@ -85,7 +85,7 @@ Next we install the script that will install or update clowder.
 cat > /home/browndog/update-clowder.sh << EOF
 #!/bin/bash
 
-# CATS-WWW (master) is the main branch for this server
+# CATS-WWW () is the main branch for this server
 # CATS-WWW1 (develop) if you want the latest version
 clowder_BRANCH=${clowder_BRANCH:-"CATS-WWW1"}
 

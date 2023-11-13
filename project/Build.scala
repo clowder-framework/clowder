@@ -18,7 +18,7 @@ object ApplicationBuild extends Build {
 
   def appVersion: String = {
     gitBranchName match {
-      case "master" => getVersion
+      case "" => getVersion
       case _ => s"${getVersion}-develop"
     }
   }

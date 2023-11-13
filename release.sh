@@ -4,7 +4,7 @@
 set -e
 
 # can use the following to push to isda-registry for testing:
-# BRANCH="master" SERVER=isda-registry.ncsa.illinois.edu/ ./release.sh
+# BRANCH="" SERVER=isda-registry.ncsa.illinois.edu/ ./release.sh
 
 # use DEBUG=echo ./release.sh to print all commands
 DEBUG=${DEBUG:-""}
@@ -19,7 +19,7 @@ BRANCH=${BRANCH:-"$(git rev-parse --abbrev-ref HEAD)"}
 BRANCH=${BRANCH} VERSION=${TMPVERSION} DEBUG=${DEBUG} $(dirname $0)/docker.sh
 
 # find out the version
-if [ "${BRANCH}" = "master" ]; then
+if [ "${BRANCH}" = "" ]; then
     VERSION=${VERSION:-""}
     if [ "${VERSION}" = "" ]; then
         TMPVERSION=$(awk '/version = / { print $4 }' $(dirname $0)/project/Build.scala | sed 's/"//g')

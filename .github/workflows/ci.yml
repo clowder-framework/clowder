@@ -13,7 +13,7 @@ on:
 
   push:
     branches:
-      - master
+      - main
       - develop
 
   pull_request:
@@ -39,7 +39,7 @@ jobs:
             BRANCH=${GITHUB_REF##*/}
           fi
           echo "GITHUB_BRANCH=${BRANCH}" >> $GITHUB_ENV
-          if [ "$BRANCH" == "master" ]; then
+          if [ "$BRANCH" == "main" ]; then
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
@@ -94,7 +94,7 @@ jobs:
             BRANCH=${GITHUB_REF##*/}
           fi
           echo "GITHUB_BRANCH=${BRANCH}" >> $GITHUB_ENV
-          if [ "$BRANCH" == "master" ]; then
+          if [ "$BRANCH" == "main" ]; then
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
@@ -139,7 +139,7 @@ jobs:
             BRANCH=${GITHUB_REF##*/}
           fi
           echo "GITHUB_BRANCH=${BRANCH}" >> $GITHUB_ENV
-          if [ "$BRANCH" == "master" ]; then
+          if [ "$BRANCH" == "main" ]; then
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV
@@ -216,7 +216,7 @@ jobs:
             BRANCH=${GITHUB_REF##*/}
           fi
           echo "GITHUB_BRANCH=${BRANCH}" >> $GITHUB_ENV
-          if [ "$BRANCH" == "master" ]; then
+          if [ "$BRANCH" == "main" ]; then
             echo "CLOWDER_VERSION=$(awk '/version = / { print $4 }' project/Build.scala | sed 's/"//g')" >> $GITHUB_ENV
           elif [ "$BRANCH" == "develop" ]; then
             echo "CLOWDER_VERSION=develop" >> $GITHUB_ENV

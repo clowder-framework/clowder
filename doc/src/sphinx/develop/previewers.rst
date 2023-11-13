@@ -12,4 +12,4 @@ Previewer can work together with extractors and external services.
 
 
 Here is a list of previewer embedded with the core
-`source <https://github.com/clowder-framework/clowder/tree/master/public/javascripts/previewers>`_.
+`source <https://github.com/clowder-framework/clowder/tree//public/javascripts/previewers>`_.

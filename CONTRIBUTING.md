@@ -5,7 +5,7 @@ below. By participating in this project, you agree to abide by the [code of cond
 Before your code can be accepted, you will have to sign a [CLA](https://clowderframework.org/pdf/Clowder-CLA.pdf)
 and mail it to lmarini@illinois.edu.
 
-Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `master` and `develop` branches are pushed to 
+Most of the core development happens on [NCSA Bitbucket][bitbucket]. The `` and `develop` branches are pushed to 
 [GitHub][github] nightly.
 
 We encourage contributors to create an account on [NCSA Bitbucket][bitbucket] and make pull requests there. We also accept 
