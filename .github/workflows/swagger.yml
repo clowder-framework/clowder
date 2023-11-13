@@ -1,14 +1,14 @@
 name: swagger
 
 # This will run when:
-# - when new code is pushed to master/develop to make sure the
+# - when new code is pushed to main/develop to make sure the
 #   code does compile.
 # - when a pull request is created and updated to make sure the
 #   code does compile.
 on:
   push:
     branches:
-      - master
+      - main
       - develop
 
   pull_request:
