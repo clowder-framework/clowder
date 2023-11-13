@@ -316,11 +316,9 @@ class ExtractorsHeartbeats(channel: Channel, queue: String) extends Actor {
       val extractionInfoResult = extractor_info.validate[ExtractorInfo]
 
       // Determine if there is a user associated with this request
-      val owner = (json \ "owner").as[String]
-      val user: Option[User] = if (owner.length > 0) {
-        users.findByEmail(owner)
-      } else {
-        None
+      val user = (json \ "owner").asOpt[String] match {
+        case Some(owner) => users.findByEmail(owner)
+        case None => None
       }
 
       // Update database
