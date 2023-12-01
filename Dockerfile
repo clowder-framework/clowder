@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # BUILD CLOWDER DIST
 # ----------------------------------------------------------------------
-FROM openjdk:8-jdk-bullseye as clowder-build
+FROM eclipse-temurin:8-jdk as clowder-build
 
 ARG BRANCH="unknown"
 ARG VERSION="unknown"
@@ -9,6 +9,10 @@ ARG BUILDNUMBER="unknown"
 ARG GITSHA1="unknown"
 
 WORKDIR /src
+
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends unzip zip && \
+    rm -rf rm -rf /var/lib/apt/lists/*
 
 # install clowder libraries (hopefully cached)
 COPY sbt* /src/
@@ -40,7 +44,7 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
 # ----------------------------------------------------------------------
 # BUILD CLOWDER
 # ----------------------------------------------------------------------
-FROM openjdk:8-jre-bullseye as clowder-runtime
+FROM eclipse-temurin:8-jre as clowder-runtime
 
 # environemnt variables
 ARG BRANCH="unknown"
