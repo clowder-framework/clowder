@@ -74,6 +74,7 @@ services:
       - S3_BUCKET=${S3_BUCKET:-clowder}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY:-clowder}
       - S3_SECRET_KEY=${S3_SECRET_KEY:-catsarecute}
+      - SWAGGER_UI_HOST=${SWAGGER_UI_HOST:-https://clowder.ncsa.illinois.edu/clowder/swagger}
     labels:
       - "traefik.enable=true"
       - "traefik.backend=clowder"
