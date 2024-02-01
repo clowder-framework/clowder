@@ -32,7 +32,7 @@ class Application @Inject()(files: FileService, collections: CollectionService, 
   def swaggerUI = Action { implicit request =>
     val swagger = routes.Application.swagger().absoluteURL(Utils.https(request))
     val swaggerUIHost =  play.Play.application().configuration().getString("swaggerUIHost")
-    if (swaggerUIHost == null) {
+    if (swaggerUIHost == null || swaggerUIHost.isEmpty()) {
       Redirect("http://clowder.ncsa.illinois.edu/swagger/?url=" + swagger)
     } else {
       Redirect(swaggerUIHost)
