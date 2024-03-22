@@ -51,7 +51,7 @@ services:
 
   # main clowder application
   clowder:
-    image: clowder/clowder:${CLOWDER_VERSION:-latest}
+    image: clowder:bugfix
     restart: unless-stopped
     networks:
       - clowder
