@@ -719,9 +719,10 @@ class  Datasets @Inject()(
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
         Logger.debug("File was already in dataset.")
         Logger.debug("Remove file from folders in dataset")
-        folders.get(foldersContainingFile).foreach(folder => {
+        foldersContainingFile.foreach(folder => {
           if (folder.parentDatasetId == dsId){
             folders.removeFile(folder.id, fileId)
+
           }
         })
     }
