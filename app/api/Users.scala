@@ -1,6 +1,6 @@
 package api
-
-import org.apache.commons.lang.StringEscapeUtils
+// import org.springframework.web.util.HtmlUtils.htmlEscape
+import org.apache.commons.lang.StringEscapeUtils.escapeJavaScript
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.Play.current
@@ -62,7 +62,10 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /** @deprecated use id instead of email */
   def updateName(id: UUID, firstName: String, lastName: String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     implicit val user = request.user
-    val escapedLastName = StringEscapeUtils.escapeJavaScript(lastName)
+//    val escapedFirstName = htmlEscape(firstName)
+//    val escapedLastName = htmlEscape(lastName)
+    val escapedFirstName = org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(firstName)
+    val escapedLastName = org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(lastName)
     users.updateUserField(id, "firstName", escapedFirstName)
     users.updateUserField(id, "lastName", escapedLastName)
     users.updateUserField(id, "fullName", escapedFirstName + " " + escapedLastName)
