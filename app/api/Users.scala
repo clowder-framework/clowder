@@ -64,8 +64,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     implicit val user = request.user
 //    val escapedFirstName = htmlEscape(firstName)
 //    val escapedLastName = htmlEscape(lastName)
-    val escapedFirstName = org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(firstName)
-    val escapedLastName = org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(lastName)
+    val escapedFirstName = scala.xml.Text(firstName).toString
+    val escapedLastName = scala.xml.Text(lastName).toString
     users.updateUserField(id, "firstName", escapedFirstName)
     users.updateUserField(id, "lastName", escapedLastName)
     users.updateUserField(id, "fullName", escapedFirstName + " " + escapedLastName)
