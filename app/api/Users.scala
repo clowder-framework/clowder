@@ -1,5 +1,6 @@
 package api
 
+import org.apache.commons.lang.StringEscapeUtils
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.Play.current
@@ -61,10 +62,12 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /** @deprecated use id instead of email */
   def updateName(id: UUID, firstName: String, lastName: String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     implicit val user = request.user
-    users.updateUserField(id, "firstName", firstName)
-    users.updateUserField(id, "lastName", lastName)
-    users.updateUserField(id, "fullName", firstName + " " + lastName)
-    users.updateUserFullName(id, firstName + " " + lastName)
+    val escapedFirstName = StringEscapeUtils.escapeJavaScript(firstName)
+    val escapedLastName = StringEscapeUtils.escapeJavaScript(lastName)
+    users.updateUserField(id, "firstName", escapedFirstName)
+    users.updateUserField(id, "lastName", escapedLastName)
+    users.updateUserField(id, "fullName", escapedFirstName + " " + escapedLastName)
+    users.updateUserFullName(id, escapedFirstName + " " + escapedLastName)
 
     Ok(Json.obj("status" -> "success"))
   }
