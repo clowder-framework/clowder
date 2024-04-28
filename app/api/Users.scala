@@ -62,7 +62,6 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /** @deprecated use id instead of email */
   def updateName(id: UUID, firstName: String, lastName: String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     implicit val user = request.user
-    val escapedFirstName = StringEscapeUtils.escapeJavaScript(firstName)
     val escapedLastName = StringEscapeUtils.escapeJavaScript(lastName)
     users.updateUserField(id, "firstName", escapedFirstName)
     users.updateUserField(id, "lastName", escapedLastName)
