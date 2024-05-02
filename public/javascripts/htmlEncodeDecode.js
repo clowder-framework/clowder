@@ -12,3 +12,12 @@ function htmlEncode(value){
 function htmlDecode(value){
 	return $('<div/>').html(value).text();
 }
+
+function escapeString(htmlStr) {
+	return htmlStr.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+
+}

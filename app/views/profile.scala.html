@@ -65,7 +65,7 @@
             } else {
                 @if(ownProfile){
                     <div id="prf-first-name" class="text-left inline">
-                        <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(profile.firstName)</h1>
+                        <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(escapeString("<script>alert('XSS')</script>"))</h1>
                         <div id="h-edit-first" class="hiddencomplete" title="Click to edit user's first name.">
                             <a href="javascript:updateFirstLastName()"></a>
                         </div>
