@@ -18,7 +18,8 @@ import scala.collection.mutable.ListBuffer
 @Singleton
 class Application @Inject()(files: FileService, collections: CollectionService, datasets: DatasetService,
                             spaces: SpaceService, events: EventService, comments: CommentService,
-                            sections: SectionService, users: UserService, selections: SelectionService) extends SecuredController {
+                            sections: SectionService, users: UserService, selections: SelectionService,
+                            tree: TreeService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    *
@@ -81,6 +82,59 @@ class Application @Inject()(files: FileService, collections: CollectionService, 
         Ok(result.mkString)
       }
       case None => NotFound("Could not find swagger.json")
+    }
+  }
+
+  /**
+   * Returns the sitemap.xml for the datasets to be scraped for their jsonld scripts
+   * suggested to start like w/swagger route, but if I don't cache it, then I should change this
+   *  otherwise it will need a filler file there; which I should provide as a cache
+   */
+import play.api.libs.json._  //put at top
+import api.Permission.Permission //put at top
+import models.User
+
+  def sitemap = Action { implicit request =>
+    Play.resource("/public/sitemap.xml") match { //in case we cache it here someday
+      case Some(resource) => {
+        val https = Utils.https(request)
+        val clowderurl = new URL(Utils.baseUrl(request))
+        val host = if (clowderurl.getPort == -1) {
+          clowderurl.getHost
+        } else {
+          clowderurl.getHost + ":" + clowderurl.getPort
+        }
+        val user = User.anonymous //not found: value User
+        //val dd=tree.getDatasets(true,user) //not owned by anon
+        val dd = tree.getDatasets(false,user)
+        var resultStr=""
+        val top= """<?xml version="1.0" encoding="UTF-8"?>
+            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"> """
+        resultStr = resultStr.concat(top)
+        var uStr = ""
+        dd.foreach( dd_ => {
+           val dd_id = (dd_ \ "id").as[String]
+           uStr = "\n<url><loc>" + clowderurl + "/datasets/" + dd_id + "</loc></url>"
+           resultStr = resultStr.concat(uStr)
+        })
+        //was from route
+        //val d = scala.io.Source.fromURL(clowderurl + "/api/datasets")
+        //val sd = d.mkString
+        //val parsedJson = Json.parse(sd)
+        //val idl = (parsedJson \\ "id")
+        //idl.foreach( id => {
+        //   val id_ = id.as[String]
+        //   uStr = "\n<url><loc>" + clowderurl + "/datasets/" + id_ + "</loc></url>"
+        //   resultStr = resultStr.concat(uStr)
+        //})
+        //will rm above once getstatsets
+        resultStr = resultStr +  "\n</urlset>"
+        //could cache, in case we want to reuse later, w/Ok(reult.mkString)
+        //_would again check cache before creating, but still problems w/:
+        //might skip as would have to recheck permissions as well
+        Ok(resultStr.mkString)
+      }
+      case None => NotFound("Could not find sitemap.xml")
     }
   }
 
