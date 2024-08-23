@@ -90,6 +90,16 @@ class Spaces @Inject()(spaces: SpaceService,
       case None => NotFound("Space not found")
     }
   }
+  def getUsers(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    spaces.get(id) match {
+      case Some(space) =>
+        val usersInSpace = spaces.getUsersInSpace(space.id, None)
+        Ok(toJson(usersInSpace.map(userToJson)))
+      case None => {
+        NotFound("Space not found")
+      }
+    }
+  }
 
   def list(when: Option[String], title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
     Ok(toJson(listSpaces(when, title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
@@ -167,8 +177,16 @@ class Spaces @Inject()(spaces: SpaceService,
     toJson(Map("id" -> space.id.stringify,
       "name" -> space.name,
       "description" -> space.description,
+      "creator" -> space.creator.stringify,
       "created" -> space.created.toString))
   }
+
+  def userToJson(user: User) = {
+    toJson(Map("id" -> user.id.stringify,
+      "email" -> user.email.get
+    ))
+  }
+
 
   def addCollectionToSpace(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>

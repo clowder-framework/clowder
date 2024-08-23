@@ -488,6 +488,7 @@ GET            /api/files/:three_d_file_id/:filename                            
 GET            /api/spaces                                                              @api.Spaces.list(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/spaces/canEdit                                                      @api.Spaces.listCanEdit(when: Option[String] ?= None, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
+GET            /api/spaces/:id/users                                                    @api.Spaces.getUsers(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
 POST           /api/spaces/:spaceId/removeCollection/:collectionId                      @api.Spaces.removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean)
