@@ -167,6 +167,7 @@ class Spaces @Inject()(spaces: SpaceService,
     toJson(Map("id" -> space.id.stringify,
       "name" -> space.name,
       "description" -> space.description,
+      "creator" ->space.creator.stringify,
       "created" -> space.created.toString))
   }
 

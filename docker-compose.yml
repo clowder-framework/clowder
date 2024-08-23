@@ -51,7 +51,7 @@ services:
 
   # main clowder application
   clowder:
-    image: clowder:bugfix
+    image: clowder/clowder:${CLOWDER_VERSION:-latest}
     restart: unless-stopped
     networks:
       - clowder
@@ -93,6 +93,9 @@ services:
     restart: unless-stopped
     networks:
       - clowder
+    command: mongod --port 27018
+    ports:
+      - '27018:27018'
     volumes:
       - mongo:/data/db
 
@@ -116,16 +119,17 @@ services:
       - rabbitmq:/var/lib/rabbitmq
 
   # search index (optional, needed for search and sorting future) 
-  elasticsearch:
-    image: clowder/elasticsearch:${CLOWDER_VERSION:-latest}
-    command: elasticsearch -Des.cluster.name="clowder"
-    networks:
-      - clowder
-    restart: unless-stopped
-    environment:
-      - cluster.name=clowder
-    volumes:
-      - elasticsearch:/usr/share/elasticsearch/data
+#  elasticsearch:
+#    image: clowder/elasticsearch:${CLOWDER_VERSION:-latest}
+#    platform: "linux/amd64"
+#    command: elasticsearch -Des.cluster.name="clowder"
+#    networks:
+#      - clowder
+#    restart: unless-stopped
+#    environment:
+#      - cluster.name=clowder
+#    volumes:
+#      - elasticsearch:/usr/share/elasticsearch/data
 
   # monitor clowder extractors
   monitor:

@@ -65,13 +65,13 @@
             } else {
                 @if(ownProfile){
                     <div id="prf-first-name" class="text-left inline">
-                        <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(escapeString("<script>alert('XSS')</script>"))</h1>
+                        <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">escapeString("<script>alert('XSS')</script>")</h1>
                         <div id="h-edit-first" class="hiddencomplete" title="Click to edit user's first name.">
                             <a href="javascript:updateFirstLastName()"></a>
                         </div>
                     </div>
                     <div id="prf-last-name" class="text-left inline edit-tab">
-                        <h1 id="last-name-title" class="inline" style="cursor:pointer" title="Click to edit user's last name.">@Html(profile.lastName)</h1>
+                        <h1 id="last-name-title" class="inline" style="cursor:pointer" title="Click to edit user's last name.">escapeString(profile.lastName)</h1>
                         <div id="h-edit-last" class="hiddencomplete" title="Click to edit user's last name.">
                             <a href="javascript:updateFirstLastName()"><span class ="glyphicon glyphicon-edit"></span></a>
                         </div>
