@@ -93,9 +93,7 @@ class Spaces @Inject()(spaces: SpaceService,
   def getUsers(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     spaces.get(id) match {
       case Some(space) =>
-
         val usersInSpace = spaces.getUsersInSpace(space.id, None)
-
         Ok(toJson(usersInSpace.map(userToJson)))
       case None => {
         NotFound("Space not found")
