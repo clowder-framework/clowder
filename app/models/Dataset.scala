@@ -110,7 +110,17 @@ object Dataset {
         "thumbnail" -> datasetThumbnail,
         "authorId" -> dataset.author.id,
         "spaces" -> dataset.spaces,
-        "resource_type" -> "dataset")
+        "resource_type" -> "dataset",
+        "license" -> Json.obj(
+          "license_type" -> dataset.licenseData.m_licenseType,
+          "license_url" -> dataset.licenseData.m_licenseUrl,
+          "license_text" -> dataset.licenseData.m_licenseText,
+          "holders" -> dataset.licenseData.m_rightsHolder,
+          "ccAllowCommercial" -> dataset.licenseData.m_ccAllowCommercial,
+          "ccAllowDerivative" -> dataset.licenseData.m_ccAllowDerivative,
+          "ccRequireShareAlike" -> dataset.licenseData.m_ccRequireShareAlike
+        )
+      )
     }
   }
 }
