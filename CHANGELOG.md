@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.22.1 - 2023-11-10
 
+### Unreleased
+- Added License details in dataset object response
+
 ### Fixed
 - Fixed hearthbeat bug where if the owner was not set in extractors_info.json clowder would throw and error and the
   extractor would not get registered.
