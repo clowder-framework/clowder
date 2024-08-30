@@ -20,6 +20,7 @@ Following is a list of contributors in alphabetical order:
 - Kastan Day
 - Kaveh Karimi-Asli
 - Kenton McHenry
+- Lachlan Deakin
 - Luigi Marini
 - Maria-Spyridoula Tzima
 - Mario Felarca

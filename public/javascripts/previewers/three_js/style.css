@@ -85,3 +85,8 @@ html, body {
         transform: rotate(360deg);
     }
 }
+
+model-viewer {
+    width: 640px;
+    height: 480px;
+}

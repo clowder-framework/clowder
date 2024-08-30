@@ -1,0 +1,207 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: "Clowder: Open Source Data Management for Long Tail Data"
+abstract: "A customizable and scalable data management system you can install in the cloud or on your own hardware."
+type: software
+version: "1.22.1"
+license: "NCSA"
+repository-code: "https://github.com/clowder-framework/clowder"
+keywords:
+  - data-management
+  - cyberinfrastructure
+  - clowder
+  - open-data
+  - open-science
+preferred-citation:
+  type: article
+  title: "Clowder: Open Source Data Management for Long Tail Data"
+  abstract: "Clowder is an open source data management system to support data curation of long tail data and metadata across multiple research domains and diverse data types. Institutions and labs can install and customize their own instance of the framework on local hardware or on remote cloud computing resources to provide a shared service to distributed communities of researchers. Data can be ingested directly from instruments or manually uploaded by users and then shared with remote collaborators using a web front end. We discuss some of the challenges encountered in designing and developing a system that can be easily adapted to different scientific areas including digital preservation, geoscience, material science, medicine, social science, cultural heritage and the arts. Some of these challenges include support for large amounts of data, horizontal scaling of domain specific preprocessing algorithms, ability to provide new data visualizations in the web browser, a comprehensive Web service API for automatic data ingestion and curation, a suite of social annotation and metadata management features to support data annotation by communities of users and algorithms, and a web based front-end to interact with code running on heterogeneous clusters, including HPC resources."
+  isbn: 9781450364461
+  publisher:
+    name: "Association for Computing Machinery"
+  doi: 10.1145/3219104.3219159
+  collection-title: "Proceedings of the Practice and Experience on Advanced Research Computing"
+  keywords:
+    - scientific gateways
+    - metadata management
+    - linked data
+    - data management
+    - data curation
+  location:
+    name: "Pittsburgh, PA, USA"
+  year: 2018
+  authors:
+    - family-names: Marini
+      given-names: Luigi
+    - family-names: Gutierrez-Polo
+      given-names: Indira
+    - family-names: Kooper
+      given-names: Rob
+    - family-names: Satheesan
+      given-names: Sandeep Puthanveetil
+    - family-names: Burnette
+      given-names: Maxwell
+    - family-names: Lee
+      given-names: Jong
+    - family-names: Nicholson
+      given-names: Todd
+    - family-names: Zhao
+      given-names: Yan
+    - family-names: McHenry
+      given-names: Kenton
+references:
+  - institution: "National Science Foundation" 
+    number: "#BCS-0941268" 
+  - institution: "National Science Foundation"  
+    number: "#EAR- 331906"
+  - institution: "National Science Foundation"  
+    number: "#ACI-1261582"
+  - institution: "National Science Foundation"  
+    number: "#ACI-1443013"
+  - institution: "National Science Foundation"  
+    number: "#OCI-0940824"
+  - institution: "National Science Foundation"  
+    number: "#OCI-0525308"
+  - institution: "National Science Foundation"  
+    number: "#OAC-1835834"
+  - institution: "National Institutes of Health"
+    number: "#1P01AI089556-01A1"
+  - institution: "Illinois - Indiana Sea Grant"
+    number: "#DW92329201"
+  - institution: "European Commission"
+    number: "#RI-261600"
+  - institution: "XSEDE"
+    number: "#OCI-1053575"
+  - institution: "ARPA-E"
+    number: "#DE-AR0000594"
+authors:
+  - family-names: "Marini"
+    given-names: "Luigi"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+    orcid: "0000-0002-8511-0211"
+  - family-names: "Kooper"
+    given-names: "Rob"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+    orcid: "0000-0002-5781-7287"
+  - family-names: "Gutierrez"
+    given-names: "Indira"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+    orcid: "0000-0001-5684-3419"
+  - family-names: "Sophocleous"
+    given-names: "Constantinos"
+  - family-names: "Burnette"
+    given-names: "Max"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Nicholson"
+    given-names: "Todd"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Ondrejcek"
+    given-names: "Michal"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Zhang"
+    given-names: "Bing"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Zharnitsky"
+    given-names: "Inna"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Puthanveetil Satheesan"
+    given-names: "Sandeep Puthanveetil"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+    orcid: "0000-0001-9075-3740"
+  - family-names: "Padhy"
+    given-names: "Smruti"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Zhao"
+    given-names: "Yan"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Liu"
+    given-names: "Rui"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Vaidya"
+    given-names: "Ashwini"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Myers"
+    given-names: "Jim"
+    orcid: "0000-0001-8462-650X"
+  - family-names: "Felarca"
+    given-names: "Mario"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Angelo"
+    given-names: "Brock"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Roeder"
+    given-names: "Gene"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Lee"
+    given-names: "Jong"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Hennessy"
+    given-names: "Will"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Issaranon"
+    given-names: "Theerasit"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Guo"
+    given-names: "Yibo"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Yuan"
+    given-names: "Xiaocheng"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Kethineedi"
+    given-names: "Varun"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Kumar"
+    given-names: "Avinash"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Nayudu"
+    given-names: "Nishant"
+    affiliation: "University of Illinois at Urbana-Champaign"
+  - family-names: "Poelmans"
+    given-names: "Ward"
+    affiliation: "Center for Molecular Modeling, Ghent University"
+  - family-names: "Jansz"
+    given-names: "Winston"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Jansen"
+    given-names: "Gregory"
+    affiliation: "College of Information Studies, University of Maryland"
+  - family-names: "Navarro"
+    given-names: "Chris"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Pitcel"
+    given-names: "Michelle"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Tenczar"
+    given-names: "Nicholas"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Wang"
+    given-names: "Chen"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Lambert"
+    given-names: "Mike"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "McHenry"
+    given-names: "Kenton"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+    orcid: "0000-0003-0367-2550"
+  - family-names: "Habib"
+    given-names: "Aaraj"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Galewsky"
+    given-names: "Ben"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Constantinou"
+    given-names: "Chrysovalantis"
+  - family-names: "Karimi-Asli"
+    given-names: "Kaveh"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Tzima"
+    given-names: "Maria-Spyridoula"
+  - family-names: "Johnson"
+    given-names: "Michael"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Bobak"
+    given-names: "Mike"
+    affiliation: "National Center for Supercomputing Applications, University of Illinois at Urbana-Champaign"
+  - family-names: "Yardley"
+    given-names: "Tim"

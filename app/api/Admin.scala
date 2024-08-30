@@ -125,10 +125,10 @@ class Admin @Inject() (userService: UserService,
       list.foreach(id =>
         userService.findById(UUID(id)) match {
           case Some(u: ClowderUser) => {
-            if (u.status == UserStatus.Inactive) {
+            if (u.status != UserStatus.Active) {
               userService.update(u.copy(status = UserStatus.Active))
-              val subject = s"[${AppConfiguration.getDisplayName}] account activated"
-              val body = views.html.emails.userActivated(u, active = true)(request)
+              val subject = s"[${AppConfiguration.getDisplayName}] account is now active"
+              val body = views.html.emails.userChanged(u, "activated")(request)
               util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
@@ -138,10 +138,10 @@ class Admin @Inject() (userService: UserService,
       list.foreach(id =>
         userService.findById(UUID(id)) match {
           case Some(u: ClowderUser) => {
-            if (!(u.status == UserStatus.Inactive)) {
+            if (u.status != UserStatus.Inactive) {
               userService.update(u.copy(status = UserStatus.Inactive))
-              val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
-              val body = views.html.emails.userActivated(u, active = false)(request)
+              val subject = s"[${AppConfiguration.getDisplayName}] account is deactivated"
+              val body = views.html.emails.userChanged(u, "deactivated")(request)
               util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
@@ -150,26 +150,27 @@ class Admin @Inject() (userService: UserService,
     (request.body \ "admin").asOpt[List[String]].foreach(list =>
       list.foreach(id =>
         userService.findById(UUID(id)) match {
-          case Some(u: ClowderUser) if (u.status == UserStatus.Active) => {
-
-            userService.update(u.copy(status = UserStatus.Admin))
-            val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
-            val body = views.html.emails.userAdmin(u, admin = true)(request)
-            util.Mail.sendEmail(subject, request.user, u, body)
-
+          case Some(u: ClowderUser) => {
+            if (u.status != UserStatus.Admin) {
+              userService.update(u.copy(status = UserStatus.Admin))
+              val subject = s"[${AppConfiguration.getDisplayName}] account is now an admin"
+              val body = views.html.emails.userChanged(u, "an admin account")(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
+            }
           }
           case _ => Logger.error(s"Could not update user with id=${id}")
         }))
-    (request.body \ "unadmin").asOpt[List[String]].foreach(list =>
+    (request.body \ "readonly").asOpt[List[String]].foreach(list =>
       list.foreach(id =>
         userService.findById(UUID(id)) match {
-          case Some(u: ClowderUser) if (u.status == UserStatus.Admin) => {
-            userService.update(u.copy(status = UserStatus.Active))
-            val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
-            val body = views.html.emails.userAdmin(u, admin = false)(request)
-            util.Mail.sendEmail(subject, request.user, u, body)
+          case Some(u: ClowderUser) => {
+            if (u.status != UserStatus.ReadOnly) {
+              userService.update(u.copy(status = UserStatus.ReadOnly))
+              val subject = s"[${AppConfiguration.getDisplayName}] account is now an read-only"
+              val body = views.html.emails.userChanged(u, "read-only")(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
+            }
           }
-
           case _ => Logger.error(s"Could not update user with id=${id}")
         }))
     Ok(toJson(Map("status" -> "success")))

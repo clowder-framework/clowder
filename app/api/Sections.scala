@@ -67,8 +67,14 @@ class Sections @Inject()(
       Logger.debug("Getting info for section with id " + id)
       sections.get(id) match {
         case Some(section) =>
-          Ok(Json.obj("id" -> section.id.toString, "file_id" -> section.file_id.toString,
-            "startTime" -> section.startTime.getOrElse(-1).toString, "tags" -> Json.toJson(section.tags.map(_.name))))
+          Ok(Json.obj(
+              "id" -> section.id.toString,
+              "file_id" -> section.file_id.toString,
+              "startTime" -> section.startTime.getOrElse(-1).toString,
+              "tags" -> Json.toJson(section.tags.map(_.name)),
+              "area" -> Json.toJson(section.area.getOrElse(null)),
+              "description" -> Json.toJson(section.description.getOrElse(""))
+          ))
         case None => Logger.error("Section not found " + id); NotFound(toJson("Section not found, id: " + id))
       }
   }

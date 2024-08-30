@@ -389,5 +389,7 @@ trait DatasetService {
 
   def getTrashedIds(): List[UUID]
 
+  def isInTrash(id: UUID): Boolean
+
   def recursiveArchive(dataset: Dataset, host: String, parameters: JsObject, apiKey: Option[String], user: Option[User])
 }

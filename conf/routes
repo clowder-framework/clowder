@@ -390,6 +390,7 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 POST           /api/files/bulkRemove                                                    @api.Files.bulkDeleteFiles()
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
+GET            /api/files/:id/sections                                                  @api.Files.sections(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
 GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
 POST           /api/files/:id/updateMetadata                                            @api.Files.updateMetadata(id: UUID, extractor_id: String)

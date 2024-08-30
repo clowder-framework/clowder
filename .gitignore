@@ -30,3 +30,4 @@ doc/src/sphinx/_build
 .DS_Store
 /doc/src/sphinx/_build
 **/.c9/*
+*~

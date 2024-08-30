@@ -33,3 +33,15 @@ case class Rectangle(
   h: Double) {
   override def toString() = f"x: $x%.2f, y: $y%.2f, width: $w%.2f, height: $h%.2f"
 }
+
+object Rectangle {
+  implicit object RectangleWrites extends Writes[Rectangle] {
+    def writes(rectangle: Rectangle): JsObject = {
+      Json.obj(
+        "x" -> rectangle.x,
+        "y" -> rectangle.y,
+        "w" -> rectangle.w,
+        "h" -> rectangle.h)
+    }
+  }
+}

@@ -23,7 +23,9 @@
     <div class="text-center">
         @if(ownProfile) {
             <div>@Messages("home.empty.message", Messages("spaces.title").toLowerCase)</div>
-            <div><a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new @Messages("space.title")">@Messages("create.title", Messages("space.title"))</a></div>
+            @if(user.get.status != UserStatus.ReadOnly) {
+                <div><a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new @Messages("space.title")">@Messages("create.title", Messages("space.title"))</a></div>
+            }
         } else {
             <div>@Messages("profile.empty.message", Messages("spaces.title").toLowerCase)</div>
         }

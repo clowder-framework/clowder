@@ -32,6 +32,7 @@ class Files @Inject()(
   collections: CollectionService,
   queries: MultimediaQueryService,
   tags: TagService,
+  sections_service: SectionService,
   comments: CommentService,
   extractions: ExtractionService,
   dtsrequests:ExtractionRequestsService,
@@ -206,6 +207,18 @@ class Files @Inject()(
         }
       }
     }
+
+  def sections(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    implicit val user = request.user
+    files.get(id) match {
+      case Some(file) => {
+        val sectionList = sections_service.findByFileId(id)
+        val sectionIds = sectionList.map { section => section.id }
+        Ok(toJson(sectionIds))
+      }
+      case None => NotFound(toJson("The requested file does not exist"))
+    }
+  }
 
   def getMetadataDefinitions(id: UUID, space: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     implicit val user = request.user
@@ -1696,6 +1709,9 @@ class Files @Inject()(
         Logger.debug("Deleting file from indexes " + file.filename)
         current.plugin[VersusPlugin].foreach {
           _.removeFromIndexes(id)
+        }
+        current.plugin[ElasticsearchPlugin].foreach {
+          _.delete(id.stringify)
         }
         Logger.debug("Deleting file: " + file.filename)
         files.removeFile(id, Utils.baseUrl(request), request.apiKey, request.user)

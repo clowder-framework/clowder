@@ -248,4 +248,6 @@ trait FileService {
 
   def getIterator(space: Option[String], since: Option[String], until: Option[String]): Iterator[File]
 
+  def isInTrash(id: UUID): Boolean
+
 }
