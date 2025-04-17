@@ -28,7 +28,7 @@
                     <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-hdd"></span> @space.name</h1>
                 </div>
                 <div class="col-md-12">
-                    <p><span id="spacedescdisplay" class='abstract'>@Html(space.description.replace("\n","<br>"))</span></p>
+                    <p><span id="spacedescdisplay" class='abstract'>@space.description.replace("\n","<br>")</span></p>
                 </div>
                 @if(user.isDefined) {
                     <div class="col-xs-12">
