@@ -51,12 +51,12 @@ jobs:
           distribution: 'zulu'
           java-version: 8
       - name: Cache SBT ivy cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.ivy2/cache
           key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('project/Build.scala') }}
       - name: Cache SBT
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.sbt
           key: ${{ runner.os }}-sbt-${{ hashFiles('project/Build.scala') }}
