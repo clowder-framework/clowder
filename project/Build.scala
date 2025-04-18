@@ -119,7 +119,7 @@ object ApplicationBuild extends Build {
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
 
     // iRods filestorage
-    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
+//    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
 
     // jsonp return from /api
     "org.julienrf" %% "play-jsonp-filter" % "1.1",
