@@ -118,9 +118,6 @@ object ApplicationBuild extends Build {
     // Testing framework
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
 
-    // iRods filestorage
-    "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
-
     // jsonp return from /api
     "org.julienrf" %% "play-jsonp-filter" % "1.1",
 
@@ -153,14 +150,18 @@ object ApplicationBuild extends Build {
     routesImport += "models._",
     routesImport += "Binders._",
     templatesImport += "org.bson.types.ObjectId",
+    resolvers := Seq(
+      "Typesafe Releases Repository" at "https://repo.lightbend.com/typesafe/releases/",
+      "Typesafe repository" at "https://repo.lightbend.com/typesafe/releases/"
+    ) ++ resolvers.value.filterNot(r => r.name == "Typesafe Releases Repository" || r.name == "Typesafe repository"),
     resolvers += Resolver.url("sbt-plugin-releases", url("https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("sbt-plugin-snapshots", url("https://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     resolvers += "Aduna" at "https://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
-    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
-    resolvers += "Typesafe repository" at "https://repo.lightbend.com/typesafe/releases/",
+    //resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
     resolvers += "Maven Central" at "https://repo1.maven.org/maven2/",
+
 
     // add custom folder to the classpath, use this to add/modify clowder:
     // custom/public/stylesheets/themes     - for custom themes
