@@ -30,7 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -51,12 +51,12 @@ jobs:
           distribution: 'zulu'
           java-version: 8
       - name: Cache SBT ivy cache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.ivy2/cache
           key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('project/Build.scala') }}
       - name: Cache SBT
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.sbt
           key: ${{ runner.os }}-sbt-${{ hashFiles('project/Build.scala') }}
@@ -85,7 +85,7 @@ jobs:
         ports:
           - 27017:27017
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -207,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
