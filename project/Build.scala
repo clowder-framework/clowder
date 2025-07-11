@@ -153,13 +153,14 @@ object ApplicationBuild extends Build {
     routesImport += "models._",
     routesImport += "Binders._",
     templatesImport += "org.bson.types.ObjectId",
-    resolvers += Resolver.url("sbt-plugin-releases", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
-    resolvers += Resolver.url("sbt-plugin-snapshots", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
+    resolvers += Resolver.url("sbt-plugin-releases", url("https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns),
+    resolvers += Resolver.url("sbt-plugin-snapshots", url("https://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-    resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
+    resolvers += "Aduna" at "https://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
     resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
-    resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
+    resolvers += "Typesafe repository" at "https://repo.lightbend.com/typesafe/releases/",
+    resolvers += "Maven Central" at "https://repo1.maven.org/maven2/",
 
     // add custom folder to the classpath, use this to add/modify clowder:
     // custom/public/stylesheets/themes     - for custom themes

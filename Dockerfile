@@ -40,7 +40,7 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
 # ----------------------------------------------------------------------
 # BUILD CLOWDER
 # ----------------------------------------------------------------------
-FROM openjdk:8-jre-bullseye as clowder-runtime
+FROM openjdk:8-jre-bullseye AS clowder-runtime
 
 # environemnt variables
 ARG BRANCH="unknown"
