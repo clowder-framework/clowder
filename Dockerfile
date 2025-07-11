@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # BUILD CLOWDER DIST
 # ----------------------------------------------------------------------
-FROM openjdk:8-jdk-bullseye as clowder-build
+FROM openjdk:8-jdk-bullseye AS clowder-build
 
 ARG BRANCH="unknown"
 ARG VERSION="unknown"
