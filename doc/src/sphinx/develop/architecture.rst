@@ -9,7 +9,7 @@ provided for external clients to communicate with the system. These clients can 
 cases as well as headless scripts for system to system communication.
 
 A service layer abstracts backend services so that individual deployments can be customized based on available resources.
-For example a user might want to store raw files on the file system, MongoDB GridFS, iRods or AWS S3 buckets.
+For example a user might want to store raw files on the file system, MongoDB GridFS, or AWS S3 buckets.
 
 When new data is added to the system, whether it is via the web interface or through the RESTful API, preprocessing is
 off-loaded to extraction services in charge of extracting appropriate data and metadata. The extraction services attempt

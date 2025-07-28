@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # BUILD CLOWDER DIST
 # ----------------------------------------------------------------------
-FROM openjdk:8-jdk-bullseye as clowder-build
+FROM openjdk:8-jdk-bullseye AS clowder-build
 
 ARG BRANCH="unknown"
 ARG VERSION="unknown"
@@ -40,7 +40,7 @@ RUN rm -rf target/universal/clowder-*.zip clowder clowder-* \
 # ----------------------------------------------------------------------
 # BUILD CLOWDER
 # ----------------------------------------------------------------------
-FROM openjdk:8-jre-bullseye as clowder-runtime
+FROM openjdk:8-jre-bullseye AS clowder-runtime
 
 # environemnt variables
 ARG BRANCH="unknown"

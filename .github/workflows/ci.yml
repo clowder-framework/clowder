@@ -30,7 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -85,7 +85,7 @@ jobs:
         ports:
           - 27017:27017
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -177,13 +177,13 @@ jobs:
           done
           rm ${ZIPFILE}
           zip -r ${ZIPFILE} ${DIR}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: clowder.zip
           path: target/universal/clowder-*.zip
       - name: Upload files to a GitHub release
         if: github.event_name == 'release' && github.event.action == 'created'
-        uses: svenstaro/upload-release-action@1.1.0
+        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
@@ -207,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: github branch
         run: |
           if [ "${{ github.event.release.target_commitish }}" != "" ]; then
@@ -237,10 +237,10 @@ jobs:
         with:
           path: ~/.sbt
           key: ${{ runner.os }}-sbt-${{ hashFiles('project/Build.scala') }}
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.7
+          python-version: 3.11
       - name: sbt doc
         run: ./sbt doc
         env:
@@ -248,7 +248,7 @@ jobs:
           VERSION: ${{ env.CLOWDER_VERSION }}
           BUILDNUMBER: ${{ github.run_number }}
           GITSHA1: ${{ github.sha  }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: ScalaDoc
           path: target/scala-*/api/
@@ -266,7 +266,7 @@ jobs:
           cd doc/src/sphinx/
           python -m pip install -r requirements.txt
           make html epub
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: HTML Documentation
           path: doc/src/sphinx/_build/html
@@ -279,13 +279,13 @@ jobs:
           key: ${{ secrets.SCP_KEY }}
           files: "doc/src/sphinx/_build/html/*"
           target: "CATS/${{ env.CLOWDER_VERSION }}/documentation/sphinx"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: EPUB Documentation
           path: doc/src/sphinx/_build/epub/Clowder.epub
       - name: Upload files to a GitHub release
         if: github.event_name == 'release' && github.event.action == 'created'
-        uses: svenstaro/upload-release-action@1.1.0
+        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
