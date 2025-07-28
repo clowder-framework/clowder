@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Removed refrences to repo.typesafe.com from sbt-launch.jar and build.scala
+
+### Removed
+- Removed iRods integration and dependencies. The iRods file storage service and plugin have been completely removed from the codebase. Users who were using iRods for file storage will need to configure an alternative storage backend (filesystem, MongoDB GridFS, or AWS S3).
+
 ## 1.22.1 - 2023-11-10
 
 ### Fixed
