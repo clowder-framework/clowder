@@ -47,13 +47,15 @@
                         case (_, _) => {}
                     }
                 }
-                <div class="btn-group btn-group-sm" id="spacesOwnership-displayed-dropdown">
-                    <select id="spacesOwnership" class="form-control" onchange="getSpaceType('@user.get.id')">
-                        <option value="1">Joined Spaces</option>
-                        <option value="2">My Spaces</option>
-                        <option value="3">All Spaces</option>
-                    </select>
-                </div>
+                @if(user.isDefined) {
+                    <div class="btn-group btn-group-sm" id="spacesOwnership-displayed-dropdown">
+                        <select id="spacesOwnership" class="form-control" onchange="getSpaceType('@user.get.id')">
+                            <option value="1">Joined Spaces</option>
+                            <option value="2">My Spaces</option>
+                            <option value="3">All Spaces</option>
+                        </select>
+                    </div>
+                }
                 <div class="btn-group btn-group-sm" id="number-displayed-dropdown">
                     <select id="numPageItems" class="form-control" onchange="getValue()">
                         <option value="12">12</option>

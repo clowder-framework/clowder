@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## Unreleased
 
 ### Fixed
+- Fixed `NoSuchElementException` in spaces listing page when user is not defined. The error occurred when calling `user.get.id` on an undefined user in the spaces ownership dropdown. Added proper user existence checks in `listSpaces.scala.html` and `miniList.scala.html` templates.
 - Removed refrences to repo.typesafe.com from sbt-launch.jar and build.scala
 
 ### Removed
