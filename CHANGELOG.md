@@ -5,14 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.23.0 - 2025-07-31
 
 ### Fixed
-- Fixed `NoSuchElementException` in spaces listing page when user is not defined. The error occurred when calling `user.get.id` on an undefined user in the spaces ownership dropdown. Added proper user existence checks in `listSpaces.scala.html` and `miniList.scala.html` templates.
+- Fixed XSS in space creation by escaping name and description field. 
+- Fixed `NoSuchElementException` in spaces listing page when user is not defined. The error occurred when calling
+  `user.get.id` on an undefined user in the spaces ownership dropdown. Added proper user existence checks in 
+  `listSpaces.scala.html` and `miniList.scala.html` templates.
 - Removed refrences to repo.typesafe.com from sbt-launch.jar and build.scala
-
-### Removed
-- Removed iRods integration and dependencies. The iRods file storage service and plugin have been completely removed from the codebase. Users who were using iRods for file storage will need to configure an alternative storage backend (filesystem, MongoDB GridFS, or AWS S3).
+- Removed iRods integration and dependencies. The iRods file storage service and plugin have been completely removed
+  from the codebase. Users who were using iRods for file storage will need to configure an alternative storage 
+  backend (filesystem, MongoDB GridFS, or AWS S3).
 
 ## 1.22.1 - 2023-11-10
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.22.1"
+VERSION="1.23.0"
 
 sed -i~ "s#^  val version = \".*\"\$#  val version = \"${VERSION}\"#" project/Build.scala
 sed -i~ "s#^version: .*\$#version: \"${VERSION}\"#" citation.cff

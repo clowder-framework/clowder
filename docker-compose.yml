@@ -97,53 +97,53 @@ services:
       - mongo:/data/db
 
   # message broker (optional but needed for extractors)
-  rabbitmq:
-    image: rabbitmq:management-alpine
-    restart: unless-stopped
-    networks:
-      - clowder
-    environment:
-      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_management path_prefix "/rabbitmq"
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=rabbitmq"
-      - "traefik.port=15672"
-      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefix: /rabbitmq"
-      - "traefik.website.frontend.whiteList.sourceRange=${TRAEFIK_IPFILTER:-172.16.0.0/12}"
-    volumes:
-      - rabbitmq:/var/lib/rabbitmq
+#  rabbitmq:
+#    image: rabbitmq:management-alpine
+#    restart: unless-stopped
+#    networks:
+#      - clowder
+#    environment:
+#      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_management path_prefix "/rabbitmq"
+#      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
+#      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.backend=rabbitmq"
+#      - "traefik.port=15672"
+#      - "traefik.frontend.rule=${TRAEFIK_HOST:-}PathPrefix: /rabbitmq"
+#      - "traefik.website.frontend.whiteList.sourceRange=${TRAEFIK_IPFILTER:-172.16.0.0/12}"
+#    volumes:
+#      - rabbitmq:/var/lib/rabbitmq
 
   # search index (optional, needed for search and sorting future) 
-  elasticsearch:
-    image: clowder/elasticsearch:${CLOWDER_VERSION:-latest}
-    command: elasticsearch -Des.cluster.name="clowder"
-    networks:
-      - clowder
-    restart: unless-stopped
-    environment:
-      - cluster.name=clowder
-    volumes:
-      - elasticsearch:/usr/share/elasticsearch/data
+#  elasticsearch:
+#    image: clowder/elasticsearch:${CLOWDER_VERSION:-latest}
+#    command: elasticsearch -Des.cluster.name="clowder"
+#    networks:
+#      - clowder
+#    restart: unless-stopped
+#    environment:
+#      - cluster.name=clowder
+#    volumes:
+#      - elasticsearch:/usr/share/elasticsearch/data
 
   # monitor clowder extractors
-  monitor:
-    image: clowder/monitor:${CLOWDER_VERSION:-latest}
-    restart: unless-stopped
-    networks:
-      - clowder
-    depends_on:
-      - rabbitmq
-    environment:
-      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
-      - RABBITMQ_MGMT_PORT=15672
-      - RABBITMQ_MGMT_PATH=/rabbitmq
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=monitor"
-      - "traefik.port=9999"
-      - "traefik.frontend.rule=${TRAEFIK_FRONTEND_RULE:-}PathPrefixStrip:/monitor"
+#  monitor:
+#    image: clowder/monitor:${CLOWDER_VERSION:-latest}
+#    restart: unless-stopped
+#    networks:
+#      - clowder
+#    depends_on:
+#      - rabbitmq
+#    environment:
+#      - RABBITMQ_URI=${RABBITMQ_URI:-amqp://guest:guest@rabbitmq/%2F}
+#      - RABBITMQ_MGMT_PORT=15672
+#      - RABBITMQ_MGMT_PATH=/rabbitmq
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.backend=monitor"
+#      - "traefik.port=9999"
+#      - "traefik.frontend.rule=${TRAEFIK_FRONTEND_RULE:-}PathPrefixStrip:/monitor"
 
 # ----------------------------------------------------------------------
 # NETWORK FOR CONTAINER COMMUNICATION
