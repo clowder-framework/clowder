@@ -13,7 +13,7 @@
     <ol class="breadcrumb">
       @(spaceId, spaceName) match {
         case (Some(s), Some(name)) => {
-          <li> <span class="glyphicon glyphicon-hdd"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @name</a></li>
+          <li> <span class="glyphicon glyphicon-hdd"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @ellipsize(name, 18)</a></li>
           <li> <span class="glyphicon glyphicon-edit"></span> @Html(title)</li>
         }
         case (_,_) => {
