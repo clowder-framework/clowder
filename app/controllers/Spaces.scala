@@ -7,6 +7,7 @@ import org.joda.time.DateTime
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
 import play.api.i18n.Messages
+import play.api.templates.HtmlFormat
 import play.api.{Logger, Play}
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import services._
@@ -411,7 +412,7 @@ class Spaces @Inject() (spaces: SpaceService, users: UserService, events: EventS
                   formData => {
                     if (Permission.checkPermission(user, Permission.CreateSpace)) {
                       Logger.debug("Creating space " + formData.name)
-                      val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                      val newSpace = ProjectSpace(name = HtmlFormat.escape(formData.name).toString(), description = HtmlFormat.escape(formData.description).toString(),
                         created = new Date, creator = userId, homePage = formData.homePage,
                         logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                         collectionCount = 0, datasetCount = 0, fileCount = 0, userCount = 0, spaceBytes = 0, metadata = List.empty,

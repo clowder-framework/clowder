@@ -23,7 +23,7 @@ on:
 
 # Certain actions will only run when this is the main repo.
 env:
-  main_REPO: clowder-framework/clowder
+  MAIN_REPO: clowder-framework/clowder
   DOCKERHUB_ORG: clowder
 
 jobs:
@@ -64,7 +64,7 @@ jobs:
             PLATFORM: "linux/amd64"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # calculate some variables that are used later
       - name: variable setup
@@ -115,11 +115,11 @@ jobs:
 
       # setup docker build
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Inspect Builder
         run: |
@@ -132,13 +132,13 @@ jobs:
       # login to registries
       - name: Login to DockerHub
         if: env.dockerhub != ''
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -147,7 +147,7 @@ jobs:
       # build the clowder docker images
       - name: Build and push ${{ matrix.IMAGE }}-build
         if: matrix.IMAGE == 'clowder'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           push: true
           context: ${{ matrix.FOLDER }}
@@ -164,7 +164,7 @@ jobs:
 
       - name: Build and push ${{ matrix.IMAGE }}-runtime
         if: matrix.IMAGE == 'clowder'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           push: true
           context: ${{ matrix.FOLDER }}
@@ -182,7 +182,7 @@ jobs:
       # build the other docker images
       - name: Build and push ${{ matrix.IMAGE }}
         if: matrix.IMAGE != 'clowder'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           push: true
           context: ${{ matrix.FOLDER }}
@@ -198,10 +198,10 @@ jobs:
 
       # update README at DockerHub
       - name: Docker Hub Description
-        if: env.dockerhub != '' && matrix.README != '' && github.event_name == 'push' && github.repository == env.main_REPO && env.BRANCH == 'main'
-        uses: peter-evans/dockerhub-description@v2
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_REPOSITORY: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
-          README_FILEPATH: ${{ matrix.README }}
+        if: env.dockerhub != '' && matrix.README != '' && github.event_name == 'push' && github.repository == env.MAIN_REPO && env.BRANCH == 'main'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ${{ env.DOCKERHUB_ORG }}/${{ matrix.IMAGE }}
+          readme-filepath	: ${{ matrix.README }}
