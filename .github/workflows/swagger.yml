@@ -1,14 +1,14 @@
 name: swagger
 
 # This will run when:
-# - when new code is pushed to master/develop to make sure the
+# - when new code is pushed to main/develop to make sure the
 #   code does compile.
 # - when a pull request is created and updated to make sure the
 #   code does compile.
 on:
   push:
     branches:
-      - master
+      - main
       - develop
 
   pull_request:
@@ -20,7 +20,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: openapi-lint 
         uses: mbowman100/swagger-validator-action@master

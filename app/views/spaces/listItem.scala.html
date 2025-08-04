@@ -22,7 +22,7 @@
 
                 <div class= "row">
                     <div class="col-md-6 col-sm-6 col-lg-6">
-                        <div class = 'abstractsummary'>@Html(space.description.replace("\n","<br>"))</div>
+                        <div class = 'abstractsummary'>space.description.replace("\n","<br>")</div>
                         <div>@space.created.format("MMM dd, yyyy")</div>
                         <div>
                             <span class="glyphicon glyphicon-briefcase" title="@space.datasetCount datasets"></span> @space.datasetCount
